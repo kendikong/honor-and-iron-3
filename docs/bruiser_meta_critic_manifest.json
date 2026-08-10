@@ -1,198 +1,198 @@
-{
-  "piece": "B6-REOPEN",
-  "pass_threshold": 95,
-  "per_row_threshold": 88,
-  "last_critic_round": 5,
-  "last_score": 89,
-  "last_result": "PASS",
-  "last_row_promoted": "unstoppable_force",
-  "notes": "Gauntlet round 5: 89/100 PASS (threshold 88). Tier 1+2 automated green; owner sign-off still NOT PASS; LOCK ≥95 + manual remain open.",
-  "approved_rows": [
-    {
-      "factory_id": "bruiser_push_through",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_charge_strike",
-      "score": 91,
-      "critic_round": 5,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_concussion_blow",
-      "score": 89,
-      "critic_round": 3,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_cleave",
-      "score": 89,
-      "critic_round": 3,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_suplex",
-      "score": 91,
-      "critic_round": 3,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_adrenaline_surge",
-      "score": 89,
-      "critic_round": 3,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_frenzy",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_earthshatter",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_meat_shield",
-      "score": 90,
-      "critic_round": 4,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_headbutt",
-      "score": 90,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_blood_boil",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_violent_collision",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_belly_flop",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_breaching_dash",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "cellular_regeneration",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "adrenaline_junkie",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "enraged",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "last_stand",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "colossal_mass",
-      "score": 90,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "overwhelming_bulk",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "thrill_of_pain",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "momentum_of_titan",
-      "score": 89,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "scar_tissue",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "crowd_breaker",
-      "score": 90,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "juggernaut",
-      "score": 90,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_guttural_roar",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "bruiser_crimson_whirlwind",
-      "score": 90,
-      "critic_round": 1,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "blood_for_blood",
-      "score": 90,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "momentum_transfer",
-      "score": 89,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "battering_ram",
-      "score": 91,
-      "critic_round": 2,
-      "fix_target": "none"
-    },
-    {
-      "factory_id": "unstoppable_force",
-      "score": 91,
-      "critic_round": 2,
-      "fix_target": "none"
-    }
-  ]
+﻿{
+    "piece":  "B6-REOPEN",
+    "pass_threshold":  88,
+    "per_row_threshold":  88,
+    "last_critic_round":  5,
+    "last_score":  92,
+    "last_result":  "PASS",
+    "last_row_promoted":  "unstoppable_force",
+    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "bruiser_push_through",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_charge_strike",
+                              "score":  91,
+                              "critic_round":  5,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_concussion_blow",
+                              "score":  89,
+                              "critic_round":  3,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_cleave",
+                              "score":  89,
+                              "critic_round":  3,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_suplex",
+                              "score":  91,
+                              "critic_round":  3,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_adrenaline_surge",
+                              "score":  89,
+                              "critic_round":  3,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_frenzy",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_earthshatter",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_meat_shield",
+                              "score":  90,
+                              "critic_round":  4,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_headbutt",
+                              "score":  90,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_blood_boil",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_violent_collision",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_belly_flop",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_breaching_dash",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cellular_regeneration",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "adrenaline_junkie",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "enraged",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "last_stand",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "colossal_mass",
+                              "score":  90,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "overwhelming_bulk",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "thrill_of_pain",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "momentum_of_titan",
+                              "score":  89,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "scar_tissue",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "crowd_breaker",
+                              "score":  90,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "juggernaut",
+                              "score":  90,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_guttural_roar",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_crimson_whirlwind",
+                              "score":  90,
+                              "critic_round":  1,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "blood_for_blood",
+                              "score":  90,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "momentum_transfer",
+                              "score":  89,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "battering_ram",
+                              "score":  91,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "unstoppable_force",
+                              "score":  91,
+                              "critic_round":  2,
+                              "fix_target":  "none"
+                          }
+                      ]
 }

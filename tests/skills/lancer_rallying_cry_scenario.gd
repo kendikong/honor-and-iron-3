@@ -1,0 +1,10 @@
+﻿extends RefCounted
+
+## Bible: lancer_rallying_cry — Lancer factory row via shared Simulator harness.
+## Globals: AbilitySystem / Simulator (Rule A).
+
+const _H := preload("res://tests/lancer_qa_harness.gd")
+
+
+static func run_all(failures: Array[String]) -> void:
+	_H.run_single_active(&"lancer_rallying_cry", failures)

@@ -1,0 +1,186 @@
+﻿{
+    "piece":  "L6-LOCK",
+    "pass_threshold":  88,
+    "per_row_threshold":  88,
+    "last_critic_round":  6,
+    "last_score":  92,
+    "last_result":  "PASS",
+    "last_row_promoted":  "leverage",
+    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "lancer_push",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_piercing_charge",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_sweeping_halberd",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_vaulting_leap",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_run_down",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_rallying_cry",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_flanking_maneuver",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_brace",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_harpoon_toss",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_glorious_charge",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_pole_vault",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_line_breaker",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_spear_wall",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lancer_meteor_drop",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "kinetic_charge",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "unstoppable_mass",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "canto",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "frontline_defense",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "flanking_strike",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "plunging_attack",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "crashing_impact",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "pole_plant",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "spear_drop",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "springboard",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "sweet_spot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "reach_advantage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "disengage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "zone_of_control",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "leverage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          }
+                      ]
+}

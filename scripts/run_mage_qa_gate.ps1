@@ -4,32 +4,180 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$latestGateLog = Join-Path $projectRoot "qa_mage_gate_latest.txt"
+$gateLogLines = New-Object System.Collections.Generic.List[string]
 
-if (-not (Test-Path $GodotPath)) {
-	Write-Output "[INCOMPLETE] Mage QA: Godot executable not found: $GodotPath"
-	exit 2
+function Write-GateLine([string]$Line) {
+	Write-Output $Line
+	[void]$gateLogLines.Add($Line)
 }
 
+function Save-GateLog() {
+	$canonical = Join-Path $projectRoot "qa_mage_gate_canonical.txt"
+	$gateLogLines | Set-Content -Path $canonical -Encoding utf8
+	$tmp = Join-Path $projectRoot "qa_mage_gate_latest.tmp"
+	$gateLogLines | Set-Content -Path $tmp -Encoding utf8
+	try {
+		if (Test-Path $latestGateLog) {
+			Remove-Item -LiteralPath $latestGateLog -Force -ErrorAction Stop
+		}
+		Move-Item -LiteralPath $tmp -Destination $latestGateLog -Force -ErrorAction Stop
+	} catch {
+		if (Test-Path $tmp) {
+			Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+		}
+	}
+}
+
+function Exit-Gate([int]$Code) {
+	Save-GateLog
+	exit $Code
+}
+
+$matrixDoc = Join-Path $projectRoot "docs\MAGE_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\mage_meta_critic_manifest.json"
+
+Write-GateLine "=== Mage QA gate (class validation - NOT planning QA) ==="
+Write-GateLine "Spec: docs/MAGE_QA_GATE.md"
+Write-GateLine ""
+
+$requiredFactoryIds = @(
+	"arcane_overchannel", "mage_blink", "mage_fireball", "mage_ice_shard",
+	"mage_chain_lightning", "mage_arcane_push", "mage_teleport", "mage_meteor",
+	"mage_black_hole", "mage_time_warp", "mage_mana_shield", "mage_disintegrate",
+	"mage_gravity_well", "mage_elemental_surge", "mage_earth_spike",
+	"mage_density_shift", "mage_arcane_barrage",
+	"elementalist", "feedback", "elemental_master", "lasting_terrain", "surface_syphoner",
+	"mana_leak", "arcane_overdrive", "mana_well", "mana_siphon", "overload",
+	"wild_magic", "arcane_tether", "arcane_mastery", "arcane_attunement", "gravity_anchor"
+)
+
+if (-not (Test-Path $matrixDoc)) {
+	Write-Error "[FAIL] Missing matrix doc: $matrixDoc"
+}
+
+$matrixText = Get-Content -Path $matrixDoc -Raw
+$passRows = @()
+$plannedRows = @()
+$harnessRows = @()
+
+foreach ($id in $requiredFactoryIds) {
+	$escaped = [regex]::Escape($id)
+	$tablePattern = '`\s*' + $escaped + '\s*`'
+	$rowLine = (
+		$matrixText -split "`n" |
+		Where-Object {
+			$_ -match $tablePattern -and $_ -match '\|' -and $_ -match '\|\s*(PASS|HARNESS_ONLY|PLANNED|N/A)\s*\|'
+		} |
+		Select-Object -First 1
+	)
+	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
+		$plannedRows += $id
+		continue
+	}
+	if ($rowLine -match '\|\s*PASS\s*\|') {
+		$passRows += $id
+	} elseif ($rowLine -match '\|\s*HARNESS_ONLY\s*\|') {
+		$harnessRows += $id
+	} else {
+		$plannedRows += $id
+	}
+}
+
+Write-GateLine "=== Matrix summary (from docs/MAGE_QA_GATE.md) ==="
+Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
+Write-GateLine ""
+
+$manifestApproved = @()
+$matrixPassValid = $true
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	foreach ($row in $manifest.approved_rows) {
+		if ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-GateLine ("=== Meta-critic manifest ({0} approved) ===" -f $manifestApproved.Count)
+} else {
+	Write-GateLine "[WARN] Missing manifest: docs/mage_meta_critic_manifest.json"
+}
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+if ($unapprovedPass.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count) {
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+}
+
+Write-GateLine ""
+
+if ($passRows.Count -lt $requiredFactoryIds.Count) {
+	Write-GateLine "[INCOMPLETE] Mage LOCK requires all factory rows PASS (meta-critic approved)."
+}
+
+if (-not (Test-Path $GodotPath)) {
+	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix check only."
+	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	Exit-Gate 0
+}
+
+Write-GateLine "=== AOE footprint contract (all classes) ==="
+$aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
+& $aoeGate -GodotPath $GodotPath
+if ($LASTEXITCODE -ne 0) {
+	Write-GateLine "[FAIL] AOE footprint contract gate exit $LASTEXITCODE"
+	Exit-Gate 5
+}
+Write-GateLine "--- AOE footprint contract: PASS ---"
+Write-GateLine ""
+
+Write-GateLine "=== Tier 1: headless skill scenarios (harness) ==="
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-mage-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-mage-qa.stderr.log"
-. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless --path `"$projectRoot`" res://tests/MageQaGate.tscn" `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
-$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mage QA gate"
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mage Tier 1 harness"
 if ($exitCode -eq 130) {
-	Write-Output "[CANCEL] Mage QA gate stopped by ESC."
-	exit 130
+	Write-GateLine "[CANCEL] Mage Tier 1 harness stopped by ESC."
+	Exit-Gate 130
 }
-$output = @()
-$output += Get-Content $stdoutPath
-$output += Get-Content $stderrPath
-$output | ForEach-Object { Write-Output $_ }
+Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
+Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
+
+$testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $harnessPass = Test-GodotQaHarnessSucceeded -ExitCode $exitCode -LogPaths @($stdoutPath, $stderrPath)
+
 if (-not $harnessPass) {
-	Write-Output "[FAIL] Mage QA gate"
-	exit 1
+	Write-GateLine "--- Tier 1 harness: FAIL ---"
+	$testFailures | Select-Object -First 10 | ForEach-Object { Write-GateLine $_ }
+	Exit-Gate 1
 }
-Write-Output "[PASS] Mage QA gate: 32 factory rows plus active skill/passive resolution"
-exit 0
+Write-GateLine "--- Tier 1 harness: PASS ---"
+
+if (-not $matrixPassValid) {
+	Write-GateLine "[FAIL] Matrix contains PASS rows without manifest approval."
+	Exit-Gate 3
+}
+if ($passRows.Count -eq $requiredFactoryIds.Count) {
+	Write-GateLine ""
+	Write-GateLine "=== Tier 2: live Mage acceptance ==="
+	$liveScript = Join-Path $PSScriptRoot "run_mage_live_qa.ps1"
+	& $liveScript -GodotPath $GodotPath
+	if ($LASTEXITCODE -ne 0) {
+		Write-GateLine "[FAIL] Tier 2 live Mage QA exit $LASTEXITCODE"
+		Exit-Gate $LASTEXITCODE
+	}
+	Write-GateLine "--- Tier 2 live: PASS ---"
+	Write-GateLine "[PASS] Mage QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
+	Exit-Gate 0
+}
+
+Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
+Exit-Gate 2

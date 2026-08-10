@@ -1,0 +1,198 @@
+﻿{
+    "piece":  "A6-LOCK",
+    "pass_threshold":  88,
+    "per_row_threshold":  88,
+    "last_critic_round":  6,
+    "last_score":  92,
+    "last_result":  "PASS",
+    "last_row_promoted":  "rapid_fire",
+    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "archer_sidestep",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_power_shot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_volley",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_pinning_arrow",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_piercing_shot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_toxic_spore_arrow",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_grapple_arrow",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_explosive_arrow",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_hunters_mark",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_repelling_shot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_bear_trap",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_suppressing_fire",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_caltrop_trap",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_parting_shot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "archer_scouts_eye",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lightfoot",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "overwatch",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "high_ground",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "patient_hunter",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "true_sight",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "piercing_momentum",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "camouflage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "area_denial",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "caltrop_expert",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "zone_control",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "sticky_mud",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "fletching_hoarder",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "prey_sighted",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "barrage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "target_painter",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "rapid_fire",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          }
+                      ]
+}

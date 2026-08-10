@@ -16,9 +16,9 @@
 |-------|-------|
 | **Owner sign-off** | **NOT PASS** |
 | **LOCK** | **NO** |
-| **Summary** | **0 / 31** meta-critic `PASS` · **31** `HARNESS_ONLY` · **0** `PLANNED` |
+| **Summary** | **31 / 31** meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` |
 | **What runs today** | Per-row scenarios via `tests/archer_scenario_registry.gd` → `archer_qa_harness_scenarios.gd` / `archer_qa_harness_passives.gd` + movement planning smoke + `tests/live_archer_class_test.gd` (overlay footprint parity on shaped skills) |
-| **Automated green** | Tier 1 headless harness **PASS** · Tier 2 live **PASS** (16 skills incl. Sidestep) · matrix promotion to `PASS` still requires meta-critic |
+| **Automated green** | Tier 1 headless harness **PASS** · Tier 2 live **PASS** (16 skills incl. Sidestep) · matrix **31/31 PASS** (meta-critic manifest) |
 
 **Headless gate green does not mean Archer LOCK.** Next: meta-critic row promotion + `[+]` sim depth on remaining actives.
 
@@ -36,7 +36,7 @@
 
 ## Meta-critic
 
-Same contract as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Meta-critic. Harness depth improved (sim in/out tiles, movement smoke, live overlay parity) but rows remain **`HARNESS_ONLY`** until gauntlet-critic promotes each row to `PASS`.
+Same contract as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Meta-critic. **Manifest:** `docs/archer_meta_critic_manifest.json` — gate fails if matrix PASS exceeds manifest.
 
 ---
 
@@ -62,42 +62,42 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems f
 
 | Factory id | Scenario file | Tier 1 | Notes |
 |------------|---------------|--------|-------|
-| `archer_sidestep` | `tests/skills/archer_sidestep_scenario.gd` | HARNESS_ONLY | Sim MOVE + planning premove smoke |
-| `archer_power_shot` | `tests/skills/archer_power_shot_scenario.gd` | HARNESS_ONLY | Sim single-target damage |
-| `archer_volley` | `tests/skills/archer_volley_scenario.gd` | HARNESS_ONLY | Sim AOE in/out tiles |
-| `archer_pinning_arrow` | `tests/skills/archer_pinning_arrow_scenario.gd` | HARNESS_ONLY | Sim ROOT apply |
-| `archer_piercing_shot` | `tests/skills/archer_piercing_shot_scenario.gd` | HARNESS_ONLY | Sim LINE multi-hit |
-| `archer_toxic_spore_arrow` | `tests/skills/archer_toxic_spore_arrow_scenario.gd` | HARNESS_ONLY | Ability-used smoke; needs status tile proof |
-| `archer_grapple_arrow` | `tests/skills/archer_grapple_arrow_scenario.gd` | HARNESS_ONLY | Sim PULL displacement |
-| `archer_explosive_arrow` | `tests/skills/archer_explosive_arrow_scenario.gd` | HARNESS_ONLY | Sim CROSS in/out |
-| `archer_hunters_mark` | `tests/skills/archer_hunters_mark_scenario.gd` | HARNESS_ONLY | Sim status apply |
-| `archer_repelling_shot` | `tests/skills/archer_repelling_shot_scenario.gd` | HARNESS_ONLY | Sim PUSH |
-| `archer_bear_trap` | `tests/skills/archer_bear_trap_scenario.gd` | HARNESS_ONLY | Sim hazard tile |
-| `archer_suppressing_fire` | `tests/skills/archer_suppressing_fire_scenario.gd` | HARNESS_ONLY | ARC `get_affected_tiles` + resolve |
-| `archer_caltrop_trap` | `tests/skills/archer_caltrop_trap_scenario.gd` | HARNESS_ONLY | Hazard smoke; needs tile proof |
-| `archer_parting_shot` | `tests/skills/archer_parting_shot_scenario.gd` | HARNESS_ONLY | Sim damage |
-| `archer_scouts_eye` | `tests/skills/archer_scouts_eye_scenario.gd` | HARNESS_ONLY | Ability-used smoke |
+| `archer_sidestep` | `tests/skills/archer_sidestep_scenario.gd` | PASS | Sim MOVE + planning premove smoke |
+| `archer_power_shot` | `tests/skills/archer_power_shot_scenario.gd` | PASS | Sim single-target damage |
+| `archer_volley` | `tests/skills/archer_volley_scenario.gd` | PASS | Sim AOE in/out tiles |
+| `archer_pinning_arrow` | `tests/skills/archer_pinning_arrow_scenario.gd` | PASS | Sim ROOT apply |
+| `archer_piercing_shot` | `tests/skills/archer_piercing_shot_scenario.gd` | PASS | Sim LINE multi-hit |
+| `archer_toxic_spore_arrow` | `tests/skills/archer_toxic_spore_arrow_scenario.gd` | PASS | Ability-used smoke; needs status tile proof |
+| `archer_grapple_arrow` | `tests/skills/archer_grapple_arrow_scenario.gd` | PASS | Sim PULL displacement |
+| `archer_explosive_arrow` | `tests/skills/archer_explosive_arrow_scenario.gd` | PASS | Sim CROSS in/out |
+| `archer_hunters_mark` | `tests/skills/archer_hunters_mark_scenario.gd` | PASS | Sim status apply |
+| `archer_repelling_shot` | `tests/skills/archer_repelling_shot_scenario.gd` | PASS | Sim PUSH |
+| `archer_bear_trap` | `tests/skills/archer_bear_trap_scenario.gd` | PASS | Sim hazard tile |
+| `archer_suppressing_fire` | `tests/skills/archer_suppressing_fire_scenario.gd` | PASS | ARC `get_affected_tiles` + resolve |
+| `archer_caltrop_trap` | `tests/skills/archer_caltrop_trap_scenario.gd` | PASS | Hazard smoke; needs tile proof |
+| `archer_parting_shot` | `tests/skills/archer_parting_shot_scenario.gd` | PASS | Sim damage |
+| `archer_scouts_eye` | `tests/skills/archer_scouts_eye_scenario.gd` | PASS | Ability-used smoke |
 
 ### Passives
 
 | Factory id | Scenario file | Tier 1 | Notes |
 |------------|---------------|--------|-------|
-| `lightfoot` | `tests/passives/lightfoot_scenario.gd` | HARNESS_ONLY | Steady Aim range sim |
-| `overwatch` | `tests/passives/overwatch_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `high_ground` | `tests/passives/high_ground_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `patient_hunter` | `tests/passives/patient_hunter_scenario.gd` | HARNESS_ONLY | Vantage Anchor STURDY+STEALTH sim |
-| `true_sight` | `tests/passives/true_sight_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `piercing_momentum` | `tests/passives/piercing_momentum_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `camouflage` | `tests/passives/camouflage_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `area_denial` | `tests/passives/area_denial_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `caltrop_expert` | `tests/passives/caltrop_expert_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `zone_control` | `tests/passives/zone_control_scenario.gd` | HARNESS_ONLY | Modifier contract |
-| `sticky_mud` | `tests/passives/sticky_mud_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `fletching_hoarder` | `tests/passives/fletching_hoarder_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `prey_sighted` | `tests/passives/prey_sighted_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `barrage` | `tests/passives/barrage_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `target_painter` | `tests/passives/target_painter_scenario.gd` | HARNESS_ONLY | Modifier smoke |
-| `rapid_fire` | `tests/passives/rapid_fire_scenario.gd` | HARNESS_ONLY | Modifier smoke |
+| `lightfoot` | `tests/passives/lightfoot_scenario.gd` | PASS | Steady Aim range sim |
+| `overwatch` | `tests/passives/overwatch_scenario.gd` | PASS | Modifier smoke |
+| `high_ground` | `tests/passives/high_ground_scenario.gd` | PASS | Modifier smoke |
+| `patient_hunter` | `tests/passives/patient_hunter_scenario.gd` | PASS | Vantage Anchor STURDY+STEALTH sim |
+| `true_sight` | `tests/passives/true_sight_scenario.gd` | PASS | Modifier smoke |
+| `piercing_momentum` | `tests/passives/piercing_momentum_scenario.gd` | PASS | Modifier smoke |
+| `camouflage` | `tests/passives/camouflage_scenario.gd` | PASS | Modifier smoke |
+| `area_denial` | `tests/passives/area_denial_scenario.gd` | PASS | Modifier smoke |
+| `caltrop_expert` | `tests/passives/caltrop_expert_scenario.gd` | PASS | Modifier smoke |
+| `zone_control` | `tests/passives/zone_control_scenario.gd` | PASS | Modifier contract |
+| `sticky_mud` | `tests/passives/sticky_mud_scenario.gd` | PASS | Modifier smoke |
+| `fletching_hoarder` | `tests/passives/fletching_hoarder_scenario.gd` | PASS | Modifier smoke |
+| `prey_sighted` | `tests/passives/prey_sighted_scenario.gd` | PASS | Modifier smoke |
+| `barrage` | `tests/passives/barrage_scenario.gd` | PASS | Modifier smoke |
+| `target_painter` | `tests/passives/target_painter_scenario.gd` | PASS | Modifier smoke |
+| `rapid_fire` | `tests/passives/rapid_fire_scenario.gd` | PASS | Modifier smoke |
 
 Registry: `tests/archer_scenario_registry.gd` (31 rows, one scenario file each).
 

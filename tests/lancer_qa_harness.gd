@@ -360,24 +360,28 @@ static func run_active_execution_matrix(failures: Array[String]) -> void:
 		&"lancer_meteor_drop",
 	]
 	for ability_id: StringName in active_ids:
-		var ability := factory_ability(ability_id)
-		assert_true(failures, "%s/executable" % ability_id, ability != null)
-		if ability == null:
-			continue
-		var result := _simulate_active_ability(ability)
-		assert_true(
-			failures,
-			"%s/used" % ability_id,
-			bool(result.get("used", false)),
-			"the modular ability must execute through Simulator",
-		)
-		assert_true(
-			failures,
-			"%s/no_validation_failure" % ability_id,
-			not bool(result.get("validation_failed", false)),
-			"scenario setup must satisfy the authored targeting contract (%s)"
-			% String(result.get("failure_reason", "")),
-		)
+		run_single_active(ability_id, failures)
+
+
+static func run_single_active(ability_id: StringName, failures: Array[String]) -> void:
+	var ability := factory_ability(ability_id)
+	assert_true(failures, "%s/executable" % ability_id, ability != null)
+	if ability == null:
+		return
+	var result := _simulate_active_ability(ability)
+	assert_true(
+		failures,
+		"%s/used" % ability_id,
+		bool(result.get("used", false)),
+		"the modular ability must execute through Simulator",
+	)
+	assert_true(
+		failures,
+		"%s/no_validation_failure" % ability_id,
+		not bool(result.get("validation_failed", false)),
+		"scenario setup must satisfy the authored targeting contract (%s)"
+		% String(result.get("failure_reason", "")),
+	)
 
 
 static func _simulate_active_ability(ability: AbilityData) -> Dictionary:

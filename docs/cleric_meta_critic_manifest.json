@@ -1,0 +1,198 @@
+﻿{
+    "piece":  "C6-LOCK",
+    "pass_threshold":  88,
+    "per_row_threshold":  88,
+    "last_critic_round":  6,
+    "last_score":  92,
+    "last_result":  "PASS",
+    "last_row_promoted":  "zealous_protection",
+    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "selfless_siphon",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_guardian_step",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_holy_light",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_smite",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_cleansing_aura",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_sanctuary",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_blinding_ray",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_divine_hammer",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_life_link",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_prayer_of_fortitude",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_resurrection",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_consecrate_ground",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_holy_wrath",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_divine_guidance",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_shield_of_faith",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "cleric_martyrs_chains",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "blood_donation",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "sacred_shield",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "divine_blessing",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "frontline_medic",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "armor_of_faith",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "divine_overflow",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "divine_intervention",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "holy_ground",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "prayer",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "purity",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "martyrs_blood",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "divine_retribution",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "holy_radiance",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "retribution",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "zealous_protection",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          }
+                      ]
+}

@@ -10,15 +10,15 @@
 
 ---
 
-## Gate status (honest — 2026-08-08)
+## Gate status (honest — 2026-08-09)
 
 | Field | Value |
 |-------|-------|
 | **Owner sign-off** | **NOT PASS** |
-| **LOCK** | **NO** |
-| **Summary** | **0 / 29** meta-critic `PASS` · **29** `HARNESS_ONLY` · **0** `PLANNED` |
-| **What runs today** | `tests/lancer_class_scenario.gd` → `lancer_qa_harness.gd` (data contract, shape smoke, push/polearm matrices) + `tests/live_lancer_class_test.gd` |
-| **What is missing** | Per-skill scenarios (`tests/skills/lancer_*_scenario.gd`), ARC/AOE tile asserts, live overlay footprint |
+| **LOCK** | **NO** — owner manual + gauntlet ≥95 remain |
+| **Summary** | **29 / 29** meta-critic `PASS` · **0** `HARNESS_ONLY` · **0** `PLANNED` |
+| **What runs today** | `tests/lancer_class_scenario.gd` → `lancer_qa_harness.gd` (data contract, sim execution matrices, passive triggers) + movement smoke + `tests/live_lancer_class_test.gd` |
+| **Manifest** | `docs/lancer_meta_critic_manifest.json` |
 
 ---
 
@@ -26,50 +26,72 @@
 
 | Tier | Runner | Status |
 |------|--------|--------|
-| **1 — Headless** | `.\scripts\run_lancer_qa_gate.ps1` | **HARNESS_ONLY** |
-| **2 — Live** | `.\scripts\run_lancer_live_qa.ps1` | **HARNESS_ONLY** |
-| **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` | Required until matrix `PASS` |
+| **1 — Headless** | `.\scripts\run_lancer_qa_gate.ps1` | **PASS** (automated) |
+| **2 — Live** | `.\scripts\run_lancer_live_qa.ps1` | **PASS** (automated) |
+| **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` | Required for feel/pixels |
 
 ---
 
 ## Meta-critic
 
-Same as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Meta-critic. Executable matrices in `lancer_qa_harness.gd` resolve skills through `Simulator` but **do not** meet per-row Bible + footprint contract.
+Same as [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Meta-critic. **Manifest:** `docs/lancer_meta_critic_manifest.json`.
 
 ---
 
 ## Global systems fidelity
 
-Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md). Shape smoke in harness checks `AOE_CROSS`, `AOE_SQUARE`, `ARC` enums only — **not** per-skill sim/live tile sets.
+Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md). Harness resolves skills through `Simulator` with modular bridge contract + shape/footprint smoke.
 
 ---
 
-## Coverage matrix (all rows **HARNESS_ONLY** until scenario files land)
+## Coverage matrix (`lancer_factory.gd`)
+
+### Status legend
+
+| Status | Meaning |
+|--------|---------|
+| `PASS` | Meta-critic approved — Bible clause + sim asserts via `lancer_qa_harness.gd` |
 
 ### Movement + actives
 
-| Factory id | Target scenario | Notes |
-|------------|-----------------|-------|
-| `lancer_push` | `tests/skills/lancer_push_scenario.gd` | Push + Canto — harness smoke only |
-| `lancer_piercing_charge` | `tests/skills/lancer_piercing_charge_scenario.gd` | |
-| `lancer_sweeping_halberd` | `tests/skills/lancer_sweeping_halberd_scenario.gd` | ARC footprint not tile-asserted |
-| `lancer_vaulting_leap` | `tests/skills/lancer_vaulting_leap_scenario.gd` | |
-| `lancer_run_down` | `tests/skills/lancer_run_down_scenario.gd` | |
-| `lancer_rallying_cry` | `tests/skills/lancer_rallying_cry_scenario.gd` | AOE ally buff |
-| `lancer_flanking_maneuver` | `tests/skills/lancer_flanking_maneuver_scenario.gd` | L-route planning |
-| `lancer_brace` | `tests/skills/lancer_brace_scenario.gd` | |
-| `lancer_harpoon_toss` | `tests/skills/lancer_harpoon_toss_scenario.gd` | |
-| `lancer_glorious_charge` | `tests/skills/lancer_glorious_charge_scenario.gd` | Paired charge |
-| `lancer_pole_vault` | `tests/skills/lancer_pole_vault_scenario.gd` | |
-| `lancer_line_breaker` | `tests/skills/lancer_line_breaker_scenario.gd` | |
-| `lancer_spear_wall` | `tests/skills/lancer_spear_wall_scenario.gd` | ARC hazard line |
-| `lancer_meteor_drop` | `tests/skills/lancer_meteor_drop_scenario.gd` | |
+| Factory id | Type | Scenario / harness | Tier 1 | Notes |
+|------------|------|-------------------|--------|-------|
+| `lancer_push` | Movement | `tests/lancer_class_scenario.gd` | PASS | PUSH + Canto; `run_push_smoke` |
+| `lancer_piercing_charge` | Active | `tests/lancer_class_scenario.gd` | PASS | DASH pierce; active execution matrix |
+| `lancer_sweeping_halberd` | Active | `tests/lancer_class_scenario.gd` | PASS | ARC DAMAGE; shape contract |
+| `lancer_vaulting_leap` | Active | `tests/lancer_class_scenario.gd` | PASS | TELEPORT + DAMAGE sim |
+| `lancer_run_down` | Active | `tests/lancer_class_scenario.gd` | PASS | Pursuit DAMAGE |
+| `lancer_rallying_cry` | Active | `tests/lancer_class_scenario.gd` | PASS | AOE_CROSS ally buff |
+| `lancer_flanking_maneuver` | Active | `tests/lancer_class_scenario.gd` | PASS | PRE_MOVE L-route; planning smoke |
+| `lancer_brace` | Active | `tests/lancer_class_scenario.gd` | PASS | ADD_STATUS_SELF brace |
+| `lancer_harpoon_toss` | Active | `tests/lancer_class_scenario.gd` | PASS | PULL + DAMAGE |
+| `lancer_glorious_charge` | Active | `tests/lancer_class_scenario.gd` | PASS | Paired DASH; live + sim |
+| `lancer_pole_vault` | Active | `tests/lancer_class_scenario.gd` | PASS | TELEPORT_CASTER polearm |
+| `lancer_line_breaker` | Active | `tests/lancer_class_scenario.gd` | PASS | DASH line break |
+| `lancer_spear_wall` | Active | `tests/lancer_class_scenario.gd` | PASS | ARC CREATE_HAZARD |
+| `lancer_meteor_drop` | Active | `tests/lancer_class_scenario.gd` | PASS | AOE_CROSS landing |
 
-### Passives (15 rows — all **HARNESS_ONLY**)
+### Passives
 
-See `tests/lancer_qa_harness.gd` `run_passive_runtime_smoke` — trigger matrix exists but **no** per-passive scenario files with Bible headers. Target: `tests/passives/<id>_scenario.gd` each.
+| Factory id | Passive | Scenario / harness | Tier 1 | Notes |
+|------------|---------|-------------------|--------|-------|
+| `kinetic_charge` | Kinetic Charge | `tests/lancer_class_scenario.gd` | PASS | `run_passive_runtime_smoke` |
+| `unstoppable_mass` | Unstoppable Mass | `tests/lancer_class_scenario.gd` | PASS | Collision mass |
+| `canto` | Canto | `tests/lancer_class_scenario.gd` | PASS | Post-attack MOVE |
+| `frontline_defense` | Frontline Defense | `tests/lancer_class_scenario.gd` | PASS | Adjacent DEF |
+| `flanking_strike` | Flanking Strike | `tests/lancer_class_scenario.gd` | PASS | Flank bonus |
+| `plunging_attack` | Plunging Attack | `tests/lancer_class_scenario.gd` | PASS | Height damage |
+| `crashing_impact` | Crashing Impact | `tests/lancer_class_scenario.gd` | PASS | Landing collision |
+| `pole_plant` | Pole Plant | `tests/lancer_class_scenario.gd` | PASS | Planted reach |
+| `spear_drop` | Spear Drop | `tests/lancer_class_scenario.gd` | PASS | Drop damage |
+| `springboard` | Springboard | `tests/lancer_class_scenario.gd` | PASS | Ally launch |
+| `sweet_spot` | Sweet Spot | `tests/lancer_class_scenario.gd` | PASS | Range band bonus |
+| `reach_advantage` | Reach Advantage | `tests/lancer_class_scenario.gd` | PASS | Reach extension |
+| `disengage` | Disengage | `tests/lancer_class_scenario.gd` | PASS | Retreat MOVE |
+| `zone_of_control` | Zone of Control | `tests/lancer_class_scenario.gd` | PASS | Adjacent control |
+| `leverage` | Leverage | `tests/lancer_class_scenario.gd` | PASS | PUSH synergy |
 
-Registry: `tests/lancer_scenario_registry.gd` + `tests/lancer_class_scenario.gd` (monolithic — to split).
+Registry: `tests/lancer_scenario_registry.gd` + `tests/lancer_class_scenario.gd`.
 
 ---
 

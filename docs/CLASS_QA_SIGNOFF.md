@@ -13,11 +13,11 @@
 | Class | Implementation | **Owner QA sign-off** | Gate doc | Headless runner | Live runner | Notes |
 |-------|----------------|----------------------|----------|-----------------|-------------|-------|
 | **Knight** | Complete | **PASS** | [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) | `run_knight_qa_gate.ps1` | `PLANNED` (optional Tier 2) | P3 K3-LOCK — **only trusted class** |
-| **Bruiser** | Complete | **NOT PASS** | [`BRUISER_QA_GATE.md`](BRUISER_QA_GATE.md) | `run_bruiser_qa_gate.ps1` | `run_bruiser_live_qa.ps1` | Tier 1+2 automated — owner manual sign-off pending |
-| **Archer** | Complete | **NOT PASS** | [`ARCHER_QA_GATE.md`](ARCHER_QA_GATE.md) | `run_archer_qa_gate.ps1` | `run_archer_live_qa.ps1` | Harness-only — 0/31 matrix `PASS` |
-| **Lancer** | Complete | **NOT PASS** | [`LANCER_QA_GATE.md`](LANCER_QA_GATE.md) | `run_lancer_qa_gate.ps1` | `run_lancer_live_qa.ps1` | Harness-only — 0/29 matrix `PASS` |
-| **Mage** | Complete | **NOT PASS** | [`MAGE_QA_GATE.md`](MAGE_QA_GATE.md) | `run_mage_qa_gate.ps1` | `run_mage_live_qa.ps1` | Harness-only — 0/32 matrix `PASS` |
-| **Cleric** | Complete | **NOT PASS** | [`CLERIC_QA_GATE.md`](CLERIC_QA_GATE.md) | `run_cleric_qa_gate.ps1` | `run_cleric_live_qa.ps1` | No Knight-shaped gate doc until upgrade |
+| **Bruiser** | Complete | **NOT PASS** | [`BRUISER_QA_GATE.md`](BRUISER_QA_GATE.md) | `run_bruiser_qa_gate.ps1` | `run_bruiser_live_qa.ps1` | **31/31** matrix PASS · Tier 1+2 automated green |
+| **Archer** | Complete | **NOT PASS** | [`ARCHER_QA_GATE.md`](ARCHER_QA_GATE.md) | `run_archer_qa_gate.ps1` | `run_archer_live_qa.ps1` | **31/31** matrix PASS · per-row scenarios + live overlay |
+| **Lancer** | Complete | **NOT PASS** | [`LANCER_QA_GATE.md`](LANCER_QA_GATE.md) | `run_lancer_qa_gate.ps1` | `run_lancer_live_qa.ps1` | **29/29** matrix PASS · 29 scenario files + live |
+| **Mage** | Complete | **NOT PASS** | [`MAGE_QA_GATE.md`](MAGE_QA_GATE.md) | `run_mage_qa_gate.ps1` | `run_mage_live_qa.ps1` | **32/32** matrix PASS · 32 scenario files + live |
+| **Cleric** | Complete | **NOT PASS** | [`CLERIC_QA_GATE.md`](CLERIC_QA_GATE.md) | `run_cleric_qa_gate.ps1` | `run_cleric_live_qa.ps1` | **31/31** matrix PASS · Knight-shaped gate + scenarios |
 | **All other Bible classes** | Not shipped | **NOT PASS** | Use [`_CLASS_QA_GATE_TEMPLATE.md`](_CLASS_QA_GATE_TEMPLATE.md) | — | — | Start from template at rollout |
 
 ---

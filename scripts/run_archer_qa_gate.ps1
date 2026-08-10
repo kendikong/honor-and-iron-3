@@ -35,6 +35,7 @@ function Exit-Gate([int]$Code) {
 }
 
 $matrixDoc = Join-Path $projectRoot "docs\ARCHER_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\archer_meta_critic_manifest.json"
 $requiredFactoryIds = @(
 	"archer_sidestep", "archer_power_shot", "archer_volley", "archer_pinning_arrow",
 	"archer_piercing_shot", "archer_toxic_spore_arrow", "archer_grapple_arrow",
@@ -87,6 +88,29 @@ Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds
 Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
 Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
 Write-GateLine ""
+
+$manifestApproved = @()
+$matrixPassValid = $true
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	foreach ($row in $manifest.approved_rows) {
+		if ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-GateLine ("=== Meta-critic manifest ({0} approved) ===" -f $manifestApproved.Count)
+} else {
+	Write-GateLine "[WARN] Missing manifest: docs/archer_meta_critic_manifest.json"
+}
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+if ($unapprovedPass.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count) {
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+}
 
 if ($passRows.Count -lt $requiredFactoryIds.Count) {
 	Write-GateLine "[INCOMPLETE] Archer LOCK requires all factory rows PASS (meta-critic approved)."
@@ -164,6 +188,10 @@ if ($liveExit -ne 0) {
 Write-GateLine "--- Tier 2 live: PASS ---"
 
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
+	if (-not $matrixPassValid) {
+		Write-GateLine "[FAIL] Matrix contains PASS rows without manifest approval."
+		Exit-Gate 3
+	}
 	Write-GateLine "[PASS] Archer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
 	Exit-Gate 0
 }

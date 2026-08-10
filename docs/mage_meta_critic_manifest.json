@@ -1,0 +1,204 @@
+﻿{
+    "piece":  "M6-LOCK",
+    "pass_threshold":  88,
+    "per_row_threshold":  88,
+    "last_critic_round":  6,
+    "last_score":  92,
+    "last_result":  "PASS",
+    "last_row_promoted":  "gravity_anchor",
+    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "arcane_overchannel",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_blink",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_fireball",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_ice_shard",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_chain_lightning",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_arcane_push",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_teleport",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_meteor",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_black_hole",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_time_warp",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_mana_shield",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_disintegrate",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_gravity_well",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_elemental_surge",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_earth_spike",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_density_shift",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mage_arcane_barrage",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "elementalist",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "feedback",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "elemental_master",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "lasting_terrain",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "surface_syphoner",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mana_leak",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "arcane_overdrive",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mana_well",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "mana_siphon",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "overload",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "wild_magic",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "arcane_tether",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "arcane_mastery",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "arcane_attunement",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "gravity_anchor",
+                              "score":  89,
+                              "critic_round":  6,
+                              "fix_target":  "none"
+                          }
+                      ]
+}

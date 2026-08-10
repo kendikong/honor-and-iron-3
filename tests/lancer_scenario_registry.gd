@@ -48,5 +48,5 @@ static func run_scenario(script_path: String, failures: Array[String]) -> bool:
 	return true
 
 static func _entry(factory_id: StringName, name: String, script_path: String) -> Dictionary:
-	return {"factory_id": factory_id, "name": name, "script_path": SCENARIO_PATH, "source_path": script_path}
+	return {"factory_id": factory_id, "name": name, "script_path": script_path, "source_path": script_path}
 

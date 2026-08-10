@@ -54,6 +54,51 @@ static func run_all(failures: Array[String]) -> void:
 	_run_selfless_siphon(failures, definition)
 
 
+static func run_factory_shell(failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	_assert(failures, "cleric/factory", definition != null)
+	if definition == null:
+		return
+	_assert(failures, "cleric/stats",
+		definition.base_constitution == 4
+		and definition.move_points == 4
+		and definition.base_strength == 1
+		and definition.base_defense == 1
+		and definition.base_magic == 4)
+	_assert(failures, "cleric/innate",
+		definition.innate_passives.size() == 1
+		and _passive(definition, &"selfless_siphon") != null)
+	_assert(failures, "cleric/passives", definition.passives.size() == 15)
+	_assert(failures, "cleric/abilities", definition.abilities.size() == 16)
+
+
+static func run_ability_row(ability_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	_assert(failures, "ability/%s" % ability_id, _ability(definition, ability_id) != null)
+	if ability_id == &"cleric_guardian_step":
+		var guardian := _ability(definition, ability_id)
+		_assert(failures, "guardian_step/all_mov",
+			guardian != null and guardian.movement_point_cost == 0
+			and guardian.effects[0].modifiers.get("cost_all_movement", false)
+			and guardian.effects[0].modifiers.get("warp_adjacent_to_target", false)
+			and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
+	elif ability_id == &"cleric_holy_light":
+		var holy_light := _ability(definition, ability_id)
+		_assert(failures, "holy_light/mag_heal",
+			holy_light != null and holy_light.effects[0].type == GameEnums.EffectType.HEAL
+			and holy_light.effects[0].modifiers.get("mag_heal", false))
+
+
+static func run_passive_row(passive_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	_assert(failures, "passive/%s" % passive_id, _passive(definition, passive_id) != null)
+
+
+static func run_selfless_siphon(failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
+	_run_selfless_siphon(failures, definition)
+
+
 static func _run_selfless_siphon(failures: Array[String], definition: UnitData) -> void:
 	var board := _H.make_plain_board(Vector2i(8, 8))
 	var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 2), {
