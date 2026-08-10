@@ -24,7 +24,7 @@
 | **Manual**                     | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability                                     | Required for feel/pixels Tier 1 cannot see                     |
 
 
-**Only Tier 1 blocks day-to-day Knight matrix work.** **CLASS LOCK** per [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 also requires live QA + owner sign-off for new classes; Knight owner sign-off (2026-08) predates live runner — Knight rows may be **LEGACY PASS** until re-audited.
+**Only Tier 1 blocks day-to-day Knight matrix work.** **CLASS LOCK** per [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md) §10.1 also requires live QA + owner sign-off for new classes. Knight owner sign-off (2026-08) predates live runner — rows failing §8.2 must be **`HARNESS_ONLY`** until re-audited (sign-off does not exempt shallow coverage).
 
 ---
 

@@ -353,7 +353,7 @@ A matrix **`PASS`** row **fails** the gate when its scenario file (or named dele
 | `factory_passive(...) != null` without sim/outcome proof | **FAIL** |
 | Active missing Layer A: no `_data_contract` / `_sim_contract` / `## Data/Sim delegate:` | **FAIL** |
 | Active missing Layer B: no `Simulator` / `simulate_plan` / `SimResult` / HP or damage outcome assert in scenario **or** delegate harness body | **FAIL** |
-| Active missing Layer C commit proof: no `assert_commit_no_jump`, `assert_slots_match_preview_commit`, `movement_planning_smoke`, Tier A `_phase` + `PlanningChecklistHarness`, or `wire_board` planning fixture | **FAIL** |
+| Active missing Layer C commit proof: no `assert_commit_no_jump`, `assert_slots_match_preview_commit`, `movement_planning_smoke`, Tier A `_phase` + `PlanningChecklistHarness`, `wire_board` fixture, **or** Tier C intent E2E (`PlanningIntentContractE2ETest`, `run_planning_select_smoke`) | **FAIL** |
 | `ABILITY_USED` present without sim/outcome proof | **FAIL** |
 | `## Data/Sim delegate:` header unparseable or harness function metadata-only (no sim/outcome in body) | **FAIL** |
 | Passive missing sim trigger/outcome proof | **FAIL** |
@@ -540,4 +540,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 7 — §8.2 enforces Layer B sim + Layer C commit proof; delegate harness body checked. Knight instance: `KNIGHT_QA_GATE.md`.*
+*Version: 2026-08-09 rev 8 — Tier C intent E2E in §8.2; LEGACY wording aligned. Knight instance: `KNIGHT_QA_GATE.md`.*

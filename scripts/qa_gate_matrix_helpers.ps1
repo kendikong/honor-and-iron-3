@@ -106,6 +106,7 @@ function Test-TextHasLayerCCommitProof {
 	return (
 		$Text -match 'assert_commit_no_jump|assert_slots_match_preview_commit|run_planning_commit_smoke|movement_planning_smoke|assert_red_contract|assert_move_preview|assert_committed_ghost|wire_board\s*\('
 		-or ($Text -match '_phase[1-9]' -and $Text -match 'PlanningChecklistHarness')
+		-or $Text -match 'PlanningIntentContractE2ETest|run_planning_select_smoke|_planning_bowling|planning intent E2E'
 	)
 }
 
