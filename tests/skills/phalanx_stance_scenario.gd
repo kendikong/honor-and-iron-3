@@ -5,14 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Phalanx Stance - SELF DEF +5 + STURDY until next turn; [+] RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn.
 ## Globals: STURDY, STAT_BUFF_DEF, RETALIATION_INFINITE_RANGE, RETALIATION_PROTOCOL via AbilitySystem / CombatSystem
+## Planning tier: fixture (run_planning_qa_gate.ps1 — obsoletes per-row Tier B smoke)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_phalanx_stance(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_phalanx_stance", "phalanx", PlanningChecklistHarness.KNIGHT_START,
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

@@ -5,14 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Indomitable Will - SELF | Convert all missing HP into SHIELD for 2 turns. [+] When SHIELD expires, gain +2 STR.
 ## Globals: ARMOR_UP(MISSING_HP scaling) + INDOMITABLE_WILL status via AbilitySystem; expiry in Simulator._tick_statuses; shield-break in CombatSystem.deal_damage.
+## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_indomitable_will(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_indomitable_will", "indomitable", PlanningChecklistHarness.KNIGHT_START,
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

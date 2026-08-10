@@ -213,7 +213,8 @@ Every `tests/skills/<factory_id>_scenario.gd` (or `tests/passives/<id>_scenario.
 3. `_sim_upgrade(failures)` — Layer B `[+]` when factory has upgrade (else skip with comment)  
 4. `_planning_proof(failures)` — Layer C per assigned tier  
    - *Knight legacy shape:* `_phase1` … `_phase7` inside `_planning_proof` or as separate calls — equivalent to Tier **A**  
-   - *Tier B:* `run_planning_commit_smoke` / harness helper — equivalent to `_planning_proof`
+   - *Knight fixture tier:* `Planning tier: fixture` in header — planning proof at `run_planning_qa_gate.ps1` (no per-row commit smoke)  
+   - *Tier B (non-Knight):* `run_planning_commit_smoke` / harness helper — equivalent to `_planning_proof`
 
 **Owner exceptions (global — not per skill):** full selection-mode sweep, drag-mode E2E, and undo tests are **not** required on every skill. Tier **A** flagship scenarios (e.g. Knight shield bash) **may** include drag in pathing phase without violating this rule.
 
@@ -235,7 +236,7 @@ Class harnesses **should** expose (names may be class-prefixed; behavior must ma
 | `assert_layer_fidelity(failures, module, layer_index, expected: Dictionary)` | A2 | `effect.type`, `amount`, `condition`, critical modifiers |
 | `assert_upgrade_modules_differ(failures, ability, fields: Array)` | A | Base vs `upgraded_modules` differ on named fields |
 | `run_sim_ability(failures, board_setup, ability_id, expect: Dictionary)` | B | Single `Simulator.simulate_player_turn`; assert events in `expect` |
-| `run_planning_commit_smoke(failures, class_id, ability_id, actor, target)` | C Tier B | `ClassPlanningChecklistHarness.wire_board` → slot parity → no jump |
+| `run_planning_commit_smoke(failures, class_id, ability_id, actor, target)` | C Tier B (non-Knight) | `ClassPlanningChecklistHarness.wire_board` → slot parity → no jump |
 | `run_single_passive(failures, passive_id)` | B | Dispatch **one** passive block with real trigger — not full-class smoke loop |
 
 **Gold scenario references (read before authoring):**
@@ -357,13 +358,13 @@ A matrix **`PASS`** row **fails** the gate when its scenario file (or named dele
 | `factory_passive(...) != null` without sim/outcome proof | **FAIL** |
 | Active missing Layer A: no `_data_contract` / `_sim_contract` / `## Data/Sim delegate:` | **FAIL** |
 | Active missing Layer B: no `Simulator` / `simulate_plan` / `SimResult` / HP or damage outcome assert in scenario **or** delegate harness body | **FAIL** |
-| Active missing Layer C commit proof: no `assert_commit_no_jump`, `assert_slots_match_preview_commit`, `movement_planning_smoke`, Tier A `_phase` + `PlanningChecklistHarness`, `wire_board` fixture, **or** Tier C intent E2E (`PlanningIntentContractE2ETest`, `run_planning_select_smoke`) | **FAIL** |
+| Active missing Layer C commit proof: no `assert_commit_no_jump`, `assert_slots_match_preview_commit`, `movement_planning_smoke`, Tier A `_phase` + `PlanningChecklistHarness`, `wire_board` fixture, **or** Tier C intent E2E (`PlanningIntentContractE2ETest`, `run_planning_select_smoke`) | **FAIL** (Knight matrix: **skipped** — Layer C at `run_planning_qa_gate.ps1` Fixture Parity Suite) |
 | `ABILITY_USED` present without sim/outcome proof | **FAIL** |
 | `## Data/Sim delegate:` header unparseable or harness function metadata-only (no sim/outcome in body) | **FAIL** |
 | Passive missing sim trigger/outcome proof | **FAIL** |
 | Factory `PlannerGroup.PRE_MOVE` or `ModulePhase.ON_PRE` without premove planning proof in scenario or delegate | **FAIL** |
 | Factory `ModulePhase.ON_POST` or ACTION+MOVE module without postmove planning proof | **FAIL** |
-| Factory MOVE/PRE_MOVE skill without blue move-tile proof (`collect_blue_tiles`, `movement_planning_smoke`, `assert_move_preview_origin`) | **FAIL** |
+| Factory MOVE/PRE_MOVE skill without blue move-tile proof (`collect_blue_tiles`, `movement_planning_smoke`, `assert_move_preview_origin`) | **FAIL** (Knight matrix: **skipped** — Fixture Parity Suite) |
 
 **Delegate path:** Header `## Data/Sim delegate: tests/foo.gd::run_bar` — gate reads `run_bar` body for Layer B and movement planning proof.
 

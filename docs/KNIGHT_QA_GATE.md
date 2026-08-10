@@ -197,16 +197,16 @@ Scenarios must prove **both** rules:
 
 **LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
 
-### Planning coverage tiers (K3-LOCK — honest; not planning QA gate)
+### Planning coverage (K3-LOCK — Fixture Parity Suite)
 
-Knight LOCK uses **tiered** planning proof in Tier 1 harness (`tests/knight_qa_harness.gd`), separate from `run_planning_qa_gate.ps1`.
+Knight **class gate** (Tier 1 harness) proves **sim + data** per row. **Planning** (preview = commit, blue/red tiles, swap, premove) is owned by **`run_planning_qa_gate.ps1`** → `tests/planning_bible_fixture_test.gd` (Fixture Parity Suite). **Obsolete:** per-row `run_planning_commit_smoke` / `run_planning_select_smoke` / knight movement smoke in `knight_qa_runner.gd`.
 
 
-| Tier  | Meaning                                                                                                                                                 | Actives                                                                                                                                   |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **A** | Full 7-phase checklist (`PlanningChecklistHarness`)                                                                                                     | `knight_shield_bash`, `knight_chain_hook`, `knight_trampling_advance`                                                                     |
-| **B** | `run_planning_commit_smoke` — select, hover, hover/click slot parity, `assert_commit_no_jump` (swap: parity only — position preview shifts post-commit) | phalanx, taunting, seismic, iron_grip, redirect, indomitable, retaliation, shield_slam, defensive_formation, **fortify**, **knight_swap** |
-| **C** | Select and/or intent contracts only                                                                                                                     | `knight_bowling_charge` (intent E2E + select)                                                                                             |
+| Tier  | Meaning | Actives |
+| ----- | ------- | ------- |
+| **A** | Full 7-phase checklist (`PlanningChecklistHarness`) in scenario | `knight_shield_bash`, `knight_chain_hook`, `knight_trampling_advance` |
+| **fixture** | Fixture Parity Suite at planning QA gate (not duplicated per scenario) | All other actives |
+| **intent** | Scenario-local intent E2E where sim alone is insufficient | `knight_bowling_charge` (`PlanningIntentContractE2ETest`) |
 
 
 **Swap / premove rule:** Pre-move column entries (including Swap) apply immediately in `projected_state`. Undoing or inserting an ally-affecting movement skill strips **all** later combined-timeline entries for every actor (`PlanDependency.cancel_ally_plans_after_step`).

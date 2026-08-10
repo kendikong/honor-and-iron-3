@@ -5,15 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Iron Grip - RANGE 1 ROOT + IRON_GRIP_DEBUFF (DEF halved next turn); [+] refund 1 AP when target already ROOT/STAGGER.
 ## Globals: ADD_STATUS(ROOT), ADD_STATUS(IRON_GRIP_DEBUFF); upgraded REFUND_AP_ON_CC via AbilitySystem.
+## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_iron_grip(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_iron_grip", "iron_grip", Vector2i(5, 5),
-		false, Vector2i(-1, -1), Vector2i(5, 5),
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

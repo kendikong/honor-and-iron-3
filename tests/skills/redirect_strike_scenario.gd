@@ -5,14 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Redirect Strike - SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
 ## Globals: ADD_STATUS_SELF(INTERCEPT) via AbilitySystem; split in CombatSystem.deal_damage.
+## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_redirect_strike(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_redirect_strike", "redirect", PlanningChecklistHarness.KNIGHT_START,
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

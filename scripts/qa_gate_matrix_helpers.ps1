@@ -335,7 +335,8 @@ function Test-ScenarioContractShallow {
 		[string]$ScenarioRelPath,
 		[string]$FullPath,
 		[string]$ProjectRoot = '',
-		[string]$FactoryId = ''
+		[string]$FactoryId = '',
+		[bool]$KnightPlanningViaFixtureSuite = $false
 	)
 	$errors = @()
 	if (-not (Test-Path $FullPath)) {
@@ -400,16 +401,16 @@ function Test-ScenarioContractShallow {
 	if ($isSkill -and -not $hasLayerB) {
 		$errors += "${ScenarioRelPath}: missing Layer B sim/outcome proof (local or delegate harness)"
 	}
-	if ($isSkill -and -not $hasLayerC) {
+	if ($isSkill -and -not $KnightPlanningViaFixtureSuite -and -not $hasLayerC) {
 		$errors += "${ScenarioRelPath}: missing Layer C planning commit proof (assert_commit_no_jump, assert_slots_match_preview_commit, movement_planning_smoke, Tier A phases, or Tier C intent E2E)"
 	}
-	if ($isSkill -and $factoryFlags.NeedsBlue -and -not (Test-TextHasBlueTileProof -Text $planningText)) {
+	if ($isSkill -and -not $KnightPlanningViaFixtureSuite -and $factoryFlags.NeedsBlue -and -not (Test-TextHasBlueTileProof -Text $planningText)) {
 		$errors += "${ScenarioRelPath}: factory requires blue move-tile proof (collect_blue_tiles, movement_planning_smoke, or assert_move_preview_origin)"
 	}
-	if ($isSkill -and $factoryFlags.NeedsPremove -and -not (Test-TextHasPremoveProof -Text $planningText)) {
+	if ($isSkill -and -not $KnightPlanningViaFixtureSuite -and $factoryFlags.NeedsPremove -and -not (Test-TextHasPremoveProof -Text $planningText)) {
 		$errors += "${ScenarioRelPath}: factory PRE_MOVE/ON_PRE requires premove planning proof"
 	}
-	if ($isSkill -and $factoryFlags.NeedsPostmove -and -not (Test-TextHasPostmoveProof -Text $planningText)) {
+	if ($isSkill -and -not $KnightPlanningViaFixtureSuite -and $factoryFlags.NeedsPostmove -and -not (Test-TextHasPostmoveProof -Text $planningText)) {
 		$errors += "${ScenarioRelPath}: factory ON_POST/MOVE+skill requires postmove planning proof"
 	}
 	if ($isPassive -and -not (Test-TextHasPassiveOutcomeProof -Text $effectiveSimText)) {
@@ -433,6 +434,7 @@ function Test-PassRowScenarioContracts {
 	if (-not (Test-Path $MatrixDocPath)) {
 		return @("missing matrix doc: $MatrixDocPath")
 	}
+	$knightPlanningViaFixture = $MatrixDocPath -match 'KNIGHT_QA_GATE'
 	$matrixText = Get-Content -Path $MatrixDocPath -Raw
 	$lines = $matrixText -split "`n"
 	foreach ($line in $lines) {
@@ -444,7 +446,7 @@ function Test-PassRowScenarioContracts {
 		$factoryId = ''
 		$idMatch = [regex]::Match($line, '`\s*([a-z][a-z0-9_]*)\s*`')
 		if ($idMatch.Success) { $factoryId = $idMatch.Groups[1].Value }
-		$errors += Test-ScenarioContractShallow -ScenarioRelPath $rel -FullPath $full -ProjectRoot $ProjectRoot -FactoryId $factoryId
+		$errors += Test-ScenarioContractShallow -ScenarioRelPath $rel -FullPath $full -ProjectRoot $ProjectRoot -FactoryId $factoryId -KnightPlanningViaFixtureSuite:$knightPlanningViaFixture
 	}
 	return $errors
 }

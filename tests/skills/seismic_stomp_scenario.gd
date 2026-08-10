@@ -5,14 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Seismic Stomp - RANGE 0 AOE 1 ATK 2 PURGE all enemies; [+] CRACKED terrain (MOVE cost ×2 via TerrainData.mp_cost_per_tile).
 ## Globals: EffectType.DAMAGE, PURGE, CHANGE_TERRAIN via AbilitySystem.
+## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_seismic_stomp(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_seismic_stomp", "seismic", PlanningChecklistHarness.KNIGHT_START,
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:

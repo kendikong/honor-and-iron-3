@@ -5,14 +5,12 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 ## Bible: Taunting Strike - RANGE 2 ATK 1 PULL 1 TAUNT; [+] RANGE 3 AOE 3x3 PULL 2 all enemies.
 ## Globals: EffectType.DAMAGE, PULL, ADD_STATUS(TAUNT) via AbilitySystem.
+## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_KnightQaHarness.run_taunting_strike(failures)
-	_KnightQaHarness.run_planning_commit_smoke(
-		failures, &"knight_taunting_strike", "taunting", PlanningChecklistHarness.ENEMY_POS,
-	)
 
 
 static func _sim_contract(failures: Array[String]) -> void:
