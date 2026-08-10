@@ -7,7 +7,7 @@ const _BruiserUpgrades := preload("res://tests/bruiser_qa_harness_upgrades.gd")
 const _ArcherUpgrades := preload("res://tests/archer_qa_harness_upgrades.gd")
 const _LancerUpgrades := preload("res://tests/lancer_qa_harness_upgrades.gd")
 const _MageHarness := preload("res://tests/mage_qa_harness.gd")
-const _ClericHarness := preload("res://tests/cleric_qa_harness.gd")
+const _ClericUpgrades := preload("res://tests/cleric_qa_harness_upgrades.gd")
 const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
 
 
@@ -29,6 +29,6 @@ static func run_for_factory(failures: Array[String], factory_id: StringName) -> 
 		"mage":
 			_MageHarness.run_upgrade_sim_for(factory_id, failures)
 		"cleric":
-			_ClericHarness.run_upgrade_sim_for(factory_id, failures)
+			_ClericUpgrades.run_upgrade_for(row_name, failures)
 		_:
 			pass

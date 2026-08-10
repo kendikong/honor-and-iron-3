@@ -184,11 +184,7 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 	var ability := _ability(definition, ability_id)
 	if ability == null or ability.upgraded_effects.is_empty():
 		return
-	_assert(
-		failures,
-		"upgrade/%s/compiled" % ability_id,
-		not ability.upgraded_effects.is_empty(),
-	)
+	_sim_ability_used(failures, ability_id, ability)
 
 
 static func _assert_cleric_outcome(

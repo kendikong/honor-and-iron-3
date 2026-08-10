@@ -547,4 +547,4 @@ ARTIFACT: docs/CLASS_QA_BIBLE.md, tests/skills/shield_bash_scenario.gd, tests/sk
 
 ---
 
-*Version: 2026-08-09 rev 9 — blue move-tile + PRE/POST factory detection shipped in gate helper.*
+*Version: 2026-08-10 rev 10 — harness-body resolution, outcome/upgrade/footprint enforcement shipped in gate helper.*

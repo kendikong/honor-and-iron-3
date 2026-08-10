@@ -129,7 +129,7 @@ function Get-ScenarioEffectiveSimText {
 	$preloadMap = Get-ScenarioPreloadMap -ScenarioText $ScenarioText
 	$simBlockMatch = [regex]::Match(
 		$ScenarioText,
-		'(?ms)static func _sim_(?:contract|trigger)\s*\([^\)]*\)\s*->\s*void:\s*(.*?)(?=\nstatic func |\z)'
+		'(?ms)static func _sim_(?:contract|trigger|upgrade)\s*\([^\)]*\)\s*->\s*void:\s*(.*?)(?=\nstatic func |\z)'
 	)
 	$simBlock = if ($simBlockMatch.Success) { $simBlockMatch.Groups[1].Value } else { $ScenarioText }
 	$callMatches = [regex]::Matches($simBlock, '(\w+)\.(run_[A-Za-z0-9_]+)\s*\(')
@@ -142,6 +142,18 @@ function Get-ScenarioEffectiveSimText {
 		$body = Get-FuncBodyFromGdFile -FullPath $full -FuncName $func
 		$body = Expand-NestedHarnessBodies -FullPath $full -Body $body -Depth 0
 		$combined += "`n" + $body
+	}
+	$idMatch = [regex]::Match($ScenarioText, 'run_for_factory\(failures,\s*&"([^"]+)"\)')
+	if ($idMatch.Success) {
+		$factoryId = $idMatch.Groups[1].Value
+		$class = ($factoryId -split '_')[0]
+		$row = $factoryId -replace "^${class}_", ''
+		$upgradeRel = "tests\${class}_qa_harness_upgrades.gd"
+		$upgradeFull = Join-Path $ProjectRoot $upgradeRel
+		if (Test-Path $upgradeFull) {
+			$combined += "`n" + (Get-FuncBodyFromGdFile -FullPath $upgradeFull -FuncName 'run_upgrade_for')
+			$combined += "`n" + (Get-FuncBodyFromGdFile -FullPath $upgradeFull -FuncName ("run_${row}_upgrade"))
+		}
 	}
 	return $combined
 }
@@ -181,9 +193,13 @@ function Test-TextHasPassiveOutcomeProof {
 
 function Test-TextHasUpgradeProof {
 	param([string]$Text)
-	return (
-		$Text -match '_sim_upgrade|ClassScenarioUpgradeRegistry|run_upgrade_for|run_.*_upgrade|run_upgrade_sim_for|upgrade/outcome|upgrade/profile|upgrade/compiled'
-	)
+	if (-not ($Text -match '_sim_upgrade|ClassScenarioUpgradeRegistry|run_upgrade_for|run_.*_upgrade|run_upgrade_sim_for')) {
+		return $false
+	}
+	if ($Text -match 'upgrade/compiled' -and -not (Test-TextHasOutcomeProof -Text $Text)) {
+		return $false
+	}
+	return $true
 }
 
 function Test-TextHasFootprintProof {

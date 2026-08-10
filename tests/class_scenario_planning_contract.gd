@@ -172,6 +172,11 @@ static func _assert_shaped_footprint(
 		not blast.is_empty(),
 		"shaped ability must have blast footprint at hover",
 	)
+	if not blast.is_empty():
+		_Checklist.assert_red_includes_cell(
+			failures, "%s/planning/red_blast_tile" % factory_id,
+			fix, ability, origin, blast[0],
+		)
 
 
 static func _class_id_from_factory(factory_id: StringName) -> StringName:
