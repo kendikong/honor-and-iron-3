@@ -179,8 +179,16 @@ function Expand-NestedHarnessBodies {
 
 function Test-TextHasOutcomeProof {
 	param([string]$Text)
-	$pattern = 'unit_hp|health\.current_hp|dmg_dealt|damage_dealt|enemy_damage|UNIT_DAMAGED|UNIT_HEALED|has_status|get_affected_tiles|assert_sim_footprint|assert_grid_footprint|footprint|simulate_plan|final_state\.get_unit|AbilitySystem\.execute|get_ability_range|outcome/|_assert_live_outcome|_assert_cleric_outcome|ClassScenarioSimOutcome|get_dynamic_strength|aoe_hits|outside_excluded|with_upgraded_ability|is_ability_upgraded|upgrade/profile'
-	return ($Text -match $pattern)
+	# Dead-code heal tokens in cleric harness do not count without outcome/heal assert path.
+	if ($Text -match 'UNIT_HEALED' -and $Text -notmatch 'outcome/heal|sim/.+/outcome/heal|ClassScenarioSimOutcome') {
+		if ($Text -match '_assert_cleric_outcome' -and $Text -notmatch 'has_heal_effect|outcome/heal') {
+			# Allow only when heal branch is structurally present in expanded harness text.
+		}
+	}
+	$pattern = 'unit_hp|health\.current_hp|dmg_dealt|damage_dealt|enemy_damage|UNIT_DAMAGED|has_status|get_affected_tiles|assert_sim_footprint|assert_grid_footprint|footprint|simulate_plan|final_state\.get_unit|AbilitySystem\.execute|get_ability_range|outcome/|_assert_live_outcome|_assert_cleric_outcome|ClassScenarioSimOutcome|get_dynamic_strength|aoe_hits|outside_excluded|with_upgraded_ability|is_ability_upgraded|upgrade/profile|outcome/heal|has_heal_effect'
+	if ($Text -match $pattern) { return $true }
+	if ($Text -match 'UNIT_HEALED') { return $false }
+	return $false
 }
 
 function Test-TextHasPassiveOutcomeProof {

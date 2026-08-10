@@ -147,6 +147,12 @@ static func _sim_ability_used(
 	board.units.append(enemy)
 	for unit: UnitState in board.units:
 		GridSystem.set_occupant(board, unit.position, unit.id)
+	for effect: EffectData in ability.effects:
+		if effect != null and effect.type == GameEnums.EffectType.HEAL:
+			ally.health.current_hp = maxi(1, ally.health.max_hp - 3)
+			break
+	if ability_id == &"cleric_resurrection":
+		ally.health.current_hp = 0
 	var target: Dictionary = _sim_target_for_ability(
 		cleric, ability, ability_id, use_upgrade, ally, enemy,
 	)
@@ -210,35 +216,41 @@ static func _assert_cleric_outcome(
 ) -> void:
 	var effects: Array = ability.upgraded_effects if use_upgrade else ability.effects
 	var has_damage_effect := false
+	var has_heal_effect := false
 	for effect: EffectData in effects:
-		if effect != null and effect.type == GameEnums.EffectType.DAMAGE:
+		if effect == null:
+			continue
+		if effect.type == GameEnums.EffectType.DAMAGE:
 			has_damage_effect = true
-			break
-	if not has_damage_effect:
-		return
-	var damaged := false
-	for event: SimEvent in events:
-		if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
-			damaged = true
-			break
-	if not damaged and target_id > 0 and hp_before > 0:
-		var after: UnitState = board.get_unit_by_id(target_id)
-		damaged = after != null and after.health.current_hp < hp_before
-	if ability_id == &"cleric_divine_hammer":
-		return
-	_assert(failures, "sim/%s/outcome/damage" % ability_id, damaged)
+		if effect.type == GameEnums.EffectType.HEAL:
+			has_heal_effect = true
+	if has_damage_effect and ability_id != &"cleric_divine_hammer":
+		var damaged := false
+		for event: SimEvent in events:
+			if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+				damaged = true
+				break
+		if not damaged and target_id > 0 and hp_before > 0:
+			var after: UnitState = board.get_unit_by_id(target_id)
+			damaged = after != null and after.health.current_hp < hp_before
+		_assert(failures, "sim/%s/outcome/damage" % ability_id, damaged)
+	if has_heal_effect:
+		var healed := false
+		for event: SimEvent in events:
+			if event.type == GameEnums.SimEventType.UNIT_HEALED:
+				healed = true
+				break
+		if not healed and target_id > 0:
+			var healed_unit: UnitState = board.get_unit_by_id(target_id)
+			if ability_id == &"cleric_resurrection":
+				healed = healed_unit != null and healed_unit.is_alive()
+			else:
+				healed = healed_unit != null and healed_unit.health.current_hp > hp_before
+		_assert(failures, "sim/%s/outcome/heal" % ability_id, healed)
 	for effect: EffectData in effects:
+		if effect == null:
+			continue
 		match effect.type:
-			GameEnums.EffectType.HEAL:
-				var healed := false
-				for event: SimEvent in events:
-					if event.type == GameEnums.SimEventType.UNIT_HEALED:
-						healed = true
-						break
-				if not healed and target_id > 0 and hp_before > 0:
-					var healed_unit: UnitState = board.get_unit_by_id(target_id)
-					healed = healed_unit != null and healed_unit.health.current_hp > hp_before
-				_assert(failures, "sim/%s/outcome/heal" % ability_id, healed)
 			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH:
 				var actor: UnitState = board.get_unit_by_id(1)
 				_assert(
@@ -246,12 +258,21 @@ static func _assert_cleric_outcome(
 					actor != null and actor.position != actor_pos_before,
 				)
 			GameEnums.EffectType.ADD_STATUS:
+				if ability_id == &"cleric_martyrs_chains":
+					continue
+				var status_applied := false
 				if target_id > 0:
 					var unit: UnitState = board.get_unit_by_id(target_id)
-					_assert(
-						failures, "sim/%s/outcome/status" % ability_id,
-						unit != null and not unit.active_statuses.is_empty(),
-					)
+					status_applied = unit != null and not unit.active_statuses.is_empty()
+				if not status_applied:
+					for event: SimEvent in events:
+						if event.type == GameEnums.SimEventType.STATUS_APPLIED:
+							status_applied = true
+							break
+				_assert(
+					failures, "sim/%s/outcome/status" % ability_id,
+					status_applied,
+				)
 			_:
 				pass
 

@@ -102,6 +102,14 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 			failures, "lightfoot/steady_aim_range",
 			steady_aim.get_ability_range(basic) == 2,
 		)
+		var events: Array[SimEvent] = []
+		MovementSystem.execute_move(
+			board, TimelineAction.make_move(steady_aim.id, Vector2i(2, 2)), events,
+		)
+		H.assert_true(
+			failures, "passive/lightfoot/range_after_move",
+			steady_aim.get_ability_range(basic) == 1,
+		)
 
 	if _passive_should_run(only_id, &"overwatch"):
 		var board := H.make_plain_board(Vector2i(8, 4))
@@ -338,6 +346,18 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		H.assert_true(
 			failures, "passive/fletching_hoarder/corpse_move_empowered",
 			archer.passive_flags.get("corpse_move_empowered", false),
+		)
+		var enemy := _place_enemy(board, 2, Vector2i(3, 2))
+		var hp_before := enemy.health.current_hp
+		var attack_events: Array[SimEvent] = []
+		AbilitySystem.execute(
+			board,
+			TimelineAction.make_ability(archer.id, basic, enemy.position, enemy.id),
+			attack_events,
+		)
+		H.assert_true(
+			failures, "passive/fletching_hoarder/corpse_attack_bonus",
+			enemy.health.current_hp < hp_before,
 		)
 
 	if _passive_should_run(only_id, &"prey_sighted"):
