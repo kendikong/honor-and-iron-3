@@ -37,6 +37,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				entry.get("actor_pos", Vector2i.ZERO),
 				entry.get("ally_pos", Vector2i.ZERO),
 				entry.get("commit_cell", Vector2i.ZERO),
+				bool(entry.get("verify_no_jump", true)),
 			)
 		"awaiting":
 			run_awaiting_smoke(
@@ -53,6 +54,8 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				entry.get("wall_cells", []),
 				entry.get("drag_route", []),
 				String(entry.get("module_assert", "")),
+				entry.get("ally_pos", Vector2i(-1, -1)),
+				bool(entry.get("arm_on_ally", false)),
 			)
 		_:
 			run_commit_smoke(
@@ -222,6 +225,7 @@ static func run_ally_smoke(
 	actor_pos: Vector2i,
 	ally_pos: Vector2i,
 	commit_cell: Vector2i,
+	verify_no_jump: bool = true,
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
@@ -243,9 +247,14 @@ static func run_ally_smoke(
 	_Checklist.assert_slots_match_preview_commit(
 		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
 	)
-	_Checklist.assert_commit_no_jump(
-		failures, "%s/planning/no_jump" % tag, fix, commit_cell,
-	)
+	if verify_no_jump:
+		_Checklist.assert_commit_no_jump(
+			failures, "%s/planning/no_jump" % tag, fix, commit_cell,
+		)
+	else:
+		_Checklist.assert_planning_timeline_after_commit(
+			failures, "%s/planning/timeline_columns" % tag, fix, commit_cell,
+		)
 
 
 static func run_awaiting_smoke(
@@ -262,10 +271,12 @@ static func run_awaiting_smoke(
 	wall_cells: Array = [],
 	drag_route: Array = [],
 	module_assert: String = "",
+	ally_pos: Vector2i = Vector2i(-1, -1),
+	arm_on_ally: bool = false,
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
-		class_id, actor_pos, enemy_pos, Vector2i(-1, -1), ability_id,
+		class_id, actor_pos, enemy_pos, ally_pos, ability_id,
 	)
 	if fix.is_empty():
 		_fail(failures, "%s/planning/fixture" % tag, "failed to wire awaiting planning board")
@@ -286,7 +297,9 @@ static func run_awaiting_smoke(
 	var director: CombatDirector = fix.director as CombatDirector
 	var unit_id: int = director.selected_unit_id if director != null else -1
 	var stand: Vector2i = _MovementTimeline.latest_stand_cell(director, unit_id)
-	if stand.x > -900000:
+	if arm_on_ally and ally_pos.x >= 0:
+		arm_cell = ally_pos
+	elif stand.x > -900000:
 		arm_cell = stand
 	_Checklist.hover(fix, arm_cell)
 	_Checklist.flush_planning(fix)

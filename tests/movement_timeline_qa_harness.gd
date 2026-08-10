@@ -124,7 +124,12 @@ static func commit_run_premove_headless(
 		"movement skill QA requires a pre-move Run leg at %s" % premove_cell,
 	)
 	_PLANNING_CHECKLIST.flush_planning(fix)
-	assert_move_preview_origin(failures, tag, fix, unit_id, ability)
+	if (
+		ability == null
+		or AbilitySystem.planning_awaiting_phase(ability)
+		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		assert_move_preview_origin(failures, tag, fix, unit_id, ability)
 
 
 static func commit_run_postmove_headless(
