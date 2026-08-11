@@ -32,8 +32,7 @@ var _drag_survive_board_cancel: bool = false
 const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
-const _HOVER_HEAVY_MIN_INTERVAL_IDLE_SEC: float = 0.045
-const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.12
+const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.045
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -58,14 +57,12 @@ var _qa_pointer_override: bool = false
 var _qa_pointer_screen_pos: Vector2 = Vector2.ZERO
 var _qa_pointer_grid_override: bool = false
 var _qa_pointer_grid_cell: Vector2i = Vector2i.ZERO
-var _hover_heavy_frame_pending: bool = false
 var _hover_heavy_throttle_gen: int = 0
 var _hover_heavy_last_flush_usec: int = 0
 var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _last_sim_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_sim_throttle_gen: int = 0
 var _hover_sim_last_flush_usec: int = 0
-var _hover_sim_frame_pending: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -1138,73 +1135,55 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if _should_restore_stand_hover_preview(cell):
 		_flush_hover_heavy_sync()
 		return
-	_schedule_hover_heavy_refresh()
-
-
-func _schedule_hover_heavy_refresh() -> void:
-	if _map_view == null or not _map_view.is_inside_tree():
-		_flush_hover_heavy_sync()
-		return
-	if _hover_heavy_frame_pending:
-		return
-	_hover_heavy_frame_pending = true
-	call_deferred("_deferred_begin_hover_heavy_flush")
-
-
-func _deferred_begin_hover_heavy_flush() -> void:
-	_hover_heavy_frame_pending = false
 	_run_hover_overlay_refresh()
-	if dragging:
-		_begin_hover_heavy_throttled_flush()
+	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
+		_run_hover_sim_refresh()
 	else:
 		_schedule_hover_sim_refresh()
 
 
+func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
+	if dragging or _director == null or not _is_planning():
+		return false
+	if not _director.board.is_in_bounds(cell):
+		return false
+	if _director.selected_unit_id < 0:
+		return false
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit == null:
+		return false
+	if not _unit_move_slot_open(p_unit.id):
+		return false
+	if force_basic_movement or _director.selected_ability_index < 0:
+		return _is_hover_move_cell(p_unit, cell)
+	return false
+
+
+func _schedule_hover_heavy_refresh() -> void:
+	## Legacy entry for callers that still batch overlay + sim; hover uses sync overlay path.
+	_run_hover_overlay_refresh()
+	_schedule_hover_sim_refresh()
+
+
+func _deferred_begin_hover_heavy_flush() -> void:
+	_deferred_begin_hover_sim_flush()
+
+
 func _hover_heavy_min_interval_sec() -> float:
-	if dragging:
-		return _HOVER_HEAVY_MIN_INTERVAL_SEC
-	return _HOVER_HEAVY_MIN_INTERVAL_IDLE_SEC
+	return _HOVER_HEAVY_MIN_INTERVAL_SEC
 
 
 func _begin_hover_heavy_throttled_flush() -> void:
-	if _director == null or not _is_planning() or dragging:
-		return
-	var min_interval: float = _hover_heavy_min_interval_sec()
-	var now_usec: int = Time.get_ticks_usec()
-	var elapsed_sec: float = (
-		float(now_usec - _hover_heavy_last_flush_usec) / 1_000_000.0
-		if _hover_heavy_last_flush_usec > 0
-		else min_interval
-	)
-	if elapsed_sec < min_interval:
-		_hover_heavy_throttle_gen += 1
-		var gen: int = _hover_heavy_throttle_gen
-		var wait_sec: float = maxf(min_interval - elapsed_sec, 0.001)
-		if _map_view == null or not _map_view.is_inside_tree():
-			_run_hover_sim_refresh()
-			return
-		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
-			func() -> void:
-				if gen != _hover_heavy_throttle_gen:
-					return
-				_run_hover_sim_refresh(),
-			CONNECT_ONE_SHOT,
-		)
-		return
-	_run_hover_sim_refresh()
+	_begin_hover_sim_throttled_flush()
 
 
 func _schedule_hover_sim_refresh() -> void:
 	if dragging or _map_view == null or not _map_view.is_inside_tree():
 		return
-	if _hover_sim_frame_pending:
-		return
-	_hover_sim_frame_pending = true
-	call_deferred("_deferred_begin_hover_sim_flush")
+	_begin_hover_sim_throttled_flush()
 
 
 func _deferred_begin_hover_sim_flush() -> void:
-	_hover_sim_frame_pending = false
 	_begin_hover_sim_throttled_flush()
 
 
@@ -1245,8 +1224,6 @@ func _begin_hover_sim_throttled_flush() -> void:
 func _flush_hover_heavy_sync() -> void:
 	_hover_heavy_throttle_gen += 1
 	_hover_sim_throttle_gen += 1
-	_hover_heavy_frame_pending = false
-	_hover_sim_frame_pending = false
 	_flush_drag_preview_refresh()
 	_run_hover_overlay_refresh()
 	_run_hover_sim_refresh()
