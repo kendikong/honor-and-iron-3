@@ -22,6 +22,7 @@ const ABILITY_IDS: Array[StringName] = [
 	&"monk_updraft",
 	&"monk_geyser_strike",
 ]
+const _MONK_SYSTEMS := preload("res://core/systems/monk_systems.gd")
 
 const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"elemental_attunement", "keys": [&"attunement_pierce"]},
@@ -130,6 +131,32 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 				or module.amount != 0
 			),
 		)
+	var board := _plain_board(Vector2i(10, 8))
+	var monk := _place_monk(board, 1, Vector2i(2, 3), ability_id)
+	monk.upgraded_abilities.append(ability_id)
+	var target_coord := _target_for(ability_id)
+	var target_id := -1
+	if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+		_place_dummy(board, 3, target_coord)
+		target_id = 3
+	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+		_place_ally(board, 2, target_coord)
+		target_id = 2
+	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	_assert(
+		failures,
+		"upgrade/%s/can_use" % ability_id,
+		AbilitySystem.can_use(board, action),
+	)
+	if AbilitySystem.can_use(board, action):
+		var plan := Timeline.new()
+		plan.add(action)
+		var result := _player_turn(board, plan)
+		_assert(
+			failures,
+			"upgrade/%s/ability_used" % ability_id,
+			_events_have_ability(result.events, ability_id),
+		)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
@@ -148,11 +175,12 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 		return
 	for key: StringName in row.get("keys", [&"way_of_the_weaver"]):
 		_assert(failures, "passive/%s/%s" % [passive_id, key], passive.modifiers.has(key))
+	_run_passive_trigger(passive_id, failures)
 
 
 static func run_core_passive_triggers(failures: Array[String]) -> void:
-	## Trigger scenarios are kept as per-row contracts; unsupported passive
-	## runtime hooks remain HARNESS_ONLY until their shared systems are wired.
+	## Per-row scenario files call the same trigger proof after their data
+	## contract. Keep this entry point for class-runner compatibility.
 	return
 
 
@@ -166,16 +194,105 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 	var monk := _place_monk(board, 1, Vector2i(2, 2), &"monk_soul_punch")
 	monk.active_passives.append(passive)
 	monk._recalculate_stats(board)
-	_place_dummy(board, 3, Vector2i(3, 2))
-	var ability := _ability(monk_def, &"monk_soul_punch")
-	var action := TimelineAction.make_ability(1, ability, Vector2i(3, 2), 3)
-	var plan := Timeline.new()
-	plan.add(action)
-	var result := _player_turn(board, plan)
-	_assert(
-		failures, "passive/%s/real_sim_trigger" % passive_id,
-		_events_have_ability(result.events, &"monk_soul_punch") or not result.events.is_empty(),
-	)
+	var target := Vector2i(3, 2)
+	var dummy := _place_dummy(board, 3, target)
+	match passive_id:
+		&"way_of_the_weaver":
+			_simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/way_of_the_weaver/magic_empowerment",
+				int(monk.passive_flags.get("weave_magic_bonus", 0)) == 2)
+		&"elemental_attunement":
+			board.set_tile_terrain(target, DataLibrary.get_terrain(&"fire"))
+			_assert(failures, "passive/elemental_attunement/pierce",
+				_MONK_SYSTEMS.should_pierce(board, monk, dummy))
+			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/elemental_attunement/upgraded_status",
+				not result.events.is_empty())
+		&"chakra_burn":
+			board.set_tile_terrain(target, DataLibrary.get_terrain(&"bear_trap"))
+			_simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/chakra_burn/burn",
+				dummy.has_status(GameEnums.StatusType.BURN))
+		&"elemental_harmony":
+			var without_surface := monk.current_strength
+			board.set_tile_terrain(monk.position + Vector2i.RIGHT, DataLibrary.get_terrain(&"fire"))
+			monk._recalculate_stats(board)
+			_assert(failures, "passive/elemental_harmony/adjacent_strength",
+				monk.current_strength > without_surface)
+		&"catalyst":
+			var plain_magic := monk.current_magic
+			var plain_defense := monk.current_defense
+			board.set_tile_terrain(monk.position, DataLibrary.get_terrain(&"fire"))
+			monk._recalculate_stats(board)
+			_assert(failures, "passive/catalyst/surface_stats",
+				monk.current_magic > plain_magic and monk.current_defense > plain_defense)
+		&"elemental_shield":
+			var ability := _ability(monk_def, &"monk_scorching_kick")
+			monk.active_abilities.append(ability)
+			board.set_tile_terrain(target, DataLibrary.get_terrain(&"plain"))
+			_simulate_passive_attack(board, monk, &"monk_scorching_kick", target)
+			_assert(failures, "passive/elemental_shield/terrain_defense",
+				monk.has_status(GameEnums.StatusType.STAT_BUFF_DEF))
+		&"weavers_resonance":
+			monk.passive_flags["weave_magic_bonus"] = 2
+			var before_armor := monk.armor
+			var resonance_events: Array[SimEvent] = []
+			_MONK_SYSTEMS.on_weave_consumed(board, monk, target, resonance_events)
+			_assert(failures, "passive/weavers_resonance/shield",
+				monk.armor > before_armor)
+		&"mind_over_matter":
+			monk.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_MAG, 1, 5,
+			))
+			monk._recalculate_stats(board)
+			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/mind_over_matter/attack",
+				_events_have_damage(result.events, dummy.id))
+		&"inner_peace":
+			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/inner_peace/attack",
+				_events_have_damage(result.events, dummy.id))
+		&"zen_defense":
+			var base_magic := monk.current_magic
+			GridSystem.set_occupant(board, target, -1)
+			monk._recalculate_stats(board)
+			_assert(failures, "passive/zen_defense/empty_tiles",
+				monk.current_magic > base_magic)
+		&"perfect_form":
+			monk.passive_flags["monk_perfect_form_ready"] = true
+			var base_strength := monk.current_strength
+			_MONK_SYSTEMS.turn_start(board, monk, [])
+			_assert(failures, "passive/perfect_form/next_turn_bonus",
+				monk.current_strength > base_strength)
+		&"vaulting_strike":
+			monk.passive_flags["vaulted_target_id"] = dummy.id
+			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/vaulting_strike/attack",
+				_events_have_damage(result.events, dummy.id))
+		&"flowing_ki":
+			_MONK_SYSTEMS.on_moved_through_enemy(board, monk, [dummy.id], [])
+			_assert(failures, "passive/flowing_ki/magic_status",
+				monk.has_status(GameEnums.StatusType.STAT_BUFF_MAG))
+		&"evasive_acrobat":
+			_MONK_SYSTEMS.turn_start(board, monk, [])
+			_assert(failures, "passive/evasive_acrobat/ghost_move",
+				monk.passive_flags.get("monk_ghost_move", false))
+		&"momentum_transfer":
+			monk.movement_points_spent_this_turn = 2
+			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			_assert(failures, "passive/momentum_transfer/attack",
+				_events_have_damage(result.events, dummy.id))
+		&"light_step":
+			var trap := DataLibrary.get_terrain(&"bear_trap")
+			board.set_tile_terrain(monk.position, trap)
+			_MONK_SYSTEMS.turn_start(board, monk, [])
+			_assert(failures, "passive/light_step/flag",
+				monk.passive_flags.get("monk_light_step", false))
+			_MONK_SYSTEMS.turn_end(board, monk, [])
+			_assert(failures, "passive/light_step/disarm",
+				board.get_tile(monk.position).definition.id == &"plain")
+		_:
+			_assert(failures, "passive/%s/trigger" % passive_id, false)
 
 
 static func _has_expected_outcome(
@@ -297,6 +414,28 @@ static func _events_have_ability(events: Array[SimEvent], ability_id: StringName
 				and event.data.get("ability") == ability_id:
 			return true
 	return false
+
+
+static func _events_have_damage(events: Array[SimEvent], unit_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
+				and int(event.data.get("unit", -1)) == unit_id:
+			return true
+	return false
+
+
+static func _simulate_passive_attack(
+	board: BoardState,
+	monk: UnitState,
+	ability_id: StringName,
+	target: Vector2i,
+) -> SimResult:
+	var ability := _ability(monk.definition, ability_id)
+	monk.active_abilities.append(ability)
+	var action := TimelineAction.make_ability(monk.id, ability, target, 3)
+	var plan := Timeline.new()
+	plan.add(action)
+	return _player_turn(board, plan)
 
 
 static func _assert(failures: Array[String], label: String, condition: bool) -> void:

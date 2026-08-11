@@ -4,6 +4,7 @@ extends RefCounted
 const _REGISTRY := preload("res://tests/monk_scenario_registry.gd")
 const _HARNESS := preload("res://tests/monk_qa_harness.gd")
 const _MOVEMENT_SMOKE := preload("res://tests/movement_planning_smoke_registry.gd")
+const _PLANNING := preload("res://tests/class_scenario_planning_contract.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -15,5 +16,7 @@ static func run_all(failures: Array[String]) -> void:
 		print("[MONK_QA] %s (%s)" % [name, factory_id])
 		if not _REGISTRY.run_scenario(script_path, failures):
 			failures.append("registry/%s: failed to load or run scenario" % name)
+	for ability_id: StringName in _HARNESS.ABILITY_IDS:
+		_PLANNING.run_for_factory(failures, ability_id)
 	_HARNESS.run_core_passive_triggers(failures)
 	_MOVEMENT_SMOKE.run_all_for_class(failures, &"monk")

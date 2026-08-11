@@ -70,11 +70,17 @@ func next_unit_id() -> int:
 func add_unit(unit: UnitState) -> void:
 	units.append(unit)
 
-## Count living spawns that share the given UnitData definition (for spawn cap).
+## Count living spawns with the same authored definition id. Cloned board states
+## duplicate Resource instances, so reference equality would bypass the cap.
 func count_living_by_definition(def: UnitData) -> int:
 	var count := 0
 	for unit in units:
-		if unit.is_alive() and unit.definition == def:
+		if (
+			unit.is_alive()
+			and unit.definition != null
+			and def != null
+			and unit.definition.id == def.id
+		):
 			count += 1
 	return count
 

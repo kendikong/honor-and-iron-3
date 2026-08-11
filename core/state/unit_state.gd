@@ -285,9 +285,19 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				if adjacent != null and adjacent.is_empty():
 					empty_adjacent += 1
 			stat_mag += empty_adjacent * int(passive.modifiers["empty_adjacent_magic"])
+		if (
+			is_passive_upgraded(passive.id)
+			and passive.modifiers.has("upgraded_equal_stat_defense")
+			and base_str + w_str + stat_str == base_mag + w_mag + stat_mag
+		):
+			stat_def += int(passive.modifiers["upgraded_equal_stat_defense"])
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
-	current_magic = maxi(0, base_mag + w_mag + stat_mag)
+	current_magic = maxi(
+		0,
+		base_mag + w_mag + stat_mag
+			- int(passive_flags.get("monk_stolen_magic", 0)),
+	)
 	current_defense = maxi(0, base_def + w_def + stat_def)
 	if int(passive_flags.get("chakra_shift_turns", 0)) > 0:
 		var unswapped_strength := current_strength

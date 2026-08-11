@@ -324,6 +324,10 @@ static func dash(
 				}))
 
 		var at_next := board.get_unit_at(next)
+		var dash_tile := board.get_tile(next)
+		if dash_tile != null and dash_tile.definition != null \
+				and dash_tile.definition.id != &"plain":
+			unit.passive_flags["passed_through_terrain"] = true
 		if at_next == null:
 			GridSystem.set_occupant(board, next, unit.id)
 			unit_on_board = true
@@ -668,7 +672,35 @@ static func _emit_collision(
 			CombatSystem.deal_collision_damage(
 				board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus
 			)
-			
+	var collision_ability := pusher.get_ability_by_id(ability_id) \
+		if pusher != null and ability_id != &"" else null
+	var splash_damage := _ability_modifier_value(
+		pusher, collision_ability, &"collision_splash_damage",
+	)
+	if splash_damage > 0:
+		var splash_center := blocker.position if blocker != null else target.position
+		for direction: Vector2i in GridSystem.DIRECTIONS:
+			var splash_target := board.get_unit_at(splash_center + direction)
+			if (
+				splash_target == null
+				or not splash_target.is_alive()
+				or splash_target.team == pusher.team
+			):
+				continue
+			var splash_raw := CombatSystem.calculate_scaled_damage(
+				pusher, splash_damage, GameEnums.StatType.PHYSICAL, board,
+			)
+			CombatSystem.deal_damage(
+				board, splash_target, splash_raw, events, &"physical", false,
+				false, pusher, collision_ability.display_name, splash_raw,
+			)
+			if AbilitySystem.ability_has_modifier(
+				collision_ability, &"collision_splash_weaken", pusher,
+			):
+				splash_target.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.WEAKEN, 1,
+				))
+				splash_target._recalculate_stats(board)
 	for i: int in range(start_idx, events.size()):
 		events[i].data["is_collision_side_effect"] = true
 

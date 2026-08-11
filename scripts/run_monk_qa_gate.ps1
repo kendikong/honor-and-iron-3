@@ -68,5 +68,5 @@ if ($exitCode -ne 0) {
 	exit $exitCode
 }
 Write-Output "[PASS] Monk Tier 1 headless factory/scenario gate"
-Write-Output "[INCOMPLETE] Monk matrix remains 0/32 PASS; LOCK is intentionally not claimed."
+Write-Output "[INCOMPLETE] Monk matrix is 29/32 PASS; three movement preview fixtures remain HARNESS_ONLY."
 exit 0

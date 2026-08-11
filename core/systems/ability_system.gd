@@ -15,6 +15,7 @@ class_name AbilitySystem
 extends RefCounted
 
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
+const MonkSystems := preload("res://core/systems/monk_systems.gd")
 
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
@@ -2229,6 +2230,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor._recalculate_stats()
 
 		MercenarySystems.before_skill_move(board, actor, ability, events)
+		MonkSystems.before_skill_move(board, actor, ability, events)
 
 		var walk_goal: Vector2i = target_coord
 		var goal_unit: UnitState = board.get_unit_at(walk_goal)
@@ -2258,6 +2260,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.active_statuses.erase(ghost_status)
 			actor._recalculate_stats()
 		MercenarySystems.after_skill_move(board, actor, ability, events)
+		MonkSystems.after_skill_move(board, actor, ability, events)
 			
 		# Recompute affected tiles after movement since actor position and facing may have changed
 		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
@@ -2603,6 +2606,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	if actor != null:
 		MercenarySystems.after_ability_execute(board, actor, action, events, attack_was_used)
+		MonkSystems.after_ability_execute(board, actor, action, events)
 
 	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
@@ -2769,6 +2773,19 @@ static func _spend_ability_cost(
 			pass
 
 
+## Canonical external-effect entry for shared passive reactions.
+static func apply_external_effect(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	effect: EffectData,
+	events: Array[SimEvent],
+	tile_coord: Vector2i,
+	target: UnitState,
+) -> void:
+	_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target)
+
+
 static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: EffectData, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
 	if target != null and actor != target and actor != null:
 		var dist = GridSystem.manhattan(actor.position, target.position)
@@ -2843,12 +2860,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					pierce = bool(actor.passive_flags.get("weave_physical_pierce", false))
 					actor.passive_flags.erase("weave_physical_bonus")
 					actor.passive_flags.erase("weave_physical_pierce")
+					MonkSystems.on_weave_consumed(board, actor, tile_coord, events)
 			elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
 				base_amt += int(actor.passive_flags.get("weave_magic_bonus", 0))
 				if actor.passive_flags.has("weave_magic_bonus"):
 					pierce = bool(actor.passive_flags.get("weave_magic_pierce", false))
 					actor.passive_flags.erase("weave_magic_bonus")
 					actor.passive_flags.erase("weave_magic_pierce")
+					MonkSystems.on_weave_consumed(board, actor, tile_coord, events)
 			var reaction_tile := board.get_tile(tile_coord)
 			if (
 				reaction_tile != null
@@ -3243,6 +3262,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				actor.passive_flags.erase("next_attack_pierce")
 			if MercenarySystems.should_pierce(board, actor, target, action.ability):
 				pierce = true
+			if MonkSystems.should_pierce(board, actor, target):
+				pierce = true
 			if actor.has_passive(&"unstoppable_mass") and actor.moved_max_movement_this_turn():
 				pierce = true
 				actor.passive_flags["root_immune_this_turn"] = true
@@ -3258,6 +3279,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if target != null and target.has_status(GameEnums.StatusType.MARK):
 				pierce = true
 			if effect.modifiers.has("target_def_set"):
+				pierce = true
+			if effect.modifiers.get("pierce_if_first_zero", false) \
+					and actor.passive_flags.get("monk_first_hit_zero", false):
+				pierce = true
+			if effect.modifiers.get("dash_absorb_element", false) \
+					and actor.passive_flags.get("passed_through_terrain", false):
 				pierce = true
 			pierce = CombatSystem.apply_attack_passive_modifiers(
 				board, actor, target, pierce
@@ -3289,6 +3316,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if effect.modifiers.has("target_magic_defense"):
 				actor.passive_flags["target_magic_defense_override"] = true
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			if effect.modifiers.get("track_first_hit_zero", false):
+				actor.passive_flags["monk_first_hit_zero"] = (
+					target == null or target_hp_before <= target.health.current_hp
+				)
 			if target != null and target_hp_before > target.health.current_hp:
 				for passive: PassiveData in actor.active_passives:
 					if passive == null or not passive.modifiers.has("way_of_the_weaver"):
@@ -3447,14 +3478,29 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				
 				if not is_immune:
 					var dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
-					
+					var push_amount := effect.amount + _push_synergy_bonus(
+						actor, effect, "push_bonus_if_push_used"
+					)
+					if effect.modifiers.has("push_if_target_on_water"):
+						var target_tile := board.get_tile(target.position)
+						if (
+							target_tile != null
+							and target_tile.definition != null
+							and target_tile.definition.id == &"water"
+						):
+							push_amount = maxi(
+								push_amount,
+								int(effect.modifiers["push_if_target_on_water"]),
+							)
+					if effect.modifiers.has("enemy_pushed_mov"):
+						actor.passive_flags["monk_pushed_enemies"] = int(
+							actor.passive_flags.get("monk_pushed_enemies", 0)
+						) + 1
 					var pending := {
 						"type": "push",
 						"target_id": target.id,
 						"dir": dir,
-						"amount": effect.amount + _push_synergy_bonus(
-							actor, effect, "push_bonus_if_push_used"
-						),
+						"amount": push_amount,
 						"actor_id": actor.id,
 						"ability_id": action.ability.id
 					}
@@ -4042,6 +4088,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 					"unit": actor.id, "to": actor.position
 				}))
+				if actor.passive_flags.has("vaulted_target_id"):
+					MonkSystems.on_moved_through_enemy(
+						board,
+						actor,
+						[int(actor.passive_flags["vaulted_target_id"])],
+						events,
+					)
 				if effect.modifiers.has("cleanse_target"):
 					cleanse_unit(target, events)
 				if actor.passive_flags.get("push_used_this_turn", false):
@@ -4191,6 +4244,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							passive.modifiers["caltrop_damage_bonus"]
 						)
 				board.terrain_payloads[tile_coord] = terrain_payload
+				MonkSystems.on_terrain_created(board, actor, tile_coord, events)
 				var standing_unit := board.get_unit_at(tile_coord)
 				if (
 					standing_unit != null

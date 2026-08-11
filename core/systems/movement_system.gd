@@ -1,6 +1,8 @@
 class_name MovementSystem
 extends RefCounted
 
+const MonkSystems := preload("res://core/systems/monk_systems.gd")
+
 ## Purpose: Owns point-based unit movement and pathfinding.
 ## Responsibilities: Find a deterministic shortest path and walk a unit along it,
 ##   spending movement points and updating occupancy via GridSystem.
@@ -223,7 +225,7 @@ static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) ->
 					"created_difficult_terrain_extra_mp", 0,
 				)
 			)
-		if unit != null and unit.has_passive(&"lightfoot"):
+		if unit != null:
 			for passive: PassiveData in unit.active_passives:
 				if passive != null and passive.modifiers.has("ignore_difficult_terrain"):
 					terrain_cost = 1
@@ -305,6 +307,8 @@ static func is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState,
 ## True when the unit may path through an enemy-occupied tile.
 static func can_pass_through_enemy(unit: UnitState, ability: AbilityData = null) -> bool:
 	if has_trample(unit):
+		return true
+	if unit != null and unit.passive_flags.get("monk_ghost_move", false):
 		return true
 	if ability != null and AbilitySystem.has_pass_through_effects(ability):
 		return true
@@ -410,6 +414,20 @@ static func execute_skill_walk(
 		if not is_final_step:
 			exit_dir = PhysicsSystem.cardinal_from_to(step, path[step_index + 1])
 		var pre_trample_ev_count: int = events.size()
+		var crossed_enemy := board.get_unit_at(step)
+		if (
+			crossed_enemy != null
+			and crossed_enemy.team != unit.team
+			and crossed_enemy.id != unit.id
+		):
+			var crossed_ids: Array[int] = []
+			for crossed_id: Variant in unit.passive_flags.get(
+				"monk_crossed_enemy_ids", [],
+			):
+				crossed_ids.append(int(crossed_id))
+			if not crossed_ids.has(crossed_enemy.id):
+				crossed_ids.append(crossed_enemy.id)
+				unit.passive_flags["monk_crossed_enemy_ids"] = crossed_ids
 		if not PhysicsSystem.resolve_pass_through_tile(
 			board, unit, step, move_dir, exit_dir, is_final_step,
 			trample_atk, bulldoze, trample_push, events, ability_id,
@@ -440,7 +458,8 @@ static func execute_skill_walk(
 		if tile != null and tile.definition != null and tile.definition.id != &"plain":
 			unit.passive_flags["passed_through_terrain"] = true
 			
-		TerrainSystem.apply_entry_at(board, unit, step, events)
+		if not unit.passive_flags.get("monk_light_step", false):
+			TerrainSystem.apply_entry_at(board, unit, step, events)
 	# Rubber-band backwards if we halted on a trampled tile.
 	while trampled_restore.has(unit.position):
 		if path.size() > 0:
@@ -469,6 +488,11 @@ static func execute_skill_walk(
 		"presentation_anim": AbilitySystem.resolve_presentation_anim(ability, unit),
 	}))
 	TerrainSystem.apply_landing(board, unit, events)
+	var crossed_enemy_ids: Array[int] = []
+	for crossed_id: Variant in unit.passive_flags.get("monk_crossed_enemy_ids", []):
+		crossed_enemy_ids.append(int(crossed_id))
+	MonkSystems.on_moved_through_enemy(board, unit, crossed_enemy_ids, events)
+	unit.passive_flags.erase("monk_crossed_enemy_ids")
 
 
 static func _has_modifier(effects: Array, key: StringName) -> bool:

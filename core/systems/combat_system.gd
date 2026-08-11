@@ -15,6 +15,7 @@ class_name CombatSystem
 extends RefCounted
 
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
+const MonkSystems := preload("res://core/systems/monk_systems.gd")
 
 ## Purpose: Owns damage and death (and nothing else).
 ## Responsibilities: Apply damage to a unit, emit damage/death events, clear
@@ -839,6 +840,7 @@ static func deal_damage(
 					attacker.passive_flags.get("__current_ability", null) as AbilityData,
 				),
 			)
+			MonkSystems.on_dealt_damage(board, attacker, target, events)
 		if (
 			source_type != &"hazard"
 			and target.has_passive(&"kinetic_redirection")

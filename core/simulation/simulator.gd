@@ -15,6 +15,7 @@ class_name Simulator
 extends RefCounted
 
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
+const MonkSystems := preload("res://core/systems/monk_systems.gd")
 
 ## Purpose: THE single source of combat truth. One pure function turns a board +
 ## a plan into a resulting board + an ordered event log. Preview and execution
@@ -154,6 +155,8 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 	for unit in board.units:
 		if unit.is_alive() and unit.team == team:
 			MercenarySystems.turn_start(board, unit, events)
+			MonkSystems.turn_start(board, unit, events)
+			MonkSystems.on_turn_start_penalty(board, unit)
 			unit.passive_flags.erase("mage_ap_refunded")
 			for passive: PassiveData in unit.active_passives:
 				if passive == null or not passive.modifiers.has("overload_tick_damage"):
@@ -373,6 +376,7 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 			if unit.passive_flags.get("next_turn_root_immune", false):
 				unit.passive_flags["root_immune_this_turn"] = true
 				unit.passive_flags.erase("next_turn_root_immune")
+			MonkSystems.turn_end(board, unit, events)
 			MercenarySystems.turn_end_rollover(unit)
 			var took_dmg: bool = unit.passive_flags.get("damaged_this_turn", false)
 			unit.passive_flags["damaged_last_turn"] = took_dmg
