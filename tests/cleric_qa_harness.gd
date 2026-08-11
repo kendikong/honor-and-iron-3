@@ -11,7 +11,7 @@ static func run_all(failures: Array[String]) -> void:
 		return
 	_assert(failures, "cleric/stats",
 		definition.base_constitution == 4
-		and definition.move_points == 4
+		and definition.move_points == 3
 		and definition.base_strength == 1
 		and definition.base_defense == 1
 		and definition.base_magic == 4)
@@ -61,7 +61,7 @@ static func run_factory_shell(failures: Array[String]) -> void:
 		return
 	_assert(failures, "cleric/stats",
 		definition.base_constitution == 4
-		and definition.move_points == 4
+		and definition.move_points == 3
 		and definition.base_strength == 1
 		and definition.base_defense == 1
 		and definition.base_magic == 4)

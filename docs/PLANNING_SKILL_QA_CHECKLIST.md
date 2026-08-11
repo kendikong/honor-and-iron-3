@@ -215,9 +215,9 @@ Notes / failures:
 ## Skill walkthroughs — what you should **see** (specific)
 
 Below: exact boards, cells, cursors, timeline icons, and preview positions.  
-**Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **1 AP / 3 MP** (knight default), auto-run **on**, auto-skill-after-move **on**.
+**Training Arena / QA fixture** unless noted: open 12×12 plain grid, knight **1 AP / 4 MP** (knight default), auto-run **on**, auto-skill-after-move **on**.
 
-**Economy (read from code, not ability names):** Knight has **1 AP / 3 MP** per turn (`knight_factory.gd`). **Every knight class skill costs 1 AP** — `DataLibrary._make_ability(..., ap_cost: 1)` in `knight_factory.gd`. **Run also costs 1 AP** when a step requires it. So with 1 AP you get **one** of: a class skill, **or** a run-required move — **not** run + skill in the same turn.
+**Economy (read from code, not ability names):** Knight has **1 AP / 4 MP** per turn (`knight_factory.gd`). **Every knight class skill costs 1 AP** — `DataLibrary._make_ability(..., ap_cost: 1)` in `knight_factory.gd`. **Run also costs 1 AP** when a step requires it. So with 1 AP you get **one** of: a class skill, **or** a run-required move — **not** run + skill in the same turn.
 
 **Do not confuse range with AP:** Numbers in ability names or upgrade text (e.g. Chain Hook **range 3**, Trampling Advance **range 2**, Bowling Charge **range 3** dash) are `range_tiles` / effect amounts — **not** `action_point_cost`. Trampling Advance additionally costs **2 MP** (`movement_point_cost = 2`), not extra AP.
 
@@ -253,8 +253,8 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 | What | Exactly |
 |------|---------|
 | **Selection** | Knight at `(4,5)` highlighted. Dummy stays at `(7,5)`. |
-| **AP / MP** | **1 / 1** AP and **3 / 3** MP (full pools). |
-| **Blue tiles** | Walk reach from `(4,5)` with 3 MP — includes `(3,5)(5,5)(4,4)(4,6)` and tiles up to 3 steps away on open ground. Does **not** include dummy cell `(7,5)`. |
+| **AP / MP** | **1 / 1** AP and **4 / 4** MP (full pools). |
+| **Blue tiles** | Walk reach from `(4,5)` with 4 MP — includes `(3,5)(5,5)(4,4)(4,6)` and tiles up to 4 steps away on open ground. Does **not** include dummy cell `(7,5)`. |
 | **Red tiles** | Small pattern around **knight stand `(4,5)`** only (range-1 bash footprint from current stand). **Dummy `(7,5)` is NOT covered in red** — too far to bash from start. |
 | **Ghost / path** | **None** (no hover yet). |
 | **Arrows** | **None**. |

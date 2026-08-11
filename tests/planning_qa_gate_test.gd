@@ -620,11 +620,11 @@ static func _test_stale_hover_updates_commit_waypoints(failures: Array[String]) 
 static func _test_planning_display_mp_left_contract(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
 	fix.knight.movement.points_left = 2
-	fix.knight.movement.max_points = 3
+	fix.knight.movement.max_points = 4
 	var proj: UnitState = fix.director.projected_state.get_unit_by_id(1)
 	if proj != null:
 		proj.movement.points_left = 2
-		proj.movement.max_points = 3
+		proj.movement.max_points = 4
 	var display_mp: int = fix.input.planning_display_mp_left(1)
 	if display_mp != 2:
 		failures.append(
@@ -3021,7 +3021,7 @@ static func _test_hook_in_range_ignores_stale_drag_route(failures: Array[String]
 
 static func _test_hook_out_of_range_enemy_hover_invalid(failures: Array[String]) -> void:
 	const HOOK_KNIGHT := Vector2i(1, 3)
-	const HOOK_ENEMY := Vector2i(8, 3)
+	const HOOK_ENEMY := Vector2i(9, 3)
 	var fix: Dictionary = _planning_fixture(HOOK_KNIGHT, HOOK_ENEMY)
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
@@ -3030,10 +3030,10 @@ static func _test_hook_out_of_range_enemy_hover_invalid(failures: Array[String])
 		failures.append("PlanningQAGate hook_out_of_range_null: Chain Hook missing")
 		return
 	director.selected_ability_index = hook_idx
-	fix.knight.movement.points_left = 3
+	fix.knight.movement.points_left = 4
 	var proj: UnitState = director.projected_state.get_unit_by_id(1)
 	if proj != null:
-		proj.movement.points_left = 3
+		proj.movement.points_left = 4
 	var slots: Dictionary = input._final_commit_slots_for_interaction(
 		1, HOOK_ENEMY, [], [], HOOK_ENEMY,
 	)

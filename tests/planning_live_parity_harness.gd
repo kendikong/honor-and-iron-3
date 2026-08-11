@@ -959,11 +959,11 @@ static func run_k1_journey_mirror(
 	if knight == null:
 		PlanningChecklistHarness.assert_fail(failures, "K1-01", "k1 unit missing")
 		return
-	if knight.ability.points_left != 1 or knight.movement.points_left != 3:
+	if knight.ability.points_left != 1 or knight.movement.points_left != 4:
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			"K1-01",
-			"k1 pools expected 1 AP / 3 MP got AP=%d MP=%d"
+			"k1 pools expected 1 AP / 4 MP got AP=%d MP=%d"
 			% [knight.ability.points_left, knight.movement.points_left],
 		)
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.KNIGHT_START)
@@ -1490,12 +1490,12 @@ static func assert_training_board_pools(
 	for unit: UnitState in fix.board.units:
 		if unit.team != GameEnums.Team.PLAYER or not unit.is_alive():
 			continue
-		if unit.ability.points_left != 1 or unit.movement.points_left != 3:
+		if unit.ability.points_left != 1 or unit.movement.points_left != unit.movement.max_points:
 			PlanningChecklistHarness.assert_fail(
 				failures,
 				label,
-				"unit %d expected 1 AP / 3 MP got AP=%d MP=%d"
-				% [unit.id, unit.ability.points_left, unit.movement.points_left],
+				"unit %d expected 1 AP / %d MP got AP=%d MP=%d"
+				% [unit.id, unit.movement.max_points, unit.ability.points_left, unit.movement.points_left],
 			)
 
 
@@ -1639,11 +1639,12 @@ static func run_k4_journey_mirror(
 	if unit == null:
 		PlanningChecklistHarness.assert_fail(failures, "K4-01", "k4 unit missing")
 		return
-	if unit.movement.points_left != 3:
+	if unit.movement.points_left != unit.movement.max_points:
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			"K4-01",
-			"k4 MP must be 3 for bible run route got %d" % unit.movement.points_left,
+			"k4 MP must match factory max (%d) for bible run route got %d"
+			% [unit.movement.max_points, unit.movement.points_left],
 		)
 	var bowling_idx: int = PlanningChecklistHarness.select_ability_for_unit(
 		fix, k4_id, PlanningChecklistHarness.BOWLING_CHARGE_ID,
