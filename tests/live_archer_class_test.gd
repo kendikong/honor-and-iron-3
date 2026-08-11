@@ -32,7 +32,7 @@ const _CASES: Array[Dictionary] = [
 		"amount": 1, "kind": &"enemy", "actor": Vector2i(8, 8), "target": Vector2i(8, 6),
 		"observe": &"status"},
 	{"id": &"archer_piercing_shot", "range": 4,
-		"flags": GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		"flags": GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.LINE, "size": 4, "type": GameEnums.EffectType.DAMAGE,
 		"amount": 2, "kind": &"enemy", "actor": Vector2i(4, 5), "target": Vector2i(8, 5),
 		"observe": &"damage"},

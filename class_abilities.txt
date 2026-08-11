@@ -61,6 +61,23 @@ Pre-Move steps apply immediately during planning (live board + ghost preview) an
 Canceling a Reposition Skill that moved/swapped an ally also cancels any of that ally's planned actions that depended on the new positions after that step.
 Targeting Data (skill list must show):
 Each ability declares targeting mode (Self, Ally, Enemy, Tile, etc.), MOV or AP cost, range, and effect keywords — players must not infer behavior from effect-type heuristics.
+Targeting Assignment (Planning Cursor — Authoritative):
+Bible geometry keywords (RANGE, AOE, SKEWER, ARC, etc.) describe footprint and distance. Authors MUST also imply what the player clicks during planning. Range highlight tiles are not the same as targeting mode — a red range bubble may show while the cursor still requires an enemy unit.
+| Player clicks | Bible pattern | Data targeting_flags | target_shape |
+| Enemy unit | RANGE X | ATK … on an enemy; single-target debuff/mark/purge; SKEWER X | ATK … through a unit | ENEMY only | SINGLE or LINE (skewer) |
+| Ally unit | Target Ally; heal/buff/shield ally; Reposition Skill on ally | ALLY (or SELF | ALLY when self is also legal) | SINGLE |
+| Self | SELF; RANGE 0 anchored on caster | SELF | SINGLE |
+| Ground tile | Place trap/hazard; empty-tile reposition (Sidestep); shoot wall/obstacle tile | TILE | SINGLE |
+| Blast / direction tile | AOE XxX; AOE X (cross); ARC; CONE; GLOBAL area — player picks center or direction on the ground; units on those tiles are hit incidentally | TILE | AOE_SQUARE, AOE_CROSS, ARC, CONE, etc. |
+| Dash endpoint | DASH X cardinal movement | DASH_LINE | SINGLE |
+Critical authoring rules:
+- RANGE X | ATK Y with no AOE / ARC / CONE keyword = enemy unit targeting (SINGLE). Never TILE.
+- SKEWER X | ATK = enemy unit targeting + LINE shape (pick the enemy; the shot fires through them along the line). Never TILE.
+- AOE / ARC / CONE = tile targeting for blast center or facing; damage may still hit enemies on those tiles.
+- Traps, Volley ground strike, Bear Trap, Caltrop Trap, Suppressing Fire hazard line = TILE only.
+- Never set TILE together with ENEMY on a single-target enemy skill — the TILE bit forces a tile cursor and drops target_unit_id on commit.
+- Grapple Arrow (shoot wall: PULL SELF) = TILE primary; upgraded pass-through enemy may also allow ENEMY on occupied tiles — dual TILE | ENEMY is intentional there only.
+Implementation: targeting_flags → planning cursor via AbilityData.sync_legacy_targeting(). LINE + ENEMY-only skewer skills must not auto-add TILE during factory finalize.
 Conditional Damage (data-driven, not per-skill code):
 Shield Slam: ATK 2 | PUSH 2 | If target was already adjacent at cast, gain ATK +2. Target DEF is reduced by 1 before damage is calculated.
 Phalanx Stance: Grants RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn (counter range becomes map-wide while both effects apply).
