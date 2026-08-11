@@ -124,11 +124,61 @@ static func select_ability(fix: Dictionary, ability_id: StringName) -> int:
 	return idx
 
 
+const ABILITY_SETTLE_FRAMES := 4
+const DRAG_SAMPLE_PIXELS := 72.0
+
+
 static func settle_ability_hover(fix: Dictionary) -> void:
 	var input: CombatPlanningInput = fix.input
 	if input == null:
 		return
 	input.call("_resync_hover_after_ability_change")
+	flush_planning(fix)
+
+
+static func wait_ability_settle_sync(fix: Dictionary) -> void:
+	for _frame: int in range(ABILITY_SETTLE_FRAMES):
+		flush_planning(fix)
+		var input: CombatPlanningInput = fix.input
+		if input != null:
+			input.flush_deferred_planning()
+	settle_ability_hover(fix)
+
+
+static func sweep_to_cell(
+	fix: Dictionary,
+	cell: Vector2i,
+	from_cell: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	var input: CombatPlanningInput = fix.input
+	var map_stub: QaPlanningMapStub = fix.get("map_stub", null) as QaPlanningMapStub
+	if input == null or map_stub == null:
+		hover(fix, cell)
+		return
+	input.clear_qa_pointer_override()
+	var start_cell: Vector2i = from_cell
+	if start_cell.x < -900000:
+		start_cell = input.get_hover_tile_for_ui()
+		if not fix.board.is_in_bounds(start_cell):
+			var unit: UnitState = fix.board.get_unit_by_id(fix.director.selected_unit_id)
+			start_cell = unit.position if unit != null else cell
+	var start_local: Vector2 = map_stub.grid_to_local(start_cell)
+	var target_local: Vector2 = map_stub.grid_to_local(cell)
+	var sample_count: int = maxi(
+		1,
+		ceili(start_local.distance_to(target_local) / DRAG_SAMPLE_PIXELS),
+	)
+	for sample_index: int in range(1, sample_count + 1):
+		var alpha: float = float(sample_index) / float(sample_count)
+		var mid_local: Vector2 = start_local.lerp(target_local, alpha)
+		var mid_cell: Vector2i = map_stub.screen_to_grid(mid_local)
+		if fix.board.is_in_bounds(mid_cell):
+			input.set_qa_pointer_grid_cell(mid_cell)
+			input.on_hover_moved(mid_cell)
+			flush_planning(fix)
+	input.set_qa_pointer_grid_cell(cell)
+	input.on_hover_moved(cell)
+	input._flush_hover_heavy_sync()
 	flush_planning(fix)
 
 
@@ -1181,61 +1231,80 @@ static func _commit_unit_id(fix: Dictionary) -> int:
 	return fix.director.selected_unit_id
 
 
-static func _training_knight(id: int, pos: Vector2i) -> UnitState:
-	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
-	var knight: UnitState = UnitState.create(id, knight_def, GameEnums.Team.PLAYER, pos)
-	knight.active_abilities = DataLibrary.build_training_abilities(knight_def)
-	knight.movement.max_points = 3
-	knight.movement.points_left = 3
-	knight.ability.points_left = 1
-	knight.ability.max_points = 1
-	return knight
+static func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
+	var unit: UnitState = board.get_unit_at(cell)
+	return unit.id if unit != null else -1
+
+
+static func clamp_training_board_pools(fix: Dictionary) -> void:
+	var director: CombatDirector = fix.director
+	for unit: UnitState in fix.board.units:
+		if unit.team != GameEnums.Team.PLAYER or not unit.is_alive():
+			continue
+		unit.ability.max_points = 1
+		unit.ability.points_left = 1
+		unit.movement.max_points = 3
+		unit.movement.points_left = 3
+	director.base_board = fix.board.clone()
+	director.projected_state = fix.board.clone()
+	director.turn_start_board = fix.board.clone()
+
+
+## Live Tier 3 trace: projected k4 keeps factory MP (4) while board units are clamped to 3.
+static func apply_live_k4_projected_mp_drift(fix: Dictionary, k4_id: int) -> void:
+	var projected: UnitState = fix.director.projected_state.get_unit_by_id(k4_id)
+	if projected == null:
+		return
+	projected.clear_run_boost()
+	projected.movement.max_points = maxi(projected.movement.max_points, 4)
+	projected.movement.points_left = projected.movement.max_points
 
 
 static func wire_bible_board() -> Dictionary:
 	PlanningDragE2EHarness.cleanup_all()
-	var dummy_def: UnitData = DataLibrary.get_training_dummy()
-	assert(dummy_def != null, "wire_bible_board: training dummy missing")
-	var units: Array[UnitState] = [
-		_training_knight(1, KNIGHT_START),
-		_training_knight(2, K2_CELL),
-		_training_knight(3, K3_CELL),
-		_training_knight(4, K4_CELL),
-		UnitState.create(5, dummy_def, GameEnums.Team.ENEMY, E_BASH_CELL),
-		UnitState.create(6, dummy_def, GameEnums.Team.ENEMY, E_HOOK_CELL),
-	]
-	var fix: Dictionary = _wire_multi_fixture(units, 1)
-	fix["k1_id"] = 1
-	fix["k2_id"] = 2
-	fix["k3_id"] = 3
-	fix["k4_id"] = 4
-	fix["e_bash_id"] = 5
-	fix["e_hook_id"] = 6
+	var session := TestBattleSession.new()
+	session.reset_defaults()
+	session.extra_player_coords = [K2_CELL, K3_CELL, K4_CELL]
+	session.dummy_coords = [E_BASH_CELL, E_HOOK_CELL]
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var k1_id: int = _unit_id_at(board, KNIGHT_START)
+	assert(k1_id > 0, "wire_bible_board: k1 missing at %s" % KNIGHT_START)
+	var fix: Dictionary = _wire_board_fixture(board, k1_id)
+	clamp_training_board_pools(fix)
+	fix["k1_id"] = _unit_id_at(fix.board, KNIGHT_START)
+	fix["k2_id"] = _unit_id_at(fix.board, K2_CELL)
+	fix["k3_id"] = _unit_id_at(fix.board, K3_CELL)
+	fix["k4_id"] = _unit_id_at(fix.board, K4_CELL)
+	fix["e_bash_id"] = _unit_id_at(fix.board, E_BASH_CELL)
+	fix["e_hook_id"] = _unit_id_at(fix.board, E_HOOK_CELL)
 	return fix
 
 
 static func wire_swap_board(ally_cell: Vector2i) -> Dictionary:
 	PlanningDragE2EHarness.cleanup_all()
-	var units: Array[UnitState] = [
-		_training_knight(1, KNIGHT_START),
-		_training_knight(2, ally_cell),
-	]
-	var fix: Dictionary = _wire_multi_fixture(units, 1)
-	fix["k1_id"] = 1
-	fix["ally_id"] = 2
+	var session := TestBattleSession.new()
+	session.reset_defaults()
+	session.extra_player_coords = [ally_cell]
+	session.dummy_coords = []
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var k1_id: int = _unit_id_at(board, KNIGHT_START)
+	assert(k1_id > 0, "wire_swap_board: k1 missing at %s" % KNIGHT_START)
+	var fix: Dictionary = _wire_board_fixture(board, k1_id)
+	clamp_training_board_pools(fix)
+	fix["k1_id"] = k1_id
+	fix["ally_id"] = _unit_id_at(fix.board, ally_cell)
 	fix["ally_cell"] = ally_cell
-	var k1: UnitState = fix.board.get_unit_by_id(1)
+	var k1: UnitState = fix.board.get_unit_by_id(k1_id)
 	fix["start_k1_mp"] = k1.movement.points_left if k1 != null else 0
 	return fix
 
 
-static func _wire_multi_fixture(units: Array[UnitState], selected_id: int) -> Dictionary:
+static func _wire_board_fixture(board: BoardState, selected_id: int) -> Dictionary:
 	var input := CombatPlanningInput.new()
 	var director := CombatDirector.new()
 	director.plan_pre_move = Timeline.new()
 	director.plan_action = Timeline.new()
 	director.plan_post_move = Timeline.new()
-	var board: BoardState = PlanningDragE2EHarness._plain_board(Vector2i(12, 12), units)
 	director.board = board
 	director.base_board = board.clone()
 	director.projected_state = board.clone()

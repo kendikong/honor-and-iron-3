@@ -132,16 +132,14 @@ static func run_k4_run_live_parity(
 	PlanningChecklistHarness.select_ability_for_unit(
 		fix, k4_id, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
+	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	enter_k4_auto_run_paint_mode(fix, k4_id)
 	run_k4_selection_route(fix, failures, k4_id, bowling, "%s/selection" % label_prefix)
 	assert_k4_run_committed(fix, failures, k4_id, "%s/selection" % label_prefix)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, k4_id)
 
-	var failure_count_before_undo: int = failures.size()
 	undo_until_unit_clear(fix, failures, k4_id, PlanningChecklistHarness.K4_START, label_prefix)
-	if failures.size() > failure_count_before_undo:
-		return
-
+	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	enter_k4_auto_run_paint_mode(fix, k4_id)
 	run_k4_drag_route(fix, failures, k4_id, bowling, "%s/drag" % label_prefix)
 	assert_k4_run_committed(fix, failures, k4_id, "%s/drag" % label_prefix)
@@ -165,7 +163,7 @@ static func run_k4_run_live_parity(
 static func enter_k4_auto_run_paint_mode(fix: Dictionary, unit_id: int) -> void:
 	fix.director.select_unit(unit_id)
 	fix.input.force_basic_movement = false
-	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.wait_ability_settle_sync(fix)
 
 
 static func run_k4_selection_route(
@@ -177,18 +175,20 @@ static func run_k4_selection_route(
 ) -> void:
 	var route: Array[Vector2i] = PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE
 	PlanningChecklistHarness.select_unit(fix, unit_id, route[0])
+	PlanningChecklistHarness.wait_ability_settle_sync(fix)
 	for step_index: int in range(1, route.size()):
 		var cell: Vector2i = route[step_index]
 		var step_label: String = "%s/step_%d" % [label_prefix, step_index]
 		var expected_path: Array[Vector2i] = route.slice(0, step_index + 1)
-		PlanningChecklistHarness.hover(fix, cell)
+		var from_cell: Vector2i = route[step_index - 1]
+		PlanningChecklistHarness.sweep_to_cell(fix, cell, from_cell)
 		assert_not_dragging(fix, failures, step_label)
 		assert_preview_path_equals(fix, failures, unit_id, expected_path, "%s/path" % step_label)
-		if cell == Vector2i(4, 2) or cell == PlanningChecklistHarness.K4_RUN_TRIGGER:
-			PlanningChecklistHarness.settle_ability_hover(fix)
 		if cell == Vector2i(4, 2):
+			PlanningChecklistHarness.wait_ability_settle_sync(fix)
 			assert_k4_walk_loop_preview(fix, failures, unit_id, bowling, cell, "%s/walk_loop" % step_label)
 		elif cell == PlanningChecklistHarness.K4_RUN_TRIGGER:
+			PlanningChecklistHarness.wait_ability_settle_sync(fix)
 			assert_k4_run_loop_preview(fix, failures, unit_id, "%s/run_trigger" % step_label)
 
 	var pre_intent: Dictionary = capture_preview_intent(
@@ -230,8 +230,10 @@ static func run_k4_drag_route(
 		assert_drag_route_equals(fix, failures, expected_path, "%s/drag_route_%d" % [label_prefix, step_index])
 		assert_preview_path_equals(fix, failures, unit_id, expected_path, "%s/preview_path_%d" % [label_prefix, step_index])
 		if cell == Vector2i(4, 2):
+			PlanningChecklistHarness.wait_ability_settle_sync(fix)
 			assert_k4_walk_loop_preview(fix, failures, unit_id, bowling, cell, "%s/walk_loop_end" % step_label)
 		elif cell == PlanningChecklistHarness.K4_RUN_TRIGGER:
+			PlanningChecklistHarness.wait_ability_settle_sync(fix)
 			assert_k4_run_loop_preview(fix, failures, unit_id, "%s/run_trigger" % step_label)
 
 	assert_drag_route_equals(fix, failures, route, "%s/route" % label_prefix)
@@ -1665,6 +1667,7 @@ static func run_k4_journey_mirror(
 		}, "K4-02/stand",
 	)
 	fix.input.auto_use_skill_after_move = false
+	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	run_k4_run_live_parity(fix, failures, k4_id, bowling, "K4")
 	var k4_projected: UnitState = PlanningChecklistHarness.projected_unit(fix, k4_id)
 	expect["k4_pos"] = k4_projected.position if k4_projected != null else PlanningChecklistHarness.K4_START
