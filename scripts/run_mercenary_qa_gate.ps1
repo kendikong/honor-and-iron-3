@@ -45,10 +45,25 @@ if (-not (Test-Path $GodotPath)) {
 	exit 2
 }
 
-& $GodotPath --headless --path $projectRoot "res://tests/MercenaryQaGate.tscn"
-if ($LASTEXITCODE -ne 0) {
+$qaWindowHelpers = Join-Path $PSScriptRoot "qa_window_placement.ps1"
+. $qaWindowHelpers
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-mercenary-qa.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-mercenary-qa.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList "--headless --path `"$projectRoot`" res://tests/MercenaryQaGate.tscn" `
+	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
+$exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mercenary Tier 1 harness"
+if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
+if (Test-Path $stderrPath) { Get-Content $stderrPath }
+
+$harnessPass = Test-GodotQaHarnessSucceeded `
+	-ExitCode $exitCode `
+	-LogPaths @($stdoutPath, $stderrPath) `
+	-PassPattern '^\[PASS\] Mercenary QA gate:'
+if (-not $harnessPass) {
 	Write-Output "[FAIL] Mercenary Tier 1 harness"
-	exit $LASTEXITCODE
+	exit 1
 }
 Write-Output "[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios"
 exit 0
