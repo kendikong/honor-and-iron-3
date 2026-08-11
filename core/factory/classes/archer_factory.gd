@@ -179,6 +179,10 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.abilities.append(_scouts_eye())
 
 	DataLibrary.finalize_unit_abilities(def)
+	for ability: AbilityData in def.abilities:
+		if ability != null and ability.id == &"archer_repelling_shot":
+			ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
+			break
 	return def
 
 

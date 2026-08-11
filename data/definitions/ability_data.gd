@@ -118,6 +118,12 @@ func _targeting_flags_to_mode() -> int:
 		return GameEnums.TargetingMode.TILE
 	if f == GameEnums.TargetingFlags.ENEMY:
 		return GameEnums.TargetingMode.ENEMY_UNIT
+	if (
+		has_targeting(GameEnums.TargetingFlags.ALLY)
+		and has_targeting(GameEnums.TargetingFlags.ENEMY)
+		and not has_targeting(GameEnums.TargetingFlags.TILE)
+	):
+		return GameEnums.TargetingMode.ANY_UNIT
 	if (f & unit_mask) == unit_mask:
 		return GameEnums.TargetingMode.ANY_UNIT
 	if has_targeting(GameEnums.TargetingFlags.DASH_LINE):
