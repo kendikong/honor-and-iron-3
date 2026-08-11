@@ -25,6 +25,7 @@ $items = @(
 	@{ N = "Archer"; P = "run_archer_qa_gate.ps1" },
 	@{ N = "Mage"; P = "run_mage_qa_gate.ps1" },
 	@{ N = "Cleric"; P = "run_cleric_qa_gate.ps1" },
+	@{ N = "Mercenary"; P = "run_mercenary_qa_gate.ps1" },
 	@{ N = "PlanningHeadless"; P = "run_planning_qa_gate.ps1" },
 	@{ N = "Regression"; P = "run_regression_tests.ps1" }
 )
@@ -51,7 +52,7 @@ foreach ($item in $items) {
 }
 
 Write-Log "=== SUMMARY ==="
-foreach ($key in @("Knight", "Bruiser", "Lancer", "Archer", "Mage", "Cleric", "PlanningHeadless", "Regression")) {
+foreach ($key in @("Knight", "Bruiser", "Lancer", "Archer", "Mage", "Cleric", "Mercenary", "PlanningHeadless", "Regression")) {
 	if ($summary.ContainsKey($key)) {
 		Write-Log ("{0}={1}" -f $key, $summary[$key])
 	}

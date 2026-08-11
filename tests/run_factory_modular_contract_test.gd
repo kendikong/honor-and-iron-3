@@ -9,6 +9,7 @@ const CLASS_IDS: Array[StringName] = [
 	&"lancer",
 	&"mage",
 	&"cleric",
+	&"mercenary",
 ]
 
 const FACTORY_PATHS: Array[String] = [
@@ -18,6 +19,7 @@ const FACTORY_PATHS: Array[String] = [
 	"res://core/factory/classes/lancer_factory.gd",
 	"res://core/factory/classes/mage_factory.gd",
 	"res://core/factory/classes/cleric_factory.gd",
+	"res://core/factory/classes/mercenary_factory.gd",
 ]
 
 func _ready() -> void:
@@ -118,6 +120,8 @@ func _build_factory(class_id: StringName) -> UnitData:
 			return MageFactory.build(weapon)
 		&"cleric":
 			return ClericFactory.build(weapon)
+		&"mercenary":
+			return MercenaryFactory.build(weapon)
 	return null
 
 

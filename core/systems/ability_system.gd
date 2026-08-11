@@ -557,7 +557,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if (
 			target_unit == null
 			or target_unit.team == actor.team
-			or GridSystem.manhattan(action.target_coord, target_unit.position) != 1
+			or (
+				target_unit.position != action.target_coord
+				and GridSystem.manhattan(action.target_coord, target_unit.position) != 1
+			)
 		):
 			return false
 
@@ -656,7 +659,12 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				return false
 				
 	if is_move or is_dash:
-		if not has_displacement and not has_pass_through_effects(ability, actor):
+		if (
+			not has_displacement
+			and not has_pass_through_effects(ability, actor)
+			and not _ability_has_modifier(actor, ability, &"target_after_move_adjacent")
+			and not _ability_has_modifier(actor, ability, &"move_to_target_adjacent")
+		):
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
 				return false

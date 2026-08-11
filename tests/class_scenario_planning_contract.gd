@@ -123,6 +123,11 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			enemy_pos = Vector2i(5, 3)
 			commit_cell = Vector2i(5, 3)
 			select_only = true
+		&"mercenary_swift_strike":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(5, 3)
+			commit_cell = enemy_pos
+			verify_no_jump = false
 		_:
 			if ability.targeting_flags & GameEnums.TargetingFlags.SELF:
 				commit_cell = actor_pos
@@ -181,7 +186,7 @@ static func _assert_shaped_footprint(
 
 static func _class_id_from_factory(factory_id: StringName) -> StringName:
 	var text := String(factory_id)
-	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight"]:
+	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary"]:
 		if text.begins_with(prefix + "_") or text == prefix:
 			return StringName(prefix)
 	return &""

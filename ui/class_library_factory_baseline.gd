@@ -4,6 +4,7 @@ extends RefCounted
 ## Fresh player units from code factories — no class_library_data.json overrides.
 const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.gd")
 const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
+const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_factory.gd")
 
 
 static func build_all_player_units() -> Dictionary:
@@ -22,7 +23,7 @@ static func build_all_player_units() -> Dictionary:
 		"mage": _mage(staff),
 		"cleric": _cleric(staff),
 		"assassin": _assassin(sword),
-		"mercenary": _mercenary(sword),
+		"mercenary": MercenaryFactoryScript.build(sword),
 		"gryphon": _gryphon(lance),
 		"monk": _monk(fist),
 		"engineer": _engineer(gun),
@@ -63,13 +64,6 @@ static func _assassin(sword: WeaponData) -> UnitData:
 	var execute := DataLibrary._make_ability(&"assassin_execute", "Assassinate", 1, [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
 	var swap := DataLibrary._make_movement_ability(&"assassin_swap", "Shadow Swap", 1, [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)], 1)
 	return DataLibrary._make_unit_data(&"assassin", "Assassin", 3, 4, 1, [execute, swap], null, GameEnums.MovementType.WALK, 4, 0, 1, sword, [p])
-
-
-static func _mercenary(sword: WeaponData) -> UnitData:
-	var p := DataLibrary._make_passive(&"veteran", "Veteran", "Reliable criticals.")
-	var rend := DataLibrary._make_ability(&"merc_rend", "Rend", 1, [DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var kick := DataLibrary._make_movement_ability(&"merc_kick", "Boot Kick", 1, [DataLibrary._effect(GameEnums.EffectType.PUSH, 1)], 1)
-	return DataLibrary._make_unit_data(&"mercenary", "Mercenary", 4, 4, 1, [rend, kick], null, GameEnums.MovementType.WALK, 4, 0, 3, sword, [p])
 
 
 static func _gryphon(lance: WeaponData) -> UnitData:

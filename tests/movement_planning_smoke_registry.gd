@@ -259,4 +259,14 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(4, 3),
 			"verify_no_jump": false,
 		},
+		# --- Mercenary ---
+		&"mercenary_pullback": {
+			"class_id": &"mercenary",
+			"factory_id": &"mercenary_pullback",
+			"tag": "pullback",
+			"mode": "premove",
+			"actor_pos": Vector2i(4, 5),
+			"enemy_pos": Vector2i(5, 5),
+			"commit_cell": Vector2i(3, 5),
+		},
 	}

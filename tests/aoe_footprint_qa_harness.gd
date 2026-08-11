@@ -51,7 +51,9 @@ static func find_ability_by_id(ability_id: StringName) -> AbilityData:
 		return DataLibrary.get_universal_run()
 	if DataLibrary.is_universal_wait(ability_id):
 		return DataLibrary.get_universal_wait()
-	for class_id: StringName in [&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage"]:
+	for class_id: StringName in [
+		&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage", &"mercenary",
+	]:
 		var unit: UnitData = _build_class_unit(class_id)
 		if unit == null:
 			continue
@@ -230,6 +232,8 @@ static func _build_class_unit(class_id: StringName) -> UnitData:
 			return ClericFactory.build(weapon)
 		&"mage":
 			return MageFactory.build(weapon)
+		&"mercenary":
+			return MercenaryFactory.build(weapon)
 		_:
 			return template
 

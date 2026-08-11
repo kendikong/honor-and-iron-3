@@ -5,6 +5,7 @@ const LancerFactoryScript := preload("res://core/factory/classes/lancer_factory.
 const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.gd")
 const ClericFactoryScript := preload("res://core/factory/classes/cleric_factory.gd")
 const MageFactoryScript := preload("res://core/factory/classes/mage_factory.gd")
+const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -186,10 +187,7 @@ static func _ensure_init() -> void:
 	var assassin := _make_unit_data(&"assassin", "Assassin", 3, 4, 1, [assassin_execute, assassin_swap], null, GameEnums.MovementType.WALK, 4, 0, 1, basic_sword, [p_assassin])
 
 	# 9. MERCENARY (SWORD)
-	var p_merc = _make_passive(&"veteran", "Veteran", "Reliable criticals.")
-	var merc_rend := _make_ability(&"merc_rend", "Rend", 1, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var merc_kick := _make_movement_ability(&"merc_kick", "Boot Kick", 1, [_effect(GameEnums.EffectType.PUSH, 1)], 1)
-	var mercenary := _make_unit_data(&"mercenary", "Mercenary", 4, 4, 1, [merc_rend, merc_kick], null, GameEnums.MovementType.WALK, 4, 0, 3, basic_sword, [p_merc])
+	var mercenary: UnitData = MercenaryFactoryScript.build(basic_sword)
 
 	# 10. GRYPHON RIDER (LANCE)
 	var p_gryphon = _make_passive(&"air_superiority", "Air Superiority", "Evades ground attacks.")

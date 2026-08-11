@@ -56,6 +56,11 @@ static func action_movement_needs_pre_or_post_leg(ability: AbilityData) -> bool:
 		return false
 	if ability.is_pre_move_planner():
 		return false
+	if (
+		ability.planner_group == GameEnums.PlannerGroup.ACTION
+		and not AbilitySystem.active_modules_for(null, ability).is_empty()
+	):
+		return false
 	if AbilitySystem.ability_has_dash(ability):
 		return false
 	return AbilitySystem.ability_has_movement_effect(ability)
