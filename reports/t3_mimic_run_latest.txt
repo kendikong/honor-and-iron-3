@@ -1,0 +1,23 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] action_range_regression
+[RUN] action_range/show_move_hover_no_action_slot
+[RUN] action_range/show_enemy_bash_committed_premove
+[RUN] action_range/show_red_anchor_on_stand
+[RUN] action_range/bowling_enemy_hover_red
+[RUN] action_range/bowling_enemy_hover_not_bash
+[RUN] action_range/bowling_dash_only_not_blue
+[RUN] action_range/bowling_dash_only_no_premove_click
+[RUN] action_range/hide_after_commit_run_icon_bash
+[RUN] action_range/hide_after_commit_run_icon_bowling
+[RUN] action_range/hide_committed_run_timeline_bowling
+[RUN] action_range/hide_committed_run_interior_hover_bowling
+[RUN] action_range/hide_no_ability
+[RUN] action_range/show_awaiting_trample
+[RUN] action_range/hover_step_updates_stand
+[RUN] action_range/parity_gate_show
+[RUN] action_range/parity_gate_hide
+[SUITE] intent_contract_e2e
+[SUITE] t3_live_headless_checklist
+[SUITE] t3_live_headless_checklist
+[PASS] Fixture Parity Suite (action_range + intent + journeys + bible)

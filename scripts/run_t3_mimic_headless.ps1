@@ -14,6 +14,9 @@ Write-Output "=== Fixture Parity Suite (headless - NOT Tier 3 LIVE) ==="
 . (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-t3-mimic.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-t3-mimic.stderr.log"
+$reportsDir = Join-Path $projectRoot "reports"
+$latestStdout = Join-Path $reportsDir "t3_mimic_run_latest.txt"
+$latestStderr = Join-Path $reportsDir "t3_mimic_run_latest.stderr.txt"
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless", "--path", $projectRoot, "--script", "res://tests/run_t3_mimic_headless.gd" `
 	-WorkingDirectory $projectRoot `
@@ -27,6 +30,9 @@ if ($exitCode -eq 130) {
 }
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
 if (Test-Path $stderrPath) { Get-Content $stderrPath }
+if (-not (Test-Path $reportsDir)) { New-Item -ItemType Directory -Path $reportsDir | Out-Null }
+if (Test-Path $stdoutPath) { Copy-Item -Force $stdoutPath $latestStdout }
+if (Test-Path $stderrPath) { Copy-Item -Force $stderrPath $latestStderr }
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })

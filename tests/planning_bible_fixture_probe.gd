@@ -128,6 +128,15 @@ static func _audit_surface(
 		)
 	if contract.get("tiles_only_in_bounds", false):
 		_assert_overlay_tiles_in_bounds(fix, failures, label)
+	if contract.get("red_tiles_exact", false):
+		_assert_red_tiles_match_stand(
+			failures,
+			fix,
+			unit_id,
+			contract.get("ability", null) as AbilityData,
+			contract.get("red_stand", hover_cell) as Vector2i,
+			label,
+		)
 	if contract.get("attack_target_clear", false):
 		PlanningChecklistHarness.assert_eq_int(
 			failures,
@@ -336,3 +345,33 @@ static func _assert_overlay_tiles_in_bounds(
 					label,
 					"overlay tile painted out of bounds at %s" % coord,
 				)
+
+
+static func _assert_red_tiles_match_stand(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	ability: AbilityData,
+	stand: Vector2i,
+	label: String,
+) -> void:
+	if ability == null:
+		PlanningChecklistHarness.assert_fail(failures, label, "red_tiles_exact requires ability")
+		return
+	var actor: UnitState = PlanningChecklistHarness.projected_unit(fix, unit_id)
+	if actor == null:
+		PlanningChecklistHarness.assert_fail(failures, label, "red_tiles_exact missing projected actor")
+		return
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, actor, ability, stand,
+	)
+	var actual: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	expected.sort()
+	actual.sort()
+	if actual != expected:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"overlay red %s must match AbilitySystem range %s at stand %s"
+			% [actual, expected, stand],
+		)

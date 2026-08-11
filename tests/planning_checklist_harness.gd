@@ -41,6 +41,7 @@ const TRAMPLE_POST_DEST := Vector2i(8, 2)
 const TRAMPLE_POST_ROUTE: Array[Vector2i] = [
 	TRAMPLE_END, Vector2i(7, 3), Vector2i(8, 3), TRAMPLE_POST_DEST,
 ]
+const TRAMPLE_POST_WAYPOINTS: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3), TRAMPLE_POST_DEST]
 const TRAMPLE_FULL_PATH: Array[Vector2i] = [
 	TRAMPLE_START, TRAMPLE_ROUTE[0], TRAMPLE_ROUTE[1],
 ]

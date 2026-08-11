@@ -329,20 +329,16 @@ static func _test_k1_hover_edges(failures: Array[String]) -> void:
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.KNIGHT_START,
 			"ability": bash,
+			"red_tiles_exact": true,
+			"attack_target_clear": true,
 			"icon_is": PlanningIcons.GLYPH_NULL,
 			"slots_invalid": true,
 			"tiles_only_in_bounds": true,
 		}, "bible/k1_edges/off_blue",
 	)
-	var off_slots: Dictionary = PlanningChecklistHarness.slots_for_click(
-		fix, PlanningChecklistHarness.OFF_BLUE_CELL,
+	_LiveParity.assert_off_blue_click_must_not_commit(
+		fix, failures, k1_id, PlanningChecklistHarness.OFF_BLUE_CELL, "bible/k1_edges/off_blue_click",
 	)
-	if not PlanningChecklistHarness.slots_invalid(off_slots):
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			"bible/k1_edges/off_blue_click",
-			"off-blue click slots must be invalid",
-		)
 
 	PlanningChecklistHarness.hover_off_map(fix)
 	_Probe.probe_cell(
