@@ -367,7 +367,7 @@ static func _pinning_arrow() -> AbilityData:
 static func _piercing_shot() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 4,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.LINE, 4,
 	)
 	module.legacy_modifiers["skewer"] = 4
@@ -376,7 +376,7 @@ static func _piercing_shot() -> AbilityData:
 	upgraded[0].legacy_modifiers["bounce_walls_45"] = true
 	return _ability(
 		&"archer_piercing_shot", "Piercing Shot", 1, [module],
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK], "Arrow bounces off walls at a 45-degree angle.",
 		upgraded,
 	)

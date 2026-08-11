@@ -607,11 +607,9 @@ static func _make_modular_ability(
 			first_motion_range = module.max_range
 	if not authored_new_aim and first_motion_range >= 0:
 		ability.range_tiles = first_motion_range
-	if (
-		_shaped_non_single_adds_tile_flag(ability.target_shape, targeting_flags)
-		or _shaped_non_single_adds_tile_flag(
-			ability.upgraded_target_shape, targeting_flags
-		)
+	if ability.target_shape != GameEnums.TargetShape.SINGLE and (
+		(targeting_flags & GameEnums.TargetingFlags.ENEMY) != 0
+		or (targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
 	):
 		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
 	ability.presentation_key = p_id
@@ -703,8 +701,7 @@ static func _configure_ability_targeting(ability: AbilityData) -> void:
 	ability.sync_legacy_targeting()
 
 
-## Shaped blast/arc/aoe skills use the TILE awaiting-input pipeline (Volley pattern).
-## LINE + ENEMY-only skewer skills keep unit targeting (Piercing Shot pattern).
+## Ranged blast/arc/line (AOE, ARC, SKEWER) skills use the TILE awaiting-input pipeline.
 static func _sync_shaped_tile_targeting_flags(ability: AbilityData) -> void:
 	if ability == null or ability.is_movement_kind():
 		return
@@ -712,49 +709,23 @@ static func _sync_shaped_tile_targeting_flags(ability: AbilityData) -> void:
 		return
 	if ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		return
-	if not _ability_shaped_requires_tile_cursor(ability):
+	var shaped_base := (
+		ability.range_tiles > 0
+		and ability.target_shape != GameEnums.TargetShape.SINGLE
+	)
+	var upg_range := ability.range_tiles
+	if ability.upgraded_range_tiles >= 0:
+		upg_range = ability.upgraded_range_tiles
+	var shaped_upg := (
+		upg_range > 0
+		and ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE
+	)
+	if not shaped_base and not shaped_upg:
 		return
 	if ability.has_targeting(GameEnums.TargetingFlags.ENEMY):
 		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
 	elif ability.has_targeting(GameEnums.TargetingFlags.ALLY):
 		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
-
-
-static func _enemy_only_targeting_flags(flags: int) -> bool:
-	return (
-		(flags & GameEnums.TargetingFlags.ENEMY) != 0
-		and (
-			flags
-			& (
-				GameEnums.TargetingFlags.TILE
-				| GameEnums.TargetingFlags.ALLY
-				| GameEnums.TargetingFlags.SELF
-			)
-		) == 0
-	)
-
-
-static func _shaped_non_single_adds_tile_flag(shape: int, flags: int) -> bool:
-	if shape == GameEnums.TargetShape.SINGLE:
-		return false
-	if shape == GameEnums.TargetShape.LINE and _enemy_only_targeting_flags(flags):
-		return false
-	return true
-
-
-static func _ability_shaped_requires_tile_cursor(ability: AbilityData) -> bool:
-	if ability.range_tiles <= 0:
-		return false
-	if _shaped_non_single_adds_tile_flag(ability.target_shape, ability.targeting_flags):
-		return true
-	var upg_range: int = ability.range_tiles
-	if ability.upgraded_range_tiles >= 0:
-		upg_range = ability.upgraded_range_tiles
-	if upg_range <= 0:
-		return false
-	return _shaped_non_single_adds_tile_flag(
-		ability.upgraded_target_shape, ability.targeting_flags
-	)
 
 
 static func _make_movement_ability(
