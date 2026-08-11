@@ -63,7 +63,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		unit.definition = def.duplicate()
 		unit.definition.equipped_weapon = config.weapon
 	else:
-		unit.definition = def
+		unit.definition = def.duplicate()
 		
 	unit.team = p_team
 	unit.position = coord

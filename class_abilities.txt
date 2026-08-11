@@ -138,7 +138,7 @@ Divine Hammer (Cleric): HP equals Floor(25% of Caster's Max HP).
 
 1. Knight
 Core Identity: Tank-Strong, High DEF, Low Mobility. The ultimate shield. Focuses on total damage absorption, shielding, and becoming an indestructible bastion.
-| CON 6 | MOV 4 | STR 4 | DEF 5 | MAG 2 |
+| CON 6 | MOV 3 | STR 4 | DEF 5 | MAG 2 |
 Innate Trait: Bastion Front
 Base Mechanic: The Knight takes 0 collision damage when pushed or knocked into walls, obstacles, or units. Additionally, all incoming physical damage originating directly from the 180-degree frontal arc (3 frontal tiles relative to facing direction) is reduced by an extra +2 DEF.
 Upgrade: Frontal damage mitigation increased by an additional +2 DEF (total +4 DEF from front). Taking collision damage grants the Knight SHIELD 2 for 1 turn.
@@ -182,7 +182,7 @@ Active Skills & Upgrades
 
 2. Bruiser
 Core Identity: Tanky Melee-Strong, High HP. Dynamic HP management. Can play as a low-HP berserker or a high-HP behemoth that uses their mass as a weapon.
-| CON 7 | MOV 3 | STR 4 | DEF 2 | MAG 1 |
+| CON 7 | MOV 4 | STR 4 | DEF 2 | MAG 1 |
 Innate Trait: Sanguine Regeneration
 Base Mechanic: At the start of every turn during resolution, the Bruiser automatically restores health equal to Floor(5% of Max HP).
 Upgrade: Turn-start regeneration increases to Floor(10% of Max HP). If the Bruiser is already at Max HP when this triggers, the excess healing is converted directly into temporary SHIELD.
@@ -362,7 +362,7 @@ Active Skills & Upgrades
 
 6. Beast Rider
 Core Identity: Fast Flanking Melee. Rides grounded beast companion. High mobility and pursuit tactics.
-| CON 5 | MOV 4 | STR 3 | DEF 2 | MAG 2 |
+| CON 5 | MOV 5 | STR 3 | DEF 2 | MAG 2 |
 Innate Trait: Gallop
 Base Mechanic: Standard movement points (MOV) can be split freely before AND after executing a Skill or basic attack (e.g., Move 2 tiles -> Attack -> Move 2 tiles).
 Upgrade: Executing movement both before and after taking an Action grants +1 STR to the attack and +1 DEF during the post-action move.
@@ -496,7 +496,7 @@ Active Skills & Upgrades
 
 9. Cleric
 Core Identity: Healer and Holy Magic. Mitigation and hostile pacifying zones.
-| CON 4 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
+| CON 4 | MOV 4 | STR 1 | DEF 1 | MAG 4 |
 Innate Trait: Selfless Siphon
 Base Mechanic: Whenever the Cleric applies any healing skill (HEAL or MAG HEAL) to an ally, the Cleric automatically restores health to self equal to 25% of the total healing delivered (rounded down).
 Upgrade: Self-healing percentage increases to 50%. If the Cleric is already at Max HP, self-healing converts directly into SHIELD.
@@ -540,7 +540,7 @@ Active Skills & Upgrades
 
 10. Shaman
 Core Identity: Debuff / Buffer Support. Master of voodoo physics.
-| CON 3 | MOV 3 | STR 1 | DEF 1 | MAG 4 |
+| CON 3 | MOV 4 | STR 1 | DEF 1 | MAG 4 |
 Innate Trait: Hexing Presence
 Base Mechanic: All enemies within RANGE 2 of the Shaman or any active Totem suffer -2 STR, -2 MAG (reducing enemy damage output) and -2 DEF (making enemies easier to kill). Affected enemies cannot gain SHIELD.
 Upgrade: Aura radius increases to RANGE 3 and affected enemies lose -1 MOV.
@@ -585,7 +585,7 @@ Active Skills & Upgrades
 
 11. Lancer
 Core Identity: Mid-Range Melee DPS. Grounded polearm specialist. Uses RANGE 2 attacks, linear physics, and momentum.
-| CON 5 | MOV 3 | STR 4 | DEF 3 | MAG 1 |
+| CON 5 | MOV 4 | STR 4 | DEF 3 | MAG 1 |
 Innate Trait: Polearm Mastery
 Base Mechanic: All basic attacks have a base range of RANGE 2. Extended-reach attacks deal 30% less damage when used at point-blank RANGE 1.
 Upgrade: Attacking an enemy from exactly RANGE 2 grants +1 STR and ignores 2 DEF.
@@ -628,7 +628,7 @@ Active Skills & Upgrades
 
 12. Engineer
 Core Identity: Ranged Utility DPS. Master of board state. Grid manipulation and constructs.
-| CON 4 | MOV 3 | STR 3 | DEF 3 | MAG 1 |
+| CON 4 | MOV 4 | STR 3 | DEF 3 | MAG 1 |
 Innate Trait: Blueprint Tread
 Base Mechanic: The Engineer treats friendly Constructs and Turrets as passable tiles (GHOST through friendly constructs). Ending a turn adjacent to a friendly Construct automatically repairs it for 1 HP.
 Upgrade: Passing through a friendly Construct grants both the Engineer and the Construct SHIELD 1.

@@ -133,6 +133,15 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			enemy_pos = Vector2i(3, 3)
 			commit_cell = enemy_pos
 			select_only = true
+		&"mercenary_tactical_retreat":
+			actor_pos = Vector2i(4, 3)
+			commit_cell = Vector2i(1, 3)
+			verify_no_jump = false
+		&"mercenary_flank_and_run":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(4, 3)
+			commit_cell = Vector2i(2, 5)
+			verify_no_jump = false
 		_:
 			if ability.targeting_flags & GameEnums.TargetingFlags.SELF:
 				commit_cell = actor_pos

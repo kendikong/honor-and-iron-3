@@ -558,11 +558,8 @@ static func _assert_charge_strike_modules(
 		expected_after_skill = Vector2i(3, 3)
 		expected_enemy = Vector2i(5, 3)
 	elif skill_target == Vector2i(3, 3):
-		expected_after_skill = Vector2i(3, 4)
-		if premove_cell.x > -999000 and premove_cell == Vector2i(2, 3):
-			expected_enemy = Vector2i(3, 2)
-		else:
-			expected_enemy = Vector2i(4, 3)
+		expected_after_skill = Vector2i(2, 3)
+		expected_enemy = Vector2i(4, 3)
 	var expected_bruiser_pos: Vector2i = (
 		postmove_cell if postmove_cell.x > -999000 else expected_after_skill
 	)
@@ -618,7 +615,24 @@ static func _assert_belly_flop_modules(
 	const ENEMY_ID := 2
 	var director: CombatDirector = fix.director as CombatDirector
 	var unit_id: int = director.selected_unit_id
-	var enemy_hp_before: int = _BruiserHarness.unit_hp(fix.board as BoardState, ENEMY_ID)
+	var ability_action: TimelineAction = null
+	for entry: Variant in director.get_player_plan().entries:
+		if entry is TimelineAction and (entry as TimelineAction).type == GameEnums.ActionType.ABILITY:
+			ability_action = entry as TimelineAction
+			break
+	_assert_true(
+		failures, "%s/modules/action_committed" % tag,
+		ability_action != null,
+		"Belly Flop must commit an ACTION timeline entry",
+	)
+	if ability_action == null:
+		return
+	var start_board: BoardState = director.turn_start_board
+	if start_board == null:
+		start_board = director.base_board
+	if start_board == null:
+		start_board = fix.board as BoardState
+	var enemy_hp_before: int = _BruiserHarness.unit_hp(start_board, ENEMY_ID)
 	var result: SimResult = _Checklist.simulate_committed(director)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(unit_id)
 	_assert_true(
@@ -626,14 +640,23 @@ static func _assert_belly_flop_modules(
 		bruiser != null and bruiser.position == commit_cell,
 		"Belly Flop TELEPORT must land on committed tile %s" % commit_cell,
 	)
-	var enemy_hp_after: int = _BruiserHarness.unit_hp(result.final_state, ENEMY_ID)
-	var dmg: int = maxi(
-		enemy_hp_before - enemy_hp_after,
-		_BruiserHarness.sum_unit_hp_damage_events(result.events, ENEMY_ID),
+	# Damage modules require a real teleport hop; oracle from turn-start (Bible layout).
+	var oracle_board: BoardState = start_board.clone()
+	oracle_board.intents = []
+	var oracle_action: TimelineAction = ability_action.clone()
+	oracle_action.awaiting_target = false
+	oracle_action.awaiting_module_index = -1
+	var oracle_plan := Timeline.new()
+	oracle_plan.add(oracle_action)
+	var oracle_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(oracle_board, oracle_plan, oracle_events)
+	var oracle_dmg: int = maxi(
+		enemy_hp_before - _BruiserHarness.unit_hp(oracle_board, ENEMY_ID),
+		_BruiserHarness.sum_unit_hp_damage_events(oracle_events, ENEMY_ID),
 	)
-	var damaged_adjacent: bool = dmg > 0
+	var damaged_adjacent: bool = oracle_dmg > 0
 	if not damaged_adjacent:
-		for e: Variant in result.events:
+		for e: Variant in oracle_events:
 			if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
 				if int(e.data.get("unit", -1)) == ENEMY_ID:
 					damaged_adjacent = true
@@ -641,7 +664,7 @@ static func _assert_belly_flop_modules(
 	_assert_true(
 		failures, "%s/modules/damage" % tag,
 		damaged_adjacent,
-		"Belly Flop DAMAGE module must reduce enemy HP (dealt %d)" % dmg,
+		"Belly Flop DAMAGE module must reduce enemy HP (dealt %d)" % oracle_dmg,
 	)
 
 

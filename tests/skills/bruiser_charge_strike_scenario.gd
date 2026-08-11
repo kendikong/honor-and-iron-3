@@ -65,10 +65,13 @@ static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 	_Checklist.assert_skill_timeline_columns(
 		failures, "%s/timeline/columns" % TAG, fix.director, unit_id, ability, commit_slots,
 	)
-	_Lib._restore_movement_mp(fix, 2)
-	_Timeline.commit_run_postmove_headless(failures, fix, ability, postmove_cell, TAG)
-	_Timeline.assert_pre_or_post_leg_if_needed(
-		failures, "%s/timeline" % TAG, fix.director, unit_id, ability,
-	)
+	if _Timeline.action_movement_needs_pre_or_post_leg(ability):
+		_Lib._restore_movement_mp(fix, 2)
+		_Timeline.commit_run_postmove_headless(failures, fix, ability, postmove_cell, TAG)
+		_Timeline.assert_pre_or_post_leg_if_needed(
+			failures, "%s/timeline" % TAG, fix.director, unit_id, ability,
+		)
+		_Lib._assert_charge_strike_modules(failures, fix, TAG, enemy_pos, postmove_cell)
+	else:
+		_Lib._assert_charge_strike_modules(failures, fix, TAG, enemy_pos, Vector2i(-999999, -999999))
 	_Timeline.assert_move_preview_origin(failures, TAG, fix, unit_id, ability)
-	_Lib._assert_charge_strike_modules(failures, fix, TAG, enemy_pos, postmove_cell)

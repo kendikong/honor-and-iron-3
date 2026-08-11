@@ -74,7 +74,7 @@ const _BATCHES: Array[Dictionary] = [
 		"skills": [&"bruiser_violent_collision"],
 	},
 	{
-		"extra_players": [Vector2i(2, 3)],
+		"extra_players": [Vector2i(4, 3)],
 		"dummies": [Vector2i(5, 4)],
 		"skills": [&"bruiser_belly_flop"],
 	},
@@ -100,14 +100,13 @@ const _CASE_ACTORS: Dictionary = {
 	&"bruiser_blood_boil": Vector2i(8, 8),
 	&"bruiser_violent_collision": Vector2i(1, 3),
 	&"bruiser_crimson_whirlwind": Vector2i(4, 5),
-	&"bruiser_belly_flop": Vector2i(2, 3),
+	&"bruiser_belly_flop": Vector2i(4, 3),
 	&"bruiser_breaching_dash": Vector2i(3, 3),
 }
 
 const _CASE_PREMOVE_RUN: Dictionary = {
 	&"bruiser_charge_strike": Vector2i(2, 3),
 	&"bruiser_violent_collision": Vector2i(2, 3),
-	&"bruiser_belly_flop": Vector2i(3, 3),
 	&"bruiser_breaching_dash": Vector2i(4, 3),
 }
 
@@ -459,7 +458,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			unit.health.current_hp = 10000
 		if unit.team == GameEnums.Team.PLAYER:
 			unit.ability.points_left = maxi(unit.ability.points_left, 1)
-			unit.movement.points_left = maxi(unit.movement.points_left, 3)
+			unit.movement.points_left = maxi(unit.movement.points_left, unit.movement.max_points)
 	_batch_target_ids.clear()
 	var board: BoardState = _director.base_board
 	for skill_id: StringName in batch.skills:

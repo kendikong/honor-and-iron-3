@@ -2540,6 +2540,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if _passive_has_modifier(actor, &"zero_move_stealth_range") and actor.movement_points_spent_this_turn == 0:
 			actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1))
 			actor._recalculate_stats()
+		if actor.has_status(GameEnums.StatusType.CANTO):
+			actor.movement.points_left = actor.movement.max_points
 
 	if actor != null and actor.is_alive() and actor.has_passive(&"intercept_tactics"):
 		var is_redirect = false
