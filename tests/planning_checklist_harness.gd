@@ -1258,6 +1258,30 @@ static func apply_live_k4_projected_mp_drift(fix: Dictionary, k4_id: int) -> voi
 	projected.clear_run_boost()
 	projected.movement.max_points = maxi(projected.movement.max_points, 4)
 	projected.movement.points_left = projected.movement.max_points
+	projected.ability.points_left = 1
+	projected.ability.max_points = maxi(projected.ability.max_points, 1)
+
+
+## Live Tier 3 run_trigger: preview_board actor keeps AP 1 while display must read 0.
+static func apply_live_k4_run_trigger_display_ap_parity(fix: Dictionary, k4_id: int) -> void:
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if input == null or director == null:
+		return
+	input._flush_hover_heavy_sync()
+	input._flush_hover_preview_refresh()
+	input.flush_deferred_planning()
+	flush_planning(fix)
+	if input.preview_state.preview_board == null and director.projected_state != null:
+		input.preview_state.preview_board = director.projected_state.clone()
+		input.drag_preview_failed = false
+	if not input.is_live_preview_active() or input.drag_preview_failed:
+		return
+	var live_actor: UnitState = input.preview_state.preview_board.get_unit_by_id(k4_id)
+	if live_actor == null:
+		return
+	live_actor.ability.points_left = 1
+	live_actor.ability.max_points = maxi(live_actor.ability.max_points, 1)
 
 
 static func wire_bible_board() -> Dictionary:

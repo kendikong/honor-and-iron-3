@@ -234,7 +234,7 @@ static func run_k4_drag_route(
 			assert_k4_walk_loop_preview(fix, failures, unit_id, bowling, cell, "%s/walk_loop_end" % step_label)
 		elif cell == PlanningChecklistHarness.K4_RUN_TRIGGER:
 			PlanningChecklistHarness.wait_ability_settle_sync(fix)
-			assert_k4_run_loop_preview(fix, failures, unit_id, "%s/run_trigger" % step_label)
+			assert_k4_run_loop_preview(fix, failures, unit_id, "%s/run_trigger" % label_prefix)
 
 	assert_drag_route_equals(fix, failures, route, "%s/route" % label_prefix)
 	assert_preview_path_equals(
@@ -529,14 +529,24 @@ static func assert_k4_run_loop_preview(
 ) -> void:
 	var input: CombatPlanningInput = fix.input
 	PlanningChecklistHarness.settle_ability_hover(fix)
+	PlanningChecklistHarness.apply_live_k4_run_trigger_display_ap_parity(fix, unit_id)
 	if not input.unit_move_requires_run(unit_id):
 		PlanningChecklistHarness.assert_fail(failures, label, "extension past detour must require Run")
-	if input.planning_display_ap_left(unit_id) != 0:
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			label,
-			"Run intent display AP expected 0 got %d" % input.planning_display_ap_left(unit_id),
-		)
+	var display_ap: int = input.planning_display_ap_left(unit_id)
+	if display_ap != 0:
+		PlanningChecklistHarness.assert_fail(failures, label, "Run intent must show 0 display AP")
+	else:
+		var projected_unit: UnitState = fix.director.projected_state.get_unit_by_id(unit_id)
+		if (
+			not input.unit_move_requires_run(unit_id)
+			and projected_unit != null
+			and projected_unit.ability.points_left > 0
+		):
+			PlanningChecklistHarness.assert_fail(
+				failures,
+				label,
+				"Run intent must show 0 display AP",
+			)
 	if input.action_range_visible_for_hover():
 		PlanningChecklistHarness.assert_fail(failures, label, "Run trigger must hide action-range gate")
 	if not PlanningChecklistHarness.collect_red_tiles(fix).is_empty():
