@@ -253,13 +253,16 @@ static func paint_route_and_capture_pre_intent(
 
 static func hop_drag_to_cell(fix: Dictionary, unit_id: int, cell: Vector2i) -> void:
 	var input: CombatPlanningInput = fix.input
-	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
-	if unit == null:
-		return
-	if not input.dragging:
-		PlanningDragE2EHarness.begin_drag_route(fix, [unit.position])
 	input.set_qa_pointer_grid_cell(cell)
-	input.update_drag(fix.map_stub.grid_to_local(cell))
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	if input.dragging:
+		input.update_drag(local)
+	elif input.is_drag_armed():
+		input.try_activate_drag(local)
+		if input.dragging:
+			input.update_drag(local)
 	PlanningChecklistHarness.flush_planning(fix)
 
 
@@ -482,7 +485,7 @@ static func assert_k4_walk_loop_preview(
 		)
 	if bowling == null:
 		PlanningChecklistHarness.assert_fail(failures, label, "bowling missing at walk loop")
-	if input.action_range_visible_for_hover():
+	if not input.action_range_visible_for_hover():
 		PlanningChecklistHarness.assert_fail(failures, label, "action-range gate must stay on at walk detour")
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "%s/red" % label, fix, bowling, true, stand, unit_id,

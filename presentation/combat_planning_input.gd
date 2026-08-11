@@ -705,10 +705,17 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	if not _drag_force_basic_active:
 		_drag_saved_force_basic = force_basic_movement
 		_drag_force_basic_active = true
+		var selected_ability: AbilityData = _selected_ability_data(unit)
 		var keep_skill_drag: bool = (
 			was_already_selected
 			and _director.selected_ability_index >= 0
-			and auto_use_skill_after_move
+			and (
+				auto_use_skill_after_move
+				or (
+					_director.auto_run
+					and not AbilitySystem.is_run_ability(selected_ability)
+				)
+			)
 		)
 		if not keep_skill_drag:
 			force_basic_movement = true
