@@ -1,6 +1,7 @@
 extends RefCounted
 
 const _Probe := preload("res://tests/planning_bible_fixture_probe.gd")
+const _LiveParity := preload("res://tests/planning_live_parity_harness.gd")
 
 ## Fixture Parity Suite: continuous K1–K4 bible session, hover edges, swap journeys.
 
@@ -86,41 +87,18 @@ static func _journey_k1_bash(
 		}, "bible/k1/enemy_hover",
 	)
 
-	if not PlanningChecklistHarness.commit_painted_click_on_cell(
-		fix,
-		PlanningChecklistHarness.K1_BASH_ROUTE,
-		PlanningChecklistHarness.ENEMY_POS,
-	):
-		PlanningChecklistHarness.assert_fail(failures, "bible/k1/commit", "waypoint bash click commit failed")
-		return
-	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, k1_id)
-	if committed_pre == null or committed_pre.waypoints != PlanningChecklistHarness.K1_BASH_WAYPOINTS:
+	_LiveParity.run_k1_bash_live_parity(
+		fix, failures, k1_id, e_bash_id, bash, "bible/k1",
+	)
+	var k1_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, k1_id)
+	if k1_pre == null or k1_pre.target_coord != PlanningChecklistHarness.BASH_APPROACH:
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			"bible/k1/commit",
-			"bash pre-move waypoints must ratify painted route %s, got %s"
-			% [PlanningChecklistHarness.K1_BASH_WAYPOINTS, committed_pre.waypoints if committed_pre != null else null],
+			"k1 bash must commit pre-move to %s (got %s)"
+			% [PlanningChecklistHarness.BASH_APPROACH, k1_pre.target_coord if k1_pre != null else null],
 		)
-
-	PlanningChecklistHarness.assert_red_contract(
-		failures,
-		"bible/k1/post_commit",
-		fix,
-		bash,
-		false,
-		PlanningChecklistHarness.BASH_APPROACH,
-		k1_id,
-	)
-	PlanningChecklistHarness.assert_enemy_live_unchanged(
-		failures, "bible/k1/post_commit", fix, e_bash_id, PlanningChecklistHarness.E_BASH_CELL,
-	)
 	var bashed: UnitState = PlanningChecklistHarness.projected_unit(fix, e_bash_id)
-	if bashed != null and bashed.position.x <= PlanningChecklistHarness.E_BASH_CELL.x:
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			"bible/k1/preview_push",
-			"projected enemy must show bash push (got %s)" % bashed.position,
-		)
 	expect["k1_pos"] = PlanningChecklistHarness.BASH_APPROACH
 	expect["e_bash_pos"] = bashed.position if bashed != null else PlanningChecklistHarness.E_BASH_CELL
 
@@ -152,6 +130,7 @@ static func _journey_k2_hook(
 			"blue_any": true,
 		}, "bible/k2/stand",
 	)
+	PlanningChecklistHarness.select_unit(fix, k2_id, PlanningChecklistHarness.E_HOOK_CELL)
 	var pull_preview: Vector2i = PlanningChecklistHarness.push_destination(fix, e_hook_id)
 	_Probe.probe_cell(
 		failures, fix, k2_id, PlanningChecklistHarness.E_HOOK_CELL, {
@@ -276,43 +255,13 @@ static func _journey_k4_run(
 	var bowling_idx: int = PlanningChecklistHarness.select_ability_for_unit(
 		fix, k4_id, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
-	## Detour+run bible: 3 walk steps to (4,2); 4th to run trigger needs Run (class MOV is 4).
-	PlanningChecklistHarness.set_unit_pools(fix, k4_id, 1, 3)
 	var bowling: AbilityData = null
 	if bowling_idx >= 0:
 		bowling = fix.board.get_unit_by_id(k4_id).active_abilities[bowling_idx]
 
-	PlanningChecklistHarness.select_unit(fix, k4_id, PlanningChecklistHarness.K4_START)
-	for step_index: int in range(1, PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE.size()):
-		var cell: Vector2i = PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE[step_index]
-		var expected_path: Array[Vector2i] = []
-		for j: int in range(step_index + 1):
-			expected_path.append(PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE[j])
-		_Probe.probe_cell(
-			failures,
-			fix,
-			k4_id,
-			cell,
-			{"path": expected_path, "manhattan": true, "preview_nonempty": true},
-			"bible/k4/step_%d" % step_index,
-		)
-		if cell == Vector2i(4, 2):
-			_Probe.assert_k4_walk_loop(
-				failures, fix, k4_id, bowling, cell, "bible/k4/walk_loop",
-			)
-		elif cell == PlanningChecklistHarness.K4_RUN_TRIGGER:
-			_Probe.assert_k4_run_trigger(
-				failures, fix, k4_id, "bible/k4/run_trigger",
-			)
-
-	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
-		fix,
-		PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE,
-		PlanningChecklistHarness.K4_RUN_TRIGGER,
-	):
-		PlanningChecklistHarness.assert_fail(failures, "bible/k4/commit", "k4 run route commit failed")
-		return
-
+	_LiveParity.run_k4_run_live_parity(
+		fix, failures, k4_id, bowling, "bible/k4",
+	)
 	var k4_projected: UnitState = PlanningChecklistHarness.projected_unit(fix, k4_id)
 	expect["k4_pos"] = k4_projected.position if k4_projected != null else PlanningChecklistHarness.K4_START
 

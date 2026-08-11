@@ -9,6 +9,7 @@ const _K1_BASH_ROUTE: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,
 ]
+const _LiveParity := preload("res://tests/planning_live_parity_harness.gd")
 const _K1_BASH_WAYPOINTS: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,
@@ -65,46 +66,18 @@ static func _test_undo_drag_premove_clears(failures: Array[String]) -> void:
 
 
 static func _test_k1_bash_tap_vs_waypoint_drag_parity(failures: Array[String]) -> void:
-	var tap_fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
-	_setup_k1_bash(tap_fix)
-	PlanningChecklistHarness.hover(tap_fix, PlanningChecklistHarness.ENEMY_POS)
-	var tap_slots: Dictionary = PlanningChecklistHarness.commit_production(
-		tap_fix, PlanningChecklistHarness.ENEMY_POS,
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var k1_id: int = 1
+	var e_bash_id: int = 2
+	var bash_idx: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.SHIELD_BASH_ID,
 	)
-	if PlanningChecklistHarness.slots_invalid(tap_slots):
-		PlanningChecklistHarness.assert_fail(
-			failures, "t3_mimic/k1_bash/tap", "enemy tap commit failed",
-		)
-		return
-	var tap_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(tap_fix, 1)
-
-	var drag_fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
-	_setup_k1_bash(drag_fix)
-	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
-		drag_fix, _K1_BASH_ROUTE, PlanningChecklistHarness.ENEMY_POS,
-	):
-		PlanningChecklistHarness.assert_fail(
-			failures, "t3_mimic/k1_bash/waypoint", "waypoint drag commit failed",
-		)
-		return
-	var drag_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(drag_fix, 1)
-
-	PlanningChecklistHarness.assert_mode_commit_parity(
-		failures, "k1/selection", tap_surface, "k1/waypoint", drag_surface,
+	var bash: AbilityData = null
+	if bash_idx >= 0:
+		bash = fix.knight.active_abilities[bash_idx]
+	_LiveParity.run_k1_bash_live_parity(
+		fix, failures, k1_id, e_bash_id, bash, "t3_mimic/k1_bash",
 	)
-	PlanningChecklistHarness.assert_eq_cell(
-		failures,
-		"t3_mimic/k1_bash/dest",
-		PlanningChecklistHarness.projected_unit(tap_fix, 1).position,
-		PlanningChecklistHarness.BASH_APPROACH,
-	)
-	var pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(drag_fix.director, 1)
-	if pre != null and pre.waypoints != _K1_BASH_WAYPOINTS:
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			"t3_mimic/k1_bash/waypoint",
-			"waypoint pre-move expected %s got %s" % [_K1_BASH_WAYPOINTS, pre.waypoints],
-		)
 
 
 static func _test_k1_bash_painted_route_click_waypoints(failures: Array[String]) -> void:
@@ -225,43 +198,14 @@ static func _test_k3_trample_tap_vs_drag_parity(failures: Array[String]) -> void
 
 
 static func _test_k4_run_selection_vs_drag_parity(failures: Array[String]) -> void:
-	var select_fix: Dictionary = PlanningChecklistHarness.wire_k4_board()
-	PlanningChecklistHarness.select_ability(
-		select_fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
+	var fix: Dictionary = PlanningChecklistHarness.wire_k4_board()
+	var k4_id: int = fix.director.selected_unit_id
+	var bowling_idx: int = PlanningChecklistHarness.select_ability(
+		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
-	PlanningChecklistHarness.hover_route(
-		select_fix, PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE,
-	)
-	var select_slots: Dictionary = PlanningChecklistHarness.commit_production(
-		select_fix, PlanningChecklistHarness.K4_RUN_TRIGGER,
-	)
-	if PlanningChecklistHarness.slots_invalid(select_slots):
-		PlanningChecklistHarness.assert_fail(
-			failures, "t3_mimic/k4_run/selection", "selection commit failed",
-		)
-		return
-	var select_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(select_fix, 1)
-
-	var drag_fix: Dictionary = PlanningChecklistHarness.wire_k4_board()
-	PlanningChecklistHarness.select_ability(
-		drag_fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,
-	)
-	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
-		drag_fix,
-		PlanningChecklistHarness.K4_DETOUR_PLUS_RUN_ROUTE,
-		PlanningChecklistHarness.K4_RUN_TRIGGER,
-	):
-		PlanningChecklistHarness.assert_fail(
-			failures, "t3_mimic/k4_run/drag", "painted run commit failed",
-		)
-		return
-	var drag_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(drag_fix, 1)
-	PlanningChecklistHarness.assert_mode_commit_parity(
-		failures, "k4/selection", select_surface, "k4/drag", drag_surface,
-	)
-	PlanningChecklistHarness.assert_eq_int(
-		failures,
-		"t3_mimic/k4_run/display_ap",
-		drag_fix.input.planning_display_ap_left(1),
-		0,
+	var bowling: AbilityData = null
+	if bowling_idx >= 0:
+		bowling = fix.knight.active_abilities[bowling_idx]
+	_LiveParity.run_k4_run_live_parity(
+		fix, failures, k4_id, bowling, "t3_mimic/k4_run",
 	)

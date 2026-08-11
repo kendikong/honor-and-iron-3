@@ -1,28 +1,25 @@
-extends Node
+extends SceneTree
 
-const _JourneysTest := preload("res://tests/planning_t3_mimic_journeys_test.gd")
-const _BibleFixtureTest := preload("res://tests/planning_bible_fixture_test.gd")
-
-## Fixture Parity Suite (headless): action_range + intent_contract + journeys + bible session.
-## Not Tier 3 LIVE — fixture board, not TestBattle.
-
-func _ready() -> void:
-	call_deferred("_run")
+## Headless CLI runner for fixture parity (NOT Tier 3 LIVE TestBattle).
+## Run: godot --headless --path <repo> --script res://tests/run_t3_mimic_headless.gd
+## Scene gate: res://tests/T3MimicHeadless.tscn → t3_mimic_headless_host.gd
 
 
-func _run() -> void:
+func _initialize() -> void:
 	var failures: Array[String] = []
-	print("[SUITE] action_range_regression")
-	ActionRangeRegressionTest.run_all(failures)
-	print("[SUITE] intent_contract_e2e")
-	PlanningIntentContractE2ETest.run_all(failures)
-	print("[SUITE] t3_mimic_journeys")
-	_JourneysTest.run_all(failures)
-	print("[SUITE] bible_fixture")
-	_BibleFixtureTest.run_all(failures)
+	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
+	var runner: GDScript = load("res://tests/planning_t3_mimic_runner.gd") as GDScript
+	var host := Node.new()
+	host.name = "T3MimicHeadlessHost"
+	root.add_child(host)
+	drag.set_host(host)
+	runner.run_all(failures)
+	drag.cleanup_all()
+	drag.set_host(null)
+	host.queue_free()
 	if failures.is_empty():
 		print("[PASS] Fixture Parity Suite (action_range + intent + journeys + bible)")
 	else:
 		for failure: String in failures:
 			printerr("[FAIL] %s" % failure)
-	get_tree().quit(0 if failures.is_empty() else 1)
+	quit(0 if failures.is_empty() else 1)

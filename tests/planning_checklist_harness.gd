@@ -123,6 +123,14 @@ static func select_ability(fix: Dictionary, ability_id: StringName) -> int:
 	return idx
 
 
+static func settle_ability_hover(fix: Dictionary) -> void:
+	var input: CombatPlanningInput = fix.input
+	if input == null:
+		return
+	input.call("_resync_hover_after_ability_change")
+	flush_planning(fix)
+
+
 static func flush_planning(fix: Dictionary) -> void:
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input

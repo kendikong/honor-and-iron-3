@@ -15,7 +15,7 @@ Write-Output "=== Fixture Parity Suite (headless - NOT Tier 3 LIVE) ==="
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-t3-mimic.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-t3-mimic.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
-	-ArgumentList "--headless", "--path", $projectRoot, "res://tests/T3MimicHeadless.tscn" `
+	-ArgumentList "--headless", "--path", $projectRoot, "--script", "res://tests/run_t3_mimic_headless.gd" `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `

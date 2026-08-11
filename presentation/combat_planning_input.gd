@@ -2068,12 +2068,7 @@ func _promote_intent_preview_after_commit() -> void:
 		return
 	var unit_id: int = _director.selected_unit_id if _director != null else -1
 	var fallback_board: BoardState = _proj() if _director != null else null
-	if unit_id >= 0 and _director != null:
-		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-			_director, preview_state, unit_id, fallback_board,
-		)
-	## Always re-apply input preview_state before promote. commit_from_slots may refresh
-	## the overlay and clear live pushes; preview_state remains the intent picture.
+	var intent_paths: Dictionary = preview_state.preview_paths.duplicate(true)
 	if preview_state.preview_board != null:
 		_planning.apply_preview_state(
 			preview_state,
@@ -2081,14 +2076,28 @@ func _promote_intent_preview_after_commit() -> void:
 			_hover_attack_target_id(),
 		)
 	_planning.promote_live_preview_to_committed()
+	var committed: CombatPlanningPreview = _planning.get_committed_preview()
+	var preserve_full_route: bool = false
+	if unit_id >= 0 and _director != null:
+		for action: TimelineAction in _director.plan_pre_move.entries:
+			if action != null and action.actor_id == unit_id and not action.waypoints.is_empty():
+				preserve_full_route = true
+				break
+		if preserve_full_route and intent_paths.has(unit_id):
+			var route: Variant = intent_paths[unit_id]
+			if route is Array and (route as Array).size() > 1:
+				committed.preview_paths[unit_id] = (route as Array).duplicate()
+				var route_size: int = (route as Array).size()
+				committed.preview_splits[unit_id] = route_size
+				committed.preview_post_splits[unit_id] = route_size
 	if unit_id >= 0 and _director != null:
 		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-			_director,
-			_planning.get_committed_preview(),
-			unit_id,
-			fallback_board,
+			_director, preview_state, unit_id, fallback_board,
 		)
-	var committed: CombatPlanningPreview = _planning.get_committed_preview()
+		if not preserve_full_route:
+			CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+				_director, committed, unit_id, fallback_board,
+			)
 	preview_state.preview_paths = committed.preview_paths.duplicate(true)
 	preview_state.preview_splits = committed.preview_splits.duplicate()
 	preview_state.preview_post_splits = committed.preview_post_splits.duplicate()
