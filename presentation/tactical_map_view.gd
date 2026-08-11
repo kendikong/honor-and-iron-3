@@ -59,6 +59,7 @@ var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
 var _fps_hud: FpsHud
 var _clock_hud: WorldClockHud
 var _last_polled_hover_cell: Vector2i = Vector2i(-999999, -999999)
+var _last_polled_mouse_pos: Vector2i = Vector2i(-999999, -999999)
 var _tree_fader: TreeCanopyFader
 var _planning_input: CombatPlanningInput
 var _autobattler_panel: AutobattlerControlPanel
@@ -501,6 +502,10 @@ func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
 		return
+	var mouse_pos: Vector2i = Vector2i(get_viewport().get_mouse_position())
+	if mouse_pos == _last_polled_mouse_pos:
+		return
+	_last_polled_mouse_pos = mouse_pos
 	var hc: Control = get_viewport().gui_get_hovered_control()
 	if hc != null and _hover_blocked_by_ui(hc):
 		var blocked_cell := Vector2i(-999, -999)

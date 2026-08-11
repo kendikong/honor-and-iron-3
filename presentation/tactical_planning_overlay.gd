@@ -100,6 +100,8 @@ var _hover_recompute_pending: bool = false
 var _deferred_preview_pending: bool = false
 var _deferred_preview_result: SimResult = null
 var _game_settings: GameSettings
+var _hover_perimeter_cache_key: int = 0
+var _cached_hover_perimeter_segments: Array = []
 
 
 func setup(
@@ -232,6 +234,58 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
 	_cached_hover_coord = Vector2i(-999, -999)
+	_hover_perimeter_cache_key = 0
+	_cached_hover_perimeter_segments.clear()
+
+
+func _hover_tile_perimeter_cache_key() -> int:
+	return hash([_hover_move_tiles, _hover_action_range_tiles])
+
+
+func _ensure_hover_perimeter_cache() -> void:
+	var cache_key: int = _hover_tile_perimeter_cache_key()
+	if cache_key == _hover_perimeter_cache_key:
+		return
+	_hover_perimeter_cache_key = cache_key
+	_cached_hover_perimeter_segments.clear()
+	_collect_tile_perimeter_segments(
+		_hover_move_tiles, _COLOR_MOVE, _COLOR_MOVE_PERIMETER_ALPHA, _cached_hover_perimeter_segments,
+	)
+	_collect_tile_perimeter_segments(
+		_hover_action_range_tiles,
+		_COLOR_ACTION_RANGE,
+		_COLOR_ACTION_RANGE_PERIMETER_ALPHA,
+		_cached_hover_perimeter_segments,
+	)
+
+
+func _collect_tile_perimeter_segments(
+	cells: Array[Vector2i],
+	tint: Color,
+	perimeter_alpha: float,
+	out_segments: Array,
+) -> void:
+	if cells.is_empty() or _map_view == null:
+		return
+	var occupied: Dictionary = {}
+	for cell: Vector2i in cells:
+		occupied[cell] = true
+	var half_extent: float = float(TacticalConstants.TILE_PX) * 0.5 - 1.0
+	var color := Color(tint.r, tint.g, tint.b, perimeter_alpha)
+	for cell: Vector2i in cells:
+		var center: Vector2 = _map_view.grid_to_local(cell)
+		var top_left := center + Vector2(-half_extent, -half_extent)
+		var top_right := center + Vector2(half_extent, -half_extent)
+		var bottom_right := center + Vector2(half_extent, half_extent)
+		var bottom_left := center + Vector2(-half_extent, half_extent)
+		if not occupied.has(cell + Vector2i.UP):
+			out_segments.append([top_left, top_right, color])
+		if not occupied.has(cell + Vector2i.RIGHT):
+			out_segments.append([top_right, bottom_right, color])
+		if not occupied.has(cell + Vector2i.DOWN):
+			out_segments.append([bottom_right, bottom_left, color])
+		if not occupied.has(cell + Vector2i.LEFT):
+			out_segments.append([bottom_left, top_left, color])
 
 
 func _planning_action_range_tiles_for_unit(
@@ -1044,8 +1098,11 @@ func _draw_hover_tiles() -> void:
 		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_action_range_tiles:
 		_draw_tile_tint(cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
-	_draw_tile_perimeter(_hover_move_tiles, _COLOR_MOVE, _COLOR_MOVE_PERIMETER_ALPHA)
-	_draw_tile_perimeter(_hover_action_range_tiles, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_PERIMETER_ALPHA)
+	_ensure_hover_perimeter_cache()
+	for entry: Variant in _cached_hover_perimeter_segments:
+		if entry is Array and entry.size() >= 3:
+			var segment: Array = entry as Array
+			draw_line(segment[0] as Vector2, segment[1] as Vector2, segment[2] as Color, 1.0)
 
 
 func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:

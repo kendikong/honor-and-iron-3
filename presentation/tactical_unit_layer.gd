@@ -218,9 +218,20 @@ func actor_grid_cell(unit_id: int) -> Vector2i:
 
 
 func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
-	_predicted_hp = hp
-	_predicted_armor = armor
+	if _predicted_stat_maps_equal(hp, _predicted_hp) and _predicted_stat_maps_equal(armor, _predicted_armor):
+		return
+	_predicted_hp = hp.duplicate()
+	_predicted_armor = armor.duplicate()
 	queue_redraw()
+
+
+func _predicted_stat_maps_equal(a: Dictionary, b: Dictionary) -> bool:
+	if a.size() != b.size():
+		return false
+	for key: Variant in a:
+		if int(a.get(key, -1)) != int(b.get(key, -1)):
+			return false
+	return true
 
 
 func clear_predicted_stats() -> void:

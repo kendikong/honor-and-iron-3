@@ -32,6 +32,7 @@ var _drag_survive_board_cancel: bool = false
 const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
+const _HOVER_HEAVY_MIN_INTERVAL_IDLE_SEC: float = 0.045
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -1073,7 +1074,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if _intent_state != null:
 			_intent_state.set_hover_coord(cell)
 		if _planning != null:
-			_planning.set_hover_coord(cell, false)
+			_planning.set_hover_coord(cell, true)
 	if not _is_planning():
 		return
 	var planning_cell_changed: bool = cell != _last_planning_hover_cell
@@ -1149,19 +1150,26 @@ func _deferred_begin_hover_heavy_flush() -> void:
 	_begin_hover_heavy_throttled_flush()
 
 
+func _hover_heavy_min_interval_sec() -> float:
+	if dragging:
+		return _HOVER_HEAVY_MIN_INTERVAL_SEC
+	return _HOVER_HEAVY_MIN_INTERVAL_IDLE_SEC
+
+
 func _begin_hover_heavy_throttled_flush() -> void:
 	if _director == null or not _is_planning() or dragging:
 		return
+	var min_interval: float = _hover_heavy_min_interval_sec()
 	var now_usec: int = Time.get_ticks_usec()
 	var elapsed_sec: float = (
 		float(now_usec - _hover_heavy_last_flush_usec) / 1_000_000.0
 		if _hover_heavy_last_flush_usec > 0
-		else _HOVER_HEAVY_MIN_INTERVAL_SEC
+		else min_interval
 	)
-	if elapsed_sec < _HOVER_HEAVY_MIN_INTERVAL_SEC:
+	if elapsed_sec < min_interval:
 		_hover_heavy_throttle_gen += 1
 		var gen: int = _hover_heavy_throttle_gen
-		var wait_sec: float = maxf(_HOVER_HEAVY_MIN_INTERVAL_SEC - elapsed_sec, 0.001)
+		var wait_sec: float = maxf(min_interval - elapsed_sec, 0.001)
 		if _map_view == null or not _map_view.is_inside_tree():
 			_run_hover_heavy_refresh()
 			return
@@ -1216,8 +1224,6 @@ func _run_hover_heavy_refresh() -> void:
 	if planning_cell_changed:
 		refresh_mouse_cursor(cell)
 	_last_heavy_hover_refresh_cell = cell
-	if _planning != null:
-		_planning.queue_redraw()
 
 
 func get_hover_tile_for_ui() -> Vector2i:
