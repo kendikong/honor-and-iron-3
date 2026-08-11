@@ -1241,7 +1241,7 @@ func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions
 		PlanDependency.strip_ally_entries_after_step(combined, action, allies)
 
 
-func _preview_from_plan(combined: Timeline) -> Dictionary:
+func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictionary:
 	var ev: Array[SimEvent] = []
 	var temp: BoardState = base_board.clone()
 	Simulator.simulate_player_turn(temp, combined, ev)
@@ -1251,6 +1251,8 @@ func _preview_from_plan(combined: Timeline) -> Dictionary:
 		ev.clear()
 		temp = base_board.clone()
 		Simulator.simulate_player_turn(temp, combined, ev)
+	if _preview_skip_enemy_resolution(new_actions):
+		return {"intents": [], "events": ev, "temp_board": temp}
 	var intents: Array = EnemyPlanner.plan(temp)
 	for intent: Variant in intents:
 		if not intent is Intent:
@@ -1259,6 +1261,18 @@ func _preview_from_plan(combined: Timeline) -> Dictionary:
 			ResolutionPipeline.apply_action(temp, action, ev)
 	ResolutionPipeline.resolve_pending_pushes(temp, ev)
 	return {"intents": intents, "events": ev, "temp_board": temp}
+
+
+func _preview_skip_enemy_resolution(new_actions: Array) -> bool:
+	if new_actions.is_empty():
+		return false
+	for raw: Variant in new_actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+	return true
 
 
 func _preview_apply_displacement_strips(
@@ -1302,7 +1316,7 @@ func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary
 	var preview_actions: Array[TimelineAction] = []
 	for action: TimelineAction in actions:
 		preview_actions.append(AbilitySystem.planning_preview_action(action))
-	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, preview_actions))
+	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, preview_actions), actions)
 	## Carry commit-slot actions so preview can ratify movement intent geometry.
 	res["actions"] = actions
 	return res

@@ -968,7 +968,11 @@ func _overlay_needs_flow_animation() -> bool:
 			for action: TimelineAction in plan.entries:
 				if action.type == GameEnums.ActionType.ABILITY:
 					return true
-	if _route.size() >= 2:
+	if _route.size() >= 2 and (
+		_planning_input == null
+		or _planning_input.dragging
+		or _planning_input.get_drag_route().size() >= 2
+	):
 		return true
 	return false
 

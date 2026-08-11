@@ -33,6 +33,7 @@ const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
 const _HOVER_HEAVY_MIN_INTERVAL_IDLE_SEC: float = 0.045
+const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.12
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -61,6 +62,10 @@ var _hover_heavy_frame_pending: bool = false
 var _hover_heavy_throttle_gen: int = 0
 var _hover_heavy_last_flush_usec: int = 0
 var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
+var _last_sim_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
+var _hover_sim_throttle_gen: int = 0
+var _hover_sim_last_flush_usec: int = 0
+var _hover_sim_frame_pending: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -550,7 +555,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 		if dragging and pv_actor != null:
 			_planning.set_threat_origin(pv_actor.position)
-			_planning._recompute_hover_ranges_from_inputs()
+		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
@@ -942,6 +947,7 @@ func _resync_hover_after_ability_change() -> void:
 		return
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_last_heavy_hover_refresh_cell = Vector2i(-9999, -9999)
+	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
 	_flush_hover_heavy_sync()
 
 
@@ -1147,7 +1153,11 @@ func _schedule_hover_heavy_refresh() -> void:
 
 func _deferred_begin_hover_heavy_flush() -> void:
 	_hover_heavy_frame_pending = false
-	_begin_hover_heavy_throttled_flush()
+	_run_hover_overlay_refresh()
+	if dragging:
+		_begin_hover_heavy_throttled_flush()
+	else:
+		_schedule_hover_sim_refresh()
 
 
 func _hover_heavy_min_interval_sec() -> float:
@@ -1171,37 +1181,84 @@ func _begin_hover_heavy_throttled_flush() -> void:
 		var gen: int = _hover_heavy_throttle_gen
 		var wait_sec: float = maxf(min_interval - elapsed_sec, 0.001)
 		if _map_view == null or not _map_view.is_inside_tree():
-			_run_hover_heavy_refresh()
+			_run_hover_sim_refresh()
 			return
 		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
 			func() -> void:
 				if gen != _hover_heavy_throttle_gen:
 					return
-				_run_hover_heavy_refresh(),
+				_run_hover_sim_refresh(),
 			CONNECT_ONE_SHOT,
 		)
 		return
-	_run_hover_heavy_refresh()
+	_run_hover_sim_refresh()
+
+
+func _schedule_hover_sim_refresh() -> void:
+	if dragging or _map_view == null or not _map_view.is_inside_tree():
+		return
+	if _hover_sim_frame_pending:
+		return
+	_hover_sim_frame_pending = true
+	call_deferred("_deferred_begin_hover_sim_flush")
+
+
+func _deferred_begin_hover_sim_flush() -> void:
+	_hover_sim_frame_pending = false
+	_begin_hover_sim_throttled_flush()
+
+
+func _hover_sim_min_interval_sec() -> float:
+	if dragging:
+		return _HOVER_HEAVY_MIN_INTERVAL_SEC
+	return _HOVER_SIM_MIN_INTERVAL_SEC
+
+
+func _begin_hover_sim_throttled_flush() -> void:
+	if _director == null or not _is_planning() or dragging:
+		return
+	var min_interval: float = _hover_sim_min_interval_sec()
+	var now_usec: int = Time.get_ticks_usec()
+	var elapsed_sec: float = (
+		float(now_usec - _hover_sim_last_flush_usec) / 1_000_000.0
+		if _hover_sim_last_flush_usec > 0
+		else min_interval
+	)
+	if elapsed_sec < min_interval:
+		_hover_sim_throttle_gen += 1
+		var gen: int = _hover_sim_throttle_gen
+		var wait_sec: float = maxf(min_interval - elapsed_sec, 0.001)
+		if _map_view == null or not _map_view.is_inside_tree():
+			_run_hover_sim_refresh()
+			return
+		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
+			func() -> void:
+				if gen != _hover_sim_throttle_gen:
+					return
+				_run_hover_sim_refresh(),
+			CONNECT_ONE_SHOT,
+		)
+		return
+	_run_hover_sim_refresh()
 
 
 func _flush_hover_heavy_sync() -> void:
 	_hover_heavy_throttle_gen += 1
+	_hover_sim_throttle_gen += 1
 	_hover_heavy_frame_pending = false
+	_hover_sim_frame_pending = false
 	_flush_drag_preview_refresh()
-	_run_hover_heavy_refresh()
+	_run_hover_overlay_refresh()
+	_run_hover_sim_refresh()
 
 
-func _run_hover_heavy_refresh() -> void:
+func _run_hover_overlay_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning() or dragging:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
-		if _director.selected_unit_id >= 0:
-			_restore_hover_preview()
-			if _planning != null:
-				_planning._recompute_hover_ranges_from_inputs()
-		else:
+		if _director.selected_unit_id < 0:
 			_sync_intent_live_board()
 			if _planning != null:
 				_planning._invalidate_hover_cache()
@@ -1212,18 +1269,39 @@ func _run_hover_heavy_refresh() -> void:
 		refresh_mouse_cursor(cell)
 		return
 	var planning_cell_changed: bool = cell != _last_heavy_hover_refresh_cell
-	if _director.selected_unit_id >= 0:
-		if planning_cell_changed:
-			_sync_threat_origin_from_cell(cell)
-		if _should_refresh_hover_preview(cell, planning_cell_changed):
-			_refresh_selected_interaction_preview()
-	elif planning_cell_changed:
-		_update_hover_attack_preview()
+	if _director.selected_unit_id >= 0 and planning_cell_changed:
+		_sync_threat_origin_from_cell(cell)
 	if _planning != null and planning_cell_changed:
 		_planning._recompute_hover_ranges_from_inputs()
 	if planning_cell_changed:
 		refresh_mouse_cursor(cell)
 	_last_heavy_hover_refresh_cell = cell
+
+
+func _run_hover_sim_refresh() -> void:
+	if _director == null or _director.board == null or not _is_planning() or dragging:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	_hover_sim_last_flush_usec = Time.get_ticks_usec()
+	if not _director.board.is_in_bounds(cell):
+		if _director.selected_unit_id >= 0:
+			_restore_hover_preview()
+		else:
+			_sync_intent_live_board()
+		_last_sim_hover_refresh_cell = cell
+		return
+	var sim_cell_changed: bool = cell != _last_sim_hover_refresh_cell
+	if _director.selected_unit_id >= 0:
+		if _should_refresh_hover_preview(cell, sim_cell_changed):
+			_refresh_selected_interaction_preview()
+	elif sim_cell_changed:
+		_update_hover_attack_preview()
+	_last_sim_hover_refresh_cell = cell
+
+
+func _run_hover_heavy_refresh() -> void:
+	_run_hover_overlay_refresh()
+	_run_hover_sim_refresh()
 
 
 func get_hover_tile_for_ui() -> Vector2i:
@@ -1639,6 +1717,7 @@ func _apply_hover_preview_dict(res: Dictionary) -> void:
 	_ensure_live_movement_intent_from_preview_actions(res)
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
+		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
