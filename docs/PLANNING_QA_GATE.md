@@ -104,7 +104,7 @@ Prove that this journey can fail (the source is restored even if the assertion f
 .\scripts\validate_live_planning_mutation.ps1
 ```
 
-**Training Arena defaults:** Knight **1 AP / 4 MP** (`knight_factory` `action_points = 1`, `move_points = 4`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` deliberately mirrors these data defaults but does **not** establish F5 parity. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
+**Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` deliberately mirrors these data defaults but does **not** establish F5 parity. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
 ## Run (planning gate — Tier 3 only)
 

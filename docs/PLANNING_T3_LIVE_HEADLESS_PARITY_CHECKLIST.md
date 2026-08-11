@@ -13,7 +13,7 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 | UNDO-01 | `_journey_undo_sprite_smoke` drag writes pre-move | `run_undo_sprite_smoke` |
 | UNDO-02 | undoable after drag walk | `run_undo_sprite_smoke` |
 | UNDO-03 | undo clears plan + home cell | `undo_until_unit_clear` |
-| K1-01 | k1 1 AP / 4 MP pools | `run_k1_journey_mirror` |
+| K1-01 | k1 1 AP / 3 MP pools | `run_k1_journey_mirror` |
 | K1-02 | phase1 stand probe | `_Probe.probe_cell` K1-02/stand |
 | K1-03 | hover edges (enemy/off-blue/off-map) | `probe_k1_hover_edges` |
 | K1-04 | walk hover probe | K1-04/walk |
@@ -46,7 +46,7 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 | K3-11 | post hover dest path | K3-11/post_hover_dest |
 | K3-12 | post-trample drag commit | `assert_k3_post_move_committed` |
 | K3-13 | post after_commit red off | K3-13/post_after_commit |
-| K4-01 | k4 factory MP for run bible | `run_k4_journey_mirror` |
+| K4-01 | k4 3 MP for run bible | `run_k4_journey_mirror` |
 | K4-02 | k4 stand probe | K4-02/stand |
 | K4-03 | selection route step probes + walk loop (4,2) | `run_k4_selection_route` |
 | K4-04 | run trigger loop (requires Run, AP 0, red off) | `assert_k4_run_loop_preview` |

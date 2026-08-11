@@ -41,10 +41,10 @@ const _TRAMPLE_POST_WAYPOINTS: Array[Vector2i] = [Vector2i(7, 3), Vector2i(8, 3)
 const _TRAMPLE_POST_FULL_PATH: Array[Vector2i] = [
 	_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1], Vector2i(7, 3), Vector2i(8, 3), _TRAMPLE_POST_DEST,
 ]
-const _K4_RUN_TRIGGER_CELL := Vector2i(9, 1)
-## Walk-only loop (4 MP) then one east tile triggers auto_run: E × 4 then E.
+const _K4_RUN_TRIGGER_CELL := Vector2i(3, 2)
+## Walk-only loop (3 MP) then one west tile triggers auto_run: E → N → W → W.
 const _K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
-	Vector2i(4, 1), Vector2i(5, 1), Vector2i(6, 1), Vector2i(7, 1), Vector2i(8, 1), _K4_RUN_TRIGGER_CELL,
+	Vector2i(4, 1), Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), _K4_RUN_TRIGGER_CELL,
 ]
 
 const _SETTLE_FRAMES := 4
@@ -454,7 +454,7 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	await _select_unit_live(ctx, k1_id, _K1_CELL)
 	var knight: UnitState = director.board.get_unit_by_id(k1_id)
 	assert_int(knight.ability.points_left).is_equal(1)
-	assert_int(knight.movement.points_left).is_equal(4)
+	assert_int(knight.movement.points_left).is_equal(3)
 	var bash: AbilityData = await _select_ability_for_unit(ctx, k1_id, _SHIELD_BASH_ID)
 	assert_object(bash).is_not_null()
 	await _probe_cell(ctx, k1_id, _K1_CELL, {

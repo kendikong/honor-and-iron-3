@@ -2214,7 +2214,7 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 	place_dummy(board_e2e, 41, Vector2i(6, 4))
 	var stomp_e2e: AbilityData = ability_on_unit(unit_on_board(board_e2e, 40), &"knight_seismic_stomp")
 	var knight_e2e: UnitState = unit_on_board(board_e2e, 40)
-	knight_e2e.movement.points_left = 4
+	knight_e2e.movement.points_left = 3
 	var plan_e2e := Timeline.new()
 	plan_e2e.add(plan_ability(40, stomp_e2e, Vector2i(4, 4), 40))
 	plan_e2e.add(
@@ -2231,7 +2231,7 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 	assert_eq_int(
 		failures, "seismic_stomp/e2e/move_onto_stomp_cracked",
 		knight_e2e_after.movement.points_left if knight_e2e_after != null else -1,
-		2,
+		1,
 	)
 	assert_eq_int(
 		failures, "seismic_stomp/range",

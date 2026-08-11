@@ -372,8 +372,8 @@ static func _hook_committed_approach_fixture() -> Dictionary:
 	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
 	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 3))
 	knight.active_abilities = [hook]
-	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.points_left = 3
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	var dummy_def: UnitData = DataLibrary.get_training_dummy()
@@ -620,11 +620,11 @@ static func _test_stale_hover_updates_commit_waypoints(failures: Array[String]) 
 static func _test_planning_display_mp_left_contract(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
 	fix.knight.movement.points_left = 2
-	fix.knight.movement.max_points = 4
+	fix.knight.movement.max_points = 3
 	var proj: UnitState = fix.director.projected_state.get_unit_by_id(1)
 	if proj != null:
 		proj.movement.points_left = 2
-		proj.movement.max_points = 4
+		proj.movement.max_points = 3
 	var display_mp: int = fix.input.planning_display_mp_left(1)
 	if display_mp != 2:
 		failures.append(
@@ -716,8 +716,8 @@ static func _test_committed_walk_preview_matches_sim_path(failures: Array[String
 			board.tiles[coord] = TileState.create(coord, plain)
 	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
 	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 2))
-	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.points_left = 3
+	knight.movement.max_points = 3
 	board.units = [knight]
 	GridSystem.set_occupant(board, knight.position, knight.id)
 	var director := CombatDirector.new()
@@ -1358,7 +1358,7 @@ static func _test_move_preview_origin_premove_and_postmove(failures: Array[Strin
 	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 2), {
 		"active_abilities": knight_def.abilities.duplicate(),
 	})
-	knight.movement.points_left = 4
+	knight.movement.points_left = 3
 	var enemy_def: UnitData = DataLibrary.get_unit(&"charger")
 	var enemy: UnitState = UnitState.create(2, enemy_def, GameEnums.Team.ENEMY, Vector2i(4, 2))
 	var board := _plain_board(Vector2i(8, 6), [knight, enemy])
@@ -3030,10 +3030,10 @@ static func _test_hook_out_of_range_enemy_hover_invalid(failures: Array[String])
 		failures.append("PlanningQAGate hook_out_of_range_null: Chain Hook missing")
 		return
 	director.selected_ability_index = hook_idx
-	fix.knight.movement.points_left = 4
+	fix.knight.movement.points_left = 3
 	var proj: UnitState = director.projected_state.get_unit_by_id(1)
 	if proj != null:
-		proj.movement.points_left = 4
+		proj.movement.points_left = 3
 	var slots: Dictionary = input._final_commit_slots_for_interaction(
 		1, HOOK_ENEMY, [], [], HOOK_ENEMY,
 	)

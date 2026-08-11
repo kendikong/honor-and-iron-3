@@ -12,7 +12,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.id = &"lancer"
 	def.display_name = "Lancer"
 	def.base_constitution = 5
-	def.move_points = 3
+	def.move_points = 4
 	def.action_points = 1
 	def.base_strength = 4
 	def.base_defense = 3

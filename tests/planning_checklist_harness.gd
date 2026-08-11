@@ -10,9 +10,9 @@ const ENEMY_POS := Vector2i(7, 5)
 const BASH_APPROACH := Vector2i(6, 5)
 const BASH_HOVER_WALK := Vector2i(5, 5)
 const K4_START := Vector2i(4, 1)
-const K4_RUN_TRIGGER := Vector2i(9, 1)
+const K4_RUN_TRIGGER := Vector2i(3, 2)
 const K4_DETOUR_PLUS_RUN_ROUTE: Array[Vector2i] = [
-	K4_START, Vector2i(5, 1), Vector2i(6, 1), Vector2i(7, 1), Vector2i(8, 1), K4_RUN_TRIGGER,
+	K4_START, Vector2i(5, 1), Vector2i(5, 2), Vector2i(4, 2), K4_RUN_TRIGGER,
 ]
 const HOOK_KNIGHT_START := Vector2i(1, 3)
 const HOOK_ENEMY_POS := Vector2i(4, 3)
@@ -92,8 +92,8 @@ static func wire_k4_board() -> Dictionary:
 	fix.director.auto_run = true
 	fix.input.auto_use_skill_after_move = false
 	fix.input.force_basic_movement = false
-	## Bible K4 run trigger: 5-tile route with MOV 4 — 4 walk steps then Run on final tile.
-	set_unit_pools(fix, fix.director.selected_unit_id, 1, 4)
+	## Bible K4 run trigger: detour fits in 3 walk steps; 4th step needs Run (class MOV is 3).
+	set_unit_pools(fix, fix.director.selected_unit_id, 1, 3)
 	return fix
 
 

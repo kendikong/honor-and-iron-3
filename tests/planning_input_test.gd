@@ -1015,7 +1015,7 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(0, 2)
 	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	knight.active_abilities = [bash]
@@ -1082,7 +1082,7 @@ static func _test_enemy_target_params_ignore_pseudo_drag(failures: Array[String]
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(0, 2)
 	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	knight.active_abilities = [bash]
@@ -1146,7 +1146,7 @@ static func _test_shield_bash_preview_pushes(failures: Array[String]) -> void:
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(1, 2)
 	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	knight.active_abilities = [bash]
@@ -1332,7 +1332,7 @@ static func _test_committed_action_approach_uses_premove_slot(failures: Array[St
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(1, 3)
 	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	knight.active_abilities = [hook]
@@ -1431,7 +1431,7 @@ static func _test_undo_movement_action_preserves_premove(failures: Array[String]
 	knight.team = GameEnums.Team.PLAYER
 	knight.position = Vector2i(3, 3)
 	knight.movement.points_left = 4
-	knight.movement.max_points = 4
+	knight.movement.max_points = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	knight.active_abilities = [trample]

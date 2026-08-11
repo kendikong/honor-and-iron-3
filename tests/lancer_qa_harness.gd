@@ -51,7 +51,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		return
 	assert_true(failures, "lancer/name", definition.display_name == "Lancer")
 	assert_eq_int(failures, "lancer/constitution", definition.base_constitution, 5)
-	assert_eq_int(failures, "lancer/movement", definition.move_points, 3)
+	assert_eq_int(failures, "lancer/movement", definition.move_points, 4)
 	assert_eq_int(failures, "lancer/strength", definition.base_strength, 4)
 	assert_eq_int(failures, "lancer/defense", definition.base_defense, 3)
 	assert_eq_int(failures, "lancer/magic", definition.base_magic, 1)
@@ -566,7 +566,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		)
 		_add_test_units(unstoppable_board, [unstoppable, unstoppable_target])
 		var unstoppable_plan := Timeline.new()
-		unstoppable_plan.add(TimelineAction.make_move(unstoppable.id, Vector2i(4, 1)))
+		unstoppable_plan.add(TimelineAction.make_move(unstoppable.id, Vector2i(5, 1)))
 		unstoppable_plan.add(TimelineAction.make_ability(
 		unstoppable.id, basic, unstoppable_target.position, unstoppable_target.id
 		))

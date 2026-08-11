@@ -42,7 +42,7 @@ static func _journey_k1_bash(
 	expect: Dictionary,
 ) -> void:
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.KNIGHT_START)
-	PlanningChecklistHarness.set_unit_pools(fix, k1_id, 1, 4)
+	PlanningChecklistHarness.set_unit_pools(fix, k1_id, 1, 3)
 	var bash_idx: int = PlanningChecklistHarness.select_ability_for_unit(
 		fix, k1_id, PlanningChecklistHarness.SHIELD_BASH_ID,
 	)
