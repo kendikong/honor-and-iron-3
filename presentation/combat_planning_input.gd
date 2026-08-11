@@ -4462,14 +4462,20 @@ func _build_enemy_commit_slots(
 		if not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
 			slots["invalid"] = "Enemy is not attackable from legal move tiles."
 			return slots
-	elif _drop_allows_move_tile(enemy.position, legal_move_tiles, actor):
+	elif (
+		_drop_allows_move_tile(enemy.position, legal_move_tiles, actor)
+		and not (
+			use_skill
+			and AbilitySystem.ability_is_offensive_dash(ability)
+		)
+	):
 		_append_move_to_commit_slots(slots, unit_id, enemy.position, waypoints, actor)
 		return slots
 	elif not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
 		slots["invalid"] = "Enemy is not attackable from legal move tiles."
 		return slots
 	if use_skill:
-		if AbilitySystem.is_movement_skill(ability):
+		if ability.is_movement_kind():
 			slots["invalid"] = "Cannot pair this action with a pre-move."
 			return slots
 		var approach_hint: Vector2i = cell
