@@ -10,10 +10,10 @@ const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
-	_KnightQaHarness.run_seismic_stomp(failures)
 
 
 static func _sim_contract(failures: Array[String]) -> void:
+	_KnightQaHarness.run_seismic_stomp(failures)
 	var stomp: AbilityData = _KnightQaHarness.factory_ability(&"knight_seismic_stomp")
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/damage",
