@@ -28,7 +28,7 @@ Any edit under these paths (or equivalent behavior owners):
 
 | Change touches | Run (headless) |
 |----------------|----------------|
-| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate (Tier 3 only)** — `.\scripts\run_planning_qa_gate.ps1` **once**. Do **not** also run `run_planning_scene_acceptance.ps1` in the same turn. |
+| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate (headless fixtures)** — `.\scripts\run_planning_qa_gate.ps1` **once** (default; **no** `-LiveTier3`). Runs headless contracts + `run_t3_mimic_headless.ps1` bible/swap parity. **Do not** run `run_planning_scene_acceptance.ps1` unless the owner explicitly asks for live Tier 3. |
 | Core sim / bridge / broad combat regression | **Full regression** — `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` |
 | Both planning and core sim | **Planning QA gate** + **full regression** (two commands, one run each) |
 

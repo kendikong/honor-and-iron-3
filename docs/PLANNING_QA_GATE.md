@@ -120,7 +120,7 @@ Optional local archaeology for disabled Tier 1/2 fixtures (failures ignored):
 .\scripts\run_planning_qa_gate.ps1 -IncludeLegacyTier12
 ```
 
-Do **not** also run `run_planning_scene_acceptance.ps1` in the same QA turn — that doubles the live TestBattle session.
+**Owner default (2026-08):** Use **headless fixture suites** for Tier 3 planning regression (`run_planning_qa_gate.ps1` without `-LiveTier3`). Live TestBattle (`run_planning_scene_acceptance.ps1`) only when the owner explicitly requests it (sprites, settle timing, F5 spot-check).
 
 Tier 3 alone (owner debugging):
 
