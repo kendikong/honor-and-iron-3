@@ -8,6 +8,8 @@ Tier 3 uses multiple Knights in `live_planning_scene_test.gd` as **exercise fixt
 
 **Owner skill checklist (7 phases, move preview = truth):** [PLANNING_SKILL_QA_CHECKLIST.md](PLANNING_SKILL_QA_CHECKLIST.md) — use for every skill manual test and for what automated tests must eventually cover.
 
+**T3 live → headless parity map:** [PLANNING_T3_LIVE_HEADLESS_PARITY_CHECKLIST.md](PLANNING_T3_LIVE_HEADLESS_PARITY_CHECKLIST.md) — every `live_planning_scene_test.gd` checkpoint ID and its headless twin (`planning_t3_live_headless_checklist_test.gd`).
+
 Automated mirror of the owner's manual planning checklist (Skill Arena / TestBattle).
 Use this gate **before and after every change** that touches planning,
 preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.

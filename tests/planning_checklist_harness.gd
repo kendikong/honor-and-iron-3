@@ -1184,7 +1184,8 @@ static func _training_knight(id: int, pos: Vector2i) -> UnitState:
 	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
 	var knight: UnitState = UnitState.create(id, knight_def, GameEnums.Team.PLAYER, pos)
 	knight.active_abilities = DataLibrary.build_training_abilities(knight_def)
-	knight.movement.points_left = knight.movement.max_points
+	knight.movement.max_points = 3
+	knight.movement.points_left = 3
 	knight.ability.points_left = 1
 	knight.ability.max_points = 1
 	return knight
