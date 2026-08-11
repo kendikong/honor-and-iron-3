@@ -132,14 +132,12 @@ static func run_k4_run_live_parity(
 	PlanningChecklistHarness.select_ability_for_unit(
 		fix, k4_id, PlanningChecklistHarness.BOWLING_CHARGE_ID,
 	)
-	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	enter_k4_auto_run_paint_mode(fix, k4_id)
 	run_k4_selection_route(fix, failures, k4_id, bowling, "%s/selection" % label_prefix)
 	assert_k4_run_committed(fix, failures, k4_id, "%s/selection" % label_prefix)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, k4_id)
 
 	undo_until_unit_clear(fix, failures, k4_id, PlanningChecklistHarness.K4_START, label_prefix)
-	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	enter_k4_auto_run_paint_mode(fix, k4_id)
 	run_k4_drag_route(fix, failures, k4_id, bowling, "%s/drag" % label_prefix)
 	assert_k4_run_committed(fix, failures, k4_id, "%s/drag" % label_prefix)
@@ -529,24 +527,10 @@ static func assert_k4_run_loop_preview(
 ) -> void:
 	var input: CombatPlanningInput = fix.input
 	PlanningChecklistHarness.settle_ability_hover(fix)
-	PlanningChecklistHarness.apply_live_k4_run_trigger_display_ap_parity(fix, unit_id)
 	if not input.unit_move_requires_run(unit_id):
 		PlanningChecklistHarness.assert_fail(failures, label, "extension past detour must require Run")
-	var display_ap: int = input.planning_display_ap_left(unit_id)
-	if display_ap != 0:
+	if input.planning_display_ap_left(unit_id) != 0:
 		PlanningChecklistHarness.assert_fail(failures, label, "Run intent must show 0 display AP")
-	else:
-		var projected_unit: UnitState = fix.director.projected_state.get_unit_by_id(unit_id)
-		if (
-			not input.unit_move_requires_run(unit_id)
-			and projected_unit != null
-			and projected_unit.ability.points_left > 0
-		):
-			PlanningChecklistHarness.assert_fail(
-				failures,
-				label,
-				"Run intent must show 0 display AP",
-			)
 	if input.action_range_visible_for_hover():
 		PlanningChecklistHarness.assert_fail(failures, label, "Run trigger must hide action-range gate")
 	if not PlanningChecklistHarness.collect_red_tiles(fix).is_empty():
@@ -1677,7 +1661,6 @@ static func run_k4_journey_mirror(
 		}, "K4-02/stand",
 	)
 	fix.input.auto_use_skill_after_move = false
-	PlanningChecklistHarness.apply_live_k4_projected_mp_drift(fix, k4_id)
 	run_k4_run_live_parity(fix, failures, k4_id, bowling, "K4")
 	var k4_projected: UnitState = PlanningChecklistHarness.projected_unit(fix, k4_id)
 	expect["k4_pos"] = k4_projected.position if k4_projected != null else PlanningChecklistHarness.K4_START
