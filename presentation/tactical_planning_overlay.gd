@@ -255,6 +255,51 @@ func _planning_action_range_tiles_for_unit(
 	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 
 
+func _hover_action_range_uses_blast_at_coord(
+	unit: UnitState,
+	p_unit: UnitState,
+	selected_ability: int,
+	cache_force: bool,
+) -> bool:
+	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
+		return false
+	if selected_ability < 0:
+		return false
+	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if ability == null or not _board.is_in_bounds(_hover_coord):
+		return false
+	return AbilitySystem.active_target_shape(
+		p_unit if p_unit != null else unit, ability,
+	) != GameEnums.TargetShape.SINGLE
+
+
+func _compute_hover_blast_action_range_tiles(
+	unit: UnitState,
+	p_unit: UnitState,
+	action_range_origin: Vector2i,
+	ability_index: int,
+	cache_force: bool,
+) -> Array[Vector2i]:
+	if not _can_show_action_range_tiles(unit, ability_index, cache_force):
+		return []
+	if ability_index < 0:
+		return []
+	var ability: AbilityData = _selected_ability_data(unit, ability_index)
+	if ability == null or not _board.is_in_bounds(_hover_coord):
+		return []
+	if AbilitySystem.active_target_shape(
+		p_unit if p_unit != null else unit, ability,
+	) == GameEnums.TargetShape.SINGLE:
+		return []
+	var plan_board: BoardState = _board
+	if _director.projected_state != null:
+		plan_board = _director.projected_state
+	var blast_actor: UnitState = p_unit if p_unit != null else unit
+	return AbilitySystem.planning_blast_tiles_at_target(
+		plan_board, blast_actor, ability, action_range_origin, _hover_coord,
+	)
+
+
 func _recompute_hover_ranges_from_inputs() -> void:
 	if _director == null:
 		return
@@ -434,7 +479,6 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
-	_invalidate_hover_cache()
 	if _director != null and _director.selected_unit_id < 0:
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
@@ -719,7 +763,9 @@ func recompute_hover_ranges(
 	var cache_awaiting_targeting: bool = (
 		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
-	if (
+	var is_selected_player: bool = _is_selected_player_unit(unit)
+	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
+	var static_cache_hit: bool = (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
 		and _cached_hover_action_range_origin == action_range_origin
@@ -727,9 +773,23 @@ func recompute_hover_ranges(
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
-		and _cached_hover_coord == _hover_coord
-	):
-		return
+	)
+	# Selected-player move/range overlays are stand-based; only AOE blast footprints track hover.
+	if not is_selected_player or unit.id != _director.selected_unit_id:
+		static_cache_hit = static_cache_hit and _cached_hover_coord == _hover_coord
+	var blast_only_refresh: bool = false
+	if static_cache_hit:
+		if _cached_hover_coord == _hover_coord:
+			return
+		if (
+			is_selected_player
+			and _hover_action_range_uses_blast_at_coord(
+				unit, p_unit, selected_ability, cache_force,
+			)
+		):
+			blast_only_refresh = true
+		else:
+			return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
 	_cached_hover_action_range_origin = action_range_origin
@@ -738,6 +798,12 @@ func recompute_hover_ranges(
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
 	_cached_hover_coord = _hover_coord
+	if blast_only_refresh:
+		_hover_action_range_tiles = _compute_hover_blast_action_range_tiles(
+			unit, p_unit, action_range_origin, selected_ability, cache_force,
+		)
+		queue_redraw()
+		return
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
@@ -749,8 +815,6 @@ func recompute_hover_ranges(
 		if unit.definition != null
 		else GameEnums.MovementType.WALK
 	)
-	var is_selected_player: bool = _is_selected_player_unit(unit)
-	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
 	if _can_show_move_tiles(unit, selected_ability):
 		var move_board: BoardState = _board
 		var move_from: Vector2i = move_origin
@@ -796,21 +860,9 @@ func recompute_hover_ranges(
 		):
 			queue_redraw()
 			return
-		var blast_tiles: Array[Vector2i] = []
-		if (
-			ability != null
-			and AbilitySystem.active_target_shape(
-				p_unit if p_unit != null else unit, ability,
-			) != GameEnums.TargetShape.SINGLE
-			and _board.is_in_bounds(_hover_coord)
-		):
-			var plan_board: BoardState = _board
-			if _director.projected_state != null:
-				plan_board = _director.projected_state
-			var blast_actor: UnitState = p_unit if p_unit != null else unit
-			blast_tiles = AbilitySystem.planning_blast_tiles_at_target(
-				plan_board, blast_actor, ability, action_range_origin, _hover_coord,
-			)
+		var blast_tiles: Array[Vector2i] = _compute_hover_blast_action_range_tiles(
+			unit, p_unit, action_range_origin, ability_index, cache_force,
+		)
 		if not blast_tiles.is_empty():
 			_hover_action_range_tiles = blast_tiles
 		else:

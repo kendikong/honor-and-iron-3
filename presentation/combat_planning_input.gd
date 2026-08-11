@@ -1751,6 +1751,26 @@ func _drag_route_commits_active() -> bool:
 	return dragging or _drag_route.size() >= 2
 
 
+func _selection_hover_corridor_paint_active() -> bool:
+	if dragging:
+		return true
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	if not _basic_move_allowed() or force_basic_movement:
+		return false
+	if _director.selected_ability_index < 0:
+		return false
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit == null:
+		return false
+	var ability := _selected_ability_data(p_unit)
+	if ability == null or _blocks_unarmed_hover_paint(p_unit, ability):
+		return false
+	if AbilitySystem.ability_has_movement_effect(ability):
+		return true
+	return auto_run_movement_active(p_unit)
+
+
 func _commit_interaction_params(
 	hover_cell: Vector2i,
 	attack_target_id: int = -1,
@@ -2575,6 +2595,18 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if unit == null:
 		return
 	var move_origin: Vector2i = _proj_move_origin(unit)
+	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
+	if (
+		not dragging
+		and not _selection_hover_corridor_paint_active()
+		and last != cell
+		and GridSystem.manhattan(move_origin, cell) == 1
+	):
+		_drag_route = [move_origin]
+		_append_route_tile(cell)
+		_sanitize_drag_route_context()
+		_sync_drag_route_stand()
+		return
 	var ability: AbilityData = null
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		ability = _selected_ability_data(unit)
