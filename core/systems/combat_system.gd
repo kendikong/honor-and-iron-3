@@ -14,6 +14,8 @@
 class_name CombatSystem
 extends RefCounted
 
+const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
+
 ## Purpose: Owns damage and death (and nothing else).
 ## Responsibilities: Apply damage to a unit, emit damage/death events, clear
 ##   occupancy on death. Other systems delegate damage here rather than touching
@@ -642,6 +644,7 @@ static func deal_damage(
 		fort = tile.definition.fortitude
 		
 	var mitigation: int = CombatSystem.get_dynamic_defense(board, target)
+	mitigation += MercenarySystems.marked_defense_bonus(target, attacker)
 	if attacker != null:
 		mitigation = maxi(
 			0,
@@ -819,6 +822,17 @@ static func deal_damage(
 	
 	if hp_dmg + armor_dmg > 0:
 		target.passive_flags["damaged_this_turn"] = true
+		if attacker != null:
+			target.passive_flags["last_attacker_id"] = attacker.id
+			MercenarySystems.on_dealt_damage(
+				board,
+				attacker,
+				target,
+				events,
+				MercenarySystems._is_basic_attack(
+					attacker.passive_flags.get("__current_ability", null) as AbilityData,
+				),
+			)
 		if (
 			source_type != &"hazard"
 			and target.has_passive(&"kinetic_redirection")
@@ -920,6 +934,16 @@ static func deal_damage(
 		}))
 		
 		if attacker != null and attacker.is_alive():
+			MercenarySystems.on_kill(
+				board,
+				attacker,
+				target,
+				events,
+				source_label,
+				MercenarySystems._is_basic_attack(
+					attacker.passive_flags.get("__current_ability", null) as AbilityData,
+				),
+			)
 			if attacker.passive_flags.get("mage_spell_in_progress", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("mana_siphon"):

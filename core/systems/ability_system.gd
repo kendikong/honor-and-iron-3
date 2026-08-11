@@ -14,6 +14,8 @@
 class_name AbilitySystem
 extends RefCounted
 
+const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
+
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
 ##   EffectData by delegating to the system that owns that effect.
@@ -585,6 +587,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		ability.consumes_action_slot()
 		and not actor.can_use_action_slot()
 		and not actor.passive_flags.get("__mage_wild_magic_repeat", false)
+		and not (
+			actor.passive_flags.get("dual_wield_bonus_basic", false)
+			and _is_basic_attack(ability)
+		)
 	):
 		return false
 
@@ -672,6 +678,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if motion_requires_occupied_target(actor, ability):
 		if not _occupied_push_target_valid(board, actor, ability, action.target_coord):
 			return false
+	if not MercenarySystems.can_use_extra(board, actor, ability, action):
+		return false
 
 	return true
 
@@ -733,17 +741,19 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 				and _passive_has_modifier(actor, &"caltrop_zero_ap")
 			):
 				return 0
-	return ap_cost
+	return MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
 
 
 static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
 	if ability == null:
 		return 0
 	if actor != null and actor.is_ability_upgraded(ability.id):
-		return ability.get_active_primary_value(true) \
+		var upgraded_cost: int = ability.get_active_primary_value(true) \
 			if ability.primary_resource == GameEnums.CostResource.MP \
 			else ability.movement_point_cost
-	return ability.movement_point_cost
+		return MercenarySystems.adjust_movement_point_cost(actor, ability, upgraded_cost)
+	var base_mp: int = ability.movement_point_cost
+	return MercenarySystems.adjust_movement_point_cost(actor, ability, base_mp)
 
 
 static func _apply_healing_passive_modifiers(
@@ -2034,6 +2044,21 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
+		actor.passive_flags["__current_ability"] = ability
+		if _is_basic_attack(ability):
+			var predatory_target: UnitState = (
+				board.get_unit_by_id(action.target_unit_id)
+				if action.target_unit_id >= 0
+				else board.get_unit_at(action.target_coord)
+			)
+			if (
+				predatory_target != null
+				and MercenarySystems._has_predatory_momentum(actor)
+				and MercenarySystems._hp_below_threshold(
+					predatory_target, MercenarySystems._predatory_threshold(actor),
+				)
+			):
+				actor.passive_flags["predatory_free_move_pending"] = true
 		
 	if not wild_magic_repeat:
 		_spend_ability_cost(actor, ability, board, events)
@@ -2193,6 +2218,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.active_statuses.append(ghost_status)
 			actor._recalculate_stats()
 
+		MercenarySystems.before_skill_move(board, actor, ability, events)
+
 		var walk_goal: Vector2i = target_coord
 		var goal_unit: UnitState = board.get_unit_at(walk_goal)
 		if (
@@ -2220,6 +2247,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if ghost_status != null:
 			actor.active_statuses.erase(ghost_status)
 			actor._recalculate_stats()
+		MercenarySystems.after_skill_move(board, actor, ability, events)
 			
 		# Recompute affected tiles after movement since actor position and facing may have changed
 		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
@@ -2562,6 +2590,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				actor._recalculate_stats()
 
 	if actor != null:
+		MercenarySystems.after_ability_execute(board, actor, action, events, attack_was_used)
+
+	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
 		actor.passive_flags.erase("on_kill_max_move")
 		actor.passive_flags.erase("paired_ally_id")
@@ -2715,7 +2746,9 @@ static func _spend_ability_cost(
 			if _ability_has_modifier(actor, ability, &"cost_all_movement"):
 				actor.movement.points_left = 0
 			else:
-				actor.movement.points_left -= movement_point_cost(actor, ability)
+				var mp_spent: int = movement_point_cost(actor, ability)
+				actor.movement.points_left -= mp_spent
+				actor.movement_points_spent_this_turn += mp_spent
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
@@ -2919,6 +2952,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				
 			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
 				base_amt += 1
+			if actor.movement_points_spent_this_turn > 0:
+				actor.passive_flags["movement_before_attack"] = true
+				var calc_def: int = MercenarySystems.passive_mod_value(
+					actor, &"movement_before_attack_defense",
+				)
+				if calc_def > 0:
+					actor.active_statuses.append(
+						DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, calc_def),
+					)
+					actor._recalculate_stats(board)
+			base_amt = MercenarySystems.adjust_attack_base(board, actor, target, action.ability, base_amt)
 				
 			var amount := base_amt
 			
@@ -3111,6 +3155,31 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						and passive.modifiers.has("debuffed_attack_pierce")
 					):
 						pierce = true
+				var merc_ignore_pct: float = MercenarySystems.extra_def_ignore_pct(
+					board, actor, target, action.ability,
+				)
+				if merc_ignore_pct > 0.0:
+					var merc_ignore: int = floori(target_def * merc_ignore_pct)
+					actor.passive_flags["attack_ignore_def"] = maxi(
+						int(actor.passive_flags.get("attack_ignore_def", 0)),
+						merc_ignore,
+					)
+					target_def = maxi(0, target_def - merc_ignore)
+				var strike_mods: Dictionary = MercenarySystems._ability_legacy_mods(actor, action.ability)
+				if strike_mods.get("remove_push_mitigation", false):
+					target.passive_flags["no_push_mitigation"] = true
+				if strike_mods.get("prevent_target_shield", false):
+					target.passive_flags["shield_blocked"] = true
+				if strike_mods.has("target_def_debuff"):
+					target.active_statuses.append(
+						DataLibrary.make_status(
+							GameEnums.StatusType.STAT_DEBUFF_DEF,
+							1,
+							int(strike_mods["target_def_debuff"]),
+						),
+					)
+					target._recalculate_stats(board)
+				MercenarySystems.apply_feint_on_target(target, actor)
 
 			if actor.passive_flags.has("breaching_dash_pierce"):
 				pierce = true
@@ -3118,6 +3187,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if actor.passive_flags.get("next_attack_pierce", false):
 				pierce = true
 				actor.passive_flags.erase("next_attack_pierce")
+			if MercenarySystems.should_pierce(board, actor, target, action.ability):
+				pierce = true
 			if actor.has_passive(&"unstoppable_mass") and actor.moved_max_movement_this_turn():
 				pierce = true
 				actor.passive_flags["root_immune_this_turn"] = true
@@ -3687,6 +3758,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							1,
 						))
 					target._recalculate_stats()
+					if effect.modifiers.has("set_max_move"):
+						var move_cap: int = int(effect.modifiers["set_max_move"])
+						target.movement.max_points = mini(target.movement.max_points, move_cap)
+						target.movement.points_left = mini(target.movement.points_left, move_cap)
 				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
 					"unit": target.id,
 					"status_type": effect.status_type,

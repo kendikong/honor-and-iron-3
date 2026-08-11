@@ -54,6 +54,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	pullback_module.legacy_modifiers["pullback"] = true
 	var pullback_upgraded := _clone_modules([pullback_module])
 	pullback_upgraded[0].legacy_modifiers["pullback_enemy_def"] = 2
+	pullback_upgraded[0].legacy_modifiers["movement_mp_override"] = 1
 	var pullback := _movement(
 		&"mercenary_pullback",
 		"Pullback",
@@ -70,7 +71,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 		"Using active movement before attacking grants +1 STR and +1 DEF until round end.",
 		"Also gain +1 AP on target kill.",
 		{"promotion": &"swordmaster", "movement_before_attack_strength": 1,
-		"movement_before_attack_defense": 1, "movement_before_attack_kill_ap": 1},
+		"movement_before_attack_defense": 1, "upgraded_movement_before_attack_kill_ap": 1},
 	))
 	definition.passives.append(_passive(
 		&"weapon_master", "Weapon Master",
@@ -403,7 +404,7 @@ static func _defense_strike() -> AbilityData:
 
 static func _blade_storm() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	module.bonus_if_adjacent_at_cast = 2
+	module.legacy_modifiers["bonus_if_target_adjacent_to_ally"] = 2
 	var upgraded := _clone_modules([module])
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
 	bleed.modifiers["bleed_weapon"] = true
@@ -460,6 +461,7 @@ static func _feint() -> AbilityData:
 	module.status_type = GameEnums.StatusType.PIERCE
 	module.status_duration = 1
 	module.legacy_modifiers["next_attack_strength"] = 1
+	module.legacy_modifiers["next_attack_pierce"] = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["target_def_pct_debuff"] = 0.25
 	upgraded[0].legacy_modifiers["target_def_pct_duration"] = 2
@@ -668,6 +670,7 @@ static func _duelists_challenge() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.TAUNT
 	module.status_duration = 2
+	module.legacy_modifiers["duelist_mark_target"] = true
 	var mark := DataLibrary._status_effect(GameEnums.StatusType.MARK, 2)
 	module.layers.append(_layer(mark))
 	var upgraded := _clone_modules([module])

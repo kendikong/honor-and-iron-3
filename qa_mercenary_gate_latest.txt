@@ -1,0 +1,60 @@
+﻿=== Mercenary QA gate (class validation - NOT planning QA) ===
+Spec: docs/MERCENARY_QA_GATE.md
+
+=== Matrix summary (from docs/MERCENARY_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 85) ===
+
+=== Tier 1: headless Mercenary scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] mercenary_qa_tier1
+[MERCENARY_QA] predatory_momentum
+[MERCENARY_QA] mercenary_pullback
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[MERCENARY_QA] mercenary_swift_strike
+[MERCENARY_QA] mercenary_defense_strike
+[MERCENARY_QA] mercenary_blade_storm
+[MERCENARY_QA] mercenary_caltrop_toss
+[MERCENARY_QA] mercenary_feint
+[MERCENARY_QA] mercenary_riposte_strike
+[MERCENARY_QA] mercenary_sever
+[MERCENARY_QA] mercenary_second_wind
+[MERCENARY_QA] mercenary_tactical_retreat
+[MERCENARY_QA] mercenary_executioners_blade
+[MERCENARY_QA] mercenary_precision_strike
+[MERCENARY_QA] mercenary_flank_and_run
+[MERCENARY_QA] mercenary_hamstring
+[MERCENARY_QA] mercenary_acrobatic_vault
+[MERCENARY_QA] mercenary_duelists_challenge
+[MERCENARY_QA] calculated_strike
+[MERCENARY_QA] weapon_master
+[MERCENARY_QA] dual_wield_momentum
+[MERCENARY_QA] precision_edge
+[MERCENARY_QA] duelists_focus
+[MERCENARY_QA] tactical_versatility
+[MERCENARY_QA] swift_feet
+[MERCENARY_QA] hit_and_run
+[MERCENARY_QA] evasive
+[MERCENARY_QA] flanking_maneuver
+[MERCENARY_QA] dirty_fighting
+[MERCENARY_QA] executioner
+[MERCENARY_QA] blood_scent
+[MERCENARY_QA] ruthless
+[MERCENARY_QA] coup_de_grace
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[PASS] Mercenary QA gate: factory matrix, all active skills, and passive contracts
+WARNING: 2 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 796 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 26 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+--- Tier 1 harness: PASS ---
+
+=== Mercenary QA gate summary ===
+[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios

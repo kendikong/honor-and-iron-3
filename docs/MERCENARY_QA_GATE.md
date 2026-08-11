@@ -17,6 +17,22 @@ Owner sign-off remains **NOT PASS** until manual review is recorded in
 | 2 — Live | `.\scripts\run_mercenary_live_qa.ps1` | Preview slots, overlay targets, commit ratification, Simulator parity |
 | Planning | `.\scripts\run_planning_qa_gate.ps1` | Shared global planning regression |
 
+## Meta-critic (owner proxy)
+
+Gauntlet-critic judges Bible adherence, global-systems fidelity, test adequacy,
+coverage, and fix-target (implementation vs QA). Required outputs: `SCORE`,
+`Largest gap`, `Fix target`, `Evidence`, `Infrastructure: ADEQUATE|INADEQUATE`.
+
+**PASS_THRESHOLD:** 85 for Mercenary gauntlet rounds.
+
+**Decision tree:** BAR fail → fix implementation if assert matches Bible clause;
+else fix QA. BAR pass → deepen scenario if shallow; else reject per-skill
+`ability.id` branches (use `legacy_modifiers` + `MercenarySystems`).
+
+**Tier 2 scope:** all 15 actives in `test_live_mercenary_every_skill`; all
+innate/passives in `test_live_mercenary_passive_overlay` (overlay + commit parity
+with only that passive enabled).
+
 ## Global systems fidelity
 
 - **Rule A — data ownership:** every skill is authored as `AbilityData` with
@@ -26,6 +42,7 @@ Owner sign-off remains **NOT PASS** until manual review is recorded in
   `_build_commit_slots_at_cell` → `_finalize_commit_slots` →
   `preview_commit_valid` / `CombatDirector.commit_from_slots` → `Simulator`.
 - No Mercenary `ability.id` branch is added to simulation or presentation.
+  Class-scoped behavior lives in `MercenarySystems` + `legacy_modifiers` data.
 
 ## Coverage matrix
 

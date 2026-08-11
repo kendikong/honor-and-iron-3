@@ -1,5 +1,24 @@
+﻿class_name MercenaryFeintScenarioTest
 extends RefCounted
-const _H := preload("res://tests/mercenary_qa_harness.gd")
+
+const _Scenarios := preload("res://tests/mercenary_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+
+## Bible: Feint — Next attack PIERCE + STR.
+## Globals: MercenarySystems + AbilitySystem + Simulator.simulate_player_turn
+## Data/Sim delegate: tests/mercenary_qa_harness_scenarios.gd::run_feint
+
 
 static func run_all(failures: Array[String]) -> void:
-	_H.run_skill_scenario(&"mercenary_feint", failures)
+	_sim_contract(failures)
+	_Planning.run_for_factory(failures, &"mercenary_feint")
+
+
+static func _sim_contract(failures: Array[String]) -> void:
+	_Scenarios.run_feint(failures)
+	_sim_upgrade(failures)
+
+
+static func _sim_upgrade(failures: Array[String]) -> void:
+	_Upgrades.run_for_factory(failures, &"mercenary_feint")

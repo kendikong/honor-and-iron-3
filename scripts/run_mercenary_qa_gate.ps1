@@ -4,6 +4,36 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$latestGateLog = Join-Path $projectRoot "qa_mercenary_gate_latest.txt"
+$gateLogLines = New-Object System.Collections.Generic.List[string]
+
+function Write-GateLine([string]$Line) {
+	Write-Output $Line
+	[void]$gateLogLines.Add($Line)
+}
+
+function Save-GateLog() {
+	$canonical = Join-Path $projectRoot "qa_mercenary_gate_canonical.txt"
+	$gateLogLines | Set-Content -Path $canonical -Encoding utf8
+	$tmp = Join-Path $projectRoot "qa_mercenary_gate_latest.tmp"
+	$gateLogLines | Set-Content -Path $tmp -Encoding utf8
+	try {
+		if (Test-Path $latestGateLog) {
+			Remove-Item -LiteralPath $latestGateLog -Force -ErrorAction Stop
+		}
+		Move-Item -LiteralPath $tmp -Destination $latestGateLog -Force -ErrorAction Stop
+	} catch {
+		if (Test-Path $tmp) {
+			Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+		}
+	}
+}
+
+function Exit-Gate([int]$Code) {
+	Save-GateLog
+	exit $Code
+}
+
 $matrixDoc = Join-Path $projectRoot "docs\MERCENARY_QA_GATE.md"
 $manifestPath = Join-Path $projectRoot "docs\mercenary_meta_critic_manifest.json"
 
@@ -21,49 +51,151 @@ $requiredFactoryIds = @(
 	"ruthless", "coup_de_grace"
 )
 
-if (-not (Test-Path $matrixDoc)) { Write-Output "[FAIL] Missing matrix doc"; exit 3 }
-if (-not (Test-Path $manifestPath)) { Write-Output "[FAIL] Missing meta-critic manifest"; exit 3 }
+if (-not (Test-Path $matrixDoc)) {
+	Write-Error "[FAIL] Missing matrix doc: $matrixDoc"
+}
 
 $matrixText = Get-Content -Path $matrixDoc -Raw
-$manifestText = Get-Content -Path $manifestPath -Raw
-$missing = @()
+$passRows = @()
+$plannedRows = @()
+$harnessRows = @()
+
 foreach ($id in $requiredFactoryIds) {
-	if ($matrixText -notmatch [regex]::Escape($id)) {
-		$missing += $id
+	$escaped = [regex]::Escape($id)
+	$tablePattern = '`\s*' + $escaped + '\s*`'
+	$rowLine = (
+		$matrixText -split "`n" |
+		Where-Object {
+			$_ -match $tablePattern -and $_ -match '\|' -and $_ -match '\|\s*(PASS|HARNESS_ONLY|PLANNED|N/A)\s*\|'
+		} |
+		Select-Object -First 1
+	)
+	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
+		$plannedRows += $id
+		continue
 	}
-	if ($manifestText -notmatch ([regex]::Escape($id))) {
-		$missing += "$id/manifest"
+	if ($rowLine -match '\|\s*PASS\s*\|') {
+		$passRows += $id
+	} elseif ($rowLine -match '\|\s*HARNESS_ONLY\s*\|') {
+		$harnessRows += $id
+	} else {
+		$plannedRows += $id
 	}
 }
-if ($missing.Count -gt 0) {
-	$missing | ForEach-Object { Write-Output "[FAIL] Missing Mercenary QA row: $_" }
-	exit 3
+
+Write-GateLine "=== Mercenary QA gate (class validation - NOT planning QA) ==="
+Write-GateLine "Spec: docs/MERCENARY_QA_GATE.md"
+Write-GateLine ""
+Write-GateLine "=== Matrix summary (from docs/MERCENARY_QA_GATE.md) ==="
+Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
+Write-GateLine ""
+
+$manifestApproved = @()
+$manifestThreshold = 88
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	if ($null -ne $manifest.pass_threshold) {
+		$manifestThreshold = [int]$manifest.pass_threshold
+	}
+	foreach ($row in $manifest.approved_rows) {
+		if ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-GateLine ("=== Meta-critic manifest ({0} approved, threshold {1}) ===" -f $manifestApproved.Count, $manifestThreshold)
+} else {
+	Write-GateLine "[WARN] Missing manifest: docs/mercenary_meta_critic_manifest.json"
+}
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+if ($unapprovedPass.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count) {
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+} else {
+	$matrixPassValid = $true
+}
+
+Write-GateLine ""
+
+. (Join-Path $PSScriptRoot "qa_gate_matrix_helpers.ps1")
+$scenarioMissing = Test-MatrixScenarioFiles -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc -RequiredFactoryIds $requiredFactoryIds
+if ($scenarioMissing.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS matrix rows missing scenario files:"
+	$scenarioMissing | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+$minGauntletScore = 88
+if (Test-Path $manifestPath) {
+	$manifestPreview = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	if ($null -ne $manifestPreview.pass_threshold) {
+		$minGauntletScore = [int]$manifestPreview.pass_threshold
+	}
+}
+$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath -MinScore $minGauntletScore
+if ($manifestErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] Meta-critic manifest gate:"
+	$manifestErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+$contractErrors = Test-PassRowScenarioContracts -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc
+if ($contractErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS scenario contract shallow (CLASS_QA_BIBLE.md ss8.2):"
+	$contractErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+
+if ($passRows.Count -lt $requiredFactoryIds.Count) {
+	Write-GateLine "[INCOMPLETE] Mercenary LOCK requires all factory rows PASS (meta-critic approved)."
 }
 
 if (-not (Test-Path $GodotPath)) {
-	Write-Output "[INCOMPLETE] Godot executable not found: $GodotPath"
-	exit 2
+	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix check only."
+	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	Exit-Gate 0
 }
 
-$qaWindowHelpers = Join-Path $PSScriptRoot "qa_window_placement.ps1"
-. $qaWindowHelpers
+Write-GateLine "=== Tier 1: headless Mercenary scenarios (harness) ==="
+. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-mercenary-qa.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-mercenary-qa.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
 	-ArgumentList "--headless --path `"$projectRoot`" res://tests/MercenaryQaGate.tscn" `
-	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
-	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
+	-RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath `
+	-PassThru -NoNewWindow
 $exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mercenary Tier 1 harness"
-if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+if ($exitCode -eq 130) {
+	Write-GateLine "[CANCEL] Mercenary Tier 1 harness stopped by ESC."
+	Exit-Gate 130
+}
+Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
+Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
 
 $harnessPass = Test-GodotQaHarnessSucceeded `
 	-ExitCode $exitCode `
 	-LogPaths @($stdoutPath, $stderrPath) `
 	-PassPattern '^\[PASS\] Mercenary QA gate:'
 if (-not $harnessPass) {
-	Write-Output "[FAIL] Mercenary Tier 1 harness"
-	exit 1
+	Write-GateLine "[FAIL] Mercenary Tier 1 harness"
+	Exit-Gate 1
 }
-Write-Output "[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios"
-exit 0
+Write-GateLine "--- Tier 1 harness: PASS ---"
+
+Write-GateLine ""
+Write-GateLine "=== Mercenary QA gate summary ==="
+if (-not $matrixPassValid) {
+	Write-GateLine "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch)."
+	Exit-Gate 3
+}
+if ($passRows.Count -eq $requiredFactoryIds.Count) {
+	Write-GateLine "[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios"
+	Exit-Gate 0
+}
+
+Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
+Exit-Gate 2

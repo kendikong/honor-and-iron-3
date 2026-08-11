@@ -13,6 +13,98 @@ const _CASES: Array[StringName] = [
 	&"mercenary_duelists_challenge",
 ]
 
+const _PASSIVE_CASES: Array[Dictionary] = [
+	{"passive": &"predatory_momentum", "ability": &"mercenary_swift_strike"},
+	{"passive": &"calculated_strike", "ability": &"mercenary_pullback"},
+	{"passive": &"weapon_master", "ability": &"mercenary_swift_strike"},
+	{"passive": &"dual_wield_momentum", "ability": &"mercenary_hamstring"},
+	{"passive": &"precision_edge", "ability": &"mercenary_swift_strike"},
+	{"passive": &"duelists_focus", "ability": &"mercenary_swift_strike"},
+	{"passive": &"tactical_versatility", "ability": &"mercenary_feint"},
+	{"passive": &"swift_feet", "ability": &"mercenary_feint"},
+	{"passive": &"hit_and_run", "ability": &"mercenary_swift_strike"},
+	{"passive": &"evasive", "ability": &"mercenary_tactical_retreat"},
+	{"passive": &"flanking_maneuver", "ability": &"mercenary_swift_strike"},
+	{"passive": &"dirty_fighting", "ability": &"mercenary_swift_strike"},
+	{"passive": &"executioner", "ability": &"mercenary_swift_strike"},
+	{"passive": &"blood_scent", "ability": &"mercenary_tactical_retreat"},
+	{"passive": &"ruthless", "ability": &"mercenary_sever"},
+	{"passive": &"coup_de_grace", "ability": &"mercenary_swift_strike"},
+]
+
+
+func test_live_mercenary_passive_overlay(timeout := 600000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(8, 16)
+	var scene := runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	if scene == null:
+		return
+	var session: TestBattleSession = scene.get_session()
+	for entry: Dictionary in _PASSIVE_CASES:
+		var passive_id: StringName = entry.get("passive", &"") as StringName
+		var ability_id: StringName = entry.get("ability", &"") as StringName
+		session.reset_defaults()
+		session.player_class_id = &"mercenary"
+		session.player_level = TestBattleSession.TRAINING_LEVEL
+		session.passive_enabled.clear()
+		session.skill_enabled.clear()
+		session.set_all_passives_enabled(&"mercenary", false)
+		session.set_all_skills_enabled(&"mercenary", false)
+		session.passive_enabled[passive_id] = true
+		session.skill_enabled[ability_id] = true
+		session.dummy_coords = [Vector2i(6, 5), Vector2i(7, 5)]
+		session.unkillable_dummies = true
+		scene.apply_training_board()
+		await runner.simulate_frames(8, 16)
+		var director := scene.get_node("CombatDirector") as CombatDirector
+		var shell := scene.get_node("CombatShell") as TacticalCombatShell
+		var input: CombatPlanningInput = shell.planning_input
+		input.auto_use_skill_after_move = true
+		var overlay: TacticalPlanningOverlay = scene.get_node(
+			"WorldModulate/MapRoot/PlanningOverlay",
+		) as TacticalPlanningOverlay
+		var actor_id := _unit_id_at(director.base_board, Vector2i(4, 5))
+		assert_int(actor_id).override_failure_message(
+			"%s/%s: missing live Mercenary actor" % [passive_id, ability_id],
+		).is_greater(-1)
+		if actor_id < 0:
+			continue
+		var actor := director.board.get_unit_by_id(actor_id)
+		var ability := _ability_by_id(actor, ability_id)
+		assert_object(ability).override_failure_message(
+			"%s/%s: missing ability on live Mercenary" % [passive_id, ability_id],
+		).is_not_null()
+		if ability == null:
+			continue
+		actor.ability.points_left = maxi(actor.ability.points_left, 1)
+		actor.movement.points_left = maxi(actor.movement.points_left, 8)
+		var target := _target_for(ability_id, ability)
+		_prepare_live_target(director.base_board, ability_id, target)
+		if director.board != director.base_board:
+			_prepare_live_target(director.board, ability_id, target)
+		if _needs_premove(ability, actor, target):
+			await _MOVEMENT_QA.commit_universal_run(
+				self, runner, director, input, actor_id, Vector2i(5, 5),
+			)
+		director.select_unit(actor_id)
+		director.select_ability(_ability_index(actor, ability))
+		await runner.simulate_frames(2, 16)
+		await _OVERLAY_QA.assert_live_overlay_parity(
+			self, runner, overlay, input, director, actor_id, ability, target,
+			StringName("%s/%s" % [passive_id, ability_id]),
+		)
+		var slots := await _commit_live_click(
+			runner, director, input, actor_id, ability, target,
+		)
+		assert_bool(_slots_invalid(slots)).override_failure_message(
+			"%s/%s: preview rejected Bible-valid target: %s" % [passive_id, ability_id, str(slots)],
+		).is_false()
+		await _MOVEMENT_QA.assert_committed(
+			self, ability_id, director, actor_id, ability, slots, input, overlay, runner,
+		)
+
 
 func test_live_mercenary_every_skill(timeout := 300000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
@@ -58,6 +150,9 @@ func test_live_mercenary_every_skill(timeout := 300000) -> void:
 		actor.ability.points_left = maxi(actor.ability.points_left, 1)
 		actor.movement.points_left = maxi(actor.movement.points_left, 8)
 		var target := _target_for(ability_id, ability)
+		_prepare_live_target(director.base_board, ability_id, target)
+		if director.board != director.base_board:
+			_prepare_live_target(director.board, ability_id, target)
 		if _needs_premove(ability, actor, target):
 			await _MOVEMENT_QA.commit_universal_run(
 				self, runner, director, input, actor_id, Vector2i(5, 5),
@@ -170,6 +265,15 @@ func _commit_live_click(
 	input.clear_qa_pointer_override()
 	await runner.simulate_frames(2, 16)
 	return slots
+
+
+func _prepare_live_target(board: BoardState, ability_id: StringName, target: Vector2i) -> void:
+	if ability_id != &"mercenary_executioners_blade":
+		return
+	var enemy := board.get_unit_at(target)
+	if enemy == null:
+		return
+	enemy.health.current_hp = maxi(1, enemy.health.max_hp / 4)
 
 
 func _target_for(ability_id: StringName, ability: AbilityData) -> Vector2i:

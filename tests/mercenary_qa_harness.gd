@@ -270,3 +270,216 @@ static func _has_action_failure(events: Array[SimEvent], actor_id: int) -> bool:
 static func _assert(failures: Array[String], label: String, condition: bool) -> void:
 	if not condition:
 		failures.append(label)
+
+
+static func assert_true(
+	failures: Array[String], tag: String, condition: bool, message: String = "",
+) -> void:
+	if not condition:
+		failures.append("%s: %s" % [tag, message if not message.is_empty() else "assertion failed"])
+
+
+static func assert_eq_int(failures: Array[String], tag: String, got: int, expected: int) -> void:
+	if got != expected:
+		failures.append("%s: expected %d got %d" % [tag, expected, got])
+
+
+static func assert_eq_cell(
+	failures: Array[String], tag: String, got: Vector2i, expected: Vector2i,
+) -> void:
+	if got != expected:
+		failures.append("%s: expected %s got %s" % [tag, expected, got])
+
+
+static func mercenary_unit_data() -> UnitData:
+	return FactoryTestHelpers.build_unit(&"mercenary")
+
+
+static func factory_ability(ability_id: StringName) -> AbilityData:
+	var def := mercenary_unit_data()
+	return _ability(def, ability_id)
+
+
+static func factory_passive(passive_id: StringName) -> PassiveData:
+	var def := mercenary_unit_data()
+	return _passive(def, passive_id)
+
+
+static func mercenary_with_ability(ability_id: StringName, upgraded: bool = false) -> Dictionary:
+	var def := mercenary_unit_data()
+	var abilities: Array = [_basic_attack_for(def), factory_ability(ability_id)]
+	var cfg: Dictionary = {
+		"active_abilities": abilities,
+		"active_passives": def.passives + def.innate_passives,
+	}
+	if upgraded:
+		cfg["upgraded_abilities"] = [ability_id]
+	return cfg
+
+
+static func mercenary_with_passive(passive_id: StringName, upgraded: bool = false) -> Dictionary:
+	var def := mercenary_unit_data()
+	var passives: Array = []
+	for p: PassiveData in def.innate_passives + def.passives:
+		if p != null and p.id == passive_id:
+			passives.append(p)
+	var cfg: Dictionary = {
+		"active_abilities": [_basic_attack_for(def)],
+		"active_passives": passives,
+	}
+	if upgraded:
+		cfg["upgraded_passives"] = [passive_id]
+	return cfg
+
+
+static func _basic_attack_for(definition: UnitData) -> AbilityData:
+	if definition == null:
+		return null
+	for ab: AbilityData in definition.abilities:
+		if ab != null and (ab.id == &"basic_attack" or String(ab.id).ends_with("_basic")):
+			return ab
+	return null
+
+
+static func with_upgraded_passive(cfg: Dictionary, passive_id: StringName) -> Dictionary:
+	var out := cfg.duplicate(true)
+	var upgraded: Array = out.get("upgraded_passives", [])
+	if passive_id not in upgraded:
+		upgraded.append(passive_id)
+	out["upgraded_passives"] = upgraded
+	return out
+
+
+static func hp_loss_from_plan(board: BoardState, plan: Timeline, unit_id: int) -> int:
+	var before: int = unit_hp(board, unit_id)
+	var result: SimResult = simulate_plan(board, plan)
+	return before - unit_hp(result.final_state, unit_id)
+
+
+static func events_ability_count(events: Array, ability_id: StringName) -> int:
+	var count := 0
+	for raw: Variant in events:
+		if raw is SimEvent and raw.type == GameEnums.SimEventType.ABILITY_USED:
+			if raw.data.get("ability") == ability_id:
+				count += 1
+	return count
+
+
+static func count_event_type(events: Array, event_type: GameEnums.SimEventType) -> int:
+	var count := 0
+	for raw: Variant in events:
+		if raw is SimEvent and raw.type == event_type:
+			count += 1
+	return count
+
+
+static func basic_attack_for_unit(unit: UnitState) -> AbilityData:
+	for ab: AbilityData in unit.active_abilities:
+		if ab != null and AbilitySystem._is_basic_attack(ab):
+			return ab
+	return null
+
+
+static func buff_dummy_defense(board: BoardState, unit_id: int, bonus: int) -> void:
+	var unit := board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, bonus))
+	unit._recalculate_stats(board)
+
+
+static func buff_merc_strength(board: BoardState, unit_id: int, bonus: int) -> void:
+	var unit := board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, bonus))
+	unit._recalculate_stats(board)
+
+
+static func with_upgraded_ability(cfg: Dictionary, ability_id: StringName) -> Dictionary:
+	var out := cfg.duplicate(true)
+	var upgraded: Array = out.get("upgraded_abilities", [])
+	if ability_id not in upgraded:
+		upgraded.append(ability_id)
+	out["upgraded_abilities"] = upgraded
+	return out
+
+
+static func make_plain_board(size: Vector2i) -> BoardState:
+	return _plain_board(size)
+
+
+static func place_mercenary(
+	board: BoardState, unit_id: int, pos: Vector2i, cfg: Dictionary = {},
+) -> UnitState:
+	var def := mercenary_unit_data()
+	var unit := UnitState.create(unit_id, def, GameEnums.Team.PLAYER, pos, cfg)
+	unit.ability.points_left = unit.ability.max_points
+	unit.movement.points_left = unit.movement.max_points
+	board.add_unit(unit)
+	GridSystem.set_occupant(board, pos, unit_id)
+	return unit
+
+
+static func place_dummy(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+	var dummy := UnitState.create(
+		unit_id, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, pos,
+	)
+	board.add_unit(dummy)
+	GridSystem.set_occupant(board, pos, unit_id)
+	return dummy
+
+
+static func unit_on_board(board: BoardState, unit_id: int) -> UnitState:
+	return board.get_unit_by_id(unit_id)
+
+
+static func unit_hp(board: BoardState, unit_id: int) -> int:
+	var unit := board.get_unit_by_id(unit_id)
+	return unit.health.current_hp if unit != null else 0
+
+
+static func ability_on_unit(unit: UnitState, ability_id: StringName) -> AbilityData:
+	for ab: AbilityData in unit.active_abilities:
+		if ab != null and ab.id == ability_id:
+			return ab
+	return null
+
+
+static func plan_ability(
+	unit_id: int,
+	ability: AbilityData,
+	target: Vector2i,
+	target_unit_id: int = -1,
+	timing: GameEnums.MoveTiming = GameEnums.MoveTiming.PRE_ACTION,
+) -> TimelineAction:
+	return TimelineAction.make_ability(unit_id, ability, target, target_unit_id, timing)
+
+
+static func simulate_plan(board: BoardState, plan: Timeline) -> SimResult:
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var out := SimResult.new()
+	out.final_state = board
+	out.events = events
+	return out
+
+
+static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bool:
+	return unit != null and unit.has_status(status_type)
+
+
+static func events_actor_moved(events: Array, actor_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_MOVED:
+			if int(e.data.get("unit", -1)) == actor_id:
+				return true
+	return false
+
+
+static func has_action_failure(events: Array, actor_id: int) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ACTION_FAILED:
+			if int(e.data.get("actor", -1)) == actor_id:
+				return true
+	return false
