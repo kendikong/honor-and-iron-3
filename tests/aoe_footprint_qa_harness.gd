@@ -25,6 +25,7 @@ const _SCENARIO_REGISTRIES: Array[GDScript] = [
 	preload("res://tests/knight_scenario_registry.gd"),
 	preload("res://tests/archer_scenario_registry.gd"),
 	preload("res://tests/lancer_scenario_registry.gd"),
+	preload("res://tests/monk_scenario_registry.gd"),
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [
@@ -52,7 +53,7 @@ static func find_ability_by_id(ability_id: StringName) -> AbilityData:
 	if DataLibrary.is_universal_wait(ability_id):
 		return DataLibrary.get_universal_wait()
 	for class_id: StringName in [
-		&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage", &"mercenary",
+		&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage", &"mercenary", &"monk",
 	]:
 		var unit: UnitData = _build_class_unit(class_id)
 		if unit == null:
@@ -234,6 +235,8 @@ static func _build_class_unit(class_id: StringName) -> UnitData:
 			return MageFactory.build(weapon)
 		&"mercenary":
 			return MercenaryFactory.build(weapon)
+		&"monk":
+			return MonkFactory.build(weapon)
 		_:
 			return template
 

@@ -141,6 +141,13 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 				unit.passive_flags.erase("life_link_damage_reduction")
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats(board)
+			if unit.passive_flags.has("chakra_shift_turns"):
+				var turns_left := int(unit.passive_flags["chakra_shift_turns"]) - 1
+				if turns_left <= 0:
+					unit.passive_flags.erase("chakra_shift_turns")
+				else:
+					unit.passive_flags["chakra_shift_turns"] = turns_left
+				unit._recalculate_stats(board)
 
 
 static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team: GameEnums.Team) -> void:

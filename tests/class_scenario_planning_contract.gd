@@ -86,6 +86,11 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 	var verify_no_jump: bool = true
 	var select_only: bool = false
 	match factory_id:
+		&"monk_leap":
+			actor_pos = Vector2i(2, 3)
+			commit_cell = Vector2i(3, 3)
+			verify_no_jump = false
+			select_only = true
 		&"bruiser_meat_shield", &"archer_repelling_shot":
 			ally_pos = Vector2i(3, 3)
 			commit_cell = ally_pos
@@ -200,7 +205,7 @@ static func _assert_shaped_footprint(
 
 static func _class_id_from_factory(factory_id: StringName) -> StringName:
 	var text := String(factory_id)
-	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary"]:
+	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary", "monk"]:
 		if text.begins_with(prefix + "_") or text == prefix:
 			return StringName(prefix)
 	return &""

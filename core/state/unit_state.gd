@@ -251,10 +251,48 @@ func _recalculate_stats(board: BoardState = null) -> void:
 			stat_mag += elemental_tiles * int(passive.modifiers["elemental_master_magic"])
 		if passive.modifiers.has("mana_well_magic"):
 			stat_mag += int(passive_flags.get("mana_well_magic_bonus", 0))
+		var current_tile: TileState = board.get_tile(position) if board != null else null
+		var on_elemental_surface := (
+			current_tile != null
+			and current_tile.definition != null
+			and current_tile.definition.id in [&"fire", &"frozen", &"water", &"steam", &"oil"]
+		)
+		if on_elemental_surface:
+			stat_mag += int(passive.modifiers.get("surface_magic", 0))
+			stat_def += int(passive.modifiers.get("surface_defense", 0))
+			if is_passive_upgraded(passive.id):
+				stat_mov += int(passive.modifiers.get("upgraded_surface_movement", 0))
+		if board != null and passive.modifiers.has("adjacent_elemental_strength"):
+			var adjacent_elemental := 0
+			for direction: Vector2i in GridSystem.DIRECTIONS:
+				var adjacent := board.get_tile(position + direction)
+				if (
+					adjacent != null
+					and adjacent.definition != null
+					and adjacent.definition.id in [&"fire", &"frozen", &"water", &"steam", &"oil"]
+				):
+					adjacent_elemental += 1
+			var harmony_bonus := int(passive.modifiers["adjacent_elemental_strength"])
+			if is_passive_upgraded(passive.id):
+				harmony_bonus = int(passive.modifiers.get(
+					"upgraded_adjacent_elemental_strength", harmony_bonus,
+				))
+			stat_str += adjacent_elemental * harmony_bonus
+		if board != null and passive.modifiers.has("empty_adjacent_magic"):
+			var empty_adjacent := 0
+			for direction: Vector2i in GridSystem.DIRECTIONS:
+				var adjacent := board.get_tile(position + direction)
+				if adjacent != null and adjacent.is_empty():
+					empty_adjacent += 1
+			stat_mag += empty_adjacent * int(passive.modifiers["empty_adjacent_magic"])
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(0, base_mag + w_mag + stat_mag)
 	current_defense = maxi(0, base_def + w_def + stat_def)
+	if int(passive_flags.get("chakra_shift_turns", 0)) > 0:
+		var unswapped_strength := current_strength
+		current_strength = current_magic
+		current_magic = unswapped_strength
 	
 	
 	if has_status(GameEnums.StatusType.ROOT):

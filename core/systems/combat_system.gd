@@ -644,6 +644,12 @@ static func deal_damage(
 		fort = tile.definition.fortitude
 		
 	var mitigation: int = CombatSystem.get_dynamic_defense(board, target)
+	if (
+		source_type == &"physical"
+		and attacker != null
+		and attacker.passive_flags.get("target_magic_defense_override", false)
+	):
+		mitigation = target.current_magic
 	mitigation += MercenarySystems.marked_defense_bonus(target, attacker)
 	if attacker != null:
 		mitigation = maxi(

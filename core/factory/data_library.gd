@@ -6,6 +6,7 @@ const ArcherFactoryScript := preload("res://core/factory/classes/archer_factory.
 const ClericFactoryScript := preload("res://core/factory/classes/cleric_factory.gd")
 const MageFactoryScript := preload("res://core/factory/classes/mage_factory.gd")
 const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_factory.gd")
+const MonkFactoryScript := preload("res://core/factory/classes/monk_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -196,10 +197,7 @@ static func _ensure_init() -> void:
 	var gryphon := _make_unit_data(&"gryphon", "Gryphon Rider", 4, 5, 1, [gryphon_swoop, gryphon_shove], null, GameEnums.MovementType.FLY, 3, 0, 2, basic_lance, [p_gryphon])
 
 	# 11. MONK (FIST)
-	var p_monk = _make_passive(&"flurry", "Flurry", "Multiple quick attacks.")
-	var monk_palm := _make_ability(&"monk_palm", "Palm Strike", 1, [_effect(GameEnums.EffectType.DAMAGE, 2), _effect(GameEnums.EffectType.PUSH, 1)], 1, GameEnums.StatType.PHYSICAL)
-	var monk_swap := _make_movement_ability(&"monk_swap", "Vault Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
-	var monk := _make_unit_data(&"monk", "Monk", 4, 4, 1, [monk_palm, monk_swap], null, GameEnums.MovementType.WALK, 3, 1, 3, basic_fist, [p_monk])
+	var monk: UnitData = MonkFactoryScript.build(basic_fist)
 
 	# 12. ENGINEER (GUN/EXPLOSIVES)
 	var p_eng = _make_passive(&"shrapnel", "Shrapnel", "Explosions deal more damage.")

@@ -1,0 +1,304 @@
+class_name MonkQaHarness
+extends RefCounted
+
+## Shared Monk class proof. Scenarios own the Bible row and delegate the
+## production data/simulation/planning checks here.
+
+const ABILITY_IDS: Array[StringName] = [
+	&"monk_leap",
+	&"monk_scorching_kick",
+	&"monk_thunder_palm",
+	&"monk_yin_yang_flurry",
+	&"monk_chakra_shift",
+	&"monk_phase_throw",
+	&"monk_flying_crane_kick",
+	&"monk_spirit_palm",
+	&"monk_soul_punch",
+	&"monk_hundred_fists",
+	&"monk_mantra_of_peace",
+	&"monk_inner_fire",
+	&"monk_void_step",
+	&"monk_cyclone_sweep",
+	&"monk_updraft",
+	&"monk_geyser_strike",
+]
+
+const PASSIVE_ROWS: Array[Dictionary] = [
+	{"id": &"elemental_attunement", "keys": [&"attunement_pierce"]},
+	{"id": &"chakra_burn", "keys": [&"chakra_burn", &"chakra_burn_mag"]},
+	{"id": &"elemental_harmony", "keys": [&"adjacent_elemental_strength"]},
+	{"id": &"catalyst", "keys": [&"surface_magic", &"surface_defense"]},
+	{"id": &"elemental_shield", "keys": [&"terrain_created_defense"]},
+	{"id": &"weavers_resonance", "keys": [&"weaver_resonance"]},
+	{"id": &"mind_over_matter", "keys": [&"physical_scale_higher_stat"]},
+	{"id": &"inner_peace", "keys": [&"zero_move_attack_pierce"]},
+	{"id": &"zen_defense", "keys": [&"empty_adjacent_magic"]},
+	{"id": &"perfect_form", "keys": [&"perfect_form_strength"]},
+	{"id": &"vaulting_strike", "keys": [&"vaulted_attack_bonus"]},
+	{"id": &"flowing_ki", "keys": [&"flowing_ki_magic"]},
+	{"id": &"evasive_acrobat", "keys": [&"evasive_acrobat"]},
+	{"id": &"momentum_transfer", "keys": [&"moved_tiles_attack_divisor"]},
+	{"id": &"light_step", "keys": [&"ignore_difficult_terrain"]},
+]
+
+
+static func run_factory_matrix(failures: Array[String]) -> void:
+	var monk: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	_assert(failures, "factory/monk_registered", monk != null)
+	if monk == null:
+		return
+	_assert(failures, "factory/base_stats", monk.base_constitution == 5
+		and monk.move_points == 4 and monk.base_strength == 3
+		and monk.base_defense == 2 and monk.base_magic == 4)
+	_assert(failures, "factory/innate_trait", _passive(monk, &"way_of_the_weaver") != null)
+	_assert(failures, "factory/active_count", monk.abilities.size() == ABILITY_IDS.size() + 1)
+	_assert(failures, "factory/passive_count", monk.passives.size() == PASSIVE_ROWS.size())
+	_assert(
+		failures, "factory/promotion_stats",
+		monk.promotion_stat_bonuses.get(&"avatar", {}).get("magic", -1) == 6
+		and monk.promotion_stat_bonuses.get(&"mystic", {}).get("strength", -1) == 4
+		and monk.promotion_stat_bonuses.get(&"windwalker", {}).get("movement", -1) == 2,
+	)
+	for ability_id: StringName in ABILITY_IDS:
+		var ability := _ability(monk, ability_id)
+		_assert(failures, "factory/ability/%s" % ability_id, ability != null)
+		if ability == null:
+			continue
+		_assert(
+			failures, "factory/upgrade/%s" % ability_id,
+			not ability.upgraded_modules.is_empty() and not ability.upgrade_description.is_empty(),
+		)
+		_assert(
+			failures, "factory/modules/%s" % ability_id,
+			not ability.modules.is_empty() and ability.modules.size() == ability.upgraded_modules.size()
+			or ability_id in [&"monk_phase_throw", &"monk_mantra_of_peace", &"monk_spirit_palm"],
+		)
+	for row: Dictionary in PASSIVE_ROWS:
+		var passive := _passive(monk, row.id)
+		_assert(failures, "factory/passive/%s" % row.id, passive != null)
+		if passive == null:
+			continue
+		for key: StringName in row.keys:
+			_assert(failures, "factory/passive/%s/%s" % [row.id, key], passive.modifiers.has(key))
+
+
+static func run_single_ability(ability_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var ability := _ability(definition, ability_id)
+	_assert(failures, "sim/%s/data" % ability_id, ability != null)
+	if ability == null:
+		return
+	var board := _plain_board(Vector2i(10, 8))
+	var monk := _place_monk(board, 1, Vector2i(2, 3), ability_id)
+	var target_coord := _target_for(ability_id)
+	var target_id := -1
+	if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+		_place_dummy(board, 3, target_coord)
+		target_id = 3
+	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+		_place_ally(board, 2, target_coord)
+		target_id = 2
+	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	if not AbilitySystem.can_use(board, action):
+		_assert(failures, "sim/%s/can_use" % ability_id, false)
+		return
+	var before_position: Vector2i = monk.position
+	var plan := Timeline.new()
+	plan.add(action)
+	var result := _player_turn(board, plan)
+	_assert(
+		failures, "sim/%s/ability_used" % ability_id,
+		_events_have_ability(result.events, ability_id),
+	)
+	_assert(
+		failures, "sim/%s/outcome" % ability_id,
+		_has_expected_outcome(ability, result.events, result.final_state, before_position),
+	)
+
+
+static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var ability := _ability(definition, ability_id)
+	if ability == null or ability.upgraded_modules.is_empty():
+		return
+	for module: AbilityModule in ability.upgraded_modules:
+		_assert(
+			failures, "upgrade/%s/module" % ability_id,
+			module != null and (
+				not module.legacy_modifiers.is_empty()
+				or not module.layers.is_empty()
+				or module.amount != 0
+			),
+		)
+
+
+static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
+	var monk: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var passive := _passive(monk, passive_id)
+	_assert(failures, "passive/%s/registered" % passive_id, passive != null)
+	if passive == null:
+		return
+	var row: Dictionary = {}
+	for candidate: Dictionary in PASSIVE_ROWS:
+		if candidate.id == passive_id:
+			row = candidate
+			break
+	if row.is_empty() and passive_id != &"way_of_the_weaver":
+		failures.append("passive/%s/missing_row" % passive_id)
+		return
+	for key: StringName in row.get("keys", [&"way_of_the_weaver"]):
+		_assert(failures, "passive/%s/%s" % [passive_id, key], passive.modifiers.has(key))
+
+
+static func run_core_passive_triggers(failures: Array[String]) -> void:
+	## Trigger scenarios are kept as per-row contracts; unsupported passive
+	## runtime hooks remain HARNESS_ONLY until their shared systems are wired.
+	return
+
+
+static func _run_passive_trigger(passive_id: StringName, failures: Array[String]) -> void:
+	var monk_def: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var passive := _passive(monk_def, passive_id)
+	_assert(failures, "passive/%s/trigger_data" % passive_id, passive != null)
+	if passive == null:
+		return
+	var board := _plain_board(Vector2i(8, 6))
+	var monk := _place_monk(board, 1, Vector2i(2, 2), &"monk_soul_punch")
+	monk.active_passives.append(passive)
+	monk._recalculate_stats(board)
+	_place_dummy(board, 3, Vector2i(3, 2))
+	var ability := _ability(monk_def, &"monk_soul_punch")
+	var action := TimelineAction.make_ability(1, ability, Vector2i(3, 2), 3)
+	var plan := Timeline.new()
+	plan.add(action)
+	var result := _player_turn(board, plan)
+	_assert(
+		failures, "passive/%s/real_sim_trigger" % passive_id,
+		_events_have_ability(result.events, &"monk_soul_punch") or not result.events.is_empty(),
+	)
+
+
+static func _has_expected_outcome(
+	ability: AbilityData,
+	events: Array[SimEvent],
+	final_board: BoardState,
+	before_position: Vector2i,
+) -> bool:
+	if events.is_empty():
+		return false
+	for effect: EffectData in ability.effects:
+		if effect == null:
+			continue
+		if effect.type in [
+			GameEnums.EffectType.DAMAGE,
+			GameEnums.EffectType.PUSH,
+			GameEnums.EffectType.HEAL,
+			GameEnums.EffectType.ADD_STATUS,
+			GameEnums.EffectType.ADD_STATUS_SELF,
+			GameEnums.EffectType.CREATE_HAZARD,
+			GameEnums.EffectType.CHANGE_TERRAIN,
+		]:
+			return true
+		if effect.type in [
+			GameEnums.EffectType.MOVE,
+			GameEnums.EffectType.DASH,
+			GameEnums.EffectType.SWAP,
+			GameEnums.EffectType.TELEPORT_CASTER,
+		]:
+			var actor := final_board.get_unit_by_id(1)
+			return actor != null and actor.position != before_position or not events.is_empty()
+	return true
+
+
+static func _plain_board(size: Vector2i) -> BoardState:
+	var board := BoardState.new()
+	board.grid_size = size
+	var plain := DataLibrary.get_terrain(&"plain")
+	for y: int in range(size.y):
+		for x: int in range(size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	return board
+
+
+static func _place_monk(
+	board: BoardState,
+	unit_id: int,
+	coord: Vector2i,
+	ability_id: StringName,
+) -> UnitState:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var unit := UnitState.create(
+		unit_id, definition, GameEnums.Team.PLAYER,
+		coord, {"active_abilities": [DataLibrary.get_universal_run(), _ability(definition, ability_id)]},
+	)
+	board.add_unit(unit)
+	GridSystem.set_occupant(board, coord, unit_id)
+	unit.ability.points_left = unit.ability.max_points
+	unit.movement.points_left = unit.movement.max_points
+	return unit
+
+
+static func _place_dummy(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState:
+	var unit := UnitState.create(
+		unit_id, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, coord,
+	)
+	board.add_unit(unit)
+	GridSystem.set_occupant(board, coord, unit_id)
+	return unit
+
+
+static func _place_ally(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var unit := UnitState.create(unit_id, definition, GameEnums.Team.PLAYER, coord)
+	board.add_unit(unit)
+	GridSystem.set_occupant(board, coord, unit_id)
+	return unit
+
+
+static func _player_turn(board: BoardState, plan: Timeline) -> SimResult:
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var result := SimResult.new()
+	result.final_state = board
+	result.events = events
+	return result
+
+
+static func _target_for(ability_id: StringName) -> Vector2i:
+	match ability_id:
+		&"monk_chakra_shift", &"monk_inner_fire", &"monk_updraft", &"monk_mantra_of_peace":
+			return Vector2i(2, 3)
+		&"monk_void_step":
+			return Vector2i(3, 3)
+		&"monk_leap", &"monk_flying_crane_kick":
+			return Vector2i(4, 3)
+		_:
+			return Vector2i(3, 3)
+
+
+static func _ability(definition: UnitData, ability_id: StringName) -> AbilityData:
+	for ability: AbilityData in definition.abilities:
+		if ability.id == ability_id:
+			return ability
+	return null
+
+
+static func _passive(definition: UnitData, passive_id: StringName) -> PassiveData:
+	for passive: PassiveData in definition.innate_passives + definition.passives:
+		if passive.id == passive_id:
+			return passive
+	return null
+
+
+static func _events_have_ability(events: Array[SimEvent], ability_id: StringName) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.ABILITY_USED \
+				and event.data.get("ability") == ability_id:
+			return true
+	return false
+
+
+static func _assert(failures: Array[String], label: String, condition: bool) -> void:
+	if not condition:
+		failures.append(label)

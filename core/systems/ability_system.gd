@@ -913,6 +913,16 @@ static func _apply_damage_effect_modifiers(
 			events,
 			actor,
 		)
+	if actor.passive_flags.get("next_attack_push", 0) > 0:
+		PhysicsSystem.push(
+			board,
+			target,
+			PhysicsSystem.cardinal_from_to(actor.position, target.position),
+			int(actor.passive_flags["next_attack_push"]),
+			events,
+			actor,
+		)
+		actor.passive_flags.erase("next_attack_push")
 	if effect.modifiers.has("shield_closest_ally_pct_damage"):
 		var damage_dealt := maxi(
 			0,
@@ -2827,6 +2837,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 			var base_amt := effect.amount
 			var temporary_strength_bonus := 0
+			if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
+				base_amt += int(actor.passive_flags.get("weave_physical_bonus", 0))
+				if actor.passive_flags.has("weave_physical_bonus"):
+					pierce = bool(actor.passive_flags.get("weave_physical_pierce", false))
+					actor.passive_flags.erase("weave_physical_bonus")
+					actor.passive_flags.erase("weave_physical_pierce")
+			elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
+				base_amt += int(actor.passive_flags.get("weave_magic_bonus", 0))
+				if actor.passive_flags.has("weave_magic_bonus"):
+					pierce = bool(actor.passive_flags.get("weave_magic_pierce", false))
+					actor.passive_flags.erase("weave_magic_bonus")
+					actor.passive_flags.erase("weave_magic_pierce")
 			var reaction_tile := board.get_tile(tile_coord)
 			if (
 				reaction_tile != null
@@ -2917,6 +2939,36 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					and passive.modifiers.has("debuffed_attack_bonus")
 				):
 					base_amt += int(passive.modifiers["debuffed_attack_bonus"])
+				if target != null and passive.modifiers.has("bonus_per_target_status") \
+						and actor.is_passive_upgraded(passive.id):
+					base_amt += target.active_statuses.size() * int(
+						passive.modifiers["bonus_per_target_status"],
+					)
+				if passive.modifiers.has("physical_scale_higher_stat") \
+						and action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
+					temporary_strength_bonus += maxi(0, actor.current_magic - actor.current_strength)
+				if actor.movement_points_spent_this_turn == 0 \
+						and passive.modifiers.has("zero_move_attack_pierce"):
+					pierce = true
+				if passive.modifiers.has("moved_tiles_attack_divisor"):
+					var divisor := int(passive.modifiers["moved_tiles_attack_divisor"])
+					if actor.is_passive_upgraded(passive.id):
+						divisor = int(passive.modifiers.get(
+							"upgraded_moved_tiles_attack_divisor", divisor,
+						))
+					if divisor > 0:
+						temporary_strength_bonus += actor.movement_points_spent_this_turn / divisor
+				if (
+					target != null
+					and target.id == int(actor.passive_flags.get("vaulted_target_id", -1))
+					and passive.modifiers.has("vaulted_attack_bonus")
+				):
+					var vault_bonus := int(passive.modifiers["vaulted_attack_bonus"])
+					if actor.is_passive_upgraded(passive.id):
+						vault_bonus = int(passive.modifiers.get(
+							"upgraded_vaulted_attack_bonus", vault_bonus,
+						))
+					base_amt += vault_bonus
 				if (
 					target != null
 					and GridSystem.manhattan(actor.position, target.position) == 2
@@ -3234,8 +3286,33 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				actor.passive_flags["mage_target_magic_ignore_pct"] = float(
 					effect.modifiers["ignore_target_magic_pct"]
 				)
+			if effect.modifiers.has("target_magic_defense"):
+				actor.passive_flags["target_magic_defense_override"] = true
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			if target != null and target_hp_before > target.health.current_hp:
+				for passive: PassiveData in actor.active_passives:
+					if passive == null or not passive.modifiers.has("way_of_the_weaver"):
+						continue
+					if dmg_type == &"physical":
+						actor.passive_flags["weave_magic_bonus"] = int(
+							passive.modifiers.get("weave_bonus", 2),
+						)
+						actor.passive_flags["weave_magic_pierce"] = true
+					else:
+						actor.passive_flags["weave_physical_bonus"] = int(
+							passive.modifiers.get("weave_bonus", 2),
+						)
+						actor.passive_flags["weave_physical_pierce"] = false
+						actor.passive_flags["next_attack_push"] = int(
+							passive.modifiers.get("weave_push", 1),
+						)
+					if actor.is_passive_upgraded(passive.id):
+						CombatSystem.add_armor(
+							board, actor, int(passive.modifiers.get("weave_shield", 1)), events,
+						)
+					break
 			actor.passive_flags.erase("mage_target_magic_ignore_pct")
+			actor.passive_flags.erase("target_magic_defense_override")
 			_apply_damage_effect_modifiers(
 				board,
 				actor,
@@ -4180,6 +4257,31 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 			if effect.status_type == GameEnums.StatusType.RUNNING:
 				_apply_running_boost(actor, events)
+				return
+			if effect.modifiers.has("chakra_shift"):
+				actor.passive_flags["chakra_shift_turns"] = 2
+				actor._recalculate_stats(board)
+				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+					"unit": actor.id,
+					"status_type": GameEnums.StatusType.NONE,
+					"duration": 2,
+					"amount": 0,
+				}))
+				if effect.modifiers.has("chakra_burst_damage"):
+					var burst := DataLibrary._effect(
+						GameEnums.EffectType.DAMAGE,
+						int(effect.modifiers["chakra_burst_damage"]),
+					)
+					burst.scaling_stat = GameEnums.StatType.MAGICAL
+					for burst_coord: Vector2i in GridSystem.get_affected_tiles(
+						board, actor.position, actor.position,
+						GameEnums.TargetShape.AOE_CROSS,
+						int(effect.modifiers.get("chakra_burst_size", 2)),
+					):
+						_apply_effect_to_tile(
+							board, actor, action, burst, events,
+							burst_coord, board.get_unit_at(burst_coord),
+						)
 				return
 			var status := StatusData.new(effect.status_type, effect.status_duration, effect.amount)
 			actor.active_statuses.append(status)
