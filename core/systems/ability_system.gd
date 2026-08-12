@@ -453,6 +453,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var actor := board.get_unit_by_id(action.actor_id)
 	if actor == null or not actor.is_alive():
 		return false
+	if actor.passive_flags.get("__shaman_echo_repeat", false):
+		return true
 	var ability := action.ability
 	if ability == null:
 		return false
@@ -2108,6 +2110,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
 	var wild_magic_repeat := bool(actor.passive_flags.get("__mage_wild_magic_repeat", false))
+	var shaman_echo_repeat := bool(actor.passive_flags.get("__shaman_echo_repeat", false))
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
@@ -2127,12 +2130,13 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			):
 				actor.passive_flags["predatory_free_move_pending"] = true
 		
-	if not wild_magic_repeat:
+	if not wild_magic_repeat and not shaman_echo_repeat:
 		_spend_ability_cost(actor, ability, board, events)
-	if not wild_magic_repeat and _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
+	if not wild_magic_repeat and not shaman_echo_repeat and _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
 		actor.passive_flags["ability_used_once:%s" % ability.id] = true
 	if (
 		not wild_magic_repeat
+		and not shaman_echo_repeat
 		and not actor.has_unlimited_training_actions()
 		and ability.consumes_action_slot()
 	):
@@ -4964,6 +4968,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 			)
 		else:
 			PhysicsSystem.push(board, target, push.dir, push.amount, events, actor, ability_id)
+		ShamanSystems.on_push_resolved(board, actor, target, ability_id, events)
 		
 		if push.get("pull_actor_to_target", false) and actor != null and actor.is_alive():
 			var pull_distance := GridSystem.manhattan(actor.position, target.position)

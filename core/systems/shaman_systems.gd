@@ -266,6 +266,8 @@ static func on_push_resolved(
 ) -> void:
 	if board == null or target == null or not target.is_alive():
 		return
+	if target.passive_flags.get("shaman_push_processing", false):
+		return
 	var partner := board.get_unit_by_id(int(target.passive_flags.get("shaman_link_partner_id", -1)))
 	if (
 		partner != null
@@ -274,12 +276,14 @@ static func on_push_resolved(
 		and pusher != null
 		and pusher.team != target.team
 	):
+		target.passive_flags["shaman_push_processing"] = true
 		var distance := int(target.passive_flags.get("shaman_link_push_amount", 1))
 		var direction := PhysicsSystem.cardinal_from_to(
 			target.position, partner.position,
 		)
 		if direction != Vector2i.ZERO:
 			PhysicsSystem.push(board, partner, direction, distance, events, pusher, ability_id)
+		target.passive_flags.erase("shaman_push_processing")
 	if (
 		target.passive_flags.get("shaman_poison_spread_on_push", false)
 		and target.has_status(GameEnums.StatusType.POISON)
@@ -458,6 +462,15 @@ static func after_ability_execute(
 			CombatSystem.add_armor(board, actor, shield, events)
 	if modifiers.get("ritual_sacrifice", false):
 		actor.passive_flags["shaman_ritual_used_this_turn"] = true
+	if (
+		actor.passive_flags.get("shaman_echo_next_cast", false)
+		and not modifiers.has("ally_corpse")
+		and not actor.passive_flags.get("__shaman_echo_repeat", false)
+	):
+		actor.passive_flags.erase("shaman_echo_next_cast")
+		actor.passive_flags["__shaman_echo_repeat"] = true
+		AbilitySystem.execute(board, action, events)
+		actor.passive_flags.erase("__shaman_echo_repeat")
 
 
 static func on_dealt_damage(
@@ -591,6 +604,8 @@ static func on_spawned(
 		)
 		construct._recalculate_stats(board)
 		return
+	if effect.modifiers.get("lightning_rod", false):
+		construct.passive_flags["shaman_lightning_rod"] = true
 	if not effect.modifiers.has("totem_kind"):
 		return
 	construct.passive_flags["shaman_totem_kind"] = effect.modifiers["totem_kind"]
