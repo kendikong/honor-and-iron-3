@@ -1,6 +1,8 @@
 class_name AoeFootprintQaHarness
 extends RefCounted
 
+const _RogueFactory := preload("res://core/factory/classes/rogue_factory.gd")
+
 ## Shared AOE / shaped-skill QA — sim footprint, overlay parity, geometry contracts.
 ## Tier-1 scenarios and Tier-2 live class tests must use this instead of metadata-only asserts.
 
@@ -245,7 +247,7 @@ static func _build_class_unit(class_id: StringName) -> UnitData:
 		&"shaman":
 			return ShamanFactory.build(weapon)
 		&"rogue":
-			return RogueFactory.build(weapon)
+			return _RogueFactory.build(weapon)
 		_:
 			return template
 
