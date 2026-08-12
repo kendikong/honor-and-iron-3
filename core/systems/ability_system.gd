@@ -794,7 +794,8 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 				and _passive_has_modifier(actor, &"caltrop_zero_ap")
 			):
 				return 0
-	return MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
+	ap_cost = MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
+	return EngineerSystems.adjust_action_point_cost(board, actor, ability, ap_cost)
 
 
 static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
@@ -2144,8 +2145,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
 		actor.passive_flags["__current_ability"] = ability
+		actor.passive_flags["__engineer_event_start"] = events.size()
 		if EngineerSystems.ability_has_explosion(actor, ability):
 			actor.passive_flags["engineer_explosion_active"] = true
+		EngineerSystems.before_ability_execute(board, actor, action, events)
 		RogueSystems.apply_smoke_spell_bonus(board, actor, ability)
 		if _is_basic_attack(ability):
 			var predatory_target: UnitState = (
@@ -2467,8 +2470,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			)
 		if (
 			effect_module != null
-			and effect_module.gate != GameEnums.ModuleGate.ALWAYS
 			and effect.type == GameEnums.EffectType.MOVE
+			and (
+				effect_module.gate != GameEnums.ModuleGate.ALWAYS
+				or effect_module.execution_phase == GameEnums.ModulePhase.ON_POST
+			)
 		):
 			if effect_module.min_range < 1 or effect_module.max_range < effect_module.min_range:
 				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -3733,6 +3739,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					if actor != null and actor.team != target.team:
 						var stand_amt := 2 if target.is_passive_upgraded(&"stand_ground") else 1
 						CombatSystem.counter_attack(board, target, actor, stand_amt, events, "Stand Ground")
+				if EngineerSystems.is_pull_immune(board, target):
+					is_immune = true
 				for dir in GridSystem.DIRECTIONS:
 					var adj_unit = board.get_unit_at(target.position + dir)
 					if adj_unit != null and adj_unit.team == target.team and adj_unit.has_passive(&"shield_wall"):

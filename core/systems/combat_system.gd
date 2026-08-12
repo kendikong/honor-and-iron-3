@@ -886,6 +886,7 @@ static func deal_damage(
 		"damage_type": source_type,
 		"source_label": source_label,
 	}))
+	EngineerSystems.after_damage(board, target, old_armor, events)
 	_apply_cleric_damage_reactions(board, target, attacker, source_type, events)
 	_apply_generic_damage_passives(board, target, attacker, source_type, events)
 

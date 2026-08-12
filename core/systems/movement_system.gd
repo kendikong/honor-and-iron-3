@@ -824,6 +824,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		var passed_construct := board.get_unit_at(step)
 		if EngineerSystems.can_pass_through_friendly_construct(unit, passed_construct):
 			EngineerSystems.on_construct_passed(board, unit, passed_construct, events)
+		elif passed_construct != null:
+			EngineerSystems.on_construct_entered(board, unit, passed_construct, events)
 		if not RogueSystems.should_skip_trap_entry(unit):
 			TerrainSystem.apply_entry_at(board, unit, step, events)
 

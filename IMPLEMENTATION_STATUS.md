@@ -8,6 +8,40 @@
 
 ---
 
+## Engineer rollout — implementation and automated QA checkpoint
+
+**Updated:** 2026-08-12  
+**Status:** Bible-authored Engineer factory, shared construct hooks, per-row
+scenarios, and Tier 2 live acceptance are present. This is **not LOCK**:
+the Engineer matrix remains `HARNESS_ONLY` until full Layer A/B/C promotion and
+meta-critic approval.
+
+### Deliverables
+- [x] Engineer factory registered with Blueprint Tread, Recall, three promotions,
+  15 passives, 15 active/reposition rows, and Bible upgrades.
+- [x] Construct scaling, Scrap, Overclock, turret lifecycle, terrain, movement,
+  combat, and Simulator hooks use shared `EngineerSystems` paths.
+- [x] Per-row Tier 1 scenarios, Engineer QA registry/runner, gate doc, and live
+  TestBattle suite are present.
+
+### QA
+| Suite | Result |
+|---|---|
+| `tests/EngineerQaGate.tscn` Tier 1 headless scenarios | **PASS** |
+| `scripts/run_engineer_live_qa.ps1` Tier 2 live factory/shape overlay | **PASS** |
+| `scripts/run_planning_qa_gate.ps1` planning headless gate | **PASS** |
+| `scripts/run_regression_tests.ps1` full simulation regression | **PASS** |
+| `scripts/run_engineer_qa_gate.ps1` LOCK summary | **INCOMPLETE** — 31 `HARNESS_ONLY` rows |
+
+### Honest QA boundary
+The Tier 1 harness proves factory data, deterministic simulation smoke, and
+shaped geometry, while Tier 2 currently proves factory loading and a Sludge
+Bomb overlay sample. The gate intentionally does not claim Engineer LOCK until
+each row has full Bible outcome assertions, live preview/commit coverage, and
+meta-critic approval.
+
+---
+
 ## Shaman rollout — implementation and automated QA checkpoint
 
 **Updated:** 2026-08-11  

@@ -309,18 +309,6 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(5, 3),
 			"verify_no_jump": false,
 		},
-		# --- Rogue ---
-		&"rogue_evasive_strike": {
-			"class_id": &"rogue",
-			"factory_id": &"rogue_evasive_strike",
-			"tag": "evasive_strike",
-			"mode": "click",
-			"actor_pos": Vector2i(2, 3),
-			"enemy_pos": Vector2i(4, 3),
-			"commit_cell": Vector2i(4, 3),
-			"verify_no_jump": false,
-			"premove_cell": Vector2i(3, 3),
-		},
 		# --- Mercenary ---
 		&"mercenary_swift_strike": {
 			"class_id": &"mercenary",

@@ -61,7 +61,148 @@ static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> boo
 			GameEnums.EffectType.RANGED_EXPLODE,
 		]:
 			return true
+		if module.legacy_modifiers.has("rocket_launcher") \
+				or module.legacy_modifiers.has("mine_explode") \
+				or module.legacy_modifiers.has("manual_detonation") \
+				or module.legacy_modifiers.has("ignite_oil"):
+			return true
 	return false
+
+
+static func adjust_action_point_cost(
+		board: BoardState,
+		actor: UnitState,
+		ability: AbilityData,
+		cost: int,
+) -> int:
+	if (
+		board != null
+		and actor != null
+		and ability != null
+		and actor.is_ability_upgraded(ability.id)
+		and has_ability_modifier(actor, ability, &"sacrifice_construct_instant")
+		and _nearest_owned_construct(board, actor) != null
+	):
+		return 0
+	return cost
+
+
+static func before_ability_execute(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	_events: Array[SimEvent],
+) -> void:
+	if (
+		board == null
+		or actor == null
+		or action == null
+		or action.ability == null
+		or not actor.is_ability_upgraded(action.ability.id)
+		or not has_ability_modifier(actor, action.ability, &"sacrifice_construct_instant")
+	):
+		return
+	var construct := _nearest_owned_construct(board, actor)
+	if construct != null:
+		_destroy_construct(board, actor, construct, _events)
+
+
+static func is_pull_immune(board: BoardState, target: UnitState) -> bool:
+	if board == null or target == null:
+		return false
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var turret := board.get_unit_at(target.position + direction)
+		if (
+			turret != null
+			and turret.team == target.team
+			and turret.definition != null
+			and turret.definition.is_construct
+			and turret.passive_flags.get("engineer_construct_kind", &"") == &"construct_turret"
+		):
+			var owner := board.get_unit_by_id(
+				int(turret.passive_flags.get("engineer_owner_id", -1)),
+			)
+			if (
+				owner != null
+			):
+				for passive: PassiveData in owner.active_passives:
+					if (
+						passive != null
+						and passive.modifiers.has("upgraded_turret_adjacent_pull_immunity")
+						and owner.is_passive_upgraded(passive.id)
+					):
+						return true
+	return false
+
+
+static func on_construct_entered(
+	board: BoardState,
+	unit: UnitState,
+	construct: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if (
+		board == null
+		or unit == null
+		or construct == null
+		or unit.team == construct.team
+		or construct.passive_flags.get("engineer_construct_kind", &"") != &"magnetic_mine"
+	):
+		return
+	var owner := board.get_unit_by_id(int(construct.passive_flags.get("engineer_owner_id", -1)))
+	if owner == null:
+		return
+	var pull_direction := PhysicsSystem.cardinal_from_to(unit.position, construct.position)
+	if pull_direction != Vector2i.ZERO:
+		PhysicsSystem.push(board, unit, pull_direction, 2, events, owner)
+	CombatSystem.deal_damage(
+		board, unit, 2, events, &"physical", false, false, owner, "Magnetic Mine", 2,
+	)
+	_destroy_construct(board, owner, construct, events)
+
+
+static func after_damage(
+	board: BoardState,
+	target: UnitState,
+	armor_before: int,
+	events: Array[SimEvent],
+) -> void:
+	if (
+		board == null
+		or target == null
+		or armor_before <= 0
+		or target.armor > 0
+		or not target.passive_flags.get("engineer_scrap_shield_spent", false)
+	):
+		return
+	var should_explode := bool(
+		target.passive_flags.get("engineer_scrap_shield_depletion_explode", false)
+	)
+	target.passive_flags.erase("engineer_scrap_shield_spent")
+	target.passive_flags.erase("engineer_scrap_shield_depletion_explode")
+	if not should_explode:
+		return
+	var owner := board.get_unit_by_id(
+		int(target.passive_flags.get("engineer_scrap_shield_owner_id", -1)),
+	)
+	var weapon_damage := (
+		owner.definition.equipped_weapon.might
+		if owner != null
+		and owner.definition != null
+		and owner.definition.equipped_weapon != null
+		else 1
+	)
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var victim := board.get_unit_at(target.position + direction)
+		if victim == null or victim.team == target.team:
+			continue
+		CombatSystem.deal_damage(
+			board, victim, weapon_damage, events, &"physical", false, false,
+			owner, "Scrap Shield", weapon_damage,
+		)
+		var push_direction := PhysicsSystem.cardinal_from_to(target.position, victim.position)
+		if push_direction != Vector2i.ZERO:
+			PhysicsSystem.push(board, victim, push_direction, 1, events, owner)
 
 
 static func grant_overclock(construct: UnitState) -> void:
@@ -229,6 +370,8 @@ static func turn_start(
 	unit.passive_flags.erase("engineer_scrap_shield_spent")
 	unit.passive_flags.erase("engineer_explosion_ap_granted")
 	unit.passive_flags.erase("engineer_recycling_ap_granted")
+	unit.passive_flags.erase("engineer_construct_destroyed_by_ability")
+	unit.passive_flags.erase("__engineer_event_start")
 
 
 static func turn_end(
@@ -315,6 +458,16 @@ static func on_construct_destroyed(
 		if not owner.passive_flags.get("engineer_recycling_ap_granted", false):
 			owner.ability.points_left = mini(owner.ability.max_points, owner.ability.points_left + 1)
 			owner.passive_flags["engineer_recycling_ap_granted"] = true
+	if (
+		owner.passive_flags.get("__current_ability", null) != null
+		and has_ability_modifier(
+			owner,
+			owner.passive_flags["__current_ability"] as AbilityData,
+			&"construct_destruction_refund_ap",
+		)
+	):
+		owner.passive_flags["engineer_construct_destroyed_by_ability"] = true
+	_trigger_chain_reaction(board, owner, construct.position, construct.id, events)
 
 
 static func on_kill(
@@ -396,6 +549,12 @@ static func after_ability_execute(
 					break
 		if modifiers.get("on_hit_scrap", false) and _ability_hit(events, actor.id):
 			actor.scrap += int(modifiers["on_hit_scrap"])
+		if (
+			modifiers.get("construct_destruction_refund_ap", 0) > 0
+			and actor.passive_flags.get("engineer_construct_destroyed_by_ability", false)
+		):
+			actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
+			actor.passive_flags.erase("engineer_construct_destroyed_by_ability")
 		if modifiers.get("scrap_bleed_weapon", false):
 			var bleed_target := board.get_unit_by_id(
 				int(actor.passive_flags.get("engineer_flak_bleed_target", -1))
@@ -412,7 +571,25 @@ static func after_ability_execute(
 			actor.passive_flags.erase("engineer_flak_bleed_target")
 		if modifiers.get("exhaust_next_turn", false):
 			actor.passive_flags["engineer_exhaust_next_turn"] = true
+		if (
+			ability_has_explosion(actor, action.ability)
+			and actor.is_passive_upgraded(&"blast_shielding")
+			and not actor.passive_flags.get("engineer_explosion_ap_granted", false)
+		):
+			var event_start := int(actor.passive_flags.get("__engineer_event_start", 0))
+			var enemy_hits := 0
+			for event_index: int in range(event_start, events.size()):
+				var event := events[event_index]
+				if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
+					continue
+				var victim := board.get_unit_by_id(int(event.data.get("unit", -1)))
+				if victim != null and victim.team != actor.team and int(event.data.get("amount", 0)) > 0:
+					enemy_hits += 1
+			if enemy_hits >= 3:
+				actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
+				actor.passive_flags["engineer_explosion_ap_granted"] = true
 	actor.passive_flags.erase("engineer_explosion_active")
+	actor.passive_flags.erase("__engineer_event_start")
 
 
 static func _apply_construct_bonuses(owner: UnitState, construct: UnitState) -> void:
@@ -564,6 +741,9 @@ static func _apply_scrap_shield(
 	target.armor += spent * 2
 	target.passive_flags["engineer_scrap_shield_spent"] = true
 	target.passive_flags["engineer_scrap_shield_owner_id"] = actor.id
+	target.passive_flags["engineer_scrap_shield_depletion_explode"] = actor.is_ability_upgraded(
+		action.ability.id
+	)
 
 
 static func _apply_wrench(
@@ -622,42 +802,10 @@ static func _detonate_construct(
 		or target.team != actor.team
 	):
 		return
-	var center := target.position
 	var owner := board.get_unit_by_id(int(target.passive_flags.get("engineer_owner_id", -1)))
-	var blast_size := 3
-	if owner != null:
-		blast_size += int(passive_value(owner, &"explosion_aoe_bonus", &"", 0))
-	var targets := GridSystem.get_affected_tiles(
-		board, center, center, GameEnums.TargetShape.AOE_SQUARE, blast_size,
-	)
-	for coord: Vector2i in targets:
-		var victim := board.get_unit_at(coord)
-		if victim != null and victim.team != actor.team:
-			CombatSystem.deal_damage(
-				board, victim, 2, events, &"physical", false, false,
-				actor, "Manual Detonation", 2,
-			)
-			if owner != null and has_passive_modifier(owner, &"detonation_bleed_weapon"):
-				var bleed_amount := (
-					owner.definition.equipped_weapon.might
-					if owner.definition != null and owner.definition.equipped_weapon != null
-					else 1
-				)
-				victim.active_statuses.append(
-					DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, bleed_amount)
-				)
-				if owner.is_passive_upgraded(&"shrapnel"):
-					victim.active_statuses.append(
-						DataLibrary.make_status(GameEnums.StatusType.BLIND, 1)
-					)
-				var push_dir := PhysicsSystem.cardinal_from_to(center, victim.position)
-				if push_dir != Vector2i.ZERO:
-					PhysicsSystem.push(board, victim, push_dir, 1, events, actor)
-	var old_hp := target.health.current_hp
-	target.health.current_hp = 0
-	if old_hp > 0:
-		on_construct_destroyed(board, target, events)
-		GridSystem.set_occupant(board, target.position, -1)
+	if owner == null:
+		owner = actor
+	_detonate_device(board, owner, target, "Manual Detonation", events)
 	if module.legacy_modifiers.get("refund_scrap", 0) > 0:
 		actor.scrap += int(module.legacy_modifiers["refund_scrap"])
 
@@ -718,6 +866,110 @@ static func _ignite_oil(
 		events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 			"coord": coord, "terrain": &"fire",
 		}))
+
+
+static func _nearest_owned_construct(board: BoardState, owner: UnitState) -> UnitState:
+	var nearest: UnitState = null
+	var nearest_distance := 1_000_000
+	for construct: UnitState in board.units:
+		if (
+			construct == null
+			or not construct.is_alive()
+			or construct.team != owner.team
+			or construct.definition == null
+			or not construct.definition.is_construct
+			or int(construct.passive_flags.get("engineer_owner_id", -1)) != owner.id
+		):
+			continue
+		var distance := GridSystem.manhattan(owner.position, construct.position)
+		if distance < nearest_distance:
+			nearest = construct
+			nearest_distance = distance
+	return nearest
+
+
+static func _destroy_construct(
+	board: BoardState,
+	_owner: UnitState,
+	construct: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if construct == null or not construct.is_alive():
+		return
+	var position := construct.position
+	construct.health.current_hp = 0
+	on_construct_destroyed(board, construct, events)
+	if board.get_unit_at(position) == construct:
+		GridSystem.set_occupant(board, position, -1)
+
+
+static func _detonate_device(
+	board: BoardState,
+	owner: UnitState,
+	device: UnitState,
+	source_label: String,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or owner == null or device == null or not device.is_alive():
+		return
+	var center := device.position
+	var blast_size := 3 + int(passive_value(owner, &"explosion_aoe_bonus", &"", 0))
+	var victims := GridSystem.get_affected_tiles(
+		board, center, center, GameEnums.TargetShape.AOE_SQUARE, blast_size,
+	)
+	for coord: Vector2i in victims:
+		var victim := board.get_unit_at(coord)
+		if victim == null or victim.team == owner.team:
+			continue
+		CombatSystem.deal_damage(
+			board, victim, 2, events, &"physical", false, false, owner, source_label, 2,
+		)
+		if has_passive_modifier(owner, &"detonation_bleed_weapon"):
+			var weapon_damage := (
+				owner.definition.equipped_weapon.might
+				if owner.definition != null and owner.definition.equipped_weapon != null
+				else 1
+			)
+			victim.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, weapon_damage)
+			)
+			if owner.is_passive_upgraded(&"shrapnel"):
+				victim.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
+			var push_direction := PhysicsSystem.cardinal_from_to(center, victim.position)
+			if push_direction != Vector2i.ZERO:
+				PhysicsSystem.push(board, victim, push_direction, 1, events, owner)
+	_destroy_construct(board, owner, device, events)
+
+
+static func _trigger_chain_reaction(
+	board: BoardState,
+	owner: UnitState,
+	center: Vector2i,
+	excluded_id: int,
+	events: Array[SimEvent],
+) -> void:
+	if owner == null or not has_passive_modifier(owner, &"chain_reaction"):
+		return
+	var chain_range := int(passive_value(
+		owner, &"chain_reaction_range", &"upgraded_chain_reaction_range", 2,
+	))
+	var devices: Array[UnitState] = []
+	for candidate: UnitState in board.units:
+		if (
+			candidate != null
+			and candidate.id != excluded_id
+			and candidate.is_alive()
+			and candidate.team == owner.team
+			and candidate.definition != null
+			and candidate.definition.is_construct
+			and candidate.passive_flags.get("engineer_spawn_modifiers", {}).get(
+				"mine_explode", false
+			)
+			and GridSystem.manhattan(candidate.position, center) <= chain_range
+		):
+			devices.append(candidate)
+	for device: UnitState in devices:
+		_detonate_device(board, owner, device, "Chain Reaction", events)
 
 
 static func _active_construct_count(board: BoardState, owner: UnitState) -> int:

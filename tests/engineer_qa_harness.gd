@@ -80,7 +80,11 @@ static func run_factory_matrix(failures: Array[String]) -> void:
 	)
 
 
-static func run_single_ability(ability_id: StringName, failures: Array[String]) -> void:
+static func run_single_ability(
+	ability_id: StringName,
+	failures: Array[String],
+	upgraded: bool = false,
+) -> void:
 	var definition := FactoryTestHelpers.build_unit(&"engineer")
 	var ability := _ability(definition, ability_id)
 	_assert(failures, "%s/data" % ability_id, ability != null)
@@ -89,12 +93,19 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 	_data_contract(failures, ability_id, ability)
 	var board := _plain_board(Vector2i(10, 8))
 	var actor := _place_engineer(board, 1, Vector2i(2, 3), ability)
-	if ability_id == &"engineer_scrap_shield":
+	if upgraded:
+		actor.upgraded_abilities.append(ability_id)
+	if ability_id == &"engineer_scrap_shield" or (
+		ability_id == &"engineer_flak_cannon" and upgraded
+	):
 		actor.scrap = 2
 	var target_coord := _target_coord(ability_id)
 	var target_id := -1
 	if ability_id == &"engineer_recall":
 		_place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id)
+	elif ability_id == &"engineer_rocket_launcher" and upgraded:
+		_place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id)
+		target_id = _place_dummy(board, 7, target_coord).id
 	elif ability_id in [
 		&"engineer_wrench_smack", &"engineer_manual_detonation",
 		&"engineer_overdrive_injection",
@@ -164,6 +175,7 @@ static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> 
 		"%s/upgrade_delta" % ability_id,
 		base_keys != upgrade_keys or ability.modules[0].amount != ability.upgraded_modules[0].amount,
 	)
+	run_single_ability(ability_id, failures, true)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
