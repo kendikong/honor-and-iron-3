@@ -8,6 +8,7 @@ const MageFactoryScript := preload("res://core/factory/classes/mage_factory.gd")
 const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_factory.gd")
 const MonkFactoryScript := preload("res://core/factory/classes/monk_factory.gd")
 const ShamanFactoryScript := preload("res://core/factory/classes/shaman_factory.gd")
+const RogueFactoryScript := preload("res://core/factory/classes/rogue_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -210,9 +211,12 @@ static func _ensure_init() -> void:
 	# 13. SHAMAN (STAFF)
 	var shaman: UnitData = ShamanFactoryScript.build(basic_staff)
 
+	# 14. ROGUE (SWORD)
+	var rogue: UnitData = RogueFactoryScript.build(basic_sword)
+
 	_player_units = [
 		knight, paladin, fighter, lancer, archer, mage, cleric,
-		assassin, mercenary, gryphon, monk, engineer, shaman
+		assassin, mercenary, gryphon, monk, engineer, shaman, rogue
 	]
 	for u in _player_units:
 		_ensure_player_basic_attack(u)
@@ -855,6 +859,9 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			display_name = "Spirit Nudge"
 			rng = 2
 			stat = GameEnums.StatType.MAGICAL
+		&"rogue":
+			id = &"rogue_basic"
+			display_name = "Quick Strike"
 	if class_id == &"lancer":
 		effects[0].modifiers["range_one_damage_multiplier"] = 0.7
 	var targeting_flags: int = (
@@ -1000,6 +1007,12 @@ static func _fire() -> TerrainData:
 	t.hazard_damage = 2
 	return t
 
+static func _poison() -> TerrainData:
+	var t := _hazard(&"poison", "Poison", 1, false)
+	t.entry_status = GameEnums.StatusType.POISON
+	t.entry_status_duration = 1
+	return t
+
 static func _water() -> TerrainData:
 	var t := TerrainData.new()
 	t.id = &"water"
@@ -1105,6 +1118,7 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"tall_grass"] = _tall_grass()
 		_cached_terrains[&"castle"] = _castle()
 		_cached_terrains[&"fire"] = _fire()
+		_cached_terrains[&"poison"] = _poison()
 		_cached_terrains[&"water"] = _water()
 		_cached_terrains[&"oil"] = _oil()
 		_cached_terrains[&"steam"] = _steam()

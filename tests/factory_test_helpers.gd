@@ -1,6 +1,8 @@
 class_name FactoryTestHelpers
 extends RefCounted
 
+const RogueFactoryScript := preload("res://core/factory/classes/rogue_factory.gd")
+
 
 static func build_unit(class_id: StringName) -> UnitData:
 	var weapon := WeaponData.new()
@@ -27,6 +29,8 @@ static func build_unit(class_id: StringName) -> UnitData:
 			unit = MonkFactory.build(weapon)
 		&"shaman":
 			unit = ShamanFactory.build(weapon)
+		&"rogue":
+			unit = RogueFactoryScript.build(weapon)
 	if unit == null:
 		return null
 	var basic := DataLibrary._make_class_basic_attack(class_id)

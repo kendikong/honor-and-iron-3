@@ -1271,3 +1271,37 @@ Implementation exists (factories, harness, live tests). **No owner sign-off** �
 
 **Final issue count:** 2 (+ **QA depth:** 32/32 matrix rows `HARNESS_ONLY` — not Knight LOCK)  
 **Audit result:** **PASS** (implementation) · **Owner QA sign-off: NOT PASS** · **QA LOCK: NO**
+
+---
+
+## Rogue — implementation and automated QA checkpoint (2026-08-11)
+
+**Status:** Bible-authored Rogue factory and registration are complete. Automated coverage is present for all 16 active/reposition rows and 16 passive rows, but the class remains **HARNESS_ONLY** until exact passive-trigger, upgrade-outcome, and live overlay proofs are promoted to the Knight bar.
+
+### Deliverables
+- [x] `RogueFactory` registered in `DataLibrary` with constitution, Pass, promotion boosts, 15 passives, 16 active/reposition abilities, and `[+]` data.
+- [x] Poison hazard terrain added to the shared `DataLibrary` terrain registry; Rogue pass-through is consumed by the shared `MovementSystem` passive path.
+- [x] Per-row Rogue scenario files, registry, Tier 1 gate, live TestBattle smoke, and Rogue QA documentation.
+
+### QA
+| Suite | Result |
+|---|---|
+| `scripts/run_rogue_qa_gate.ps1` Tier 1 factory/scenario gate | **PASS** |
+| `scripts/run_rogue_live_qa.ps1` live TestBattle factory load | **PASS** |
+| `scripts/run_regression_tests.ps1` full simulation regression | **PASS** |
+
+### Audit checkpoint
+| Pillar | Result | Notes |
+|---|---|---|
+| Completeness | PASS | 32/32 factory rows have scenario files and registry entries. |
+| Correct coding | PASS | Rogue behavior remains factory data plus shared systems; no Rogue-specific `ability.id` branch was added. |
+| Inconsistencies | PASS | DataLibrary, FactoryTestHelpers, movement pass-through, headless gate, and live class smoke agree on the Rogue IDs. |
+| Issues | PASS | Two explicit QA-depth follow-ups are documented below. |
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 1 | 32/32 matrix rows are `HARNESS_ONLY`; exact passive triggers and upgrade outcomes need production-resolution assertions before LOCK. | Med | Deferred — next Rogue QA depth wave |
+| 2 | Live suite currently proves TestBattle factory loading, not every Rogue preview/commit overlay footprint. | Med | Deferred — next Rogue live QA wave |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (implementation checkpoint) · **QA LOCK: NO**

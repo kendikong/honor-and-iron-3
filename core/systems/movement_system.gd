@@ -311,6 +311,10 @@ static func can_pass_through_enemy(unit: UnitState, ability: AbilityData = null)
 		return true
 	if unit != null and unit.passive_flags.get("monk_ghost_move", false):
 		return true
+	if unit != null:
+		for passive: PassiveData in unit.active_passives:
+			if passive != null and passive.modifiers.get("ghost_move", false):
+				return true
 	if ability != null and AbilitySystem.has_pass_through_effects(ability):
 		return true
 	return false
