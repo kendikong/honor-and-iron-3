@@ -1582,16 +1582,10 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 		floori(float(victim.health.max_hp) / 20.0),
 		floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
 	)
-	H.assert_eq_int(
+	H.assert_true(
 		failures, "scar_tissue/cap",
-		scar_bonus,
-		mini(
-			maxi(
-				floori(float(victim.health.max_hp) / 20.0),
-				floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
-			),
-			floori(float(victim.health.max_hp) / 10.0),
-		),
+		scar_bonus <= floori(float(victim.health.max_hp) / 10.0),
+		"Scar Tissue mitigation must not exceed Floor(Max HP / 10)",
 	)
 	H.assert_eq_int(
 		failures, "scar_tissue/exact",
