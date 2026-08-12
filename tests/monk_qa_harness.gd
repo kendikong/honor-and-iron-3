@@ -126,6 +126,35 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 	)
 
 
+static func run_shaped_footprint(ability_id: StringName, failures: Array[String]) -> void:
+	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
+	var ability := _ability(definition, ability_id)
+	if ability == null or not AoeFootprintQaHarness.ability_requires_footprint_qa(ability):
+		return
+	match ability_id:
+		&"monk_cyclone_sweep":
+			_run_cyclone_sweep_footprint(failures, ability)
+		&"monk_mantra_of_peace":
+			_run_mantra_of_peace_footprint(failures, ability)
+		_:
+			failures.append("footprint/%s/unhandled_shaped_skill" % ability_id)
+
+
+static func assert_grid_footprint_excludes(
+	failures: Array[String],
+	tag: String,
+	board: BoardState,
+	origin: Vector2i,
+	target: Vector2i,
+	shape: GameEnums.TargetShape,
+	size: int,
+	outside: Vector2i,
+) -> void:
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, tag, board, origin, target, shape, size, outside,
+	)
+
+
 static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
 	var definition: UnitData = FactoryTestHelpers.build_unit(&"monk")
 	var ability := _ability(definition, ability_id)
@@ -483,3 +512,74 @@ static func _simulate_passive_attack(
 static func _assert(failures: Array[String], label: String, condition: bool) -> void:
 	if not condition:
 		failures.append(label)
+
+
+static func _run_cyclone_sweep_footprint(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	var origin := Vector2i(3, 3)
+	_place_monk(board, 10, origin, &"monk_cyclone_sweep")
+	_place_dummy(board, 11, Vector2i(4, 3))
+	_place_dummy(board, 12, Vector2i(4, 4))
+	_place_dummy(board, 13, Vector2i(5, 3))
+	var target := Vector2i(4, 3)
+	var outside_before: Vector2i = board.get_unit_by_id(13).position
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(10, ability, target, 11))
+	var result := _player_turn(board, plan)
+	var center_after: Vector2i = result.final_state.get_unit_by_id(11).position
+	var perp_after: Vector2i = result.final_state.get_unit_by_id(12).position
+	var outside_after: Vector2i = result.final_state.get_unit_by_id(13).position
+	_assert(
+		failures, "cyclone/footprint/inside_center",
+		center_after != Vector2i(4, 3) or perp_after != Vector2i(4, 4),
+	)
+	_assert(failures, "cyclone/footprint/outside", outside_after == outside_before)
+	assert_grid_footprint_excludes(
+		failures,
+		"cyclone/footprint/grid",
+		board,
+		origin,
+		target,
+		ability.target_shape,
+		ability.target_shape_size,
+		Vector2i(5, 3),
+	)
+
+
+static func _run_mantra_of_peace_footprint(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	var origin := Vector2i(4, 4)
+	_place_monk(board, 10, origin, &"monk_mantra_of_peace")
+	var footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, origin, origin, ability.target_shape, ability.target_shape_size,
+	)
+	var inside_coord := origin
+	for tile: Vector2i in footprint:
+		if tile != origin:
+			inside_coord = tile
+			break
+	_place_dummy(board, 11, inside_coord)
+	_place_dummy(board, 12, Vector2i(8, 8))
+	assert_grid_footprint_excludes(
+		failures,
+		"mantra/footprint/grid",
+		board,
+		origin,
+		origin,
+		ability.target_shape,
+		ability.target_shape_size,
+		Vector2i(8, 8),
+	)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(10, ability, origin, -1))
+	var result := _player_turn(board, plan)
+	var inside := result.final_state.get_unit_by_id(11)
+	var outside := result.final_state.get_unit_by_id(12)
+	_assert(
+		failures, "mantra/footprint/inside_weaken",
+		inside != null and inside.has_status(GameEnums.StatusType.WEAKEN),
+	)
+	_assert(
+		failures, "mantra/footprint/outside",
+		outside != null and not outside.has_status(GameEnums.StatusType.WEAKEN),
+	)

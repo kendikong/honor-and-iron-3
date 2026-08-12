@@ -49,6 +49,9 @@ func test_live_monk_every_skill(timeout := 600000) -> void:
 		var overlay: TacticalPlanningOverlay = scene.get_node(
 			"WorldModulate/MapRoot/PlanningOverlay",
 		) as TacticalPlanningOverlay
+		_relocate_training_player(director.base_board, ability_id)
+		if director.board != director.base_board:
+			_relocate_training_player(director.board, ability_id)
 		var actor_cell := _actor_cell_for(ability_id)
 		var actor_id := _unit_id_at(director.base_board, actor_cell)
 		assert_int(actor_id).override_failure_message(
@@ -94,25 +97,25 @@ func test_live_monk_every_skill(timeout := 600000) -> void:
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
 		&"monk_leap":
-			return [Vector2i(5, 5)]
+			return []
 		&"monk_phase_throw":
-			return [Vector2i(5, 5)]
+			return [Vector2i(5, 3)]
 		&"monk_flying_crane_kick":
-			return [Vector2i(7, 5)]
-		&"monk_cyclone_sweep", &"monk_updraft", &"monk_geyser_strike":
+			return [Vector2i(6, 3)]
+		&"monk_cyclone_sweep", &"monk_updraft":
 			return [Vector2i(6, 5), Vector2i(7, 5)]
+		&"monk_geyser_strike":
+			return [Vector2i(6, 5)]
 		_:
 			return [Vector2i(6, 5)]
 
 
 func _actor_cell_for(ability_id: StringName) -> Vector2i:
 	match ability_id:
-		&"monk_leap":
-			return Vector2i(4, 5)
+		&"monk_leap", &"monk_flying_crane_kick":
+			return Vector2i(2, 3)
 		&"monk_phase_throw":
-			return Vector2i(4, 5)
-		&"monk_flying_crane_kick":
-			return Vector2i(2, 5)
+			return Vector2i(4, 3)
 		_:
 			return Vector2i(4, 5)
 
@@ -141,17 +144,30 @@ func _prepare_live_board(
 	target: Vector2i,
 ) -> void:
 	match ability_id:
-		&"monk_leap":
-			var vault_cell := actor_cell + Vector2i(
-				signi(target.x - actor_cell.x),
-				signi(target.y - actor_cell.y),
-			)
-			if board.get_unit_at(vault_cell) == null:
-				_spawn_dummy(board, vault_cell)
-		&"monk_geyser_strike":
-			board.set_tile_terrain(target, DataLibrary.get_terrain(&"water"))
+		&"monk_flying_crane_kick":
+			if board.get_unit_at(target) != null:
+				return
+			# Dash destination must stay empty; enemy belongs on the approach lane.
+			pass
 		_:
 			pass
+
+
+func _relocate_training_player(board: BoardState, ability_id: StringName) -> void:
+	var cell := _actor_cell_for(ability_id)
+	var player := _find_player_unit(board)
+	if player == null or player.position == cell:
+		return
+	GridSystem.set_occupant(board, player.position, -1)
+	player.position = cell
+	GridSystem.set_occupant(board, cell, player.id)
+
+
+func _find_player_unit(board: BoardState) -> UnitState:
+	for unit: UnitState in board.units:
+		if unit.team == GameEnums.Team.PLAYER:
+			return unit
+	return null
 
 
 func _spawn_dummy(board: BoardState, coord: Vector2i) -> void:
@@ -175,7 +191,7 @@ func _target_for(
 		return actor_cell
 	match ability_id:
 		&"monk_leap":
-			return actor_cell + Vector2i(2, 0)
+			return actor_cell + Vector2i(1, 0)
 		&"monk_phase_throw":
 			return actor_cell + Vector2i(1, 0)
 		&"monk_flying_crane_kick":

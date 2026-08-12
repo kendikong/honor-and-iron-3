@@ -20,8 +20,14 @@ $process = Start-Process -FilePath $GodotPath -ArgumentList $args `
 $process.WaitForExit()
 $process.Refresh()
 $exitCode = [int]$process.ExitCode
+$stdoutText = Get-Content $stdoutPath -Raw
+$stderrText = Get-Content $stderrPath -Raw
 Get-Content $stdoutPath
 Get-Content $stderrPath
+if ($stdoutText -match 'FAILED' -or $stderrText -match 'FAILED') {
+	Write-Output "[FAIL] Monk live QA reported test failures"
+	exit 100
+}
 if ($exitCode -ne 0) {
 	Write-Output "[FAIL] Monk live QA exit $exitCode"
 	exit $exitCode
