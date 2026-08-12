@@ -1,4 +1,4 @@
-commit: 67523bd99276e8742dc0b0464571480d3908d325
+commit: b84a700b4173cb9887bb03b2fea4b7c347707031
 
 === Bible alignment QA bundle (round 4 — monk Layer C planning) ===
 
