@@ -88,31 +88,95 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 	if ability == null:
 		return
 	var board := _plain_board(Vector2i(10, 8))
-	var actor := _place_rogue(board, 1, Vector2i(2, 3), ability_id)
-	var target := _target_for(ability_id)
-	var target_id := -1
-	if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
-		_place_dummy(board, 3, target)
-		target_id = 3
-	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
-		_place_ally(board, 2, target)
-		target_id = 2
-	var action := TimelineAction.make_ability(1, ability, target, target_id)
+	var rogue_pos := Vector2i(2, 3)
+	var actor := _place_rogue(board, 1, rogue_pos, ability_id)
+	var target_setup := _configure_sim_target(board, ability_id, ability, rogue_pos)
+	var target_coord: Vector2i = target_setup.coord
+	var target_id: int = target_setup.id
+	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	if ability_id == &"rogue_evasive_strike":
+		var move_coord := rogue_pos + Vector2i(1, 0)
+		var enemy_coord := rogue_pos + Vector2i(2, 0)
+		AbilitySystem.set_module_target(action, 0, move_coord, -1)
+		AbilitySystem.set_module_target(action, 1, enemy_coord, 3)
 	_assert(failures, "%s/can_use" % ability_id, AbilitySystem.can_use(board, action))
 	if not AbilitySystem.can_use(board, action):
 		return
+	var board_before := board.clone()
+	var plan := Timeline.new()
+	plan.add(action)
 	var events: Array[SimEvent] = []
-	AbilitySystem.execute(board, action, events)
+	Simulator.simulate_player_turn(board, plan, events)
+	var result := SimResult.new()
+	result.final_state = board
+	result.events = events
 	_assert(
 		failures,
 		"%s/ability_used" % ability_id,
-		_events_have_ability(events, ability_id),
+		_events_have_ability(result.events, ability_id),
+	)
+	ClassScenarioSimOutcome.assert_from_events(
+		failures,
+		"%s" % ability_id,
+		ability,
+		result.events,
+		board_before,
+		result.final_state,
+		target_id,
 	)
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
 		var footprint := GridSystem.get_affected_tiles(
-			board, actor.position, target, ability.target_shape, ability.target_shape_size,
+			board_before, actor.position, target_coord, ability.target_shape, ability.target_shape_size,
 		)
-		_assert(failures, "%s/footprint" % ability_id, footprint.has(target) and not footprint.is_empty())
+		_assert(failures, "%s/footprint" % ability_id, footprint.has(target_coord) and not footprint.is_empty())
+
+
+static func _configure_sim_target(
+	board: BoardState,
+	ability_id: StringName,
+	ability: AbilityData,
+	rogue_pos: Vector2i,
+) -> Dictionary:
+	var target_coord := _target_for(ability_id)
+	var target_id := -1
+	match ability_id:
+		&"rogue_slip_past":
+			_place_dummy(board, 3, rogue_pos + Vector2i(1, 0))
+			target_coord = rogue_pos + Vector2i(1, 0)
+			target_id = 3
+		&"rogue_shadow_step":
+			_place_dummy(board, 3, rogue_pos + Vector2i(2, 0))
+			target_coord = rogue_pos + Vector2i(2, 0)
+			target_id = 3
+		&"rogue_evasive_strike":
+			var move_coord := rogue_pos + Vector2i(1, 0)
+			var enemy_coord := rogue_pos + Vector2i(2, 0)
+			_place_dummy(board, 3, enemy_coord)
+			target_coord = move_coord
+			target_id = 3
+		&"rogue_smoke_bomb":
+			target_coord = rogue_pos
+		&"rogue_shadow_swap":
+			_place_ally(board, 2, Vector2i(3, 3))
+			target_coord = Vector2i(3, 3)
+			target_id = 2
+		&"rogue_shuriken_volley":
+			_place_dummy(board, 3, rogue_pos + Vector2i(2, 0))
+			_place_dummy(board, 4, rogue_pos + Vector2i(3, 0))
+			target_coord = rogue_pos + Vector2i(2, -1)
+			target_id = 3
+		&"rogue_poison_flask":
+			_place_dummy(board, 3, rogue_pos + Vector2i(2, 0))
+			target_coord = rogue_pos + Vector2i(2, 0)
+			target_id = 3
+		_:
+			if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+				_place_dummy(board, 3, target_coord)
+				target_id = 3
+			elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+				_place_ally(board, 2, target_coord)
+				target_id = 2
+	return {"coord": target_coord, "id": target_id}
 
 
 static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> void:
@@ -126,11 +190,29 @@ static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> 
 		"upgrade/%s/profile" % ability_id,
 		not ability.upgraded_modules.is_empty() and not ability.upgrade_description.is_empty(),
 	)
+	var board := _plain_board(Vector2i(10, 8))
+	var rogue := _place_rogue(board, 1, Vector2i(2, 3), ability_id)
+	rogue.upgraded_abilities.append(ability_id)
+	var target_setup := _configure_sim_target(board, ability_id, ability, rogue.position)
+	var target_coord: Vector2i = target_setup.coord
+	var target_id: int = target_setup.id
+	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	if ability_id == &"rogue_evasive_strike":
+		var move_coord := rogue.position + Vector2i(1, 0)
+		var enemy_coord := rogue.position + Vector2i(2, 0)
+		AbilitySystem.set_module_target(action, 0, move_coord, -1)
+		AbilitySystem.set_module_target(action, 1, enemy_coord, target_id)
+	_assert(failures, "upgrade/%s/can_use" % ability_id, AbilitySystem.can_use(board, action))
+	if not AbilitySystem.can_use(board, action):
+		return
+	var plan := Timeline.new()
+	plan.add(action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
 	_assert(
 		failures,
-		"upgrade/%s/changes" % ability_id,
-		ability.modules.size() == ability.upgraded_modules.size()
-			and ability.upgrade_description.length() > 0,
+		"upgrade/%s/ability_used" % ability_id,
+		_events_have_ability(events, ability_id),
 	)
 
 
@@ -191,13 +273,14 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 				int(rogue.passive_flags.get("rogue_after_teleport_attack_bonus", 0)) >= 3,
 			)
 		&"debuff_overload":
-			rogue.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			var debuffed_enemy := _place_dummy(board, 7, Vector2i(4, 2))
+			debuffed_enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
 			var dmg_events: Array[SimEvent] = []
 			_ROGUE_SYSTEMS.turn_start(board, rogue, dmg_events)
 			_assert(
 				failures,
 				"passive/debuff_overload/tick",
-				_events_have_damage_to(dmg_events, rogue.id),
+				_events_have_damage_to(dmg_events, debuffed_enemy.id),
 			)
 		&"shadow_slip":
 			var enemy := _place_dummy(board, 3, Vector2i(3, 2))
@@ -293,11 +376,22 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			var panic_bonus := _ROGUE_SYSTEMS.damage_bonus(board, rogue, debuffed, null)
 			_assert(failures, "passive/panic_cascade/bonus", panic_bonus >= 2)
 		&"mind_static":
-			var shield_target := _place_dummy(board, 11, Vector2i(3, 2))
+			var knight_def := FactoryTestHelpers.build_unit(&"knight")
+			var def_target := UnitState.create(
+				11, knight_def, GameEnums.Team.ENEMY, Vector2i(3, 2),
+			)
+			board.add_unit(def_target)
+			GridSystem.set_occupant(board, Vector2i(3, 2), 11)
+			var adjustments := _ROGUE_SYSTEMS.dynamic_stat_adjustments(board, def_target)
 			_assert(
 				failures,
 				"passive/mind_static/no_shield",
-				not _ROGUE_SYSTEMS.can_gain_shield(board, shield_target),
+				not _ROGUE_SYSTEMS.can_gain_shield(board, def_target),
+			)
+			_assert(
+				failures,
+				"passive/mind_static/def_down",
+				int(adjustments.get("defense", 0)) < 0,
 			)
 		&"board_scrambler":
 			var swap_events: Array[SimEvent] = []

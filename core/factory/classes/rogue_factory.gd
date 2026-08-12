@@ -348,8 +348,8 @@ static func _evasive_strike() -> AbilityData:
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	var strike := _module(GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	strike.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	strike.aim_module_index = 0
+	strike.aim_binding = GameEnums.AimBinding.NEW_AIM
+	strike.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	var guard := _module(GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF)
 	guard.status_type = GameEnums.StatusType.STAT_BUFF_DEF
 	guard.status_duration = 1

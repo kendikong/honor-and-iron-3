@@ -60,13 +60,16 @@ static func turn_start(board: BoardState, unit: UnitState, events: Array[SimEven
 	))
 	if per_debuff <= 0:
 		return
-	var unique := _unique_debuff_count(unit)
-	if unique <= 0:
-		return
-	var raw := per_debuff * unique
-	CombatSystem.deal_damage(
-		board, unit, raw, events, &"true", true, false, unit, "Debuff Overload", raw,
-	)
+	for enemy: UnitState in board.units:
+		if enemy == null or not enemy.is_alive() or enemy.team == unit.team:
+			continue
+		var unique := _unique_debuff_count(enemy)
+		if unique <= 0:
+			continue
+		var raw := per_debuff * unique
+		CombatSystem.deal_damage(
+			board, enemy, raw, events, &"true", true, false, unit, "Debuff Overload", raw,
+		)
 
 
 static func turn_end(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
@@ -443,7 +446,13 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 		return result
 	var reduction_pct := incoming_damage_reduction_pct(board, unit)
 	if reduction_pct > 0.0:
-		result.defense += floori(unit.current_defense * reduction_pct)
+		var def_basis: int = (
+			unit.definition.base_defense
+			if unit.definition != null
+			else unit.current_defense
+		)
+		if def_basis > 0:
+			result.defense -= floori(def_basis * reduction_pct)
 	return result
 
 

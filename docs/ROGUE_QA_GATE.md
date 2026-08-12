@@ -26,45 +26,45 @@
 
 | Factory id | Type | Scenario | Tier 1 |
 |---|---|---|---|
-| `rogue_slip_past` | Movement | `tests/skills/rogue_slip_past_scenario.gd` | HARNESS_ONLY |
-| `rogue_shadow_step` | Active | `tests/skills/rogue_shadow_step_scenario.gd` | HARNESS_ONLY |
-| `rogue_kidney_strike` | Active | `tests/skills/rogue_kidney_strike_scenario.gd` | HARNESS_ONLY |
-| `rogue_smoke_bomb` | Active | `tests/skills/rogue_smoke_bomb_scenario.gd` | HARNESS_ONLY |
-| `rogue_evasive_strike` | Active | `tests/skills/rogue_evasive_strike_scenario.gd` | HARNESS_ONLY |
-| `rogue_grappling_hook` | Active | `tests/skills/rogue_grappling_hook_scenario.gd` | HARNESS_ONLY |
-| `rogue_switcheroo` | Active | `tests/skills/rogue_switcheroo_scenario.gd` | HARNESS_ONLY |
-| `rogue_blindside` | Active | `tests/skills/rogue_blindside_scenario.gd` | HARNESS_ONLY |
-| `rogue_throat_slit` | Active | `tests/skills/rogue_throat_slit_scenario.gd` | HARNESS_ONLY |
-| `rogue_amnesia_dust` | Active | `tests/skills/rogue_amnesia_dust_scenario.gd` | HARNESS_ONLY |
-| `rogue_death_mark` | Active | `tests/skills/rogue_death_mark_scenario.gd` | HARNESS_ONLY |
-| `rogue_lethal_flourish` | Active | `tests/skills/rogue_lethal_flourish_scenario.gd` | HARNESS_ONLY |
-| `rogue_shadow_swap` | Active | `tests/skills/rogue_shadow_swap_scenario.gd` | HARNESS_ONLY |
-| `rogue_kidnap` | Active | `tests/skills/rogue_kidnap_scenario.gd` | HARNESS_ONLY |
-| `rogue_shuriken_volley` | Active | `tests/skills/rogue_shuriken_volley_scenario.gd` | HARNESS_ONLY |
-| `rogue_poison_flask` | Active | `tests/skills/rogue_poison_flask_scenario.gd` | HARNESS_ONLY |
+| `rogue_slip_past` | Movement | `tests/skills/rogue_slip_past_scenario.gd` | PASS |
+| `rogue_shadow_step` | Active | `tests/skills/rogue_shadow_step_scenario.gd` | PASS |
+| `rogue_kidney_strike` | Active | `tests/skills/rogue_kidney_strike_scenario.gd` | PASS |
+| `rogue_smoke_bomb` | Active | `tests/skills/rogue_smoke_bomb_scenario.gd` | PASS |
+| `rogue_evasive_strike` | Active | `tests/skills/rogue_evasive_strike_scenario.gd` | PASS |
+| `rogue_grappling_hook` | Active | `tests/skills/rogue_grappling_hook_scenario.gd` | PASS |
+| `rogue_switcheroo` | Active | `tests/skills/rogue_switcheroo_scenario.gd` | PASS |
+| `rogue_blindside` | Active | `tests/skills/rogue_blindside_scenario.gd` | PASS |
+| `rogue_throat_slit` | Active | `tests/skills/rogue_throat_slit_scenario.gd` | PASS |
+| `rogue_amnesia_dust` | Active | `tests/skills/rogue_amnesia_dust_scenario.gd` | PASS |
+| `rogue_death_mark` | Active | `tests/skills/rogue_death_mark_scenario.gd` | PASS |
+| `rogue_lethal_flourish` | Active | `tests/skills/rogue_lethal_flourish_scenario.gd` | PASS |
+| `rogue_shadow_swap` | Active | `tests/skills/rogue_shadow_swap_scenario.gd` | PASS |
+| `rogue_kidnap` | Active | `tests/skills/rogue_kidnap_scenario.gd` | PASS |
+| `rogue_shuriken_volley` | Active | `tests/skills/rogue_shuriken_volley_scenario.gd` | PASS |
+| `rogue_poison_flask` | Active | `tests/skills/rogue_poison_flask_scenario.gd` | PASS |
 
 ### Passives
 
 | Factory id | Scenario | Tier 1 |
 |---|---|---|
-| `pass` | `tests/passives/pass_scenario.gd` | HARNESS_ONLY |
-| `backstab` | `tests/passives/backstab_scenario.gd` | HARNESS_ONLY |
-| `blink_mastery` | `tests/passives/blink_mastery_scenario.gd` | HARNESS_ONLY |
-| `lethal_position` | `tests/passives/lethal_position_scenario.gd` | HARNESS_ONLY |
-| `shadow_strike` | `tests/passives/shadow_strike_scenario.gd` | HARNESS_ONLY |
-| `killing_intent` | `tests/passives/killing_intent_scenario.gd` | HARNESS_ONLY |
-| `shadow_clone` | `tests/passives/shadow_clone_scenario.gd` | HARNESS_ONLY |
-| `phase_shift` | `tests/passives/phase_shift_scenario.gd` | HARNESS_ONLY |
-| `blink_strike` | `tests/passives/blink_strike_scenario.gd` | HARNESS_ONLY |
-| `shadow_meld` | `tests/passives/shadow_meld_scenario.gd` | HARNESS_ONLY |
-| `shadow_slip` | `tests/passives/shadow_slip_scenario.gd` | HARNESS_ONLY |
-| `miasma_spreader` | `tests/passives/miasma_spreader_scenario.gd` | HARNESS_ONLY |
-| `panic_cascade` | `tests/passives/panic_cascade_scenario.gd` | HARNESS_ONLY |
-| `debuff_overload` | `tests/passives/debuff_overload_scenario.gd` | HARNESS_ONLY |
-| `mind_static` | `tests/passives/mind_static_scenario.gd` | HARNESS_ONLY |
-| `board_scrambler` | `tests/passives/board_scrambler_scenario.gd` | HARNESS_ONLY |
+| `pass` | `tests/passives/pass_scenario.gd` | PASS |
+| `backstab` | `tests/passives/backstab_scenario.gd` | PASS |
+| `blink_mastery` | `tests/passives/blink_mastery_scenario.gd` | PASS |
+| `lethal_position` | `tests/passives/lethal_position_scenario.gd` | PASS |
+| `shadow_strike` | `tests/passives/shadow_strike_scenario.gd` | PASS |
+| `killing_intent` | `tests/passives/killing_intent_scenario.gd` | PASS |
+| `shadow_clone` | `tests/passives/shadow_clone_scenario.gd` | PASS |
+| `phase_shift` | `tests/passives/phase_shift_scenario.gd` | PASS |
+| `blink_strike` | `tests/passives/blink_strike_scenario.gd` | PASS |
+| `shadow_meld` | `tests/passives/shadow_meld_scenario.gd` | PASS |
+| `shadow_slip` | `tests/passives/shadow_slip_scenario.gd` | PASS |
+| `miasma_spreader` | `tests/passives/miasma_spreader_scenario.gd` | PASS |
+| `panic_cascade` | `tests/passives/panic_cascade_scenario.gd` | PASS |
+| `debuff_overload` | `tests/passives/debuff_overload_scenario.gd` | PASS |
+| `mind_static` | `tests/passives/mind_static_scenario.gd` | PASS |
+| `board_scrambler` | `tests/passives/board_scrambler_scenario.gd` | PASS |
 
-**Summary:** 0 / 32 `PASS` · 32 `HARNESS_ONLY` · 0 `PLANNED`.
+**Summary:** 32 / 32 `PASS` · 0 `HARNESS_ONLY` · 0 `PLANNED`.
 
 ## Scenario contract
 
