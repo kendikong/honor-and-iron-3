@@ -283,8 +283,14 @@ function Test-TextHasPremoveProof {
 
 function Test-TextHasPostmoveProof {
 	param([string]$Text)
+	# _Planning.run_for_factory alone is insufficient — require explicit post-move leg proof.
+	if ($Text -match '_Planning\.run_for_factory') {
+		return (
+			$Text -match 'postmove_cell|commit_run_postmove|_run_postmove|run_planning_postmove|MovementPlanningSmokeRegistry\.run_for_factory_id'
+		)
+	}
 	return (
-		$Text -match 'postmove|ON_POST|assert_move_preview_origin|movement_planning_smoke|_run_postmove|class_scenario_planning_contract|_Planning\.run_for_factory'
+		$Text -match 'postmove|ON_POST|commit_run_postmove|postmove_cell|assert_move_preview_origin|movement_planning_smoke|MovementPlanningSmokeRegistry'
 	)
 }
 
@@ -304,18 +310,27 @@ function Get-FactoryPlanningFlags {
 	if (-not (Test-Path $factoryPath)) { return $none }
 	$text = Get-Content -Path $factoryPath -Raw
 	$escaped = [regex]::Escape($FactoryId)
-	$match = [regex]::Match($text, "(?ms)(.{0,2000})&`"$escaped`"\s*,[^\)]*\)")
-	if (-not $match.Success) { return $none }
-	$snippet = $match.Groups[1].Value + $match.Value
+	$idMarker = "&`"$escaped`""
+	$idPos = $text.IndexOf($idMarker)
+	if ($idPos -lt 0) { return $none }
+	$start = $text.LastIndexOf("static func _", $idPos)
+	if ($start -lt 0) { $start = 0 }
+	$nextFunc = $text.IndexOf("static func _", $idPos + $idMarker.Length)
+	$snippet = if ($nextFunc -ge 0) {
+		$text.Substring($start, $nextFunc - $start)
+	} else {
+		$text.Substring($start)
+	}
 	$isPreMove = $snippet -match 'PlannerGroup\.PRE_MOVE'
 	$hasOnPre = $snippet -match 'ModulePhase\.ON_PRE'
 	$hasOnPost = $snippet -match 'ModulePhase\.ON_POST'
 	$hasMoveEffect = $snippet -match 'EffectType\.(MOVE|MOVE_INTO_AND_PUSH|DASH)\b'
+	$hasNewAim = $snippet -match 'AimBinding\.NEW_AIM'
 	$isAction = $snippet -match 'PlannerGroup\.ACTION'
 	return @{
 		NeedsBlue = ($isPreMove -or $hasMoveEffect -or $hasOnPre)
 		NeedsPremove = ($isPreMove -or $hasOnPre)
-		NeedsPostmove = ($hasOnPost -or ($isAction -and $hasMoveEffect))
+		NeedsPostmove = ($hasOnPost -or ($isAction -and $hasMoveEffect -and $hasNewAim))
 	}
 }
 

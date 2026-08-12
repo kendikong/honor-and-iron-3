@@ -2,6 +2,8 @@ class_name FactoryTestHelpers
 extends RefCounted
 
 const RogueFactoryScript := preload("res://core/factory/classes/rogue_factory.gd")
+const BeastRiderFactoryScript := preload("res://core/factory/classes/beast_rider_factory.gd")
+const EngineerFactoryScript := preload("res://core/factory/classes/engineer_factory.gd")
 
 
 static func build_unit(class_id: StringName) -> UnitData:
@@ -31,6 +33,10 @@ static func build_unit(class_id: StringName) -> UnitData:
 			unit = ShamanFactory.build(weapon)
 		&"rogue":
 			unit = RogueFactoryScript.build(weapon)
+		&"beast_rider":
+			unit = BeastRiderFactoryScript.build(weapon)
+		&"engineer":
+			unit = EngineerFactoryScript.build(weapon)
 	if unit == null:
 		return null
 	var basic := DataLibrary._make_class_basic_attack(class_id)

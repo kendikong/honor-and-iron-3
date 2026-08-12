@@ -530,12 +530,14 @@ static func _parting_shot() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 3,
 		GameEnums.TargetingFlags.ENEMY,
 	)
+	strike.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	var move := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	move.aim_binding = GameEnums.AimBinding.NEW_AIM
+	move.execution_phase = GameEnums.ModulePhase.ON_POST
 	var modules: Array[AbilityModule] = [strike, move]
 	var upgraded := _clone_modules(modules)
 	upgraded[1].legacy_modifiers["ghost_move"] = 1

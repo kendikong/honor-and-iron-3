@@ -131,6 +131,7 @@ enum StatusType {
 	THORNS,
 	IRON_GRIP_DEBUFF,
 	BRACED, ## Negates the next incoming melee attack and retaliates.
+	OVERCLOCK, ## Construct takes an additional action this turn.
 	## Sentinel for modules/effects whose primary is not ADD_STATUS / ADD_STATUS_SELF.
 	NONE,
 }
@@ -163,7 +164,7 @@ static func keyword_uses_push_amount(keyword_id: AbilityKeywordId) -> bool:
 
 static func is_buff(status: StatusType) -> bool:
 	match status:
-		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS, StatusType.BRACED:
+		StatusType.STAT_BUFF_STR, StatusType.STAT_BUFF_MP, StatusType.STAT_BUFF_ACC, StatusType.STAT_BUFF_MAG, StatusType.STAT_BUFF_DEF, StatusType.STAT_BUFF_MOV, StatusType.PIERCE, StatusType.GHOST, StatusType.TRAMPLE, StatusType.STEALTH, StatusType.INTERCEPT, StatusType.STURDY, StatusType.INVULNERABLE, StatusType.AIRBORNE, StatusType.CANTO, StatusType.RUNNING, StatusType.RETALIATION_PROTOCOL, StatusType.RETALIATION_INFINITE_RANGE, StatusType.INDOMITABLE_WILL, StatusType.INDOMITABLE_WILL_UPGRADED, StatusType.THORNS, StatusType.BRACED, StatusType.OVERCLOCK:
 			return true
 	return false
 

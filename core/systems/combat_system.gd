@@ -18,6 +18,8 @@ const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
+const EngineerSystems := preload("res://core/systems/engineer_systems.gd")
 
 ## Purpose: Owns damage and death (and nothing else).
 ## Responsibilities: Apply damage to a unit, emit damage/death events, clear
@@ -191,6 +193,25 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 				)
 			):
 				def += int(passive.modifiers.get("moved_tiles_def", 0))
+		var engineer_def_pct := float(unit.passive_flags.get("engineer_target_def_pct", 0.0))
+		if engineer_def_pct > 0.0:
+			def = floori(def * (1.0 - engineer_def_pct))
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var adjacent := board.get_unit_at(unit.position + dir)
+			if (
+				adjacent != null
+				and adjacent.is_alive()
+				and adjacent.team == unit.team
+				and adjacent.definition != null
+				and adjacent.definition.is_construct
+				and int(adjacent.passive_flags.get("engineer_owner_id", -1)) >= 0
+			):
+				var owner := board.get_unit_by_id(
+					int(adjacent.passive_flags.get("engineer_owner_id", -1))
+				)
+				if owner != null and owner.team == unit.team and owner.has_passive(&"shield_generator"):
+					def += 1
+					break
 		
 	if unit.has_passive(&"bulwark"):
 		var bonus = adjacent_units
@@ -499,6 +520,13 @@ static func deal_damage(
 	if target == null:
 		return
 	if (
+		attacker != null
+		and target == attacker
+		and attacker.passive_flags.get("engineer_explosion_active", false)
+		and EngineerSystems.has_passive_modifier(attacker, &"own_explosion_immunity")
+	):
+		return
+	if (
 		board != null
 		and source_type == &"magical"
 		and attacker != null
@@ -586,6 +614,12 @@ static func deal_damage(
 	amount = maxi(
 		0,
 		amount - ShamanSystems.incoming_damage_reduction(board, target, attacker),
+	)
+	amount = maxi(
+		0,
+		amount - BeastRiderSystems.incoming_damage_reduction(
+			board, target, source_type, attacker,
+		),
 	)
 	if (
 		attacker != null
@@ -891,6 +925,7 @@ static func deal_damage(
 			)
 			MonkSystems.on_dealt_damage(board, attacker, target, events)
 			RogueSystems.on_dealt_damage(board, attacker, target, events)
+			BeastRiderSystems.on_attack_hit(board, attacker, target, events)
 			RogueSystems.on_attack_hit(board, attacker, target, events)
 			var shaman_ability := attacker.passive_flags.get("__current_ability", null) as AbilityData
 			var shaman_action := TimelineAction.new()
@@ -1005,6 +1040,8 @@ static func deal_damage(
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DIED, {
 			"unit": target.id,
 		}))
+		EngineerSystems.on_construct_destroyed(board, target, events)
+		EngineerSystems.on_kill(board, attacker, target, events)
 		
 		if attacker != null and attacker.is_alive():
 			MercenarySystems.on_kill(
@@ -1019,6 +1056,7 @@ static func deal_damage(
 			)
 			ShamanSystems.on_kill(board, attacker, target, events)
 			RogueSystems.on_kill(board, attacker, target, events)
+			BeastRiderSystems.on_kill(board, attacker, target, events)
 			if attacker.passive_flags.get("mage_spell_in_progress", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("mana_siphon"):

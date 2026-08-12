@@ -3,6 +3,7 @@ extends RefCounted
 
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
 
 ## Purpose: The live state of one unit during a battle. Single source of truth for
 ## that unit's HP, position, facing, and remaining points.
@@ -306,6 +307,11 @@ func _recalculate_stats(board: BoardState = null) -> void:
 		stat_mag += int(rogue_adjustments.get("magic", 0))
 		stat_def += int(rogue_adjustments.get("defense", 0))
 		stat_mov += int(rogue_adjustments.get("movement", 0))
+		var beast_adjustments := BeastRiderSystems.dynamic_stat_adjustments(board, self)
+		stat_str += int(beast_adjustments.get("strength", 0))
+		stat_mag += int(beast_adjustments.get("magic", 0))
+		stat_def += int(beast_adjustments.get("defense", 0))
+		stat_mov += int(beast_adjustments.get("movement", 0))
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(

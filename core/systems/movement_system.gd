@@ -4,6 +4,8 @@ extends RefCounted
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
+const EngineerSystems := preload("res://core/systems/engineer_systems.gd")
 
 ## Purpose: Owns point-based unit movement and pathfinding.
 ## Responsibilities: Find a deterministic shortest path and walk a unit along it,
@@ -279,7 +281,9 @@ static func resolve_move_path(
 	)
 	if not waypoints.is_empty():
 		if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
-			return waypoints.duplicate()
+			if can_end_movement_on(board, waypoints[waypoints.size() - 1], unit):
+				return waypoints.duplicate()
+			return []
 		## Committed waypoints are intent truth — never silently re-pathfind.
 		if (
 			_is_contiguous_cardinal_route(start, waypoints)
@@ -288,7 +292,10 @@ static func resolve_move_path(
 		):
 			return waypoints.duplicate()
 		return []
-	return find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
+	var path := find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
+	if not path.is_empty() and not can_end_movement_on(board, path[path.size() - 1], unit):
+		return []
+	return path
 
 
 static func can_reach_coord(
@@ -333,6 +340,8 @@ static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState
 				if unit != null and (unit.has_status(GameEnums.StatusType.GHOST) or can_pass_through_enemy(unit, ability)):
 					return true # Ghost/Trample/BULLDOZE can walk through enemies
 				return false # Cannot walk through enemies
+			if EngineerSystems.can_pass_through_friendly_construct(unit, occ):
+				return true
 			return false # Allied units block transit; only explicit pass-through may enter occupants
 	return true
 
@@ -700,7 +709,11 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		}))
 		return
 	if action.move_timing == GameEnums.MoveTiming.POST_ACTION and unit.pre_move_used_this_turn:
-		if not unit.has_passive(&"canto") and not unit.has_status(GameEnums.StatusType.CANTO):
+		if (
+			not BeastRiderSystems.can_post_move(unit)
+			and not unit.has_passive(&"canto")
+			and not unit.has_status(GameEnums.StatusType.CANTO)
+		):
 			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 				"actor": action.actor_id, "reason": "cannot_move_after_pre_move",
 			}))
@@ -764,6 +777,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 
 	var from := unit.position
 	var points_before: int = unit.movement.points_left
+	BeastRiderSystems.before_skill_move(board, unit, action.ability, events)
 	GridSystem.set_occupant(board, unit.position, -1)
 	var trample_hit_ids: Dictionary = {}
 	
@@ -807,6 +821,9 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 				for tag_i in range(pre_trample_ev_count, events.size() - 1):
 					events[tag_i].data["trample_step"] = step_index
 
+		var passed_construct := board.get_unit_at(step)
+		if EngineerSystems.can_pass_through_friendly_construct(unit, passed_construct):
+			EngineerSystems.on_construct_passed(board, unit, passed_construct, events)
 		if not RogueSystems.should_skip_trap_entry(unit):
 			TerrainSystem.apply_entry_at(board, unit, step, events)
 
@@ -827,6 +844,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	unit.movement.points_left -= mp_spent
 	unit.record_movement(path, mp_spent, from)
 	_apply_movement_passives(board, unit, events)
+	EngineerSystems.after_movement(board, unit, events)
 	ShamanSystems.collect_soul_orb(board, unit, unit.position, events)
 	GridSystem.set_occupant(board, unit.position, unit.id)
 
@@ -855,6 +873,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		unit.pre_move_used_this_turn = true
 	_apply_canto_keyword(unit)
 	_resolve_zone_of_control(board, unit, events)
+	BeastRiderSystems.after_standard_move(board, unit, events)
 
 
 static func _apply_canto_keyword(unit: UnitState) -> void:

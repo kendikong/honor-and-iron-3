@@ -18,6 +18,8 @@ const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
+const EngineerSystems := preload("res://core/systems/engineer_systems.gd")
 
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
@@ -495,6 +497,17 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 	if not _has_resource_for_ability(actor, ability):
 		return false
+	if (
+		EngineerSystems.has_ability_modifier(actor, ability, &"scrap_shield")
+		and actor.scrap <= 0
+	):
+		return false
+	if (
+		actor.is_ability_upgraded(ability.id)
+		and EngineerSystems.has_ability_modifier(actor, ability, &"scrap_attack_bonus")
+		and actor.scrap < 1
+	):
+		return false
 	var dist := GridSystem.manhattan(actor.position, action.target_coord)
 	if ability_has_dash(ability, actor):
 		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
@@ -551,6 +564,19 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			):
 				target_unit = adj_unit
 				break
+	if EngineerSystems.has_ability_modifier(actor, ability, &"recall_adjacent_construct"):
+		if not EngineerSystems.can_use_recall(board, actor, action.target_coord):
+			return false
+	if (
+		EngineerSystems.has_ability_modifier(actor, ability, &"construct_target_only")
+		and (
+			target_unit == null
+			or target_unit.team != actor.team
+			or target_unit.definition == null
+			or not target_unit.definition.is_construct
+		)
+	):
+		return false
 	if (
 		target_unit != null
 		and _ability_has_modifier(actor, ability, &"requires_missing_hp")
@@ -698,6 +724,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		if not _occupied_push_target_valid(board, actor, ability, action.target_coord):
 			return false
 	if not MercenarySystems.can_use_extra(board, actor, ability, action):
+		return false
+	if not BeastRiderSystems.can_use_extra(board, actor, ability, action):
 		return false
 
 	return true
@@ -2116,6 +2144,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
 		actor.passive_flags["__current_ability"] = ability
+		if EngineerSystems.ability_has_explosion(actor, ability):
+			actor.passive_flags["engineer_explosion_active"] = true
 		RogueSystems.apply_smoke_spell_bonus(board, actor, ability)
 		if _is_basic_attack(ability):
 			var predatory_target: UnitState = (
@@ -2294,6 +2324,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MercenarySystems.before_skill_move(board, actor, ability, events)
 		MonkSystems.before_skill_move(board, actor, ability, events)
 		RogueSystems.before_skill_move(board, actor, ability, events)
+		BeastRiderSystems.before_skill_move(board, actor, ability, events)
 
 		var walk_goal: Vector2i = target_coord
 		var goal_unit: UnitState = board.get_unit_at(walk_goal)
@@ -2325,6 +2356,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MercenarySystems.after_skill_move(board, actor, ability, events)
 		MonkSystems.after_skill_move(board, actor, ability, events)
 		RogueSystems.after_skill_move(board, actor, ability, events)
+		BeastRiderSystems.after_skill_move(board, actor, ability, events)
 			
 		# Recompute affected tiles after movement since actor position and facing may have changed
 		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
@@ -2673,6 +2705,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MonkSystems.after_ability_execute(board, actor, action, events)
 		ShamanSystems.after_ability_execute(board, actor, action, events)
 		RogueSystems.after_ability_execute(board, actor, action, events)
+		BeastRiderSystems.after_ability_execute(board, actor, action, events)
+		EngineerSystems.after_ability_execute(board, actor, action, events)
 
 	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
@@ -2932,6 +2966,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 			var base_amt := effect.amount
 			var temporary_strength_bonus := 0
+			var engineer_damage := EngineerSystems.damage_adjustment(
+				board, actor, target, effect,
+			)
+			base_amt += int(engineer_damage.get("amount", 0))
+			pierce = pierce or bool(engineer_damage.get("pierce", false))
 			if action.ability.scaling_stat == GameEnums.StatType.PHYSICAL:
 				base_amt += int(actor.passive_flags.get("weave_physical_bonus", 0))
 				if actor.passive_flags.has("weave_physical_bonus"):
@@ -3140,6 +3179,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				board, actor, target, effect, &"ability",
 			)
 			amount += RogueSystems.damage_bonus(board, actor, target, effect)
+			amount += BeastRiderSystems.damage_bonus(board, actor, target, effect)
 				
 			var dmg_type = &"physical"
 			if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
@@ -3364,6 +3404,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if MonkSystems.should_pierce(board, actor, target):
 				pierce = true
 			if RogueSystems.should_pierce(board, actor, target, effect):
+				pierce = true
+			if BeastRiderSystems.should_pierce(board, actor, target, effect):
 				pierce = true
 			if actor.has_passive(&"unstoppable_mass") and actor.moved_max_movement_this_turn():
 				pierce = true
@@ -3939,6 +3981,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							action.ability.display_name,
 							adjacent_damage,
 						)
+				EngineerSystems.on_spawned(board, actor, construct, effect, action, events)
 			else:
 				# Summoner: create a minion at target_coord from behavior.spawn_unit.
 				if actor.definition == null or actor.definition.behavior == null:
@@ -4292,16 +4335,21 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 					return
 			elif effect.modifiers.has("motion_mode"):
-				destination = RogueSystems.resolve_teleport_destination(
-					board,
-					actor,
-					target,
-					tile_coord,
-					int(effect.modifiers["motion_mode"]),
-				)
+				if effect.modifiers.get("reposition_opposite_side", false):
+					destination = BeastRiderSystems.resolve_reposition_destination(
+						board, actor, target,
+					)
+				else:
+					destination = RogueSystems.resolve_teleport_destination(
+						board,
+						actor,
+						target,
+						tile_coord,
+						int(effect.modifiers["motion_mode"]),
+					)
 				if destination == Vector2i(-1, -1):
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": actor.id, "reason": "rogue_teleport_no_landing",
+						"actor": actor.id, "reason": "teleport_no_landing",
 					}))
 					return
 			if not GridSystem.is_occupied(board, destination) and not GridSystem.is_wall(board, destination):

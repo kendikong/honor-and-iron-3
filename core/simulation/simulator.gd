@@ -18,6 +18,8 @@ const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
+const EngineerSystems := preload("res://core/systems/engineer_systems.gd")
 
 ## Purpose: THE single source of combat truth. One pure function turns a board +
 ## a plan into a resulting board + an ordered event log. Preview and execution
@@ -70,6 +72,7 @@ static func simulate_player_turn(board: BoardState, plan: Timeline, events: Arra
 	ResolutionPipeline.resolve_pending_pushes(board, events)
 	_apply_bucket(board, plan, ActionBucket.POST_MOVE, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)
+	EngineerSystems.player_phase_end(board, events)
 
 
 static func _apply_bucket(
@@ -83,6 +86,7 @@ static func _apply_bucket(
 			continue
 		if not _action_in_bucket(action, bucket):
 			continue
+		BeastRiderSystems.prepare_action(board, plan, action)
 		ResolutionPipeline.apply_action(board, action, events)
 
 
@@ -162,6 +166,8 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			ShamanSystems.turn_start(board, unit, events)
 			RogueSystems.turn_start(board, unit, events)
 			RogueSystems.apply_next_turn_ap_bonus(unit)
+			BeastRiderSystems.turn_start(board, unit, events)
+			EngineerSystems.turn_start(board, unit, events)
 			unit.passive_flags.erase("mage_ap_refunded")
 			for passive: PassiveData in unit.active_passives:
 				if passive == null or not passive.modifiers.has("overload_tick_damage"):
@@ -384,7 +390,9 @@ static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> voi
 			MonkSystems.turn_end(board, unit, events)
 			ShamanSystems.turn_end(unit)
 			RogueSystems.turn_end(board, unit, events)
+			BeastRiderSystems.turn_end(board, unit, events)
 			MercenarySystems.turn_end_rollover(unit)
+			EngineerSystems.turn_end(board, unit, events)
 			var took_dmg: bool = unit.passive_flags.get("damaged_this_turn", false)
 			unit.passive_flags["damaged_last_turn"] = took_dmg
 			for passive: PassiveData in unit.active_passives:

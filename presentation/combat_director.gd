@@ -1,6 +1,8 @@
 class_name CombatDirector
 extends Node
 
+const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
+
 ## Purpose: The bridge between the pure simulation and the visuals, and the turn
 ## state machine (constitution: "Combat should always exist in one state").
 ## Responsibilities: Own the live BoardState + the player's Timelines; expose a
@@ -585,7 +587,11 @@ func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 	if not p_unit.has_used_turn_action():
 		return false
 	if _unit_has_pre_move_queued(unit_id):
-		return p_unit.has_passive(&"canto") or p_unit.has_status(GameEnums.StatusType.CANTO)
+		return (
+			BeastRiderSystems.can_post_move(p_unit)
+			or p_unit.has_passive(&"canto")
+			or p_unit.has_status(GameEnums.StatusType.CANTO)
+		)
 	return true
 
 @rpc("any_peer", "call_local", "reliable")

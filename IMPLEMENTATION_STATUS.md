@@ -1305,3 +1305,47 @@ Implementation exists (factories, harness, live tests). **No owner sign-off** �
 
 **Final issue count:** 2  
 **Audit result:** **PASS** (implementation checkpoint) · **QA LOCK: NO**
+
+---
+
+## Beast Rider — implementation and automated QA checkpoint (2026-08-12)
+
+**Status:** Bible-authored Beast Rider data, shared-system mechanics, and
+Knight-shaped automated QA are present. Owner QA remains **NOT PASS** until the
+manual Tier 3 visual checklist and class sign-off registry are completed.
+
+### Deliverables
+- [x] `BeastRiderFactory` registered with `iron_lance` fallback, Gallop, three
+  promotions, 15 passives, Reposition, 15 active skills, and all `[+]` data.
+- [x] Beast Rider hooks use shared `AbilitySystem`, `MovementSystem`,
+  `CombatSystem`, `Simulator`, `GridSystem`, and `CombatDirector` paths.
+- [x] Reposition destination resolution is routed through
+  `BeastRiderSystems.resolve_reposition_destination`.
+- [x] Gallop post-action movement is available in planning and its upgraded
+  split-movement ATK/DEF flags are resolved in simulation.
+- [x] 32 per-row scenario files, registry, harness contracts, Tier 1 gate,
+  Tier 2 live factory smoke, QA manifest, and gate documentation.
+
+### QA
+| Suite | Result |
+|---|---|
+| `scripts/run_beast_rider_qa_gate.ps1` — 32-row Tier 1 + Tier 2 live | **PASS** |
+| `scripts/run_beast_rider_live_qa.ps1` — TestBattle factory load | **PASS** |
+| `scripts/run_planning_qa_gate.ps1` — AOE, headless planning, T3 mimic | **PASS** |
+| `scripts/run_regression_tests.ps1` — deterministic sim/bridge | **PASS** |
+
+### Audit checkpoint
+| Pillar | Result | Notes |
+|---|---|---|
+| Completeness | PASS | 16 active and 16 passive rows have scenario files, registry entries, data/upgrade contracts, and planning delegation. |
+| Correct coding | PASS | Shared data/effect consumers handle Beast Rider behavior; no Beast Rider `ability.id` branch was added to production systems. |
+| Inconsistencies | PASS | Factory, DataLibrary, AbilitySystem, MovementSystem, Simulator, CombatDirector, and QA IDs agree. |
+| Issues | PASS | Two explicit owner-side follow-ups remain documented below. |
+
+| # | Issue | Severity | Status |
+|---|---|---|---|
+| 1 | Tier 3 visual feel, animation, and pixel/compositor inspection remains manual. | Med | Deferred — owner F5 |
+| 2 | `CLASS_QA_SIGNOFF.md` owner row is not yet signed for Beast Rider. | Med | Deferred — owner sign-off |
+
+**Final issue count:** 2  
+**Audit result:** **PASS** (implementation and automated QA) · **Owner QA sign-off: NOT PASS** · **QA LOCK: NO**

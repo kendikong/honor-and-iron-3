@@ -9,6 +9,8 @@ const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_fa
 const MonkFactoryScript := preload("res://core/factory/classes/monk_factory.gd")
 const ShamanFactoryScript := preload("res://core/factory/classes/shaman_factory.gd")
 const RogueFactoryScript := preload("res://core/factory/classes/rogue_factory.gd")
+const BeastRiderFactoryScript := preload("res://core/factory/classes/beast_rider_factory.gd")
+const EngineerFactoryScript := preload("res://core/factory/classes/engineer_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -203,10 +205,7 @@ static func _ensure_init() -> void:
 	var monk: UnitData = MonkFactoryScript.build(basic_fist)
 
 	# 12. ENGINEER (GUN/EXPLOSIVES)
-	var p_eng = _make_passive(&"shrapnel", "Shrapnel", "Explosions deal more damage.")
-	var eng_grenade := _make_ability(&"eng_grenade", "Grenade", 3, [_effect(GameEnums.EffectType.RANGED_EXPLODE, 2)], 1)
-	var eng_pull := _make_ability(&"eng_pull", "Grappling Hook", 3, [_effect(GameEnums.EffectType.PULL, 1)], 0)
-	var engineer := _make_unit_data(&"engineer", "Engineer", 3, 3, 1, [eng_grenade, eng_pull], null, GameEnums.MovementType.WALK, 2, 0, 3, basic_gun, [p_eng])
+	var engineer: UnitData = EngineerFactoryScript.build(basic_gun)
 
 	# 13. SHAMAN (STAFF)
 	var shaman: UnitData = ShamanFactoryScript.build(basic_staff)
@@ -214,9 +213,12 @@ static func _ensure_init() -> void:
 	# 14. ROGUE (SWORD)
 	var rogue: UnitData = RogueFactoryScript.build(basic_sword)
 
+	# 15. BEAST RIDER (LANCE)
+	var beast_rider: UnitData = BeastRiderFactoryScript.build(basic_lance)
+
 	_player_units = [
 		knight, paladin, fighter, lancer, archer, mage, cleric,
-		assassin, mercenary, gryphon, monk, engineer, shaman, rogue
+		assassin, mercenary, gryphon, monk, engineer, shaman, rogue, beast_rider
 	]
 	for u in _player_units:
 		_ensure_player_basic_attack(u)
@@ -862,6 +864,10 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		&"rogue":
 			id = &"rogue_basic"
 			display_name = "Quick Strike"
+		&"beast_rider":
+			id = &"beast_rider_basic"
+			display_name = "Lance Jab"
+			rng = 1
 	if class_id == &"lancer":
 		effects[0].modifiers["range_one_damage_multiplier"] = 0.7
 	var targeting_flags: int = (
@@ -1092,6 +1098,14 @@ static func _spear_wall() -> TerrainData:
 	t.entry_status_duration = 1
 	return t
 
+static func _barbed_wire() -> TerrainData:
+	var t := _hazard(&"barbed_wire", "Barbed Wire", 0, false)
+	t.is_trap = true
+	t.entry_status = GameEnums.StatusType.ROOT
+	t.entry_status_duration = 1
+	t.entry_bleed_amount = 1
+	return t
+
 static func _sanctuary() -> TerrainData:
 	var t := _hazard(&"sanctuary", "Sanctuary", 0, false)
 	t.display_name = "Sanctuary"
@@ -1131,6 +1145,7 @@ static func get_terrain(id: StringName) -> TerrainData:
 		_cached_terrains[&"caltrop_trap"] = _caltrop_trap()
 		_cached_terrains[&"suppressing_fire"] = _suppressing_fire()
 		_cached_terrains[&"spear_wall"] = _spear_wall()
+		_cached_terrains[&"barbed_wire"] = _barbed_wire()
 		_cached_terrains[&"sanctuary"] = _sanctuary()
 		_cached_terrains[&"holy_ground"] = _holy_ground()
 		_cached_terrains[&"smoke"] = _smoke()

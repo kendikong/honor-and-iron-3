@@ -215,6 +215,7 @@ func get_active_motion_module(upgraded: bool = false) -> AbilityModule:
 			module != null
 			and AbilityModuleBridge.is_motion_type(module.primary_type)
 			and module.gate == GameEnums.ModuleGate.ALWAYS
+			and module.execution_phase != GameEnums.ModulePhase.ON_POST
 		):
 			return module
 	return null
