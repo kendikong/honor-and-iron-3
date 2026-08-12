@@ -3,6 +3,7 @@ extends RefCounted
 
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
+const RogueSystems := preload("res://core/systems/rogue_systems.gd")
 
 ## Purpose: Owns point-based unit movement and pathfinding.
 ## Responsibilities: Find a deterministic shortest path and walk a unit along it,
@@ -433,6 +434,7 @@ static func execute_skill_walk(
 			if not crossed_ids.has(crossed_enemy.id):
 				crossed_ids.append(crossed_enemy.id)
 				unit.passive_flags["monk_crossed_enemy_ids"] = crossed_ids
+			RogueSystems.track_crossed_enemy(unit, crossed_enemy.id)
 		if not PhysicsSystem.resolve_pass_through_tile(
 			board, unit, step, move_dir, exit_dir, is_final_step,
 			trample_atk, bulldoze, trample_push, events, ability_id,
@@ -463,7 +465,7 @@ static func execute_skill_walk(
 		if tile != null and tile.definition != null and tile.definition.id != &"plain":
 			unit.passive_flags["passed_through_terrain"] = true
 			
-		if not unit.passive_flags.get("monk_light_step", false):
+		if not unit.passive_flags.get("monk_light_step", false) and not RogueSystems.should_skip_trap_entry(unit):
 			TerrainSystem.apply_entry_at(board, unit, step, events)
 	# Rubber-band backwards if we halted on a trampled tile.
 	while trampled_restore.has(unit.position):
@@ -805,7 +807,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 				for tag_i in range(pre_trample_ev_count, events.size() - 1):
 					events[tag_i].data["trample_step"] = step_index
 
-		TerrainSystem.apply_entry_at(board, unit, step, events)
+		if not RogueSystems.should_skip_trap_entry(unit):
+			TerrainSystem.apply_entry_at(board, unit, step, events)
 
 	unit.position = path[path.size() - 1]
 	var mp_spent: int = 0

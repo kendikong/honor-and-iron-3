@@ -4,6 +4,8 @@ extends RefCounted
 ## Layer A/B helper for Rogue rows. Each row scenario delegates here, while
 ## shaped rows additionally delegate to the shared footprint contract.
 
+const _ROGUE_SYSTEMS := preload("res://core/systems/rogue_systems.gd")
+
 const ABILITY_IDS: Array[StringName] = [
 	&"rogue_slip_past",
 	&"rogue_shadow_step",
@@ -152,8 +154,165 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 			"passive/%s/upgrade_text" % passive_id,
 			not passive.upgraded_description.is_empty(),
 		)
+		_run_passive_trigger(passive_id, failures)
 		return
 	failures.append("passive/%s/row_missing" % passive_id)
+
+
+static func _run_passive_trigger(passive_id: StringName, failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"rogue")
+	var passive := _passive(definition, passive_id)
+	if passive == null:
+		return
+	var board := _plain_board(Vector2i(8, 6))
+	var rogue := _place_rogue(board, 1, Vector2i(2, 2), &"rogue_kidney_strike")
+	rogue.active_passives.append(passive)
+	rogue._recalculate_stats(board)
+	match passive_id:
+		&"backstab":
+			var dummy := _place_dummy(board, 3, Vector2i(2, 3))
+			dummy.facing = GameEnums.Facing.SOUTH
+			rogue.position = Vector2i(2, 2)
+			GridSystem.set_occupant(board, Vector2i(2, 3), 3)
+			GridSystem.set_occupant(board, Vector2i(2, 2), 1)
+			_ROGUE_SYSTEMS.apply_attack_ignore_def(board, rogue, dummy)
+			_assert(
+				failures,
+				"passive/backstab/ignore_def",
+				int(rogue.passive_flags.get("attack_ignore_def", 0)) > 0,
+			)
+		&"blink_mastery":
+			rogue.passive_flags["jumped_or_teleported_this_turn"] = true
+			var events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), events)
+			_assert(
+				failures,
+				"passive/blink_mastery/bonus",
+				int(rogue.passive_flags.get("rogue_after_teleport_attack_bonus", 0)) >= 3,
+			)
+		&"debuff_overload":
+			rogue.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			var dmg_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.turn_start(board, rogue, dmg_events)
+			_assert(
+				failures,
+				"passive/debuff_overload/tick",
+				_events_have_damage_to(dmg_events, rogue.id),
+			)
+		&"shadow_slip":
+			var enemy := _place_dummy(board, 3, Vector2i(3, 2))
+			var slip_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.on_moved_through_enemy(board, rogue, [enemy.id], slip_events)
+			_assert(
+				failures,
+				"passive/shadow_slip/blind_mark",
+				enemy.has_status(GameEnums.StatusType.BLIND) and enemy.has_status(GameEnums.StatusType.MARK),
+			)
+		&"blink_strike":
+			_assert(
+				failures,
+				"passive/blink_strike/range",
+				_ROGUE_SYSTEMS.basic_attack_range_bonus(rogue) >= 2,
+			)
+		&"pass":
+			_assert(
+				failures,
+				"passive/pass/trap_skip",
+				_ROGUE_SYSTEMS.should_skip_trap_entry(rogue),
+			)
+		&"shadow_strike":
+			var strike_target := _place_dummy(board, 4, Vector2i(3, 2))
+			rogue.position = Vector2i(2, 2)
+			var strike_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.after_teleport(
+				board, rogue, strike_target, _ability(definition, &"rogue_shadow_step"), strike_events,
+			)
+			_assert(
+				failures,
+				"passive/shadow_strike/mark",
+				strike_target.has_status(GameEnums.StatusType.MARK),
+			)
+		&"lethal_position":
+			rogue.passive_flags["rogue_tiles_moved"] = 3
+			var dmg_bonus := _ROGUE_SYSTEMS.damage_bonus(
+				board, rogue, _place_dummy(board, 5, Vector2i(4, 2)), null,
+			)
+			_assert(failures, "passive/lethal_position/str", dmg_bonus >= 3)
+		&"killing_intent":
+			var low_hp := _place_dummy(board, 6, Vector2i(3, 2))
+			low_hp.health.current_hp = 1
+			rogue.position = Vector2i(2, 2)
+			_ROGUE_SYSTEMS.turn_end(board, rogue, [])
+			_assert(
+				failures,
+				"passive/killing_intent/ap_flag",
+				int(rogue.passive_flags.get("rogue_bonus_ap_next_turn", 0)) >= 1,
+			)
+		&"shadow_clone":
+			var clone_events: Array[SimEvent] = []
+			var units_before := board.units.size()
+			var corpse := UnitState.create(
+				99,
+				DataLibrary.get_training_dummy(),
+				GameEnums.Team.ENEMY,
+				Vector2i(6, 2),
+			)
+			corpse.health.current_hp = 0
+			_ROGUE_SYSTEMS.on_kill(board, rogue, corpse, clone_events)
+			_assert(
+				failures,
+				"passive/shadow_clone/decoy_spawn",
+				board.units.size() > units_before or _events_have_spawn(clone_events),
+			)
+		&"phase_shift":
+			var phase_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), phase_events)
+			_assert(failures, "passive/phase_shift/stealth", rogue.has_status(GameEnums.StatusType.STEALTH))
+		&"shadow_meld":
+			board.set_tile_terrain(rogue.position, DataLibrary.get_terrain(&"smoke"))
+			_ROGUE_SYSTEMS.apply_smoke_spell_bonus(board, rogue, _ability(definition, &"rogue_smoke_bomb"))
+			_assert(
+				failures,
+				"passive/shadow_meld/magic_bonus",
+				int(rogue.passive_flags.get("mage_spell_magic_bonus", 0)) >= 2,
+			)
+		&"miasma_spreader":
+			var spread_source := _place_dummy(board, 8, Vector2i(4, 2))
+			spread_source.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			var spread_target := _place_dummy(board, 9, Vector2i(5, 2))
+			_ROGUE_SYSTEMS.on_attack_hit(board, rogue, spread_source, [])
+			_assert(
+				failures,
+				"passive/miasma_spreader/spread",
+				spread_target.has_status(GameEnums.StatusType.POISON),
+			)
+		&"panic_cascade":
+			var debuffed := _place_dummy(board, 10, Vector2i(4, 2))
+			debuffed.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			rogue.passive_flags["__current_ability"] = _ability(definition, &"rogue_lethal_flourish")
+			var panic_bonus := _ROGUE_SYSTEMS.damage_bonus(board, rogue, debuffed, null)
+			_assert(failures, "passive/panic_cascade/bonus", panic_bonus >= 2)
+		&"mind_static":
+			var shield_target := _place_dummy(board, 11, Vector2i(3, 2))
+			_assert(
+				failures,
+				"passive/mind_static/no_shield",
+				not _ROGUE_SYSTEMS.can_gain_shield(board, shield_target),
+			)
+		&"board_scrambler":
+			var swap_events: Array[SimEvent] = []
+			var scrambler_target := _place_dummy(board, 12, Vector2i(4, 2))
+			var swap_partner := _place_dummy(board, 13, Vector2i(5, 2))
+			var target_pos_before := scrambler_target.position
+			var partner_pos_before := swap_partner.position
+			_ROGUE_SYSTEMS.on_dealt_damage(board, rogue, scrambler_target, swap_events)
+			_assert(
+				failures,
+				"passive/board_scrambler/swap_event",
+				scrambler_target.position != target_pos_before
+					or swap_partner.position != partner_pos_before
+					or _events_have_move(swap_events),
+			)
 
 
 static func run_core_passive_triggers(failures: Array[String]) -> void:
@@ -249,6 +408,28 @@ static func _events_have_ability(events: Array[SimEvent], ability_id: StringName
 	for event: SimEvent in events:
 		if event.type == GameEnums.SimEventType.ABILITY_USED \
 				and event.data.get("ability") == ability_id:
+			return true
+	return false
+
+
+static func _events_have_damage_to(events: Array[SimEvent], unit_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
+				and int(event.data.get("unit", -1)) == unit_id:
+			return true
+	return false
+
+
+static func _events_have_spawn(events: Array[SimEvent]) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_SPAWNED:
+			return true
+	return false
+
+
+static func _events_have_move(events: Array[SimEvent]) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_MOVED:
 			return true
 	return false
 

@@ -2,6 +2,7 @@ class_name UnitState
 extends RefCounted
 
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
+const RogueSystems := preload("res://core/systems/rogue_systems.gd")
 
 ## Purpose: The live state of one unit during a battle. Single source of truth for
 ## that unit's HP, position, facing, and remaining points.
@@ -300,6 +301,11 @@ func _recalculate_stats(board: BoardState = null) -> void:
 		stat_mag += int(shaman_adjustments.get("magic", 0))
 		stat_def += int(shaman_adjustments.get("defense", 0))
 		stat_mov += int(shaman_adjustments.get("movement", 0))
+		var rogue_adjustments := RogueSystems.dynamic_stat_adjustments(board, self)
+		stat_str += int(rogue_adjustments.get("strength", 0))
+		stat_mag += int(rogue_adjustments.get("magic", 0))
+		stat_def += int(rogue_adjustments.get("defense", 0))
+		stat_mov += int(rogue_adjustments.get("movement", 0))
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(
@@ -532,6 +538,9 @@ func get_ability_range(ability_data: AbilityData) -> int:
 			if range_bonus > 0:
 				authored_range += range_bonus
 				break
+		var blink_bonus := RogueSystems.basic_attack_range_bonus(self)
+		if blink_bonus > 0 and DataLibrary.is_basic_ability(ability_data.id):
+			authored_range = maxi(authored_range, blink_bonus)
 	return authored_range
 
 func get_ability_by_id(ability_id: StringName) -> AbilityData:

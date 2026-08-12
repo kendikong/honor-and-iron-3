@@ -17,6 +17,7 @@ extends RefCounted
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
+const RogueSystems := preload("res://core/systems/rogue_systems.gd")
 
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
@@ -2115,6 +2116,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
 		actor.passive_flags["__current_ability"] = ability
+		RogueSystems.apply_smoke_spell_bonus(board, actor, ability)
 		if _is_basic_attack(ability):
 			var predatory_target: UnitState = (
 				board.get_unit_by_id(action.target_unit_id)
@@ -2291,6 +2293,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 		MercenarySystems.before_skill_move(board, actor, ability, events)
 		MonkSystems.before_skill_move(board, actor, ability, events)
+		RogueSystems.before_skill_move(board, actor, ability, events)
 
 		var walk_goal: Vector2i = target_coord
 		var goal_unit: UnitState = board.get_unit_at(walk_goal)
@@ -2321,6 +2324,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor._recalculate_stats()
 		MercenarySystems.after_skill_move(board, actor, ability, events)
 		MonkSystems.after_skill_move(board, actor, ability, events)
+		RogueSystems.after_skill_move(board, actor, ability, events)
 			
 		# Recompute affected tiles after movement since actor position and facing may have changed
 		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
@@ -2668,6 +2672,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MercenarySystems.after_ability_execute(board, actor, action, events, attack_was_used)
 		MonkSystems.after_ability_execute(board, actor, action, events)
 		ShamanSystems.after_ability_execute(board, actor, action, events)
+		RogueSystems.after_ability_execute(board, actor, action, events)
 
 	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
@@ -2795,6 +2800,8 @@ static func _spend_ability_cost(
 		return
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
+	if RogueSystems.consume_smoke_free_ap(actor, ability):
+		ap_cost = 0
 	if _is_spell(ability) and actor.passive_flags.get("mana_shield_casting", false):
 		actor.armor = maxi(0, actor.armor - 1)
 		return
@@ -3132,6 +3139,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			amount += ShamanSystems.damage_bonus(
 				board, actor, target, effect, &"ability",
 			)
+			amount += RogueSystems.damage_bonus(board, actor, target, effect)
 				
 			var dmg_type = &"physical"
 			if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
@@ -3328,6 +3336,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						merc_ignore,
 					)
 					target_def = maxi(0, target_def - merc_ignore)
+				RogueSystems.apply_attack_ignore_def(board, actor, target)
 				var strike_mods: Dictionary = MercenarySystems._ability_legacy_mods(actor, action.ability)
 				if strike_mods.get("remove_push_mitigation", false):
 					target.passive_flags["no_push_mitigation"] = true
@@ -3353,6 +3362,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if MercenarySystems.should_pierce(board, actor, target, action.ability):
 				pierce = true
 			if MonkSystems.should_pierce(board, actor, target):
+				pierce = true
+			if RogueSystems.should_pierce(board, actor, target, effect):
 				pierce = true
 			if actor.has_passive(&"unstoppable_mass") and actor.moved_max_movement_this_turn():
 				pierce = true
@@ -3648,6 +3659,24 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 				return
 			if target != null:
+				var grapple_plan := RogueSystems.resolve_grapple_pull(
+					board, actor, target, tile_coord, effect,
+				)
+				if grapple_plan.get("pull_self", false):
+					var pull_dest: Vector2i = grapple_plan.get("destination", actor.position)
+					if (
+						GridSystem.is_in_bounds(board, pull_dest)
+						and not GridSystem.is_occupied(board, pull_dest)
+					):
+						var from := actor.position
+						GridSystem.set_occupant(board, from, -1)
+						actor.position = pull_dest
+						GridSystem.set_occupant(board, pull_dest, actor.id)
+						events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+							"actor": actor.id, "from": from, "to": pull_dest, "grapple": true,
+						}))
+						return
+				target = grapple_plan.get("pull_target", target) as UnitState
 				if effect.modifiers.has("grapple_pass_through_damage"):
 					var grapple_raw := CombatSystem.calculate_scaled_damage(
 						actor, 2, GameEnums.StatType.PHYSICAL, board,
@@ -3958,6 +3987,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events):
 					return
+				if effect.modifiers.get("from_behind_only", false) and not _is_backstab(actor, target):
+					return
 				if effect.modifiers.get("density_shift", false):
 					if target.team == actor.team:
 						target.active_statuses.append(
@@ -4260,6 +4291,19 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"actor": actor.id, "reason": "guardian_step_no_landing",
 					}))
 					return
+			elif effect.modifiers.has("motion_mode"):
+				destination = RogueSystems.resolve_teleport_destination(
+					board,
+					actor,
+					target,
+					tile_coord,
+					int(effect.modifiers["motion_mode"]),
+				)
+				if destination == Vector2i(-1, -1):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "rogue_teleport_no_landing",
+					}))
+					return
 			if not GridSystem.is_occupied(board, destination) and not GridSystem.is_wall(board, destination):
 				if effect.modifiers.has("vault_over"):
 					var vault_dir := PhysicsSystem.straight_line_dir(actor.position, destination)
@@ -4325,6 +4369,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							"stagger_on_collision": actor.is_passive_upgraded(passive.id)
 							and passive.modifiers.has("upgraded_landing_collision_stagger"),
 						})
+				RogueSystems.after_teleport(board, actor, target, action.ability, events)
 		GameEnums.EffectType.CHANGE_TERRAIN:
 			# Amount parameter can be used to select terrain type, for now just hardcode cracked
 			var terrain_id = &"cracked"

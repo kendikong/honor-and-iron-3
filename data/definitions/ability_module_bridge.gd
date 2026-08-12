@@ -364,6 +364,8 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	if module == null:
 		return out
 	var primary: EffectData = module.primary_as_effect()
+	if module.motion_mode != GameEnums.MotionMode.NONE:
+		primary.modifiers["motion_mode"] = module.motion_mode
 	_apply_keywords_to_effect(primary, module)
 	out.append(primary)
 	for kw: AbilityKeyword in module.keywords:
@@ -876,6 +878,8 @@ static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnu
 		GameEnums.LayerCondition.ON_KILL:
 			if not eff.modifiers.has("on_kill_heal_shield") and not eff.modifiers.has("frenzy_on_kill_ap"):
 				eff.modifiers["on_kill_heal_shield"] = 1
+		GameEnums.LayerCondition.IF_FROM_BEHIND:
+			eff.modifiers["from_behind_only"] = true
 		_:
 			pass
 

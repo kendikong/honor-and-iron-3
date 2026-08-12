@@ -17,6 +17,7 @@ extends RefCounted
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
 const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
+const RogueSystems := preload("res://core/systems/rogue_systems.gd")
 
 ## Purpose: Owns damage and death (and nothing else).
 ## Responsibilities: Apply damage to a unit, emit damage/death events, clear
@@ -889,6 +890,8 @@ static func deal_damage(
 				),
 			)
 			MonkSystems.on_dealt_damage(board, attacker, target, events)
+			RogueSystems.on_dealt_damage(board, attacker, target, events)
+			RogueSystems.on_attack_hit(board, attacker, target, events)
 			var shaman_ability := attacker.passive_flags.get("__current_ability", null) as AbilityData
 			var shaman_action := TimelineAction.new()
 			shaman_action.actor_id = attacker.id
@@ -1015,6 +1018,7 @@ static func deal_damage(
 				),
 			)
 			ShamanSystems.on_kill(board, attacker, target, events)
+			RogueSystems.on_kill(board, attacker, target, events)
 			if attacker.passive_flags.get("mage_spell_in_progress", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("mana_siphon"):
@@ -1327,6 +1331,8 @@ static func add_armor(board: BoardState, target: UnitState, amount: int, events:
 	if target == null or not target.is_alive() or amount <= 0:
 		return
 	if not ShamanSystems.can_gain_shield(board, target):
+		return
+	if not RogueSystems.can_gain_shield(board, target):
 		return
 	if target.has_status(GameEnums.StatusType.VULNERABLE):
 		return # Cannot gain SHIELD while vulnerable

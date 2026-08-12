@@ -1,6 +1,8 @@
 class_name TerrainSystem
 extends RefCounted
 
+const RogueSystems := preload("res://core/systems/rogue_systems.gd")
+
 ## Purpose: Owns tile-triggered terrain effects (and nothing else). This is the
 ## "Terrain" stage of the fixed resolution order; it runs the instant a unit lands
 ## on a tile, whether by walking or by being displaced.
@@ -69,6 +71,7 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		)
 	if not unit.is_alive():
 		return
+	RogueSystems.on_hazard_entry(board, unit, coord, events)
 	var payload: Dictionary = board.terrain_payloads.get(coord, {})
 	var terrain_owner := board.get_unit_by_id(int(payload.get("terrain_owner_id", -1)))
 	if payload.get("sanctuary", false) and terrain_owner != null:
