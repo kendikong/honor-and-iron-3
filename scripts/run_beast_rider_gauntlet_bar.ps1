@@ -19,9 +19,11 @@ $lines = @(Get-Content -Path $outFile)
 $raw = Get-Content -Path $outFile -Raw
 $proofs = @(
 	"--- Tier 1 harness: PASS ---",
+	"--- AOE footprint contract: PASS ---",
+	"[PASS] Beast Rider Tier 2 live preview/factory gate",
 	"0 failures",
 	"test_live_beast_rider_every_skill",
-	"[PASS] Beast Rider QA gate: matrix 100% PASS + Tier 1 harness PASS."
+	"[PASS] Beast Rider QA gate: matrix 32/32 + Tier 1 harness + Tier 2 live + AOE footprint PASS"
 )
 $missing = @()
 foreach ($proof in $proofs) {
