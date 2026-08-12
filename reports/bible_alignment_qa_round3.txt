@@ -1,4 +1,4 @@
-﻿commit: 4e5fb16c1c60ee8523528ef3fa367d0102c52b63
+﻿commit: fdf8db450ebbcf58c668b1a5b9e2163edac28c75
 
 === run_mage_qa_gate.ps1 (exit 0) ===
 === Mage QA gate (class validation - NOT planning QA) ===
@@ -1808,6 +1808,7 @@ WARNING: LPC class loadout: item 'weapon_blunt_waraxe' incompatible with body=te
 [PASS] Bruiser live QA: 16 movement/actives through preview/commit + AOE overlay
 --- Tier 2 live: PASS ---
 [PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+
 
 
 
