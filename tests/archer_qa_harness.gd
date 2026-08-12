@@ -182,7 +182,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		&"archer_piercing_shot": [GameEnums.EffectType.DAMAGE, 2, 4, GameEnums.TargetShape.LINE],
 		&"archer_toxic_spore_arrow": [GameEnums.EffectType.DAMAGE, 1, 5, GameEnums.TargetShape.SINGLE],
 		&"archer_grapple_arrow": [GameEnums.EffectType.PULL, 1, 4, GameEnums.TargetShape.SINGLE],
-		&"archer_explosive_arrow": [GameEnums.EffectType.DAMAGE, 2, 4, GameEnums.TargetShape.AOE_CROSS],
+		&"archer_explosive_arrow": [GameEnums.EffectType.DAMAGE, 2, 4, GameEnums.TargetShape.AOE_SQUARE],
 		&"archer_hunters_mark": [GameEnums.EffectType.ADD_STATUS, 1, 5, GameEnums.TargetShape.SINGLE],
 		&"archer_repelling_shot": [GameEnums.EffectType.DAMAGE, 1, 2, GameEnums.TargetShape.SINGLE],
 		&"archer_bear_trap": [GameEnums.EffectType.CREATE_HAZARD, 3, 3, GameEnums.TargetShape.SINGLE],
@@ -263,9 +263,9 @@ static func run_shape_contract_smoke(failures: Array[String]) -> void:
 		failures,
 		"shape/explosive",
 		explosive != null
-		and explosive.target_shape == GameEnums.TargetShape.AOE_CROSS
+		and explosive.target_shape == GameEnums.TargetShape.AOE_SQUARE
 		and explosive.target_shape_size == 1,
-		"AOE 1 must be the shared cardinal cross",
+		"Explosive Arrow must use Bible AOE 1 square footprint",
 	)
 	assert_true(
 		failures,

@@ -50,9 +50,9 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.passives.append(_passive(
 		&"overwatch",
 		"Overwatch",
-		"If you end planning without spending AP, the first enemy entering your line of sight automatically suffers ATK 1.",
-		"If you end planning without spending AP, the first enemy entering your line of sight automatically suffers ATK 1.",
-		{"planning_unused_ap_reaction": 1},
+		"If you end planning without spending AP, the first enemy entering your line of sight suffers a basic attack scaling off WPN.",
+		"If you end planning without spending AP, the first enemy entering your line of sight suffers a basic attack scaling off WPN.",
+		{"planning_unused_ap_reaction": 1, "overwatch_basic_attack": true},
 	))
 	def.passives.append(_passive(
 		&"high_ground",
@@ -135,10 +135,10 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.passives.append(_passive(
 		&"prey_sighted",
 		"Prey Sighted",
-		"Attacks against movement-penalized enemies gain +2 STR and ignore 2 DEF.",
-		"Ignore 4 DEF instead.",
-		{"movement_penalty_attack_bonus": 2, "movement_penalty_ignore_def": 2,
-		"upgraded_movement_penalty_ignore_def": 4},
+		"Attacks against movement-penalized enemies gain +2 STR and ignore 25% DEF.",
+		"Ignore 50% DEF instead.",
+		{"movement_penalty_attack_bonus": 2, "movement_penalty_ignore_def_pct": 0.25,
+		"upgraded_movement_penalty_ignore_def_pct": 0.5},
 	))
 	def.passives.append(_passive(
 		&"barrage",
@@ -416,7 +416,7 @@ static func _explosive_arrow() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 4,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_CROSS, 1,
+		GameEnums.TargetShape.AOE_SQUARE, 1,
 	)
 	module.legacy_modifiers["destroy_terrain"] = true
 	var upgraded := _clone_modules([module])

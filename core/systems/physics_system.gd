@@ -409,6 +409,10 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 	var effective_distance: int = distance
 	if pusher != null and pusher.has_passive(&"battering_ram"):
 		effective_distance += 1
+	if not target.passive_flags.get("no_push_mitigation", false):
+		var mitigation_tiles := int(target.passive_flags.get("push_mitigation_tiles", 0))
+		if mitigation_tiles > 0:
+			effective_distance = maxi(0, effective_distance - mitigation_tiles)
 		
 	var is_vulnerable = target.has_status(GameEnums.StatusType.VULNERABLE)
 	var has_stand_ground = target.has_passive(&"stand_ground")

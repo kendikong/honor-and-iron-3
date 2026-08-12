@@ -683,6 +683,7 @@ static func deal_damage(
 	if target.has_passive(&"scar_tissue"):
 		var missing_hp = target.health.max_hp - target.health.current_hp
 		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
+		reduction = mini(reduction, floori(target.health.max_hp / 10.0))
 		if target.is_passive_upgraded(&"scar_tissue"):
 			reduction += 1
 		mitigation += reduction

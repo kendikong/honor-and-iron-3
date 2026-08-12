@@ -118,16 +118,15 @@ static func run_grapple_arrow(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	board.set_tile_terrain(Vector2i(5, 3), DataLibrary.get_terrain(&"wall"))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_grapple_arrow"))
-	H.place_dummy(board, 2, Vector2i(5, 3))
-	var start: Vector2i = board.get_unit_by_id(2).position
+	var start: Vector2i = board.get_unit_by_id(1).position
 	var skill: AbilityData = H.ability_on_unit(board.get_unit_by_id(1), &"archer_grapple_arrow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
-	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	var archer: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_true(
 		failures, "grapple_arrow/pull",
-		enemy != null and enemy.position != start,
+		archer != null and archer.position != start,
 	)
 
 
@@ -144,7 +143,7 @@ static func run_explosive_arrow(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var dmg_cross: int = hp_cross - (H.unit_hp(result.final_state, 2) + H.unit_hp(result.final_state, 3))
-	H.assert_true(failures, "explosive_arrow/cross_hits", dmg_cross > 0)
+	H.assert_true(failures, "explosive_arrow/square_hits", dmg_cross > 0)
 	H.assert_eq_int(failures, "explosive_arrow/outside_excluded", H.unit_hp(result.final_state, 4), hp_out)
 
 

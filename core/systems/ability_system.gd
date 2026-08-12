@@ -3284,6 +3284,22 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						pierce = true
 					if (
 						_target_has_movement_penalty(target)
+						and passive.modifiers.has("movement_penalty_ignore_def_pct")
+					):
+						var ignore_pct := float(passive.modifiers["movement_penalty_ignore_def_pct"])
+						if (
+							actor.is_passive_upgraded(passive.id)
+							and passive.modifiers.has("upgraded_movement_penalty_ignore_def_pct")
+						):
+							ignore_pct = float(passive.modifiers["upgraded_movement_penalty_ignore_def_pct"])
+						var movement_ignore := floori(target_def * ignore_pct)
+						actor.passive_flags["attack_ignore_def"] = maxi(
+							int(actor.passive_flags.get("attack_ignore_def", 0)),
+							movement_ignore,
+						)
+						target_def = maxi(0, target_def - movement_ignore)
+					if (
+						_target_has_movement_penalty(target)
 						and passive.modifiers.has("movement_penalty_ignore_def")
 					):
 						var movement_ignore := int(passive.modifiers["movement_penalty_ignore_def"])
@@ -3938,6 +3954,36 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events):
 					return
+				if effect.modifiers.get("density_shift", false):
+					if target.team == actor.team:
+						target.active_statuses.append(
+							DataLibrary.make_status(
+								GameEnums.StatusType.STURDY,
+								effect.status_duration,
+							),
+						)
+					else:
+						var mit_tiles := int(target.passive_flags.get("push_mitigation_tiles", 1))
+						target.passive_flags["push_mitigation_tiles"] = mit_tiles * 2
+					if (
+						effect.modifiers.get("apply_weaken_enemy", false)
+						and target.team != actor.team
+					):
+						target.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.WEAKEN,
+							effect.status_duration,
+							1,
+						))
+					target._recalculate_stats(board)
+					events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+						"unit": target.id,
+						"status_type": GameEnums.StatusType.STURDY
+						if target.team == actor.team
+						else GameEnums.StatusType.WEAKEN,
+						"duration": effect.status_duration,
+						"amount": effect.amount,
+					}))
+					return
 					
 				var stat_val = effect.amount
 				if effect.modifiers.has("weapon_scaled"):
@@ -3970,6 +4016,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				else:
 					var status := StatusData.new(effect.status_type, effect.status_duration, stat_val)
 					target.active_statuses.append(status)
+					if effect.modifiers.get("mantra_peace_weaken", false):
+						target.passive_flags["mantra_weaken"] = true
 					if (
 						effect.modifiers.get("apply_weaken_enemy", false)
 						and target.team != actor.team
@@ -4287,6 +4335,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.CREATE_HAZARD:
 			var terrain_id: StringName = effect.modifiers.get("terrain_id", &"spear_wall")
 			var previous_tile := board.get_tile(tile_coord)
+			var reacted_to_terrain := false
 			if (
 				previous_tile != null
 				and previous_tile.definition != null
@@ -4294,6 +4343,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				and previous_tile.definition.id == effect.modifiers["reaction_terrain"]
 			):
 				terrain_id = &"steam"
+				reacted_to_terrain = true
 			var terrain := DataLibrary.get_terrain(terrain_id)
 			if terrain != null:
 				if not board.temporary_terrain_previous.has(tile_coord):
@@ -4420,6 +4470,39 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					standing_unit.active_statuses.append(DataLibrary.make_status(
 						GameEnums.StatusType.INVULNERABLE, 1
 					))
+				if (
+					reacted_to_terrain
+					and terrain_id == &"steam"
+					and effect.modifiers.get("reaction_steam_splash", false)
+				):
+					var splash_size := int(effect.modifiers.get("reaction_steam_splash_size", 3))
+					var splash_power := int(effect.modifiers.get("reaction_steam_splash_damage", 2))
+					var splash_coords := GridSystem.get_affected_tiles(
+						board,
+						tile_coord,
+						tile_coord,
+						GameEnums.TargetShape.AOE_SQUARE,
+						splash_size,
+					)
+					for splash_coord: Vector2i in splash_coords:
+						var splash_target := board.get_unit_at(splash_coord)
+						if splash_target == null or splash_target.team == actor.team:
+							continue
+						var splash_amount := CombatSystem.calculate_scaled_damage(
+							actor, splash_power, GameEnums.StatType.MAGICAL, board,
+						)
+						CombatSystem.deal_damage(
+							board,
+							splash_target,
+							splash_amount,
+							events,
+							&"magical",
+							false,
+							false,
+							actor,
+							"Steam Splash",
+							splash_amount,
+						)
 				events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 					"coord": tile_coord,
 					"terrain": terrain_id,

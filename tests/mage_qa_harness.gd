@@ -494,10 +494,20 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 			_assert(failures, "upgrade/mage_blink/surface", effects[0].modifiers.get("leave_elemental_surface", false))
 		&"mage_fireball":
 			_assert(failures, "upgrade/mage_fireball/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"frozen")
-			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_modules[0].target_shape_size == 3)
+			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_modules[0].target_shape_size == 1)
+			_assert(
+				failures,
+				"upgrade/mage_fireball/steam_splash",
+				_has_reaction_steam_splash(ability.upgraded_effects),
+			)
 		&"mage_ice_shard":
 			_assert(failures, "upgrade/mage_ice_shard/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"fire")
-			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_modules[0].target_shape_size == 3)
+			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_modules[0].target_shape_size == 1)
+			_assert(
+				failures,
+				"upgrade/mage_ice_shard/steam_splash",
+				_has_reaction_steam_splash(ability.upgraded_effects),
+			)
 		&"mage_chain_lightning":
 			_assert(failures, "upgrade/mage_chain_lightning/surface", effects[0].modifiers.get("strike_all_surface", false))
 		&"mage_arcane_push":
@@ -626,6 +636,13 @@ static func _events_have_ability(events: Array[SimEvent], ability_id: StringName
 		if event.type == GameEnums.SimEventType.ABILITY_USED and event.data.get("ability") == ability_id:
 			return true
 	return false
+
+static func _has_reaction_steam_splash(effects: Array) -> bool:
+	for effect in effects:
+		if effect is EffectData and effect.modifiers.get("reaction_steam_splash", false):
+			return true
+	return false
+
 
 static func _assert(failures: Array[String], label: String, condition: bool) -> void:
 	if not condition:

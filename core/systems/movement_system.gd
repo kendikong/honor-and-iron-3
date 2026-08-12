@@ -1006,6 +1006,21 @@ static func _resolve_zone_of_control(
 			or not _line_of_sight(board, watcher.position, moved_unit.position)
 		):
 			continue
+		var overwatch_basic := _basic_attack(watcher)
+		if overwatch_basic != null and _has_passive_modifier(watcher, &"overwatch_basic_attack"):
+			watcher.passive_flags["overwatch_used"] = true
+			var ap_before := watcher.ability.points_left
+			var action_used_before := watcher.turn_action_used
+			var reaction := TimelineAction.make_ability(
+				watcher.id,
+				overwatch_basic,
+				moved_unit.position,
+				moved_unit.id,
+			)
+			AbilitySystem.execute(board, reaction, events)
+			watcher.ability.points_left = ap_before
+			watcher.turn_action_used = action_used_before
+			continue
 		var overwatch_raw := CombatSystem.calculate_scaled_damage(
 			watcher, 1, GameEnums.StatType.PHYSICAL, board,
 		)

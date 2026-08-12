@@ -446,6 +446,7 @@ static func _mantra_of_peace() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.WEAKEN
 	module.status_duration = 1
+	module.legacy_modifiers["mantra_peace_weaken"] = true
 	var upgraded := _clone_modules([module])
 	var heal := DataLibrary._effect(GameEnums.EffectType.HEAL, 1)
 	heal.scaling_stat = GameEnums.StatType.MAX_HP

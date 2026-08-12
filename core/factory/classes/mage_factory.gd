@@ -219,12 +219,14 @@ static func _fireball() -> AbilityData:
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_SQUARE, 3, GameEnums.StatType.MAGICAL,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.MAGICAL,
 	)
 	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
 	var steam := _terrain(&"steam")
-	steam.modifiers["reaction_frozen_to_steam"] = true
 	steam.modifiers["reaction_terrain"] = &"frozen"
+	steam.modifiers["reaction_steam_splash"] = true
+	steam.modifiers["reaction_steam_splash_size"] = 3
+	steam.modifiers["reaction_steam_splash_damage"] = 2
 	upgraded.layers.append(_layer(steam))
 	return _spell(
 		&"mage_fireball", "Fireball", [base], [upgraded],
@@ -245,17 +247,19 @@ static func _ice_shard() -> AbilityData:
 	base.layers.append(_layer(slow))
 	base.layers.append(_layer(_terrain(&"frozen")))
 	var upgraded := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 2, 1, 4,
-		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_SQUARE, 3, GameEnums.StatType.MAGICAL,
+		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
 	var upgraded_slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 1)
 	upgraded_slow.modifiers["set_max_move"] = 1
 	upgraded.layers.append(_layer(upgraded_slow))
+	upgraded.layers.append(_layer(_terrain(&"frozen")))
 	var steam := _terrain(&"steam")
-	steam.modifiers["reaction_fire_to_steam"] = true
 	steam.modifiers["reaction_terrain"] = &"fire"
+	steam.modifiers["reaction_steam_splash"] = true
+	steam.modifiers["reaction_steam_splash_size"] = 3
+	steam.modifiers["reaction_steam_splash_damage"] = 2
 	upgraded.layers.append(_layer(steam))
 	return _spell(
 		&"mage_ice_shard", "Ice Shard", [base], [upgraded],
@@ -493,17 +497,16 @@ static func _earth_spike() -> AbilityData:
 
 static func _density_shift() -> AbilityData:
 	var base := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 2, 1, 3,
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 	)
-	base.status_type = GameEnums.StatusType.STURDY
 	base.status_duration = 2
 	base.legacy_modifiers["density_shift"] = true
+	base.legacy_modifiers["utility_only"] = true
 	var upgraded := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 2, 1, 3,
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 	)
-	upgraded.status_type = GameEnums.StatusType.STURDY
 	upgraded.status_duration = 2
 	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
 	upgraded.legacy_modifiers["apply_weaken_enemy"] = true
