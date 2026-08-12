@@ -583,3 +583,37 @@ static func _run_mantra_of_peace_footprint(failures: Array[String], ability: Abi
 		failures, "mantra/footprint/outside",
 		outside != null and not outside.has_status(GameEnums.StatusType.WEAKEN),
 	)
+	_run_mantra_weaken_hazard_persist(failures, ability)
+
+
+static func _run_mantra_weaken_hazard_persist(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(8, 8))
+	var origin := Vector2i(4, 4)
+	_place_monk(board, 20, origin, &"monk_mantra_of_peace")
+	_place_dummy(board, 21, origin)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(20, ability, origin, -1))
+	var result := _player_turn(board, plan)
+	var victim := result.final_state.get_unit_by_id(21)
+	_assert(
+		failures, "mantra/weaken/applied",
+		victim != null and victim.has_status(GameEnums.StatusType.WEAKEN),
+	)
+	if victim == null:
+		return
+	var hazard_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, victim, 2, hazard_events, &"hazard", false, false, null, "Hazard", 2,
+	)
+	_assert(
+		failures, "mantra/weaken/persists_hazard",
+		victim.has_status(GameEnums.StatusType.WEAKEN),
+	)
+	var direct_events: Array[SimEvent] = []
+	CombatSystem.deal_damage(
+		board, victim, 8, direct_events, &"physical", false, false, null, "Hit", 8,
+	)
+	_assert(
+		failures, "mantra/weaken/breaks_direct",
+		not victim.has_status(GameEnums.StatusType.WEAKEN),
+	)

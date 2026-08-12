@@ -1006,24 +1006,27 @@ static func run_overwhelming_bulk_upgrade(failures: Array[String]) -> void:
 	var enemy: UnitState = H.unit_on_board(board, 2)
 	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
 	enemy._recalculate_stats()
-	enemy.health.max_hp = 80
-	enemy.health.current_hp = 80
+	enemy.health.max_hp = 100
+	enemy.health.current_hp = 100
 	H.assert_true(
 		failures, "overwhelming_bulk/upgrade/precond",
 		bruiser.is_passive_upgraded(&"overwhelming_bulk")
 			and bruiser.health.current_hp > enemy.health.max_hp,
 	)
-	var start_pos: Vector2i = enemy.position
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_headbutt")
-	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
-	var result: SimResult = H.simulate_plan(board, plan)
+	var start_pos: Vector2i = enemy.position
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(
+		board,
+		TimelineAction.make_ability(1, skill, Vector2i(4, 3), 2),
+		events,
+	)
 	H.assert_true(
 		failures, "overwhelming_bulk/upgrade/pierce_events",
-		H.events_have_damage_pierce(result.events, true),
+		H.events_have_damage_pierce(events, true),
 		"upgraded bulk pierce must apply on AbilitySystem DAMAGE path",
 	)
-	var after: UnitState = result.final_state.get_unit_by_id(2)
+	var after: UnitState = board.get_unit_by_id(2)
 	H.assert_true(
 		failures, "overwhelming_bulk/upgrade/push_lands",
 		after != null and after.position != start_pos,

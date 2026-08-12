@@ -14,6 +14,7 @@ static func run_all(failures: Array[String]) -> void:
 
 static func _sim_contract(failures: Array[String]) -> void:
 		_H.run_single_ability(&"mage_density_shift", failures)
+		_H.run_density_shift_bible(failures)
 		_sim_upgrade(failures)
 
 static func _sim_upgrade(failures: Array[String]) -> void:

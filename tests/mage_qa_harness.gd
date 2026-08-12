@@ -136,6 +136,45 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		_check_upgrade_contract(failures, ability_data)
 
 
+static func run_density_shift_bible(failures: Array[String]) -> void:
+	var ability := _ability(FactoryTestHelpers.build_unit(&"mage"), &"mage_density_shift")
+	if ability == null:
+		_assert(failures, "density_shift/ability", false)
+		return
+	var ally_board := _plain_board(Vector2i(8, 8))
+	var mage_ally := _place_mage(ally_board, 1, Vector2i(2, 3), &"mage_density_shift")
+	_place_mage_ally(ally_board, 2, Vector2i(4, 3))
+	var ally := ally_board.get_unit_by_id(2)
+	var ally_action := TimelineAction.make_ability(1, ability, ally.position, 2)
+	AbilitySystem.execute(ally_board, ally_action, [])
+	_assert(
+		failures,
+		"density_shift/ally_sturdy",
+		ally != null and ally.has_status(GameEnums.StatusType.STURDY),
+	)
+	_assert(
+		failures,
+		"density_shift/ally_no_push_mitigation",
+		int(ally.passive_flags.get("push_mitigation_tiles", 0)) == 0,
+	)
+	var enemy_board := _plain_board(Vector2i(8, 8))
+	_place_mage(enemy_board, 10, Vector2i(2, 3), &"mage_density_shift")
+	_place_dummy(enemy_board, 11, Vector2i(4, 3))
+	var enemy := enemy_board.get_unit_by_id(11)
+	var enemy_action := TimelineAction.make_ability(10, ability, enemy.position, 11)
+	AbilitySystem.execute(enemy_board, enemy_action, [])
+	_assert(
+		failures,
+		"density_shift/enemy_push_mitigation",
+		enemy != null and int(enemy.passive_flags.get("push_mitigation_tiles", 0)) == 2,
+	)
+	_assert(
+		failures,
+		"density_shift/enemy_no_sturdy",
+		enemy != null and not enemy.has_status(GameEnums.StatusType.STURDY),
+	)
+
+
 static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
 	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	var ability := _ability(mage_def, ability_id)

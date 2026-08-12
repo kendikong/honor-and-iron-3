@@ -130,6 +130,42 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 			enemy.health.current_hp < hp_before
 			or archer.passive_flags.get("overwatch_used", false),
 		)
+		var wpn_board := H.make_plain_board(Vector2i(8, 4))
+		var wpn_basic := DataLibrary._make_class_basic_attack(&"archer")
+		var low_wpn := H.place_archer(
+			wpn_board, 20, Vector2i(2, 1),
+			{"active_abilities": [wpn_basic], "active_passives": [H.factory_passive(&"overwatch")]},
+		)
+		if low_wpn.definition != null and low_wpn.definition.equipped_weapon != null:
+			low_wpn.definition.equipped_weapon.might = 0
+		low_wpn.ability.points_left = low_wpn.ability.max_points
+		var high_wpn := H.place_archer(
+			wpn_board, 21, Vector2i(2, 3),
+			{"active_abilities": [wpn_basic], "active_passives": [H.factory_passive(&"overwatch")]},
+		)
+		if high_wpn.definition != null and high_wpn.definition.equipped_weapon != null:
+			high_wpn.definition.equipped_weapon.might = 5
+		high_wpn.ability.points_left = high_wpn.ability.max_points
+		var low_enemy := _place_enemy(wpn_board, 22, Vector2i(6, 1))
+		var high_enemy := _place_enemy(wpn_board, 23, Vector2i(6, 3))
+		var low_hp := low_enemy.health.current_hp
+		var high_hp := high_enemy.health.current_hp
+		var low_plan := Timeline.new()
+		low_plan.add(TimelineAction.make_move(low_enemy.id, Vector2i(4, 1)))
+		var high_plan := Timeline.new()
+		high_plan.add(TimelineAction.make_move(high_enemy.id, Vector2i(4, 3)))
+		var low_events: Array[SimEvent] = []
+		var high_events: Array[SimEvent] = []
+		Simulator.simulate_player_turn(wpn_board, low_plan, low_events)
+		Simulator.simulate_player_turn(wpn_board, high_plan, high_events)
+		var low_loss := low_hp - low_enemy.health.current_hp
+		var high_loss := high_hp - high_enemy.health.current_hp
+		H.assert_true(
+			failures,
+			"passive/overwatch/wpn_scales",
+			high_loss > low_loss,
+			"Overwatch must scale with equipped weapon might",
+		)
 
 	if _passive_should_run(only_id, &"zone_control"):
 		var board := H.make_plain_board(Vector2i(8, 4))
@@ -383,6 +419,29 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		H.assert_true(
 			failures, "passive/prey_sighted/movement_penalty_attack_bonus",
 			enemy.health.current_hp < hp_before,
+		)
+		var board_plain := H.make_plain_board(Vector2i(8, 4))
+		var plain_archer := H.place_archer(
+			board_plain, 10, Vector2i(1, 2),
+			{"active_abilities": [basic], "active_passives": []},
+		)
+		var plain_enemy := H.place_dummy(board_plain, 11, Vector2i(3, 2))
+		plain_enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.ROOT, 2))
+		plain_enemy._recalculate_stats(board_plain)
+		var plain_hp := plain_enemy.health.current_hp
+		var plain_events: Array[SimEvent] = []
+		AbilitySystem.execute(
+			board_plain,
+			TimelineAction.make_ability(plain_archer.id, basic, plain_enemy.position, plain_enemy.id),
+			plain_events,
+		)
+		var prey_loss := hp_before - enemy.health.current_hp
+		var plain_loss := plain_hp - plain_enemy.health.current_hp
+		H.assert_true(
+			failures,
+			"passive/prey_sighted/def_ignore_pct",
+			prey_loss > plain_loss,
+			"Prey Sighted must ignore 25% DEF vs movement-penalized targets",
 		)
 
 	if _passive_should_run(only_id, &"barrage"):

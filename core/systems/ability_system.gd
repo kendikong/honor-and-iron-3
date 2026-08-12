@@ -3406,6 +3406,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if effect.modifiers.has("target_magic_defense"):
 				actor.passive_flags["target_magic_defense_override"] = true
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			if dmg_type == &"physical":
+				CombatSystem.apply_post_attack_push_passives(
+					board, actor, target, events, action.ability.id,
+				)
 			if (
 				effect.modifiers.has("heal_per_debuff")
 				and target != null

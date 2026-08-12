@@ -1,0 +1,16 @@
+﻿=== run_mage_qa_gate.ps1 ===
+--- Tier 2 live: PASS ---
+[PASS] Mage QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+
+=== run_archer_qa_gate.ps1 ===
+--- Tier 2 live: PASS ---
+[PASS] Archer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+
+=== run_monk_qa_gate.ps1 ===
+--- Tier 2 live: PASS ---
+[PASS] Monk QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+
+=== run_bruiser_qa_gate.ps1 ===
+--- Tier 2 live: PASS ---
+[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+

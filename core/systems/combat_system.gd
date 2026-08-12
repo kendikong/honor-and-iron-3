@@ -444,17 +444,34 @@ static func apply_attack_passive_modifiers(
 		):
 			continue
 		pierce = true
-		if attacker.is_passive_upgraded(passive.id):
-			board.pending_pushes.append({
-				"type": "push",
-				"target_id": target.id,
-				"dir": PhysicsSystem.cardinal_from_to(attacker.position, target.position),
-				"amount": 1,
-				"actor_id": attacker.id,
-				"ability_id": passive.id,
-			})
 		break
 	return pierce
+
+
+static func apply_post_attack_push_passives(
+	board: BoardState,
+	attacker: UnitState,
+	target: UnitState,
+	events: Array[SimEvent],
+	ability_id: StringName = &"",
+) -> void:
+	if attacker == null or target == null or not target.is_alive():
+		return
+	for passive: PassiveData in attacker.active_passives:
+		if (
+			passive == null
+			or not passive.modifiers.has("overwhelming_bulk")
+			or not attacker.is_passive_upgraded(passive.id)
+			or attacker.health.current_hp <= target.health.max_hp
+		):
+			continue
+		var push_dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
+		if push_dir == Vector2i.ZERO:
+			return
+		PhysicsSystem.push(
+			board, target, push_dir, 1, events, attacker, ability_id,
+		)
+		break
 
 
 static func _apply_kinetic_redirection_stack(target: UnitState) -> void:

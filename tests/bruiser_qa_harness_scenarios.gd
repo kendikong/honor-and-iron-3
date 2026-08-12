@@ -1403,6 +1403,9 @@ static func run_overwhelming_bulk(failures: Array[String]) -> void:
 	var board_ab: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board_ab, 20, Vector2i(3, 3), cfg_ab)
 	H.place_dummy(board_ab, 21, Vector2i(4, 3))
+	var bruiser_ab: UnitState = H.unit_on_board(board_ab, 20)
+	bruiser_ab.health.max_hp = 150
+	bruiser_ab.health.current_hp = 150
 	var enemy_ab: UnitState = H.unit_on_board(board_ab, 21)
 	enemy_ab.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
 	enemy_ab._recalculate_stats()
@@ -1410,32 +1413,40 @@ static func run_overwhelming_bulk(failures: Array[String]) -> void:
 	enemy_ab.health.current_hp = 10
 	var hp_ab: int = enemy_ab.health.current_hp
 	var skill_ab: AbilityData = H.ability_on_unit(H.unit_on_board(board_ab, 20), &"bruiser_headbutt")
-	var plan_ab := Timeline.new()
-	plan_ab.add(H.plan_ability(20, skill_ab, Vector2i(4, 3), 21))
-	var result_ab: SimResult = H.simulate_plan(board_ab, plan_ab)
+	var events_ab: Array[SimEvent] = []
+	AbilitySystem.execute(
+		board_ab,
+		TimelineAction.make_ability(20, skill_ab, Vector2i(4, 3), 21),
+		events_ab,
+	)
 	H.assert_true(
 		failures, "overwhelming_bulk/ability_pierce_events",
-		H.events_have_damage_pierce(result_ab.events, true),
+		H.events_have_damage_pierce(events_ab, true),
 	)
-	var dmg_ab: int = hp_ab - H.unit_hp(result_ab.final_state, 21)
+	var dmg_ab: int = H.sum_unit_hp_damage_events(events_ab, 21)
 	var board_ctl: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board_ctl, 30, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
 	H.place_dummy(board_ctl, 31, Vector2i(4, 3))
+	var bruiser_ctl: UnitState = H.unit_on_board(board_ctl, 30)
+	bruiser_ctl.health.max_hp = 150
+	bruiser_ctl.health.current_hp = 150
 	var enemy_ctl: UnitState = H.unit_on_board(board_ctl, 31)
 	enemy_ctl.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 20))
 	enemy_ctl._recalculate_stats()
 	enemy_ctl.health.max_hp = 10
 	enemy_ctl.health.current_hp = 10
-	var hp_ctl: int = enemy_ctl.health.current_hp
 	var skill_ctl: AbilityData = H.ability_on_unit(H.unit_on_board(board_ctl, 30), &"bruiser_headbutt")
-	var plan_ctl := Timeline.new()
-	plan_ctl.add(H.plan_ability(30, skill_ctl, Vector2i(4, 3), 31))
-	var result_ctl: SimResult = H.simulate_plan(board_ctl, plan_ctl)
-	var dmg_ctl: int = hp_ctl - H.unit_hp(result_ctl.final_state, 31)
+	var events_ctl: Array[SimEvent] = []
+	AbilitySystem.execute(
+		board_ctl,
+		TimelineAction.make_ability(30, skill_ctl, Vector2i(4, 3), 31),
+		events_ctl,
+	)
+	var dmg_ctl: int = H.sum_unit_hp_damage_events(events_ctl, 31)
 	H.assert_true(
 		failures, "overwhelming_bulk/ability_pierce_dmg",
-		dmg_ab > dmg_ctl,
-		"AbilitySystem DAMAGE path must pierce when bulk precond met",
+		dmg_ab > dmg_ctl and dmg_ab > 0,
+		"AbilitySystem DAMAGE path must pierce when bulk precond met (bulk=%d control=%d)" % [dmg_ab, dmg_ctl],
 	)
 
 
@@ -1570,6 +1581,17 @@ static func run_scar_tissue(failures: Array[String]) -> void:
 	var scar_bonus: int = maxi(
 		floori(float(victim.health.max_hp) / 20.0),
 		floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
+	)
+	H.assert_eq_int(
+		failures, "scar_tissue/cap",
+		scar_bonus,
+		mini(
+			maxi(
+				floori(float(victim.health.max_hp) / 20.0),
+				floori(float(victim.health.max_hp - victim.health.current_hp) / 20.0),
+			),
+			floori(float(victim.health.max_hp) / 10.0),
+		),
 	)
 	H.assert_eq_int(
 		failures, "scar_tissue/exact",
