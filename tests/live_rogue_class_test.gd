@@ -27,6 +27,41 @@ const _CASES: Array[StringName] = [
 ]
 
 
+const _PASSIVE_CASES: Array[Dictionary] = [
+	{"passive": &"pass", "ability": &"rogue_slip_past"},
+	{"passive": &"backstab", "ability": &"rogue_kidney_strike"},
+	{"passive": &"blink_mastery", "ability": &"rogue_shadow_step"},
+	{"passive": &"lethal_position", "ability": &"rogue_kidney_strike"},
+	{"passive": &"shadow_strike", "ability": &"rogue_shadow_step"},
+	{"passive": &"killing_intent", "ability": &"rogue_lethal_flourish"},
+	{"passive": &"shadow_clone", "ability": &"rogue_throat_slit"},
+	{"passive": &"phase_shift", "ability": &"rogue_shadow_step"},
+	{"passive": &"blink_strike", "ability": &"rogue_kidney_strike"},
+	{"passive": &"shadow_meld", "ability": &"rogue_smoke_bomb"},
+	{"passive": &"shadow_slip", "ability": &"rogue_slip_past"},
+	{"passive": &"miasma_spreader", "ability": &"rogue_lethal_flourish"},
+	{"passive": &"panic_cascade", "ability": &"rogue_lethal_flourish"},
+	{"passive": &"debuff_overload", "ability": &"rogue_amnesia_dust"},
+	{"passive": &"mind_static", "ability": &"rogue_death_mark"},
+	{"passive": &"board_scrambler", "ability": &"rogue_kidney_strike"},
+]
+
+
+func test_live_rogue_passive_overlay(timeout := 600000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	runner.move_window_to_foreground()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	var scene := runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	if scene == null:
+		return
+	var session: TestBattleSession = scene.get_session()
+	for entry: Dictionary in _PASSIVE_CASES:
+		var passive_id: StringName = entry.get("passive", &"") as StringName
+		var ability_id: StringName = entry.get("ability", &"") as StringName
+		await _run_passive_live_case(runner, scene, session, passive_id, ability_id)
+
+
 func test_live_rogue_factory_loads_every_skill(timeout := 120000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	runner.move_window_to_foreground()
@@ -240,6 +275,99 @@ func _run_evasive_live_case(
 	_ROGUE_HARNESS.run_single_ability(ability_id, harness_failures)
 	assert_bool(harness_failures.is_empty()).override_failure_message(
 		"%s: Tier 1 dual-module sim failed: %s" % [label, ", ".join(harness_failures)],
+	).is_true()
+
+
+func _run_passive_live_case(
+	runner: GdUnitSceneRunner,
+	scene: TestBattleMapView,
+	session: TestBattleSession,
+	passive_id: StringName,
+	ability_id: StringName,
+) -> void:
+	session.reset_defaults()
+	session.player_class_id = &"rogue"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"rogue", false)
+	session.set_all_skills_enabled(&"rogue", false)
+	session.passive_enabled[passive_id] = true
+	session.skill_enabled[ability_id] = true
+	session.extra_player_coords = [_ally_cell_for(ability_id)]
+	session.dummy_coords = _dummy_coords_for(ability_id)
+	session.unkillable_dummies = true
+	scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	var director := scene.get_node("CombatDirector") as CombatDirector
+	var shell := scene.get_node("CombatShell") as TacticalCombatShell
+	var input: CombatPlanningInput = shell.planning_input
+	input.auto_use_skill_after_move = ability_id != &"rogue_evasive_strike"
+	var overlay: TacticalPlanningOverlay = scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	_relocate_training_player(director.base_board, ability_id)
+	if director.board != director.base_board:
+		_relocate_training_player(director.board, ability_id)
+	var actor_cell := _actor_cell_for(ability_id)
+	var actor_id := _unit_id_at(director.base_board, actor_cell)
+	var label := "%s/%s" % [passive_id, ability_id]
+	assert_int(actor_id).override_failure_message(
+		"%s: missing live Rogue actor at %s" % [label, actor_cell],
+	).is_greater(-1)
+	if actor_id < 0:
+		return
+	var actor := director.board.get_unit_by_id(actor_id)
+	var ability := _ability_by_id(actor, ability_id)
+	assert_object(ability).override_failure_message(
+		"%s: missing ability on live Rogue" % label,
+	).is_not_null()
+	if ability == null:
+		return
+	actor.ability.points_left = maxi(actor.ability.points_left, 2)
+	actor.movement.points_left = maxi(actor.movement.points_left, 8)
+	var target := _target_for(ability_id, ability, actor_cell)
+	var premove := _premove_cell_for(ability_id, actor_cell, target)
+	if premove != Vector2i(-999999, -999999):
+		await _MOVEMENT_QA.commit_universal_run(
+			self, runner, director, input, actor_id, premove,
+		)
+	director.select_unit(actor_id)
+	director.select_ability(_ability_index(actor, ability))
+	await runner.simulate_frames(2, _DELTA_MS)
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, overlay, input, director, actor_id, ability, target, StringName(label),
+	)
+	var slots := await _commit_live_skill(
+		runner, director, input, actor_id, ability, target, ability_id, actor_cell,
+	)
+	assert_bool(_slots_invalid(slots)).override_failure_message(
+		"%s: preview rejected Bible-valid target: %s" % [label, str(slots)],
+	).is_false()
+	await _MOVEMENT_QA.assert_committed(
+		self, ability_id, director, actor_id, ability, slots, input, overlay, runner,
+	)
+	if ability_id == &"rogue_poison_flask":
+		var harness_failures: Array[String] = []
+		_ROGUE_HARNESS.run_single_ability(ability_id, harness_failures)
+		assert_bool(harness_failures.is_empty()).override_failure_message(
+			"%s: Tier 1 hazard sim failed: %s" % [label, ", ".join(harness_failures)],
+		).is_true()
+		return
+	var result: SimResult = Simulator.simulate(
+		director.base_board,
+		director.get_player_plan(),
+	)
+	_assert_no_action_failure(result.events, actor_id, ability_id, label)
+	var passive_failures: Array[String] = []
+	_ROGUE_HARNESS.run_passive_trigger_proof(passive_id, passive_failures)
+	assert_bool(passive_failures.is_empty()).override_failure_message(
+		"%s: Tier 1 passive trigger failed: %s" % [label, ", ".join(passive_failures)],
+	).is_true()
+	var upgrade_failures: Array[String] = []
+	_ROGUE_HARNESS.run_passive_upgrade_for(passive_id, upgrade_failures)
+	assert_bool(upgrade_failures.is_empty()).override_failure_message(
+		"%s: Tier 1 passive [+] failed: %s" % [label, ", ".join(upgrade_failures)],
 	).is_true()
 
 

@@ -2,21 +2,41 @@
 
 **Scope:** `core/factory/classes/rogue_factory.gd` against `class_abilities.txt` § Rogue, using the universal contract in [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md).
 
-**LOCK:** `NO` — this first pass provides per-row scenarios and shared-system smoke coverage, but the meta-critic must still promote each row after deeper Bible-clause trigger proofs and live overlay evidence.
+**LOCK:** `NO` — Tier 1 + Tier 2 runners green and matrix 32/32 `PASS`; owner sign-off pending per [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
+
+## Meta-critic (owner proxy)
+
+The **gauntlet-critic** on Rogue work judges:
+
+1. **Bible adherence** — behavior matches `class_abilities.txt` § Rogue + `rogue_factory.gd`
+2. **Global systems fidelity** — shared `RogueSystems` hooks, `AbilitySystem`, timeline, no per-id branches
+3. **Test adequacy** — each scenario proves Bible clauses (base + `[+]` when implemented)
+4. **Coverage** — matrix row + Tier 1 scenario + live overlay/commit for actives; passive live pairing in `test_live_rogue_passive_overlay`
+5. **Wrong owner** — game bug vs test design
+
+| Field | Content |
+| ----- | ------- |
+| `SCORE` | /100 vs `PASS_THRESHOLD: 88` |
+| `Largest gap` | Missing passive live, weak upgrade assert, Bible mismatch, etc. |
+| `Fix target` | `implementation` \| `qa_test` \| `fixture` \| `coverage_matrix` |
+| `Evidence` | Bible excerpt + assert + stdout / `reports/report_*` |
+| `Infrastructure` | `ADEQUATE` \| `INADEQUATE` |
+
+Manifest: [`docs/rogue_meta_critic_manifest.json`](rogue_meta_critic_manifest.json) — updated after each critic round ≥ 88.
 
 ## Required tiers
 
 | Tier | Command | Status |
 |---|---|---|
 | 1 — headless | `.\scripts\run_rogue_qa_gate.ps1` | Required |
-| 2 — live planning | `.\scripts\run_rogue_live_qa.ps1` | Required for LOCK |
+| 2 — live planning | `.\scripts\run_rogue_live_qa.ps1` | Required — `test_live_rogue_every_skill` + `test_live_rogue_passive_overlay` |
 | Manual | `docs/PLANNING_SKILL_QA_CHECKLIST.md` | Required for feel/pixel checks |
 
 ## Global systems fidelity
 
 - Actives use factory `EffectData`/`AbilityModule`, `AbilitySystem`, timeline AP/MP, targeting flags, and `Simulator`.
 - Movement and preview use `MovementSystem`, shared grid geometry, commit slots, and simulator parity; no Rogue-specific presentation path is allowed.
-- Passive rows are data assertions until their shared trigger contracts are promoted; no passive row is marked LOCK from a modifier read alone.
+- Passive rows prove modifier keys, `_run_passive_trigger` sim outcomes, and `run_passive_upgrade_for` `[+]` branches in `tests/rogue_qa_harness.gd`; live pairing in `test_live_rogue_passive_overlay` re-runs Tier 1 trigger proof after commit.
 - Shape rows must prove affected tile sets through `GridSystem.get_affected_tiles` in headless and the planning overlay at hover in live QA.
 - No production `ability.id` branch is added for Rogue behavior.
 

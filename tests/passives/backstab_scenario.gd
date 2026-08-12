@@ -1,5 +1,7 @@
 extends RefCounted
-## Bible: Backstab - Rogue promotion passive, ignore DEF after pass-through.
+## Bible: Backstab — attacks from behind ignore target DEF; [+] extended range.
+## Globals: `RogueSystems.apply_attack_ignore_def` + `backstab_ignore_def` modifier.
+## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
 const _H := preload("res://tests/rogue_qa_harness.gd")
 static func run_all(failures: Array[String]) -> void:
 	_H.run_passive_factory(&"backstab", failures)

@@ -125,10 +125,264 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		target_id,
 	)
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
-		var footprint := GridSystem.get_affected_tiles(
-			board_before, actor.position, target_coord, ability.target_shape, ability.target_shape_size,
-		)
-		_assert(failures, "%s/footprint" % ability_id, footprint.has(target_coord) and not footprint.is_empty())
+		run_shaped_footprint(ability_id, failures)
+
+
+static func run_passive_trigger_proof(passive_id: StringName, failures: Array[String]) -> void:
+	_run_passive_trigger(passive_id, failures)
+
+
+static func run_passive_upgrade_for(passive_id: StringName, failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"rogue")
+	var passive := _passive(definition, passive_id)
+	if passive == null or passive.upgraded_description.is_empty():
+		return
+	var board := _plain_board(Vector2i(8, 6))
+	var rogue := _place_rogue(board, 1, Vector2i(2, 2), &"rogue_kidney_strike")
+	rogue.active_passives.append(passive)
+	rogue.upgraded_passives.append(passive_id)
+	rogue._recalculate_stats(board)
+	match passive_id:
+		&"blink_mastery":
+			rogue.passive_flags["jumped_or_teleported_this_turn"] = true
+			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), [])
+			_assert(
+				failures,
+				"passive/blink_mastery/upgraded_bonus",
+				int(rogue.passive_flags.get("rogue_after_teleport_attack_bonus", 0)) >= 4,
+			)
+		&"debuff_overload":
+			var enemy := _place_dummy(board, 7, Vector2i(4, 2))
+			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
+			var events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.turn_start(board, rogue, events)
+			var total := 0
+			for event: SimEvent in events:
+				if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
+						and int(event.data.get("unit", -1)) == enemy.id:
+					total += int(event.data.get("amount", 0))
+			_assert(failures, "passive/debuff_overload/upgraded_tick", total >= 4)
+		&"mind_static":
+			var knight_def := FactoryTestHelpers.build_unit(&"knight")
+			var def_target := UnitState.create(
+				11, knight_def, GameEnums.Team.ENEMY, Vector2i(5, 2),
+			)
+			board.add_unit(def_target)
+			GridSystem.set_occupant(board, Vector2i(5, 2), 11)
+			var adjustments := _ROGUE_SYSTEMS.dynamic_stat_adjustments(board, def_target)
+			_assert(
+				failures,
+				"passive/mind_static/upgraded_def_down",
+				int(adjustments.get("defense", 0)) <= -2,
+			)
+		&"blink_strike":
+			_assert(
+				failures,
+				"passive/blink_strike/upgraded_range",
+				_ROGUE_SYSTEMS.basic_attack_range_bonus(rogue) >= 3,
+			)
+		&"shadow_meld":
+			board.set_tile_terrain(rogue.position, DataLibrary.get_terrain(&"smoke"))
+			_ROGUE_SYSTEMS.apply_smoke_spell_bonus(board, rogue, _ability(definition, &"rogue_smoke_bomb"))
+			_assert(
+				failures,
+				"passive/shadow_meld/upgraded_magic",
+				int(rogue.passive_flags.get("mage_spell_magic_bonus", 0)) >= 3,
+			)
+		&"killing_intent":
+			var mid_hp := _place_dummy(board, 6, Vector2i(3, 2))
+			mid_hp.health.current_hp = int(mid_hp.health.max_hp * 0.6)
+			rogue.position = Vector2i(2, 2)
+			_ROGUE_SYSTEMS.turn_end(board, rogue, [])
+			_assert(
+				failures,
+				"passive/killing_intent/upgraded_threshold",
+				int(rogue.passive_flags.get("rogue_bonus_ap_next_turn", 0)) >= 1,
+			)
+		&"miasma_spreader":
+			_assert(
+				failures,
+				"passive/miasma_spreader/upgraded_range",
+				int(_ROGUE_SYSTEMS.passive_value(rogue, &"miasma_spreader_range", &"upgraded_miasma_spreader_range", 1)) >= 2,
+			)
+		&"shadow_strike":
+			var strike_target := _place_dummy(board, 4, Vector2i(3, 2))
+			rogue.position = Vector2i(2, 2)
+			_ROGUE_SYSTEMS.after_teleport(
+				board, rogue, strike_target, _ability(definition, &"rogue_shadow_step"), [],
+			)
+			_assert(
+				failures,
+				"passive/shadow_strike/upgraded_silence",
+				strike_target.has_status(GameEnums.StatusType.SILENCE),
+			)
+		&"shadow_slip":
+			var slip_enemy := _place_dummy(board, 3, Vector2i(3, 2))
+			_ROGUE_SYSTEMS.on_moved_through_enemy(board, rogue, [slip_enemy.id], [])
+			_assert(
+				failures,
+				"passive/shadow_slip/upgraded_poison",
+				slip_enemy.has_status(GameEnums.StatusType.POISON),
+			)
+		&"lethal_position":
+			rogue.passive_flags["rogue_tiles_moved"] = 2
+			var moved_bonus := _ROGUE_SYSTEMS.damage_bonus(
+				board, rogue, _place_dummy(board, 14, Vector2i(5, 2)), null,
+			)
+			_assert(failures, "passive/lethal_position/upgraded_move_scaling", moved_bonus >= 2)
+		&"board_scrambler":
+			var scrambler_target := _place_dummy(board, 12, Vector2i(4, 2))
+			_place_dummy(board, 13, Vector2i(5, 2))
+			_ROGUE_SYSTEMS.on_dealt_damage(board, rogue, scrambler_target, [])
+			_assert(
+				failures,
+				"passive/board_scrambler/upgraded_root",
+				scrambler_target.has_status(GameEnums.StatusType.ROOT),
+			)
+		&"shadow_clone":
+			var corpse := UnitState.create(
+				99, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(6, 2),
+			)
+			corpse.health.current_hp = 0
+			var clone_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.on_kill(board, rogue, corpse, clone_events)
+			_assert(
+				failures,
+				"passive/shadow_clone/upgraded_explode",
+				_events_have_spawn(clone_events),
+			)
+		&"phase_shift":
+			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), [])
+			var stealth_target := _place_dummy(board, 5, Vector2i(3, 2))
+			_ROGUE_SYSTEMS.apply_attack_ignore_def(board, rogue, stealth_target)
+			_assert(
+				failures,
+				"passive/phase_shift/upgraded_ignore_def",
+				int(rogue.passive_flags.get("attack_ignore_def", 0)) > 0,
+			)
+		&"panic_cascade":
+			var confused := _place_dummy(board, 10, Vector2i(4, 2))
+			confused.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CONFUSION, 1))
+			confused.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
+			rogue.passive_flags["__current_ability"] = _ability(definition, &"rogue_lethal_flourish")
+			var panic_bonus := _ROGUE_SYSTEMS.damage_bonus(board, rogue, confused, null)
+			_assert(failures, "passive/panic_cascade/upgraded_bonus", panic_bonus >= 6)
+		&"backstab":
+			var bleed_board := _plain_board(Vector2i(8, 6))
+			var bleed_rogue := _place_rogue(bleed_board, 1, Vector2i(2, 2), &"rogue_kidney_strike")
+			bleed_rogue.active_passives.append(passive)
+			bleed_rogue.upgraded_passives.append(passive_id)
+			var bleed_target := _place_dummy(bleed_board, 3, Vector2i(2, 3))
+			bleed_target.facing = GameEnums.Facing.SOUTH
+			bleed_rogue.position = Vector2i(2, 2)
+			_ROGUE_SYSTEMS.apply_attack_ignore_def(bleed_board, bleed_rogue, bleed_target)
+			_assert(
+				failures,
+				"passive/backstab/upgraded_bleed",
+				bleed_target.has_status(GameEnums.StatusType.BLEED),
+			)
+		&"pass":
+			var pierce_board := _plain_board(Vector2i(8, 6))
+			var pierce_rogue := _place_rogue(pierce_board, 1, Vector2i(2, 2), &"rogue_slip_past")
+			pierce_rogue.active_passives.append(passive)
+			pierce_rogue.upgraded_passives.append(passive_id)
+			var pierce_enemy := _place_dummy(pierce_board, 3, Vector2i(3, 2))
+			_ROGUE_SYSTEMS.on_moved_through_enemy(pierce_board, pierce_rogue, [pierce_enemy.id], [])
+			_assert(
+				failures,
+				"passive/pass/upgraded_pierce",
+				int(pierce_rogue.passive_flags.get("rogue_pierce_target_id", -1)) == pierce_enemy.id,
+			)
+
+
+static func run_shaped_footprint(ability_id: StringName, failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"rogue")
+	var ability := _ability(definition, ability_id)
+	if ability == null or not AoeFootprintQaHarness.ability_requires_footprint_qa(ability):
+		return
+	match ability_id:
+		&"rogue_shuriken_volley":
+			_run_shuriken_volley_footprint(failures, ability)
+		&"rogue_smoke_bomb":
+			_run_smoke_bomb_footprint(failures, ability)
+		_:
+			failures.append("footprint/%s/unhandled_shaped_skill" % ability_id)
+
+
+static func assert_grid_footprint_excludes(
+	failures: Array[String],
+	tag: String,
+	board: BoardState,
+	origin: Vector2i,
+	target: Vector2i,
+	shape: GameEnums.TargetShape,
+	size: int,
+	outside: Vector2i,
+) -> void:
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures, tag, board, origin, target, shape, size, outside,
+	)
+
+
+static func _run_shuriken_volley_footprint(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	var origin := Vector2i(3, 4)
+	var target := Vector2i(5, 3)
+	var rogue := _place_rogue(board, 1, origin, &"rogue_shuriken_volley")
+	var inside := _place_dummy(board, 2, Vector2i(5, 4))
+	var outside := _place_dummy(board, 3, Vector2i(8, 8))
+	var inside_hp := inside.health.current_hp
+	var outside_hp := outside.health.current_hp
+	assert_grid_footprint_excludes(
+		failures, "shuriken/footprint/grid", board, origin, target,
+		ability.target_shape, ability.target_shape_size, Vector2i(8, 8),
+	)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, ability, target, 2))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var inside_after := board.get_unit_by_id(2)
+	var outside_after := board.get_unit_by_id(3)
+	_assert(
+		failures,
+		"shuriken/footprint/inside_damaged",
+		inside_after != null and inside_after.health.current_hp < inside_hp,
+	)
+	_assert(
+		failures,
+		"shuriken/footprint/outside_untouched",
+		outside_after != null and outside_after.health.current_hp == outside_hp,
+	)
+
+
+static func _run_smoke_bomb_footprint(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	var origin := Vector2i(4, 4)
+	var rogue := _place_rogue(board, 1, origin, &"rogue_smoke_bomb")
+	var footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, origin, origin, ability.target_shape, ability.target_shape_size,
+	)
+	var inside_coord := origin
+	for tile: Vector2i in footprint:
+		if tile != origin:
+			inside_coord = tile
+			break
+	_place_ally(board, 2, inside_coord)
+	_place_dummy(board, 3, Vector2i(8, 8))
+	assert_grid_footprint_excludes(
+		failures, "smoke/footprint/grid", board, origin, origin,
+		ability.target_shape, ability.target_shape_size, Vector2i(8, 8),
+	)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, ability, origin, -1))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	_assert(
+		failures,
+		"smoke/footprint/ability_used",
+		_events_have_ability(events, &"rogue_smoke_bomb"),
+	)
 
 
 static func _configure_sim_target(
@@ -214,6 +468,160 @@ static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> 
 		"upgrade/%s/ability_used" % ability_id,
 		_events_have_ability(events, ability_id),
 	)
+	_run_conditional_upgrade(ability_id, failures)
+	_assert_upgraded_bible_marker(ability_id, failures)
+
+
+static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"rogue")
+	var ability := _ability(definition, ability_id)
+	if ability == null or ability.upgraded_modules.is_empty():
+		failures.append("upgrade/%s/missing_upgraded_modules" % ability_id)
+		return
+	var upgraded: Array[AbilityModule] = ability.get_active_modules(true)
+	var base: Array[AbilityModule] = ability.modules
+	if upgraded.is_empty() or base.is_empty():
+		failures.append("upgrade/%s/empty_runtime_modules" % ability_id)
+		return
+	match ability_id:
+		&"rogue_slip_past":
+			_assert(
+				failures,
+				"upgrade/rogue_slip_past/def_debuff",
+				upgraded[0].legacy_modifiers.has("target_def_debuff"),
+			)
+		&"rogue_shadow_step":
+			_assert(
+				failures,
+				"upgrade/rogue_shadow_step/behind_motion",
+				upgraded[0].motion_mode == GameEnums.MotionMode.BEHIND_TARGET
+					and int(upgraded[0].legacy_modifiers.get("behind_target_strength", 0)) >= 1,
+			)
+		&"rogue_smoke_bomb":
+			_assert(
+				failures,
+				"upgrade/rogue_smoke_bomb/ally_heal",
+				int(upgraded[0].legacy_modifiers.get("smoke_ally_heal_per_turn", 0)) >= 1,
+			)
+		&"rogue_evasive_strike":
+			_assert(
+				failures,
+				"upgrade/rogue_evasive_strike/move_and_strike",
+				upgraded[0].amount >= 3 and upgraded[1].amount >= 2,
+			)
+		&"rogue_grappling_hook":
+			_assert(
+				failures,
+				"upgrade/rogue_grappling_hook/trap_multiplier",
+				int(upgraded[0].legacy_modifiers.get("trap_collision_damage_multiplier", 0)) >= 2,
+			)
+		&"rogue_switcheroo":
+			_assert(
+				failures,
+				"upgrade/rogue_switcheroo/inherit_attacks",
+				bool(upgraded[0].legacy_modifiers.get("inherit_incoming_attacks", false)),
+			)
+		&"rogue_blindside":
+			_assert(
+				failures,
+				"upgrade/rogue_blindside/stagger_bonus",
+				int(upgraded[0].legacy_modifiers.get("if_target_staggered_bonus", 0)) >= 2,
+			)
+		&"rogue_amnesia_dust":
+			_assert(
+				failures,
+				"upgrade/rogue_amnesia_dust/poison_layer",
+				upgraded[0].layers.size() > base[0].layers.size(),
+			)
+		&"rogue_death_mark":
+			_assert(
+				failures,
+				"upgrade/rogue_death_mark/refresh_mark",
+				bool(upgraded[0].legacy_modifiers.get("on_kill_refresh_mark_zero_ap", false)),
+			)
+		&"rogue_shadow_swap":
+			_assert(
+				failures,
+				"upgrade/rogue_shadow_swap/def_layer",
+				not upgraded[0].layers.is_empty(),
+			)
+		&"rogue_kidnap":
+			_assert(
+				failures,
+				"upgrade/rogue_kidnap/stagger_both",
+				bool(upgraded[0].legacy_modifiers.get("swap_collision_stagger_both", false)),
+			)
+		&"rogue_shuriken_volley":
+			_assert(
+				failures,
+				"upgrade/rogue_shuriken_volley/pierce_blind",
+				bool(upgraded[0].legacy_modifiers.get("pierce_vs_blind", false)),
+			)
+		&"rogue_poison_flask":
+			_assert(
+				failures,
+				"upgrade/rogue_poison_flask/hazard_blind",
+				bool(upgraded[0].legacy_modifiers.get("hazard_blind_on_entry", false)),
+			)
+		&"rogue_kidney_strike", &"rogue_throat_slit", &"rogue_lethal_flourish":
+			pass
+		_:
+			failures.append("upgrade/%s/unmapped_bible_marker" % ability_id)
+
+
+static func _run_conditional_upgrade(ability_id: StringName, failures: Array[String]) -> void:
+	match ability_id:
+		&"rogue_kidney_strike":
+			var board := _plain_board(Vector2i(8, 6))
+			var target := _place_dummy(board, 3, Vector2i(3, 3))
+			target.facing = GameEnums.Facing.SOUTH
+			var rogue := _place_rogue(board, 1, Vector2i(3, 2), ability_id)
+			rogue.upgraded_abilities.append(ability_id)
+			rogue.facing = GameEnums.Facing.SOUTH
+			var ability := _ability(FactoryTestHelpers.build_unit(&"rogue"), ability_id)
+			var plan := Timeline.new()
+			plan.add(TimelineAction.make_ability(1, ability, target.position, target.id))
+			var events: Array[SimEvent] = []
+			Simulator.simulate_player_turn(board, plan, events)
+			_assert(
+				failures,
+				"upgrade/rogue_kidney_strike/behind_root",
+				target.has_status(GameEnums.StatusType.ROOT),
+			)
+		&"rogue_throat_slit":
+			var board := _plain_board(Vector2i(8, 6))
+			var rogue := _place_rogue(board, 1, Vector2i(2, 3), ability_id)
+			rogue.upgraded_abilities.append(ability_id)
+			var victim := _place_dummy(board, 3, Vector2i(3, 3))
+			victim.health.current_hp = 1
+			var neighbor := _place_dummy(board, 4, Vector2i(4, 3))
+			var ability := _ability(FactoryTestHelpers.build_unit(&"rogue"), ability_id)
+			var plan := Timeline.new()
+			plan.add(TimelineAction.make_ability(1, ability, victim.position, victim.id))
+			Simulator.simulate_player_turn(board, plan, [])
+			_assert(
+				failures,
+				"upgrade/rogue_throat_slit/spread_silence",
+				neighbor.has_status(GameEnums.StatusType.SILENCE),
+			)
+		&"rogue_lethal_flourish":
+			var board := _plain_board(Vector2i(8, 6))
+			var rogue := _place_rogue(board, 1, Vector2i(2, 3), ability_id)
+			rogue.upgraded_abilities.append(ability_id)
+			var ability := _ability(FactoryTestHelpers.build_unit(&"rogue"), ability_id)
+			var victim := _place_dummy(board, 3, Vector2i(3, 3))
+			victim.health.current_hp = 1
+			rogue.ability.points_left = 0
+			rogue.passive_flags["__current_ability"] = ability
+			var kill_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.on_kill(board, rogue, victim, kill_events)
+			_assert(
+				failures,
+				"upgrade/rogue_lethal_flourish/kill_ap",
+				rogue.ability.points_left >= 1,
+			)
+		_:
+			pass
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
@@ -237,6 +645,7 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 			not passive.upgraded_description.is_empty(),
 		)
 		_run_passive_trigger(passive_id, failures)
+		run_passive_upgrade_for(passive_id, failures)
 		return
 	failures.append("passive/%s/row_missing" % passive_id)
 

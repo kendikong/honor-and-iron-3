@@ -1,0 +1,86 @@
+﻿Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+Godot_v4.7-stable_win64.exe : SCRIPT ERROR: Parse Error: Identifier "RogueFactory" not declared in the current scope.
+At C:\Users\Kendy\AppData\Local\Temp\ps-script-460389ed-d6c8-48ef-94e6-dec0f6f35a0e.ps1:87 char:49
++ ... nd-iron-3"; & "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\G ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (SCRIPT ERROR: P... current scope.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   at: GDScript::reload (res://tests/aoe_footprint_qa_harness.gd:248)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://tests/rogue_qa_harness.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://tests/rogue_qa_runner.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+   at: GDScript::reload (res://tests/rogue_qa_gate.gd:0)
+ERROR: Failed to load script "res://tests/rogue_qa_gate.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+[SUITE] rogue_qa_tier1
+[ROGUE_QA] pass (pass)
+[ROGUE_QA] slip_past (rogue_slip_past)
+[ROGUE_QA] shadow_step (rogue_shadow_step)
+[ROGUE_QA] kidney_strike (rogue_kidney_strike)
+[ROGUE_QA] smoke_bomb (rogue_smoke_bomb)
+SCRIPT ERROR: Invalid call. Nonexistent function 'ability_requires_footprint_qa' in base 'GDScript'.
+   at: run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+   GDScript backtrace (most recent call first):
+       [0] run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+       [1] run_single_ability (res://tests/rogue_qa_harness.gd:128)
+       [2] run_all (res://tests/skills/rogue_smoke_bomb_scenario.gd:9)
+       [3] run_scenario (res://tests/rogue_scenario_registry.gd:48)
+       [4] run_all (res://tests/rogue_qa_runner.gd:16)
+       [5] _run (res://tests/rogue_qa_gate.gd:13)
+SCRIPT ERROR: Invalid call. Nonexistent function 'ability_requires_footprint_qa' in base 'GDScript'.
+   at: run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+   GDScript backtrace (most recent call first):
+       [0] run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+       [1] run_all (res://tests/skills/rogue_smoke_bomb_scenario.gd:10)
+       [2] run_scenario (res://tests/rogue_scenario_registry.gd:48)
+       [3] run_all (res://tests/rogue_qa_runner.gd:16)
+       [4] _run (res://tests/rogue_qa_gate.gd:13)
+[ROGUE_QA] evasive_strike (rogue_evasive_strike)
+[ROGUE_QA] grappling_hook (rogue_grappling_hook)
+[ROGUE_QA] switcheroo (rogue_switcheroo)
+[ROGUE_QA] blindside (rogue_blindside)
+[ROGUE_QA] throat_slit (rogue_throat_slit)
+[ROGUE_QA] amnesia_dust (rogue_amnesia_dust)
+[ROGUE_QA] death_mark (rogue_death_mark)
+[ROGUE_QA] lethal_flourish (rogue_lethal_flourish)
+[ROGUE_QA] shadow_swap (rogue_shadow_swap)
+[ROGUE_QA] kidnap (rogue_kidnap)
+[ROGUE_QA] shuriken_volley (rogue_shuriken_volley)
+SCRIPT ERROR: Invalid call. Nonexistent function 'ability_requires_footprint_qa' in base 'GDScript'.
+   at: run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+   GDScript backtrace (most recent call first):
+       [0] run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+       [1] run_single_ability (res://tests/rogue_qa_harness.gd:128)
+       [2] run_all (res://tests/skills/rogue_shuriken_volley_scenario.gd:9)
+       [3] run_scenario (res://tests/rogue_scenario_registry.gd:48)
+       [4] run_all (res://tests/rogue_qa_runner.gd:16)
+       [5] _run (res://tests/rogue_qa_gate.gd:13)
+SCRIPT ERROR: Invalid call. Nonexistent function 'ability_requires_footprint_qa' in base 'GDScript'.
+   at: run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+   GDScript backtrace (most recent call first):
+       [0] run_shaped_footprint (res://tests/rogue_qa_harness.gd:302)
+       [1] run_all (res://tests/skills/rogue_shuriken_volley_scenario.gd:10)
+       [2] run_scenario (res://tests/rogue_scenario_registry.gd:48)
+       [3] run_all (res://tests/rogue_qa_runner.gd:16)
+       [4] _run (res://tests/rogue_qa_gate.gd:13)
+[ROGUE_QA] poison_flask (rogue_poison_flask)
+[ROGUE_QA] backstab (backstab)
+[ROGUE_QA] blink_mastery (blink_mastery)
+[ROGUE_QA] lethal_position (lethal_position)
+[ROGUE_QA] shadow_strike (shadow_strike)
+[ROGUE_QA] killing_intent (killing_intent)
+[ROGUE_QA] shadow_clone (shadow_clone)
+[ROGUE_QA] phase_shift (phase_shift)
+[ROGUE_QA] blink_strike (blink_strike)
+[ROGUE_QA] shadow_meld (shadow_meld)
+[ROGUE_QA] shadow_slip (shadow_slip)
+[ROGUE_QA] miasma_spreader (miasma_spreader)
+[ROGUE_QA] panic_cascade (panic_cascade)
+[ROGUE_QA] debuff_overload (debuff_overload)
+[ROGUE_QA] mind_static (mind_static)
+[ROGUE_QA] board_scrambler (board_scrambler)
+[PASS] Rogue QA gate: factory matrix, all active skills, and passive rows
