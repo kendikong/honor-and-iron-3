@@ -1,4 +1,4 @@
-﻿commit: 9bc395a0eac5c39c207fd1558b3c326a780455e5
+﻿commit: 1835c768f46409f3050e1c21e342cd85c978c676
 
 === run_mage_qa_gate.ps1 (exit 0) ===
 === Mage QA gate (class validation - NOT planning QA) ===
@@ -88,17 +88,17 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_mage_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_mage_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mage_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_mage_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mage_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 340ms[0m
+  [38;2;250;235;215mres://tests/live_mage_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mage_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 966ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 351ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 978ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (1/1)[0m
-[38;2;233;150;122mTotal execution time: 34s 351ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_857/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_857/index.html[0m
+[38;2;233;150;122mTotal execution time: 34s 978ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_861/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_861/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
@@ -431,17 +431,17 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_archer_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_archer_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_archer_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 861ms[0m
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_archer_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 524ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 875ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 535ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (1/1)[0m
-[38;2;233;150;122mTotal execution time: 16s 875ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_858/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_858/index.html[0m
+[38;2;233;150;122mTotal execution time: 16s 535ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_862/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_862/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
@@ -860,17 +860,17 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_monk_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_monk_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_monk_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_monk_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_monk_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 18s 201ms[0m
+  [38;2;250;235;215mres://tests/live_monk_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_monk_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 18s 233ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 18s 214ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 18s 246ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (1/1)[0m
-[38;2;233;150;122mTotal execution time: 18s 214ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_859/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_859/index.html[0m
+[38;2;233;150;122mTotal execution time: 18s 246ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_863/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_863/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
@@ -1213,17 +1213,17 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_bruiser_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_bruiser_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_bruiser_multi_skill_session[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_bruiser_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_bruiser_multi_skill_session[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 32s 116ms[0m
+  [38;2;250;235;215mres://tests/live_bruiser_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_bruiser_multi_skill_session[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 32s 124ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 32s 138ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 32s 146ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (1/1)[0m
-[38;2;233;150;122mTotal execution time: 32s 138ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_860/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_860/index.html[0m
+[38;2;233;150;122mTotal execution time: 32s 146ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_864/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_864/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 ERROR: Condition "!actions.custom_samplers.has(function->arguments[j].tex_builtin)" is true. Continuing.
