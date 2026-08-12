@@ -1,7 +1,8 @@
 extends RefCounted
-## Bible: Shadow Clone - Rogue promotion passive, decoy/taunt on kill.
+## Bible: shadow_clone - Rogue passive via RogueSystems hooks in harness.
 ## Globals: RogueSystems + AbilitySystem + Simulator
-## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
+## Data/Sim delegate: tests/rogue_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/rogue_qa_harness.gd")
+
 static func run_all(failures: Array[String]) -> void:
-	_H._run_passive_trigger(&"shadow_clone", failures)
+	_H.run_passive_factory(&"shadow_clone", failures)

@@ -1,7 +1,8 @@
 extends RefCounted
-## Bible: Debuff Overload — enemies take +1 unmitigated damage per unique debuff at Rogue turn start; [+] +2.
-## Globals: `RogueSystems.turn_start` + `CombatSystem.deal_damage` (true damage).
-## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
+## Bible: debuff_overload - Rogue passive via RogueSystems hooks in harness.
+## Globals: RogueSystems + AbilitySystem + Simulator
+## Data/Sim delegate: tests/rogue_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/rogue_qa_harness.gd")
+
 static func run_all(failures: Array[String]) -> void:
-	_H._run_passive_trigger(&"debuff_overload", failures)
+	_H.run_passive_factory(&"debuff_overload", failures)

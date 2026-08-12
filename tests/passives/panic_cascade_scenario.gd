@@ -1,7 +1,8 @@
 extends RefCounted
-## Bible: Panic Cascade - Rogue promotion passive, damage per target status.
+## Bible: panic_cascade - Rogue passive via RogueSystems hooks in harness.
 ## Globals: RogueSystems + AbilitySystem + Simulator
-## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
+## Data/Sim delegate: tests/rogue_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/rogue_qa_harness.gd")
+
 static func run_all(failures: Array[String]) -> void:
-	_H._run_passive_trigger(&"panic_cascade", failures)
+	_H.run_passive_factory(&"panic_cascade", failures)

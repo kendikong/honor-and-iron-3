@@ -1,7 +1,8 @@
 extends RefCounted
-## Bible: Shadow Meld - Rogue promotion passive, smoke spell conversion/free AP.
+## Bible: shadow_meld - Rogue passive via RogueSystems hooks in harness.
 ## Globals: RogueSystems + AbilitySystem + Simulator
-## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
+## Data/Sim delegate: tests/rogue_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/rogue_qa_harness.gd")
+
 static func run_all(failures: Array[String]) -> void:
-	_H._run_passive_trigger(&"shadow_meld", failures)
+	_H.run_passive_factory(&"shadow_meld", failures)

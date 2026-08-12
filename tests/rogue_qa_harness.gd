@@ -644,6 +644,9 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 			"passive/%s/upgrade_text" % passive_id,
 			not passive.upgraded_description.is_empty(),
 		)
+		var trigger_board := _plain_board(Vector2i(8, 6))
+		var trigger_events: Array[SimEvent] = []
+		Simulator.simulate_player_turn(trigger_board, Timeline.new(), trigger_events)
 		_run_passive_trigger(passive_id, failures)
 		run_passive_upgrade_for(passive_id, failures)
 		return
