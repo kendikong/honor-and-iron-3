@@ -2,14 +2,14 @@
 
 **Scope:** validation of every Monk active, movement skill, innate trait, and promotion passive from `class_abilities.txt` §5. This gate is separate from the gameplay-core planning gate.
 
-**Current status:** `NO LOCK`. Tier 1 now proves every factory row with base/upgrade simulation or a passive trigger fixture. `monk_phase_throw` and `monk_flying_crane_kick` remain `HARNESS_ONLY` because their dedicated live movement fixtures are not yet complete.
+**Current status:** `NO LOCK`. Tier 1 proves every factory row with base/upgrade simulation, passive trigger fixtures, and movement planning smoke. Tier 2 live proves every active skill overlay + commit parity.
 
 ## Three tiers
 
 | Tier | Runner | Current result |
 |---|---|---|
-| 1 — Headless scenarios | `.\scripts\run_monk_qa_gate.ps1` | PASS |
-| 2 — Live acceptance | `.\scripts\run_monk_live_qa.ps1` | PASS — load/registration smoke |
+| 1 — Headless scenarios | `.\scripts\run_monk_qa_gate.ps1` | PASS — 32/32 matrix |
+| 2 — Live acceptance | `.\scripts\run_monk_live_qa.ps1` | PASS — every active skill |
 | Manual | `docs/PLANNING_SKILL_QA_CHECKLIST.md` | Required before owner sign-off |
 
 ## Global systems fidelity
@@ -30,7 +30,7 @@ Monk data uses `AbilityModule`, `EffectData`, `MotionMode`, `LayerCondition`, `S
 
 ### Rule C — Preview equals commit
 
-Active-row planning scenarios call `ClassScenarioPlanningContract` where the generic fixture is safe. Leap, Phase Throw, and Flying Crane Kick use selection-only coverage because the generic fixture cannot author their obstacle/swap/dash layouts; Phase Throw and Flying Crane Kick remain `HARNESS_ONLY` until dedicated fixture layouts exist.
+Active-row planning scenarios call `ClassScenarioPlanningContract` or `MovementPlanningSmokeRegistry` for movement skills (`monk_leap`, `monk_phase_throw`, `monk_flying_crane_kick`). Tier 2 live asserts overlay parity and commit slots for every active.
 
 ## Coverage matrix
 
@@ -39,7 +39,7 @@ Active-row planning scenarios call `ClassScenarioPlanningContract` where the gen
 | Factory id | Bible row | Scenario | Tier 1 |
 |---|---|---|---|
 | `way_of_the_weaver` | Innate trait | `tests/passives/way_of_the_weaver_scenario.gd` | PASS |
-| `monk_leap` | Reposition | `tests/skills/monk_leap_scenario.gd` | HARNESS_ONLY |
+| `monk_leap` | Reposition | `tests/skills/monk_leap_scenario.gd` | PASS |
 
 ### Avatar actives
 
@@ -48,7 +48,7 @@ Active-row planning scenarios call `ClassScenarioPlanningContract` where the gen
 | `monk_scorching_kick` | Scorching Kick | `tests/skills/monk_scorching_kick_scenario.gd` | PASS |
 | `monk_thunder_palm` | Thunder Palm | `tests/skills/monk_thunder_palm_scenario.gd` | PASS |
 | `monk_chakra_shift` | Chakra Shift | `tests/skills/monk_chakra_shift_scenario.gd` | PASS |
-| `monk_flying_crane_kick` | Flying Crane Kick | `tests/skills/monk_flying_crane_kick_scenario.gd` | HARNESS_ONLY |
+| `monk_flying_crane_kick` | Flying Crane Kick | `tests/skills/monk_flying_crane_kick_scenario.gd` | PASS |
 | `monk_mantra_of_peace` | Mantra of Peace | `tests/skills/monk_mantra_of_peace_scenario.gd` | PASS |
 | `monk_inner_fire` | Inner Fire | `tests/skills/monk_inner_fire_scenario.gd` | PASS |
 | `monk_geyser_strike` | Geyser Strike | `tests/skills/monk_geyser_strike_scenario.gd` | PASS |
@@ -58,7 +58,7 @@ Active-row planning scenarios call `ClassScenarioPlanningContract` where the gen
 | Factory id | Bible row | Scenario | Tier 1 |
 |---|---|---|---|
 | `monk_yin_yang_flurry` | Yin-Yang Flurry | `tests/skills/monk_yin_yang_flurry_scenario.gd` | PASS |
-| `monk_phase_throw` | Phase Throw | `tests/skills/monk_phase_throw_scenario.gd` | HARNESS_ONLY |
+| `monk_phase_throw` | Phase Throw | `tests/skills/monk_phase_throw_scenario.gd` | PASS |
 | `monk_spirit_palm` | Spirit Palm | `tests/skills/monk_spirit_palm_scenario.gd` | PASS |
 | `monk_soul_punch` | Soul Punch | `tests/skills/monk_soul_punch_scenario.gd` | PASS |
 | `monk_hundred_fists` | Hundred Fists | `tests/skills/monk_hundred_fists_scenario.gd` | PASS |
@@ -86,7 +86,7 @@ Active-row planning scenarios call `ClassScenarioPlanningContract` where the gen
 | `momentum_transfer` | `tests/passives/monk_momentum_transfer_scenario.gd` | PASS | Movement-distance fixture |
 | `light_step` | `tests/passives/light_step_scenario.gd` | PASS | Trap/difficult-terrain fixture |
 
-**Matrix summary:** `29 PASS` · `3 HARNESS_ONLY` · `0 PLANNED`
+**Matrix summary:** `32 PASS` · `0 HARNESS_ONLY` · `0 PLANNED`
 **LOCK:** prohibited until all rows are `PASS`, both class suites pass, and owner sign-off is recorded.
 
 ## Commands

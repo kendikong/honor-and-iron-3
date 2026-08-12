@@ -166,7 +166,7 @@ function Expand-NestedHarnessBodies {
 	)
 	if ($Depth -gt 4 -or [string]::IsNullOrWhiteSpace($Body)) { return $Body }
 	$expanded = $Body
-	$nested = [regex]::Matches($Body, '\b(_sim_[A-Za-z0-9_]+|_sim_basic_attack_with_passive|_assert_[A-Za-z0-9_]+|_run_passive_blocks|run_single_passive|_simulate_active_ability)\s*\(')
+	$nested = [regex]::Matches($Body, '\b(_sim_[A-Za-z0-9_]+|_sim_basic_attack_with_passive|_assert_[A-Za-z0-9_]+|_run_passive_trigger|_run_passive_blocks|run_single_passive|_simulate_active_ability)\s*\(')
 	foreach ($n in $nested) {
 		$fname = $n.Groups[1].Value
 		$nestedBody = Get-FuncBodyFromGdFile -FullPath $FullPath -FuncName $fname

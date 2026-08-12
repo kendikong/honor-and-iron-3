@@ -36,7 +36,7 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"zen_defense", "keys": [&"empty_adjacent_magic"]},
 	{"id": &"perfect_form", "keys": [&"perfect_form_strength"]},
 	{"id": &"vaulting_strike", "keys": [&"vaulted_attack_bonus"]},
-	{"id": &"flowing_ki", "keys": [&"flowing_ki_magic"]},
+	{"id": &"flowing_ki", "keys": [&"flowing_ki", &"flowing_ki_magic"]},
 	{"id": &"evasive_acrobat", "keys": [&"evasive_acrobat"]},
 	{"id": &"momentum_transfer", "keys": [&"moved_tiles_attack_divisor"]},
 	{"id": &"light_step", "keys": [&"ignore_difficult_terrain"]},
@@ -91,25 +91,34 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		return
 	var board := _plain_board(Vector2i(10, 8))
 	var monk := _place_monk(board, 1, Vector2i(2, 3), ability_id)
-	var target_coord := _target_for(ability_id)
-	var target_id := -1
-	if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
-		_place_dummy(board, 3, target_coord)
-		target_id = 3
-	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
-		_place_ally(board, 2, target_coord)
-		target_id = 2
+	var target_setup := _configure_sim_target(board, ability_id, ability, monk.position)
+	var target_coord: Vector2i = target_setup.coord
+	var target_id: int = target_setup.id
 	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
 	if not AbilitySystem.can_use(board, action):
 		_assert(failures, "sim/%s/can_use" % ability_id, false)
 		return
 	var before_position: Vector2i = monk.position
+	var board_before := board.clone()
 	var plan := Timeline.new()
 	plan.add(action)
-	var result := _player_turn(board, plan)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var result := SimResult.new()
+	result.final_state = board
+	result.events = events
 	_assert(
 		failures, "sim/%s/ability_used" % ability_id,
 		_events_have_ability(result.events, ability_id),
+	)
+	ClassScenarioSimOutcome.assert_from_events(
+		failures,
+		"sim/%s" % ability_id,
+		ability,
+		result.events,
+		board_before,
+		result.final_state,
+		target_id,
 	)
 	_assert(
 		failures, "sim/%s/outcome" % ability_id,
@@ -134,14 +143,9 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 	var board := _plain_board(Vector2i(10, 8))
 	var monk := _place_monk(board, 1, Vector2i(2, 3), ability_id)
 	monk.upgraded_abilities.append(ability_id)
-	var target_coord := _target_for(ability_id)
-	var target_id := -1
-	if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
-		_place_dummy(board, 3, target_coord)
-		target_id = 3
-	elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
-		_place_ally(board, 2, target_coord)
-		target_id = 2
+	var target_setup := _configure_sim_target(board, ability_id, ability, monk.position)
+	var target_coord: Vector2i = target_setup.coord
+	var target_id: int = target_setup.id
 	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
 	_assert(
 		failures,
@@ -151,11 +155,12 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 	if AbilitySystem.can_use(board, action):
 		var plan := Timeline.new()
 		plan.add(action)
-		var result := _player_turn(board, plan)
+		var events: Array[SimEvent] = []
+		Simulator.simulate_player_turn(board, plan, events)
 		_assert(
 			failures,
 			"upgrade/%s/ability_used" % ability_id,
-			_events_have_ability(result.events, ability_id),
+			_events_have_ability(events, ability_id),
 		)
 
 
@@ -175,6 +180,9 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 		return
 	for key: StringName in row.get("keys", [&"way_of_the_weaver"]):
 		_assert(failures, "passive/%s/%s" % [passive_id, key], passive.modifiers.has(key))
+	var trigger_board := _plain_board(Vector2i(8, 6))
+	var trigger_events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trigger_board, Timeline.new(), trigger_events)
 	_run_passive_trigger(passive_id, failures)
 
 
@@ -253,11 +261,13 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			_assert(failures, "passive/inner_peace/attack",
 				_events_have_damage(result.events, dummy.id))
 		&"zen_defense":
-			var base_magic := monk.current_magic
-			GridSystem.set_occupant(board, target, -1)
-			monk._recalculate_stats(board)
+			var zen_board := _plain_board(Vector2i(8, 6))
+			var zen_monk := _place_monk(zen_board, 1, Vector2i(4, 3), &"monk_soul_punch")
+			zen_monk.active_passives.append(passive)
+			var base_magic := zen_monk.current_magic
+			zen_monk._recalculate_stats(zen_board)
 			_assert(failures, "passive/zen_defense/empty_tiles",
-				monk.current_magic > base_magic)
+				zen_monk.current_magic > base_magic)
 		&"perfect_form":
 			monk.passive_flags["monk_perfect_form_ready"] = true
 			var base_strength := monk.current_strength
@@ -388,10 +398,42 @@ static func _target_for(ability_id: StringName) -> Vector2i:
 			return Vector2i(2, 3)
 		&"monk_void_step":
 			return Vector2i(3, 3)
-		&"monk_leap", &"monk_flying_crane_kick":
+		&"monk_leap":
 			return Vector2i(4, 3)
+		&"monk_phase_throw":
+			return Vector2i(3, 3)
+		&"monk_flying_crane_kick":
+			return Vector2i(5, 3)
 		_:
 			return Vector2i(3, 3)
+
+
+static func _configure_sim_target(
+	board: BoardState,
+	ability_id: StringName,
+	ability: AbilityData,
+	monk_pos: Vector2i,
+) -> Dictionary:
+	var target_coord := _target_for(ability_id)
+	var target_id := -1
+	match ability_id:
+		&"monk_leap":
+			target_coord = monk_pos + Vector2i.RIGHT
+		&"monk_phase_throw":
+			_place_dummy(board, 3, monk_pos + Vector2i.RIGHT)
+			target_coord = monk_pos + Vector2i.RIGHT
+			target_id = 3
+		&"monk_flying_crane_kick":
+			_place_dummy(board, 4, monk_pos + Vector2i(2, 0))
+			target_coord = monk_pos + Vector2i(3, 0)
+		_:
+			if ability.targeting_flags & GameEnums.TargetingFlags.ENEMY:
+				_place_dummy(board, 3, target_coord)
+				target_id = 3
+			elif ability.targeting_flags & GameEnums.TargetingFlags.ALLY:
+				_place_ally(board, 2, target_coord)
+				target_id = 2
+	return {"coord": target_coord, "id": target_id}
 
 
 static func _ability(definition: UnitData, ability_id: StringName) -> AbilityData:

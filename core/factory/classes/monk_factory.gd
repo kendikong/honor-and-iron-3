@@ -123,7 +123,7 @@ static func build(basic_fist: WeaponData) -> UnitData:
 		&"flowing_ki", "Flowing Ki",
 		"Moving through or jumping over an enemy grants +1 MAG this turn.",
 		"Also gain +1 STR.",
-		{"promotion": &"windwalker", "flowing_ki_magic": 1,
+		{"promotion": &"windwalker", "flowing_ki": true, "flowing_ki_magic": 1,
 		"upgraded_flowing_ki_strength": 1},
 	))
 	definition.passives.append(_passive(

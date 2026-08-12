@@ -86,20 +86,6 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 	var verify_no_jump: bool = true
 	var select_only: bool = false
 	match factory_id:
-		&"monk_leap":
-			actor_pos = Vector2i(2, 3)
-			commit_cell = Vector2i(3, 3)
-			verify_no_jump = false
-			select_only = true
-		&"monk_phase_throw":
-			actor_pos = Vector2i(4, 3)
-			enemy_pos = Vector2i(5, 3)
-			commit_cell = enemy_pos
-			select_only = true
-		&"monk_flying_crane_kick":
-			actor_pos = Vector2i(2, 3)
-			commit_cell = Vector2i(5, 3)
-			select_only = true
 		&"bruiser_meat_shield", &"archer_repelling_shot":
 			ally_pos = Vector2i(3, 3)
 			commit_cell = ally_pos

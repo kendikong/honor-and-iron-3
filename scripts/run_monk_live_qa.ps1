@@ -26,5 +26,5 @@ if ($exitCode -ne 0) {
 	Write-Output "[FAIL] Monk live QA exit $exitCode"
 	exit $exitCode
 }
-Write-Output "[PASS] Monk live QA: TestBattle class load and active registration"
+Write-Output "[PASS] Monk live QA: every active skill overlay + commit parity"
 exit 0

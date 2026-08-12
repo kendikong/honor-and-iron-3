@@ -36,6 +36,14 @@ static func _ability_has_effect(
 	upgraded: bool,
 ) -> bool:
 	var effects: Array = ability.upgraded_effects if upgraded else ability.effects
+	for module: AbilityModule in ability.get_active_modules(upgraded):
+		if module == null:
+			continue
+		if module.primary_type == effect_type:
+			return true
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.effect != null and layer.effect.type == effect_type:
+				return true
 	for effect: EffectData in effects:
 		if effect != null and effect.type == effect_type:
 			return true
@@ -93,7 +101,7 @@ static func _assert_status(
 	var unit: UnitState = board_after.get_unit_by_id(target_unit_id)
 	_assert(
 		failures, "%s/outcome/status" % prefix,
-		unit != null and not unit.status_effects.is_empty(),
+		unit != null and not unit.active_statuses.is_empty(),
 	)
 
 

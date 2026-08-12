@@ -43,10 +43,6 @@ static func all_entries() -> Array[Dictionary]:
 static func run_scenario(script_path: String, failures: Array[String]) -> bool:
 	if not ResourceLoader.exists(script_path):
 		return false
-	if script_path.contains("/passives/"):
-		## Passive rows remain HARNESS_ONLY until their shared trigger hooks are
-		## implemented; factory coverage still validates every passive row.
-		return true
 	var script: GDScript = load(script_path) as GDScript
 	if script == null:
 		return false
