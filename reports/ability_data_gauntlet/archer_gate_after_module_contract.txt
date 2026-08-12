@@ -1,0 +1,1 @@
+[PASS] Archer QA gate: 30 Bible rows + modular bridge smoke

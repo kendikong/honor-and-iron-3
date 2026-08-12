@@ -1,0 +1,225 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;220;20;60m
+Headless mode is not supported!
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+You can run with '--ignoreHeadlessMode' to swtich off this check.
+[0m
+[38;2;220;20;60mAbnormal exit with 103[0m
+Run dispose test resources
+[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;220;20;60m
+Headless mode is not supported!
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+You can run with '--ignoreHeadlessMode' to swtich off this check.
+[0m
+[38;2;220;20;60mAbnormal exit with 103[0m
+Run dispose test resources
+[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;220;20;60m
+Headless mode is not supported!
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+You can run with '--ignoreHeadlessMode' to swtich off this check.
+[0m
+[38;2;220;20;60mAbnormal exit with 103[0m
+Run dispose test resources
+[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;220;20;60m
+Headless mode is not supported!
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+
+You can run with '--ignoreHeadlessMode' to swtich off this check.
+[0m
+[38;2;220;20;60mAbnormal exit with 103[0m
+Run dispose test resources
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/shadow_tuning.gd:329)
+WARNING: The local variable "strength" is shadowing an already-declared function at line 132 in the current class.
+   at: GDScript::reload (res://scripts/cloud_tuning.gd:95)
+WARNING: The local variable "scale_tiles" is shadowing an already-declared function at line 150 in the current class.
+   at: GDScript::reload (res://scripts/cloud_tuning.gd:96)
+WARNING: The local variable "mask_steps" is shadowing an already-declared function at line 146 in the current class.
+   at: GDScript::reload (res://scripts/cloud_tuning.gd:99)
+WARNING: The local variable "shape_mix" is shadowing an already-declared function at line 154 in the current class.
+   at: GDScript::reload (res://scripts/cloud_tuning.gd:100)
+WARNING: The local variable "shape_scale" is shadowing an already-declared function at line 158 in the current class.
+   at: GDScript::reload (res://scripts/cloud_tuning.gd:101)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://autoload/weather_bus.gd:624)
+WARNING: The parameter "sun_dir" is never used in the function "shadow_cast_direction_pixels_for_sun()". If this is intended, prefix it with an underscore: "_sun_dir".
+   at: GDScript::reload (res://autoload/weather_bus.gd:691)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/display_window_helper.gd:26)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/display_window_helper.gd:34)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/display_window_helper.gd:37)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://ui/menu_navigation.gd:9)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://ui/menu_navigation.gd:15)
+WARNING: The local function parameter "owner" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://ui/menu_navigation.gd:20)
+WARNING: The local variable "owner" is shadowing an already-declared property in the base class "Node".
+   at: GDScript::reload (res://ui/menu_navigation.gd:27)
+WARNING: The parameter "mod" is never used in the function "_strip_promoted_modifier_keys()". If this is intended, prefix it with an underscore: "_mod".
+   at: GDScript::reload (res://data/definitions/ability_module_bridge.gd:516)
+WARNING: Integer used when an enum value is expected. If this is intended, cast the integer to the enum type using the "as" keyword.
+   at: GDScript::reload (res://data/definitions/ability_data.gd:78)
+WARNING: The local variable "c_turret" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_turret".
+   at: GDScript::reload (res://core/factory/data_library.gd:143)
+WARNING: The local variable "c_tesla" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_tesla".
+   at: GDScript::reload (res://core/factory/data_library.gd:144)
+WARNING: The local variable "c_mine" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_mine".
+   at: GDScript::reload (res://core/factory/data_library.gd:145)
+WARNING: The local variable "c_voodoo" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_voodoo".
+   at: GDScript::reload (res://core/factory/data_library.gd:146)
+WARNING: The local variable "c_bone" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_bone".
+   at: GDScript::reload (res://core/factory/data_library.gd:147)
+WARNING: The local variable "c_obsidian" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_obsidian".
+   at: GDScript::reload (res://core/factory/data_library.gd:148)
+WARNING: The local variable "c_hammer" is declared but never used in the block. If this is intended, prefix it with an underscore: "_c_hammer".
+   at: GDScript::reload (res://core/factory/data_library.gd:149)
+WARNING: The function parameter "abs" has the same name as a built-in function.
+   at: GDScript::reload (res://core/factory/data_library.gd:904)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://core/progression/unit_level_growth.gd:16)
+WARNING: The parameter "move_cost" is never used in the function "get_reachable_tiles()". If this is intended, prefix it with an underscore: "_move_cost".
+   at: GDScript::reload (res://core/systems/movement_system.gd:18)
+WARNING: The parameter "move_cost" is never used in the function "find_path()". If this is intended, prefix it with an underscore: "_move_cost".
+   at: GDScript::reload (res://core/systems/movement_system.gd:70)
+WARNING: The local variable "move_cost" is declared but never used in the block. If this is intended, prefix it with an underscore: "_move_cost".
+   at: GDScript::reload (res://core/systems/movement_system.gd:376)
+WARNING: The local variable "mt" is declared but never used in the block. If this is intended, prefix it with an underscore: "_mt".
+   at: GDScript::reload (res://core/systems/movement_system.gd:377)
+WARNING: The variable "from" is declared below in the parent block.
+   at: GDScript::reload (res://core/systems/movement_system.gd:658)
+WARNING: The variable "points_before" is declared below in the parent block.
+   at: GDScript::reload (res://core/systems/movement_system.gd:659)
+WARNING: The parameter "move_cost" is never used in the function "_is_legal_walk()". If this is intended, prefix it with an underscore: "_move_cost".
+   at: GDScript::reload (res://core/systems/movement_system.gd:1026)
+WARNING: The parameter "board" is never used in the function "can_plan()". If this is intended, prefix it with an underscore: "_board".
+   at: GDScript::reload (res://core/systems/ability_system.gd:1601)
+WARNING: The local variable "dash_steps" is shadowing an already-declared function at line 1206 in the current class.
+   at: GDScript::reload (res://core/systems/ability_system.gd:3501)
+WARNING: The parameter "events" is never used in the function "_finish_spellcast()". If this is intended, prefix it with an underscore: "_events".
+   at: GDScript::reload (res://core/systems/ability_system.gd:4007)
+WARNING: The local variable "immune_id" is declared but never used in the block. If this is intended, prefix it with an underscore: "_immune_id".
+   at: GDScript::reload (res://core/systems/physics_system.gd:247)
+WARNING: The parameter "board" is never used in the function "get_affected_tiles()". If this is intended, prefix it with an underscore: "_board".
+   at: GDScript::reload (res://core/systems/grid_system.gd:70)
+WARNING: The parameter "attacker" is never used in the function "_apply_generic_damage_passives()". If this is intended, prefix it with an underscore: "_attacker".
+   at: GDScript::reload (res://core/systems/combat_system.gd:1045)
+WARNING: The parameter "source_type" is never used in the function "_apply_generic_damage_passives()". If this is intended, prefix it with an underscore: "_source_type".
+   at: GDScript::reload (res://core/systems/combat_system.gd:1046)
+WARNING: The parameter "source_type" is never used in the function "_apply_cleric_damage_reactions()". If this is intended, prefix it with an underscore: "_source_type".
+   at: GDScript::reload (res://core/systems/combat_system.gd:1084)
+WARNING: The parameter "board" is never used in the function "heal()". If this is intended, prefix it with an underscore: "_board".
+   at: GDScript::reload (res://core/systems/combat_system.gd:1210)
+WARNING: The parameter "board" is never used in the function "add_armor()". If this is intended, prefix it with an underscore: "_board".
+   at: GDScript::reload (res://core/systems/combat_system.gd:1231)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:60)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:98)
+WARNING: The parameter "terrain_set" is never used in the function "_suppress_wang_variants()". If this is intended, prefix it with an underscore: "_terrain_set".
+   at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:116)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_terrain_peering.gd:125)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:148)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:181)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:223)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/mana_seed_tileset_builder.gd:224)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/tile_set_factory.gd:120)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/tile_set_factory.gd:122)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/tile_set_factory.gd:124)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/tile_set_factory.gd:126)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/tile_catalog.gd:385)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+   at: GDScript::reload (res://scripts/player_grid.gd:37)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+   at: GDScript::reload (res://scripts/player_grid.gd:57)
+WARNING: The function parameter "seed" has the same name as a built-in function.
+   at: GDScript::reload (res://scripts/player_grid.gd:82)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:64)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:137)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:137)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:192)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:232)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:452)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:453)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:654)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:735)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://scripts/map_generator.gd:736)
+WARNING: The parameter "grid" is never used in the function "_tree_edge_density_cap()". If this is intended, prefix it with an underscore: "_grid".
+   at: GDScript::reload (res://scripts/map_generator.gd:741)
+WARNING: The local function parameter "batch_seed" is shadowing an already-declared function at line 7 in the current class.
+   at: GDScript::reload (res://core/batch/mass_sim_seed.gd:11)
+WARNING: The local function parameter "battle_seed" is shadowing an already-declared function at line 11 in the current class.
+   at: GDScript::reload (res://core/batch/mass_sim_seed.gd:15)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:15)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:27)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:31)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:35)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:39)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:43)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:43)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:47)
+WARNING: Integer division. Decimal part will be discarded.
+   at: GDScript::reload (res://bridge/spawn_placer.gd:47)
+[PASS] Archer live QA: 15 active skills through preview/commit

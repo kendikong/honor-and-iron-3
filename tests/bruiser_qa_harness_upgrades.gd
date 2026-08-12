@@ -1032,6 +1032,11 @@ static func run_overwhelming_bulk_upgrade(failures: Array[String]) -> void:
 		after != null and after.position != start_pos,
 		"upgraded overwhelming bulk must PUSH 1 on pierce ability attack",
 	)
+	H.assert_true(
+		failures, "overwhelming_bulk/upgrade/push_event",
+		H.events_have_unit_pushed(events, 2),
+		"apply_post_attack_push_passives must emit UNIT_PUSHED for target",
+	)
 
 
 static func run_thrill_of_pain_upgrade(failures: Array[String]) -> void:

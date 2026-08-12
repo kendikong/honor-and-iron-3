@@ -1,0 +1,55 @@
+﻿=== Shaman QA gate (class validation - NOT planning QA) ===
+Spec: docs/SHAMAN_QA_GATE.md
+
+=== Matrix summary (from docs/SHAMAN_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 85) ===
+
+=== AOE footprint contract (all classes) ===
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] shaman_qa_tier1
+[SHAMAN_QA] hexing_presence
+[SHAMAN_QA] echoing_spirits
+[SHAMAN_QA] spiritual_offering
+[SHAMAN_QA] spiritual_guardian
+[SHAMAN_QA] miasma_resonance
+[SHAMAN_QA] voodoo_conduit
+[SHAMAN_QA] voodoo_doll
+[SHAMAN_QA] spirit_link
+[SHAMAN_QA] pain_sharing
+[SHAMAN_QA] sympathetic_magic
+[SHAMAN_QA] chain_reaction
+[SHAMAN_QA] soul_collector
+[SHAMAN_QA] hexing_touch
+[SHAMAN_QA] ritual_sacrifice
+[SHAMAN_QA] soul_burn
+[SHAMAN_QA] soul_weaver
+[SHAMAN_QA] shaman_usher
+[SHAMAN_QA] shaman_curse_of_weakness
+[SHAMAN_QA] shaman_healing_totem
+[SHAMAN_QA] shaman_flame_totem
+[SHAMAN_QA] shaman_bloodlust
+[SHAMAN_QA] shaman_hex
+[SHAMAN_QA] shaman_voodoo_link
+[SHAMAN_QA] shaman_terrify
+[SHAMAN_QA] shaman_miasma
+[SHAMAN_QA] shaman_bone_spear
+[SHAMAN_QA] shaman_ancestral_spirit
+[SHAMAN_QA] shaman_totem_guard
+[SHAMAN_QA] shaman_sympathetic_bond
+[SHAMAN_QA] shaman_soul_siphon
+[SHAMAN_QA] shaman_pain_spike
+[SHAMAN_QA] shaman_earthbind_totem
+[PASS] Shaman QA gate: factory matrix, per-row scenarios, and movement smoke
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live preview/commit ===
+--- Tier 2 live: PASS ---
+[PASS] Shaman QA gate: Tier 1 + Tier 2 + matrix manifest

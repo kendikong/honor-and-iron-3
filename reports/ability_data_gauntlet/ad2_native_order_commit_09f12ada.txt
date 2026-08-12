@@ -1,0 +1,8 @@
+﻿QA_COMMIT: 09f12ada04a4aa061fffb46fe6dd5d2a468a6f5b
+QA_SCENE: res://tests/AbilityModuleBridgeTest.tscn
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order PASS
+ABILITY_MODULE_BRIDGE_TEST: PASS
+QA_EXIT: 

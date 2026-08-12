@@ -1,0 +1,4 @@
+﻿BASE_COMMIT: 3a302b6c9c2c96b170a287bd5f3b97e9b6d479c1
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+CLASS_LIBRARY_MODULE_MIGRATION: PASS

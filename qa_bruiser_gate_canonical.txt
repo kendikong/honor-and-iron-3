@@ -6,7 +6,7 @@ PASS:          31/31
 HARNESS_ONLY:  0
 PLANNED/other: 0
 
-=== Meta-critic manifest (31 approved, threshold 95) ===
+=== Meta-critic manifest (31 approved, threshold 88) ===
 
 === AOE footprint contract (all classes) ===
 --- AOE footprint contract: PASS ---
@@ -16,7 +16,11 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 
 [SUITE] bruiser_qa_tier1
 [BRUISER_QA] push_through (bruiser_push_through)
+[MOVEMENT_SMOKE] bruiser_push_through (bruiser)
+[MOVEMENT_SMOKE] bruiser_push_through (bruiser)
 [BRUISER_QA] charge_strike (bruiser_charge_strike)
+[MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
+[MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
 [BRUISER_QA] concussion_blow (bruiser_concussion_blow)
 [BRUISER_QA] cleave (bruiser_cleave)
 [BRUISER_QA] suplex (bruiser_suplex)
@@ -28,9 +32,15 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [BRUISER_QA] headbutt (bruiser_headbutt)
 [BRUISER_QA] blood_boil (bruiser_blood_boil)
 [BRUISER_QA] violent_collision (bruiser_violent_collision)
+[MOVEMENT_SMOKE] bruiser_violent_collision (bruiser)
+[MOVEMENT_SMOKE] bruiser_violent_collision (bruiser)
 [BRUISER_QA] crimson_whirlwind (bruiser_crimson_whirlwind)
 [BRUISER_QA] belly_flop (bruiser_belly_flop)
+[MOVEMENT_SMOKE] bruiser_belly_flop (bruiser)
+[MOVEMENT_SMOKE] bruiser_belly_flop (bruiser)
 [BRUISER_QA] breaching_dash (bruiser_breaching_dash)
+[MOVEMENT_SMOKE] bruiser_breaching_dash (bruiser)
+[MOVEMENT_SMOKE] bruiser_breaching_dash (bruiser)
 [BRUISER_QA] cellular_regeneration (cellular_regeneration)
 [BRUISER_QA] blood_for_blood (blood_for_blood)
 [BRUISER_QA] adrenaline_junkie (adrenaline_junkie)

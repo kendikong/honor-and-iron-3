@@ -1,0 +1,69 @@
+﻿=== Monk QA gate (class validation - NOT planning QA) ===
+Spec: docs/MONK_QA_GATE.md
+
+=== Matrix summary (from docs/MONK_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 88) ===
+
+=== AOE footprint contract (all classes) ===
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] monk_qa_tier1
+[MONK_QA] way_of_the_weaver (way_of_the_weaver)
+[MONK_QA] leap (monk_leap)
+[MOVEMENT_SMOKE] monk_leap (monk)
+[MONK_QA] scorching_kick (monk_scorching_kick)
+[MONK_QA] thunder_palm (monk_thunder_palm)
+[MONK_QA] yin_yang_flurry (monk_yin_yang_flurry)
+[MONK_QA] chakra_shift (monk_chakra_shift)
+[MONK_QA] phase_throw (monk_phase_throw)
+[MONK_QA] flying_crane_kick (monk_flying_crane_kick)
+[MOVEMENT_SMOKE] monk_flying_crane_kick (monk)
+[MONK_QA] spirit_palm (monk_spirit_palm)
+[MONK_QA] soul_punch (monk_soul_punch)
+[MONK_QA] hundred_fists (monk_hundred_fists)
+[MONK_QA] mantra_of_peace (monk_mantra_of_peace)
+[MONK_QA] inner_fire (monk_inner_fire)
+[MONK_QA] void_step (monk_void_step)
+[MONK_QA] cyclone_sweep (monk_cyclone_sweep)
+[MONK_QA] updraft (monk_updraft)
+[MONK_QA] geyser_strike (monk_geyser_strike)
+[MONK_QA] elemental_attunement (elemental_attunement)
+[MONK_QA] chakra_burn (chakra_burn)
+[MONK_QA] elemental_harmony (elemental_harmony)
+[MONK_QA] catalyst (catalyst)
+[MONK_QA] elemental_shield (elemental_shield)
+[MONK_QA] weavers_resonance (weavers_resonance)
+[MONK_QA] mind_over_matter (mind_over_matter)
+[MONK_QA] inner_peace (inner_peace)
+[MONK_QA] zen_defense (zen_defense)
+[MONK_QA] perfect_form (perfect_form)
+[MONK_QA] vaulting_strike (vaulting_strike)
+[MONK_QA] flowing_ki (flowing_ki)
+[MONK_QA] evasive_acrobat (evasive_acrobat)
+[MONK_QA] momentum_transfer (momentum_transfer)
+[MONK_QA] light_step (light_step)
+[MOVEMENT_SMOKE] monk_leap (monk)
+[MOVEMENT_SMOKE] monk_flying_crane_kick (monk)
+[MOVEMENT_SMOKE] monk_leap (monk)
+[MOVEMENT_SMOKE] monk_flying_crane_kick (monk)
+[PASS] Monk QA gate: factory matrix, all active skills, and passive triggers
+WARNING: 2 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 811 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 26 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+--- Tier 1 harness: PASS ---
+
+=== Monk QA gate summary ===
+
+=== Tier 2: live Monk acceptance ===
+--- Tier 2 live: PASS ---
+[PASS] Monk QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.

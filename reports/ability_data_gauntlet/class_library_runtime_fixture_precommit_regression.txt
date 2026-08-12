@@ -1,0 +1,41 @@
+﻿BASE_COMMIT: 5bf137ff861152807aff9e0217ddc7125e4932a8
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[START] Deterministic regression suite
+[ok] preview matches execution
+[ok] input board is never mutated
+[ok] push into wall deals collision damage
+[ok] battle reaches a conclusion
+[ok] bomber self-destructs and damages adjacent
+[ok] summoner spawns minion and respects cap
+[ok] teleporter warps behind farthest player
+[ok] engineer grenade damages target and adjacent without self-damage
+[ok] movement skill spends MP not AP
+[ok] movement skill resolves in pre-move bucket
+[ok] run clears next turn and can be used again
+[ok] run leaves action slot for 0 AP basic attack
+[ok] run uses global AbilityKind economy paths
+
+--- DEMO: one simulated turn (plain-English event log) ---
+Start: Knight at (1,1), Dummy (6 hp) at (3,1), Wall at (4,1).
+Player plan: step to (2,1), then slash the dummy east.
+What happens, in order:
+  - unit 1 walks from (1, 1) to (2, 1) (1 steps)
+  - ABILITY_USED { "actor": 1, "ability": &"slash", "ability_name": "slash", "target_coord": (3, 1), "target_unit": 2, "presentation_anim": 0, "actor_id": 1 }
+  - MATH_TELEMETRY { "type": "damage", "base": 4, "wpn": 0, "stat_name": "STR", "stat_val": 0, "multiplier_raw": 4.0, "floored": 4, "backstab": false, "backstab_bonus": 0, "final_raw": 4, "range_one_damage_multiplier": 1.0, "target_def": 0, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 }
+  - unit 2 takes 4 damage (hp now 6)
+  - unit 2 collides with wall at (4, 1)
+  - MATH_TELEMETRY { "type": &"collision", "base": 1, "base_bonus": 0, "excess_push": 1, "push_distance": 1, "tiles_moved": 0, "wpn": 0, "stat_name": "STR", "stat_val": 0, "multiplier_raw": 0.75, "floored": 0, "final_raw": 0, "target_def": 0, "fortitude": 0, "pusher_id": 1, "is_collision_side_effect": true }
+  - unit 2 takes 0 damage (hp now 6)
+  - ENEMY_PHASE_BEGAN {  }
+  - turn 1 ends
+Result: Dummy at (3, 1) with 6 hp (4 from slash, +1 from hitting the wall).
+--- end demo ---
+
+[PASS] All Milestone 1 simulation tests passed.
+[PASS] Deterministic regression suite passed.
+QA_RESULT_FILE: user://regression_test_result.txt
+STARTED
+BRIDGE_START
+BRIDGE_FINISHED
+PASS

@@ -160,11 +160,17 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		Simulator.simulate_player_turn(wpn_board, high_plan, high_events)
 		var low_loss := low_hp - low_enemy.health.current_hp
 		var high_loss := high_hp - high_enemy.health.current_hp
+		var low_wpn_dmg := CombatSystem.calculate_scaled_damage(
+			low_wpn, 1, GameEnums.StatType.PHYSICAL, wpn_board,
+		)
+		var high_wpn_dmg := CombatSystem.calculate_scaled_damage(
+			high_wpn, 1, GameEnums.StatType.PHYSICAL, wpn_board,
+		)
 		H.assert_true(
 			failures,
 			"passive/overwatch/wpn_scales",
-			high_loss > low_loss,
-			"Overwatch must scale with equipped weapon might",
+			high_loss - low_loss >= high_wpn_dmg - low_wpn_dmg,
+			"Overwatch damage must scale with equipped weapon might",
 		)
 
 	if _passive_should_run(only_id, &"zone_control"):
@@ -437,11 +443,12 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		)
 		var prey_loss := hp_before - enemy.health.current_hp
 		var plain_loss := plain_hp - plain_enemy.health.current_hp
+		var expected_ignore := floori(plain_enemy.current_defense * 0.25)
 		H.assert_true(
 			failures,
 			"passive/prey_sighted/def_ignore_pct",
-			prey_loss > plain_loss,
-			"Prey Sighted must ignore 25% DEF vs movement-penalized targets",
+			prey_loss - plain_loss >= expected_ignore,
+			"Prey Sighted must ignore at least 25%% DEF (%d)" % expected_ignore,
 		)
 
 	if _passive_should_run(only_id, &"barrage"):

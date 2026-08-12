@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<testsuites id="2026-08-08" name="report_387" tests="1" failures="0" skipped="0" flaky="0" time="0.000">
-	<testsuite id="0" name="live_cleric_class_test" package="tests" timestamp="2026-08-08T09:18:12" hostname="localhost" tests="1" failures="0" errors="0" skipped="0" flaky="0" time="10.656">
-		<testcase name="test_live_cleric_every_skill" classname="live_cleric_class_test" time="10.644">
-		</testcase>
-	</testsuite>
-</testsuites>

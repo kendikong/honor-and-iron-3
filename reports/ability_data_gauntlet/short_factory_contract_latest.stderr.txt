@@ -1,0 +1,2 @@
+ERROR: Can't load the script "res://tests/run_factory_modular_contract_test.gd" as it doesn't inherit from SceneTree or MainLoop.
+   at: start (main/main.cpp:4381)

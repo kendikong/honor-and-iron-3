@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-11" name="report_839" tests="1" failures="0" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-12T03:53:24" hostname="localhost" tests="1" failures="0" errors="0" skipped="0" flaky="0" time="16.443">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="16.432">
+		</testcase>
+	</testsuite>
+</testsuites>

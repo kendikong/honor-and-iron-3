@@ -1,0 +1,62 @@
+﻿=== Cleric QA gate (class validation - NOT planning QA) ===
+Spec: docs/CLERIC_QA_GATE.md
+
+=== Matrix summary (from docs/CLERIC_QA_GATE.md) ===
+PASS:          31/31
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (31 approved) ===
+
+=== AOE footprint contract (all classes) ===
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] cleric_qa_tier1
+[CLERIC_QA] selfless_siphon (selfless_siphon)
+[CLERIC_QA] guardian_step (cleric_guardian_step)
+[MOVEMENT_SMOKE] cleric_guardian_step (cleric)
+[CLERIC_QA] holy_light (cleric_holy_light)
+[CLERIC_QA] smite (cleric_smite)
+[CLERIC_QA] cleansing_aura (cleric_cleansing_aura)
+[CLERIC_QA] sanctuary (cleric_sanctuary)
+[CLERIC_QA] blinding_ray (cleric_blinding_ray)
+[CLERIC_QA] divine_hammer (cleric_divine_hammer)
+[CLERIC_QA] life_link (cleric_life_link)
+[CLERIC_QA] prayer_of_fortitude (cleric_prayer_of_fortitude)
+[CLERIC_QA] resurrection (cleric_resurrection)
+[CLERIC_QA] consecrate_ground (cleric_consecrate_ground)
+[CLERIC_QA] holy_wrath (cleric_holy_wrath)
+[CLERIC_QA] divine_guidance (cleric_divine_guidance)
+[CLERIC_QA] shield_of_faith (cleric_shield_of_faith)
+[CLERIC_QA] martyrs_chains (cleric_martyrs_chains)
+[CLERIC_QA] blood_donation (blood_donation)
+[CLERIC_QA] sacred_shield (sacred_shield)
+[CLERIC_QA] divine_blessing (divine_blessing)
+[CLERIC_QA] frontline_medic (frontline_medic)
+[CLERIC_QA] armor_of_faith (armor_of_faith)
+[CLERIC_QA] divine_overflow (divine_overflow)
+[CLERIC_QA] divine_intervention (divine_intervention)
+[CLERIC_QA] holy_ground (holy_ground)
+[CLERIC_QA] prayer (prayer)
+[CLERIC_QA] purity (purity)
+[CLERIC_QA] martyrs_blood (martyrs_blood)
+[CLERIC_QA] divine_retribution (divine_retribution)
+[CLERIC_QA] holy_radiance (holy_radiance)
+[CLERIC_QA] retribution (retribution)
+[CLERIC_QA] zealous_protection (zealous_protection)
+[MOVEMENT_SMOKE] cleric_guardian_step (cleric)
+[PASS] Cleric QA Tier 1 scenarios
+WARNING: 2 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 798 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 26 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Cleric acceptance ===
+--- Tier 2 live: PASS ---
+[PASS] Cleric QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
