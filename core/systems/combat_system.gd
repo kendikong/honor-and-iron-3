@@ -16,6 +16,7 @@ extends RefCounted
 
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
+const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 
 ## Purpose: Owns damage and death (and nothing else).
 ## Responsibilities: Apply damage to a unit, emit damage/death events, clear
@@ -554,6 +555,13 @@ static func deal_damage(
 		
 	if target.has_status(GameEnums.StatusType.ELECTRIFIED):
 		amount += 1
+	amount += ShamanSystems.incoming_damage_bonus(target)
+	amount = maxi(
+		0,
+		amount - ShamanSystems.incoming_damage_reduction(board, target, attacker),
+	)
+	if attacker != null and attacker.passive_flags.get("shaman_wither", false):
+		amount = floori(amount * 0.75)
 
 	if telemetry_base >= 0:
 		append_flat_damage_telemetry(board, target, telemetry_base, events, pierce or source_type == &"true")
@@ -841,6 +849,20 @@ static func deal_damage(
 				),
 			)
 			MonkSystems.on_dealt_damage(board, attacker, target, events)
+			var shaman_ability := attacker.passive_flags.get("__current_ability", null) as AbilityData
+			var shaman_action := TimelineAction.new()
+			shaman_action.actor_id = attacker.id
+			shaman_action.ability = shaman_ability
+			var shaman_effect := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 0)
+			if shaman_ability != null:
+				for module: AbilityModule in shaman_ability.get_active_modules(
+					attacker.is_ability_upgraded(shaman_ability.id)
+				):
+					if module != null:
+						shaman_effect.modifiers.merge(module.legacy_modifiers)
+			ShamanSystems.on_dealt_damage(
+				board, attacker, target, shaman_action, shaman_effect, events, source_type,
+			)
 		if (
 			source_type != &"hazard"
 			and target.has_passive(&"kinetic_redirection")
@@ -952,6 +974,7 @@ static func deal_damage(
 					attacker.passive_flags.get("__current_ability", null) as AbilityData,
 				),
 			)
+			ShamanSystems.on_kill(board, attacker, target, events)
 			if attacker.passive_flags.get("mage_spell_in_progress", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("mana_siphon"):
@@ -1262,6 +1285,8 @@ static func heal(board: BoardState, target: UnitState, amount: int, events: Arra
 
 static func add_armor(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
 	if target == null or not target.is_alive() or amount <= 0:
+		return
+	if not ShamanSystems.can_gain_shield(board, target):
 		return
 	if target.has_status(GameEnums.StatusType.VULNERABLE):
 		return # Cannot gain SHIELD while vulnerable

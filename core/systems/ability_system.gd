@@ -16,6 +16,7 @@ extends RefCounted
 
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
+const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 
 ## Purpose: Runs the data-driven ability pipeline (Validate -> Execute -> Resolve).
 ## Responsibilities: Validate cost/range, spend action points, and interpret each
@@ -198,7 +199,9 @@ static func active_range_tiles(
 ) -> int:
 	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
 	if actor != null and module_index == 0:
-		return actor.get_ability_range(ability)
+		return actor.get_ability_range(ability) + ShamanSystems.conduit_range_bonus(
+			actor, ability,
+		)
 	if module != null:
 		return module.max_range
 	if ability == null:
@@ -546,6 +549,18 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				target_unit = adj_unit
 				break
 	if (
+		target_unit != null
+		and _ability_has_modifier(actor, ability, &"requires_missing_hp")
+		and target_unit.health.current_hp >= target_unit.health.max_hp
+	):
+		return false
+	if (
+		target_unit != null
+		and _ability_has_modifier(actor, ability, &"requires_debuff")
+		and not _target_has_debuff(target_unit)
+	):
+		return false
+	if (
 		not _target_allowed(actor, ability, target_unit, action.target_coord)
 		and not _can_push_destructible_target(
 			board,
@@ -718,6 +733,12 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 	if (
 		ability.cost_modifier == GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N
 		and _adjacent_enemy_count(board, actor) >= ability.cost_modifier_n
+	):
+		return 0
+	if (
+		ability.kind == GameEnums.AbilityKind.CLASS_SKILL
+		and actor.ability.points_left < ap_cost
+		and ShamanSystems.can_use_ritual_sacrifice(actor, ability)
 	):
 		return 0
 	var needed: int = AbilityModuleBridge.modules_modifier_value(
@@ -1022,6 +1043,28 @@ static func _link_enemy_pair(
 		return
 	target.passive_flags["magic_chain_partner_id"] = partner.id
 	partner.passive_flags["magic_chain_partner_id"] = target.id
+	if effect.modifiers.has("voodoo_link"):
+		var weapon := actor.definition.equipped_weapon.might if actor.definition.equipped_weapon != null else 1
+		var link_multiplier := 1
+		if actor.has_passive(&"spirit_link"):
+			link_multiplier = 2 if actor.is_passive_upgraded(&"spirit_link") else 1
+		target.passive_flags["shaman_link_partner_id"] = partner.id
+		partner.passive_flags["shaman_link_partner_id"] = target.id
+		target.passive_flags["shaman_link_weapon"] = weapon * int(
+			effect.modifiers.get("shared_damage_wpn", 1),
+		) * link_multiplier
+		partner.passive_flags["shaman_link_weapon"] = target.passive_flags["shaman_link_weapon"]
+		target.passive_flags["shaman_link_damage_bonus"] = (
+			2 if actor.is_passive_upgraded(&"pain_sharing") else 1
+		) if actor.has_passive(&"pain_sharing") else 0
+		partner.passive_flags["shaman_link_damage_bonus"] = target.passive_flags["shaman_link_damage_bonus"]
+		target.passive_flags["shaman_link_shared_push"] = bool(effect.modifiers.get("shared_push", false))
+		partner.passive_flags["shaman_link_shared_push"] = target.passive_flags["shaman_link_shared_push"]
+		var push_amount := 0
+		if actor.has_passive(&"chain_reaction"):
+			push_amount = 2 if actor.is_passive_upgraded(&"chain_reaction") else 1
+		target.passive_flags["shaman_link_push_amount"] = push_amount
+		partner.passive_flags["shaman_link_push_amount"] = push_amount
 	var blind: bool = bool(effect.modifiers.get("link_blind", false))
 	target.passive_flags["magic_chain_blind"] = blind
 	partner.passive_flags["magic_chain_blind"] = blind
@@ -1044,8 +1087,21 @@ static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, bo
 		hp_cost = ability.get_active_primary_value(actor.is_ability_upgraded(ability.id))
 	elif ability.secondary_resource == GameEnums.CostResource.HP:
 		hp_cost = ability.get_active_secondary_value(actor.is_ability_upgraded(ability.id))
+	var ritual_sacrifice := (
+		actor.ability.points_left < ap_cost
+		and ShamanSystems.can_use_ritual_sacrifice(actor, ability)
+	)
+	if ritual_sacrifice:
+		hp_cost = ShamanSystems.ritual_sacrifice_cost(actor)
 	if hp_cost > 0 and actor.health.current_hp <= hp_cost:
 		return false
+	if (
+		actor.ability.points_left < ap_cost
+		and ShamanSystems.can_use_ritual_sacrifice(actor, ability)
+	):
+		var ritual_hp := ShamanSystems.ritual_sacrifice_cost(actor)
+		if actor.health.current_hp <= ritual_hp:
+			return false
 			
 	match ability.kind:
 		GameEnums.AbilityKind.MOVEMENT_SKILL:
@@ -2607,6 +2663,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if actor != null:
 		MercenarySystems.after_ability_execute(board, actor, action, events, attack_was_used)
 		MonkSystems.after_ability_execute(board, actor, action, events)
+		ShamanSystems.after_ability_execute(board, actor, action, events)
 
 	if actor != null:
 		actor.passive_flags.erase("paired_strength_bonus")
@@ -2745,6 +2802,13 @@ static func _spend_ability_cost(
 		hp_cost = ability.get_active_primary_value(actor.is_ability_upgraded(ability.id))
 	elif ability.secondary_resource == GameEnums.CostResource.HP:
 		hp_cost = ability.get_active_secondary_value(actor.is_ability_upgraded(ability.id))
+	var ritual_sacrifice := (
+		actor.ability.points_left < ap_cost
+		and ShamanSystems.can_use_ritual_sacrifice(actor, ability)
+	)
+	if ritual_sacrifice:
+		hp_cost = ShamanSystems.ritual_sacrifice_cost(actor)
+		actor.passive_flags["shaman_ritual_used_this_turn"] = true
 	if hp_cost > 0:
 		actor.health.current_hp -= hp_cost
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
@@ -2768,7 +2832,8 @@ static func _spend_ability_cost(
 		GameEnums.AbilityKind.UNIVERSAL_RUN:
 			actor.ability.points_left -= ap_cost
 		GameEnums.AbilityKind.CLASS_SKILL:
-			actor.ability.points_left -= ap_cost
+			if not ritual_sacrifice:
+				actor.ability.points_left -= ap_cost
 		_:
 			pass
 
@@ -3058,6 +3123,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if base_amt > 0:
 				var raw = (base_amt + wpn) * (1.0 + stat_val / 5.0)
 				amount = floori(raw)
+			amount += ShamanSystems.damage_bonus(
+				board, actor, target, effect, &"ability",
+			)
 				
 			var dmg_type = &"physical"
 			if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
@@ -3316,6 +3384,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if effect.modifiers.has("target_magic_defense"):
 				actor.passive_flags["target_magic_defense_override"] = true
 			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			if (
+				effect.modifiers.has("heal_per_debuff")
+				and target != null
+				and target_hp_before > target.health.current_hp
+			):
+				var siphon_heal := ShamanSystems.unit_debuff_count(target) * int(
+					effect.modifiers["heal_per_debuff"],
+				)
+				if siphon_heal > 0:
+					CombatSystem.heal(board, actor, siphon_heal, events)
+					ShamanSystems.on_healed(board, actor, actor, siphon_heal, events)
 			if effect.modifiers.get("track_first_hit_zero", false):
 				actor.passive_flags["monk_first_hit_zero"] = (
 					target == null or target_hp_before <= target.health.current_hp
@@ -3679,6 +3758,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					heal_amount,
 					events,
 				)
+				ShamanSystems.on_healed(
+					board,
+					actor,
+					target,
+					target.health.current_hp - hp_before,
+					events,
+				)
 		GameEnums.EffectType.ARMOR_UP:
 			if target != null:
 				var shield_amount = effect.amount
@@ -3766,6 +3852,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					construct._recalculate_stats()
 				board.add_unit(construct)
 				GridSystem.set_occupant(board, coord, construct_id)
+				ShamanSystems.on_spawned(board, actor, construct, effect, action, events)
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_SPAWNED, {
 					"actor": actor.id,
 					"unit": construct_id,
@@ -3821,6 +3908,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if target != null:
 				if effect.modifiers.has("link_two_enemies"):
 					_link_enemy_pair(board, actor, target, effect, events)
+					return
+				if ShamanSystems.pre_status_application(
+					board, actor, target, effect, events,
+				):
 					return
 				if (
 					target.passive_flags.get("full_health_debuff_immunity", false)
@@ -3881,6 +3972,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							GameEnums.StatusType.WEAKEN,
 							effect.status_duration,
 							1,
+						))
+					if effect.modifiers.get("curse_of_weakness", false):
+						target.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.STAT_DEBUFF_DEF,
+							effect.status_duration,
+							2,
 						))
 					target._recalculate_stats()
 					if effect.modifiers.has("set_max_move"):

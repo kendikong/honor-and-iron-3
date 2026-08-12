@@ -8,6 +8,41 @@
 
 ---
 
+## Shaman rollout — implementation and automated QA checkpoint
+
+**Updated:** 2026-08-11  
+**Status:** Implementation complete for the Bible-authored Shaman factory, shared
+simulation hooks, and Knight-bar-shaped automated gate. This is automated PASS,
+not owner visual sign-off.
+
+### Deliverables
+- [x] `ShamanFactory` registered in `DataLibrary` with the innate, Usher,
+  promotion packages, 15 passives, 16 active rows, and upgrades.
+- [x] Shared `ShamanSystems` hooks connected through `AbilitySystem`,
+  `CombatSystem`, `MovementSystem`, `Simulator`, `UnitState`, and `BoardState`.
+- [x] Per-row scenario files, factory matrix, movement smoke, AOE registration,
+  live preview/commit coverage, and Shaman QA runner.
+
+### QA
+| Suite | Result |
+|---|---|
+| `scripts/run_shaman_qa_gate.ps1` Tier 1 factory/scenario gate | **PASS** |
+| `scripts/run_shaman_qa_gate.ps1` Tier 2 live preview/commit gate | **PASS** |
+| `scripts/run_regression_tests.ps1` full simulation regression | **PASS** |
+
+### Audit checkpoint
+| Pillar | Result | Notes |
+|---|---|---|
+| Completeness | PASS | Factory rows, shared hooks, scenarios, and both gate tiers are present. |
+| Correct coding | PASS | Headless simulation remains Node-free; shared data/effect paths are used. |
+| Inconsistencies | PASS | Shaman state is cloned with `BoardState`; preview and commit use the same slots path. |
+| Issues | PASS | No blocking automated issue remains; owner F5 visual review is still pending. |
+
+**Final issue count:** 1 (owner visual/manual review — deferred to owner)  
+**Audit result:** **PASS for automated implementation; owner sign-off NOT PASS**
+
+---
+
 ## Class QA owner sign-off (authoritative)
 
 **Only Knight is PASS.** All other classes are **NOT PASS** until QA is redone to the Knight bar.

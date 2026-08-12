@@ -20,6 +20,7 @@ var temporary_terrain_turns: Dictionary = {}
 var temporary_terrain_previous: Dictionary = {}
 var terrain_payloads: Dictionary = {}
 var delayed_effects: Array[Dictionary] = []
+var soul_orbs: Dictionary = {}       # Vector2i -> Shaman Soul Collector payload
 
 func get_tile(coord: Vector2i) -> TileState:
 	return tiles.get(coord, null)
@@ -101,4 +102,5 @@ func clone() -> BoardState:
 	copy.temporary_terrain_previous = temporary_terrain_previous.duplicate(true)
 	copy.terrain_payloads = terrain_payloads.duplicate(true)
 	copy.delayed_effects = delayed_effects.duplicate(true)
+	copy.soul_orbs = soul_orbs.duplicate(true)
 	return copy

@@ -2,6 +2,7 @@ class_name MovementSystem
 extends RefCounted
 
 const MonkSystems := preload("res://core/systems/monk_systems.gd")
+const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
 
 ## Purpose: Owns point-based unit movement and pathfinding.
 ## Responsibilities: Find a deterministic shortest path and walk a unit along it,
@@ -474,6 +475,7 @@ static func execute_skill_walk(
 	GridSystem.set_occupant(board, unit.position, unit.id)
 	unit.record_movement(path, route_mp_cost(board, path, unit), from)
 	_apply_movement_passives(board, unit, events)
+	ShamanSystems.collect_soul_orb(board, unit, unit.position, events)
 	if path.size() >= 1:
 		var prev_pos: Vector2i = from if path.size() == 1 else path[path.size() - 2]
 		unit.facing = PhysicsSystem.facing_from_vector(unit.position - prev_pos)
@@ -818,6 +820,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	unit.movement.points_left -= mp_spent
 	unit.record_movement(path, mp_spent, from)
 	_apply_movement_passives(board, unit, events)
+	ShamanSystems.collect_soul_orb(board, unit, unit.position, events)
 	GridSystem.set_occupant(board, unit.position, unit.id)
 
 	# Face the direction of the final step (used for flanking/backstab), unless the

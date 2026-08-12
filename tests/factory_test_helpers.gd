@@ -25,6 +25,8 @@ static func build_unit(class_id: StringName) -> UnitData:
 			unit = MercenaryFactory.build(weapon)
 		&"monk":
 			unit = MonkFactory.build(weapon)
+		&"shaman":
+			unit = ShamanFactory.build(weapon)
 	if unit == null:
 		return null
 	var basic := DataLibrary._make_class_basic_attack(class_id)

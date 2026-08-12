@@ -1,6 +1,8 @@
 class_name UnitState
 extends RefCounted
 
+const ShamanSystems := preload("res://core/systems/shaman_systems.gd")
+
 ## Purpose: The live state of one unit during a battle. Single source of truth for
 ## that unit's HP, position, facing, and remaining points.
 ## Responsibilities: Hold runtime state assembled from components; clone itself.
@@ -291,6 +293,13 @@ func _recalculate_stats(board: BoardState = null) -> void:
 			and base_str + w_str + stat_str == base_mag + w_mag + stat_mag
 		):
 			stat_def += int(passive.modifiers["upgraded_equal_stat_defense"])
+
+	if board != null:
+		var shaman_adjustments := ShamanSystems.dynamic_stat_adjustments(board, self)
+		stat_str += int(shaman_adjustments.get("strength", 0))
+		stat_mag += int(shaman_adjustments.get("magic", 0))
+		stat_def += int(shaman_adjustments.get("defense", 0))
+		stat_mov += int(shaman_adjustments.get("movement", 0))
 
 	current_strength = maxi(0, base_str + w_str + stat_str)
 	current_magic = maxi(

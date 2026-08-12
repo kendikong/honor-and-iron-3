@@ -7,6 +7,7 @@ const ClericFactoryScript := preload("res://core/factory/classes/cleric_factory.
 const MageFactoryScript := preload("res://core/factory/classes/mage_factory.gd")
 const MercenaryFactoryScript := preload("res://core/factory/classes/mercenary_factory.gd")
 const MonkFactoryScript := preload("res://core/factory/classes/monk_factory.gd")
+const ShamanFactoryScript := preload("res://core/factory/classes/shaman_factory.gd")
 
 ## Purpose: A hardcoded central registry of all Units, Terrain, Abilities, and Maps.
 ## This simulates loading .tres files from disk until the actual asset pipeline
@@ -148,6 +149,7 @@ static func _ensure_init() -> void:
 	var c_bone = _make_construct(&"bone_barricade", "Bone Barricade", 50.0)
 	var c_obsidian = _make_construct(&"obsidian_wall", "Obsidian Wall", 50.0)
 	var c_hammer = _make_construct(&"divine_hammer", "Divine Hammer", 10.0)
+	var c_ghost = _make_construct(&"ghost_ally", "Ghost Ally", 0.0)
 	
 	var basic_axe = _make_weapon(&"iron_axe", "Iron Axe")
 	var basic_sword = _make_weapon(&"iron_sword", "Iron Sword")
@@ -206,10 +208,7 @@ static func _ensure_init() -> void:
 	var engineer := _make_unit_data(&"engineer", "Engineer", 3, 3, 1, [eng_grenade, eng_pull], null, GameEnums.MovementType.WALK, 2, 0, 3, basic_gun, [p_eng])
 
 	# 13. SHAMAN (STAFF)
-	var p_shaman = _make_passive(&"curse", "Curse", "Enemies take more damage.")
-	var shaman_ward := _make_ability(&"shaman_ward", "Earth Ward", 3, [_effect(GameEnums.EffectType.ARMOR_UP, 2)], 1)
-	var shaman_shove := _make_ability(&"shaman_shove", "Gale Force", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 0)
-	var shaman := _make_unit_data(&"shaman", "Shaman", 3, 3, 1, [shaman_ward, shaman_shove], null, GameEnums.MovementType.WALK, 0, 4, 2, basic_staff, [p_shaman])
+	var shaman: UnitData = ShamanFactoryScript.build(basic_staff)
 
 	_player_units = [
 		knight, paladin, fighter, lancer, archer, mage, cleric,
