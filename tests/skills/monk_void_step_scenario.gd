@@ -10,3 +10,4 @@ const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_H.run_factory_matrix(failures)
+	_Planning.run_for_factory(failures, &"monk_void_step")

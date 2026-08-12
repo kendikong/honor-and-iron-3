@@ -12,3 +12,4 @@ static func run_all(failures: Array[String]) -> void:
 	_H.run_single_ability(&"monk_cyclone_sweep", failures)
 	_H.run_shaped_footprint(&"monk_cyclone_sweep", failures)
 	_H.run_upgrade_sim_for(&"monk_cyclone_sweep", failures)
+	_Planning.run_for_factory(failures, &"monk_cyclone_sweep")
