@@ -4,10 +4,10 @@
     "spec": "docs/CLASS_QA_BIBLE.md",
     "pass_threshold": 88,
     "per_row_threshold": 88,
-    "last_critic_round": 12,
+    "last_critic_round": 13,
     "last_score": 88,
     "last_result": "PASS",
-    "notes": "Gauntlet round 12: BAR 397 lines via run_beast_rider_gauntlet_bar.ps1; critic 88/100 PASS@88. Production safe_landing/territorial hooks + sim integration proofs.",
+    "notes": "Gauntlet round 13: fresh BAR (397 lines) via run_beast_rider_gauntlet_bar.ps1; independent critic 88/100 PASS@88.",
     "approved_rows": [
         { "factory_id": "beast_reposition", "score": 88, "critic_round": 12, "fix_target": "none" },
         { "factory_id": "beast_pounce", "score": 88, "critic_round": 12, "fix_target": "none" },
