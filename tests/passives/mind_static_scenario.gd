@@ -1,7 +1,7 @@
 extends RefCounted
 ## Bible: Mind Static - Rogue promotion passive, range and defense suppression.
 ## Globals: RogueSystems + AbilitySystem + Simulator
-## Data/Sim delegate: tests/rogue_qa_harness.gd::run_passive_factory
+## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
 const _H := preload("res://tests/rogue_qa_harness.gd")
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_factory(&"mind_static", failures)
+	_H._run_passive_trigger(&"mind_static", failures)

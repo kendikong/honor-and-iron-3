@@ -4,4 +4,4 @@ extends RefCounted
 ## Data/Sim delegate: tests/rogue_qa_harness.gd::_run_passive_trigger
 const _H := preload("res://tests/rogue_qa_harness.gd")
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_factory(&"debuff_overload", failures)
+	_H._run_passive_trigger(&"debuff_overload", failures)

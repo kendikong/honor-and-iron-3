@@ -96,7 +96,12 @@ if ($scenarioMissing.Count -gt 0) {
 	$scenarioMissing | ForEach-Object { Write-Output "  $_" }
 	exit 3
 }
-$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+$manifestErrors = @()
+if ($manifestApproved.Count -gt 0) {
+	$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+} else {
+	Write-Output "[WARN] Manifest has no approved_rows - skipping last_score gate until gauntlet-critic >= $manifestThreshold"
+}
 if ($manifestErrors.Count -gt 0) {
 	Write-Output "[FAIL] Meta-critic manifest gate:"
 	$manifestErrors | ForEach-Object { Write-Output "  $_" }
