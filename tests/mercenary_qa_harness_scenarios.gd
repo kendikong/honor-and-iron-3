@@ -45,14 +45,27 @@ static func run_pullback(failures: Array[String]) -> void:
 
 static func run_swift_strike(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
-	H.place_mercenary(board, 1, Vector2i(2, 3), H.mercenary_with_ability(&"mercenary_swift_strike"))
-	H.place_dummy(board, 2, Vector2i(4, 3))
+	var start: Vector2i = Vector2i(2, 3)
+	var move_pos: Vector2i = Vector2i(3, 3)
+	var enemy_pos: Vector2i = Vector2i(4, 3)
+	H.place_mercenary(board, 1, start, H.mercenary_with_ability(&"mercenary_swift_strike"))
+	H.place_dummy(board, 2, enemy_pos)
 	var hp: int = H.unit_hp(board, 2)
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_swift_strike")
+	var action := TimelineAction.make_ability(1, skill, enemy_pos, 2)
+	AbilitySystem.set_module_target(action, 0, move_pos, -1)
+	AbilitySystem.set_module_target(action, 1, enemy_pos, 2)
+	action.awaiting_target = false
+	action.awaiting_module_index = -1
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	plan.add(action)
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "swift_strike/damage", H.unit_hp(result.final_state, 2) < hp)
+	H.assert_eq_cell(
+		failures, "swift_strike/pos",
+		H.unit_on_board(result.final_state, 1).position,
+		move_pos,
+	)
 
 
 static func run_defense_strike(failures: Array[String]) -> void:

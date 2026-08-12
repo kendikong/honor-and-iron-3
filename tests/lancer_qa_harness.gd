@@ -415,6 +415,15 @@ static func run_single_active(ability_id: StringName, failures: Array[String]) -
 		has_outcome,
 		"active sim must produce a combat outcome event, not ABILITY_USED alone",
 	)
+	if AbilitySystem.ability_has_movement_effect(ability):
+		var before_pos: Vector2i = result.get("before_pos", Vector2i.ZERO)
+		var after_pos: Vector2i = result.get("after_pos", before_pos)
+		assert_true(
+			failures,
+			"%s/position" % ability_id,
+			before_pos != after_pos,
+			"movement skill must change actor tile (before %s after %s)" % [before_pos, after_pos],
+		)
 
 
 static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
@@ -465,8 +474,10 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		target_coord = Vector2i(3, 2)
 		target_id = -1
 	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
+	var before_pos: Vector2i = actor.position
 	var events: Array[SimEvent] = []
 	Simulator.simulate_player_turn(board, _single_action_plan(action), events)
+	var after_unit: UnitState = board.get_unit_by_id(actor.id)
 	var used := false
 	var validation_failed := false
 	var failure_reason := ""
@@ -481,6 +492,8 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		"validation_failed": validation_failed,
 		"failure_reason": failure_reason,
 		"events": events,
+		"before_pos": before_pos,
+		"after_pos": after_unit.position if after_unit != null else before_pos,
 	}
 
 

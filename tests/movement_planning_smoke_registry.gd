@@ -140,6 +140,17 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(3, 5),
 			"module_assert": "archer_sidestep",
 		},
+		&"archer_parting_shot": {
+			"class_id": &"archer",
+			"factory_id": &"archer_parting_shot",
+			"tag": "parting_shot",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(4, 3),
+			"verify_no_jump": false,
+			"postmove_cell": Vector2i(2, 5),
+		},
 		# --- Lancer ---
 		&"lancer_push": {
 			"class_id": &"lancer",
@@ -296,6 +307,40 @@ static func _entries() -> Dictionary:
 			"actor_pos": Vector2i(2, 3),
 			"enemy_pos": Vector2i(6, 3),
 			"commit_cell": Vector2i(5, 3),
+			"verify_no_jump": false,
+		},
+		# --- Rogue ---
+		&"rogue_evasive_strike": {
+			"class_id": &"rogue",
+			"factory_id": &"rogue_evasive_strike",
+			"tag": "evasive_strike",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(4, 3),
+			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 3),
+		},
+		# --- Mercenary ---
+		&"mercenary_swift_strike": {
+			"class_id": &"mercenary",
+			"factory_id": &"mercenary_swift_strike",
+			"tag": "swift_strike",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(4, 3),
+			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 3),
+		},
+		&"mercenary_flank_and_run": {
+			"class_id": &"mercenary",
+			"factory_id": &"mercenary_flank_and_run",
+			"tag": "flank_and_run",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(2, 5),
 			"verify_no_jump": false,
 		},
 	}

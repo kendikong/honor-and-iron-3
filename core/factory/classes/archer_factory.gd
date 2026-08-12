@@ -526,18 +526,22 @@ static func _caltrop_trap() -> AbilityData:
 
 
 static func _parting_shot() -> AbilityData:
-	var module := _module(
+	var strike := _module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 3,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	var move := DataLibrary._effect(GameEnums.EffectType.MOVE, 2)
-	move.modifiers["post_attack_move"] = true
-	module.layers.append(_layer(move, GameEnums.LayerCondition.AT_RESOLUTION))
-	var upgraded := _clone_modules([module])
-	upgraded[0].layers[0].effect.modifiers["ghost_move"] = 1
+	var move := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.TO_EMPTY_TILE,
+	)
+	move.aim_binding = GameEnums.AimBinding.NEW_AIM
+	var modules: Array[AbilityModule] = [strike, move]
+	var upgraded := _clone_modules(modules)
+	upgraded[1].legacy_modifiers["ghost_move"] = 1
 	return _ability(
-		&"archer_parting_shot", "Parting Shot", 1, [module],
-		GameEnums.TargetingFlags.ENEMY,
+		&"archer_parting_shot", "Parting Shot", 1, modules,
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"After attacking, immediately MOVE 2 tiles. Upgraded movement gains GHOST.",
 		upgraded,

@@ -4,6 +4,7 @@ extends RefCounted
 
 const _HARNESS := preload("res://tests/aoe_footprint_qa_harness.gd")
 const _MOVEMENT := preload("res://tests/movement_timeline_qa_harness.gd")
+const _MODULE_MOVEMENT := preload("res://tests/movement_module_qa_harness.gd")
 
 
 static func run(failures: Array[String]) -> void:
@@ -14,3 +15,4 @@ static func run(failures: Array[String]) -> void:
 	_HARNESS.audit_premove_arc_regression(failures)
 	_MOVEMENT.audit_scenario_registries(failures)
 	_MOVEMENT.audit_live_class_tests(failures)
+	_MODULE_MOVEMENT.audit_all(failures)
