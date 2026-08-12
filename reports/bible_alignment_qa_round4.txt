@@ -1,6 +1,8 @@
-commit: b84a700b4173cb9887bb03b2fea4b7c347707031
+commit: b548ba45884b746a7cac777dfd98733d793e93d1
+code_under_test: b548ba45884b746a7cac777dfd98733d793e93d1
+artifact_bundle: 5a89cd890f13a4aeb8028997faf46d12c4db6322
 
-=== Bible alignment QA bundle (round 4 â€” monk Layer C planning) ===
+=== Bible alignment QA bundle (round 4 — monk Layer C planning) ===
 
 === Mage QA gate (class validation - NOT planning QA) ===
 Spec: docs/MAGE_QA_GATE.md
