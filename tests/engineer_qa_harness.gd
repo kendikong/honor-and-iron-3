@@ -103,9 +103,6 @@ static func run_single_ability(
 	var target_id := -1
 	if ability_id == &"engineer_recall":
 		_place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id)
-	elif ability_id == &"engineer_rocket_launcher" and upgraded:
-		_place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id)
-		target_id = _place_dummy(board, 7, target_coord).id
 	elif ability_id in [
 		&"engineer_wrench_smack", &"engineer_manual_detonation",
 		&"engineer_overdrive_injection",

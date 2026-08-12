@@ -794,8 +794,7 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 				and _passive_has_modifier(actor, &"caltrop_zero_ap")
 			):
 				return 0
-	ap_cost = MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
-	return EngineerSystems.adjust_action_point_cost(board, actor, ability, ap_cost)
+	return MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
 
 
 static func movement_point_cost(actor: UnitState, ability: AbilityData) -> int:
@@ -2148,7 +2147,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags["__engineer_event_start"] = events.size()
 		if EngineerSystems.ability_has_explosion(actor, ability):
 			actor.passive_flags["engineer_explosion_active"] = true
-		EngineerSystems.before_ability_execute(board, actor, action, events)
 		RogueSystems.apply_smoke_spell_bonus(board, actor, ability)
 		if _is_basic_attack(ability):
 			var predatory_target: UnitState = (

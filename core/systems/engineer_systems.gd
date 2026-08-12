@@ -69,44 +69,6 @@ static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> boo
 	return false
 
 
-static func adjust_action_point_cost(
-		board: BoardState,
-		actor: UnitState,
-		ability: AbilityData,
-		cost: int,
-) -> int:
-	if (
-		board != null
-		and actor != null
-		and ability != null
-		and actor.is_ability_upgraded(ability.id)
-		and has_ability_modifier(actor, ability, &"sacrifice_construct_instant")
-		and _nearest_owned_construct(board, actor) != null
-	):
-		return 0
-	return cost
-
-
-static func before_ability_execute(
-	board: BoardState,
-	actor: UnitState,
-	action: TimelineAction,
-	_events: Array[SimEvent],
-) -> void:
-	if (
-		board == null
-		or actor == null
-		or action == null
-		or action.ability == null
-		or not actor.is_ability_upgraded(action.ability.id)
-		or not has_ability_modifier(actor, action.ability, &"sacrifice_construct_instant")
-	):
-		return
-	var construct := _nearest_owned_construct(board, actor)
-	if construct != null:
-		_destroy_construct(board, actor, construct, _events)
-
-
 static func is_pull_immune(board: BoardState, target: UnitState) -> bool:
 	if board == null or target == null:
 		return false
@@ -866,26 +828,6 @@ static func _ignite_oil(
 		events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 			"coord": coord, "terrain": &"fire",
 		}))
-
-
-static func _nearest_owned_construct(board: BoardState, owner: UnitState) -> UnitState:
-	var nearest: UnitState = null
-	var nearest_distance := 1_000_000
-	for construct: UnitState in board.units:
-		if (
-			construct == null
-			or not construct.is_alive()
-			or construct.team != owner.team
-			or construct.definition == null
-			or not construct.definition.is_construct
-			or int(construct.passive_flags.get("engineer_owner_id", -1)) != owner.id
-		):
-			continue
-		var distance := GridSystem.manhattan(owner.position, construct.position)
-		if distance < nearest_distance:
-			nearest = construct
-			nearest_distance = distance
-	return nearest
 
 
 static func _destroy_construct(
