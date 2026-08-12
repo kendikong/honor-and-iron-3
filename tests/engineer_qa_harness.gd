@@ -284,10 +284,14 @@ static func _data_contract(
 			_assert(failures, "%s/data/amount" % ability_id, module.amount == 3)
 			_assert(failures, "%s/data/range" % ability_id, module.min_range == 1 and module.max_range == 1)
 			_assert(failures, "%s/data/def_loss" % ability_id, module.legacy_modifiers.get("target_def_pct_loss", 0.0) == 0.25)
-		&"engineer_sludge_bomb", &"engineer_frag_bomb":
+		&"engineer_sludge_bomb":
 			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 3)
 			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
 			_assert(failures, "%s/data/hazard_layer" % ability_id, not module.layers.is_empty())
+		&"engineer_frag_bomb":
+			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 3)
+			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
+			_assert(failures, "%s/data/ignite_oil" % ability_id, module.legacy_modifiers.get("ignite_oil", false))
 		&"engineer_construct_turret":
 			_assert(failures, "%s/data/spawn" % ability_id, module.spawn_unit_id == &"construct_turret")
 		&"engineer_magnetic_mine":
