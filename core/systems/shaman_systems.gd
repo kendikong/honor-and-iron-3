@@ -9,6 +9,8 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 	var result := {"strength": 0, "magic": 0, "defense": 0, "movement": 0}
 	if board == null or unit == null:
 		return result
+	if unit.passive_flags.get("shaman_wither", false):
+		result.movement -= 2
 	for source: UnitState in board.units:
 		if source == null or not source.is_alive():
 			continue
@@ -30,14 +32,21 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 			result.strength += int(aura.strength)
 			result.magic += int(aura.magic)
 			result.defense += int(aura.defense)
+			result.movement += int(aura.movement)
 			if bool(aura.miasma) and unit_has_debuff(unit):
 				result.movement -= int(aura.miasma_movement)
 	return result
 
 
+static func can_gain_positive_buff(target: UnitState) -> bool:
+	return target != null and not target.passive_flags.get("shaman_wither", false)
+
+
 static func can_gain_shield(board: BoardState, target: UnitState) -> bool:
 	if board == null or target == null:
 		return true
+	if target.passive_flags.get("shaman_wither", false):
+		return false
 	for source: UnitState in board.units:
 		if source == null or source.team == target.team or not source.is_alive():
 			continue
@@ -311,6 +320,14 @@ static func pre_status_application(
 ) -> bool:
 	if actor == null or target == null or effect == null:
 		return false
+	if (
+		GameEnums.is_buff(effect.status_type)
+		and not can_gain_positive_buff(target)
+	):
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": actor.id, "reason": "wither_blocks_buff",
+		}))
+		return true
 	if effect.modifiers.get("requires_missing_hp", false) \
 			and target.health.current_hp >= target.health.max_hp:
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -329,13 +346,18 @@ static func pre_status_application(
 			"stripped_shield": true,
 		}))
 		return true
-	if effect.modifiers.get("hex", false) and target.is_boss():
+	if effect.modifiers.get("hex", false):
 		target.passive_flags["shaman_wither"] = true
 		target.passive_flags["shaman_wither_turns"] = effect.status_duration
-	if effect.modifiers.get("hex_vulnerable", false):
-		target.active_statuses.append(DataLibrary.make_status(
-			GameEnums.StatusType.VULNERABLE, effect.status_duration,
-		))
+		if effect.modifiers.get("hex_vulnerable", false):
+			target.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.VULNERABLE, effect.status_duration,
+			))
+		target._recalculate_stats(board)
+		events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+			"unit": target.id, "status": &"wither",
+		}))
+		return true
 	if effect.modifiers.get("poison_spread_on_push_collision", false):
 		target.passive_flags["shaman_poison_spread_on_push"] = true
 	if effect.modifiers.get("push_mitigation_zero", false):
@@ -551,6 +573,23 @@ static func on_dealt_damage(
 		_voodoo_doll_revenge(board, target, events)
 
 
+static func find_lightning_rod_redirect(board: BoardState, victim: UnitState) -> UnitState:
+	if board == null or victim == null:
+		return null
+	for candidate: UnitState in board.units:
+		if (
+			candidate == null
+			or not candidate.is_alive()
+			or candidate.id == victim.id
+			or candidate.team != victim.team
+			or not candidate.passive_flags.get("shaman_lightning_rod", false)
+		):
+			continue
+		if GridSystem.manhattan(candidate.position, victim.position) <= 1:
+			return candidate
+	return null
+
+
 static func incoming_damage_bonus(target: UnitState) -> int:
 	if target == null or not target.passive_flags.has("shaman_link_damage_bonus"):
 		return 0
@@ -576,6 +615,17 @@ static func incoming_damage_reduction(
 		):
 			return int(source.passive_flags.get("shaman_guard_ranged_reduction", 2))
 	return 0
+
+
+static func apply_spiritual_offering_on_hp_spend(
+	board: BoardState,
+	actor: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if actor == null or not _has_passive_modifier(actor, &"spiritual_offering"):
+		return
+	var shield := _passive_value(actor, &"offering_shield", &"upgraded_offering_shield", 1)
+	CombatSystem.add_armor(board, actor, shield, events)
 
 
 static func on_spawned(
@@ -627,7 +677,20 @@ static func on_spawned(
 	construct.passive_flags["shaman_guardian_def"] = _passive_value(
 		actor, &"guardian_aura_def", &"upgraded_guardian_aura_def", 1,
 	)
+	var hex_passive := _find_passive(actor, &"hexing_presence")
+	if hex_passive != null:
+		var hex_upgraded := actor.is_passive_upgraded(hex_passive.id)
+		construct.passive_flags["shaman_totem_hex_range"] = int(hex_passive.modifiers.get(
+			"upgraded_hexing_presence_range" if hex_upgraded else "hexing_presence_range", 2,
+		))
+		construct.passive_flags["shaman_totem_hex_mov"] = int(hex_passive.modifiers.get(
+			"upgraded_hexing_presence_mov" if hex_upgraded else "hexing_presence_mov", 0,
+		))
 	construct._recalculate_stats(board)
+	if _has_passive_modifier(actor, &"echoing_spirits") and actor.is_passive_upgraded(&"echoing_spirits"):
+		var bonus_hp := int(_passive_value(actor, &"upgraded_totem_hp", &"upgraded_totem_hp", 2))
+		construct.health.max_hp += bonus_hp
+		construct.health.current_hp += bonus_hp
 
 
 static func unit_has_debuff(unit: UnitState) -> bool:
@@ -732,12 +795,23 @@ static func _hexing_aura(source: UnitState) -> Dictionary:
 			"strength": int(passive.modifiers.get("hexing_presence_str", -2)),
 			"magic": int(passive.modifiers.get("hexing_presence_mag", -2)),
 			"defense": int(passive.modifiers.get("hexing_presence_def", -2)),
+			"movement": int(passive.modifiers.get(
+				"upgraded_hexing_presence_mov" if upgraded else "hexing_presence_mov", 0,
+			)),
 			"miasma": _has_passive_modifier(source, &"miasma_resonance"),
 			"miasma_movement": 1,
 		}
 	var totem_kind: StringName = source.passive_flags.get("shaman_totem_kind", &"")
 	if totem_kind != &"":
-		return {"range": 2, "strength": -2, "magic": -2, "defense": -2, "miasma": false, "miasma_movement": 0}
+		return {
+			"range": int(source.passive_flags.get("shaman_totem_hex_range", 2)),
+			"strength": -2,
+			"magic": -2,
+			"defense": -2,
+			"movement": int(source.passive_flags.get("shaman_totem_hex_mov", 0)),
+			"miasma": false,
+			"miasma_movement": 0,
+		}
 	return {}
 
 

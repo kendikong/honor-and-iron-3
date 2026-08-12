@@ -11,6 +11,24 @@
 
 ```text
 ══════════════════════════════════════
+GAUNTLET SCORE │ SHAMAN-LOCK │ Round 5 │ SELF-GRADED: no (subagent)
+SCORE: 86/100 │ THRESHOLD: 85 │ PASS
+DELTA: +31 vs Round 1 (was 55)
+R1: 55 FAIL │ R2: 63 FAIL │ R3: 71 FAIL │ R4: 78 FAIL │ R5: 86 PASS
+STOP_CONDITION_MET: yes (automated gauntlet bar)
+══════════════════════════════════════
+```
+
+| Round | Piece | Score | Result |
+|-------|-------|-------|--------|
+| r5 | SHAMAN-LOCK | 86 | PASS — WITHER, usher totems, lightning rod, Knight-bar harness |
+| r4 | SHAMAN-LOCK | 78 | FAIL |
+| r3 | SHAMAN-LOCK | 71 | FAIL |
+| r2 | SHAMAN-LOCK | 63 | FAIL |
+| r1 | SHAMAN-LOCK | 55 | FAIL |
+
+```text
+══════════════════════════════════════
 GAUNTLET SCORE │ AD-5 │ Round 2 │ SELF-GRADED: no (subagent)
 SCORE: 88/100 │ THRESHOLD: 85 │ PASS │ CLIMBING
 DELTA: +15 vs round 1 (was 73)

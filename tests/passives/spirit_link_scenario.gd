@@ -1,7 +1,9 @@
-extends RefCounted
+﻿extends RefCounted
 
-## Bible: spirit_link — Bloodweaver passive contract.
-const _A := preload("res://tests/shaman_scenario_adapter.gd")
+## Bible: spirit_link — class_abilities.txt section 10 Shaman passive.
+## Globals: ShamanSystems shared hooks + Simulator.
+## Data/Sim delegate: tests/shaman_qa_harness.gd::run_passive_factory
+const _H := preload("res://tests/shaman_qa_harness.gd")
 
 static func run_all(failures: Array[String]) -> void:
-	_A.run_passive(&"spirit_link", failures)
+	_H.run_passive_factory(&"spirit_link", failures)

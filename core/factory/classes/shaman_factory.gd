@@ -40,7 +40,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.ALLY_STEP,
 	)
-	usher.legacy_modifiers["shaman_usher"] = true
+	usher.legacy_modifiers["relocate_target"] = true
 	usher.legacy_modifiers["move_active_totem"] = false
 	var usher_upgraded := DataLibrary._duplicate_modules([usher])
 	usher_upgraded[0].max_range = 4

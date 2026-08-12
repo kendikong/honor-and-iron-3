@@ -480,6 +480,15 @@ static func deal_damage(
 ) -> void:
 	if target == null:
 		return
+	if (
+		board != null
+		and source_type == &"magical"
+		and attacker != null
+		and attacker.team != target.team
+	):
+		var lightning_rod := ShamanSystems.find_lightning_rod_redirect(board, target)
+		if lightning_rod != null:
+			target = lightning_rod
 	if attacker != null and GridSystem.manhattan(target.position, attacker.position) > 1:
 		for passive: PassiveData in target.active_passives:
 			if (
@@ -560,8 +569,14 @@ static func deal_damage(
 		0,
 		amount - ShamanSystems.incoming_damage_reduction(board, target, attacker),
 	)
-	if attacker != null and attacker.passive_flags.get("shaman_wither", false):
-		amount = floori(amount * 0.75)
+	if (
+		attacker != null
+		and attacker.passive_flags.get("shaman_wither", false)
+	):
+		if attacker.is_boss():
+			amount = floori(amount * 0.75)
+		else:
+			amount = floori(amount * 0.50)
 
 	if telemetry_base >= 0:
 		append_flat_damage_telemetry(board, target, telemetry_base, events, pierce or source_type == &"true")

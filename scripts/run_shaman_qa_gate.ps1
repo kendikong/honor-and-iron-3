@@ -4,8 +4,44 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$matrixPath = Join-Path $projectRoot "docs\SHAMAN_QA_GATE.md"
-$required = @(
+$latestGateLog = Join-Path $projectRoot "qa_shaman_gate_latest.txt"
+$gateLogLines = New-Object System.Collections.Generic.List[string]
+
+function Write-GateLine([string]$Line) {
+	Write-Output $Line
+	[void]$gateLogLines.Add($Line)
+}
+
+function Save-GateLog() {
+	$canonical = Join-Path $projectRoot "qa_shaman_gate_canonical.txt"
+	$gateLogLines | Set-Content -Path $canonical -Encoding utf8
+	$tmp = Join-Path $projectRoot "qa_shaman_gate_latest.tmp"
+	$gateLogLines | Set-Content -Path $tmp -Encoding utf8
+	try {
+		if (Test-Path $latestGateLog) {
+			Remove-Item -LiteralPath $latestGateLog -Force -ErrorAction Stop
+		}
+		Move-Item -LiteralPath $tmp -Destination $latestGateLog -Force -ErrorAction Stop
+	} catch {
+		if (Test-Path $tmp) {
+			Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+		}
+	}
+}
+
+function Exit-Gate([int]$Code) {
+	Save-GateLog
+	exit $Code
+}
+
+$matrixDoc = Join-Path $projectRoot "docs\SHAMAN_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\shaman_meta_critic_manifest.json"
+
+Write-GateLine "=== Shaman QA gate (class validation - NOT planning QA) ==="
+Write-GateLine "Spec: docs/SHAMAN_QA_GATE.md"
+Write-GateLine ""
+
+$requiredFactoryIds = @(
 	"hexing_presence", "echoing_spirits", "spiritual_offering", "spiritual_guardian",
 	"miasma_resonance", "voodoo_conduit", "voodoo_doll", "spirit_link", "pain_sharing",
 	"sympathetic_magic", "chain_reaction", "soul_collector", "hexing_touch",
@@ -17,62 +53,169 @@ $required = @(
 	"shaman_soul_siphon", "shaman_pain_spike"
 )
 
-$lines = New-Object System.Collections.Generic.List[string]
-function Log([string]$line) {
-	Write-Output $line
-	[void]$lines.Add($line)
+if (-not (Test-Path $matrixDoc)) {
+	Write-GateLine "[FAIL] Missing matrix doc: $matrixDoc"
+	Exit-Gate 3
 }
 
-Log "=== Shaman QA gate ==="
-Log "Spec: docs/SHAMAN_QA_GATE.md"
-if (-not (Test-Path $matrixPath)) {
-	Log "[FAIL] Missing Shaman matrix: $matrixPath"
-	exit 1
+$matrixText = Get-Content -Path $matrixDoc -Raw
+$passRows = @()
+$plannedRows = @()
+$harnessRows = @()
+
+foreach ($id in $requiredFactoryIds) {
+	$escaped = [regex]::Escape($id)
+	$tablePattern = '`\s*' + $escaped + '\s*`'
+	$rowLine = (
+		$matrixText -split "`n" |
+		Where-Object {
+			$_ -match $tablePattern -and $_ -match '\|' -and $_ -match '\|\s*(PASS|HARNESS_ONLY|PLANNED|N/A)\s*\|'
+		} |
+		Select-Object -First 1
+	)
+	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
+		$plannedRows += $id
+		continue
+	}
+	if ($rowLine -match '\|\s*PASS\s*\|') {
+		$passRows += $id
+	} elseif ($rowLine -match '\|\s*HARNESS_ONLY\s*\|') {
+		$harnessRows += $id
+	} else {
+		$plannedRows += $id
+	}
 }
 
-$missingRows = @($required | Where-Object { (Get-Content $matrixPath -Raw) -notmatch [regex]::Escape("``$_``") })
-$missingScenarios = @()
-foreach ($id in $required) {
-	$folder = if ($id -eq "hexing_presence" -or $id -in $required[1..15]) { "passives" } else { "skills" }
-	$path = Join-Path $projectRoot "tests\$folder\${id}_scenario.gd"
-	if (-not (Test-Path $path)) { $missingScenarios += "$folder/$id" }
+Write-GateLine "=== Matrix summary (from docs/SHAMAN_QA_GATE.md) ==="
+Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
+Write-GateLine ""
+
+$manifestApproved = @()
+$manifestThreshold = 85
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	if ($null -ne $manifest.pass_threshold) {
+		$manifestThreshold = [int]$manifest.pass_threshold
+	} elseif ($null -ne $manifest.threshold) {
+		$manifestThreshold = [int]$manifest.threshold
+	}
+	foreach ($row in $manifest.approved_rows) {
+		if ($row -is [string]) {
+			$manifestApproved += $row
+		} elseif ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-GateLine ("=== Meta-critic manifest ({0} approved, threshold {1}) ===" -f $manifestApproved.Count, $manifestThreshold)
+} else {
+	Write-GateLine "[WARN] Missing manifest: docs/shaman_meta_critic_manifest.json"
 }
-if ($missingRows.Count -gt 0) { Log "[FAIL] Matrix rows missing: $($missingRows -join ', ')" }
-if ($missingScenarios.Count -gt 0) { Log "[FAIL] Scenario files missing: $($missingScenarios -join ', ')" }
-if ($missingRows.Count -gt 0 -or $missingScenarios.Count -gt 0) { exit 1 }
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+if ($unapprovedPass.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count) {
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+} else {
+	$matrixPassValid = $true
+}
+
+Write-GateLine ""
+
+. (Join-Path $PSScriptRoot "qa_gate_matrix_helpers.ps1")
+$scenarioMissing = Test-MatrixScenarioFiles -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc -RequiredFactoryIds $requiredFactoryIds
+if ($scenarioMissing.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS matrix rows missing scenario files:"
+	$scenarioMissing | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+if ($manifestErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] Meta-critic manifest gate:"
+	$manifestErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+$contractErrors = Test-PassRowScenarioContracts -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc
+if ($contractErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS scenario contract shallow (CLASS_QA_BIBLE.md ss8.2):"
+	$contractErrors | ForEach-Object { Write-GateLine "  $_" }
+	Exit-Gate 3
+}
+
+if ($passRows.Count -lt $requiredFactoryIds.Count) {
+	Write-GateLine "[INCOMPLETE] Shaman LOCK requires all factory rows PASS (meta-critic approved)."
+	if ($harnessRows.Count -gt 0) {
+		Write-GateLine "HARNESS_ONLY (need Bible + [+] asserts): $($harnessRows -join ', ')"
+	}
+	if ($plannedRows.Count -gt 0) {
+		Write-GateLine "PLANNED (no scenario): $($plannedRows -join ', ')"
+	}
+}
 
 if (-not (Test-Path $GodotPath)) {
-	Log "[INCOMPLETE] Godot executable not found: $GodotPath"
-	exit 2
+	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix check only."
+	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	Exit-Gate 0
 }
 
-$stdoutPath = Join-Path $env:TEMP "honor-and-iron-shaman-tier1.stdout.log"
-$stderrPath = Join-Path $env:TEMP "honor-and-iron-shaman-tier1.stderr.log"
-$process = Start-Process -FilePath $GodotPath -ArgumentList @(
-	"--headless", "--path", $projectRoot, "res://tests/ShamanQaGate.tscn"
-) -WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
+Write-GateLine "=== AOE footprint contract (all classes) ==="
+$aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
+& $aoeGate -GodotPath $GodotPath
+if ($LASTEXITCODE -ne 0) {
+	Write-GateLine "[FAIL] AOE footprint contract gate exit $LASTEXITCODE"
+	Exit-Gate 5
+}
+Write-GateLine "--- AOE footprint contract: PASS ---"
+Write-GateLine ""
+
+Write-GateLine "=== Tier 1: headless skill scenarios (harness) ==="
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-shaman-qa.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-shaman-qa.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList "--headless --path `"$projectRoot`" res://tests/ShamanQaGate.tscn" `
+	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
 $process.WaitForExit()
-$exitCode = $process.ExitCode
-$output = @()
-if (Test-Path $stdoutPath) { $output += Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { $output += Get-Content $stderrPath }
-$output | ForEach-Object { Log ([string]$_) }
-$canonical = Join-Path $projectRoot "qa_shaman_gate_canonical.txt"
-$latest = Join-Path $projectRoot "qa_shaman_gate_latest.txt"
-$lines | Set-Content -Path $canonical -Encoding utf8
-$lines | Set-Content -Path $latest -Encoding utf8
-$outputText = $output -join "`n"
-if ($outputText -notmatch '\[PASS\] Shaman QA gate: factory matrix' -or
-	$outputText -match '\[FAIL\] Shaman QA gate:') {
-	Log "[FAIL] Shaman QA gate exit code $exitCode"
-	exit $exitCode
+$process.Refresh()
+$exitCode = [int]$process.ExitCode
+Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
+Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
+
+$testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
+$scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
+$harnessPass = ($exitCode -eq 0 -and $testFailures.Count -eq 0 -and $scriptErrors.Count -eq 0)
+
+if ($harnessPass) {
+	Write-GateLine "--- Tier 1 harness: PASS ---"
+} else {
+	Write-GateLine "--- Tier 1 harness: FAIL ---"
+	if ($testFailures.Count -gt 0) {
+		$testFailures | Select-Object -First 10 | ForEach-Object { Write-GateLine $_ }
+	}
+	if ($scriptErrors.Count -gt 0) {
+		Write-GateLine "[FAIL] Godot SCRIPT ERROR lines detected ($($scriptErrors.Count)):"
+		$scriptErrors | Select-Object -First 5 | ForEach-Object { Write-GateLine $_ }
+	}
+	Exit-Gate 4
 }
-Log "[PASS] Shaman Tier 1 gate"
+
+Write-GateLine ""
+Write-GateLine "=== Tier 2: live preview/commit ==="
 & (Join-Path $PSScriptRoot "run_shaman_live_qa.ps1") -GodotPath $GodotPath
 if ($LASTEXITCODE -ne 0) {
-	Log "[FAIL] Shaman Tier 2 live gate exit code $LASTEXITCODE"
-	exit $LASTEXITCODE
+	Write-GateLine "[FAIL] Shaman Tier 2 live gate exit code $LASTEXITCODE"
+	Exit-Gate 6
 }
-Log "[PASS] Shaman QA gate: Tier 1 + Tier 2"
-exit 0
+Write-GateLine "--- Tier 2 live: PASS ---"
+
+if (-not $matrixPassValid -or $passRows.Count -lt $requiredFactoryIds.Count) {
+	Write-GateLine "[FAIL] Matrix not fully PASS with manifest alignment."
+	Exit-Gate 7
+}
+
+Write-GateLine "[PASS] Shaman QA gate: Tier 1 + Tier 2 + matrix manifest"
+Exit-Gate 0

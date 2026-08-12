@@ -2815,6 +2815,8 @@ static func _spend_ability_cost(
 		actor.passive_flags["shaman_ritual_used_this_turn"] = true
 	if hp_cost > 0:
 		actor.health.current_hp -= hp_cost
+		if ritual_sacrifice:
+			ShamanSystems.apply_spiritual_offering_on_hp_spend(board, actor, events)
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
 			"actor": actor.id,
 			"source": actor.id,
@@ -4157,6 +4159,41 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					board, target, target.health.current_hp, events, &"physical", false, false, actor,
 					action.ability.display_name, target.health.current_hp
 				)
+		GameEnums.EffectType.MOVE:
+			if effect.modifiers.get("relocate_target", false):
+				var subject := target
+				if subject == null and action.target_unit_id >= 0:
+					subject = board.get_unit_by_id(action.target_unit_id)
+				if subject == null or subject.team != actor.team:
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "relocate_missing_subject",
+					}))
+					return
+				var is_totem := subject.passive_flags.has("shaman_totem_owner_id")
+				if is_totem and not effect.modifiers.get("move_active_totem", false):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "relocate_totem_requires_upgrade",
+					}))
+					return
+				var max_steps := 2 if is_totem else 1
+				var relocate_dest := tile_coord
+				if (
+					GridSystem.is_occupied(board, relocate_dest)
+					or GridSystem.is_wall(board, relocate_dest)
+					or GridSystem.manhattan(subject.position, relocate_dest) > max_steps
+					or GridSystem.manhattan(subject.position, relocate_dest) < 1
+				):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "relocate_invalid_destination",
+					}))
+					return
+				GridSystem.set_occupant(board, subject.position, -1)
+				subject.position = relocate_dest
+				GridSystem.set_occupant(board, relocate_dest, subject.id)
+				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+					"unit": subject.id, "to": relocate_dest,
+				}))
+				return
 		GameEnums.EffectType.TELEPORT_CASTER:
 			var destination := tile_coord
 			if effect.modifiers.has("warp_adjacent_to_target"):
