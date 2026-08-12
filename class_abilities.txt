@@ -459,6 +459,7 @@ Active Skills & Upgrades
 8. Archer
 Core Identity: Ranged DPS. Master of suppression, line-of-sight dominance, and pinning enemies down.
 | CON 3 | MOV 4 | STR 4 | DEF 1 | MAG 1 |
+Basic Attack (Snap Shot): RANGE 2 | ATK 1 (0 AP, WPN scaling).
 Innate Trait: Steady Aim
 Base Mechanic: The Archer can spend MOV equal to their Max MOV during planning (standing still and using no tile movement) to automatically trigger Steady Aim: granting +1 RANGE and +1 STR to all attacks executed that turn (operates automatically in planning, similar to Auto-Run).
 Upgrade: Spending Max MOV grants +2 RANGE, +2 STR, and attacks gain PIERCE.

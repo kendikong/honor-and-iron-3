@@ -381,7 +381,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	assert_true(
 		failures,
 		"passive/steady_aim",
-		steady_aim.get_ability_range(basic) == 2,
+		steady_aim.get_ability_range(basic) == 3,
 		"Steady Aim must extend attacks while no movement is spent",
 	)
 

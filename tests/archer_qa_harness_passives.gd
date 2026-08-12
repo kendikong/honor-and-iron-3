@@ -100,7 +100,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		)
 		H.assert_true(
 			failures, "lightfoot/steady_aim_range",
-			steady_aim.get_ability_range(basic) == 2,
+			steady_aim.get_ability_range(basic) == 3,
 		)
 		var events: Array[SimEvent] = []
 		MovementSystem.execute_move(
@@ -108,7 +108,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		)
 		H.assert_true(
 			failures, "passive/lightfoot/range_after_move",
-			steady_aim.get_ability_range(basic) == 1,
+			steady_aim.get_ability_range(basic) == 2,
 		)
 
 	if _passive_should_run(only_id, &"overwatch"):
@@ -201,7 +201,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 				"active_passives": [H.factory_passive(&"high_ground")],
 			},
 		)
-		var enemy := H.place_dummy(board, 2, Vector2i(4, 2))
+		var enemy := H.place_dummy(board, 2, Vector2i(5, 2))
 		var action := TimelineAction.make_ability(archer.id, basic, enemy.position, enemy.id)
 		H.assert_true(
 			failures, "passive/high_ground/elevation_range",

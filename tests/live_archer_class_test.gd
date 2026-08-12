@@ -15,7 +15,7 @@ const _CASES: Array[Dictionary] = [
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.MOVE,
 		"amount": 1, "kind": &"tile", "actor": Vector2i(1, 5), "target": Vector2i(0, 5),
 		"observe": &"movement"},
-	{"id": &"archer_basic", "range": 1, "flags": GameEnums.TargetingFlags.ENEMY,
+	{"id": &"archer_basic", "range": 2, "flags": GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE, "size": 1, "type": GameEnums.EffectType.DAMAGE,
 		"amount": 1, "kind": &"enemy", "actor": Vector2i(4, 5), "target": Vector2i(6, 5),
 		"observe": &"damage"},

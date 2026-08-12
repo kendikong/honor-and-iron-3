@@ -826,7 +826,7 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		&"archer":
 			id = &"archer_basic"
 			display_name = "Snap Shot"
-			rng = 1
+			rng = 2
 		&"mage":
 			id = &"mage_basic"
 			display_name = "Arcane Flick"
