@@ -802,7 +802,9 @@ static func deal_damage(
 		target.passive_flags["exact_lethal_damage"] = hp_dmg == target.health.current_hp
 		target.health.current_hp = maxi(0, target.health.current_hp - hp_dmg)
 		
-		# Root and Pacify break instantly on damage
+		# Root and Pacify break instantly on damage. WEAKEN breaks on direct hits but
+		# persists through DoT/hazard (Mantra of Peace and global DoT/hazard rule).
+		var dot_or_hazard := source_type in [&"hazard", &"bleed", &"burn", &"poison"]
 		var new_statuses: Array[StatusData] = []
 		var removed_statuses = false
 		for status in target.active_statuses:
@@ -810,6 +812,11 @@ static func deal_damage(
 				removed_statuses = true
 				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
 					"unit": target.id, "reason": "damage_taken"
+				}))
+			elif status.type == GameEnums.StatusType.WEAKEN and not dot_or_hazard:
+				removed_statuses = true
+				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_REMOVED, {
+					"unit": target.id, "reason": "damage_taken", "status": "weaken"
 				}))
 			else:
 				new_statuses.append(status)
