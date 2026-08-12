@@ -144,6 +144,7 @@ static func after_skill_move(
 	var modules := active_module_modifiers(unit, ability)
 	if modules.get("pounce_land_adjacent", false):
 		_land_adjacent_to_target(board, unit, events)
+		on_landing(board, unit, events)
 	if modules.get("drag_remaining_movement", false):
 		_drag_target_for_remaining_movement(board, unit, ability, events)
 
@@ -352,6 +353,87 @@ static func incoming_damage_reduction(
 	return floori(float(target.current_defense) / 2.0) + base
 
 
+static func on_enemy_entered_adjacent(
+	board: BoardState,
+	watcher: UnitState,
+	intruder: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or watcher == null or intruder == null:
+		return
+	if watcher.team == intruder.team or not intruder.is_alive():
+		return
+	if GridSystem.manhattan(watcher.position, intruder.position) != 1:
+		return
+	var attack := int(passive_value(
+		watcher, &"adjacent_entry_attack", &"upgraded_adjacent_entry_attack", 0,
+	))
+	if attack <= 0:
+		return
+	var raw := CombatSystem.calculate_scaled_damage(
+		watcher, attack, GameEnums.StatType.PHYSICAL, board,
+	)
+	CombatSystem.deal_damage_raw(
+		board,
+		watcher,
+		intruder,
+		raw,
+		GameEnums.StatType.PHYSICAL,
+		events,
+		"Territorial",
+		attack,
+	)
+
+
+static func on_landing(
+	board: BoardState,
+	unit: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or unit == null or not unit.is_alive():
+		return
+	if not has_passive_modifier(unit, &"safe_landing"):
+		return
+	var push_amount := int(passive_value(
+		unit, &"landing_shockwave_push", &"upgraded_landing_shockwave_push", 0,
+	))
+	if push_amount <= 0:
+		return
+	var size := int(passive_value(unit, &"landing_shockwave_size", &"", 3))
+	var tiles := GridSystem.get_affected_tiles(
+		board, unit.position, unit.position, GameEnums.TargetShape.AOE_SQUARE, size,
+	)
+	for tile: Vector2i in tiles:
+		var pushed := board.get_unit_at(tile)
+		if pushed == null or pushed.id == unit.id or not pushed.is_alive():
+			continue
+		var direction := PhysicsSystem.cardinal_from_to(unit.position, pushed.position)
+		if direction == Vector2i.ZERO:
+			continue
+		PhysicsSystem.push(board, pushed, direction, push_amount, events, unit)
+
+
+static func before_ability_execute(
+	_board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+) -> void:
+	if actor == null or action == null or action.ability == null:
+		return
+	var mods := active_module_modifiers(actor, action.ability)
+	if mods.get("pounce_land_adjacent", false):
+		var pounce_target := AbilitySystem.module_target_unit_id(action, 1)
+		if pounce_target < 0:
+			pounce_target = action.target_unit_id
+		if pounce_target >= 0:
+			actor.passive_flags["beast_pounce_target_id"] = pounce_target
+	if mods.get("feral_drag", false):
+		var drag_target_id := action.target_unit_id
+		if drag_target_id < 0:
+			drag_target_id = AbilitySystem.module_target_unit_id(action, 0)
+		actor.passive_flags["beast_drag_target_id"] = drag_target_id
+
+
 static func after_ability_execute(
 	board: BoardState,
 	actor: UnitState,
@@ -363,10 +445,9 @@ static func after_ability_execute(
 	var mods := active_module_modifiers(actor, action.ability)
 	if mods.get("reposition_opposite_side", false):
 		apply_reposition(board, actor, board.get_unit_at(action.target_coord), events)
-	if mods.get("feral_drag", false):
-		actor.passive_flags["beast_drag_target_id"] = action.target_unit_id
 	if mods.get("landing_vulnerable", false):
 		_apply_landing_vulnerable(board, actor, events)
+		on_landing(board, actor, events)
 	if mods.get("drag_remaining_movement", false):
 		_drag_target_for_remaining_movement(board, actor, action.ability, events)
 

@@ -6,6 +6,8 @@ extends RefCounted
 
 const _BEAST := preload("res://core/systems/beast_rider_systems.gd")
 const _PLANNING := preload("res://tests/class_scenario_planning_contract.gd")
+const _MovementSystem := preload("res://core/systems/movement_system.gd")
+const _TerrainSystem := preload("res://core/systems/terrain_system.gd")
 
 const ABILITY_IDS: Array[StringName] = [
 	&"beast_reposition", &"beast_pounce", &"beast_feral_drag", &"beast_maul",
@@ -236,6 +238,68 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 		&"safe_landing":
 			_BEAST.turn_start(board, actor, events)
 			_assert(failures, "passive/safe_landing/airborne", actor.has_status(GameEnums.StatusType.AIRBORNE))
+			var hazard_coord := Vector2i(4, 3)
+			_set_hazard_tile(board, hazard_coord)
+			var shock_target := _place_enemy(board, 3, Vector2i(5, 3))
+			var hp_before := actor.health.current_hp
+			var shock_pos_before := shock_target.position
+			GridSystem.set_occupant(board, actor.position, -1)
+			actor.position = hazard_coord
+			GridSystem.set_occupant(board, hazard_coord, actor.id)
+			_BEAST.on_landing(board, actor, events)
+			_TerrainSystem.apply_landing(board, actor, events)
+			_assert(
+				failures,
+				"passive/safe_landing/hazard_zero",
+				actor.health.current_hp == hp_before,
+			)
+			_assert(
+				failures,
+				"passive/safe_landing/shockwave_push",
+				shock_target.position != shock_pos_before,
+			)
+			_assert(
+				failures,
+				"passive/safe_landing/upgraded_push",
+				int(_BEAST.passive_value(
+					actor, &"landing_shockwave_push", &"upgraded_landing_shockwave_push", 0,
+				)) >= 2,
+			)
+			var pounce_board := _plain_board(Vector2i(10, 8))
+			var pounce := _ability(definition, &"beast_pounce")
+			var pounce_actor := _place_actor(pounce_board, 1, Vector2i(2, 3), pounce)
+			pounce_actor.active_passives.append(passive)
+			pounce_actor.upgraded_passives.append(passive_id)
+			pounce_actor._recalculate_stats(pounce_board)
+			_BEAST.turn_start(pounce_board, pounce_actor, events)
+			_place_enemy(pounce_board, 2, Vector2i(4, 3))
+			var wave_victim := _place_enemy(pounce_board, 3, Vector2i(3, 4))
+			var wave_pos_before := wave_victim.position
+			var pounce_setup := _configure_sim_target(
+				pounce_board, &"beast_pounce", pounce, Vector2i(2, 3),
+			)
+			var pounce_action := TimelineAction.make_ability(
+				pounce_actor.id, pounce, pounce_setup.coord, pounce_setup.id,
+			)
+			_apply_sim_action_overrides(
+				pounce_action, &"beast_pounce", pounce, pounce_actor, pounce_board, pounce_setup,
+			)
+			pounce_actor.passive_flags["training_unlimited_actions"] = true
+			pounce_actor.turn_action_used = false
+			pounce_actor.ability.points_left = pounce_actor.ability.max_points
+			var pounce_events: Array[SimEvent] = []
+			Simulator.simulate_player_turn(pounce_board, _timeline(pounce_action), pounce_events)
+			_assert(
+				failures,
+				"passive/safe_landing/pounce_integration",
+				_events_have_ability(pounce_events, &"beast_pounce"),
+			)
+			_assert(
+				failures,
+				"passive/safe_landing/pounce_shockwave",
+				wave_victim.position != wave_pos_before
+					or _event_unit_moved(pounce_events, wave_victim.id),
+			)
 		&"aerial_superiority":
 			var grounded_def := int(_BEAST.passive_value(actor, &"grounded_melee_defense", &"", 0))
 			_assert(failures, "passive/aerial_superiority/defense", grounded_def >= 2)
@@ -267,12 +331,50 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 				int(_BEAST.passive_value(actor, &"upgraded_miss_zero_damage_shield", &"", 0)) >= 1,
 			)
 		&"territorial":
+			actor.upgraded_passives.clear()
+			actor._recalculate_stats(board)
+			var base_intruder := _place_enemy(board, 2, Vector2i(5, 3))
+			base_intruder.movement.points_left = maxi(base_intruder.movement.points_left, 3)
+			var base_hp := base_intruder.health.current_hp
+			var base_events: Array[SimEvent] = []
+			_MovementSystem.execute_move(
+				board,
+				TimelineAction.make_move(base_intruder.id, Vector2i(3, 3)),
+				base_events,
+			)
 			_assert(
 				failures,
-				"passive/territorial/entry_attack",
-				int(_BEAST.passive_value(
-					actor, &"adjacent_entry_attack", &"upgraded_adjacent_entry_attack", 0,
-				)) >= 1,
+				"passive/territorial/base_entry_damage",
+				base_intruder.health.current_hp < base_hp,
+			)
+			_assert(
+				failures,
+				"passive/territorial/base_entry_amount",
+				_event_hp_damage(base_events, base_intruder.id) >= 1,
+			)
+			var up_board := _plain_board(Vector2i(10, 8))
+			var up_actor := _place_actor(up_board, 1, Vector2i(2, 3), _ability(definition, &"beast_thrash"))
+			up_actor.active_passives.append(passive)
+			up_actor.upgraded_passives.append(passive_id)
+			up_actor._recalculate_stats(up_board)
+			var intruder := _place_enemy(up_board, 4, Vector2i(5, 3))
+			intruder.movement.points_left = maxi(intruder.movement.points_left, 3)
+			var hp_before := intruder.health.current_hp
+			var move_events: Array[SimEvent] = []
+			_MovementSystem.execute_move(
+				up_board,
+				TimelineAction.make_move(intruder.id, Vector2i(3, 3)),
+				move_events,
+			)
+			_assert(
+				failures,
+				"passive/territorial/upgraded_entry_damage",
+				intruder.health.current_hp < hp_before,
+			)
+			_assert(
+				failures,
+				"passive/territorial/upgraded_entry_amount",
+				_event_hp_damage(move_events, intruder.id) >= 2,
 			)
 		&"intimidating_presence":
 			var before_def := actor.current_defense
@@ -404,6 +506,27 @@ static func _event_damaged_unit(events: Array[SimEvent], unit_id: int) -> bool:
 	for event: SimEvent in events:
 		if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
 				and int(event.data.get("unit", -1)) == unit_id:
+			return true
+	return false
+
+
+static func _event_hp_damage(events: Array[SimEvent], unit_id: int) -> int:
+	var total := 0
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
+			continue
+		if int(event.data.get("unit", -1)) != unit_id:
+			continue
+		total += int(event.data.get("hp_damaged", event.data.get("amount", 0)))
+	return total
+
+
+static func _event_unit_moved(events: Array[SimEvent], unit_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		var moved_id := int(event.data.get("unit", event.data.get("actor", -1)))
+		if moved_id == unit_id:
 			return true
 	return false
 

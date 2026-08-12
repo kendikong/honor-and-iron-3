@@ -62,6 +62,9 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		
 	if unit.has_status(GameEnums.StatusType.AIRBORNE) or unit.has_status(GameEnums.StatusType.GHOST):
 		return # Airborne and Ghost ignore hazard damage
+
+	if dmg > 0 and unit.has_passive(&"safe_landing"):
+		return # Safe Landing — zero hazard damage when entering a tile
 		
 	# Damage + entry payload flow through the shared terrain/combat stages.
 	if dmg > 0:

@@ -341,6 +341,7 @@ static func _entries() -> Dictionary:
 			"enemy_pos": Vector2i(4, 3),
 			"commit_cell": Vector2i(3, 2),
 			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 2),
 		},
 		&"beast_run_down": {
 			"class_id": &"beast_rider",

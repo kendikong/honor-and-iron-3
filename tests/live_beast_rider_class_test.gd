@@ -151,11 +151,18 @@ func _actor_cell_for(ability_id: StringName) -> Vector2i:
 
 
 func _premove_cell_for(
-	_ability_id: StringName,
-	_actor_cell: Vector2i,
-	_target: Vector2i,
+	ability_id: StringName,
+	actor_cell: Vector2i,
+	target: Vector2i,
 ) -> Vector2i:
-	return Vector2i(-999999, -999999)
+	if ability_id != &"beast_pounce":
+		return Vector2i(-999999, -999999)
+	if GridSystem.manhattan(actor_cell, target) <= 1:
+		return Vector2i(-999999, -999999)
+	return actor_cell + Vector2i(
+		signi(target.x - actor_cell.x),
+		signi(target.y - actor_cell.y),
+	)
 
 
 func _prepare_live_board(

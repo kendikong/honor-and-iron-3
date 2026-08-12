@@ -934,6 +934,15 @@ static func _resolve_zone_of_control(
 			or GridSystem.manhattan(watcher.position, moved_unit.position) != 1
 		):
 			continue
+		BeastRiderSystems.on_enemy_entered_adjacent(board, watcher, moved_unit, events)
+	for watcher: UnitState in board.units:
+		if (
+			watcher == null
+			or not watcher.is_alive()
+			or watcher.team == moved_unit.team
+			or GridSystem.manhattan(watcher.position, moved_unit.position) != 1
+		):
+			continue
 		for passive: PassiveData in watcher.active_passives:
 			if passive == null or not passive.modifiers.has("arcane_tether"):
 				continue
