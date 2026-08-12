@@ -473,7 +473,10 @@ static func track_movement_tiles(
 				unit, &"blood_scent_move", &"upgraded_blood_scent_move",
 			)
 			if blood_mov > 0:
-				unit.movement.max_points += blood_mov
+				unit.active_statuses.append(
+					DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, blood_mov),
+				)
+				unit._recalculate_stats(board)
 				unit.movement.points_left += blood_mov
 
 
