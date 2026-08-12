@@ -331,4 +331,26 @@ static func _entries() -> Dictionary:
 			"commit_cell": Vector2i(2, 5),
 			"verify_no_jump": false,
 		},
+		# --- Beast Rider ---
+		&"beast_pounce": {
+			"class_id": &"beast_rider",
+			"factory_id": &"beast_pounce",
+			"tag": "pounce",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(4, 3),
+			"commit_cell": Vector2i(3, 2),
+			"verify_no_jump": false,
+		},
+		&"beast_run_down": {
+			"class_id": &"beast_rider",
+			"factory_id": &"beast_run_down",
+			"tag": "run_down",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"enemy_pos": Vector2i(3, 3),
+			"commit_cell": Vector2i(4, 3),
+			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 3),
+		},
 	}

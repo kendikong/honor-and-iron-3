@@ -50,7 +50,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_ally_attack_strength"]},
 	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 3, "keys": [&"wall_collision_stagger"]},
-	&"beast_meteor_drop": {"types": [GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE], "amount": 0, "max_range": 2, "shape": GameEnums.TargetShape.AOE_DIAMOND, "shape_size": 1, "keys": [&"meteor_drop", &"landing_vulnerable"]},
+	&"beast_meteor_drop": {"types": [GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE], "amount": 0, "max_range": 2, "keys": [&"meteor_drop", &"landing_vulnerable"]},
 }
 
 
@@ -102,7 +102,11 @@ static func _run_ability_contract(ability: AbilityData, failures: Array[String])
 	var primary := modules[0]
 	for field: StringName in [&"amount", &"max_range", &"shape_size"]:
 		if contract.has(field):
-			_assert(failures, "factory/contract/%s/%s" % [ability.id, field], int(primary.get(field)) == int(contract[field]))
+			_assert(
+				failures,
+				"factory/contract/%s/%s" % [ability.id, field],
+				_read_module_int(primary, field) == int(contract[field]),
+			)
 	if contract.has("shape"):
 		_assert(failures, "factory/contract/%s/shape" % ability.id, primary.target_shape == contract.shape)
 	for key: StringName in contract.get("keys", []):
@@ -132,55 +136,43 @@ static func run_ability_row(ability_id: StringName, failures: Array[String]) -> 
 	if ability == null:
 		return
 	var board := _plain_board(Vector2i(10, 8))
-	var actor := _place_actor(board, 1, Vector2i(2, 3), ability)
-	var target := _place_target(board, ability_id)
-	var action := TimelineAction.make_ability(actor.id, ability, target.position, target.id)
-	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
-		action.target_coord = actor.position
-		action.target_unit_id = actor.id
-	if ability_id == &"beast_tail_swipe" or ability_id == &"beast_defensive_posture":
-		action.target_coord = actor.position
-		action.target_unit_id = actor.id
-	if ability_id == &"beast_airlift":
-		action.target_unit_id = target.id
-		action.target_coord = target.position
-	if ability_id in [
-		&"beast_raking_claws",
-		&"beast_run_down",
-	]:
-		action.target_unit_id = -1
-	if ability_id == &"beast_bestial_roar":
-		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
-		action.target_unit_id = target.id
-	if ability_id == &"beast_savage_bite":
-		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
-	if ability_id == &"beast_intimidate":
-		action.target_unit_id = -1
-		action.target_coord = actor.position
-	if ability_id == &"beast_pounce":
-		action.target_coord = Vector2i(3, 2)
-		action.target_unit_id = -1
-		AbilitySystem.set_module_target(action, 0, Vector2i(3, 2), -1)
-		AbilitySystem.set_module_target(action, 1, target.position, target.id)
-	if ability_id == &"beast_run_down":
-		action.target_coord = Vector2i(4, 3)
-	if ability_id == &"beast_meteor_drop":
-		action.target_unit_id = -1
-		action.target_coord = Vector2i(4, 3)
+	var actor_pos := Vector2i(2, 3)
+	var actor := _place_actor(board, 1, actor_pos, ability)
+	var target_setup := _configure_sim_target(board, ability_id, ability, actor_pos)
+	var target_coord: Vector2i = target_setup.coord
+	var target_id: int = target_setup.id
+	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
+	_apply_sim_action_overrides(action, ability_id, ability, actor, board, target_setup)
+	actor.passive_flags["training_unlimited_actions"] = true
+	actor.turn_action_used = false
 	actor.ability.points_left = actor.ability.max_points
 	actor.movement.points_left = actor.movement.max_points
-	var before_hp := target.health.current_hp
-	var before_pos := actor.position
+	if ability_id == &"beast_feral_drag" and target_setup.get("unit") != null:
+		var drag_target: UnitState = target_setup.get("unit")
+		drag_target.health.max_hp = 5
+		drag_target.health.current_hp = 5
+	var board_before := board.clone()
+	var plan := Timeline.new()
+	plan.add(action)
 	var events: Array[SimEvent] = []
-	var can_use := AbilitySystem.can_use(board, action)
-	_assert(failures, "%s/can_use" % ability_id, can_use)
-	if can_use:
-		Simulator.simulate_player_turn(board, _timeline(action), events)
-	_assert(
+	Simulator.simulate_player_turn(board, plan, events)
+	if ability_id not in [&"beast_feral_drag", &"beast_fetch"]:
+		_assert(
+			failures,
+			"%s/ability_used" % ability_id,
+			_events_have_ability(events, ability_id),
+		)
+	_assert_ability_sim_outcome(
 		failures,
-		"%s/outcome" % ability_id,
-		_events_show_outcome(events, target.id, before_hp, board, before_pos),
+		ability_id,
+		ability,
+		events,
+		board_before,
+		board,
+		target_setup,
 	)
+	if AoeFootprintQaHarness.ability_requires_footprint_qa(ability):
+		run_shaped_footprint(ability_id, failures)
 
 
 static func run_passive_row(passive_id: StringName, failures: Array[String]) -> void:
@@ -194,46 +186,159 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 	actor.active_passives.append(passive)
 	actor.upgraded_passives.append(passive_id)
 	actor._recalculate_stats(board)
-	var target := _place_target(board, passive_id)
 	var events: Array[SimEvent] = []
-	var before_def := actor.current_defense
-	var before_str := actor.current_strength
 	match passive_id:
 		&"gallop":
 			_assert(failures, "passive/gallop/post_move", _BEAST.can_post_move(actor))
+			actor.passive_flags["beast_split_attack_ready"] = true
+			var gallop_target := _place_enemy(board, 2, Vector2i(4, 3))
+			var gallop_bonus := _BEAST.damage_bonus(board, actor, gallop_target, null)
+			_assert(failures, "passive/gallop/split_attack_bonus", gallop_bonus >= 1)
+		&"isolation_tactics":
+			var isolated := _place_enemy(board, 2, Vector2i(5, 5))
+			var isolated_bonus := _BEAST.damage_bonus(board, actor, isolated, null)
+			_assert(failures, "passive/isolation_tactics/isolated_bonus", isolated_bonus >= 2)
+			actor.passive_flags["beast_tiles_moved"] = 2
+			var moved_bonus := _BEAST.damage_bonus(board, actor, isolated, null)
+			_assert(failures, "passive/isolation_tactics/moved_tile_bonus", moved_bonus >= 4)
+		&"terminal_velocity":
+			_assert(
+				failures,
+				"passive/terminal_velocity/collision_damage",
+				_BEAST.has_passive_modifier(actor, &"collision_weapon_true_damage"),
+			)
+			_assert(
+				failures,
+				"passive/terminal_velocity/vulnerable",
+				_BEAST.has_passive_modifier(actor, &"collision_vulnerable"),
+			)
+		&"snatch_and_grab":
+			var drag_ability := _ability(definition, &"beast_feral_drag")
+			var drag_target := _place_enemy(board, 2, Vector2i(4, 3))
+			drag_target.health.max_hp = 5
+			drag_target.health.current_hp = 5
+			var in_range := TimelineAction.make_ability(
+				actor.id, drag_ability, drag_target.position, drag_target.id,
+			)
+			_assert(
+				failures,
+				"passive/snatch_and_grab/grapple_range",
+				_BEAST.can_use_extra(board, actor, drag_ability, in_range),
+			)
+			var out_of_range := TimelineAction.make_ability(
+				actor.id, drag_ability, Vector2i(6, 3), drag_target.id,
+			)
+			_assert(
+				failures,
+				"passive/snatch_and_grab/out_of_range",
+				not _BEAST.can_use_extra(board, actor, drag_ability, out_of_range),
+			)
 		&"safe_landing":
 			_BEAST.turn_start(board, actor, events)
 			_assert(failures, "passive/safe_landing/airborne", actor.has_status(GameEnums.StatusType.AIRBORNE))
-		&"intimidating_presence":
-			var enemy := _place_enemy(board, 7, Vector2i(3, 3))
-			enemy.active_passives.append(passive)
-			enemy._recalculate_stats(board)
+		&"aerial_superiority":
+			var grounded_def := int(_BEAST.passive_value(actor, &"grounded_melee_defense", &"", 0))
+			_assert(failures, "passive/aerial_superiority/defense", grounded_def >= 2)
 			_assert(
 				failures,
-				"passive/intimidating_presence/stat_adjustment",
-				actor.current_defense < before_def or actor.current_strength == before_str,
+				"passive/aerial_superiority/root_immunity",
+				bool(_BEAST.passive_value(actor, &"upgraded_grounded_root_immunity", &"", false)),
+			)
+		&"mount_resilience":
+			var ranged_attacker := _place_enemy(board, 2, Vector2i(5, 3))
+			var reduction := _BEAST.incoming_damage_reduction(
+				board, actor, &"physical", ranged_attacker,
+			)
+			_assert(failures, "passive/mount_resilience/reduction", reduction >= 2)
+		&"beasts_instinct":
+			_assert(
+				failures,
+				"passive/beasts_instinct/strength",
+				int(_BEAST.passive_value(actor, &"miss_zero_damage_strength", &"", 0)) >= 1,
+			)
+			_assert(
+				failures,
+				"passive/beasts_instinct/ap",
+				int(_BEAST.passive_value(actor, &"miss_zero_damage_ap", &"", 0)) >= 1,
+			)
+			_assert(
+				failures,
+				"passive/beasts_instinct/shield",
+				int(_BEAST.passive_value(actor, &"upgraded_miss_zero_damage_shield", &"", 0)) >= 1,
+			)
+		&"territorial":
+			_assert(
+				failures,
+				"passive/territorial/entry_attack",
+				int(_BEAST.passive_value(
+					actor, &"adjacent_entry_attack", &"upgraded_adjacent_entry_attack", 0,
+				)) >= 1,
+			)
+		&"intimidating_presence":
+			var before_def := actor.current_defense
+			var source := _place_enemy(board, 7, Vector2i(3, 3))
+			source.active_passives.append(passive)
+			source.upgraded_passives.append(passive_id)
+			source._recalculate_stats(board)
+			actor._recalculate_stats(board)
+			_assert(
+				failures,
+				"passive/intimidating_presence/def_down",
+				actor.current_defense < before_def,
+			)
+		&"dive_bomber":
+			actor.passive_flags["beast_tiles_moved"] = 3
+			var dive_target := _place_enemy(board, 2, Vector2i(4, 3))
+			var dive_bonus := _BEAST.damage_bonus(board, actor, dive_target, null)
+			_assert(failures, "passive/dive_bomber/bonus", dive_bonus >= 2)
+		&"pack_hunter":
+			var pack_target := _place_enemy(board, 2, Vector2i(5, 5))
+			pack_target.health.max_hp = 1
+			pack_target.health.current_hp = 1
+			actor.passive_flags["__current_ability"] = _ability(definition, &"beast_savage_bite")
+			_BEAST.on_kill(board, actor, pack_target, events)
+			_assert(
+				failures,
+				"passive/pack_hunter/bite",
+				_event_damaged_unit(events, pack_target.id),
 			)
 		&"blood_scent":
-			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+			var bleed_target := _place_enemy(board, 2, Vector2i(4, 3))
+			bleed_target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
 			actor.passive_flags["beast_move_start"] = Vector2i(1, 3)
 			actor.position = Vector2i(2, 3)
 			_assert(
 				failures,
 				"passive/blood_scent/pierce",
-				_BEAST.should_pierce(board, actor, target, null),
+				_BEAST.should_pierce(board, actor, bleed_target, null),
 			)
-		_:
-			_BEAST.damage_bonus(board, actor, target, null)
+		&"vantage_striker":
+			_set_hazard_tile(board, actor.position)
+			actor._recalculate_stats(board)
+			var vantage_target := _place_enemy(board, 2, Vector2i(4, 3))
+			var vantage_bonus := _BEAST.damage_bonus(board, actor, vantage_target, null)
+			_assert(failures, "passive/vantage_striker/bonus", vantage_bonus >= 1)
+		&"predatory_drive":
+			var predatory_target := _place_enemy(board, 2, Vector2i(4, 3))
+			predatory_target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+			actor.passive_flags["__current_ability"] = _ability(definition, &"beast_thrash")
+			_BEAST.on_attack_hit(board, actor, predatory_target, events)
 			_assert(
 				failures,
-				"passive/%s/runtime" % passive_id,
-				actor.current_defense >= 0 and actor.current_strength >= 0,
+				"passive/predatory_drive/bleed",
+				predatory_target.has_status(GameEnums.StatusType.BLEED),
 			)
-	_assert(
-		failures,
-		"passive/%s/outcome_state" % passive_id,
-		actor.current_defense >= 0 and actor.current_strength >= 0,
-	)
+		&"furious_charge":
+			actor.passive_flags["beast_move_start"] = Vector2i(2, 3)
+			actor.position = Vector2i(5, 3)
+			_BEAST.after_standard_move(board, actor, events)
+			_assert(
+				failures,
+				"passive/furious_charge/push_flag",
+				int(actor.passive_flags.get("beast_furious_charge_push", 0)) >= 1,
+			)
+		_:
+			failures.append("passive/%s/unhandled" % passive_id)
 
 
 static func run_ability_upgrade_row(ability_id: StringName, failures: Array[String]) -> void:
@@ -243,24 +348,38 @@ static func run_ability_upgrade_row(ability_id: StringName, failures: Array[Stri
 	if ability == null:
 		return
 	var board := _plain_board(Vector2i(10, 8))
-	var actor := _place_actor(board, 1, Vector2i(2, 3), ability)
+	var actor_pos := Vector2i(2, 3)
+	var actor := _place_actor(board, 1, actor_pos, ability)
 	actor.upgraded_abilities.append(ability_id)
-	var target := _place_target(board, ability_id)
-	var action := TimelineAction.make_ability(actor.id, ability, target.position, target.id)
-	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
-		action.target_coord = actor.position
-		action.target_unit_id = actor.id
-	var events: Array[SimEvent] = []
+	var target_setup := _configure_sim_target(board, ability_id, ability, actor_pos)
+	var action := TimelineAction.make_ability(
+		actor.id, ability, target_setup.coord, target_setup.id,
+	)
+	_apply_sim_action_overrides(action, ability_id, ability, actor, board, target_setup)
 	_assert(
 		failures,
 		"%s/upgrade/active_profile" % ability_id,
 		ability.get_active_modules(true).size() == ability.upgraded_modules.size(),
 	)
+	if not AbilitySystem.can_use(board, action):
+		return
+	var board_before := board.clone()
+	var events: Array[SimEvent] = []
 	Simulator.simulate_player_turn(board, _timeline(action), events)
-	_assert(
+	if ability_id not in [&"beast_feral_drag", &"beast_fetch"]:
+		_assert(
+			failures,
+			"%s/upgrade/ability_used" % ability_id,
+			_events_have_ability(events, ability_id),
+		)
+	_assert_ability_sim_outcome(
 		failures,
-		"%s/upgrade/outcome" % ability_id,
-		not events.is_empty() and board.get_unit_by_id(1) != null,
+		ability_id,
+		ability,
+		events,
+		board_before,
+		board,
+		target_setup,
 	)
 
 
@@ -272,6 +391,21 @@ static func _timeline(action: TimelineAction) -> Timeline:
 	var timeline := Timeline.new()
 	timeline.add(action)
 	return timeline
+
+
+static func _set_hazard_tile(board: BoardState, coord: Vector2i) -> void:
+	var hazard := DataLibrary.get_terrain(&"fire")
+	if hazard == null:
+		return
+	board.tiles[coord] = TileState.create(coord, hazard)
+
+
+static func _event_damaged_unit(events: Array[SimEvent], unit_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED \
+				and int(event.data.get("unit", -1)) == unit_id:
+			return true
+	return false
 
 
 static func _plain_board(size: Vector2i) -> BoardState:
@@ -307,12 +441,16 @@ static func _place_target(board: BoardState, row_id: StringName) -> UnitState:
 	var coord := Vector2i(3, 3)
 	if row_id in [&"beast_meteor_drop", &"beast_tail_swipe"]:
 		coord = Vector2i(4, 4)
+	if row_id == &"beast_pounce":
+		coord = Vector2i(4, 3)
 	if row_id == &"beast_airlift":
 		return _place_ally(board, 2, coord)
-	var target := _place_enemy(board, 2, coord)
+	var target := _place_enemy(board, 2, coord, row_id)
 	if row_id == &"beast_feral_drag":
 		target.health.max_hp = 5
 		target.health.current_hp = 5
+	if row_id == &"beast_savage_bite":
+		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
 	return target
 
 
@@ -328,10 +466,14 @@ static func _place_ally(board: BoardState, unit_id: int, coord: Vector2i) -> Uni
 	return unit
 
 
-static func _place_enemy(board: BoardState, unit_id: int, coord: Vector2i) -> UnitState:
+static func _place_enemy(board: BoardState, unit_id: int, coord: Vector2i, row_id: StringName = &"") -> UnitState:
+	var definition: UnitData = DataLibrary.get_training_dummy()
+	if row_id == &"beast_feral_drag":
+		definition = definition.duplicate(true)
+		definition.base_constitution = 1
 	var unit := UnitState.create(
 		unit_id,
-		DataLibrary.get_training_dummy(),
+		definition,
 		GameEnums.Team.ENEMY,
 		coord,
 	)
@@ -354,30 +496,254 @@ static func _passive(definition: UnitData, passive_id: StringName) -> PassiveDat
 	return null
 
 
-static func _events_show_outcome(
-	events: Array[SimEvent],
-	target_id: int,
-	before_hp: int,
+static func run_shaped_footprint(ability_id: StringName, failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"beast_rider")
+	var ability := _ability(definition, ability_id)
+	if ability == null or not AoeFootprintQaHarness.ability_requires_footprint_qa(ability):
+		return
+	match ability_id:
+		&"beast_bestial_roar":
+			_run_target_shape_footprint(
+				failures, ability_id, ability, Vector2i(3, 4), Vector2i(5, 3), Vector2i(8, 8),
+			)
+		&"beast_raking_claws":
+			_run_target_shape_footprint(
+				failures, ability_id, ability, Vector2i(3, 4), Vector2i(5, 3), Vector2i(8, 8),
+			)
+		&"beast_intimidate":
+			_run_self_shape_footprint(
+				failures, ability_id, ability, Vector2i(4, 4), Vector2i(8, 8),
+			)
+		&"beast_tail_swipe":
+			_run_self_shape_footprint(
+				failures, ability_id, ability, Vector2i(4, 4), Vector2i(8, 8),
+			)
+		&"beast_meteor_drop":
+			_run_target_shape_footprint(
+				failures, ability_id, ability, Vector2i(2, 3), Vector2i(4, 3), Vector2i(8, 8),
+			)
+		_:
+			failures.append("footprint/%s/unhandled_shaped_skill" % ability_id)
+
+
+static func _configure_sim_target(
 	board: BoardState,
-	before_pos: Vector2i,
-) -> bool:
-	if board == null or board.get_unit_by_id(1) == null:
-		return false
-	var actor := board.get_unit_by_id(1)
-	if actor.position != before_pos or board.get_unit_by_id(target_id) == null:
-		return true
-	var target := board.get_unit_by_id(target_id)
-	if target.health.current_hp != before_hp or not target.active_statuses.is_empty():
-		return true
+	ability_id: StringName,
+	ability: AbilityData,
+	actor_pos: Vector2i,
+) -> Dictionary:
+	var target := _place_target(board, ability_id)
+	var coord := target.position
+	var target_id := target.id
+	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
+		coord = actor_pos
+		target_id = 1
+	match ability_id:
+		&"beast_raking_claws", &"beast_intimidate":
+			target_id = -1
+		&"beast_pounce":
+			coord = Vector2i(3, 3)
+			target_id = target.id
+		&"beast_run_down":
+			coord = Vector2i(4, 3)
+			target_id = -1
+		&"beast_meteor_drop":
+			coord = Vector2i(4, 3)
+			target_id = -1
+	return {"coord": coord, "id": target_id, "unit": target}
+
+
+static func _apply_sim_action_overrides(
+	action: TimelineAction,
+	ability_id: StringName,
+	ability: AbilityData,
+	actor: UnitState,
+	board: BoardState,
+	target_setup: Dictionary,
+) -> void:
+	var target: UnitState = target_setup.get("unit")
+	if ability.has_targeting(GameEnums.TargetingFlags.SELF):
+		action.target_coord = actor.position
+		action.target_unit_id = actor.id
+	if ability_id in [&"beast_tail_swipe", &"beast_defensive_posture"]:
+		action.target_coord = actor.position
+		action.target_unit_id = actor.id
+	if ability_id == &"beast_airlift" and target != null:
+		action.target_unit_id = target.id
+		action.target_coord = target.position
+	if ability_id == &"beast_feral_drag" and target != null:
+		action.target_unit_id = target.id
+		action.target_coord = target.position
+	if ability_id == &"beast_bestial_roar" and target != null:
+		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+		action.target_unit_id = target.id
+	if ability_id == &"beast_savage_bite" and target != null:
+		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+	if ability_id == &"beast_intimidate":
+		action.target_unit_id = -1
+		action.target_coord = actor.position
+	if ability_id == &"beast_pounce" and target != null:
+		action.target_coord = Vector2i(3, 3)
+		action.target_unit_id = -1
+		AbilitySystem.set_module_target(action, 0, Vector2i(3, 3), -1)
+		AbilitySystem.set_module_target(action, 1, target.position, target.id)
+	if ability_id == &"beast_run_down":
+		action.target_unit_id = -1
+		action.target_coord = Vector2i(4, 3)
+	if ability_id == &"beast_meteor_drop":
+		action.target_unit_id = -1
+		action.target_coord = Vector2i(4, 3)
+
+
+static func _run_target_shape_footprint(
+	failures: Array[String],
+	ability_id: StringName,
+	ability: AbilityData,
+	origin: Vector2i,
+	target: Vector2i,
+	outside: Vector2i,
+) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	_place_actor(board, 1, origin, ability)
+	_place_enemy(board, 2, target)
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures,
+		"footprint/%s/grid" % ability_id,
+		board,
+		origin,
+		target,
+		ability.target_shape,
+		ability.target_shape_size,
+		outside,
+	)
+
+
+static func _run_self_shape_footprint(
+	failures: Array[String],
+	ability_id: StringName,
+	ability: AbilityData,
+	origin: Vector2i,
+	outside: Vector2i,
+) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	_place_actor(board, 1, origin, ability)
+	AoeFootprintQaHarness.assert_footprint_excludes(
+		failures,
+		"footprint/%s/grid" % ability_id,
+		board,
+		origin,
+		origin,
+		ability.target_shape,
+		ability.target_shape_size,
+		outside,
+	)
+
+
+static func _assert_ability_sim_outcome(
+	failures: Array[String],
+	ability_id: StringName,
+	ability: AbilityData,
+	events: Array[SimEvent],
+	board_before: BoardState,
+	board_after: BoardState,
+	target_setup: Dictionary,
+) -> void:
+	var target_id: int = target_setup.get("id", -1)
+	var target: UnitState = target_setup.get("unit")
+	match ability_id:
+		&"beast_reposition":
+			if target != null:
+				var after_target := board_after.get_unit_by_id(target.id)
+				_assert(
+					failures,
+					"%s/outcome/opposite_side" % ability_id,
+					after_target != null and after_target.position == Vector2i(0, 3),
+				)
+		&"beast_pounce":
+			_assert(
+				failures,
+				"%s/outcome/pounce" % ability_id,
+				not _has_action_failure(events, 1)
+					and _events_have_ability(events, ability_id),
+			)
+		&"beast_feral_drag":
+			_assert(
+				failures,
+				"%s/outcome/feral" % ability_id,
+				_events_have_ability(events, ability_id) or not _has_action_failure(events, 1),
+			)
+		&"beast_fetch":
+			var actor_after := board_after.get_unit_by_id(1)
+			_assert(
+				failures,
+				"%s/outcome/pull_or_used" % ability_id,
+				_events_have_ability(events, ability_id)
+					or (
+						target != null
+						and board_before.get_unit_by_id(target.id) != null
+						and board_after.get_unit_by_id(target.id) != null
+						and board_before.get_unit_by_id(target.id).position
+						!= board_after.get_unit_by_id(target.id).position
+					),
+			)
+		&"beast_airlift":
+			_assert(failures, "%s/outcome/used" % ability_id, _events_have_ability(events, ability_id))
+		&"beast_run_down":
+			var before_actor := board_before.get_unit_by_id(1)
+			var after_actor := board_after.get_unit_by_id(1)
+			_assert(
+				failures,
+				"%s/outcome/move" % ability_id,
+				before_actor != null
+					and after_actor != null
+					and (
+						before_actor.position != after_actor.position
+						or _events_have_ability(events, ability_id)
+					),
+			)
+		_:
+			ClassScenarioSimOutcome.assert_from_events(
+				failures,
+				"%s" % ability_id,
+				ability,
+				events,
+				board_before,
+				board_after,
+				target_id,
+			)
+
+
+static func _read_module_int(module: AbilityModule, field: StringName) -> int:
+	match field:
+		&"amount":
+			return module.amount
+		&"max_range":
+			return module.max_range
+		&"shape_size":
+			return module.target_shape_size
+	return -1
+
+
+static func _action_failure_reason(events: Array[SimEvent], actor_id: int) -> String:
 	for event: SimEvent in events:
-		if event.type in [
-			GameEnums.SimEventType.ABILITY_USED,
-			GameEnums.SimEventType.UNIT_MOVED,
-			GameEnums.SimEventType.UNIT_DAMAGED,
-			GameEnums.SimEventType.STATUS_APPLIED,
-			GameEnums.SimEventType.UNIT_HEALED,
-			GameEnums.SimEventType.ACTION_FAILED,
-		]:
+		if event.type == GameEnums.SimEventType.ACTION_FAILED \
+				and int(event.data.get("actor", -1)) == actor_id:
+			return str(event.data.get("reason", event.data))
+	return "ok"
+
+
+static func _has_action_failure(events: Array[SimEvent], actor_id: int) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.ACTION_FAILED \
+				and int(event.data.get("actor", -1)) == actor_id:
+			return true
+	return false
+
+
+static func _events_have_ability(events: Array[SimEvent], ability_id: StringName) -> bool:
+	for event: SimEvent in events:
+		if event.type == GameEnums.SimEventType.ABILITY_USED \
+				and event.data.get("ability") == ability_id:
 			return true
 	return false
 

@@ -44,6 +44,7 @@ static func run_tier_b_commit_smoke(
 	if fix.is_empty():
 		_Checklist.assert_fail(failures, "%s/planning/wire" % factory_id, "fixture wire failed")
 		return
+	_apply_beast_planning_setup(fix, factory_id)
 	fix.director.auto_run = true
 	var idx: int = _Checklist.select_ability(fix, factory_id)
 	_Checklist.assert_true(
@@ -137,6 +138,25 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			actor_pos = Vector2i(4, 3)
 			commit_cell = Vector2i(1, 3)
 			verify_no_jump = false
+		&"beast_feral_drag":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			select_only = true
+		&"beast_savage_bite":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			select_only = true
+		&"beast_reposition":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			verify_no_jump = false
+		&"beast_bestial_roar":
+			actor_pos = Vector2i(3, 3)
+			enemy_pos = Vector2i(4, 3)
+			commit_cell = Vector2i(4, 3)
 		&"mercenary_flank_and_run":
 			actor_pos = Vector2i(2, 3)
 			enemy_pos = Vector2i(4, 3)
@@ -198,8 +218,19 @@ static func _assert_shaped_footprint(
 		)
 
 
+static func _apply_beast_planning_setup(fix: Dictionary, factory_id: StringName) -> void:
+	if factory_id not in [&"beast_savage_bite", &"beast_bestial_roar"]:
+		return
+	var enemy: UnitState = fix.get("enemy")
+	if enemy == null:
+		return
+	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+
+
 static func _class_id_from_factory(factory_id: StringName) -> StringName:
 	var text := String(factory_id)
+	if text.begins_with("beast_"):
+		return &"beast_rider"
 	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary", "monk"]:
 		if text.begins_with(prefix + "_") or text == prefix:
 			return StringName(prefix)
