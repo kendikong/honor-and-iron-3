@@ -187,10 +187,13 @@ func _queue_static_tiles_redraw() -> void:
 func _draw_static_tile_layers() -> void:
 	if _board == null or _map_view == null or _director == null:
 		return
+	var canvas: CanvasItem = _static_tiles_layer
+	if canvas == null:
+		return
 	if CombatDirector.is_planning_phase(_phase):
-		_draw_danger_area()
+		_draw_danger_area(canvas)
 	if _preview_range_overlays_enabled():
-		_draw_hover_tiles()
+		_draw_hover_tiles(canvas)
 
 
 func teardown() -> void:
@@ -208,6 +211,7 @@ func apply_settings(settings: GameSettings) -> void:
 	_game_settings = settings
 	if _planning_input != null:
 		_planning_input.refresh_mouse_cursor(_hover_coord)
+	_queue_static_tiles_redraw()
 	queue_redraw()
 
 
@@ -1156,27 +1160,37 @@ func _draw() -> void:
 			_draw_death_marker(entry[0] as Vector2i)
 
 
-func _draw_hover_tiles() -> void:
+func _draw_hover_tiles(canvas: CanvasItem) -> void:
+	if canvas == null:
+		return
 	for cell: Vector2i in _hover_move_tiles:
-		_draw_tile_tint(cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
+		_draw_tile_tint(canvas, cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_action_range_tiles:
-		_draw_tile_tint(cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
+		_draw_tile_tint(canvas, cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
 	_ensure_hover_perimeter_cache()
 	for entry: Variant in _cached_hover_perimeter_segments:
 		if entry is Array and entry.size() >= 3:
 			var segment: Array = entry as Array
-			draw_line(segment[0] as Vector2, segment[1] as Vector2, segment[2] as Color, 1.0)
+			canvas.draw_line(segment[0] as Vector2, segment[1] as Vector2, segment[2] as Color, 1.0)
 
 
-func _draw_tile_tint(cell: Vector2i, tint: Color, fill_alpha: float, draw_border: bool = false) -> void:
+func _draw_tile_tint(
+	canvas: CanvasItem,
+	cell: Vector2i,
+	tint: Color,
+	fill_alpha: float,
+	draw_border: bool = false,
+) -> void:
+	if canvas == null or _map_view == null:
+		return
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var rect := Rect2(
 		_map_view.grid_to_local(cell) - Vector2(tile_px * 0.5, tile_px * 0.5),
 		Vector2(tile_px, tile_px),
 	).grow(-2.0)
-	draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
+	canvas.draw_rect(rect, Color(tint.r, tint.g, tint.b, fill_alpha), true)
 	if draw_border:
-		draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
+		canvas.draw_rect(rect, Color(tint.r, tint.g, tint.b, _COLOR_TILE_BORDER_ALPHA), false, 1.0)
 
 
 func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: float) -> void:
@@ -1562,8 +1576,8 @@ func _draw_flowing_arrowheads_for_route(
 		arrow_pos += wave_spacing
 
 
-func _draw_danger_area() -> void:
-	if not _show_danger_area or _board == null or _director == null:
+func _draw_danger_area(canvas: CanvasItem) -> void:
+	if canvas == null or not _show_danger_area or _board == null or _director == null:
 		return
 	if _danger_tiles_dirty:
 		_danger_tiles_cache.clear()
@@ -1595,7 +1609,7 @@ func _draw_danger_area() -> void:
 		_danger_tiles_dirty = false
 	for c: Variant in _danger_tiles_cache:
 		if c is Vector2i:
-			_draw_tile_tint(c as Vector2i, _COLOR_DANGER, _COLOR_DANGER.a)
+			_draw_tile_tint(canvas, c as Vector2i, _COLOR_DANGER, _COLOR_DANGER.a)
 
 
 func _draw_preview_arrows() -> void:
@@ -2492,5 +2506,4 @@ func _add_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability
 func _update_hover_action_icon() -> void:
 	if _planning_input != null:
 		_hover_action_icon = _planning_input.compute_hover_action_icon(_hover_coord)
-		return
-	_hover_action_icon = ""
+		ret
