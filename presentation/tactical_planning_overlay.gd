@@ -2506,4 +2506,5 @@ func _add_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability
 func _update_hover_action_icon() -> void:
 	if _planning_input != null:
 		_hover_action_icon = _planning_input.compute_hover_action_icon(_hover_coord)
-		ret
+		return
+	_hover_action_icon = ""
