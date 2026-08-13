@@ -195,6 +195,105 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 		var before := construct.health.current_hp
 		EngineerSystems.player_phase_end(board, [])
 		_assert(failures, "passive/overclock/turn_damage", construct.health.current_hp < before)
+	elif passive_id == &"turret_syndrome":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		EngineerSystems.player_phase_end(board, [])
+		var spawned: UnitState = null
+		for candidate: UnitState in board.units:
+			if (
+				candidate != null
+				and candidate != actor
+				and candidate.is_alive()
+				and candidate.definition != null
+				and candidate.definition.is_construct
+				and int(candidate.passive_flags.get("engineer_owner_id", -1)) == actor.id
+			):
+				spawned = candidate
+				break
+		_assert(
+			failures,
+			"passive/turret_syndrome/spawn",
+			spawned != null and spawned.definition != null and spawned.definition.is_construct,
+		)
+	elif passive_id == &"shield_generator":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		actor.upgraded_passives.append(passive_id)
+		_place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
+		var ally := _place_ally(board, 5, Vector2i(3, 3))
+		var base_def := ally.current_defense
+		_assert(
+			failures,
+			"passive/shield_generator/defense",
+			CombatSystem.get_dynamic_defense(board, ally) == base_def + 1,
+		)
+		_assert(
+			failures,
+			"passive/shield_generator/pull_immunity",
+			EngineerSystems.is_pull_immune(board, ally),
+		)
+	elif passive_id == &"chain_reaction":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		var first := _place_construct(board, 4, Vector2i(3, 2), &"magnetic_mine", actor.id)
+		var second := _place_construct(board, 5, Vector2i(4, 2), &"magnetic_mine", actor.id)
+		first.passive_flags["engineer_spawn_modifiers"] = {"mine_explode": true}
+		second.passive_flags["engineer_spawn_modifiers"] = {"mine_explode": true}
+		first.health.current_hp = 0
+		var events: Array[SimEvent] = []
+		EngineerSystems.on_construct_destroyed(board, first, events)
+		_assert(failures, "passive/chain_reaction/detonates_neighbor", not second.is_alive())
+	elif passive_id == &"scrap_mechanic":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		var target := _place_dummy(board, 7, Vector2i(3, 2))
+		target.health.current_hp = 0
+		EngineerSystems.on_kill(board, actor, target, [])
+		_assert(failures, "passive/scrap_mechanic/scrap_drop", actor.scrap == 1)
+	elif passive_id == &"recycling_protocol":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		var construct := _place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
+		construct.health.current_hp = 0
+		actor.ability.points_left = 0
+		actor.ability.max_points = 2
+		EngineerSystems.on_construct_destroyed(board, construct, [])
+		_assert(failures, "passive/recycling_protocol/scrap", actor.scrap == 2)
+		_assert(failures, "passive/recycling_protocol/ap", actor.ability.points_left == 1)
+	elif passive_id in [&"overclocked_maintenance", &"field_technician"]:
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		var construct_coord := (
+			Vector2i(3, 2) if passive_id == &"overclocked_maintenance" else Vector2i(4, 2)
+		)
+		var construct := _place_construct(board, 4, construct_coord, &"construct_turret", actor.id)
+		construct.health.current_hp = maxi(1, construct.health.max_hp - 4)
+		actor.movement_points_spent_this_turn = 1
+		var before := construct.health.current_hp
+		EngineerSystems.after_movement(board, actor, [])
+		_assert(
+			failures,
+			"passive/%s/repair" % passive_id,
+			construct.health.current_hp > before,
+		)
+	elif passive_id == &"blueprint_tread":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.upgraded_passives.append(passive_id)
+		var construct := _place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
+		EngineerSystems.on_construct_passed(board, actor, construct, [])
+		_assert(
+			failures,
+			"passive/blueprint_tread/pass_through_shield",
+			actor.armor > 0 and construct.armor > 0,
+		)
 
 
 static func _plain_board(size: Vector2i) -> BoardState:

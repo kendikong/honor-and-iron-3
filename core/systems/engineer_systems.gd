@@ -444,7 +444,7 @@ static func on_kill(
 		if (
 			engineer == null
 			or not engineer.is_alive()
-			or engineer.team != target.team
+			or engineer.team == target.team
 			or not has_passive_modifier(engineer, &"enemy_death_scrap_range")
 			or GridSystem.manhattan(engineer.position, target.position) > int(
 				passive_value(engineer, &"enemy_death_scrap_range", &"", 3)
@@ -890,7 +890,7 @@ static func _trigger_chain_reaction(
 	excluded_id: int,
 	events: Array[SimEvent],
 ) -> void:
-	if owner == null or not has_passive_modifier(owner, &"chain_reaction"):
+	if owner == null or not has_passive_modifier(owner, &"chain_reaction_range"):
 		return
 	var chain_range := int(passive_value(
 		owner, &"chain_reaction_range", &"upgraded_chain_reaction_range", 2,

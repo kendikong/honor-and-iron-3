@@ -4,6 +4,7 @@ extends Node2D
 ## LPC unit sprites on the tactical grid (Phase 5).
 
 const _CharacterActor = preload("res://scripts/lpc/character_actor.gd")
+const _ConstructPlaceholder = preload("res://scripts/lpc/construct_placeholder.gd")
 const _FloatingTextScene = preload("res://presentation/floating_text.tscn")
 
 const BAR_W: float = 14.0
@@ -1029,10 +1030,17 @@ func _ensure_actor(unit: UnitState) -> void:
 	actor.name = "Unit_%d" % unit.id
 	actor.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(actor)
-	var recipe: CharacterRecipe = UnitVisualFactory.roll_recipe_for_unit(
-		_catalog, _profile, unit,
-	)
-	actor.apply_recipe(recipe)
+	if unit.definition != null and unit.definition.is_construct:
+		var placeholder = _ConstructPlaceholder.new()
+		placeholder.name = "ConstructVisual"
+		placeholder.z_index = 2
+		placeholder.configure(unit.definition.id, int(unit.team))
+		actor.add_child(placeholder)
+	else:
+		var recipe: CharacterRecipe = UnitVisualFactory.roll_recipe_for_unit(
+			_catalog, _profile, unit,
+		)
+		actor.apply_recipe(recipe)
 	actor.set_display_scale(_display_scale())
 	_actors[unit.id] = actor
 	_position_actor(unit.id, unit.position)
