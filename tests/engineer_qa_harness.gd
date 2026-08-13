@@ -101,6 +101,7 @@ static func run_single_ability(
 		actor.scrap = 2
 	var target_coord := _target_coord(ability_id)
 	var target_id := -1
+	var sacrifice_id := -1
 	if ability_id == &"engineer_recall":
 		_place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id)
 	elif ability_id in [
@@ -111,15 +112,25 @@ static func run_single_ability(
 		if ability_id == &"engineer_wrench_smack":
 			var wrench_target := board.get_unit_by_id(target_id)
 			wrench_target.health.current_hp = maxi(1, wrench_target.health.max_hp - 1)
+	elif ability_id == &"engineer_rocket_launcher" and not upgraded:
+		target_id = _place_dummy(board, 7, target_coord).id
 	elif ability_id not in [
 		&"engineer_construct_turret", &"engineer_magnetic_mine",
 		&"engineer_tesla_barricade", &"engineer_scrap_shield",
 		&"engineer_barbed_wire", &"engineer_recall",
+		&"engineer_rocket_launcher",
 	]:
 		target_id = _place_dummy(board, 7, target_coord).id
 	elif ability_id == &"engineer_scrap_shield":
 		target_id = _place_ally(board, 7, target_coord).id
+	elif ability_id == &"engineer_rocket_launcher" and upgraded:
+		target_id = _place_dummy(board, 7, target_coord).id
+		sacrifice_id = _place_construct(board, 8, Vector2i(3, 3), &"construct_turret", actor.id).id
 	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	if sacrifice_id >= 0:
+		AbilitySystem.set_module_target(
+			action, 1, Vector2i(3, 3), sacrifice_id,
+		)
 	_assert(failures, "%s/can_use" % ability_id, AbilitySystem.can_use(board, action))
 	if not AbilitySystem.can_use(board, action):
 		return
@@ -139,6 +150,13 @@ static func run_single_ability(
 			"engineer_wrench_smack/outcome/construct_repair",
 			repaired != null and repaired.health.current_hp > before.get_unit_by_id(target_id).health.current_hp,
 		)
+	elif ability_id == &"engineer_rocket_launcher" and upgraded:
+		var damaged := false
+		for event: SimEvent in result.events:
+			if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+				damaged = true
+				break
+		_assert(failures, "engineer_rocket_launcher/outcome/damage", damaged)
 	else:
 		ClassScenarioSimOutcome.assert_from_events(
 			failures, String(ability_id), ability, result.events, before, result.final_state, target_id,

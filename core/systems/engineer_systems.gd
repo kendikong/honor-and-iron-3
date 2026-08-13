@@ -473,10 +473,23 @@ static func after_ability_execute(
 	var modules: Array[AbilityModule] = action.ability.get_active_modules(
 		actor.is_ability_upgraded(action.ability.id)
 	)
-	for module: AbilityModule in modules:
+	for module_index: int in modules.size():
+		var module: AbilityModule = modules[module_index]
 		if module == null:
 			continue
 		var modifiers := module.legacy_modifiers
+		if modifiers.get("sacrifice_construct_instant", false):
+			var sacrifice_target := board.get_unit_by_id(
+				AbilitySystem.module_target_unit_id(action, module_index)
+			)
+			if (
+				sacrifice_target != null
+				and sacrifice_target.is_alive()
+				and sacrifice_target.team == actor.team
+				and sacrifice_target.definition != null
+				and sacrifice_target.definition.is_construct
+			):
+				_destroy_construct(board, actor, sacrifice_target, events)
 		if modifiers.get("ignite_oil", false) or modifiers.get("ignite_oil_area", false):
 			_ignite_oil(board, actor, action, module, events)
 		if modifiers.get("scrap_shield", false):

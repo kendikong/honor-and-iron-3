@@ -398,6 +398,13 @@ static func _rocket_launcher() -> AbilityData:
 		"exhaust_next_turn": true}
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["sacrifice_construct_instant"] = true
+	var sacrifice := _module(
+		GameEnums.EffectType.DAMAGE, 0, 0, 99, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+	)
+	sacrifice.aim_binding = GameEnums.AimBinding.NEW_AIM
+	sacrifice.legacy_modifiers["sacrifice_construct_instant"] = true
+	upgraded.append(sacrifice)
 	return _ability(&"engineer_rocket_launcher", "Rocket Launcher", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
