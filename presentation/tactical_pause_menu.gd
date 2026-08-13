@@ -73,6 +73,10 @@ func _build_ui() -> void:
 		comp.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_root.add_child(comp),
 	)
+	_add_button(vbox, "Report Bug", func() -> void:
+		if DebugReportService != null:
+			DebugReportService.open_report_dialog(),
+	)
 	_add_button(vbox, "Restart Turn", func() -> void:
 		close_menu()
 		if _director != null:

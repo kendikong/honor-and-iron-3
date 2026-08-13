@@ -65,6 +65,26 @@ var _planning_input: CombatPlanningInput
 var _autobattler_panel: AutobattlerControlPanel
 
 
+func build_debug_context() -> Dictionary:
+	var context: Dictionary = {
+		"mode": "tactical_combat",
+		"selected_unit_id": _director.selected_unit_id if _director != null else -1,
+		"selected_ability_index": _director.selected_ability_index if _director != null else -1,
+		"phase": _director.phase if _director != null else -1,
+		"board": DebugReportRuntime.serialize_board(_director.board) if _director != null else {},
+		"projected_board": DebugReportRuntime.serialize_board(_director.projected_state) if _director != null else {},
+		"turn_start_board": DebugReportRuntime.serialize_board(_director.turn_start_board) if _director != null else {},
+		"timelines": {
+			"pre_move": DebugReportRuntime.serialize_timeline(_director.plan_pre_move) if _director != null else [],
+			"action": DebugReportRuntime.serialize_timeline(_director.plan_action) if _director != null else [],
+			"post_move": DebugReportRuntime.serialize_timeline(_director.plan_post_move) if _director != null else [],
+		},
+	}
+	if _planning_overlay != null:
+		context["planning_overlay"] = _planning_overlay.build_debug_context()
+	return context
+
+
 func _ready() -> void:
 	_settings.load_from_disk()
 	_settings.apply_audio_buses()

@@ -381,6 +381,26 @@ func get_committed_preview() -> CombatPlanningPreview:
 	return _committed_preview
 
 
+func build_debug_context() -> Dictionary:
+	return {
+		"hover_coord": [_hover_coord.x, _hover_coord.y],
+		"hover_move_tiles": _coords_to_arrays(_hover_move_tiles),
+		"hover_action_range_tiles": _coords_to_arrays(_hover_action_range_tiles),
+		"route": _coords_to_arrays(_route),
+		"aiming": _aiming,
+		"attack_target_id": _attack_target_id,
+		"action_range_origin": [_action_range_origin.x, _action_range_origin.y],
+		"hover_action_icon": _hover_action_icon,
+	}
+
+
+static func _coords_to_arrays(coords: Array[Vector2i]) -> Array[Array]:
+	var result: Array[Array] = []
+	for coord: Vector2i in coords:
+		result.append([coord.x, coord.y])
+	return result
+
+
 func get_hover_move_tiles() -> Array[Vector2i]:
 	return _hover_move_tiles.duplicate()
 

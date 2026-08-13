@@ -35,6 +35,7 @@ func _rebuild_menu() -> void:
 	_add_nav_button(vbox, "Class Library Editor", _on_class_library_pressed)
 	_add_nav_button(vbox, "Map Dev Sandbox", _on_dev_sandbox_pressed)
 	_add_nav_button(vbox, "Mass Simulation Analytics", _on_mass_sim_pressed)
+	_add_nav_button(vbox, "Report Bug", _on_report_bug_pressed)
 
 	vbox.add_child(_separator())
 
@@ -119,3 +120,8 @@ func _on_compendium_pressed() -> void:
 
 func _on_class_library_pressed() -> void:
 	get_tree().change_scene_to_file("res://scenes/ClassLibraryEditor.tscn")
+
+
+func _on_report_bug_pressed() -> void:
+	if DebugReportService != null:
+		DebugReportService.open_report_dialog()

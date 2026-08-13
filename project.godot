@@ -30,6 +30,7 @@ EventBus="*res://presentation/event_bus.gd"
 NetworkManager="*res://core/systems/network_manager.gd"
 GlobalTimeline="*res://core/state/global_timeline.gd"
 SkirmishLaunch="*res://autoload/skirmish_launch.gd"
+DebugReportService="*res://debug/debug_report_service.gd"
 
 [display]
 
