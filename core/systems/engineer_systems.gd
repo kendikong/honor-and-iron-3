@@ -114,6 +114,10 @@ static func on_construct_entered(
 	var owner := board.get_unit_by_id(int(construct.passive_flags.get("engineer_owner_id", -1)))
 	if owner == null:
 		return
+	var spawn_modifiers: Dictionary = construct.passive_flags.get("engineer_spawn_modifiers", {})
+	if spawn_modifiers.get("absorbs_items_scrap", false) and unit.scrap > 0:
+		owner.scrap += unit.scrap
+		unit.scrap = 0
 	var pull_direction := PhysicsSystem.cardinal_from_to(unit.position, construct.position)
 	if pull_direction != Vector2i.ZERO:
 		PhysicsSystem.push(board, unit, pull_direction, 2, events, owner)

@@ -1,6 +1,17 @@
-extends RefCounted
-## Bible §12 passive: Explosive Expert — explosives +1 damage to mechanicals and ignore DEF; [+] explosions ATK +2.
-## Globals: AbilitySystem + CombatSystem.
+﻿extends RefCounted
+
 const _H := preload("res://tests/engineer_qa_harness.gd")
+
+## Bible §12: Explosive Expert — explosives +1 vs mechanicals ignore DEF; [+] explosions ATK +2.
+## Globals: EngineerSystems + AbilitySystem + CombatSystem + Simulator.
+## Data/Sim delegate: tests/engineer_qa_harness.gd::run_passive_row
+
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_factory(&"explosive_expert", failures)
+	_data_contract(failures)
+	_sim_trigger(failures)
+
+static func _data_contract(failures: Array[String]) -> void:
+	_H.run_factory_matrix(failures)
+
+static func _sim_trigger(failures: Array[String]) -> void:
+	_H.run_passive_row(&"explosive_expert", failures)

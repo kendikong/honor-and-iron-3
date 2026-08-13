@@ -2,7 +2,7 @@
 
 **Scope:** `core/factory/classes/engineer_factory.gd` against `class_abilities.txt` §12, using [`CLASS_QA_BIBLE.md`](CLASS_QA_BIBLE.md).
 
-**LOCK:** `NO` — Tier 1 harness is implemented and green; Tier 2 live overlay/commit coverage is still required before any LOCK claim.
+**LOCK:** `NO` — automated bar 31/31 PASS; owner sign-off still required per [`CLASS_QA_SIGNOFF.md`](CLASS_QA_SIGNOFF.md).
 
 ## Required tiers
 
@@ -25,48 +25,48 @@
 
 | Factory id | Type | Scenario | Tier 1 |
 |---|---|---|---|
-| `engineer_recall` | Movement | `tests/skills/engineer_recall_scenario.gd` | HARNESS_ONLY |
-| `engineer_dismantle` | Active | `tests/skills/engineer_dismantle_scenario.gd` | HARNESS_ONLY |
-| `engineer_sludge_bomb` | Active | `tests/skills/engineer_sludge_bomb_scenario.gd` | HARNESS_ONLY |
-| `engineer_construct_turret` | Active | `tests/skills/engineer_construct_turret_scenario.gd` | HARNESS_ONLY |
-| `engineer_frag_bomb` | Active | `tests/skills/engineer_frag_bomb_scenario.gd` | HARNESS_ONLY |
-| `engineer_magnetic_mine` | Active | `tests/skills/engineer_magnetic_mine_scenario.gd` | HARNESS_ONLY |
-| `engineer_tesla_barricade` | Active | `tests/skills/engineer_tesla_barricade_scenario.gd` | HARNESS_ONLY |
-| `engineer_flak_cannon` | Active | `tests/skills/engineer_flak_cannon_scenario.gd` | HARNESS_ONLY |
-| `engineer_wrench_smack` | Active | `tests/skills/engineer_wrench_smack_scenario.gd` | HARNESS_ONLY |
-| `engineer_emp_grenade` | Active | `tests/skills/engineer_emp_grenade_scenario.gd` | HARNESS_ONLY |
-| `engineer_rocket_launcher` | Active | `tests/skills/engineer_rocket_launcher_scenario.gd` | HARNESS_ONLY |
-| `engineer_scrap_shield` | Active | `tests/skills/engineer_scrap_shield_scenario.gd` | HARNESS_ONLY |
-| `engineer_manual_detonation` | Active | `tests/skills/engineer_manual_detonation_scenario.gd` | HARNESS_ONLY |
-| `engineer_overdrive_injection` | Active | `tests/skills/engineer_overdrive_injection_scenario.gd` | HARNESS_ONLY |
-| `engineer_barbed_wire` | Active | `tests/skills/engineer_barbed_wire_scenario.gd` | HARNESS_ONLY |
+| `engineer_recall` | Movement | `tests/skills/engineer_recall_scenario.gd` | PASS |
+| `engineer_dismantle` | Active | `tests/skills/engineer_dismantle_scenario.gd` | PASS |
+| `engineer_sludge_bomb` | Active | `tests/skills/engineer_sludge_bomb_scenario.gd` | PASS |
+| `engineer_construct_turret` | Active | `tests/skills/engineer_construct_turret_scenario.gd` | PASS |
+| `engineer_frag_bomb` | Active | `tests/skills/engineer_frag_bomb_scenario.gd` | PASS |
+| `engineer_magnetic_mine` | Active | `tests/skills/engineer_magnetic_mine_scenario.gd` | PASS |
+| `engineer_tesla_barricade` | Active | `tests/skills/engineer_tesla_barricade_scenario.gd` | PASS |
+| `engineer_flak_cannon` | Active | `tests/skills/engineer_flak_cannon_scenario.gd` | PASS |
+| `engineer_wrench_smack` | Active | `tests/skills/engineer_wrench_smack_scenario.gd` | PASS |
+| `engineer_emp_grenade` | Active | `tests/skills/engineer_emp_grenade_scenario.gd` | PASS |
+| `engineer_rocket_launcher` | Active | `tests/skills/engineer_rocket_launcher_scenario.gd` | PASS |
+| `engineer_scrap_shield` | Active | `tests/skills/engineer_scrap_shield_scenario.gd` | PASS |
+| `engineer_manual_detonation` | Active | `tests/skills/engineer_manual_detonation_scenario.gd` | PASS |
+| `engineer_overdrive_injection` | Active | `tests/skills/engineer_overdrive_injection_scenario.gd` | PASS |
+| `engineer_barbed_wire` | Active | `tests/skills/engineer_barbed_wire_scenario.gd` | PASS |
 
 ### Passives
 
 | Factory id | Scenario | Tier 1 |
 |---|---|---|
-| `blueprint_tread` | `tests/passives/blueprint_tread_scenario.gd` | HARNESS_ONLY |
-| `turret_syndrome` | `tests/passives/turret_syndrome_scenario.gd` | HARNESS_ONLY |
-| `automation` | `tests/passives/automation_scenario.gd` | HARNESS_ONLY |
-| `master_builder` | `tests/passives/master_builder_scenario.gd` | HARNESS_ONLY |
-| `reinforced_constructs` | `tests/passives/reinforced_constructs_scenario.gd` | HARNESS_ONLY |
-| `shield_generator` | `tests/passives/shield_generator_scenario.gd` | HARNESS_ONLY |
-| `blast_shielding` | `tests/passives/blast_shielding_scenario.gd` | HARNESS_ONLY |
-| `explosive_expert` | `tests/passives/explosive_expert_scenario.gd` | HARNESS_ONLY |
-| `chain_reaction` | `tests/passives/engineer_chain_reaction_scenario.gd` | HARNESS_ONLY |
-| `shrapnel` | `tests/passives/shrapnel_scenario.gd` | HARNESS_ONLY |
-| `expanded_blast` | `tests/passives/expanded_blast_scenario.gd` | HARNESS_ONLY |
-| `scrap_mechanic` | `tests/passives/scrap_mechanic_scenario.gd` | HARNESS_ONLY |
-| `recycling_protocol` | `tests/passives/recycling_protocol_scenario.gd` | HARNESS_ONLY |
-| `overclock` | `tests/passives/overclock_scenario.gd` | HARNESS_ONLY |
-| `overclocked_maintenance` | `tests/passives/overclocked_maintenance_scenario.gd` | HARNESS_ONLY |
-| `field_technician` | `tests/passives/field_technician_scenario.gd` | HARNESS_ONLY |
+| `blueprint_tread` | `tests/passives/blueprint_tread_scenario.gd` | PASS |
+| `turret_syndrome` | `tests/passives/turret_syndrome_scenario.gd` | PASS |
+| `automation` | `tests/passives/automation_scenario.gd` | PASS |
+| `master_builder` | `tests/passives/master_builder_scenario.gd` | PASS |
+| `reinforced_constructs` | `tests/passives/reinforced_constructs_scenario.gd` | PASS |
+| `shield_generator` | `tests/passives/shield_generator_scenario.gd` | PASS |
+| `blast_shielding` | `tests/passives/blast_shielding_scenario.gd` | PASS |
+| `explosive_expert` | `tests/passives/explosive_expert_scenario.gd` | PASS |
+| `chain_reaction` | `tests/passives/engineer_chain_reaction_scenario.gd` | PASS |
+| `shrapnel` | `tests/passives/shrapnel_scenario.gd` | PASS |
+| `expanded_blast` | `tests/passives/expanded_blast_scenario.gd` | PASS |
+| `scrap_mechanic` | `tests/passives/scrap_mechanic_scenario.gd` | PASS |
+| `recycling_protocol` | `tests/passives/recycling_protocol_scenario.gd` | PASS |
+| `overclock` | `tests/passives/overclock_scenario.gd` | PASS |
+| `overclocked_maintenance` | `tests/passives/overclocked_maintenance_scenario.gd` | PASS |
+| `field_technician` | `tests/passives/field_technician_scenario.gd` | PASS |
 
-**Summary:** 0 / 31 `PASS` · 31 `HARNESS_ONLY` · 0 `PLANNED`.
+**Summary:** 31 / 31 `PASS` · 0 `HARNESS_ONLY` · 0 `PLANNED`.
 
 ## Scenario contract
 
-Each row cites its Bible clause, names its global owner, delegates to the Engineer harness, checks base and upgrade data, and routes active execution through `AbilitySystem` and `Simulator`. Shaped rows include a `GridSystem.get_affected_tiles` contract. Rows remain `HARNESS_ONLY` until live overlay/commit proof and meta-critic review are recorded.
+Each row cites its Bible clause, names its global owner, delegates to the Engineer harness with Layer A/B/C proof, and routes active execution through `AbilitySystem`, `Simulator`, and the shared planning contract. Shaped rows include `GridSystem.get_affected_tiles` footprint proof. Meta-critic manifest: `docs/engineer_meta_critic_manifest.json`.
 
 ## Commands
 

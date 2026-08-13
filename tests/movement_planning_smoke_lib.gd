@@ -166,6 +166,7 @@ static func run_commit_smoke(
 	if fix.is_empty():
 		_fail(failures, "%s/planning/fixture" % tag, "failed to wire planning board")
 		return
+	_apply_engineer_movement_setup(fix, ability_id)
 	fix.director.auto_run = true
 	var ability: AbilityData = _ability_on_actor(fix, ability_id)
 	var resolved_premove: Vector2i = _MovementTimeline.resolve_premove_run_cell(
@@ -710,3 +711,21 @@ static func _assert_archer_sidestep_modules(
 		_BruiserHarness.events_actor_moved(result.events, unit_id),
 		"Sidestep MOVE module must relocate the archer",
 	)
+
+
+static func _apply_engineer_movement_setup(fix: Dictionary, ability_id: StringName) -> void:
+	if ability_id != &"engineer_recall":
+		return
+	var actor: UnitState = fix.get("actor")
+	var board: BoardState = fix.get("board")
+	if actor == null or board == null:
+		return
+	var construct := UnitState.create(
+		90, DataLibrary.get_unit(&"construct_turret"), GameEnums.Team.PLAYER, Vector2i(4, 3),
+	)
+	construct.passive_flags["engineer_owner_id"] = actor.id
+	construct.passive_flags["engineer_construct_kind"] = &"construct_turret"
+	board.add_unit(construct)
+	GridSystem.set_occupant(board, construct.position, construct.id)
+	fix.director.base_board = board.clone()
+	fix.director.projected_state = board.clone()

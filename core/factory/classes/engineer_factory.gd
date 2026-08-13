@@ -89,13 +89,6 @@ static func build(basic_gun: WeaponData) -> UnitData:
 		{"promotion": &"siegecrafter", "turret_adjacent_defense": 1,
 		"upgraded_turret_adjacent_pull_immunity": true},
 	))
-	definition.passives.append(_passive(
-		&"expanded_blast", "Expanded Blast",
-		"Explosion AOE increases by +1 tile.",
-		"Explosions destroy traps and cover.",
-		{"promotion": &"siegecrafter", "explosion_aoe_bonus": 1,
-		"upgraded_explosion_destroy_traps": true},
-	))
 
 	# Demolitionist.
 	definition.passives.append(_passive(
@@ -125,6 +118,13 @@ static func build(basic_gun: WeaponData) -> UnitData:
 		"Also applies BLIND.",
 		{"promotion": &"demolitionist", "detonation_bleed_weapon": true,
 		"detonation_push": 1, "upgraded_detonation_blind": true},
+	))
+	definition.passives.append(_passive(
+		&"expanded_blast", "Expanded Blast",
+		"Explosion AOE increases by +1 tile.",
+		"Explosions destroy traps and cover.",
+		{"promotion": &"demolitionist", "explosion_aoe_bonus": 1,
+		"upgraded_explosion_destroy_traps": true},
 	))
 
 	# Mechanist.

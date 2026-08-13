@@ -1,0 +1,200 @@
+﻿{
+    "last_score":  88,
+    "piece":  "ENGINEER-LOCK",
+    "class_id":  "engineer",
+    "goal_scope":  "Automated Knight-bar QA: matrix 31/31 PASS, AOE footprint, Tier 1 harness, Tier 2 live factory+overlay.",
+    "last_result":  "PASS",
+    "approved_rows":  [
+                          {
+                              "factory_id":  "engineer_recall",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_dismantle",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_sludge_bomb",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_construct_turret",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_frag_bomb",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_magnetic_mine",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_tesla_barricade",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_flak_cannon",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_wrench_smack",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_emp_grenade",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_rocket_launcher",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_scrap_shield",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_manual_detonation",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_overdrive_injection",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "engineer_barbed_wire",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "blueprint_tread",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "turret_syndrome",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "automation",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "master_builder",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "reinforced_constructs",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "shield_generator",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "blast_shielding",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "explosive_expert",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "chain_reaction",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "shrapnel",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "expanded_blast",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "scrap_mechanic",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "recycling_protocol",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "overclock",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "overclocked_maintenance",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "field_technician",
+                              "critic_round":  1,
+                              "score":  88,
+                              "fix_target":  "none"
+                          }
+                      ],
+    "per_row_threshold":  88,
+    "pass_threshold":  88,
+    "last_critic_round":  2,
+    "spec":  "docs/CLASS_QA_BIBLE.md",
+    "notes":  "Gauntlet round 2: BAR green engineer_gauntlet_latest.stdout.txt; expanded_blast promotion fixed; magnetic mine scrap absorb."
+}

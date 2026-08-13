@@ -2,6 +2,7 @@ class_name AoeFootprintQaHarness
 extends RefCounted
 
 const _RogueFactory := preload("res://core/factory/classes/rogue_factory.gd")
+const _BeastRiderFactory := preload("res://core/factory/classes/beast_rider_factory.gd")
 
 ## Shared AOE / shaped-skill QA — sim footprint, overlay parity, geometry contracts.
 ## Tier-1 scenarios and Tier-2 live class tests must use this instead of metadata-only asserts.
@@ -30,6 +31,7 @@ const _SCENARIO_REGISTRIES: Array[GDScript] = [
 	preload("res://tests/monk_scenario_registry.gd"),
 	preload("res://tests/shaman_scenario_registry.gd"),
 	preload("res://tests/rogue_scenario_registry.gd"),
+	preload("res://tests/beast_rider_scenario_registry.gd"),
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [
@@ -41,6 +43,7 @@ const _LIVE_CLASS_TESTS: Array[String] = [
 	"res://tests/live_monk_class_test.gd",
 	"res://tests/live_shaman_class_test.gd",
 	"res://tests/live_rogue_class_test.gd",
+	"res://tests/live_beast_rider_class_test.gd",
 ]
 
 
@@ -60,7 +63,7 @@ static func find_ability_by_id(ability_id: StringName) -> AbilityData:
 	if DataLibrary.is_universal_wait(ability_id):
 		return DataLibrary.get_universal_wait()
 	for class_id: StringName in [
-		&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage", &"mercenary", &"monk", &"shaman", &"rogue",
+		&"bruiser", &"knight", &"archer", &"lancer", &"cleric", &"mage", &"mercenary", &"monk", &"shaman", &"rogue", &"beast_rider", &"engineer",
 	]:
 		var unit: UnitData = _build_class_unit(class_id)
 		if unit == null:
@@ -248,6 +251,8 @@ static func _build_class_unit(class_id: StringName) -> UnitData:
 			return ShamanFactory.build(weapon)
 		&"rogue":
 			return _RogueFactory.build(weapon)
+		&"beast_rider":
+			return _BeastRiderFactory.build(weapon)
 		_:
 			return template
 

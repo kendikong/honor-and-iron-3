@@ -1,7 +1,23 @@
-extends RefCounted
-## Bible §12: Flak Cannon — RANGE 1 ARC, ATK 2, PUSH 1; [+] consume Scrap for ATK +2 and BLEED X.
-## Globals: AbilitySystem + GridSystem + PhysicsSystem + Simulator.
+﻿extends RefCounted
+
 const _H := preload("res://tests/engineer_qa_harness.gd")
+const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+
+## Bible §12: Flak Cannon — RANGE 1 ARC ATK 2 PUSH 1; [+] consume 1 Scrap ATK +2 BLEED X.
+## Globals: AbilitySystem + EngineerSystems + Simulator + GridSystem.
+## Data/Sim delegate: tests/engineer_qa_harness.gd::run_ability_row
+
 static func run_all(failures: Array[String]) -> void:
-	_H.run_single_ability(&"engineer_flak_cannon", failures)
-	_H.run_upgrade_for(&"engineer_flak_cannon", failures)
+	_data_contract(failures)
+	_sim_contract(failures)
+	_sim_upgrade(failures)
+	_Planning.run_for_factory(failures, &"engineer_flak_cannon")
+
+static func _data_contract(failures: Array[String]) -> void:
+	_H.run_factory_matrix(failures)
+
+static func _sim_contract(failures: Array[String]) -> void:
+	_H.run_ability_row(&"engineer_flak_cannon", failures)
+
+static func _sim_upgrade(failures: Array[String]) -> void:
+	_H.run_ability_upgrade_row(&"engineer_flak_cannon", failures)

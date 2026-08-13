@@ -45,6 +45,7 @@ static func run_tier_b_commit_smoke(
 		_Checklist.assert_fail(failures, "%s/planning/wire" % factory_id, "fixture wire failed")
 		return
 	_apply_beast_planning_setup(fix, factory_id)
+	_apply_engineer_planning_setup(fix, factory_id)
 	fix.director.auto_run = true
 	var idx: int = _Checklist.select_ability(fix, factory_id)
 	_Checklist.assert_true(
@@ -153,6 +154,32 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			enemy_pos = Vector2i(3, 3)
 			commit_cell = Vector2i(3, 3)
 			verify_no_jump = false
+		&"engineer_recall":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(-1, -1)
+			commit_cell = Vector2i(3, 3)
+			verify_no_jump = false
+		&"engineer_wrench_smack", &"engineer_manual_detonation", &"engineer_overdrive_injection":
+			actor_pos = Vector2i(2, 3)
+			ally_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			enemy_pos = Vector2i(-1, -1)
+			verify_no_jump = false
+		&"engineer_sludge_bomb", &"engineer_frag_bomb", &"engineer_emp_grenade":
+			actor_pos = Vector2i(5, 5)
+			enemy_pos = Vector2i(6, 5)
+			commit_cell = Vector2i(6, 5)
+			select_only = true
+		&"engineer_scrap_shield":
+			actor_pos = Vector2i(2, 3)
+			ally_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			enemy_pos = Vector2i(-1, -1)
+			select_only = true
+		&"engineer_construct_turret", &"engineer_magnetic_mine", &"engineer_tesla_barricade":
+			actor_pos = Vector2i(2, 3)
+			commit_cell = Vector2i(4, 3)
+			enemy_pos = Vector2i(-1, -1)
 		&"beast_bestial_roar":
 			actor_pos = Vector2i(3, 3)
 			enemy_pos = Vector2i(4, 3)
@@ -218,6 +245,39 @@ static func _assert_shaped_footprint(
 		)
 
 
+static func _apply_engineer_planning_setup(fix: Dictionary, factory_id: StringName) -> void:
+	var actor: UnitState = fix.get("actor")
+	var board: BoardState = fix.get("board")
+	if actor == null or board == null:
+		return
+	match factory_id:
+		&"engineer_recall":
+			var construct := UnitState.create(
+				90, DataLibrary.get_unit(&"construct_turret"), GameEnums.Team.PLAYER, Vector2i(4, 3),
+			)
+			construct.passive_flags["engineer_owner_id"] = actor.id
+			construct.passive_flags["engineer_construct_kind"] = &"construct_turret"
+			board.add_unit(construct)
+			GridSystem.set_occupant(board, construct.position, construct.id)
+			fix.director.base_board = board.clone()
+			fix.director.projected_state = board.clone()
+		&"engineer_wrench_smack", &"engineer_manual_detonation", &"engineer_overdrive_injection":
+			var target := UnitState.create(
+				91, DataLibrary.get_unit(&"construct_turret"), GameEnums.Team.PLAYER, Vector2i(3, 3),
+			)
+			target.passive_flags["engineer_owner_id"] = actor.id
+			target.passive_flags["engineer_construct_kind"] = &"construct_turret"
+			board.add_unit(target)
+			GridSystem.set_occupant(board, target.position, target.id)
+			fix.director.base_board = board.clone()
+			fix.director.projected_state = board.clone()
+		&"engineer_scrap_shield":
+			actor.scrap = 2
+		&"engineer_flak_cannon":
+			actor.scrap = 2
+			actor.upgraded_abilities.append(&"engineer_flak_cannon")
+
+
 static func _apply_beast_planning_setup(fix: Dictionary, factory_id: StringName) -> void:
 	if factory_id not in [&"beast_savage_bite", &"beast_bestial_roar"]:
 		return
@@ -231,7 +291,7 @@ static func _class_id_from_factory(factory_id: StringName) -> StringName:
 	var text := String(factory_id)
 	if text.begins_with("beast_"):
 		return &"beast_rider"
-	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary", "monk"]:
+	for prefix: String in ["bruiser", "archer", "lancer", "mage", "cleric", "knight", "mercenary", "monk", "engineer"]:
 		if text.begins_with(prefix + "_") or text == prefix:
 			return StringName(prefix)
 	return &""

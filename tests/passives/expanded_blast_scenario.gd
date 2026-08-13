@@ -1,6 +1,17 @@
-extends RefCounted
-## Bible §12 passive: Expanded Blast — explosion AOE +1 tile; [+] destroy traps and cover.
-## Globals: GridSystem + AbilitySystem terrain destruction.
+﻿extends RefCounted
+
 const _H := preload("res://tests/engineer_qa_harness.gd")
+
+## Bible §12: Expanded Blast — explosion AOE +1; [+] destroy traps/cover.
+## Globals: EngineerSystems + AbilitySystem + CombatSystem + Simulator.
+## Data/Sim delegate: tests/engineer_qa_harness.gd::run_passive_row
+
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_factory(&"expanded_blast", failures)
+	_data_contract(failures)
+	_sim_trigger(failures)
+
+static func _data_contract(failures: Array[String]) -> void:
+	_H.run_factory_matrix(failures)
+
+static func _sim_trigger(failures: Array[String]) -> void:
+	_H.run_passive_row(&"expanded_blast", failures)

@@ -1,6 +1,17 @@
-extends RefCounted
-## Bible §12 passive: Turret Syndrome — end turn without moving spawns mini-turret at Floor(25% Max HP); [+] +50% Max HP.
-## Globals: EngineerSystems + AbilitySystem + Simulator.
+﻿extends RefCounted
+
 const _H := preload("res://tests/engineer_qa_harness.gd")
+
+## Bible §12: Turret Syndrome — end turn without moving spawns mini-turret; [+] +50% Max HP.
+## Globals: EngineerSystems + AbilitySystem + CombatSystem + Simulator.
+## Data/Sim delegate: tests/engineer_qa_harness.gd::run_passive_row
+
 static func run_all(failures: Array[String]) -> void:
-	_H.run_passive_factory(&"turret_syndrome", failures)
+	_data_contract(failures)
+	_sim_trigger(failures)
+
+static func _data_contract(failures: Array[String]) -> void:
+	_H.run_factory_matrix(failures)
+
+static func _sim_trigger(failures: Array[String]) -> void:
+	_H.run_passive_row(&"turret_syndrome", failures)

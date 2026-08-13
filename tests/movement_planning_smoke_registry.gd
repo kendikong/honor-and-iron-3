@@ -354,4 +354,15 @@ static func _entries() -> Dictionary:
 			"verify_no_jump": false,
 			"premove_cell": Vector2i(3, 3),
 		},
+		# --- Engineer ---
+		&"engineer_recall": {
+			"class_id": &"engineer",
+			"factory_id": &"engineer_recall",
+			"tag": "recall",
+			"mode": "click",
+			"actor_pos": Vector2i(2, 3),
+			"commit_cell": Vector2i(3, 3),
+			"verify_no_jump": false,
+			"premove_cell": Vector2i(3, 3),
+		},
 	}

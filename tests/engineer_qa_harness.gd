@@ -85,6 +85,14 @@ static func run_single_ability(
 	failures: Array[String],
 	upgraded: bool = false,
 ) -> void:
+	run_ability_row(ability_id, failures, upgraded)
+
+
+static func run_ability_row(
+	ability_id: StringName,
+	failures: Array[String],
+	upgraded: bool = false,
+) -> void:
 	var definition := FactoryTestHelpers.build_unit(&"engineer")
 	var ability := _ability(definition, ability_id)
 	_assert(failures, "%s/data" % ability_id, ability != null)
@@ -178,6 +186,10 @@ static func run_single_ability(
 
 
 static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> void:
+	run_ability_upgrade_row(ability_id, failures)
+
+
+static func run_ability_upgrade_row(ability_id: StringName, failures: Array[String]) -> void:
 	var ability := _ability(FactoryTestHelpers.build_unit(&"engineer"), ability_id)
 	_assert(failures, "%s/upgrade_description" % ability_id, ability != null and not ability.upgrade_description.is_empty())
 	if ability == null:
@@ -191,9 +203,30 @@ static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> 
 		base_keys != upgrade_keys or ability.modules[0].amount != ability.upgraded_modules[0].amount,
 	)
 	run_single_ability(ability_id, failures, true)
+	if ability_id == &"engineer_magnetic_mine":
+		_assert_magnetic_mine_scrap_absorb(failures)
+
+
+static func _assert_magnetic_mine_scrap_absorb(failures: Array[String]) -> void:
+	var engineer := FactoryTestHelpers.build_unit(&"engineer")
+	var board := _plain_board(Vector2i(8, 6))
+	var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_magnetic_mine"))
+	var mine := _place_construct(board, 4, Vector2i(3, 2), &"magnetic_mine", actor.id)
+	mine.passive_flags["engineer_spawn_modifiers"] = {
+		"absorbs_items_scrap": true, "mine_explode": true, "mine_pull": 2, "mine_damage": 2,
+	}
+	var enemy := _place_dummy(board, 7, Vector2i(4, 2))
+	enemy.scrap = 2
+	var events: Array[SimEvent] = []
+	EngineerSystems.on_construct_entered(board, enemy, mine, events)
+	_assert(failures, "engineer_magnetic_mine/upgrade/scrap_absorb", actor.scrap == 2)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
+	run_passive_row(passive_id, failures)
+
+
+static func run_passive_row(passive_id: StringName, failures: Array[String]) -> void:
 	var engineer := FactoryTestHelpers.build_unit(&"engineer")
 	var passive := _passive(engineer, passive_id)
 	_assert(failures, "passive/%s/data" % passive_id, passive != null)
@@ -312,6 +345,102 @@ static func run_passive_factory(passive_id: StringName, failures: Array[String])
 			"passive/blueprint_tread/pass_through_shield",
 			actor.armor > 0 and construct.armor > 0,
 		)
+	elif passive_id == &"automation":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		_place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
+		var enemy := _place_dummy(board, 7, Vector2i(3, 3))
+		var events: Array[SimEvent] = []
+		EngineerSystems.player_phase_end(board, events)
+		var damaged := false
+		for event: SimEvent in events:
+			if (
+				event.type == GameEnums.SimEventType.UNIT_DAMAGED
+				and int(event.data.get("unit", -1)) == enemy.id
+			):
+				damaged = true
+				break
+		_assert(failures, "passive/automation/turret_damage", damaged)
+	elif passive_id == &"master_builder":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		_assert(
+			failures,
+			"passive/master_builder/limit",
+			int(EngineerSystems.passive_value(actor, &"active_construct_limit", &"", 0)) == 1,
+		)
+	elif passive_id == &"reinforced_constructs":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		actor._recalculate_stats(board)
+		var construct := _place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
+		var before_hp := construct.health.max_hp
+		EngineerSystems.on_spawned(board, actor, construct, null, null, [])
+		var has_def_buff := false
+		for status in construct.active_statuses:
+			if status.type == GameEnums.StatusType.STAT_BUFF_DEF:
+				has_def_buff = true
+				break
+		_assert(
+			failures,
+			"passive/reinforced_constructs/hp_bonus",
+			construct.health.max_hp > before_hp or has_def_buff,
+		)
+	elif passive_id == &"blast_shielding":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_frag_bomb"))
+		actor.active_passives.append(passive)
+		_assert(
+			failures,
+			"passive/blast_shielding/immunity_flag",
+			EngineerSystems.has_passive_modifier(actor, &"own_explosion_immunity"),
+		)
+	elif passive_id == &"explosive_expert":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_frag_bomb"))
+		actor.active_passives.append(passive)
+		var target := _place_construct(board, 7, Vector2i(3, 2), &"construct_turret", -1)
+		target.team = GameEnums.Team.ENEMY
+		var effect := DataLibrary._effect(GameEnums.EffectType.EXPLODE, 2)
+		actor.passive_flags["__current_ability"] = _ability(engineer, &"engineer_frag_bomb")
+		var adjustment := EngineerSystems.damage_adjustment(board, actor, target, effect)
+		_assert(
+			failures,
+			"passive/explosive_expert/mechanical_bonus",
+			int(adjustment.get("amount", 0)) >= 1,
+		)
+	elif passive_id == &"shrapnel":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_manual_detonation"))
+		actor.active_passives.append(passive)
+		var device := _place_construct(board, 4, Vector2i(3, 2), &"magnetic_mine", actor.id)
+		_place_dummy(board, 7, Vector2i(4, 2))
+		var ability := _ability(engineer, &"engineer_manual_detonation")
+		var action := TimelineAction.make_ability(1, ability, device.position, device.id)
+		var plan := Timeline.new()
+		plan.add(action)
+		var result := Simulator.simulate(board, plan)
+		var enemy := result.final_state.get_unit_by_id(7)
+		var has_bleed := false
+		if enemy != null:
+			for status in enemy.active_statuses:
+				if status.type == GameEnums.StatusType.BLEED:
+					has_bleed = true
+					break
+		_assert(failures, "passive/shrapnel/bleed", has_bleed)
+	elif passive_id == &"expanded_blast":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_manual_detonation"))
+		actor.active_passives.append(passive)
+		var center := Vector2i(3, 2)
+		var size := 3 + int(EngineerSystems.passive_value(actor, &"explosion_aoe_bonus", &"", 0))
+		var tiles := GridSystem.get_affected_tiles(
+			board, center, center, GameEnums.TargetShape.AOE_SQUARE, size,
+		)
+		_assert(failures, "passive/expanded_blast/aoe", tiles.size() > 9)
 
 
 static func _plain_board(size: Vector2i) -> BoardState:
