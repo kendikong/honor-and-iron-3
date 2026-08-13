@@ -2211,6 +2211,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
 	
 	var pres_anim: int = resolve_presentation_anim(action.ability, actor)
+	BeastRiderSystems.before_ability_execute(board, actor, action)
 	events.append(SimEvent.make(GameEnums.SimEventType.ABILITY_USED, {
 		"actor": action.actor_id,
 		"ability": action.ability.id,
