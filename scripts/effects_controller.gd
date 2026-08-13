@@ -162,16 +162,17 @@ func process_water_burst(delta: float) -> void:
 
 func process_frame(delta: float) -> void:
 	process_water_burst(delta)
+	var want_env_receive: bool = (
+		settings.oblique_contact_shadows or settings.cloud_shadows
+	)
+	if not want_env_receive:
+		return
 	if settings.cloud_shadows:
 		CloudTuning.sync_runtime(settings)
 		_sync_cloud_mask_bake()
 	if settings.cloud_shadows and _atmosphere != null:
 		_atmosphere.refresh_cloud_drift()
-	var want_env_receive: bool = (
-		settings.oblique_contact_shadows or settings.cloud_shadows
-	)
-	var want_ground_shadows: bool = want_env_receive
-	if want_ground_shadows and _shadow_sprites != null:
+	if _shadow_sprites != null:
 		ShadowPlacer.sync_ground_shadow_drift(settings, _shadow_sprites)
 	_apply_tile_cloud_drift()
 	if settings.oblique_contact_shadows and _shadow_sprites != null and _last_grid != null:

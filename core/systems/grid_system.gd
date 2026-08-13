@@ -62,7 +62,7 @@ static func manhattan(a: Vector2i, b: Vector2i) -> int:
 
 ## The single place tile occupancy changes. id of -1 clears the tile.
 static func set_occupant(board: BoardState, coord: Vector2i, unit_id: int) -> void:
-	var tile := board.get_tile(coord)
+	var tile := board.writable_tile(coord)
 	if tile != null:
 		tile.occupant_id = unit_id
 

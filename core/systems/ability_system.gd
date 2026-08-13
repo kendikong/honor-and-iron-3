@@ -4428,7 +4428,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.CHANGE_TERRAIN:
 			# Amount parameter can be used to select terrain type, for now just hardcode cracked
 			var terrain_id = &"cracked"
-			var tile = board.get_tile(tile_coord)
+			var tile = board.writable_tile(tile_coord)
 			if tile != null:
 				var new_def = DataLibrary.get_terrain(terrain_id)
 				if new_def != null:

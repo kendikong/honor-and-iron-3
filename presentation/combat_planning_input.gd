@@ -3578,6 +3578,8 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		return false
 	if unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
 		return false
+	if _planning != null and not _planning.get_hover_move_tiles().is_empty():
+		return _planning.is_hover_move_tile(coord)
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false

@@ -21,9 +21,21 @@ var temporary_terrain_previous: Dictionary = {}
 var terrain_payloads: Dictionary = {}
 var delayed_effects: Array[Dictionary] = []
 var soul_orbs: Dictionary = {}       # Vector2i -> Shaman Soul Collector payload
+## Clones share TileState refs until a write; occupancy/terrain then copy-on-write.
+var _shared_tiles: bool = false
 
 func get_tile(coord: Vector2i) -> TileState:
 	return tiles.get(coord, null)
+
+
+func writable_tile(coord: Vector2i) -> TileState:
+	var tile: TileState = tiles.get(coord, null)
+	if tile == null:
+		return null
+	if _shared_tiles:
+		tile = tile.clone()
+		tiles[coord] = tile
+	return tile
 
 
 func set_tile_terrain(coord: Vector2i, terrain: TerrainData) -> void:
@@ -89,9 +101,9 @@ func clone() -> BoardState:
 	var copy := BoardState.new()
 	copy.grid_size = grid_size
 	copy.turn_index = turn_index
-	# Dictionary preserves insertion order in Godot 4, so cloning is deterministic.
-	for key in tiles:
-		copy.tiles[key] = (tiles[key] as TileState).clone()
+	# Share TileState until occupancy/terrain writes (writable_tile copy-on-write).
+	copy.tiles = tiles.duplicate()
+	copy._shared_tiles = true
 	for unit in units:
 		copy.units.append(unit.clone())
 	copy.items = items.duplicate()

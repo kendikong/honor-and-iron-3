@@ -156,10 +156,13 @@ func setup(
 	if _intent_state != null:
 		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
+			if coord == _hover_coord:
+				return
 			_hover_coord = coord
 			if _director != null and _director.selected_unit_id < 0:
 				_invalidate_hover_cache()
 				_recompute_hover_ranges_from_inputs()
+			_hover_redraw_immediate = true
 			queue_redraw(),
 		)
 	set_process(true)

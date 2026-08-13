@@ -52,7 +52,9 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		# Destroy the trap
 		var new_def = DataLibrary.get_terrain(&"cracked")
 		if new_def != null:
-			tile.definition = new_def
+			tile = board.writable_tile(coord)
+			if tile != null:
+				tile.definition = new_def
 			events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
 				"coord": coord, "terrain": &"cracked"
 			}))
