@@ -33,6 +33,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_chain_hook_pull_toward_player,
 		_test_trampling_premove_then_arm_commit_flow,
 		_test_trampling_unarmed_empty_hover_is_premove,
+		_test_trampling_unarmed_hover_follows_mouse_waypoints,
 		# Integrity extensions (headless-only; beyond manual checklist)
 		_test_hover_slots_are_deterministic,
 		_test_commit_plan_matches_hover_slots,
@@ -112,6 +113,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_pull",
 		"trample_flow",
 		"trample_unarmed_hover",
+		"trample_unarmed_hover_paint",
 		"hover_deterministic",
 		"commit_matches_hover",
 		"undo_keeps_premove",
@@ -1135,6 +1137,10 @@ static func _test_trampling_unarmed_empty_hover_is_premove(failures: Array[Strin
 			"PlanningQAGate Trampling unarmed hover: pre-move dest %s expected %s"
 			% [str(pre.target_coord), str(hover_walk)],
 		)
+
+
+static func _test_trampling_unarmed_hover_follows_mouse_waypoints(failures: Array[String]) -> void:
+	TramplingAdvanceE2ETest._test_unarmed_hover_follows_mouse_waypoints(failures)
 
 
 static func _test_hover_slots_are_deterministic(failures: Array[String]) -> void:

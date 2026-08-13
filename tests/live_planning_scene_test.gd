@@ -625,6 +625,18 @@ func _journey_knight3_trampling_advance(ctx: Dictionary) -> void:
 		"ability": trample,
 		"manhattan": true,
 	}, "k3/phase1/stand")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_ROUTE[0], {
+		"path": [_K3_CELL, _TRAMPLE_ROUTE[0]],
+		"ghost_pos": _TRAMPLE_ROUTE[0],
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "k3/unarmed/hover_east")
+	await _probe_cell(ctx, k3_id, _TRAMPLE_END, {
+		"path": _TRAMPLE_FULL_PATH,
+		"ghost_pos": _TRAMPLE_END,
+		"manhattan": true,
+		"preview_nonempty": true,
+	}, "k3/unarmed/hover_end")
 	await _tap_cell(ctx, _K3_CELL, "k3/selection/arm")
 	await _wait_ability_settle(ctx)
 	assert_bool(input.awaiting_targeting_active()).is_true()

@@ -1142,9 +1142,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
 				)
 			)
-			var movement_skill_unarmed: bool = _blocks_unarmed_hover_paint(p_unit, ability)
 			var allow_hover_paint: bool = is_awaiting_move or dragging or (
-				not move_already_planned and _basic_move_allowed() and not movement_skill_unarmed
+				not move_already_planned and _basic_move_allowed()
 			)
 			var should_extend_route: bool = planning_cell_changed
 			if (
@@ -1875,7 +1874,7 @@ func _selection_hover_corridor_paint_active() -> bool:
 	if p_unit == null:
 		return false
 	var ability := _selected_ability_data(p_unit)
-	if ability == null or _blocks_unarmed_hover_paint(p_unit, ability):
+	if ability == null:
 		return false
 	if AbilitySystem.ability_has_movement_effect(ability):
 		return true
@@ -2718,9 +2717,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		_sanitize_drag_route_context()
 		_sync_drag_route_stand()
 		return
-	var ability: AbilityData = null
-	if not force_basic_movement and _director.selected_ability_index >= 0:
-		ability = _selected_ability_data(unit)
+	var ability: AbilityData = _route_pathfinding_ability(unit)
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	var budget: int = _drag_max_steps(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
@@ -2776,10 +2773,7 @@ func _append_route_tile(coord: Vector2i) -> void:
 	if _drag_route.size() - 1 >= _drag_max_steps(unit):
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
-	var ability: AbilityData = null
-	if not force_basic_movement and _director.selected_ability_index >= 0:
-		ability = _selected_ability_data(unit)
-		
+	var ability: AbilityData = _route_pathfinding_ability(unit)
 	if GridSystem.manhattan(last, coord) != 1 or not MovementSystem.is_walkable_for(board, coord, unit, ability):
 		return
 	_drag_route.append(coord)
@@ -2792,10 +2786,7 @@ func _sanitize_drag_route_context() -> void:
 	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
 		return
-	var ability: AbilityData = null
-	if not force_basic_movement and _director.selected_ability_index >= 0:
-		ability = _selected_ability_data(unit)
-		
+	var ability: AbilityData = _route_pathfinding_ability(unit)
 	var final_cell: Vector2i = _drag_route.back()
 	var basic_fallback: bool = false
 	if ability != null:
@@ -2877,19 +2868,18 @@ func clear_awaiting_targeting() -> void:
 	_request_planning_selection_refresh()
 
 
-## TILE movement skills (e.g. Trampling Advance) use single-tile premove until self-armed;
-## dash-line skills (Bowling Charge / K4) keep corridor hover paint while unarmed.
-func _blocks_unarmed_hover_paint(actor: UnitState, ability: AbilityData) -> bool:
-	if ability == null or actor == null:
-		return false
-	if _is_awaiting_movement_endpoint(actor, ability) or awaiting_targeting_active():
-		return false
-	if not AbilitySystem.ability_has_movement_effect(ability, actor):
-		return false
-	return (
-		AbilitySystem.active_targeting_flags(actor, ability)
-		& GameEnums.TargetingFlags.TILE
-	) != 0
+## Occupancy for painted hover/drag. Unarmed premove uses basic walk; armed awaiting uses the skill.
+func _route_pathfinding_ability(unit: UnitState) -> AbilityData:
+	if unit == null or force_basic_movement or _director == null:
+		return null
+	if _director.selected_ability_index < 0:
+		return null
+	var ability := _selected_ability_data(unit)
+	if ability == null:
+		return null
+	if awaiting_targeting_active() or _is_awaiting_movement_endpoint(unit, ability):
+		return ability
+	return null
 
 
 func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
@@ -4080,9 +4070,8 @@ func _build_commit_slots_at_cell(
 			return slots
 
 	if ability_index >= 0 and ability != null and not force_basic_movement:
-		var movement_skill_unarmed: bool = _blocks_unarmed_hover_paint(actor, ability)
 		var effective_waypoints: Array[Vector2i] = waypoints
-		if effective_waypoints.is_empty() and not movement_skill_unarmed and _drag_route_commits_active():
+		if effective_waypoints.is_empty() and _drag_route_commits_active():
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				effective_waypoints = painted

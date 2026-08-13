@@ -13,6 +13,7 @@ static func run_all(failures: Array[String]) -> void:
 	_sim_contract(failures)
 	_phase1_select(failures)
 	_phase2_hover_empty_unarmed(failures)
+	_phase2_unarmed_mouse_waypoints(failures)
 	_phase2_3_arm_and_paint(failures)
 	_phase4_hover_end(failures)
 	_phase5_commit(failures)
@@ -169,6 +170,10 @@ static func _phase2_hover_empty_unarmed(failures: Array[String]) -> void:
 	PlanningChecklistHarness.assert_cursor_contains(
 		failures, "trample/phase2_unarmed/cursor_walk", fix, walk_slots, PlanningIcons.GLYPH_WALK,
 	)
+
+
+static func _phase2_unarmed_mouse_waypoints(failures: Array[String]) -> void:
+	TramplingAdvanceE2ETest._test_unarmed_hover_follows_mouse_waypoints(failures)
 
 
 static func _phase2_3_arm_and_paint(failures: Array[String]) -> void:

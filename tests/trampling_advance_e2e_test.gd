@@ -14,6 +14,7 @@ const NORTH_THEN_EAST: Array[Vector2i] = [Vector2i(5, 3), Vector2i(6, 3)]
 
 static func run_all(failures: Array[String]) -> void:
 	_test_arm_and_commit_smoke(failures)
+	_test_unarmed_hover_follows_mouse_waypoints(failures)
 	_test_tile_by_tile_drag_route_preserves_paint_order(failures)
 	_test_jump_drag_repath_must_not_replace_valid_painted_route(failures)
 	_test_mouse_jump_drag_exposes_pathfinder_reorder(failures)
@@ -83,6 +84,36 @@ static func _knight_fixture(start: Vector2i) -> Dictionary:
 	}
 	PlanningDragE2EHarness.track_raw_fixture(fix)
 	return fix
+
+
+static func _test_unarmed_hover_follows_mouse_waypoints(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if fix.trample_idx < 0:
+		failures.append("TramplingAdvanceE2E unarmed hover: missing Trampling Advance")
+		return
+	director.selected_ability_index = fix.trample_idx
+	if input.awaiting_targeting_active():
+		failures.append("TramplingAdvanceE2E unarmed hover: select must not arm awaiting yet")
+		return
+	director_set_hover(input, START_CELL)
+	input.on_hover_moved(EAST_THEN_NORTH[0])
+	input.on_hover_moved(EAST_THEN_NORTH[1])
+	var expected: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
+	if input._drag_route != expected:
+		failures.append(
+			"TramplingAdvanceE2E unarmed hover: mouse corridor %s expected %s"
+			% [str(input._drag_route), str(expected)],
+		)
+		return
+	var params: Dictionary = input._commit_interaction_params(EAST_THEN_NORTH[1], -1)
+	var painted: Array[Vector2i] = params.get("waypoints", []) as Array[Vector2i]
+	if painted != EAST_THEN_NORTH:
+		failures.append(
+			"TramplingAdvanceE2E unarmed hover: commit waypoints %s expected mouse path %s"
+			% [str(painted), str(EAST_THEN_NORTH)],
+		)
 
 
 static func _test_arm_and_commit_smoke(failures: Array[String]) -> void:
