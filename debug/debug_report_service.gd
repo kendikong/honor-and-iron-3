@@ -20,6 +20,8 @@ var _preview_update_count: int = 0
 var _overlay: CanvasLayer
 var _generic_menu: Control
 var _report_dialog: Control
+var _pause_owned: bool = false
+var _was_paused_before_debug_menu: bool = false
 
 
 func _ready() -> void:
@@ -29,6 +31,7 @@ func _ready() -> void:
 	_overlay.layer = 100
 	_overlay.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_overlay)
+	get_tree().scene_changed.connect(_on_scene_changed)
 	if EventBus != null:
 		EventBus.sim_event.connect(_on_sim_event)
 		EventBus.action_rejected.connect(_on_action_rejected)
@@ -37,6 +40,19 @@ func _ready() -> void:
 		EventBus.turn_phase_changed.connect(_on_turn_phase_changed)
 		EventBus.timeline_changed.connect(_on_timeline_changed)
 		EventBus.preview_updated.connect(_on_preview_updated)
+
+
+func _on_scene_changed() -> void:
+	_recent_events.clear()
+	_latest_preview.clear()
+	_latest_timeline.clear()
+	_latest_rejection = ""
+	_preview_update_count = 0
+	_append_event({
+		"kind": "scene_changed",
+		"scene_path": get_tree().current_scene.scene_file_path
+			if get_tree().current_scene != null else "",
+	})
 
 
 func _input(event: InputEvent) -> void:
@@ -56,6 +72,7 @@ func _input(event: InputEvent) -> void:
 	if _generic_menu != null:
 		_close_generic_menu()
 	else:
+		_pause_for_debug_capture()
 		_open_generic_menu()
 	get_viewport().set_input_as_handled()
 
@@ -63,7 +80,8 @@ func _input(event: InputEvent) -> void:
 func open_report_dialog() -> void:
 	if _report_dialog != null:
 		return
-	_close_generic_menu()
+	_pause_for_debug_capture()
+	_close_generic_menu(false)
 	var dialog_script: Script = load("res://debug/debug_report_dialog.gd")
 	_report_dialog = dialog_script.new()
 	_report_dialog.name = "DebugReportDialog"
@@ -77,6 +95,7 @@ func close_report_dialog() -> void:
 		return
 	_report_dialog.queue_free()
 	_report_dialog = null
+	_restore_pause_after_debug_capture()
 
 
 func submit_report(
@@ -120,7 +139,7 @@ func submit_report(
 	var project_path := project_dir.path_join("%s.json" % report_id)
 	if _write_text(project_path, report_json):
 		paths.append(project_path)
-	_append_index(report, paths)
+	_append_index(report)
 	return {
 		"report_id": report_id,
 		"paths": paths,
@@ -149,8 +168,10 @@ static func serialize_board(board: BoardState) -> Dictionary:
 			"id": unit.id,
 			"definition": String(unit.definition.id) if unit.definition != null else "",
 			"team": unit.team,
+			"team_name": _enum_name(GameEnums.Team.keys(), unit.team),
 			"position": _coord(unit.position),
 			"facing": unit.facing,
+			"facing_name": _enum_name(GameEnums.Facing.keys(), unit.facing),
 			"alive": unit.is_alive(),
 			"hp": unit.health.current_hp,
 			"max_hp": unit.health.max_hp,
@@ -188,7 +209,9 @@ static func serialize_timeline(timeline: Timeline) -> Array[Dictionary]:
 		result.append({
 			"actor_id": action.actor_id,
 			"type": action.type,
+			"type_name": _enum_name(GameEnums.ActionType.keys(), action.type),
 			"move_timing": action.move_timing,
+			"move_timing_name": _enum_name(GameEnums.MoveTiming.keys(), action.move_timing),
 			"target_coord": _coord(action.target_coord),
 			"target_unit_id": action.target_unit_id,
 			"ability": String(action.ability.id) if action.ability != null else "",
@@ -207,7 +230,7 @@ static func serialize_timeline(timeline: Timeline) -> Array[Dictionary]:
 func _open_generic_menu() -> void:
 	_generic_menu = ColorRect.new()
 	_generic_menu.name = "GlobalDebugEscapeMenu"
-	_generic_menu.color = Color(0.02, 0.03, 0.05, 0.92)
+	_generic_menu.color = MenuTheme.BG_DIM
 	_generic_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_generic_menu.process_mode = Node.PROCESS_MODE_ALWAYS
 	_overlay.add_child(_generic_menu)
@@ -215,6 +238,7 @@ func _open_generic_menu() -> void:
 	panel.set_anchors_preset(Control.PRESET_CENTER)
 	panel.custom_minimum_size = Vector2(360, 220)
 	_generic_menu.add_child(panel)
+	MenuTheme.apply_panel(panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 10)
 	panel.add_child(box)
@@ -222,24 +246,44 @@ func _open_generic_menu() -> void:
 	title.text = "PAUSED"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
+	MenuTheme.style_title(title)
 	box.add_child(title)
 	var report := Button.new()
 	report.text = "Report Bug"
 	report.custom_minimum_size.y = 42
+	MenuTheme.style_menu_button(report)
 	report.pressed.connect(open_report_dialog)
 	box.add_child(report)
 	var close := Button.new()
 	close.text = "Close"
 	close.custom_minimum_size.y = 42
+	MenuTheme.style_menu_button(close)
 	close.pressed.connect(_close_generic_menu)
 	box.add_child(close)
 
 
-func _close_generic_menu() -> void:
+func _close_generic_menu(restore_pause: bool = true) -> void:
 	if _generic_menu == null:
 		return
 	_generic_menu.queue_free()
 	_generic_menu = null
+	if restore_pause:
+		_restore_pause_after_debug_capture()
+
+
+func _pause_for_debug_capture() -> void:
+	if _pause_owned:
+		return
+	_was_paused_before_debug_menu = get_tree().paused
+	get_tree().paused = true
+	_pause_owned = true
+
+
+func _restore_pause_after_debug_capture() -> void:
+	if not _pause_owned:
+		return
+	get_tree().paused = _was_paused_before_debug_menu
+	_pause_owned = false
 
 
 func _capture_scene_context() -> Dictionary:
@@ -281,7 +325,8 @@ func _capture_screenshot(report_id: String, user_dir: String, project_dir: Strin
 	if image.save_png(user_path) != OK:
 		return ""
 	var project_path := project_dir.path_join(filename)
-	image.save_png(project_path)
+	if image.save_png(project_path) == OK:
+		return project_path
 	return user_path
 
 
@@ -300,7 +345,7 @@ func _write_text(path: String, text: String) -> bool:
 	return true
 
 
-func _append_index(report: Dictionary, paths: Array[String]) -> void:
+func _append_index(report: Dictionary) -> void:
 	var index_path := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("index.md")
 	var line := "- `%s` **%s** — %s — %s\n" % [
 		report.report_id,
@@ -318,6 +363,7 @@ func _on_sim_event(event: SimEvent) -> void:
 	_append_event({
 		"kind": "sim_event",
 		"type": event.type,
+		"type_name": _enum_name(GameEnums.SimEventType.keys(), event.type),
 		"data": _sanitize(event.data),
 	})
 
@@ -336,12 +382,16 @@ func _on_ability_selected(index: int) -> void:
 
 
 func _on_turn_phase_changed(phase: int) -> void:
-	_append_event({"kind": "phase_changed", "phase": phase})
+	_append_event({
+		"kind": "phase_changed",
+		"phase": phase,
+		"phase_name": _enum_name(CombatDirector.Phase.keys(), phase),
+	})
 
 
 func _on_timeline_changed(timeline: Timeline, statuses: PackedStringArray) -> void:
 	_latest_timeline = {
-		"actions": serialize_timeline(timeline),
+		"action_count": timeline.entries.size() if timeline != null else 0,
 		"statuses": Array(statuses),
 	}
 	_append_event({
@@ -361,6 +411,7 @@ func _on_preview_updated(result: SimResult) -> void:
 		"update_count": _preview_update_count,
 		"event_count": event_count,
 		"last_event_type": last_event_type,
+		"last_event_type_name": _enum_name(GameEnums.SimEventType.keys(), last_event_type),
 	}
 
 
@@ -409,6 +460,12 @@ static func _statuses(statuses: Array[StatusData]) -> Array[Dictionary]:
 
 static func _coord(value: Vector2i) -> Array[int]:
 	return [value.x, value.y]
+
+
+static func _enum_name(names: PackedStringArray, value: int) -> String:
+	if value < 0 or value >= names.size():
+		return ""
+	return names[value]
 
 
 static func _limit_text(value: String, max_length: int) -> String:

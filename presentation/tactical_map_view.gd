@@ -80,6 +80,15 @@ func build_debug_context() -> Dictionary:
 			"post_move": DebugReportRuntime.serialize_timeline(_director.plan_post_move) if _director != null else [],
 		},
 	}
+	if _director != null and _director.board != null:
+		var selected_unit := _director.board.get_unit_by_id(_director.selected_unit_id)
+		var selected_ability := CombatDirector.resolve_selected_ability(
+			selected_unit,
+			_director.selected_ability_index,
+		)
+		context["selected_ability_id"] = (
+			String(selected_ability.id) if selected_ability != null else ""
+		)
 	if _planning_overlay != null:
 		context["planning_overlay"] = _planning_overlay.build_debug_context()
 	return context

@@ -13,6 +13,7 @@ and actual result. The tool automatically adds:
 
 - Current scene, mode, engine/project version, FPS, window size, and pause state.
 - A bounded buffer of the last 64 meaningful events.
+- Event history resets when changing scenes, so reports do not mix unrelated modes.
 - Current board, projected board, turn-start board, units, statuses, abilities,
   passives, terrain, selected unit/skill, timelines, hover tiles, and route.
 - The latest preview summary and rejected-action reason.

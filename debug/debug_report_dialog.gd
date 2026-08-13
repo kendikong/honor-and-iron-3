@@ -24,27 +24,37 @@ func setup(service: DebugReportRuntime) -> void:
 
 func _build_ui() -> void:
 	var backdrop := ColorRect.new()
-	backdrop.color = Color(0.015, 0.02, 0.035, 0.96)
+	backdrop.color = MenuTheme.BG_DIM
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(backdrop)
 
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(780, 700)
+	var viewport_size := get_viewport_rect().size
+	panel.custom_minimum_size = Vector2(
+		clampf(viewport_size.x - 48.0, 360.0, 780.0),
+		clampf(viewport_size.y - 48.0, 420.0, 700.0),
+	)
 	add_child(panel)
+	MenuTheme.apply_panel(panel)
 
 	var margin := MarginContainer.new()
 	for key: String in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
 		margin.add_theme_constant_override(key, 18)
 	panel.add_child(margin)
 
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_child(scroll)
+
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 8)
-	margin.add_child(root)
+	scroll.add_child(root)
 
 	var title := Label.new()
 	title.text = "REPORT A BUG"
 	title.add_theme_font_size_override("font_size", 28)
+	MenuTheme.style_title(title)
 	root.add_child(title)
 
 	var explanation := Label.new()
@@ -54,6 +64,7 @@ func _build_ui() -> void:
 		"and optional screenshot."
 	)
 	explanation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	MenuTheme.style_muted_label(explanation)
 	root.add_child(explanation)
 
 	var metadata := HBoxContainer.new()
@@ -98,11 +109,13 @@ func _build_ui() -> void:
 	var cancel := Button.new()
 	cancel.text = "Cancel"
 	cancel.custom_minimum_size.x = 120
+	MenuTheme.style_menu_button(cancel)
 	cancel.pressed.connect(_service.close_report_dialog)
 	buttons.add_child(cancel)
 	var save := Button.new()
 	save.text = "Save Bug Report"
 	save.custom_minimum_size.x = 180
+	MenuTheme.style_menu_button(save)
 	save.pressed.connect(_save_report)
 	buttons.add_child(save)
 
@@ -132,12 +145,19 @@ func _save_report() -> void:
 
 
 func _add_option(parent: HBoxContainer, default_text: String, values: Array[String]) -> OptionButton:
+	var group := VBoxContainer.new()
+	group.add_theme_constant_override("separation", 2)
+	parent.add_child(group)
+	var label := Label.new()
+	label.text = "Category" if default_text == "Bug" else "Severity"
+	MenuTheme.style_section_label(label)
+	group.add_child(label)
 	var option := OptionButton.new()
 	for value: String in values:
 		option.add_item(value)
 	option.select(values.find(default_text))
 	option.custom_minimum_size.x = 180
-	parent.add_child(option)
+	group.add_child(option)
 	return option
 
 
