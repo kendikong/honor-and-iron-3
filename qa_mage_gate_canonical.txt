@@ -61,5 +61,4 @@ ERROR: 26 resources still in use at exit (run with --verbose for details).
 --- Tier 1 harness: PASS ---
 
 === Tier 2: live Mage acceptance ===
---- Tier 2 live: PASS ---
-[PASS] Mage QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+[FAIL] Tier 2 live Mage QA exit 1

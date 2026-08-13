@@ -70,5 +70,4 @@ ERROR: 26 resources still in use at exit (run with --verbose for details).
 === Lancer QA gate summary ===
 
 === Tier 2: live Lancer acceptance ===
---- Tier 2 live: PASS ---
-[PASS] Lancer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+[FAIL] Tier 2 live Lancer QA exit 1

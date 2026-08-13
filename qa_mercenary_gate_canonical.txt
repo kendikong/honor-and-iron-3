@@ -17,6 +17,8 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MOVEMENT_SMOKE] mercenary_pullback (mercenary)
 [MOVEMENT_SMOKE] mercenary_pullback (mercenary)
 [MERCENARY_QA] mercenary_swift_strike
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
 [MERCENARY_QA] mercenary_defense_strike
 [MERCENARY_QA] mercenary_blade_storm
 [MERCENARY_QA] mercenary_caltrop_toss
@@ -28,6 +30,8 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MERCENARY_QA] mercenary_executioners_blade
 [MERCENARY_QA] mercenary_precision_strike
 [MERCENARY_QA] mercenary_flank_and_run
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
 [MERCENARY_QA] mercenary_hamstring
 [MERCENARY_QA] mercenary_acrobatic_vault
 [MERCENARY_QA] mercenary_duelists_challenge
@@ -47,14 +51,16 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MERCENARY_QA] ruthless
 [MERCENARY_QA] coup_de_grace
 [MOVEMENT_SMOKE] mercenary_pullback (mercenary)
-[FAIL] blood_scent/outcome/move_bonus: moving closer to wounded enemy must grant bonus MOV
-[FAIL] blood_scent/upgrade/move: expected 2 got 0
-[FAIL] blood_scent/upgrade/move: expected 2 got 0
-[FAIL] Mercenary QA gate: 3 failure(s)
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
+[PASS] Mercenary QA gate: factory matrix, all active skills, and passive contracts
 WARNING: 2 RIDs of type "CanvasItem" were leaked.
    at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
-WARNING: 796 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+WARNING: 797 ObjectDB instances were leaked at exit (run with `--verbose` for details).
    at: cleanup (core/object/object.cpp:2535)
 ERROR: 26 resources still in use at exit (run with --verbose for details).
    at: clear (core/io/resource.cpp:822)
-[FAIL] Mercenary Tier 1 harness
+--- Tier 1 harness: PASS ---
+
+=== Mercenary QA gate summary ===
+[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios

@@ -165,13 +165,7 @@ static func _ensure_init() -> void:
 	# 1. KNIGHT (AXE)
 	var knight := KnightFactory.build(basic_axe)
 
-	# 2. PALADIN (SWORD)
-	var p_paladin = _make_passive(&"holy_shield", "Holy Shield", "Resists magic.")
-	var paladin_heal := _make_ability(&"paladin_heal", "Lay on Hands", 1, [_effect(GameEnums.EffectType.HEAL, 2)], 1, GameEnums.StatType.MAGICAL)
-	var paladin_swap := _make_movement_ability(&"paladin_swap", "Holy Swap", 2, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
-	var paladin := _make_unit_data(&"paladin", "Paladin", 5, 3, 1, [paladin_heal, paladin_swap], null, GameEnums.MovementType.WALK, 3, 2, 4, basic_sword, [p_paladin])
-
-	# 3. BRUISER (AXE)
+	# 2. BRUISER (AXE)
 	var fighter := BruiserFactory.build(basic_axe)
 
 	# 4. LANCER (LANCE)
@@ -217,7 +211,7 @@ static func _ensure_init() -> void:
 	var beast_rider: UnitData = BeastRiderFactoryScript.build(basic_lance)
 
 	_player_units = [
-		knight, paladin, fighter, lancer, archer, mage, cleric,
+		knight, fighter, lancer, archer, mage, cleric,
 		assassin, mercenary, gryphon, monk, engineer, shaman, rogue, beast_rider
 	]
 	for u in _player_units:
@@ -813,11 +807,6 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		&"knight":
 			id = &"knight_basic"
 			display_name = "Shield Strike"
-		&"paladin":
-			id = &"paladin_basic"
-			display_name = "Holy Mending"
-			effects = [_effect(GameEnums.EffectType.HEAL, 1)]
-			stat = GameEnums.StatType.MAGICAL
 		&"bruiser":
 			id = &"bruiser_basic"
 			display_name = "Wild Swing"

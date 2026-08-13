@@ -18,19 +18,6 @@ static func build() -> Dictionary:
 				"weapon": 1.0,
 			},
 		},
-		"paladin": {
-			"forced_items": {
-				"weapon": "weapon_sword_longsword",
-				"shield": "shield_crusader",
-				"armour": "torso_armour_legion",
-				"clothes": "torso_clothes_robe",
-			},
-			"slot_fill": {
-				"shield": 1.0,
-				"weapon": 1.0,
-				"armour": 0.85,
-			},
-		},
 		"bruiser": {
 			"forced_items": {
 				"weapon": "weapon_blunt_waraxe",

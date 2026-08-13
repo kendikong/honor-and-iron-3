@@ -28,7 +28,6 @@ static func build_all_player_units() -> Dictionary:
 		"monk": _monk(fist),
 		"engineer": _engineer(gun),
 		"shaman": _shaman(staff),
-		"paladin": _paladin(sword),
 	}
 
 
@@ -92,10 +91,3 @@ static func _shaman(staff: WeaponData) -> UnitData:
 	var ward := DataLibrary._make_ability(&"shaman_ward", "Earth Ward", 3, [DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2)], 1)
 	var shove := DataLibrary._make_ability(&"shaman_shove", "Gale Force", 2, [DataLibrary._effect(GameEnums.EffectType.PUSH, 1)], 0)
 	return DataLibrary._make_unit_data(&"shaman", "Shaman", 3, 3, 1, [ward, shove], null, GameEnums.MovementType.WALK, 0, 4, 2, staff, [p])
-
-
-static func _paladin(sword: WeaponData) -> UnitData:
-	var p := DataLibrary._make_passive(&"holy_shield", "Holy Shield", "Resists magic.")
-	var heal := DataLibrary._make_ability(&"paladin_heal", "Lay on Hands", 1, [DataLibrary._effect(GameEnums.EffectType.HEAL, 2)], 1, GameEnums.StatType.MAGICAL)
-	var swap := DataLibrary._make_movement_ability(&"paladin_swap", "Holy Swap", 2, [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)], 1)
-	return DataLibrary._make_unit_data(&"paladin", "Paladin", 5, 3, 1, [heal, swap], null, GameEnums.MovementType.WALK, 3, 2, 4, sword, [p])

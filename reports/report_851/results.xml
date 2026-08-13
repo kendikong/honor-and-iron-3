@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<testsuites id="2026-08-11" name="report_851" tests="1" failures="0" skipped="0" flaky="0" time="0.000">
-	<testsuite id="0" name="live_bruiser_class_test" package="tests" timestamp="2026-08-12T04:21:46" hostname="localhost" tests="1" failures="0" errors="0" skipped="0" flaky="0" time="31.950">
-		<testcase name="test_live_bruiser_multi_skill_session" classname="live_bruiser_class_test" time="31.929">
-		</testcase>
-	</testsuite>
-</testsuites>

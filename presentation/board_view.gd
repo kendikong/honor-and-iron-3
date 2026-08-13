@@ -2222,15 +2222,6 @@ func _draw_class_icon(c: Vector2, class_id: StringName, color: Color) -> void:
 				c + Vector2(3, 5)
 			])
 			draw_polygon(arrow_right, [color])
-		&"paladin":
-			var pts := PackedVector2Array([
-				c + Vector2(-6, -6), c + Vector2(6, -6),
-				c + Vector2(6, 2), c + Vector2(0, 8),
-				c + Vector2(-6, 2), c + Vector2(-6, -6)
-			])
-			draw_polyline(pts, color, 2.0)
-			draw_rect(Rect2(c.x - 1.5, c.y - 3, 3, 7), color, true)
-			draw_rect(Rect2(c.x - 3.5, c.y - 1, 7, 3), color, true)
 		&"fighter":
 			draw_rect(Rect2(c.x - 5, c.y - 4, 10, 8), color, true)
 			draw_rect(Rect2(c.x - 6, c.y - 6, 3, 3), color, true)
@@ -5145,7 +5136,6 @@ func _get_action_autobattler_scores(action: TimelineAction) -> Dictionary:
 func _class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
 		&"knight": return "♞"
-		&"paladin": return "🛡️"
 		&"fighter": return "✊"
 		&"lancer": return "🧲"
 		&"archer": return "🏹"

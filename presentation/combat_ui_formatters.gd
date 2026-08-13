@@ -302,7 +302,6 @@ static func describe_action(
 static func class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
 		&"knight": return "♞"
-		&"paladin": return "🛡️"
 		&"fighter": return "✊"
 		&"lancer": return "🧲"
 		&"archer": return "🏹"

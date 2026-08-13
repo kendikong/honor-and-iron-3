@@ -56,11 +56,16 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [BRUISER_QA] juggernaut (juggernaut)
 [BRUISER_QA] battering_ram (battering_ram)
 [BRUISER_QA] unstoppable_force (unstoppable_force)
-[PASS] Bruiser QA Tier 1 scenarios
---- Tier 1 harness: PASS ---
-
-=== Bruiser QA gate summary ===
-
-=== Tier 2: live Bruiser acceptance ===
---- Tier 2 live: PASS ---
-[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+[FAIL] charge_strike/upgrade/terrain_flag: assertion failed
+[FAIL] charge_strike/upgrade/terrain_dmg: expected 4 got 0
+[FAIL] charge_strike/upgrade/ghost_path: expected (4, 3) got (2, 3)
+[FAIL] charge_strike/upgrade/terrain_flag: assertion failed
+[FAIL] charge_strike/upgrade/terrain_dmg: expected 4 got 0
+[FAIL] charge_strike/upgrade/ghost_path: expected (4, 3) got (2, 3)
+--- Tier 1 harness: FAIL ---
+[FAIL] charge_strike/upgrade/terrain_flag: assertion failed
+[FAIL] charge_strike/upgrade/terrain_dmg: expected 4 got 0
+[FAIL] charge_strike/upgrade/ghost_path: expected (4, 3) got (2, 3)
+[FAIL] charge_strike/upgrade/terrain_flag: assertion failed
+[FAIL] charge_strike/upgrade/terrain_dmg: expected 4 got 0
+[FAIL] charge_strike/upgrade/ghost_path: expected (4, 3) got (2, 3)
