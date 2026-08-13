@@ -61,6 +61,8 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and (event as InputEventKey).echo:
 		return
 	if _report_dialog != null:
+		close_report_dialog()
+		get_viewport().set_input_as_handled()
 		return
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
@@ -116,6 +118,7 @@ func submit_report(
 
 	var report := {
 		"report_id": report_id,
+		"status": "open",
 		"created_at": Time.get_datetime_string_from_system(true),
 		"category": category,
 		"severity": severity,
@@ -140,9 +143,13 @@ func submit_report(
 	if _write_text(project_path, report_json):
 		paths.append(project_path)
 	_append_index(report)
+	var display_paths: Array[String] = []
+	for path: String in paths:
+		display_paths.append(_display_path(path))
 	return {
 		"report_id": report_id,
 		"paths": paths,
+		"display_paths": display_paths,
 		"screenshot": screenshot_path,
 	}
 
@@ -308,6 +315,7 @@ func _runtime_metadata() -> Dictionary:
 		"engine": Engine.get_version_info(),
 		"project": ProjectSettings.get_setting("application/config/name", ""),
 		"project_version": ProjectSettings.get_setting("application/config/version", "dev"),
+		"git_commit": _read_git_commit_hash(),
 		"scene_path": scene.scene_file_path if scene != null else "",
 		"fps_at_capture": Engine.get_frames_per_second(),
 		"paused_at_capture": get_tree().paused,
@@ -346,13 +354,20 @@ func _write_text(path: String, text: String) -> bool:
 
 
 func _append_index(report: Dictionary) -> void:
-	var index_path := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("index.md")
-	var line := "- `%s` **%s** — %s — %s\n" % [
+	var line := "- `%s` **%s** — %s — %s — %s\n" % [
 		report.report_id,
+		report.get("status", "open"),
 		report.severity,
 		report.category,
 		report.title if not String(report.title).is_empty() else "(untitled)",
 	]
+	var project_index := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("index.md")
+	_append_index_line(project_index, line)
+	var user_index := _ensure_report_directory(REPORT_DIR_USER).path_join("index.md")
+	_append_index_line(user_index, line)
+
+
+func _append_index_line(index_path: String, line: String) -> void:
 	var existing := ""
 	if FileAccess.file_exists(index_path):
 		existing = FileAccess.get_file_as_string(index_path)
@@ -475,6 +490,32 @@ static func _limit_text(value: String, max_length: int) -> String:
 static func _make_report_id() -> String:
 	var stamp := Time.get_datetime_string_from_system(false).replace("-", "").replace(":", "")
 	return "BUG-%s-%03d" % [stamp, Time.get_ticks_msec() % 1000]
+
+
+func _read_git_commit_hash() -> String:
+	var head_path := ProjectSettings.globalize_path("res://.git/HEAD")
+	if not FileAccess.file_exists(head_path):
+		return ""
+	var head := FileAccess.get_file_as_string(head_path).strip_edges()
+	if head.is_empty():
+		return ""
+	if head.begins_with("ref: "):
+		var ref_path := head.substr(5).strip_edges()
+		var object_path := ProjectSettings.globalize_path("res://.git/%s" % ref_path)
+		if FileAccess.file_exists(object_path):
+			return FileAccess.get_file_as_string(object_path).strip_edges().substr(0, 40)
+		return ""
+	return head.substr(0, 40)
+
+
+func _display_path(absolute_path: String) -> String:
+	var project_root := ProjectSettings.globalize_path("res://").replace("\\", "/")
+	var normalized := absolute_path.replace("\\", "/")
+	if normalized.begins_with(project_root):
+		return normalized.substr(project_root.length())
+	if normalized.find("bug_reports/") >= 0:
+		return normalized.substr(normalized.find("bug_reports/"))
+	return normalized.get_file()
 
 
 static func _sanitize(value: Variant) -> Variant:

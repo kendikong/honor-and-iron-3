@@ -11,11 +11,12 @@ The ESC menu exposes **Report Bug** in every scene:
 The player supplies the category, severity, title, description, expected result,
 and actual result. The tool automatically adds:
 
-- Current scene, mode, engine/project version, FPS, window size, and pause state.
+- Current scene, mode, engine/project version, git commit (when available), FPS, window size, and pause state.
 - A bounded buffer of the last 64 meaningful events.
 - Event history resets when changing scenes, so reports do not mix unrelated modes.
 - Current board, projected board, turn-start board, units, statuses, abilities,
-  passives, terrain, selected unit/skill, timelines, hover tiles, and route.
+  passives, terrain, selected unit/skill, timelines, hover tiles, route, battle
+  log tail, and planning preview-failure state.
 - The latest preview summary and rejected-action reason.
 - An optional screenshot captured only when the player saves the report.
 
@@ -36,9 +37,9 @@ is self-contained; the screenshot is optional.
 3. Describe what happened and save.
 4. Tell the agent: **“Fix all open bug reports.”**
 
-The agent should read the JSON files, triage design/balance concerns separately
-from implementation bugs, fix actionable reports, run the matching QA, and
-leave the report files available as the audit trail.
+The agent should read the JSON files (each has `"status": "open"` until fixed),
+triage design/balance concerns separately from implementation bugs, fix actionable
+reports, run the matching QA, and leave the report files available as the audit trail.
 
 ## Performance contract
 

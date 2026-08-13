@@ -648,6 +648,15 @@ func get_log_label() -> RichTextLabel:
 	return _log_label
 
 
+func get_log_plain_text(max_chars: int = 4000) -> String:
+	if _log_label == null:
+		return ""
+	var text := _log_label.get_parsed_text()
+	if text.length() <= max_chars:
+		return text
+	return text.substr(text.length() - max_chars)
+
+
 func _on_phase_changed(phase: int) -> void:
 	_phase = phase
 	if _intent_state != null:

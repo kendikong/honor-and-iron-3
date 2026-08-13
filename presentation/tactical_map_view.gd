@@ -66,11 +66,16 @@ var _autobattler_panel: AutobattlerControlPanel
 
 
 func build_debug_context() -> Dictionary:
+	var phase := _director.phase if _director != null else -1
+	var phase_name := ""
+	if phase >= 0 and phase < CombatDirector.Phase.keys().size():
+		phase_name = CombatDirector.Phase.keys()[phase]
 	var context: Dictionary = {
 		"mode": "tactical_combat",
 		"selected_unit_id": _director.selected_unit_id if _director != null else -1,
 		"selected_ability_index": _director.selected_ability_index if _director != null else -1,
-		"phase": _director.phase if _director != null else -1,
+		"phase": phase,
+		"phase_name": phase_name,
 		"board": DebugReportRuntime.serialize_board(_director.board) if _director != null else {},
 		"projected_board": DebugReportRuntime.serialize_board(_director.projected_state) if _director != null else {},
 		"turn_start_board": DebugReportRuntime.serialize_board(_director.turn_start_board) if _director != null else {},
@@ -91,6 +96,14 @@ func build_debug_context() -> Dictionary:
 		)
 	if _planning_overlay != null:
 		context["planning_overlay"] = _planning_overlay.build_debug_context()
+	if _side_panels != null:
+		context["battle_log_tail"] = _side_panels.get_log_plain_text()
+	if _planning_input != null:
+		var hover := _planning_input.get_hover_tile_for_ui()
+		context["planning_input"] = {
+			"drag_preview_failed": _planning_input.drag_preview_failed,
+			"hover_tile": [hover.x, hover.y],
+		}
 	return context
 
 

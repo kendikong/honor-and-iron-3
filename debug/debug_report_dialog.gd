@@ -13,6 +13,8 @@ var _expected: TextEdit
 var _actual: TextEdit
 var _screenshot: CheckBox
 var _status: Label
+var _save_button: Button
+var _saving: bool = false
 
 
 func setup(service: DebugReportRuntime) -> void:
@@ -48,6 +50,7 @@ func _build_ui() -> void:
 	margin.add_child(scroll)
 
 	var root := VBoxContainer.new()
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.add_theme_constant_override("separation", 8)
 	scroll.add_child(root)
 
@@ -117,15 +120,23 @@ func _build_ui() -> void:
 	save.custom_minimum_size.x = 180
 	MenuTheme.style_menu_button(save)
 	save.pressed.connect(_save_report)
+	_save_button = save
 	buttons.add_child(save)
+	_title.call_deferred("grab_focus")
 
 
 func _save_report() -> void:
+	if _saving:
+		return
 	var title := _title.text.strip_edges()
 	var description := _description.text.strip_edges()
 	if title.is_empty() or description.is_empty():
 		_status.text = "Please provide a short title and describe what happened."
 		return
+	_saving = true
+	if _save_button != null:
+		_save_button.disabled = true
+	_status.text = "Saving report..."
 	var result := _service.submit_report(
 		_category.get_item_text(_category.selected),
 		_severity.get_item_text(_severity.selected),
@@ -135,9 +146,12 @@ func _save_report() -> void:
 		_actual.text,
 		_screenshot.button_pressed,
 	)
-	var paths: Array = result.get("paths", [])
+	var paths: Array = result.get("display_paths", result.get("paths", []))
 	if paths.is_empty():
 		_status.text = "Could not write the report. Check the Godot user-data folder permissions."
+		_saving = false
+		if _save_button != null:
+			_save_button.disabled = false
 		return
 	_status.text = "Saved %s\n%s" % [result.get("report_id", "report"), "\n".join(paths)]
 	await get_tree().create_timer(1.0, true).timeout

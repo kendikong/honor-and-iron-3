@@ -74,6 +74,7 @@ func _build_ui() -> void:
 		_root.add_child(comp),
 	)
 	_add_button(vbox, "Report Bug", func() -> void:
+		close_menu()
 		if DebugReportService != null:
 			DebugReportService.open_report_dialog(),
 	)
