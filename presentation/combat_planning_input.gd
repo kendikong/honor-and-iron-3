@@ -75,6 +75,9 @@ var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
 var _suppress_post_commit_hover_refresh: bool = false
+const _HOVER_PREVIEW_LRU_MAX: int = 24
+var _hover_preview_lru: Dictionary = {}
+var _hover_preview_lru_order: Array[String] = []
 
 
 func setup(
@@ -1062,6 +1065,41 @@ func _invalidate_planning_hover_cache(reset_hover_cell: bool = true) -> void:
 	_hover_cursor_cached_icon = ""
 	_overlay_cursor_icon = ""
 	_overlay_cursor_cell = Vector2i(-9999, -9999)
+	_clear_hover_preview_lru()
+
+
+func _clear_hover_preview_lru() -> void:
+	_hover_preview_lru.clear()
+	_hover_preview_lru_order.clear()
+
+
+func _duplicate_preview_result(res: Dictionary) -> Dictionary:
+	var copy: Dictionary = res.duplicate()
+	if res.has("temp_board") and res["temp_board"] is BoardState:
+		copy["temp_board"] = (res["temp_board"] as BoardState).clone()
+	if res.has("events"):
+		copy["events"] = (res["events"] as Array).duplicate()
+	if res.has("intents"):
+		copy["intents"] = (res["intents"] as Array).duplicate()
+	return copy
+
+
+func _store_hover_preview_lru(cache_key: String, res: Dictionary) -> void:
+	if cache_key.is_empty() or res.is_empty():
+		return
+	_hover_preview_lru[cache_key] = _duplicate_preview_result(res)
+	_hover_preview_lru_order.erase(cache_key)
+	_hover_preview_lru_order.append(cache_key)
+	while _hover_preview_lru_order.size() > _HOVER_PREVIEW_LRU_MAX:
+		var stale_key: String = _hover_preview_lru_order[0]
+		_hover_preview_lru_order.remove_at(0)
+		_hover_preview_lru.erase(stale_key)
+
+
+func _take_hover_preview_lru(cache_key: String) -> Dictionary:
+	if cache_key.is_empty() or not _hover_preview_lru.has(cache_key):
+		return {}
+	return _duplicate_preview_result(_hover_preview_lru[cache_key] as Dictionary)
 
 
 ## Public alias for input controller / UI when ability changes outside EventBus order.
@@ -1135,11 +1173,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if _should_restore_stand_hover_preview(cell):
 		_flush_hover_heavy_sync()
 		return
-	_run_hover_overlay_refresh()
 	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
 	else:
 		_schedule_hover_sim_refresh()
+	_run_hover_overlay_refresh()
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
@@ -1225,8 +1263,8 @@ func _flush_hover_heavy_sync() -> void:
 	_hover_heavy_throttle_gen += 1
 	_hover_sim_throttle_gen += 1
 	_flush_drag_preview_refresh()
-	_run_hover_overlay_refresh()
 	_run_hover_sim_refresh()
+	_run_hover_overlay_refresh()
 
 
 func _run_hover_overlay_refresh() -> void:
@@ -1243,15 +1281,12 @@ func _run_hover_overlay_refresh() -> void:
 		_last_heavy_hover_refresh_cell = cell
 		if _planning != null:
 			_planning.queue_redraw()
-		refresh_mouse_cursor(cell)
 		return
 	var planning_cell_changed: bool = cell != _last_heavy_hover_refresh_cell
 	if _director.selected_unit_id >= 0 and planning_cell_changed:
 		_sync_threat_origin_from_cell(cell)
 	if _planning != null and planning_cell_changed:
 		_planning._recompute_hover_ranges_from_inputs()
-	if planning_cell_changed:
-		refresh_mouse_cursor(cell)
 	_last_heavy_hover_refresh_cell = cell
 
 
@@ -1274,6 +1309,8 @@ func _run_hover_sim_refresh() -> void:
 	elif sim_cell_changed:
 		_update_hover_attack_preview()
 	_last_sim_hover_refresh_cell = cell
+	if not dragging:
+		refresh_mouse_cursor(cell)
 
 
 func _run_hover_heavy_refresh() -> void:
@@ -1713,9 +1750,21 @@ func _refresh_live_interaction_preview(
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
 	if cache_key == _hover_preview_cache_key and preview_state.preview_board != null:
 		return
-	var res: Dictionary = _preview_at_interaction_cell(
-		unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
-	)
+	var res: Dictionary = _take_hover_preview_lru(cache_key)
+	if res.is_empty():
+		res = _preview_at_interaction_cell(
+			unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
+		)
+		_store_hover_preview_lru(cache_key, res)
+	_apply_hover_preview_from_result(res, unit_id, move_coord, cache_key)
+
+
+func _apply_hover_preview_from_result(
+	res: Dictionary,
+	unit_id: int,
+	move_coord: Vector2i,
+	cache_key: String,
+) -> void:
 	drag_preview_failed = _is_invalid_dict(res)
 	for event: Variant in res.get("events", []):
 		if event is SimEvent:

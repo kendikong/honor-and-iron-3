@@ -12,6 +12,7 @@ const COMPOSITE_SLASH_COLOR: Color = Color(0.82, 0.86, 0.92, 0.95)
 var _icon: String = ""
 var _font_size: int = BASE_ICON_SIZE
 var _drawer: Control
+var _last_draw_mouse_pos: Vector2 = Vector2(-99999.0, -99999.0)
 
 
 func _ready() -> void:
@@ -33,13 +34,19 @@ func set_icon(icon: String) -> void:
 	if _icon == icon:
 		return
 	_icon = icon
+	_last_draw_mouse_pos = Vector2(-99999.0, -99999.0)
 	if _drawer != null:
 		_drawer.queue_redraw()
 
 
 func _process(_delta: float) -> void:
-	if _icon != "" and _drawer != null:
-		_drawer.queue_redraw()
+	if _icon == "" or _drawer == null:
+		return
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	if mouse_pos.distance_squared_to(_last_draw_mouse_pos) < 0.25:
+		return
+	_last_draw_mouse_pos = mouse_pos
+	_drawer.queue_redraw()
 
 
 func _on_draw() -> void:

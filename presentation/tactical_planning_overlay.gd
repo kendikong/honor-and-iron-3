@@ -102,6 +102,10 @@ var _deferred_preview_result: SimResult = null
 var _game_settings: GameSettings
 var _hover_perimeter_cache_key: int = 0
 var _cached_hover_perimeter_segments: Array = []
+var _static_tiles_layer: Node2D
+var _anim_redraw_accum: float = 0.0
+var _hover_redraw_immediate: bool = false
+const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 30.0
 
 
 func setup(
@@ -144,6 +148,7 @@ func setup(
 		else:
 			_hover_move_tiles.clear()
 			_hover_action_range_tiles.clear()
+			_queue_static_tiles_redraw()
 		mark_danger_dirty()
 		queue_redraw(),
 	)
@@ -158,10 +163,38 @@ func setup(
 			queue_redraw(),
 		)
 	set_process(true)
+	_ensure_static_tiles_layer()
+
+
+func _ensure_static_tiles_layer() -> void:
+	if _static_tiles_layer != null:
+		return
+	_static_tiles_layer = Node2D.new()
+	_static_tiles_layer.name = "StaticTiles"
+	_static_tiles_layer.show_behind_parent = true
+	_static_tiles_layer.draw.connect(_draw_static_tile_layers)
+	add_child(_static_tiles_layer)
+
+
+func _queue_static_tiles_redraw() -> void:
+	if _static_tiles_layer != null:
+		_static_tiles_layer.queue_redraw()
+
+
+func _draw_static_tile_layers() -> void:
+	if _board == null or _map_view == null or _director == null:
+		return
+	if CombatDirector.is_planning_phase(_phase):
+		_draw_danger_area()
+	if _preview_range_overlays_enabled():
+		_draw_hover_tiles()
 
 
 func teardown() -> void:
 	set_process(false)
+	if _static_tiles_layer != null:
+		_static_tiles_layer.queue_free()
+		_static_tiles_layer = null
 	_map_view = null
 	_director = null
 	_intent_state = null
@@ -205,11 +238,12 @@ func planning_cursor_display_enabled() -> bool:
 
 func set_show_danger_area(enabled: bool) -> void:
 	_show_danger_area = enabled
-	queue_redraw()
+	_queue_static_tiles_redraw()
 
 
 func mark_danger_dirty() -> void:
 	_danger_tiles_dirty = true
+	_queue_static_tiles_redraw()
 
 
 func get_show_danger_area() -> bool:
@@ -557,6 +591,7 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
+	_hover_redraw_immediate = true
 	if redraw:
 		queue_redraw()
 
@@ -822,7 +857,7 @@ func recompute_hover_ranges(
 		_invalidate_hover_cache()
 		_hover_move_tiles.clear()
 		_hover_action_range_tiles.clear()
-		queue_redraw()
+		_queue_static_tiles_redraw()
 		return
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
@@ -876,12 +911,12 @@ func recompute_hover_ranges(
 		_hover_action_range_tiles = _compute_hover_blast_action_range_tiles(
 			unit, p_unit, action_range_origin, selected_ability, cache_force,
 		)
-		queue_redraw()
+		_queue_static_tiles_redraw()
 		return
 	_hover_move_tiles.clear()
 	_hover_action_range_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
-		queue_redraw()
+		_queue_static_tiles_redraw()
 		return
 	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
 	var mt: int = (
@@ -918,7 +953,7 @@ func recompute_hover_ranges(
 				move_ability,
 			)
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-		queue_redraw()
+		_queue_static_tiles_redraw()
 		return
 	var ability_index: int = selected_ability if is_selected_player else -1
 	if cache_force and is_selected_player:
@@ -932,7 +967,7 @@ func recompute_hover_ranges(
 			and budget_unit != null
 			and budget_unit.ability.points_left >= ability.action_point_cost
 		):
-			queue_redraw()
+			_queue_static_tiles_redraw()
 			return
 		var blast_tiles: Array[Vector2i] = _compute_hover_blast_action_range_tiles(
 			unit, p_unit, action_range_origin, ability_index, cache_force,
@@ -945,7 +980,7 @@ func recompute_hover_ranges(
 			)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
-	queue_redraw()
+	_queue_static_tiles_redraw()
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -954,6 +989,7 @@ func _on_board_changed(board: BoardState) -> void:
 		return
 	_danger_tiles_dirty = true
 	_invalidate_hover_cache()
+	_queue_static_tiles_redraw()
 
 
 func _process(delta: float) -> void:
@@ -967,7 +1003,11 @@ func _process(delta: float) -> void:
 	if need_redraw:
 		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		queue_redraw()
+		_anim_redraw_accum += delta
+		if _hover_redraw_immediate or _anim_redraw_accum >= _FLOW_ANIM_REDRAW_INTERVAL_SEC:
+			_hover_redraw_immediate = false
+			_anim_redraw_accum = 0.0
+			queue_redraw()
 
 
 func _overlay_needs_flow_animation() -> bool:
@@ -1089,12 +1129,8 @@ func _draw() -> void:
 		return
 	var show_planning: bool = CombatDirector.is_planning_phase(_phase)
 	if show_planning:
-		_draw_danger_area()
 		if _preview_live_ghosts_enabled():
 			_draw_move_ghosts()
-	if _preview_range_overlays_enabled():
-		_draw_hover_tiles()
-	if show_planning:
 		if _preview_live_ghosts_enabled():
 			_draw_ghosts()
 		if _preview_arrows_enabled():
