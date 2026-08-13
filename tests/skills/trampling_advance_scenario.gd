@@ -36,6 +36,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 		_KnightQaHarness.ability_has_effect(trample, GameEnums.EffectType.PUSH, false),
 	)
 	_KnightQaHarness.run_trample_base_sim(failures)
+	_KnightQaHarness.run_trample_end_on_occupied_sim(failures)
 
 
 static func _fixture_unit(fix: Dictionary) -> UnitState:

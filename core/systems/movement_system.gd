@@ -281,7 +281,7 @@ static func resolve_move_path(
 	)
 	if not waypoints.is_empty():
 		if _is_legal_walk(board, start, waypoints, max_steps, move_cost, unit, ability):
-			if can_end_movement_on(board, waypoints[waypoints.size() - 1], unit):
+			if can_end_movement_on(board, waypoints[waypoints.size() - 1], unit, ability):
 				return waypoints.duplicate()
 			return []
 		## Committed waypoints are intent truth — never silently re-pathfind.
@@ -293,7 +293,7 @@ static func resolve_move_path(
 			return waypoints.duplicate()
 		return []
 	var path := find_path(board, start, target_coord, max_steps, mt, move_cost, ability)
-	if not path.is_empty() and not can_end_movement_on(board, path[path.size() - 1], unit):
+	if not path.is_empty() and not can_end_movement_on(board, path[path.size() - 1], unit, ability):
 		return []
 	return path
 
@@ -351,11 +351,19 @@ static func has_trample(unit: UnitState) -> bool:
 		return false
 	return unit.has_status(GameEnums.StatusType.TRAMPLE)
 
-## Whether a unit may end a basic move on this tile (ally-occupied tiles block).
-static func can_end_movement_on(board: BoardState, coord: Vector2i, unit: UnitState) -> bool:
+## Whether a unit may end a move on this tile.
+## Occupied tiles are illegal for basic movement; into-occupied-push motion may land
+## on an occupant (execution pushes them off). Do not use is_passable here — that
+## helper treats occupancy as impassable and would block this rule.
+static func can_end_movement_on(
+	board: BoardState,
+	coord: Vector2i,
+	unit: UnitState,
+	ability: AbilityData = null,
+) -> bool:
 	if unit == null or not GridSystem.is_in_bounds(board, coord):
 		return false
-	if not GridSystem.is_passable(board, coord):
+	if GridSystem.is_wall(board, coord):
 		return false
 	if not GridSystem.is_occupied(board, coord):
 		return true
@@ -363,6 +371,8 @@ static func can_end_movement_on(board: BoardState, coord: Vector2i, unit: UnitSt
 	if occ == null:
 		return true
 	if occ.id == unit.id:
+		return true
+	if AbilitySystem.ability_has_into_occupied_push_effect(ability, unit):
 		return true
 	if occ.team != unit.team and has_trample(unit):
 		return true
@@ -1160,7 +1170,9 @@ static func _is_legal_walk(
 		
 	var end_tile: Vector2i = route[route.size() - 1]
 	if GridSystem.is_occupied(board, end_tile):
-		if ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
+		if AbilitySystem.ability_has_into_occupied_push_effect(ability, unit):
+			pass
+		elif ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
 			var end_occ := board.get_unit_at(end_tile)
 			if end_occ != null and end_occ.id != unit.id:
 				return false

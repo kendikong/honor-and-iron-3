@@ -976,6 +976,37 @@ static func run_trample_base_sim(failures: Array[String]) -> void:
 	)
 
 
+static func run_trample_end_on_occupied_sim(failures: Array[String]) -> void:
+	## INTO_OCCUPIED_PUSH: landing on the enemy tile occupies it and pushes them off.
+	var board: BoardState = make_plain_board(Vector2i(12, 8))
+	place_knight(board, 1, Vector2i(4, 4))
+	place_dummy(board, 2, Vector2i(5, 4))
+	var enemy_hp_before: int = unit_hp(board, 2)
+	var knight: UnitState = unit_on_board(board, 1)
+	var trample: AbilityData = ability_on_unit(knight, &"knight_trampling_advance")
+	var plan := Timeline.new()
+	plan.add(plan_ability(1, trample, Vector2i(5, 4), 2))
+	var result: SimResult = simulate_plan(board, plan)
+	var after: UnitState = result.final_state.get_unit_by_id(1)
+	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	assert_true(
+		failures, "trample/end_occupied/landed",
+		after != null and after.position == Vector2i(5, 4),
+		"trampling must occupy the enemy tile, got %s"
+		% [after.position if after != null else Vector2i(-1, -1)],
+	)
+	assert_eq_cell(
+		failures, "trample/end_occupied/pushed",
+		enemy.position if enemy != null else Vector2i(-1, -1),
+		Vector2i(6, 4),
+	)
+	assert_true(
+		failures, "trample/end_occupied/damaged",
+		enemy != null and unit_hp(result.final_state, 2) < enemy_hp_before,
+		"landing trample must still deal contact damage",
+	)
+
+
 static func run_concussive_shatter(failures: Array[String]) -> void:
 	var walls: Array[Vector2i] = [Vector2i(6, 2)]
 	var board: BoardState = make_plain_board(Vector2i(10, 5), walls)

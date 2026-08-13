@@ -103,7 +103,10 @@ static func ability_has_into_occupied_push_effect(
 	ability: AbilityData,
 	actor: UnitState = null,
 ) -> bool:
-	return motion_requires_occupied_target(actor, ability)
+	if motion_requires_occupied_target(actor, ability):
+		return true
+	var module: AbilityModule = active_motion_module(actor, ability)
+	return module != null and module.motion_mode == GameEnums.MotionMode.INTO_OCCUPIED_PUSH
 
 
 static func _occupied_push_target_valid(
