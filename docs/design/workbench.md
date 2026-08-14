@@ -10,9 +10,9 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE — 100% canvas MATCH lock │ Round 7 │ SELF-GRADED: no (subagent)
+GAUNTLET SCORE │ BIBLE-TO-CODE — 100% canvas MATCH lock │ Round 8 extras closed │ SELF-GRADED: no (subagent)
 SCORE: 96/100 │ THRESHOLD: 95 │ PASS │ STALLED
-DELTA: +0 vs Round 3 honesty (96)
+DELTA: +48 vs Round 8 critic fail (48); +0 vs Round 7 (96)
 STOP_CONDITION_MET: yes (this piece)
 ══════════════════════════════════════
 ```
@@ -41,6 +41,8 @@ STOP_CONDITION_MET: yes (this piece)
 | 5 | BIBLE-TO-CODE | 86 | PASS | no (subagent) |
 | 6 | BIBLE-TO-CODE | 87 | PASS | no (subagent) |
 | 7 | BIBLE-TO-CODE 100% MATCH lock | 96 | PASS | no (subagent) |
+| 8 | BIBLE-TO-CODE extras closed (no Beast Meteor Drop) | 48 | FAIL | no (subagent) |
+| 8b | BIBLE-TO-CODE extras closed + extras stdout | 96 | PASS | no (subagent) |
 
 ### Wave 8 (2026-08-14)
 

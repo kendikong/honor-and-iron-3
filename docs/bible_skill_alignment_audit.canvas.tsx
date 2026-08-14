@@ -231,7 +231,6 @@ const R: Finding[] = [
   { cls: "Beast Rider", skill: "Airlift", bible: "Pick ally Step 1; drop empty Step 3. [+] ally +1 STR", verdict: "MATCH", delta: "airlift_keep_caster skips rider teleport; pickup/drop on shared-tile path." },
   { cls: "Beast Rider", skill: "Tail Swipe", bible: "RANGE 0 AOE 3x3 ATK 1 PUSH 2. [+] wall STAGGER", verdict: "MATCH", delta: "Square size 1 = 3x3. [+] wall_collision_stagger on object collision." },
   { cls: "Beast Rider", skill: "Gore", bible: "RANGE 1 ATK 2 PUSH 1; BLEED → ATK+2. [+] VULNERABLE", verdict: "MATCH", delta: "bleed_bonus_damage 2 via MercenarySystems.adjust_attack_base. PUSH 1 layer. Upgrade VULNERABLE." },
-  { cls: "Beast Rider", skill: "Meteor Drop (Beast)", bible: "RANGE 2 jump; ATK 2 adj. [+] VULNERABLE", verdict: "MATCH", delta: "Diamond 1 adjacent-ish. landing_vulnerable works." },
 
   { cls: "Mage", skill: "Stats / promotions", bible: "CON 3 MOV 4 STR 1 DEF 1 MAG 5 + three promo lines", verdict: "MATCH", delta: "promotion_stat_bonuses present." },
   { cls: "Mage", skill: "Arcane Overchannel", bible: "Spell → stack max 3 +1 MAG ATK; persist; decay if no spell. [+] at 3: 1 AP 1/turn + SHIELD 2", verdict: "MATCH", delta: "Refund+SHIELD 2 gated on innate upgrade." },

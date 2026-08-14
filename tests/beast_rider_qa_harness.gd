@@ -14,7 +14,7 @@ const ABILITY_IDS: Array[StringName] = [
 	&"beast_bestial_roar", &"beast_raking_claws", &"beast_rest_recover",
 	&"beast_intimidate", &"beast_fetch", &"beast_savage_bite", &"beast_run_down",
 	&"beast_thrash", &"beast_defensive_posture", &"beast_airlift",
-	&"beast_tail_swipe", &"beast_gore", &"beast_meteor_drop",
+	&"beast_tail_swipe", &"beast_gore",
 ]
 
 const PASSIVE_ROWS: Array[Dictionary] = [
@@ -53,7 +53,6 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_keep_caster", &"airlift_ally_attack_strength"]},
 	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
 	&"beast_gore": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"bleed_bonus_damage"]},
-	&"beast_meteor_drop": {"types": [GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE], "amount": 0, "max_range": 2, "keys": [&"meteor_drop", &"landing_vulnerable"]},
 }
 
 
@@ -639,8 +638,6 @@ static func _place_actor(
 
 static func _place_target(board: BoardState, row_id: StringName) -> UnitState:
 	var coord := Vector2i(3, 3)
-	if row_id == &"beast_meteor_drop":
-		coord = Vector2i(4, 4)
 	if row_id == &"beast_tail_swipe":
 		coord = Vector2i(3, 4)
 	if row_id == &"beast_pounce":
@@ -720,10 +717,6 @@ static func run_shaped_footprint(ability_id: StringName, failures: Array[String]
 			_run_self_shape_footprint(
 				failures, ability_id, ability, Vector2i(4, 4), Vector2i(8, 8),
 			)
-		&"beast_meteor_drop":
-			_run_target_shape_footprint(
-				failures, ability_id, ability, Vector2i(2, 3), Vector2i(4, 3), Vector2i(8, 8),
-			)
 		_:
 			failures.append("footprint/%s/unhandled_shaped_skill" % ability_id)
 
@@ -747,9 +740,6 @@ static func _configure_sim_target(
 			coord = Vector2i(3, 3)
 			target_id = target.id
 		&"beast_run_down":
-			coord = Vector2i(4, 3)
-			target_id = -1
-		&"beast_meteor_drop":
 			coord = Vector2i(4, 3)
 			target_id = -1
 	return {"coord": coord, "id": target_id, "unit": target}
@@ -790,9 +780,6 @@ static func _apply_sim_action_overrides(
 		AbilitySystem.set_module_target(action, 0, target.position, target.id)
 		AbilitySystem.set_module_target(action, 1, target.position, target.id)
 	if ability_id == &"beast_run_down":
-		action.target_unit_id = -1
-		action.target_coord = Vector2i(4, 3)
-	if ability_id == &"beast_meteor_drop":
 		action.target_unit_id = -1
 		action.target_coord = Vector2i(4, 3)
 

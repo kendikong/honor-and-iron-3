@@ -1,8 +1,8 @@
 ﻿{
-    "generated":  "2026-08-14T10:08:22",
+    "generated":  "2026-08-14T10:34:08",
     "source":  "C:\\Users\\Kendy\\Downloads\\honor-and-iron-3\\docs\\bible_skill_alignment_audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  398
+                   "MATCH":  397
                },
     "rows":  [
                  {
@@ -1210,12 +1210,6 @@
                      "skill":  "Gore",
                      "verdict":  "MATCH",
                      "delta":  "bleed_bonus_damage 2 via MercenarySystems.adjust_attack_base. PUSH 1 layer. Upgrade VULNERABLE."
-                 },
-                 {
-                     "cls":  "Beast Rider",
-                     "skill":  "Meteor Drop (Beast)",
-                     "verdict":  "MATCH",
-                     "delta":  "Diamond 1 adjacent-ish. landing_vulnerable works."
                  },
                  {
                      "cls":  "Mage",

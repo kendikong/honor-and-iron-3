@@ -185,7 +185,6 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.abilities.append(_airlift())
 	definition.abilities.append(_tail_swipe())
 	definition.abilities.append(_gore())
-	definition.abilities.append(_meteor_drop())
 
 	DataLibrary.finalize_unit_abilities(definition)
 	return definition
@@ -559,33 +558,6 @@ static func _gore() -> AbilityData:
 		&"beast_gore", "Gore", [gore], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
 		"Target suffers VULNERABLE.",
-	)
-
-
-static func _meteor_drop() -> AbilityData:
-	var jump := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 2,
-		GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
-	)
-	jump.execution_phase = GameEnums.ModulePhase.ON_PRE
-	jump.legacy_modifiers["meteor_drop"] = true
-	var strike := _module(
-		GameEnums.EffectType.DAMAGE, 2, 0, 0,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_DIAMOND, 1, GameEnums.StatType.PHYSICAL,
-	)
-	strike.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	strike.aim_module_index = 0
-	var modules: Array[AbilityModule] = [jump, strike]
-	var upgraded := _clone(modules)
-	upgraded[1].legacy_modifiers["landing_vulnerable"] = true
-	return _ability(
-		&"beast_meteor_drop", "Meteor Drop", modules, upgraded,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
-		"Targets hit suffer VULNERABLE.",
 	)
 
 

@@ -11,7 +11,7 @@ const _CASES: Array[StringName] = [
 	&"beast_bestial_roar", &"beast_raking_claws", &"beast_rest_recover",
 	&"beast_intimidate", &"beast_fetch", &"beast_savage_bite", &"beast_run_down",
 	&"beast_thrash", &"beast_defensive_posture", &"beast_airlift",
-	&"beast_tail_swipe", &"beast_gore", &"beast_meteor_drop",
+	&"beast_tail_swipe", &"beast_gore",
 ]
 
 
@@ -136,8 +136,6 @@ func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 			return [Vector2i(3, 3)]
 		&"beast_intimidate", &"beast_tail_swipe":
 			return [Vector2i(6, 5), Vector2i(7, 5)]
-		&"beast_meteor_drop":
-			return [Vector2i(6, 5)]
 		_:
 			return [Vector2i(6, 5)]
 
@@ -223,8 +221,6 @@ func _target_for(
 			return Vector2i(4, 3)
 		&"beast_airlift":
 			return Vector2i(5, 5)
-		&"beast_meteor_drop":
-			return Vector2i(6, 5)
 		&"beast_raking_claws":
 			return Vector2i(5, 5)
 		&"beast_maul":
