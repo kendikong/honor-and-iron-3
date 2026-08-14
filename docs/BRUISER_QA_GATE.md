@@ -136,7 +136,7 @@ Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 | `scar_tissue` | Scar Tissue | `tests/passives/scar_tissue_scenario.gd` | PASS | Physical damage reduction scaling |
 | `momentum_transfer` | Momentum Transfer | `tests/passives/momentum_transfer_scenario.gd` | PASS | PUSH collision → HEAL; `[+]` STR |
 | `crowd_breaker` | Crowd Breaker | `tests/passives/crowd_breaker_scenario.gd` | PASS | Adjacent enemy STR + splash |
-| `juggernaut` | Juggernaut | `tests/passives/juggernaut_scenario.gd` | PASS | Trap destroy; `[+]` SHIELD |
+| `juggernaut` | Unstoppable Tread | `tests/passives/juggernaut_scenario.gd` | PASS | Trap destroy; `[+]` SHIELD |
 | `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | PASS | PUSH +1 tile; `[+]` wall STAGGER |
 | `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | PASS | STAGGER/ROOT immune + SHIELD on resist |
 

@@ -14,7 +14,7 @@ const ABILITY_IDS: Array[StringName] = [
 	&"beast_bestial_roar", &"beast_raking_claws", &"beast_rest_recover",
 	&"beast_intimidate", &"beast_fetch", &"beast_savage_bite", &"beast_run_down",
 	&"beast_thrash", &"beast_defensive_posture", &"beast_airlift",
-	&"beast_tail_swipe", &"beast_meteor_drop",
+	&"beast_tail_swipe", &"beast_gore", &"beast_meteor_drop",
 ]
 
 const PASSIVE_ROWS: Array[Dictionary] = [
@@ -52,6 +52,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_keep_caster", &"airlift_ally_attack_strength"]},
 	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
+	&"beast_gore": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"bleed_bonus_damage"]},
 	&"beast_meteor_drop": {"types": [GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE], "amount": 0, "max_range": 2, "keys": [&"meteor_drop", &"landing_vulnerable"]},
 }
 
@@ -67,7 +68,7 @@ static func run_factory_matrix(failures: Array[String]) -> void:
 	_assert(failures, "factory/base_defense", definition.base_defense == 2)
 	_assert(failures, "factory/base_magic", definition.base_magic == 2)
 	_assert(failures, "factory/innate_count", definition.innate_passives.size() == 1)
-	_assert(failures, "factory/ability_count", definition.abilities.size() == 17)
+	_assert(failures, "factory/ability_count", definition.abilities.size() == ABILITY_IDS.size() + 1)
 	_assert(failures, "factory/passive_count", definition.passives.size() == 15)
 	for ability_id: StringName in ABILITY_IDS:
 		var ability := _ability(definition, ability_id)
@@ -514,6 +515,51 @@ static func run_ability_upgrade_row(ability_id: StringName, failures: Array[Stri
 		board,
 		target_setup,
 	)
+
+
+static func run_gore_bible_proof(failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"beast_rider")
+	var ability := _ability(definition, &"beast_gore")
+	_assert(failures, "beast_gore/bible/data", ability != null)
+	if ability == null:
+		return
+	var clean := _sim_gore_once(ability, false, false)
+	var bled := _sim_gore_once(ability, true, false)
+	var upgraded := _sim_gore_once(ability, false, true)
+	_assert(failures, "beast_gore/bible/damage", int(clean.get("damage", 0)) > 0)
+	_assert(
+		failures,
+		"beast_gore/bible/push",
+		clean.get("target_pos", Vector2i(3, 3)) != Vector2i(3, 3),
+	)
+	_assert(
+		failures,
+		"beast_gore/bible/bleed_bonus",
+		int(bled.get("damage", 0)) > int(clean.get("damage", 0)),
+	)
+	_assert(failures, "beast_gore/bible/upgrade_vulnerable", bool(upgraded.get("vulnerable", false)))
+
+
+static func _sim_gore_once(ability: AbilityData, apply_bleed: bool, upgraded: bool) -> Dictionary:
+	var board := _plain_board(Vector2i(10, 8))
+	var actor := _place_actor(board, 1, Vector2i(2, 3), ability)
+	var target := _place_enemy(board, 2, Vector2i(3, 3))
+	if apply_bleed:
+		target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+	if upgraded:
+		actor.upgraded_abilities.append(&"beast_gore")
+	actor.passive_flags["training_unlimited_actions"] = true
+	actor.turn_action_used = false
+	actor.ability.points_left = actor.ability.max_points
+	var action := TimelineAction.make_ability(actor.id, ability, target.position, target.id)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, _timeline(action), events)
+	var after := board.get_unit_by_id(2)
+	return {
+		"damage": _event_hp_damage(events, 2),
+		"target_pos": after.position if after != null else Vector2i(3, 3),
+		"vulnerable": after != null and after.has_status(GameEnums.StatusType.VULNERABLE),
+	}
 
 
 static func run_planning_row(factory_id: StringName, failures: Array[String]) -> void:

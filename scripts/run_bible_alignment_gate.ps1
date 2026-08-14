@@ -24,7 +24,7 @@ foreach ($path in $candidates) {
 }
 
 Write-Output "=== Bible alignment QA gate ==="
-Write-Output "Spec: canvas 100% MATCH (FAIL=0, DATA-ONLY=0, MISSING=0); MATCH deltas must not admit invented./superset extras."
+Write-Output "Spec: canvas 100% MATCH (FAIL=0, DATA-ONLY=0, MISSING=0); MATCH deltas must not admit invented./superset extras; every class_abilities (The X) Name: must appear on the canvas."
 
 $rows = @()
 if ($null -ne $canvas) {
@@ -92,6 +92,39 @@ Write-Output ("DATA-ONLY: {0}" -f $dataOnly.Count)
 Write-Output ("MISSING: {0}" -f $missing.Count)
 Write-Output ("DISHONEST MATCH deltas: {0}" -f $dishonestMatch.Count)
 
+$missingBible = @()
+$biblePath = Join-Path $projectRoot "class_abilities.txt"
+if (Test-Path -LiteralPath $biblePath) {
+	$bibleLines = Get-Content -LiteralPath $biblePath
+	$classPattern = '^\d+\.\s+(Knight|Bruiser|Mercenary|Rogue|Monk|Beast Rider|Mage|Archer|Cleric|Shaman|Lancer|Engineer)\s*$'
+	$namePattern = '^\(The [^)]+\)\s+([^:]+):'
+	$currentClass = $null
+	$requiredNames = @()
+	foreach ($line in $bibleLines) {
+		if ($line -match $classPattern) {
+			$currentClass = $Matches[1]
+			continue
+		}
+		if ($null -eq $currentClass) {
+			continue
+		}
+		if ($line -match $namePattern) {
+			$requiredNames += [pscustomobject]@{ cls = $currentClass; name = $Matches[1].Trim() }
+		}
+	}
+	foreach ($req in $requiredNames) {
+		$hits = @($rows | Where-Object {
+			$base = $_.skill -replace '\s*\([^)]+\)\s*$', ''
+			$_.cls -eq $req.cls -and ($base.Trim() -eq $req.name -or $_.skill -eq $req.name)
+		})
+		if ($hits.Count -eq 0) {
+			$missingBible += $req
+		}
+	}
+	Write-Output ("Bible (The X) names: {0}" -f $requiredNames.Count)
+	Write-Output ("BIBLE NAMES MISSING FROM CANVAS: {0}" -f $missingBible.Count)
+}
+
 $docsDir = Join-Path $projectRoot "docs"
 if (-not (Test-Path -LiteralPath $docsDir)) {
 	New-Item -ItemType Directory -Path $docsDir | Out-Null
@@ -100,9 +133,9 @@ $snapshot | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $auditJson -Encod
 Write-Output ""
 Write-Output "Wrote $auditJson"
 
-if ($fails.Count -gt 0 -or $dataOnly.Count -gt 0 -or $missing.Count -gt 0 -or $dishonestMatch.Count -gt 0) {
+if ($fails.Count -gt 0 -or $dataOnly.Count -gt 0 -or $missing.Count -gt 0 -or $dishonestMatch.Count -gt 0 -or $missingBible.Count -gt 0) {
 	Write-Output ""
-	Write-Output ("--- Bible alignment gate: FAIL (FAIL={0} DATA-ONLY={1} MISSING={2} DISHONEST={3}) ---" -f $fails.Count, $dataOnly.Count, $missing.Count, $dishonestMatch.Count)
+	Write-Output ("--- Bible alignment gate: FAIL (FAIL={0} DATA-ONLY={1} MISSING={2} DISHONEST={3} BIBLE-NAME={4}) ---" -f $fails.Count, $dataOnly.Count, $missing.Count, $dishonestMatch.Count, $missingBible.Count)
 	$fails | Select-Object -First 20 | ForEach-Object {
 		Write-Output ("[FAIL] {0} / {1}" -f $_.cls, $_.skill)
 	}
@@ -114,6 +147,9 @@ if ($fails.Count -gt 0 -or $dataOnly.Count -gt 0 -or $missing.Count -gt 0 -or $d
 	}
 	$dishonestMatch | Select-Object -First 10 | ForEach-Object {
 		Write-Output ("[DISHONEST] {0} / {1}: {2}" -f $_.cls, $_.skill, $_.delta)
+	}
+	$missingBible | Select-Object -First 20 | ForEach-Object {
+		Write-Output ("[BIBLE-NAME] {0} / {1}" -f $_.cls, $_.name)
 	}
 	exit 1
 }

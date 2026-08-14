@@ -60,9 +60,9 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md). Harness resolves s
 | `lancer_piercing_charge` | Active | `tests/skills/lancer_piercing_charge_scenario.gd` | PASS | DASH pierce |
 | `lancer_sweeping_halberd` | Active | `tests/skills/lancer_sweeping_halberd_scenario.gd` | PASS | ARC DAMAGE |
 | `lancer_vaulting_leap` | Active | `tests/skills/lancer_vaulting_leap_scenario.gd` | PASS | TELEPORT + DAMAGE |
-| `lancer_run_down` | Active | `tests/skills/lancer_run_down_scenario.gd` | PASS | Pursuit DAMAGE |
+| `lancer_run_down` | Active | `tests/skills/lancer_run_down_scenario.gd` | PASS | Impale RANGE 2 ATK 3 |
 | `lancer_rallying_cry` | Active | `tests/skills/lancer_rallying_cry_scenario.gd` | PASS | AOE_CROSS ally buff |
-| `lancer_flanking_maneuver` | Active | `tests/skills/lancer_flanking_maneuver_scenario.gd` | PASS | PRE_MOVE L-route |
+| `lancer_flanking_maneuver` | Active | `tests/skills/lancer_flanking_maneuver_scenario.gd` | PASS | Wraparound L-route |
 | `lancer_brace` | Active | `tests/skills/lancer_brace_scenario.gd` | PASS | ADD_STATUS_SELF brace |
 | `lancer_harpoon_toss` | Active | `tests/skills/lancer_harpoon_toss_scenario.gd` | PASS | PULL + DAMAGE |
 | `lancer_glorious_charge` | Active | `tests/skills/lancer_glorious_charge_scenario.gd` | PASS | Paired DASH |

@@ -12,7 +12,7 @@ func _run() -> void:
 	print("[SUITE] beast_rider_qa_tier1")
 	_RUNNER.run_all(failures)
 	if failures.is_empty():
-		print("[PASS] Beast Rider QA gate: factory matrix, 16 active rows, 16 passive rows")
+		print("[PASS] Beast Rider QA gate: factory matrix, 17 active rows, 16 passive rows")
 	else:
 		for failure: String in failures:
 			print("[FAIL] %s" % failure)

@@ -83,7 +83,7 @@ Active-row planning scenarios call `ClassScenarioPlanningContract` or `MovementP
 | `vaulting_strike` | `tests/passives/vaulting_strike_scenario.gd` | PASS | Vault fixture |
 | `flowing_ki` | `tests/passives/flowing_ki_scenario.gd` | PASS | Crossed-enemy fixture |
 | `evasive_acrobat` | `tests/passives/evasive_acrobat_scenario.gd` | PASS | Pass-through fixture |
-| `momentum_transfer` | `tests/passives/monk_momentum_transfer_scenario.gd` | PASS | Movement-distance fixture |
+| `momentum_transfer` | `tests/passives/monk_momentum_transfer_scenario.gd` | PASS | Ki Momentum: +1 STR per 2 tiles |
 | `light_step` | `tests/passives/light_step_scenario.gd` | PASS | Trap/difficult-terrain fixture |
 
 **Matrix summary:** `32 PASS` · `0 HARNESS_ONLY` · `0 PLANNED`

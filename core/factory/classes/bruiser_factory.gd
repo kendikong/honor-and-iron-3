@@ -60,7 +60,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	
 	def.passives.append(DataLibrary._make_passive(&"momentum_transfer", "Momentum Transfer", "Applying PUSH collision HEALS 1.", "[+] HEAL 1 and gain +1 STR."))
 	def.passives.append(DataLibrary._make_passive(&"crowd_breaker", "Crowd Breaker", "+1 STR per adjacent enemy. Splash damage ATK 1.", "[+] Splash damage ATK 2."))
-	def.passives.append(DataLibrary._make_passive(&"juggernaut", "Juggernaut", "Moving over traps destroys them for 0 damage.", "[+] Destroying trap grants SHIELD 1."))
+	def.passives.append(DataLibrary._make_passive(&"juggernaut", "Unstoppable Tread", "Moving over traps destroys them for 0 damage.", "[+] Destroying trap grants SHIELD 1."))
 	def.passives.append(DataLibrary._make_passive(&"battering_ram", "Battering Ram", "PUSH pushes 1 additional tile.", "[+] Pushed enemies hitting walls suffer STAGGER."))
 	def.passives.append(DataLibrary._make_passive(&"unstoppable_force", "Unstoppable Force", "Immune to STAGGER/ROOT. Resisting grants SHIELD 1.", "[+] Resisting grants SHIELD 2."))
 	

@@ -1,8 +1,8 @@
 ﻿{
-    "generated":  "2026-08-14T09:48:13",
-    "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
+    "generated":  "2026-08-14T10:08:22",
+    "source":  "C:\\Users\\Kendy\\Downloads\\honor-and-iron-3\\docs\\bible_skill_alignment_audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  397
+                   "MATCH":  398
                },
     "rows":  [
                  {
@@ -301,9 +301,9 @@
                  },
                  {
                      "cls":  "Bruiser",
-                     "skill":  "Juggernaut (passive)",
+                     "skill":  "Unstoppable Tread",
                      "verdict":  "MATCH",
-                     "delta":  "terrain_system.gd:51."
+                     "delta":  "terrain_system.gd:51. Display is Bible Unstoppable Tread; factory id stays juggernaut."
                  },
                  {
                      "cls":  "Bruiser",
@@ -901,9 +901,9 @@
                  },
                  {
                      "cls":  "Monk",
-                     "skill":  "Momentum Transfer (Monk)",
+                     "skill":  "Ki Momentum",
                      "verdict":  "MATCH",
-                     "delta":  "ability_system.gd:3108."
+                     "delta":  "ability_system.gd:3108. Display is Bible Ki Momentum; factory id stays momentum_transfer."
                  },
                  {
                      "cls":  "Monk",
@@ -1099,9 +1099,9 @@
                  },
                  {
                      "cls":  "Beast Rider",
-                     "skill":  "Blood Scent (Beast)",
+                     "skill":  "Blood Trail",
                      "verdict":  "MATCH",
-                     "delta":  "BeastRiderSystems grants MOV when closing on BLEED; PIERCE already worked."
+                     "delta":  "BeastRiderSystems grants MOV when closing on BLEED; PIERCE already worked. Display is Bible Blood Trail; factory id stays blood_scent."
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1204,6 +1204,12 @@
                      "skill":  "Tail Swipe",
                      "verdict":  "MATCH",
                      "delta":  "Square size 1 = 3x3. [+] wall_collision_stagger on object collision."
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Gore",
+                     "verdict":  "MATCH",
+                     "delta":  "bleed_bonus_damage 2 via MercenarySystems.adjust_attack_base. PUSH 1 layer. Upgrade VULNERABLE."
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1879,9 +1885,9 @@
                  },
                  {
                      "cls":  "Shaman",
-                     "skill":  "Chain Reaction (Shaman)",
+                     "skill":  "Linked Ripple",
                      "verdict":  "MATCH",
-                     "delta":  "on_push_resolved."
+                     "delta":  "on_push_resolved. Display is Bible Linked Ripple; factory id stays chain_reaction."
                  },
                  {
                      "cls":  "Shaman",
@@ -2137,9 +2143,9 @@
                  },
                  {
                      "cls":  "Lancer",
-                     "skill":  "Run Down (Lancer)",
+                     "skill":  "Impale",
                      "verdict":  "MATCH",
-                     "delta":  "ability_system.gd:3153."
+                     "delta":  "ability_system.gd:3153. Display is Bible Impale; factory id stays lancer_run_down."
                  },
                  {
                      "cls":  "Lancer",
@@ -2149,9 +2155,9 @@
                  },
                  {
                      "cls":  "Lancer",
-                     "skill":  "Flanking Maneuver",
+                     "skill":  "Wraparound",
                      "verdict":  "MATCH",
-                     "delta":  "l_shape_move + multiplier 2."
+                     "delta":  "l_shape_move + multiplier 2. Display is Bible Wraparound; factory id stays lancer_flanking_maneuver."
                  },
                  {
                      "cls":  "Lancer",

@@ -134,7 +134,7 @@ static func build(basic_fist: WeaponData) -> UnitData:
 		"evasive_acrobat_confusion": true, "upgraded_evasive_acrobat_blind": true},
 	))
 	definition.passives.append(_passive(
-		&"momentum_transfer", "Momentum Transfer",
+		&"momentum_transfer", "Ki Momentum",
 		"Gain +1 STR for every 2 tiles moved before attacking.",
 		"Gain +1 STR per tile moved.",
 		{"promotion": &"windwalker", "moved_tiles_attack_divisor": 2,

@@ -16,7 +16,7 @@ $requiredFactoryIds = @(
 	"beast_bestial_roar", "beast_raking_claws", "beast_rest_recover",
 	"beast_intimidate", "beast_fetch", "beast_savage_bite", "beast_run_down",
 	"beast_thrash", "beast_defensive_posture", "beast_airlift",
-	"beast_tail_swipe", "beast_meteor_drop",
+	"beast_tail_swipe", "beast_gore", "beast_meteor_drop",
 	"gallop", "isolation_tactics", "terminal_velocity", "snatch_and_grab",
 	"safe_landing", "aerial_superiority", "mount_resilience", "beasts_instinct",
 	"territorial", "intimidating_presence", "dive_bomber", "pack_hunter",
@@ -189,7 +189,7 @@ if (-not $matrixPassValid) {
 	exit 2
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-Output "[PASS] Beast Rider QA gate: matrix 32/32 + Tier 1 harness + Tier 2 live + AOE footprint PASS (automated bar; owner sign-off separate per CLASS_QA_SIGNOFF.md)."
+	Write-Output "[PASS] Beast Rider QA gate: matrix 33/33 + Tier 1 harness + Tier 2 live + AOE footprint PASS (automated bar; owner sign-off separate per CLASS_QA_SIGNOFF.md)."
 	exit 0
 }
 

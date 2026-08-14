@@ -146,7 +146,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		{"halve_target_def_one_turn": true, "armor_explosion_atk": 1},
 	))
 	def.abilities.append(_attack(
-		&"lancer_run_down", "Run Down", 2, 3,
+		&"lancer_run_down", "Impale", 2, 3,
 		"On Kill: gain MAX MOVEMENT +2.",
 		{"bonus_atk_vs_fear_or_lower_movement": 2},
 		{"on_kill_max_move": 2},
@@ -483,7 +483,7 @@ static func _flanking_maneuver() -> AbilityData:
 	upgraded[0].legacy_modifiers["l_shape_move"] = true
 	upgraded[0].legacy_modifiers["ghost_move"] = 1
 	return _ability(
-		&"lancer_flanking_maneuver", "Flanking Maneuver", 1, [module],
+		&"lancer_flanking_maneuver", "Wraparound", 1, [module],
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Gain GHOST during MOVE.", upgraded,

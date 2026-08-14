@@ -119,7 +119,7 @@ static func _add_passives(definition: UnitData) -> void:
 		{"promotion": &"bloodweaver", "sympathetic_magic": true,
 		"linked_ally_heal": 1, "linked_ally_magic": 1,
 		"upgraded_linked_ally_magic": 2}))
-	p.append(_passive(&"chain_reaction", "Chain Reaction",
+	p.append(_passive(&"chain_reaction", "Linked Ripple",
 		"Applying PUSH to a linked enemy applies PUSH 1 to all linked enemies.",
 		"Apply PUSH 2 instead.",
 		{"promotion": &"bloodweaver", "chain_reaction": true,

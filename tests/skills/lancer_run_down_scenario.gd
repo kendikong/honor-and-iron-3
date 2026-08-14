@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Bible: lancer_run_down - Lancer factory row via shared Simulator harness.
+## Bible: Impale — RANGE 2 | ATK 3 | ATK +2 vs FEAR or lower MOV; [+] On Kill +1 Max MOV.
 ## Globals: AbilitySystem / Simulator (Rule A).
 
 const _H := preload("res://tests/lancer_qa_harness.gd")

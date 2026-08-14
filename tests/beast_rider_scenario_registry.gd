@@ -19,6 +19,7 @@ static func all_entries() -> Array[Dictionary]:
 		_entry(&"beast_defensive_posture", "defensive_posture", "res://tests/skills/beast_defensive_posture_scenario.gd"),
 		_entry(&"beast_airlift", "airlift", "res://tests/skills/beast_airlift_scenario.gd"),
 		_entry(&"beast_tail_swipe", "tail_swipe", "res://tests/skills/beast_tail_swipe_scenario.gd"),
+		_entry(&"beast_gore", "gore", "res://tests/skills/beast_gore_scenario.gd"),
 		_entry(&"beast_meteor_drop", "meteor_drop", "res://tests/skills/beast_meteor_drop_scenario.gd"),
 		_entry(&"gallop", "gallop", "res://tests/passives/gallop_scenario.gd"),
 		_entry(&"isolation_tactics", "isolation_tactics", "res://tests/passives/isolation_tactics_scenario.gd"),

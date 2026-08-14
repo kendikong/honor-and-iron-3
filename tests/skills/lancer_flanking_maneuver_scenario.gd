@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Bible: lancer_flanking_maneuver - Lancer factory row via shared Simulator harness.
+## Bible: Wraparound — L-shape MOVE to a flanking tile | ATK 2 doubled; [+] GHOST during MOVE.
 ## Globals: AbilitySystem / Simulator (Rule A).
 
 const _H := preload("res://tests/lancer_qa_harness.gd")

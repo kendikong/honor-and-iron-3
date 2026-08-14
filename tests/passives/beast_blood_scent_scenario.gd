@@ -3,7 +3,7 @@ extends RefCounted
 
 const _H := preload("res://tests/beast_rider_qa_harness.gd")
 
-## Bible: Blood Scent — +1 MOVE and PIERCE toward BLEEDing enemy; [+] +2 MOVE.
+## Bible: Blood Trail — +1 MOVE and PIERCE toward BLEEDing enemy; [+] +2 MOVE.
 ## Globals: MovementSystem direction intent and CombatSystem pierce validation.
 ## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
 

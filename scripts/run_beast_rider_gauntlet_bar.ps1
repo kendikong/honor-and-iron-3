@@ -23,7 +23,7 @@ $proofs = @(
 	"[PASS] Beast Rider Tier 2 live preview/factory gate",
 	"0 failures",
 	"test_live_beast_rider_every_skill",
-	"[PASS] Beast Rider QA gate: matrix 32/32 + Tier 1 harness + Tier 2 live + AOE footprint PASS"
+	"[PASS] Beast Rider QA gate: matrix 33/33 + Tier 1 harness + Tier 2 live + AOE footprint PASS"
 )
 $missing = @()
 foreach ($proof in $proofs) {

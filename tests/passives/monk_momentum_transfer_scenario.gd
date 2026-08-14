@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Bible: Momentum Transfer — +1 STR per 2 tiles moved before attack; [+] per 1 tile.
+## Bible: Ki Momentum — +1 STR per 2 tiles moved before attack; [+] per 1 tile.
 ## Globals: shared movement-distance attack scaling.
 ## Data/Sim delegate: tests/monk_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/monk_qa_harness.gd")

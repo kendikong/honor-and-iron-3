@@ -1,6 +1,6 @@
 ﻿extends RefCounted
 
-## Bible: chain_reaction — class_abilities.txt section 10 Shaman passive.
+## Bible: Linked Ripple — applying PUSH to a linked enemy applies PUSH 1 to all other linked enemies.
 ## Globals: ShamanSystems shared hooks + Simulator.
 ## Data/Sim delegate: tests/shaman_qa_harness.gd::run_passive_factory
 const _H := preload("res://tests/shaman_qa_harness.gd")

@@ -10,7 +10,7 @@ runtime behavior remains in `AbilitySystem`, `MovementSystem`, `CombatSystem`,
 
 | Tier | Automated proof | Gate |
 |---|---|---|
-| 1 | 16 active/movement scenarios, 16 passive scenarios, base/upgrade profiles, deterministic outcome checks | `run_beast_rider_qa_gate.ps1` |
+| 1 | 17 active/movement scenarios, 16 passive scenarios, base/upgrade profiles, deterministic outcome checks | `run_beast_rider_qa_gate.ps1` |
 | 2 | TestBattle factory loads every Beast Rider active skill with all passives enabled | `run_beast_rider_live_qa.ps1` |
 | 3 | Owner visual check: split Gallop path, Reposition opposite-side landing, shaped red overlays, landing/push animation, no preview/commit jump | Manual F5 checklist |
 
@@ -41,6 +41,7 @@ Movement rows must prove blue reachable tiles and pre/post timing where applicab
 | `beast_defensive_posture` | `tests/skills/beast_defensive_posture_scenario.gd` | PASS | INTERCEPT 50%, DEF +2; [+] PUSH attacker |
 | `beast_airlift` | `tests/skills/beast_airlift_scenario.gd` | PASS | ally pickup/drop phases; [+] ally ATK +1 |
 | `beast_tail_swipe` | `tests/skills/beast_tail_swipe_scenario.gd` | PASS | 3x3 ATK 1 PUSH 2; [+] collision STAGGER |
+| `beast_gore` | `tests/skills/beast_gore_scenario.gd` | PASS | RANGE 1 ATK 2 PUSH 1; BLEED ATK+2; [+] VULNERABLE |
 | `beast_meteor_drop` | `tests/skills/beast_meteor_drop_scenario.gd` | PASS | RANGE 2 jump and adjacent ATK 2; [+] VULNERABLE |
 | `gallop` | `tests/passives/gallop_scenario.gd` | PASS | split pre/post standard MOV; [+] ATK/DEF |
 | `isolation_tactics` | `tests/passives/isolation_tactics_scenario.gd` | PASS | isolated target ATK +2; [+] moved-tile ATK |
@@ -54,7 +55,7 @@ Movement rows must prove blue reachable tiles and pre/post timing where applicab
 | `intimidating_presence` | `tests/passives/intimidating_presence_scenario.gd` | PASS | permanent -DEF/-MOVE RANGE 2; [+] RANGE 3 |
 | `dive_bomber` | `tests/passives/dive_bomber_scenario.gd` | PASS | 4+ moved attack ATK +2; [+] threshold 3 |
 | `pack_hunter` | `tests/passives/pack_hunter_scenario.gd` | PASS | isolated follow-up bite, 50% DEF ignore; [+] ATK 2 |
-| `blood_scent` | `tests/passives/beast_blood_scent_scenario.gd` | PASS | +MOV and PIERCE toward BLEED; [+] +2 MOV |
+| `blood_scent` | `tests/passives/beast_blood_scent_scenario.gd` | PASS | Blood Trail: +MOV and PIERCE toward BLEED; [+] +2 MOV |
 | `vantage_striker` | `tests/passives/vantage_striker_scenario.gd` | PASS | difficult terrain immunity and hazard ATK; [+] +2 |
 | `predatory_drive` | `tests/passives/predatory_drive_scenario.gd` | PASS | BLEED WPN on BLEED/isolated; [+] POISON |
 | `furious_charge` | `tests/passives/furious_charge_scenario.gd` | PASS | straight 3+ next-attack PUSH 1; [+] PUSH 2 |
@@ -64,13 +65,13 @@ Movement rows must prove blue reachable tiles and pre/post timing where applicab
 - [ ] F5: Gallop can commit a pre-action move, action, and post-action move; the
   last preview remains the committed path and facing.
 - [ ] F5: Reposition shows the moved unit landing on the empty opposite-side tile.
-- [ ] F5: Pounce, Bestial Roar, Raking Claws, Intimidate, Tail Swipe, and Meteor
+- [ ] F5: Pounce, Bestial Roar, Raking Claws, Intimidate, Tail Swipe, Gore, and Meteor
   Drop red overlays match their Bible footprints.
 - [ ] F5: airborne landing, hazard immunity, PUSH collisions, and post-action
   animation contain no shader/material/runtime errors.
 
 ## Gate record
 
-Last automated result: PASS — Tier 1 32-row harness and Tier 2 factory/live suite.
+Last automated result: PASS — Tier 1 33-row harness and Tier 2 factory/live suite.
 Owner visual Tier 3 remains a manual presentation check and is not represented
 as an automated PASS.

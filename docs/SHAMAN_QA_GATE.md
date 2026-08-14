@@ -36,7 +36,7 @@ This gate validates the Shaman class against `class_abilities.txt` and
 | `spirit_link` | Bloodweaver: linked hit damage | `tests/passives/spirit_link_scenario.gd` | PASS |
 | `pain_sharing` | Bloodweaver: linked damage bonus | `tests/passives/pain_sharing_scenario.gd` | PASS |
 | `sympathetic_magic` | Bloodweaver: linked healing/MAG | `tests/passives/sympathetic_magic_scenario.gd` | PASS |
-| `chain_reaction` | Bloodweaver: linked PUSH propagation | `tests/passives/chain_reaction_scenario.gd` | PASS |
+| `chain_reaction` | Bloodweaver: Linked Ripple PUSH propagation | `tests/passives/chain_reaction_scenario.gd` | PASS |
 | `soul_collector` | Soulwalker: kill orbs and cap | `tests/passives/soul_collector_scenario.gd` | PASS |
 | `hexing_touch` | Soulwalker: melee attacker permanent debuffs | `tests/passives/hexing_touch_scenario.gd` | PASS |
 | `ritual_sacrifice` | Soulwalker: HP-for-AP skill economy | `tests/passives/ritual_sacrifice_scenario.gd` | PASS |

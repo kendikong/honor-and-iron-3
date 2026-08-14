@@ -139,7 +139,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	))
 	definition.passives.append(_passive(
 		&"blood_scent",
-		"Blood Scent",
+		"Blood Trail",
 		"Gain +1 MOVE and PIERCE while moving toward a BLEEDING enemy.",
 		"Gain +2 MOVE instead.",
 		{"promotion": &"apex_predator", "blood_scent_move": 1,
@@ -184,6 +184,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.abilities.append(_defensive_posture())
 	definition.abilities.append(_airlift())
 	definition.abilities.append(_tail_swipe())
+	definition.abilities.append(_gore())
 	definition.abilities.append(_meteor_drop())
 
 	DataLibrary.finalize_unit_abilities(definition)
@@ -540,6 +541,24 @@ static func _tail_swipe() -> AbilityData:
 			| GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
 		"Wall collision applies STAGGER.",
+	)
+
+
+static func _gore() -> AbilityData:
+	var gore := _module(
+		GameEnums.EffectType.DAMAGE, 2, 1, 1,
+		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
+		GameEnums.StatType.PHYSICAL,
+	)
+	gore.legacy_modifiers["bleed_bonus_damage"] = 2
+	gore.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
+	var upgraded := _clone([gore])
+	var vulnerable := DataLibrary._status_effect(GameEnums.StatusType.VULNERABLE, 1)
+	upgraded[0].layers.append(_layer(vulnerable))
+	return _ability(
+		&"beast_gore", "Gore", [gore], upgraded,
+		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
+		"Target suffers VULNERABLE.",
 	)
 
 

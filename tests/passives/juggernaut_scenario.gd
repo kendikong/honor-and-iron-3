@@ -3,7 +3,7 @@ extends RefCounted
 
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
 
-## Bible: Juggernaut — moving over traps destroys them for 0 damage.
+## Bible: Unstoppable Tread — moving over traps destroys them for 0 damage.
 ## [+] destroying a trap grants SHIELD 1.
 ## Globals: TerrainSystem.apply_landing trap destroy path.
 
