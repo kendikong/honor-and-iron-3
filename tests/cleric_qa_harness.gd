@@ -159,6 +159,17 @@ static func _sim_ability_used(
 	var target_coord: Vector2i = target["coord"]
 	var target_id: int = target["id"]
 	var action := TimelineAction.make_ability(cleric.id, ability, target_coord, target_id)
+	if ability_id == &"cleric_martyrs_chains":
+		var partner := UnitState.create(
+			4,
+			DataLibrary.get_training_dummy(),
+			GameEnums.Team.ENEMY,
+			Vector2i(6, 3),
+		)
+		board.units.append(partner)
+		GridSystem.set_occupant(board, partner.position, partner.id)
+		AbilitySystem.set_module_target(action, 0, enemy.position, enemy.id)
+		AbilitySystem.set_module_target(action, 1, partner.position, partner.id)
 	var legal: bool = AbilitySystem.can_use(board, action)
 	if not legal:
 		if use_upgrade:

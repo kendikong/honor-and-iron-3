@@ -35,22 +35,31 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		"upgraded_hexing_presence_range": 3, "upgraded_hexing_presence_mov": -1},
 	))
 
-	var usher := DataLibrary._module(
+	var usher_pick := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 2, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.ALLY_STEP,
 	)
-	usher.legacy_modifiers["relocate_target"] = true
-	usher.legacy_modifiers["move_active_totem"] = false
-	var usher_upgraded := DataLibrary._duplicate_modules([usher])
+	usher_pick.legacy_modifiers["relocate_subject_only"] = true
+	var usher_step := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+		GameEnums.MotionMode.ALLY_STEP,
+	)
+	usher_step.aim_binding = GameEnums.AimBinding.NEW_AIM
+	usher_step.legacy_modifiers["relocate_target"] = true
+	usher_step.legacy_modifiers["move_active_totem"] = false
+	var usher_upgraded := DataLibrary._duplicate_modules([usher_pick, usher_step])
 	usher_upgraded[0].max_range = 4
-	usher_upgraded[0].legacy_modifiers["move_active_totem"] = true
+	usher_upgraded[1].max_range = 2
+	usher_upgraded[1].legacy_modifiers["relocate_target"] = true
+	usher_upgraded[1].legacy_modifiers["move_active_totem"] = true
 	definition.abilities.append(DataLibrary._make_modular_ability(
-		&"shaman_usher", "Usher", [usher], usher_upgraded, 2,
+		&"shaman_usher", "Usher", [usher_pick, usher_step], usher_upgraded, 2,
 		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
 		[AbilityModuleBridge.TAG_POSITIONING],
 		"Select an ally within RANGE 4; active Totems may also move 2 tiles.",
-		GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE,
 	))
 
 	_add_passives(definition)
@@ -205,10 +214,11 @@ static func _status(
 
 
 static func _curse_of_weakness() -> AbilityData:
-	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 2, 1, 4, GameEnums.TargetingFlags.ENEMY)
-	base.status_type = GameEnums.StatusType.WEAKEN
+	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, -2, 1, 4, GameEnums.TargetingFlags.ENEMY)
+	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 3
 	base.legacy_modifiers = {"curse_of_weakness": true, "stat_str": -2, "stat_def": -2}
+	base.layers.append(_layer(_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 3, 2)))
 	var up := DataLibrary._duplicate_modules([base])
 	up[0].legacy_modifiers["push_mitigation_zero"] = true
 	return _ability(&"shaman_curse_of_weakness", "Curse of Weakness", [base], up,
@@ -219,16 +229,12 @@ static func _healing_totem() -> AbilityData:
 	var base := _spawn(&"voodoo_totem", 2, {"totem_kind": &"healing", "pulse_aoe": 2, "pulse_heal": 1})
 	var up := _spawn(&"voodoo_totem", 2, {"totem_kind": &"healing", "pulse_aoe": 2, "pulse_heal": 1, "pulse_cleanse": true})
 	return _ability(&"shaman_healing_totem", "Healing Totem", [base], [up],
-		GameEnums.TargetingFlags.TILE, "Summon a Totem with AOE 2 MAG HEAL 1 pulses; [+] pulses CLEANSE.")
+		GameEnums.TargetingFlags.TILE, "Summon a Totem with AOE 2 HEAL 1 pulses; [+] pulses CLEANSE.")
 
 
 static func _flame_totem() -> AbilityData:
 	var base := _spawn(&"voodoo_totem", 2, {"totem_kind": &"flame", "pulse_aoe": 2, "pulse_mag_atk": 1})
-	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)))
-	base.layers[-1].effect.modifiers = {"terrain_id": &"fire", "hazard_duration": 1}
 	var up := _spawn(&"voodoo_totem", 2, {"totem_kind": &"flame", "pulse_aoe": 2, "pulse_mag_atk": 1, "pulse_fire": true})
-	up.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)))
-	up.layers[-1].effect.modifiers = {"terrain_id": &"fire", "hazard_duration": 1}
 	return _ability(&"shaman_flame_totem", "Flame Totem", [base], [up],
 		GameEnums.TargetingFlags.TILE, "Summon a Totem with AOE 2 MAG ATK 1 pulses; [+] pulses create FIRE.")
 
@@ -258,11 +264,14 @@ static func _hex() -> AbilityData:
 
 
 static func _voodoo_link() -> AbilityData:
-	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY)
-	base.legacy_modifiers = {"voodoo_link": true, "link_two_enemies": true, "shared_damage_wpn": 1}
-	var up := DataLibrary._duplicate_modules([base])
+	var first := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY)
+	first.legacy_modifiers = {"voodoo_link": true, "link_two_enemies": true, "shared_damage_wpn": 1}
+	var second := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY)
+	second.aim_binding = GameEnums.AimBinding.NEW_AIM
+	second.legacy_modifiers = {"link_partner_pick": true}
+	var up := DataLibrary._duplicate_modules([first, second])
 	up[0].legacy_modifiers["shared_push"] = true
-	return _ability(&"shaman_voodoo_link", "Voodoo Link", [base], up, GameEnums.TargetingFlags.ENEMY,
+	return _ability(&"shaman_voodoo_link", "Voodoo Link", [first, second], up, GameEnums.TargetingFlags.ENEMY,
 		"Link 2 enemies; shared damage equals WPN; [+] shared PUSH effects.")
 
 
@@ -270,8 +279,9 @@ static func _terrify() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 2, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.FEAR
 	base.status_duration = 1
-	base.legacy_modifiers = {"terrify": true, "requires_debuff": true, "boss_fallback_purge_shield": true}
+	base.legacy_modifiers = {"terrify": true, "requires_debuff": true}
 	var up := DataLibrary._duplicate_modules([base])
+	up[0].legacy_modifiers["boss_fallback_purge_shield"] = true
 	up[0].legacy_modifiers["boss_fallback_vulnerable"] = true
 	return _ability(&"shaman_terrify", "Terrify", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"Apply FEAR to a debuffed target; Boss fallback strips SHIELD and applies VULNERABLE.")
@@ -303,10 +313,17 @@ static func _bone_spear() -> AbilityData:
 
 
 static func _ancestral_spirit() -> AbilityData:
-	var base := _spawn(&"ghost_ally", 1, {"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true})
-	var up := _spawn(&"ghost_ally", 1, {"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true, "echo_upgraded": true})
+	var base := _spawn(&"ghost_ally", 1, {
+		"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true, "ghost_hp_pct": 0.25,
+	})
+	base.targeting_flags = GameEnums.TargetingFlags.ALLY
+	var up := _spawn(&"ghost_ally", 1, {
+		"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true,
+		"echo_upgraded": true, "ghost_hp_pct": 0.25,
+	})
+	up.targeting_flags = GameEnums.TargetingFlags.ALLY
 	return _ability(&"shaman_ancestral_spirit", "Ancestral Spirit", [base], [up],
-		GameEnums.TargetingFlags.ALLY, "Target an ally corpse in RANGE 1; summon a 1-HP Ghost Ally for 1 turn.")
+		GameEnums.TargetingFlags.ALLY, "Target an ally corpse in RANGE 1; summon a Ghost Ally at 25% caster HP for 1 turn.")
 
 
 static func _totem_guard() -> AbilityData:
@@ -317,12 +334,14 @@ static func _totem_guard() -> AbilityData:
 
 
 static func _sympathetic_bond() -> AbilityData:
-	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3,
-		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY)
-	base.legacy_modifiers = {"sympathetic_bond": true, "link_ally_enemy": true, "ally_heal_enemy_wpn": true}
-	var up := DataLibrary._duplicate_modules([base])
+	var ally := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY)
+	ally.legacy_modifiers = {"sympathetic_bond": true, "link_ally_enemy": true, "ally_heal_enemy_wpn": true}
+	var enemy := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY)
+	enemy.aim_binding = GameEnums.AimBinding.NEW_AIM
+	enemy.legacy_modifiers = {"link_partner_pick": true}
+	var up := DataLibrary._duplicate_modules([ally, enemy])
 	up[0].legacy_modifiers["enemy_damage_ally_heal"] = 1
-	return _ability(&"shaman_sympathetic_bond", "Sympathetic Bond", [base], up,
+	return _ability(&"shaman_sympathetic_bond", "Sympathetic Bond", [ally, enemy], up,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		"Link an ally and enemy; ally HEAL causes enemy WPN damage; [+] enemy damage HEALs ally 1.")
 

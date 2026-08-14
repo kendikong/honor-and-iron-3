@@ -317,11 +317,13 @@ static func pre_status_application(
 	target: UnitState,
 	effect: EffectData,
 	events: Array[SimEvent],
+	action: TimelineAction = null,
 ) -> bool:
 	if actor == null or target == null or effect == null:
 		return false
 	if (
 		GameEnums.is_buff(effect.status_type)
+		and effect.amount > 0
 		and not can_gain_positive_buff(target)
 	):
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -335,6 +337,11 @@ static func pre_status_application(
 		}))
 		return true
 	if effect.modifiers.get("terrify", false) and target.is_boss():
+		if (
+			not effect.modifiers.get("boss_fallback_purge_shield", false)
+			and not effect.modifiers.get("boss_fallback_vulnerable", false)
+		):
+			return false
 		target.armor = 0
 		if effect.modifiers.get("boss_fallback_vulnerable", false):
 			target.active_statuses.append(DataLibrary.make_status(
@@ -363,12 +370,26 @@ static func pre_status_application(
 	if effect.modifiers.get("push_mitigation_zero", false):
 		target.passive_flags["no_push_mitigation"] = true
 	if effect.modifiers.get("sympathetic_bond", false):
-		var counterpart: UnitState = _nearest_counterpart(board, actor, target)
-		if counterpart != null:
-			if target.team == actor.team:
-				link_ally_enemy(board, actor, target, counterpart, effect, events)
-			else:
-				link_ally_enemy(board, actor, counterpart, target, effect, events)
+		var ally: UnitState = target if target.team == actor.team else null
+		var enemy: UnitState = target if target.team != actor.team else null
+		if action != null:
+			var picked_ally := board.get_unit_by_id(AbilitySystem.module_target_unit_id(action, 0))
+			var picked_enemy := board.get_unit_by_id(AbilitySystem.module_target_unit_id(action, 1))
+			if picked_ally != null and picked_ally.team == actor.team:
+				ally = picked_ally
+			if picked_enemy != null and picked_enemy.team != actor.team:
+				enemy = picked_enemy
+		if ally == null or enemy == null:
+			var counterpart: UnitState = _nearest_counterpart(board, actor, target)
+			if counterpart != null:
+				if target.team == actor.team:
+					ally = target
+					enemy = counterpart
+				else:
+					ally = counterpart
+					enemy = target
+		if ally != null and enemy != null:
+			link_ally_enemy(board, actor, ally, enemy, effect, events)
 	return false
 
 
@@ -491,7 +512,13 @@ static func after_ability_execute(
 	):
 		actor.passive_flags.erase("shaman_echo_next_cast")
 		actor.passive_flags["__shaman_echo_repeat"] = true
+		var force_upgraded := bool(actor.passive_flags.get("shaman_echo_upgraded", false))
+		var already_upgraded := actor.is_ability_upgraded(action.ability.id)
+		if force_upgraded and not already_upgraded:
+			actor.upgraded_abilities.append(action.ability.id)
 		AbilitySystem.execute(board, action, events)
+		if force_upgraded and not already_upgraded:
+			actor.upgraded_abilities.erase(action.ability.id)
 		actor.passive_flags.erase("__shaman_echo_repeat")
 
 
@@ -644,10 +671,15 @@ static func on_spawned(
 			effect.modifiers.get("ghost_duration", 1),
 		)
 		construct.passive_flags["shaman_ghost_echo_next_cast"] = true
-		construct.health.max_hp = 1
-		construct.health.current_hp = 1
+		var ghost_hp := maxi(1, floori(
+			actor.health.max_hp * float(effect.modifiers.get("ghost_hp_pct", 0.25)),
+		))
+		construct.health.max_hp = ghost_hp
+		construct.health.current_hp = ghost_hp
 		actor.passive_flags["shaman_ghost_id"] = construct.id
 		actor.passive_flags["shaman_echo_next_cast"] = true
+		if effect.modifiers.get("echo_upgraded", false):
+			actor.passive_flags["shaman_echo_upgraded"] = true
 		construct.passive_flags["shaman_guardian_link"] = true
 		construct.passive_flags["shaman_guardian_def"] = _passive_value(
 			actor, &"guardian_aura_def", &"upgraded_guardian_aura_def", 1,

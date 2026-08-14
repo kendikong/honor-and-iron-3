@@ -38,7 +38,7 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"scrap_mechanic", "keys": [&"enemy_death_scrap_range"]},
 	{"id": &"recycling_protocol", "keys": [&"construct_destroyed_scrap", &"construct_destroyed_ap"]},
 	{"id": &"overclock", "keys": [&"construct_overclock", &"overclock_turn_damage"]},
-	{"id": &"overclocked_maintenance", "keys": [&"maintenance_repair", &"maintenance_cost"]},
+	{"id": &"overclocked_maintenance", "keys": [&"maintenance_repair", &"maintenance_shield"]},
 	{"id": &"field_technician", "keys": [&"repair_range", &"repair_next_attack_strength"]},
 ]
 
@@ -157,6 +157,12 @@ static func run_ability_row(
 			failures,
 			"engineer_wrench_smack/outcome/construct_repair",
 			repaired != null and repaired.health.current_hp > before.get_unit_by_id(target_id).health.current_hp,
+		)
+	elif ability_id == &"engineer_rocket_launcher" and not upgraded:
+		_assert(
+			failures,
+			"engineer_rocket_launcher/outcome/delayed",
+			not result.final_state.delayed_effects.is_empty(),
 		)
 	elif ability_id == &"engineer_rocket_launcher" and upgraded:
 		var damaged := false
@@ -317,22 +323,38 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 		EngineerSystems.on_construct_destroyed(board, construct, [])
 		_assert(failures, "passive/recycling_protocol/scrap", actor.scrap == 2)
 		_assert(failures, "passive/recycling_protocol/ap", actor.ability.points_left == 1)
-	elif passive_id in [&"overclocked_maintenance", &"field_technician"]:
+	elif passive_id == &"overclocked_maintenance":
 		var board := _plain_board(Vector2i(8, 6))
 		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
 		actor.active_passives.append(passive)
-		var construct_coord := (
-			Vector2i(3, 2) if passive_id == &"overclocked_maintenance" else Vector2i(4, 2)
-		)
-		var construct := _place_construct(board, 4, construct_coord, &"construct_turret", actor.id)
+		var construct := _place_construct(board, 4, Vector2i(3, 2), &"construct_turret", actor.id)
 		construct.health.current_hp = maxi(1, construct.health.max_hp - 4)
 		actor.movement_points_spent_this_turn = 1
 		var before := construct.health.current_hp
 		EngineerSystems.after_movement(board, actor, [])
 		_assert(
 			failures,
-			"passive/%s/repair" % passive_id,
+			"passive/overclocked_maintenance/repair",
 			construct.health.current_hp > before,
+		)
+	elif passive_id == &"field_technician":
+		var board := _plain_board(Vector2i(8, 6))
+		var actor := _place_engineer(board, 1, Vector2i(2, 2), _ability(engineer, &"engineer_construct_turret"))
+		actor.active_passives.append(passive)
+		actor.active_passives.append(_passive(engineer, &"blueprint_tread"))
+		var construct := _place_construct(board, 4, Vector2i(4, 2), &"construct_turret", actor.id)
+		construct.health.current_hp = maxi(1, construct.health.max_hp - 4)
+		var before := construct.health.current_hp
+		EngineerSystems.player_phase_end(board, [])
+		_assert(
+			failures,
+			"passive/field_technician/repair",
+			construct.health.current_hp > before,
+		)
+		_assert(
+			failures,
+			"passive/field_technician/next_attack_str",
+			int(actor.passive_flags.get("next_attack_strength_bonus", 0)) == 1,
 		)
 	elif passive_id == &"blueprint_tread":
 		var board := _plain_board(Vector2i(8, 6))
@@ -574,7 +596,7 @@ static func _data_contract(
 			_assert(failures, "%s/data/explosion" % ability_id, module.primary_type == GameEnums.EffectType.RANGED_EXPLODE)
 		&"engineer_overdrive_injection":
 			_assert(failures, "%s/data/strength" % ability_id, module.primary_type == GameEnums.EffectType.ADD_STATUS and module.amount == 2)
-			_assert(failures, "%s/data/self_damage" % ability_id, module.legacy_modifiers.get("self_unmitigated_damage", 0) == 2)
+			_assert(failures, "%s/data/construct_damage" % ability_id, module.legacy_modifiers.get("construct_unmitigated_damage", 0) == 2)
 		&"engineer_barbed_wire":
 			_assert(failures, "%s/data/arc" % ability_id, module.target_shape == GameEnums.TargetShape.ARC and module.target_shape_size == 3)
 			_assert(failures, "%s/data/terrain" % ability_id, module.legacy_modifiers.get("terrain_id", &"") == &"barbed_wire")

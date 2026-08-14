@@ -432,18 +432,20 @@ static func _shield_of_faith() -> AbilityData:
 
 
 static func _martyrs_chains() -> AbilityData:
-	var base := DataLibrary._module(
+	var first := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
 	)
-	base.legacy_modifiers["link_two_enemies"] = true
-	base.legacy_modifiers["magic_link_damage"] = 1
-	var upgraded := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
+	first.legacy_modifiers["link_two_enemies"] = true
+	first.legacy_modifiers["magic_link_damage"] = 1
+	var second := DataLibrary._module(
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["link_blind"] = true
+	second.aim_binding = GameEnums.AimBinding.NEW_AIM
+	second.legacy_modifiers["link_partner_pick"] = true
+	var upgraded := DataLibrary._duplicate_modules([first, second])
+	upgraded[0].legacy_modifiers["link_blind"] = true
 	return _ability(
-		&"cleric_martyrs_chains", "Martyr's Chains", [base], [upgraded],
+		&"cleric_martyrs_chains", "Martyr's Chains", [first, second], upgraded,
 		GameEnums.TargetingFlags.ENEMY,
 		"Linked enemies also suffer BLIND when the link triggers.",
 	)

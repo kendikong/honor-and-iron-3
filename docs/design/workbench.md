@@ -73,7 +73,15 @@ Mage 9 canvas FAILs closed: Overchannel refund/SHIELD upgrade-only; Elementalist
 
 QA: Mage gate+live PASS. Planning QA PASS.
 
-Canvas FAIL remaining: Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next cluster: **Engineer 10**.
+Canvas FAIL remaining: Shaman 9, Cleric 1 (dual-pick). Next cluster: **Shaman 9**.
+
+### Wave 11 (2026-08-14)
+
+Engineer 10 canvas FAILs closed: Turret Syndrome +50% turret HP; Expanded Blast cross +1 / destroy traps; Scrap Mechanic HP; Maintenance MOV-spend HEAL 1/2 SHIELD 1; Field Technician RANGE 2 + next STR; Wrench +1 STR; EMP HEAL 2; Rocket delay+sacrifice; Manual Det adjacent cross; Overdrive damages construct.
+
+QA: Engineer gate+live PASS.
+
+Canvas FAIL remaining: Shaman 9, Cleric 1 (dual-pick). Next cluster: **Shaman 9**.
 
 Lancer 12 canvas FAILs closed (Glorious Charge live dual-pick; Piercing Charge dash-then-RANGE 2; Polearm ignore-DEF upgrade-only; etc.). Archer 11 canvas FAILs closed (Steady Aim spends remaining MOV; Sidestep keep facing; Overwatch cone; Vantage on Steady Aim only; Camouflage Range>3; Caltrop 1 AP / Expert waiver; Target Painter PIERCE upgrade-only; Hunter's Mark ally RANGE/PIERCE; Repelling ally pick; Suppressing RANGE 4).
 

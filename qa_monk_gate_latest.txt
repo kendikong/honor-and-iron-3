@@ -54,9 +54,9 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MOVEMENT_SMOKE] monk_leap (monk)
 [MOVEMENT_SMOKE] monk_flying_crane_kick (monk)
 [PASS] Monk QA gate: factory matrix, all active skills, and passive triggers
-WARNING: 2 RIDs of type "CanvasItem" were leaked.
+WARNING: 3 RIDs of type "CanvasItem" were leaked.
    at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
-WARNING: 811 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+WARNING: 386 ObjectDB instances were leaked at exit (run with `--verbose` for details).
    at: cleanup (core/object/object.cpp:2535)
 ERROR: 26 resources still in use at exit (run with --verbose for details).
    at: clear (core/io/resource.cpp:822)

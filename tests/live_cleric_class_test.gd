@@ -96,12 +96,9 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 			self, runner, overlay, input, director, actor_id, ability, target_cell, item.id,
 		)
 		input._intent_state.set_hover_coord(item.target)
-		var slots: Dictionary = input._build_commit_slots_at_cell(actor_id, item.target)
-		var first_action: TimelineAction = _first_slot_action(slots)
-		if first_action != null and first_action.awaiting_target:
-			slots = input._final_commit_slots_for_click_at_cell(
-				actor_id, actor.position, Vector2.ZERO,
-			)
+		var slots: Dictionary = input._final_commit_slots_for_click_at_cell(
+			actor_id, item.target, Vector2.ZERO,
+		)
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: live preview rejected target %s" % [item.id, item.target]
 		).is_false()
@@ -112,8 +109,11 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 			"%s: live commit rejected slots" % item.id
 		).is_true()
 		if director.find_awaiting_action(actor_id) != null:
+			var second_cell: Vector2i = item.target
+			if item.id == &"cleric_martyrs_chains":
+				second_cell = item.target + Vector2i(0, 1)
 			slots = input._final_commit_slots_for_click_at_cell(
-				actor_id, item.target, Vector2.ZERO,
+				actor_id, second_cell, Vector2.ZERO,
 			)
 			assert_bool(_slots_invalid(slots)).override_failure_message(
 				"%s: live target-finalization rejected target %s" % [item.id, item.target]

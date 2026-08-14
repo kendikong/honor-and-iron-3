@@ -426,7 +426,25 @@ static func planning_module_target_valid(
 			return false
 		distance = PhysicsSystem.straight_line_distance(origin, target_coord)
 	if distance < module.min_range or distance > module.max_range:
-		return false
+		if not module.legacy_modifiers.get("relocate_target", false):
+			return false
+	if module.legacy_modifiers.get("relocate_target", false):
+		var subject: UnitState = target_board.get_unit_by_id(
+			module_target_unit_id(action, 0)
+		)
+		if subject == null or not subject.is_alive():
+			return false
+		var is_totem := subject.passive_flags.has("shaman_totem_owner_id")
+		var max_steps := 2 if is_totem and module.legacy_modifiers.get("move_active_totem", false) else 1
+		var step_distance := GridSystem.manhattan(subject.position, target_coord)
+		if (
+			step_distance < 1
+			or step_distance > max_steps
+			or GridSystem.is_occupied(target_board, target_coord)
+			or GridSystem.is_wall(target_board, target_coord)
+		):
+			return false
+		return true
 	if module.has_targeting(GameEnums.TargetingFlags.TILE):
 		return true
 	if target_coord == origin:
@@ -1111,25 +1129,25 @@ static func _first_empty_adjacent_cell(board: BoardState, center: Vector2i) -> V
 static func _link_enemy_pair(
 	board: BoardState,
 	actor: UnitState,
+	action: TimelineAction,
 	target: UnitState,
 	effect: EffectData,
 	events: Array[SimEvent],
 ) -> void:
 	var partner: UnitState = null
-	var partner_distance := 999
-	for candidate: UnitState in board.units:
-		if (
-			candidate == null
-			or candidate.id == target.id
-			or not candidate.is_alive()
-			or candidate.team == actor.team
-		):
-			continue
-		var distance := GridSystem.manhattan(actor.position, candidate.position)
-		if distance < partner_distance:
-			partner = candidate
-			partner_distance = distance
-	if partner == null:
+	var partner_id := -1
+	if action != null and action.module_target_unit_ids.size() > 1:
+		partner_id = action.module_target_unit_ids[1]
+	if partner_id >= 0:
+		partner = board.get_unit_by_id(partner_id)
+	if (
+		partner == null
+		or not partner.is_alive()
+		or partner.team == actor.team
+		or partner.id == target.id
+	):
+		if active_modules_for(actor, action.ability if action != null else null).size() < 2:
+			return
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": actor.id, "reason": "martyrs_chains_missing_second_enemy",
 		}))
@@ -1309,6 +1327,8 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 			if (
 				module.primary_type == GameEnums.EffectType.MOVE
 				and not AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
+				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_target")
+				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_subject_only")
 			):
 				return true
 		return false
@@ -1319,7 +1339,12 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
 			return true
-		if eff.type == GameEnums.EffectType.MOVE and not eff.modifiers.has("post_attack_move"):
+		if (
+			eff.type == GameEnums.EffectType.MOVE
+			and not eff.modifiers.has("post_attack_move")
+			and not eff.modifiers.has("relocate_target")
+			and not eff.modifiers.has("relocate_subject_only")
+		):
 			return true
 	return false
 
@@ -2480,6 +2505,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			)
 		)
 		and not ability_has_post_attack_move(ability, actor)
+		and not ability_has_modifier(ability, &"relocate_target", actor)
+		and not ability_has_modifier(ability, &"relocate_subject_only", actor)
 	)
 	if (has_pass_through_effects(ability, actor) or is_move) and not ability_has_dash(ability, actor) and target_coord != actor.position:
 		var motion_module: AbilityModule = active_motion_module(actor, ability)
@@ -4324,6 +4351,46 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					)
 		GameEnums.EffectType.SPAWN:
 			var coord := tile_coord
+			if effect.modifiers.get("spawn_furthest_empty_on_line", false):
+				var line := GridSystem.get_affected_tiles(
+					board, actor.position, tile_coord,
+					GameEnums.TargetShape.LINE, 4,
+				)
+				var furthest := Vector2i(-1, -1)
+				for line_coord: Vector2i in line:
+					if line_coord == actor.position:
+						continue
+					if (
+						GridSystem.is_passable(board, line_coord)
+						and not GridSystem.is_occupied(board, line_coord)
+					):
+						furthest = line_coord
+				if furthest == Vector2i(-1, -1):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "spawn_no_empty_line_tile",
+					}))
+					return
+				coord = furthest
+			if effect.modifiers.get("ally_corpse", false):
+				var corpse: UnitState = target
+				if corpse == null and action.target_unit_id >= 0:
+					corpse = board.get_unit_by_id(action.target_unit_id)
+				if (
+					corpse == null
+					or corpse.is_alive()
+					or corpse.team != actor.team
+				):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "ancestral_requires_ally_corpse",
+					}))
+					return
+				if GridSystem.is_occupied(board, coord) or not GridSystem.is_passable(board, coord):
+					coord = _first_empty_adjacent_cell(board, corpse.position)
+					if coord == Vector2i(-1, -1):
+						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+							"actor": actor.id, "reason": "spawn_blocked",
+						}))
+						return
 			if effect.spawn_unit_id != &"":
 				if GridSystem.is_occupied(board, coord) or not GridSystem.is_passable(board, coord):
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
@@ -4414,7 +4481,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.ADD_STATUS:
 			if target != null:
 				if effect.modifiers.has("link_two_enemies"):
-					_link_enemy_pair(board, actor, target, effect, events)
+					_link_enemy_pair(board, actor, action, target, effect, events)
+					return
+				if effect.modifiers.get("link_partner_pick", false):
 					return
 				if effect.modifiers.has("life_link"):
 					target.passive_flags["life_link_source_id"] = actor.id
@@ -4449,7 +4518,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					if purity_handled:
 						return
 				if ShamanSystems.pre_status_application(
-					board, actor, target, effect, events,
+					board, actor, target, effect, events, action,
 				):
 					return
 				if (
@@ -4744,8 +4813,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					action.ability.display_name, target.health.current_hp
 				)
 		GameEnums.EffectType.MOVE:
+			if effect.modifiers.get("relocate_subject_only", false):
+				return
 			if effect.modifiers.get("relocate_target", false):
-				var subject := target
+				var subject := board.get_unit_by_id(module_target_unit_id(action, 0))
+				if subject == null:
+					subject = target
 				if subject == null and action.target_unit_id >= 0:
 					subject = board.get_unit_by_id(action.target_unit_id)
 				if subject == null or subject.team != actor.team:

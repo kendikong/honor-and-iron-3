@@ -75,6 +75,12 @@ func test_live_shaman_every_skill(timeout := 600000) -> void:
 					terrify_target.active_statuses.append(
 						DataLibrary.make_status(GameEnums.StatusType.WEAKEN, 1)
 					)
+		elif ability_id == &"shaman_ancestral_spirit":
+			for corpse_board: BoardState in [director.base_board, director.board]:
+				var corpse := corpse_board.get_unit_at(_ALLY_CELL)
+				if corpse != null:
+					corpse.health.current_hp = 0
+					GridSystem.set_occupant(corpse_board, corpse.position, -1)
 		director.select_unit(actor_id)
 		if ability_id == &"shaman_usher":
 			target = _ALLY_CELL
@@ -88,7 +94,7 @@ func test_live_shaman_every_skill(timeout := 600000) -> void:
 			self, runner, overlay, input, director, actor_id, ability, target, ability_id,
 		)
 		var slots := await _commit_live_click(
-			runner, director, input, actor_id, ability, target,
+			runner, director, input, actor_id, ability, target, _second_target_for(ability_id),
 		)
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: valid preview target rejected: %s" % [ability_id, slots],
@@ -110,11 +116,19 @@ func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 
 
 func _target_for(ability_id: StringName) -> Vector2i:
-	if ability_id in [&"shaman_usher", &"shaman_ancestral_spirit"]:
-		return _ALLY_CELL
-	if ability_id == &"shaman_bloodlust":
+	if ability_id in [&"shaman_usher", &"shaman_ancestral_spirit", &"shaman_bloodlust", &"shaman_sympathetic_bond"]:
 		return _ALLY_CELL
 	return _TARGET_CELL
+
+
+func _second_target_for(ability_id: StringName) -> Vector2i:
+	if ability_id == &"shaman_usher":
+		return Vector2i(3, 4)
+	if ability_id == &"shaman_voodoo_link":
+		return Vector2i(7, 5)
+	if ability_id == &"shaman_sympathetic_bond":
+		return _TARGET_CELL
+	return Vector2i(-1, -1)
 
 
 func _ability_by_id(actor: UnitState, ability_id: StringName) -> AbilityData:
@@ -155,6 +169,7 @@ func _commit_live_click(
 	actor_id: int,
 	ability: AbilityData,
 	cell: Vector2i,
+	second_cell: Vector2i = Vector2i(-1, -1),
 ) -> Dictionary:
 	input.set_qa_pointer_grid_cell(cell)
 	input._intent_state.set_hover_coord(cell)
@@ -183,9 +198,10 @@ func _commit_live_click(
 	if not director.commit_from_slots(actor_id, slots):
 		return {"invalid": "initial arm rejected"}
 	if director.find_awaiting_action(actor_id) != null:
-		input.on_hover_moved(cell)
+		var followup := second_cell if second_cell != Vector2i(-1, -1) else cell
+		input.on_hover_moved(followup)
 		input._flush_hover_heavy_sync()
-		slots = input._build_commit_slots_at_cell(actor_id, cell)
+		slots = input._build_commit_slots_at_cell(actor_id, followup)
 	else:
 		slots = slots
 	if _slots_invalid(slots):

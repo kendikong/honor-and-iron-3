@@ -69,6 +69,55 @@ static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> boo
 	return false
 
 
+static func _repair_range(engineer: UnitState) -> int:
+	if has_passive_modifier(engineer, &"repair_range"):
+		return int(passive_value(engineer, &"repair_range", &"", 2))
+	return 1
+
+
+static func _grant_repair_attack_bonus(engineer: UnitState) -> void:
+	if engineer == null or not has_passive_modifier(engineer, &"repair_next_attack_strength"):
+		return
+	engineer.passive_flags["next_attack_strength_bonus"] = int(passive_value(
+		engineer, &"repair_next_attack_strength",
+		&"upgraded_repair_next_attack_strength", 1,
+	))
+
+
+static func _boost_owned_construct_hp(board: BoardState, engineer: UnitState, amount: int) -> void:
+	if board == null or engineer == null or amount <= 0:
+		return
+	for construct: UnitState in board.units:
+		if (
+			construct == null
+			or not construct.is_alive()
+			or construct.definition == null
+			or not construct.definition.is_construct
+			or int(construct.passive_flags.get("engineer_owner_id", -1)) != engineer.id
+		):
+			continue
+		construct.health.max_hp += amount
+		construct.health.current_hp += amount
+
+
+static func _flush_actor_delayed_effects(
+	board: BoardState,
+	actor: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or actor == null or board.delayed_effects.is_empty():
+		return
+	var remaining: Array = []
+	for entry: Dictionary in board.delayed_effects:
+		if int(entry.get("actor_id", -1)) != actor.id:
+			remaining.append(entry)
+			continue
+		AbilitySystem.execute_delayed_effect(board, entry, events)
+	board.delayed_effects.clear()
+	for entry: Dictionary in remaining:
+		board.delayed_effects.append(entry)
+
+
 static func is_pull_immune(board: BoardState, target: UnitState) -> bool:
 	if board == null or target == null:
 		return false
@@ -291,36 +340,16 @@ static func after_movement(
 			CombatSystem.heal(
 				board,
 				construct,
-				int(passive_value(unit, &"maintenance_repair", &"upgraded_maintenance_repair", 2)),
+				int(passive_value(unit, &"maintenance_repair", &"upgraded_maintenance_repair", 1)),
 				events,
 			)
 			AbilitySystem.cleanse_unit(construct, events)
-			var shield := floori(unit.health.max_hp / 10.0)
+			var shield := int(passive_value(unit, &"maintenance_shield", &"", 1))
 			CombatSystem.add_armor(board, unit, shield, events)
 			CombatSystem.add_armor(board, construct, shield, events)
+			_grant_repair_attack_bonus(unit)
 			break
-	if has_passive_modifier(unit, &"repair_range"):
-		for construct: UnitState in board.units:
-			if (
-				construct == null
-				or not construct.is_alive()
-				or construct.definition == null
-				or not construct.definition.is_construct
-				or construct.team != unit.team
-				or GridSystem.manhattan(unit.position, construct.position) > int(
-					passive_value(unit, &"repair_range", &"", 2)
-				)
-				or construct.health.current_hp >= construct.health.max_hp
-			):
-				continue
-			CombatSystem.heal(board, construct, 1, events)
-			construct.passive_flags["engineer_construct_attack_bonus"] = int(
-				passive_value(
-					unit, &"repair_next_attack_strength",
-					&"upgraded_repair_next_attack_strength", 1,
-				)
-			)
-			break
+	# Field Technician extends Blueprint Tread range; it does not auto-heal on move.
 
 
 static func turn_start(
@@ -434,6 +463,9 @@ static func on_construct_destroyed(
 	):
 		owner.passive_flags["engineer_construct_destroyed_by_ability"] = true
 	_trigger_chain_reaction(board, owner, construct.position, construct.id, events)
+	var overdrive_scrap := int(construct.passive_flags.get("overdrive_scrap_on_death", 0))
+	if overdrive_scrap > 0:
+		owner.scrap += overdrive_scrap
 
 
 static func on_kill(
@@ -464,6 +496,7 @@ static func on_kill(
 				amount = 2 if engineer.is_passive_upgraded(passive.id) else 1
 				break
 		engineer.scrap += amount
+		_boost_owned_construct_hp(board, engineer, amount)
 
 
 static func after_ability_execute(
@@ -494,6 +527,7 @@ static func after_ability_execute(
 				and sacrifice_target.definition.is_construct
 			):
 				_destroy_construct(board, actor, sacrifice_target, events)
+				_flush_actor_delayed_effects(board, actor, events)
 		if modifiers.get("ignite_oil", false) or modifiers.get("ignite_oil_area", false):
 			_ignite_oil(board, actor, action, module, events)
 		if modifiers.get("scrap_shield", false):
@@ -609,10 +643,10 @@ static func _spawn_stationary_turret(
 		if definition == null:
 			return
 		var turret := UnitState.create(board.next_unit_id(), definition, engineer.team, coord)
-		var hp_pct := int(passive_value(
-			engineer, &"mini_turret_hp_pct", &"upgraded_mini_turret_hp_pct", 25,
-		))
-		turret.health.max_hp = maxi(1, floori(engineer.health.max_hp * hp_pct / 100.0))
+		var hp := maxi(1, floori(engineer.health.max_hp * 25 / 100.0))
+		if engineer.is_passive_upgraded(&"turret_syndrome"):
+			hp = maxi(1, floori(hp * 1.5))
+		turret.health.max_hp = hp
 		turret.health.current_hp = turret.health.max_hp
 		turret.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STURDY, 999))
 		turret.passive_flags["engineer_owner_id"] = engineer.id
@@ -638,7 +672,7 @@ static func _repair_adjacent_construct(
 			or construct.definition == null
 			or not construct.definition.is_construct
 			or construct.team != engineer.team
-			or GridSystem.manhattan(engineer.position, construct.position) != 1
+			or GridSystem.manhattan(engineer.position, construct.position) > _repair_range(engineer)
 		):
 			continue
 		CombatSystem.heal(
@@ -646,6 +680,8 @@ static func _repair_adjacent_construct(
 				engineer, &"construct_repair_adjacent", &"", 1,
 			)), events,
 		)
+		_grant_repair_attack_bonus(engineer)
+		return
 
 
 static func _resolve_turrets(board: BoardState, events: Array[SimEvent]) -> void:
@@ -741,15 +777,16 @@ static func _apply_wrench(
 	AbilitySystem.cleanse_unit(target, events)
 	grant_overclock(target)
 	var bonus := int(module.legacy_modifiers.get("wrench_strength_bonus", 0))
-	if actor.is_ability_upgraded(action.ability.id):
-		target.passive_flags["engineer_construct_attack_bonus"] = bonus
+	if actor.is_ability_upgraded(action.ability.id) and bonus > 0:
+		actor.passive_flags["next_attack_strength_bonus"] = bonus
+	_grant_repair_attack_bonus(actor)
 
 
 static func _apply_overdrive_cost(
 	board: BoardState,
 	actor: UnitState,
 	action: TimelineAction,
-	_module: AbilityModule,
+	module: AbilityModule,
 	events: Array[SimEvent],
 ) -> void:
 	var target := board.get_unit_by_id(action.target_unit_id)
@@ -759,9 +796,13 @@ static func _apply_overdrive_cost(
 		return
 	grant_overclock(target)
 	CombatSystem.deal_damage(
-		board, actor, 2, events, &"true", true, false, actor,
+		board, target, 2, events, &"true", true, false, actor,
 		"Overdrive Injection", 2,
 	)
+	if actor.is_ability_upgraded(action.ability.id):
+		target.passive_flags["overdrive_scrap_on_death"] = int(
+			module.legacy_modifiers.get("refund_scrap_on_construct_death", 1)
+		)
 
 
 static func _detonate_construct(
@@ -798,7 +839,7 @@ static func _apply_emp_construct_rules(
 ) -> void:
 	var area := GridSystem.get_affected_tiles(
 		board, action.target_coord, action.target_coord,
-		GameEnums.TargetShape.AOE_SQUARE, 2,
+		module.target_shape, module.target_shape_size,
 	)
 	for coord: Vector2i in area:
 		var target := board.get_unit_at(coord)
@@ -872,11 +913,26 @@ static func _detonate_device(
 	if board == null or owner == null or device == null or not device.is_alive():
 		return
 	var center := device.position
-	var blast_size := 3 + int(passive_value(owner, &"explosion_aoe_bonus", &"", 0))
+	var blast_size := 1 + int(passive_value(owner, &"explosion_aoe_bonus", &"", 0))
 	var victims := GridSystem.get_affected_tiles(
-		board, center, center, GameEnums.TargetShape.AOE_SQUARE, blast_size,
+		board, center, center, GameEnums.TargetShape.AOE_CROSS, blast_size,
 	)
+	var destroy_traps := owner.is_passive_upgraded(&"expanded_blast")
 	for coord: Vector2i in victims:
+		if destroy_traps:
+			var tile := board.get_tile(coord)
+			if (
+				tile != null
+				and tile.definition != null
+				and (tile.definition.is_trap or tile.definition.blocks_movement)
+			):
+				var plain := DataLibrary.get_terrain(&"plain")
+				if plain != null:
+					board.set_tile_terrain(coord, plain)
+					board.terrain_payloads.erase(coord)
+					events.append(SimEvent.make(GameEnums.SimEventType.TERRAIN_CHANGED, {
+						"coord": coord, "terrain": &"plain", "destroyed_by": owner.id,
+					}))
 		var victim := board.get_unit_at(coord)
 		if victim == null or victim.team == owner.team:
 			continue

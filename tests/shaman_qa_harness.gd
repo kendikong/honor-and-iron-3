@@ -115,6 +115,7 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 	var target_coord: Vector2i = target_setup.coord
 	var target_id: int = target_setup.id
 	var action := TimelineAction.make_ability(1, ability, target_coord, target_id)
+	_bind_dual_aim(action, ability_id, board, target_coord, target_id)
 	if not AbilitySystem.can_use(board, action):
 		_assert(failures, "sim/%s/can_use" % ability_id, false)
 		return
@@ -182,6 +183,7 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 	var action := TimelineAction.make_ability(
 		1, ability, target_setup.coord, target_id,
 	)
+	_bind_dual_aim(action, ability_id, board, target_setup.coord, target_id)
 	_assert(
 		failures, "upgrade/%s/profile" % ability_id,
 		shaman.is_ability_upgraded(ability_id),
@@ -222,7 +224,10 @@ static func _assert_upgrade_outcome(
 			usher_board.add_unit(totem)
 			GridSystem.set_occupant(usher_board, totem.position, totem.id)
 			var usher_plan := Timeline.new()
-			usher_plan.add(TimelineAction.make_ability(1, ability, Vector2i(5, 3), totem.id))
+			var usher_action := TimelineAction.make_ability(1, ability, Vector2i(3, 3), totem.id)
+			AbilitySystem.set_module_target(usher_action, 0, Vector2i(3, 3), totem.id)
+			AbilitySystem.set_module_target(usher_action, 1, Vector2i(5, 3), -1)
+			usher_plan.add(usher_action)
 			var usher_events: Array[SimEvent] = []
 			Simulator.simulate_player_turn(usher_board, usher_plan, usher_events)
 			var moved_totem := usher_board.get_unit_by_id(totem.id)
@@ -761,6 +766,30 @@ static func _configure_sim_target(
 		_place_dummy(board, 3, target)
 		target_id = 3
 	return {"coord": target, "id": target_id}
+
+
+static func _bind_dual_aim(
+	action: TimelineAction,
+	ability_id: StringName,
+	board: BoardState,
+	target_coord: Vector2i,
+	target_id: int,
+) -> void:
+	if action == null:
+		return
+	if ability_id == &"shaman_usher":
+		AbilitySystem.set_module_target(action, 0, Vector2i(3, 3), 2)
+		AbilitySystem.set_module_target(action, 1, Vector2i(4, 3), -1)
+	elif ability_id == &"shaman_voodoo_link":
+		var partner := board.get_unit_by_id(4)
+		AbilitySystem.set_module_target(action, 0, target_coord, target_id)
+		if partner != null:
+			AbilitySystem.set_module_target(action, 1, partner.position, partner.id)
+	elif ability_id == &"shaman_sympathetic_bond":
+		var enemy := board.get_unit_by_id(3)
+		AbilitySystem.set_module_target(action, 0, target_coord, target_id)
+		if enemy != null:
+			AbilitySystem.set_module_target(action, 1, enemy.position, enemy.id)
 
 
 static func _plain_board(size: Vector2i) -> BoardState:

@@ -58,7 +58,7 @@ static func build(basic_gun: WeaponData) -> UnitData:
 		"End turn without moving: spawn a mini-turret adjacent.",
 		"Mini-turret gains +50% Max HP.",
 		{"promotion": &"siegecrafter", "stationary_mini_turret": true,
-		"mini_turret_hp_pct": 25, "upgraded_mini_turret_hp_pct": 50},
+		"mini_turret_hp_pct": 25, "upgraded_mini_turret_hp_bonus_pct": 50},
 	))
 	definition.passives.append(_passive(
 		&"automation", "Automation",
@@ -151,15 +151,15 @@ static func build(basic_gun: WeaponData) -> UnitData:
 	))
 	definition.passives.append(_passive(
 		&"overclocked_maintenance", "Overclocked Maintenance",
-		"Spend 1 MOV adjacent to a Construct to repair 2, cleanse debuffs, and grant both SHIELD Floor(Max HP / 10).",
-		"Repair amount becomes 4 HP.",
-		{"promotion": &"mechanist", "maintenance_repair": 2,
-		"maintenance_cost": 1, "maintenance_shield_divisor": 10,
-		"upgraded_maintenance_repair": 4},
+		"If you spend 1+ MOV and end adjacent to a friendly construct: HEAL 1, CLEANSE, both gain SHIELD 1.",
+		"Repair HEAL 2.",
+		{"promotion": &"mechanist", "maintenance_repair": 1,
+		"maintenance_shield": 1,
+		"upgraded_maintenance_repair": 2},
 	))
 	definition.passives.append(_passive(
 		&"field_technician", "Field Technician",
-		"Repair Constructs from RANGE 2; they gain +1 STR on their next attack.",
+		"Blueprint Tread repair RANGE 2. After any repair, +1 STR on your next attack.",
 		"Next attack bonus becomes +2 STR.",
 		{"promotion": &"mechanist", "repair_range": 2,
 		"repair_next_attack_strength": 1,
@@ -380,12 +380,12 @@ static func _emp_grenade() -> AbilityData:
 	base.layers = [_layer(DataLibrary._status_effect(GameEnums.StatusType.SILENCE, 1))]
 	base.legacy_modifiers = {"emp_grenade": true, "mechanical_boss_damage_wpn": 3}
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["emp_friendly_construct_heal"] = 10
+	upgraded[0].legacy_modifiers["emp_friendly_construct_heal"] = 2
 	upgraded[0].legacy_modifiers["emp_friendly_construct_overclock"] = true
 	return _ability(&"engineer_emp_grenade", "EMP Grenade", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
-		"Friendly Constructs HEAL 10 and gain OVERCLOCK.")
+		"Friendly Constructs HEAL 2 and gain OVERCLOCK.")
 
 
 static func _rocket_launcher() -> AbilityData:
@@ -394,8 +394,8 @@ static func _rocket_launcher() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers = {"rocket_launcher": true, "destroy_cover_traps": true,
-		"exhaust_next_turn": true}
+	base.legacy_modifiers = {"rocket_launcher": true, "destroy_terrain": true,
+		"exhaust_next_turn": true, "delayed_next_turn": true}
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["sacrifice_construct_instant"] = true
 	var sacrifice := _module(
@@ -447,7 +447,7 @@ static func _overdrive_injection() -> AbilityData:
 	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 1
 	base.legacy_modifiers = {"overdrive_injection": true, "construct_target_only": true,
-		"self_unmitigated_damage": 2}
+		"construct_unmitigated_damage": 2}
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["refund_scrap_on_construct_death"] = 1
 	return _ability(&"engineer_overdrive_injection", "Overdrive Injection",
