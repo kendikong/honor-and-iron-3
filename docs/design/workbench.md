@@ -19,9 +19,9 @@ STOP_CONDITION_MET: yes (this piece)
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 3 │ SELF-GRADED: no (subagent)
-SCORE: 58/100 │ THRESHOLD: 85 │ FAIL │ SLIPPED
-DELTA: −4 vs round 2 (was 62)
+GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 4 │ SELF-GRADED: no (subagent)
+SCORE: 56/100 │ THRESHOLD: 85 │ FAIL │ SLIPPED
+DELTA: −2 vs round 3 (was 58)
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
@@ -37,6 +37,21 @@ STOP_CONDITION_MET: no
 | 2 | BIBLE-CONSISTENCY | 90 | PASS | no (subagent) |
 | 2 | BIBLE-TO-CODE | 62 | FAIL | no (subagent) |
 | 3 | BIBLE-TO-CODE | 58 | FAIL | no (subagent) |
+| 4 | BIBLE-TO-CODE | 56 | FAIL | no (subagent) |
+
+### Wave 6 (2026-08-14)
+
+Audits collapsed to 1 finding (Rogue 13 canvas FAILs). Implemented in `RogueSystems` + factory data + harness:
+
+- Pass [+] pierce gated; Slip Past lands opposite empty; Lethal Position STR/RANGE/DEF; Shadow Clone TAUNT on enemies + explode; Phase Shift until-attack; Blink Strike teleport; Shadow Slip MOV refund on attack; Panic Cascade WPN on debuff apply; Smoke stealth-vs-outside + heal/turn; Grapple pull-until-adjacent / self-pull RANGE 4 + trap×2; Amnesia unacted + CONFUSION next turn; Kidnap push away from caster; Poison Flask AOE 1 + BLIND on entry.
+
+QA: Rogue gate PASS 32/32. Rogue live PASS 3/3. Planning QA PASS. Alignment gate FAIL **73** (was 86). Rogue FAIL **0**.
+
+Next largest cluster: **Lancer 12**.
+
+Bowling Charge / Trampling Advance untouched. No class LOCK claim.
+
+**Commit:** `44a61de6d68c441cd1f92f39e12cbcc37a59677c`
 
 ### Wave 5 (2026-08-14)
 
