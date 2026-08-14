@@ -566,6 +566,63 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
+	_add_section(vbox, "Hover FPS throttle")
+	_add_hint(
+		vbox,
+		"0 = full quality. 100 = max FPS while circling. Click still commits for real.",
+	)
+	_hover_throttle_slider = _add_dev_value_slider(
+		vbox,
+		"Throttle",
+		0.0,
+		100.0,
+		1.0,
+		_game_settings.hover_throttle_pct,
+		"%",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			_game_settings.apply_hover_throttle_preset(v)
+			_sync_hover_throttle_sliders()
+			_save_game_settings()
+			EventBus.interface_settings_changed.emit(),
+	)
+	_hover_throttle_label = _hover_throttle_slider.get_meta("value_label") as Label
+	_hover_sim_ms_slider = _add_dev_value_slider(
+		vbox,
+		"Hover sim delay",
+		0.0,
+		400.0,
+		5.0,
+		_game_settings.hover_sim_interval_ms,
+		"ms",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			_game_settings.hover_sim_interval_ms = v
+			_save_game_settings()
+			EventBus.interface_settings_changed.emit(),
+	)
+	_hover_sim_ms_label = _hover_sim_ms_slider.get_meta("value_label") as Label
+	_overlay_fps_slider = _add_dev_value_slider(
+		vbox,
+		"Overlay anim FPS",
+		0.0,
+		30.0,
+		1.0,
+		_game_settings.planning_overlay_fps,
+		"fps",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			_game_settings.planning_overlay_fps = v
+			_save_game_settings()
+			EventBus.interface_settings_changed.emit(),
+	)
+	_overlay_fps_label = _overlay_fps_slider.get_meta("value_label") as Label
+	_sync_hover_throttle_sliders()
+
+	vbox.add_child(HSeparator.new())
 	_dev_tile_labels_check = _add_dev_check(
 		vbox,
 		"Tile ID labels (sandbox map)",
@@ -632,63 +689,6 @@ func _build_developer_tab(parent: TabContainer) -> void:
 			check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		preview_parent.add_child(check)
 		_planning_preview_checks[field] = check
-
-	vbox.add_child(HSeparator.new())
-	_add_section(vbox, "Hover FPS throttle")
-	_add_hint(
-		vbox,
-		"Big circling hitch killer. 0 = full quality (ghosts/sim every tile). 100 = skip hover sim and overlay redraws until you click. Commit still validates.",
-	)
-	_hover_throttle_slider = _add_dev_value_slider(
-		vbox,
-		"Throttle",
-		0.0,
-		100.0,
-		1.0,
-		_game_settings.hover_throttle_pct,
-		"%",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.apply_hover_throttle_preset(v)
-			_sync_hover_throttle_sliders()
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_hover_throttle_label = _hover_throttle_slider.get_meta("value_label") as Label
-	_hover_sim_ms_slider = _add_dev_value_slider(
-		vbox,
-		"Hover sim delay",
-		0.0,
-		400.0,
-		5.0,
-		_game_settings.hover_sim_interval_ms,
-		"ms",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.hover_sim_interval_ms = v
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_hover_sim_ms_label = _hover_sim_ms_slider.get_meta("value_label") as Label
-	_overlay_fps_slider = _add_dev_value_slider(
-		vbox,
-		"Overlay anim FPS",
-		0.0,
-		30.0,
-		1.0,
-		_game_settings.planning_overlay_fps,
-		"fps",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.planning_overlay_fps = v
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_overlay_fps_label = _overlay_fps_slider.get_meta("value_label") as Label
-	_sync_hover_throttle_sliders()
 
 	_sandbox_tools_box = VBoxContainer.new()
 	vbox.add_child(_sandbox_tools_box)
