@@ -881,31 +881,31 @@ func recompute_hover_ranges(
 	)
 	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
-	var static_cache_hit: bool = (
+	var move_cache_hit: bool = (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
-		and _cached_hover_action_range_origin == action_range_origin
 		and _cached_hover_ability == cache_ability
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
 	)
-	# Selected-player move/range overlays are stand-based; only AOE blast footprints track hover.
+	# Enemy / unselected hover still keys off the cursor cell.
 	if not is_selected_player or unit.id != _director.selected_unit_id:
-		static_cache_hit = static_cache_hit and _cached_hover_coord == _hover_coord
-	var blast_only_refresh: bool = false
-	if static_cache_hit:
-		if _cached_hover_coord == _hover_coord:
-			return
-		if (
-			is_selected_player
-			and _hover_action_range_uses_blast_at_coord(
-				unit, p_unit, selected_ability, cache_force,
-			)
-		):
-			blast_only_refresh = true
-		else:
-			return
+		move_cache_hit = move_cache_hit and _cached_hover_coord == _hover_coord
+	var action_cache_hit: bool = (
+		move_cache_hit
+		and _cached_hover_action_range_origin == action_range_origin
+	)
+	if (
+		not is_selected_player
+		or unit.id != _director.selected_unit_id
+		or _hover_action_range_uses_blast_at_coord(
+			unit, p_unit, selected_ability, cache_force,
+		)
+	):
+		action_cache_hit = action_cache_hit and _cached_hover_coord == _hover_coord
+	if move_cache_hit and action_cache_hit:
+		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
 	_cached_hover_action_range_origin = action_range_origin
@@ -914,9 +914,9 @@ func recompute_hover_ranges(
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
 	_cached_hover_coord = _hover_coord
-	if blast_only_refresh:
-		_hover_action_range_tiles = _compute_hover_blast_action_range_tiles(
-			unit, p_unit, action_range_origin, selected_ability, cache_force,
+	if move_cache_hit:
+		_fill_hover_action_range_tiles(
+			unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
 		)
 		_queue_static_tiles_redraw()
 		return
@@ -959,8 +959,24 @@ func recompute_hover_ranges(
 				move_cost,
 				move_ability,
 			)
+	_fill_hover_action_range_tiles(
+		unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
+	)
+	_queue_static_tiles_redraw()
+
+
+func _fill_hover_action_range_tiles(
+	unit: UnitState,
+	p_unit: UnitState,
+	action_range_origin: Vector2i,
+	selected_ability: int,
+	cache_force: bool,
+	is_selected_player: bool,
+) -> void:
+	_hover_action_range_tiles.clear()
+	if _intent_tiles_blocked(unit, selected_ability):
+		return
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-		_queue_static_tiles_redraw()
 		return
 	var ability_index: int = selected_ability if is_selected_player else -1
 	if cache_force and is_selected_player:
@@ -974,7 +990,6 @@ func recompute_hover_ranges(
 			and budget_unit != null
 			and budget_unit.ability.points_left >= ability.action_point_cost
 		):
-			_queue_static_tiles_redraw()
 			return
 		var blast_tiles: Array[Vector2i] = _compute_hover_blast_action_range_tiles(
 			unit, p_unit, action_range_origin, ability_index, cache_force,
@@ -987,7 +1002,6 @@ func recompute_hover_ranges(
 			)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
-	_queue_static_tiles_redraw()
 
 
 func _on_board_changed(board: BoardState) -> void:

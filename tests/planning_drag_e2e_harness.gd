@@ -24,6 +24,7 @@ static func wire_minimal_fixture(
 	var overlay := TacticalPlanningOverlay.new()
 	_attach_to_host(overlay)
 	overlay.setup(null, fix.director, intent)
+	overlay.qa_static_overlay = true
 	overlay.set_board(fix.board)
 	fix.input._planning = overlay
 	fix.input._intent_state = intent
@@ -151,6 +152,7 @@ static func wire_fixture(fix: Dictionary) -> Dictionary:
 	_attach_to_host(map_stub)
 	_attach_to_host(overlay)
 	overlay.setup(null, fix.director, intent)
+	overlay.qa_static_overlay = true
 	overlay.set_board(fix.board)
 	fix.input._map_view = map_stub
 	fix.input._planning = overlay

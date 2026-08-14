@@ -525,6 +525,7 @@ static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 	var intent := CombatIntentState.new()
 	var overlay := TacticalPlanningOverlay.new()
 	overlay.setup(null, fix.director, intent)
+	overlay.qa_static_overlay = true
 	overlay.set_board(fix.board)
 	fix.input._planning = overlay
 	fix.input._intent_state = intent

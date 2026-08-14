@@ -1180,19 +1180,22 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
+	## QA fixtures keep immediate sim. Live F5 uses the throttle so circling
+	## a unit does not resim every blue tile. Commit still flushes first.
 	if dragging or _director == null or not _is_planning():
 		return false
 	if not _director.board.is_in_bounds(cell):
 		return false
-	if _director.selected_unit_id < 0:
-		return false
-	var p_unit := _proj_unit(_director.selected_unit_id)
-	if p_unit == null:
-		return false
-	if not _unit_move_slot_open(p_unit.id):
-		return false
-	if force_basic_movement or _director.selected_ability_index < 0:
-		return _is_hover_move_cell(p_unit, cell)
+	if _planning != null and _planning.qa_static_overlay:
+		if _director.selected_unit_id < 0:
+			return false
+		var p_unit := _proj_unit(_director.selected_unit_id)
+		if p_unit == null:
+			return false
+		if not _unit_move_slot_open(p_unit.id):
+			return false
+		if force_basic_movement or _director.selected_ability_index < 0:
+			return _is_hover_move_cell(p_unit, cell)
 	return false
 
 
@@ -2257,14 +2260,7 @@ func _intent_snapshot_key_for(
 	var wp_parts: PackedStringArray = PackedStringArray()
 	for wp: Vector2i in waypoints:
 		wp_parts.append("%d,%d" % [wp.x, wp.y])
-	var legal_parts: PackedStringArray = PackedStringArray()
-	var legal_sorted: Array[Vector2i] = legal_move_tiles.duplicate()
-	legal_sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-		return a.x < b.x or (a.x == b.x and a.y < b.y)
-	)
-	for cell_l: Vector2i in legal_sorted:
-		legal_parts.append("%d,%d" % [cell_l.x, cell_l.y])
-	return "%d|%d|%s|%s|%d|%d|%d|%s|%s|%d" % [
+	return "%d|%d|%s|%s|%d|%d|%d|%s|%d|%d" % [
 		plan_rev,
 		unit_id,
 		str(cell),
@@ -2273,9 +2269,17 @@ func _intent_snapshot_key_for(
 		face_dir,
 		1 if awaiting_targeting_active() else 0,
 		",".join(wp_parts),
-		",".join(legal_parts),
+		_legal_move_tiles_fingerprint(legal_move_tiles),
 		1 if force_basic_movement else 0,
 	]
+
+
+func _legal_move_tiles_fingerprint(legal_move_tiles: Array[Vector2i]) -> int:
+	var legal_sorted: Array[Vector2i] = legal_move_tiles.duplicate()
+	legal_sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
+		return a.x < b.x or (a.x == b.x and a.y < b.y)
+	)
+	return hash(legal_sorted)
 
 
 func _duplicate_commit_slots(slots: Dictionary) -> Dictionary:
@@ -2512,19 +2516,17 @@ func _hover_interaction_cache_key(
 	elif hover_unit != null and hover_unit.id == unit_id:
 		resolved_target = unit_id
 	var params: Dictionary = _commit_interaction_params(hover_cell, resolved_target)
-	var face_dir: int = -1
-	if _map_view != null:
-		face_dir = _facing_from_drop(_mouse_local_for_facing(), params.cell)
 	var legal_tiles: Array[Vector2i] = params.legal_move_tiles as Array[Vector2i]
 	if legal_tiles.is_empty():
 		legal_tiles = _snapshot_drag_legal_move_tiles()
+	## Mouse facing does not change walk/sim events; commit still keys facing separately.
 	return _intent_snapshot_key_for(
 		unit_id,
 		params.cell,
 		params.waypoints as Array[Vector2i],
 		legal_tiles,
 		params.preferred,
-		face_dir,
+		-1,
 	)
 
 
