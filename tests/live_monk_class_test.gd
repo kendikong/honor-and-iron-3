@@ -97,11 +97,11 @@ func test_live_monk_every_skill(timeout := 600000) -> void:
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
 		&"monk_leap":
-			return []
+			return [Vector2i(3, 3)]
 		&"monk_phase_throw":
 			return [Vector2i(5, 3)]
 		&"monk_flying_crane_kick":
-			return [Vector2i(6, 3)]
+			return [Vector2i(5, 3)]
 		&"monk_cyclone_sweep", &"monk_updraft":
 			return [Vector2i(6, 5), Vector2i(7, 5)]
 		&"monk_geyser_strike":
@@ -191,7 +191,7 @@ func _target_for(
 		return actor_cell
 	match ability_id:
 		&"monk_leap":
-			return actor_cell + Vector2i(1, 0)
+			return actor_cell + Vector2i(2, 0)
 		&"monk_phase_throw":
 			return actor_cell + Vector2i(1, 0)
 		&"monk_flying_crane_kick":

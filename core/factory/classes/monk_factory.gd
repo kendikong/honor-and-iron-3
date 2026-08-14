@@ -54,8 +54,8 @@ static func build(basic_fist: WeaponData) -> UnitData:
 		&"elemental_harmony", "Elemental Harmony",
 		"Gain ATK +1 per adjacent elemental tile.",
 		"Gain ATK +2 per adjacent elemental tile.",
-		{"promotion": &"avatar", "adjacent_elemental_strength": 1,
-		"upgraded_adjacent_elemental_strength": 2},
+		{"promotion": &"avatar", "adjacent_elemental_attack": 1,
+		"upgraded_adjacent_elemental_attack": 2},
 	))
 	definition.passives.append(_passive(
 		&"catalyst", "Catalyst",
@@ -282,7 +282,7 @@ static func _damage(
 
 static func _leap() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 1, 1, 1,
+		GameEnums.EffectType.TELEPORT_CASTER, 2, 2, 2,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.NONE, GameEnums.MotionMode.VAULT_OVER,
 	)
@@ -388,18 +388,27 @@ static func _phase_throw() -> AbilityData:
 
 static func _flying_crane_kick() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.DASH, 3, 1, 3,
+		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
+	module.legacy_modifiers["stop_adjacent_first_enemy"] = true
+	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+	strike.scaling_stat = GameEnums.StatType.PHYSICAL
+	strike.modifiers["damage_adjacent_on_landing"] = true
+	strike.modifiers["require_dash_line_enemy"] = true
+	module.layers.append(_layer(strike))
 	var upgraded := _clone_modules([module])
+	upgraded[0].legacy_modifiers["stop_adjacent_first_enemy"] = true
 	upgraded[0].legacy_modifiers["dash_absorb_element"] = true
+	if not upgraded[0].layers.is_empty() and upgraded[0].layers[0].effect != null:
+		upgraded[0].layers[0].effect.modifiers["dash_absorb_element"] = true
 	return _ability(
 		&"monk_flying_crane_kick", "Flying Crane Kick", [module], upgraded,
-		GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
-		"Dash 3 and deal ATK 2. [+] Dashing over a hazard absorbs its element into the attack.",
+		"Dash 3, stop adjacent to the first enemy in the line, and deal ATK 2. [+] Dashing over a hazard absorbs its element into the attack.",
 	)
 
 
@@ -409,6 +418,7 @@ static func _spirit_palm() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
+	module.layers[0].effect.modifiers["collision_splash_damage"] = 2
 	var upgraded := _clone_modules([module])
 	upgraded[0].layers[0].effect.modifiers["collision_splash_damage"] = 2
 	upgraded[0].layers[0].effect.modifiers["collision_splash_weaken"] = true
@@ -440,8 +450,7 @@ static func _hundred_fists() -> AbilityData:
 static func _mantra_of_peace() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.ADD_STATUS, 1, 0, 0,
-		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY
-		| GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	module.status_type = GameEnums.StatusType.WEAKEN
@@ -492,14 +501,16 @@ static func _void_step() -> AbilityData:
 
 static func _cyclone_sweep() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.PUSH, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.PUSH, 2, 1, 1,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.ARC, 1,
 	)
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["enemy_pushed_mov"] = 1
 	return _ability(
 		&"monk_cyclone_sweep", "Cyclone Sweep", [module], upgraded,
-		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		[AbilityModuleBridge.TAG_ATTACK],
 		"PUSH 2 all targets in ARC. [+] Gain +1 MOV per enemy pushed.",
 	)
 
@@ -533,8 +544,7 @@ static func _geyser_strike() -> AbilityData:
 	water.modifiers = {"terrain_id": &"water", "hazard_duration": 1, "elemental_surface": true}
 	module.layers.append(_layer(water))
 	var upgraded := _clone_modules([module])
-	upgraded[0].layers[0].effect.amount = 2
-	upgraded[0].layers[1].effect.modifiers["push_if_target_on_water"] = 2
+	upgraded[0].layers[0].effect.modifiers["push_if_target_on_water"] = 2
 	return _ability(
 		&"monk_geyser_strike", "Geyser Strike", [module], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],

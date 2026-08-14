@@ -105,6 +105,14 @@ static func turn_end(board: BoardState, unit: UnitState, events: Array[SimEvent]
 	unit.passive_flags.erase("monk_light_step")
 	unit.passive_flags.erase("monk_ghost_move")
 	unit.passive_flags.erase("monk_crossed_enemy")
+	var inner_turns := int(unit.passive_flags.get("monk_inner_fire_turns", 0))
+	if inner_turns > 0:
+		inner_turns -= 1
+		if inner_turns <= 0:
+			unit.passive_flags.erase("monk_inner_fire_turns")
+			unit.passive_flags.erase("monk_inner_fire_surface")
+		else:
+			unit.passive_flags["monk_inner_fire_turns"] = inner_turns
 
 
 static func before_skill_move(
@@ -205,6 +213,18 @@ static func on_attack_hit(
 ) -> void:
 	if attacker == null or target == null or target_hp_before <= target.health.current_hp:
 		return
+	var absorbed: StringName = attacker.passive_flags.get("monk_absorbed_element", &"") as StringName
+	if absorbed != &"":
+		var absorbed_surface := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
+		absorbed_surface.modifiers = {
+			"terrain_id": absorbed,
+			"hazard_duration": 1,
+			"elemental_surface": true,
+		}
+		AbilitySystem.apply_external_effect(
+			board, attacker, action, absorbed_surface, events, target.position, target,
+		)
+		attacker.passive_flags.erase("monk_absorbed_element")
 	var target_tile := board.get_tile(target.position) if board != null else null
 	var ability := attacker.passive_flags.get("__current_ability", null) as AbilityData
 	var ability_mods := _ability_modifiers(attacker, ability)
@@ -355,6 +375,29 @@ static func on_dealt_damage(
 	)
 
 
+static func damage_bonus(
+	board: BoardState,
+	attacker: UnitState,
+	_target: UnitState,
+	_effect: EffectData,
+) -> int:
+	if board == null or attacker == null:
+		return 0
+	if not has_passive_modifier(attacker, &"adjacent_elemental_attack"):
+		return 0
+	var adjacent_elemental := 0
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var adjacent := board.get_tile(attacker.position + direction)
+		if _is_elemental_tile(adjacent):
+			adjacent_elemental += 1
+	return adjacent_elemental * int(passive_value(
+		attacker,
+		&"adjacent_elemental_attack",
+		&"upgraded_adjacent_elemental_attack",
+		1,
+	))
+
+
 static func on_weave_consumed(
 	board: BoardState,
 	actor: UnitState,
@@ -363,8 +406,9 @@ static func on_weave_consumed(
 ) -> void:
 	if actor == null or board == null or not has_passive_modifier(actor, &"weaver_resonance"):
 		return
+	var _formula_key := int(passive_value(actor, &"weaver_resonance_damage", &"", 1))
 	var damage := maxi(
-		1,
+		_formula_key,
 		floori(float(actor.current_strength + actor.current_magic) * 0.5),
 	)
 	CombatSystem.add_armor(
@@ -374,6 +418,9 @@ static func on_weave_consumed(
 		events,
 	)
 	var upgraded := actor.is_passive_upgraded(&"weavers_resonance")
+	var source_type: StringName = (
+		&"physical" if actor.current_strength >= actor.current_magic else &"magical"
+	)
 	for coord: Vector2i in GridSystem.get_affected_tiles(
 		board,
 		actor.position,
@@ -389,7 +436,7 @@ static func on_weave_consumed(
 			victim,
 			damage,
 			events,
-			&"magical",
+			source_type,
 			false,
 			false,
 			actor,
@@ -422,7 +469,9 @@ static func after_ability_execute(
 		)
 	if mods.get("leap_absorb_surface", false) \
 			and _is_elemental_tile(board.get_tile(actor.position)):
-		actor.passive_flags["next_attack_pierce"] = true
+		var land_tile := board.get_tile(actor.position)
+		if land_tile != null and land_tile.definition != null:
+			actor.passive_flags["monk_absorbed_element"] = land_tile.definition.id
 	if mods.has("landed_magic_bonus") and actor.passive_flags.get(
 			"jumped_or_teleported_this_turn", false,
 	):

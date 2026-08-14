@@ -272,22 +272,6 @@ func _recalculate_stats(board: BoardState = null) -> void:
 			stat_def += int(passive.modifiers.get("surface_defense", 0))
 			if is_passive_upgraded(passive.id):
 				stat_mov += int(passive.modifiers.get("upgraded_surface_movement", 0))
-		if board != null and passive.modifiers.has("adjacent_elemental_strength"):
-			var adjacent_elemental := 0
-			for direction: Vector2i in GridSystem.DIRECTIONS:
-				var adjacent := board.get_tile(position + direction)
-				if (
-					adjacent != null
-					and adjacent.definition != null
-					and adjacent.definition.id in [&"fire", &"frozen", &"water", &"steam", &"oil"]
-				):
-					adjacent_elemental += 1
-			var harmony_bonus := int(passive.modifiers["adjacent_elemental_strength"])
-			if is_passive_upgraded(passive.id):
-				harmony_bonus = int(passive.modifiers.get(
-					"upgraded_adjacent_elemental_strength", harmony_bonus,
-				))
-			stat_str += adjacent_elemental * harmony_bonus
 		if board != null and passive.modifiers.has("empty_adjacent_magic"):
 			var empty_adjacent := 0
 			for direction: Vector2i in GridSystem.DIRECTIONS:

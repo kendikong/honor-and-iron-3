@@ -27,7 +27,7 @@ const _MONK_SYSTEMS := preload("res://core/systems/monk_systems.gd")
 const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"elemental_attunement", "keys": [&"attunement_pierce"]},
 	{"id": &"chakra_burn", "keys": [&"chakra_burn", &"chakra_burn_mag"]},
-	{"id": &"elemental_harmony", "keys": [&"adjacent_elemental_strength"]},
+	{"id": &"elemental_harmony", "keys": [&"adjacent_elemental_attack"]},
 	{"id": &"catalyst", "keys": [&"surface_magic", &"surface_defense"]},
 	{"id": &"elemental_shield", "keys": [&"terrain_created_defense"]},
 	{"id": &"weavers_resonance", "keys": [&"weaver_resonance"]},
@@ -251,11 +251,11 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			_assert(failures, "passive/chakra_burn/burn",
 				dummy.has_status(GameEnums.StatusType.BURN))
 		&"elemental_harmony":
-			var without_surface := monk.current_strength
 			board.set_tile_terrain(monk.position + Vector2i.RIGHT, DataLibrary.get_terrain(&"fire"))
-			monk._recalculate_stats(board)
-			_assert(failures, "passive/elemental_harmony/adjacent_strength",
-				monk.current_strength > without_surface)
+			var dummy_for_harmony := board.get_unit_at(target)
+			var harmony_bonus := _MONK_SYSTEMS.damage_bonus(board, monk, dummy_for_harmony, null)
+			_assert(failures, "passive/elemental_harmony/adjacent_attack",
+				harmony_bonus >= 1)
 		&"catalyst":
 			var plain_magic := monk.current_magic
 			var plain_defense := monk.current_defense
@@ -447,7 +447,8 @@ static func _configure_sim_target(
 	var target_id := -1
 	match ability_id:
 		&"monk_leap":
-			target_coord = monk_pos + Vector2i.RIGHT
+			_place_dummy(board, 8, monk_pos + Vector2i.RIGHT)
+			target_coord = monk_pos + Vector2i(2, 0)
 		&"monk_phase_throw":
 			_place_dummy(board, 3, monk_pos + Vector2i.RIGHT)
 			target_coord = monk_pos + Vector2i.RIGHT

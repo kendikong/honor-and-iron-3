@@ -773,6 +773,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			and not _ability_has_modifier(actor, ability, &"move_to_target_adjacent")
 			and not _ability_has_modifier(actor, ability, &"land_opposite_target")
 			and not _ability_has_modifier(actor, ability, &"paired_ally_charge")
+			and not _ability_has_modifier(actor, ability, &"stop_adjacent_first_enemy")
 		):
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
@@ -2717,11 +2718,23 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			continue
 
 		if effect.modifiers.has("damage_adjacent_on_landing"):
+			if (
+				effect.modifiers.get("require_dash_line_enemy", false)
+				and int(actor.passive_flags.get("monk_dash_enemy_id", -1)) < 0
+			):
+				effect_index += 1
+				continue
 			for dir in GridSystem.DIRECTIONS:
 				var adj_coord: Vector2i = actor.position + dir
 				var adj_unit: UnitState = board.get_unit_at(adj_coord)
 				if adj_unit != null and adj_unit != actor and adj_unit.is_alive() and adj_unit.team != actor.team:
+					if (
+						effect.modifiers.get("require_dash_line_enemy", false)
+						and adj_unit.id != int(actor.passive_flags.get("monk_dash_enemy_id", -1))
+					):
+						continue
 					_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
+			actor.passive_flags.erase("monk_dash_enemy_id")
 			effect_index += 1
 			continue
 
@@ -3434,6 +3447,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			)
 			amount += RogueSystems.damage_bonus(board, actor, target, effect)
 			amount += BeastRiderSystems.damage_bonus(board, actor, target, effect)
+			amount += MonkSystems.damage_bonus(board, actor, target, effect)
 				
 			var dmg_type = &"physical"
 			if action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
@@ -4635,6 +4649,15 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var dir := PhysicsSystem.straight_line_dir(actor.position, action.target_coord)
 			var dash_steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
 			if dir != Vector2i.ZERO and dash_steps >= 1 and dash_steps <= effect.amount:
+				if effect.modifiers.get("stop_adjacent_first_enemy", false):
+					actor.passive_flags.erase("monk_dash_enemy_id")
+					for step_index: int in range(1, dash_steps + 1):
+						var cell := actor.position + dir * step_index
+						var occupant := board.get_unit_at(cell)
+						if occupant != null and occupant.team != actor.team and occupant.is_alive():
+							actor.passive_flags["monk_dash_enemy_id"] = occupant.id
+							dash_steps = step_index - 1
+							break
 				var pending = {
 					"type": "dash",
 					"target_id": actor.id,

@@ -57,7 +57,13 @@ Beast Rider 11 canvas FAILs closed:
 
 QA: Beast Rider gate+live PASS. Planning QA PASS.
 
-Canvas FAIL remaining: Monk 10, Mage 9, Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next cluster: **Monk 10**.
+### Wave 9 (2026-08-14)
+
+Monk 10 canvas FAILs closed: Leap over 1-tile blocker; Harmony ATK not STR; Weaver phys/mag hybrid; Vaulting Strike via leap vault; Flying Crane stop-adjacent-first-enemy; Spirit Palm base collision splash; Mantra TILE targeting; Inner Fire 2-turn decay; Cyclone TILE pick; Geyser PUSH 2 only on WATER.
+
+QA: Monk gate+live PASS.
+
+Canvas FAIL remaining: Mage 9, Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next cluster: **Mage 9**.
 
 Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
