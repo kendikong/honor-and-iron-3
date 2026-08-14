@@ -18,6 +18,11 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.base_defense = 3
 	def.base_magic = 1
 	def.equipped_weapon = basic_lance
+	def.promotion_stat_bonuses = {
+		&"cavalier": {"strength": 2, "constitution": 2, "movement": 3},
+		&"skystriker": {"strength": 4, "constitution": 2, "movement": 2},
+		&"halberdier": {"strength": 4, "defense": 4, "movement": 0},
+	}
 
 	def.innate_passives.append(_passive(
 		&"polearm_mastery",
@@ -31,7 +36,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		&"lancer_push",
 		"Push",
 		1,
-		0,
+		1,
 		_module(GameEnums.EffectType.PUSH, 1, 1, 1, GameEnums.TargetingFlags.ALLY),
 	)
 	push.modules[0].legacy_modifiers["allow_friendly_target"] = true

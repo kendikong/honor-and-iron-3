@@ -812,22 +812,23 @@ static func run_bulwark(failures: Array[String]) -> void:
 
 
 static func run_kinetic_armor(failures: Array[String]) -> void:
-	## Bible: flat -1 damage while SHIELD active; [+] flat -2.
+	## Bible: Floor(DEF / 2) while SHIELD active; [+] Floor((DEF + 2) / 2).
 	var board_no: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board_no, 1, Vector2i(3, 2))
 	var knight_no: UnitState = unit_on_board(board_no, 1)
-	knight_no.armor = 10
+	knight_no.armor = 1
 	var loss_no_passive: int = damage_taken_pierce(board_no, 1, 12)
 	var cfg: Dictionary = with_single_passive(&"kinetic_armor", false)
 	var board: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board, 10, Vector2i(3, 2), cfg)
 	var knight: UnitState = unit_on_board(board, 10)
-	knight.armor = 10
+	knight.armor = 1
 	var loss_with: int = damage_taken_pierce(board, 10, 12)
+	var expected_base := floori(float(knight.current_defense) / 2.0)
 	assert_eq_int(
 		failures, "kinetic_armor/mitigate_one",
 		loss_no_passive - loss_with,
-		1,
+		expected_base,
 	)
 	var board_no_shield: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board_no_shield, 20, Vector2i(3, 2), cfg)
@@ -847,7 +848,7 @@ static func run_kinetic_armor(failures: Array[String]) -> void:
 	var board_hazard: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board_hazard, 30, Vector2i(3, 2), cfg)
 	var knight_hz: UnitState = unit_on_board(board_hazard, 30)
-	knight_hz.armor = 10
+	knight_hz.armor = 1
 	var hp_hz_before: int = knight_hz.health.current_hp
 	var hz_events: Array[SimEvent] = []
 	CombatSystem.deal_damage(
@@ -863,12 +864,13 @@ static func run_kinetic_armor(failures: Array[String]) -> void:
 	var board_up: BoardState = make_plain_board(Vector2i(8, 5))
 	place_knight(board_up, 40, Vector2i(3, 2), cfg_up)
 	var knight_up: UnitState = unit_on_board(board_up, 40)
-	knight_up.armor = 10
+	knight_up.armor = 1
+	var expected_up := floori((float(knight_up.current_defense) + 2.0) / 2.0)
 	var loss_up: int = damage_taken_pierce(board_up, 40, 12)
 	assert_eq_int(
 		failures, "kinetic_armor/upgrade/mitigate_two",
 		loss_no_passive - loss_up,
-		2,
+		expected_up,
 	)
 	assert_true(
 		failures, "kinetic_armor/upgrade/better_than_base",
@@ -2181,17 +2183,14 @@ static func run_seismic_stomp(failures: Array[String]) -> void:
 		cracked_tile != null and cracked_tile.definition != null and cracked_tile.definition.id == &"cracked",
 		"upgraded seismic stomp must set cracked terrain id on AOE cell",
 	)
-	for dx: int in range(-1, 2):
-		for dy: int in range(-1, 2):
-			if dx == 0 and dy == 0:
-				continue
-			var cracked_coord: Vector2i = Vector2i(4 + dx, 4 + dy)
-			var tile_up: TileState = result2.final_state.get_tile(cracked_coord)
-			assert_true(
-				failures, "seismic_stomp/upgrade/cracked_aoe_%d_%d" % [cracked_coord.x, cracked_coord.y],
-				tile_up != null and tile_up.definition != null and tile_up.definition.id == &"cracked",
-				"upgraded seismic stomp must crack full AOE 1 (3x3) footprint",
-			)
+	for dir: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var cracked_coord: Vector2i = Vector2i(4, 4) + dir
+		var tile_up: TileState = result2.final_state.get_tile(cracked_coord)
+		assert_true(
+			failures, "seismic_stomp/upgrade/cracked_aoe_%d_%d" % [cracked_coord.x, cracked_coord.y],
+			tile_up != null and tile_up.definition != null and tile_up.definition.id == &"cracked",
+			"upgraded seismic stomp must crack the AOE 1 cross (cardinal tiles)",
+		)
 	var board_base: BoardState = make_plain_board(Vector2i(10, 8))
 	place_knight(board_base, 50, Vector2i(4, 4))
 	place_dummy(board_base, 51, Vector2i(5, 4))
@@ -2331,6 +2330,8 @@ static func run_fortify(failures: Array[String]) -> void:
 		"active_abilities": [DataLibrary.get_universal_run()],
 	})
 	var fortify: AbilityData = ability_on_unit(unit_on_board(board, 1), &"knight_fortify")
+	var ally_def_before: int = unit_on_board(board, 3).current_defense
+	var caster_def: int = unit_on_board(board, 1).current_defense
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, fortify, Vector2i(4, 3), 3))
 	var result: SimResult = simulate_player_turn(board, plan)
@@ -2339,6 +2340,11 @@ static func run_fortify(failures: Array[String]) -> void:
 		failures, "fortify/ally_def",
 		ally != null and has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
 		"fortify must buff ally DEF",
+	)
+	assert_eq_int(
+		failures, "fortify/ally_def_adds_caster",
+		ally.current_defense if ally != null else -1,
+		ally_def_before + caster_def,
 	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_fortify")
 	var board2: BoardState = make_plain_board(Vector2i(10, 8))

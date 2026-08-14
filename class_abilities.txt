@@ -132,7 +132,7 @@ MARK: Attackers deal extra damage equal to the attacker's WPN against this targe
 DEBUFFED: The unit has any negative status (ROOT, STAGGER, BLEED, POISON, WEAKEN, MARK, FEAR, and so on) OR is inside a hostile stat-penalty aura (Hexing Presence, Intimidating Presence). Aura penalties count.
 ISOLATED: A unit with no adjacent ally (no other unit of the same faction in an adjacent tile). An enemy standing next to another enemy is not isolated.
 SMOKE: Tile field. Units inside cannot be targeted by attackers standing outside (STEALTH vs outside). Lasts as the skill says.
-CALTROPS: Trap tile. Entering suffers the skill's ATK (and ROOT / BLEED if the skill says so).
+CALTROPS: Trap tile. Entering applies the placing skill's listed effects. If the skill names ATK X, that is the entry damage. If it names ROOT / BLEED / DEF shred and no ATK, those apply with no ATK (Caltrop Trap is ROOT + BLEED; Caltrop Toss is ATK).
 THORNS X%: When hit in melee, the attacker takes Floor(X% of the damage they dealt), rounded down.
 Push Mitigation: How much PUSH/PULL distance is reduced. VULNERABLE sets it to 0. Density Shift can double it.
 CLEANSE: Instantly remove all negative debuffs and status effects.
@@ -142,7 +142,7 @@ INVULNERABLE: Immune to all damage, debuffs, and positional manipulation.
 HOLY AURA: 1-tile aura projected by an object. Allies in the aura gain +1 DEF. Enemies that start their turn in the aura suffer MAG ATK 1 (caster's MAG, object as origin).
 LIGHTNING ROD: Magical attacks that hit a unit in RANGE 2 of this object also deal MAG ATK 1 (owner's MAG) to all enemies adjacent to the object (once per attack).
 AIRBORNE: Standard movement ignores all ground hazards, traps, difficult terrain, and Chasms.
-SHARED TILE (Airlift): While carried, the ally occupies the rider's tile. Both remain on the board and can be targeted. Melee RANGE 1 and any AOE that includes that tile hit both. The carried ally cannot spend MOV or use their Action until dropped. They do not block the rider's movement. Drop requires an empty tile.
+SHARED TILE (Airlift): While carried, the ally occupies the rider's tile. Both remain on the board. Each occupant can still be selected as a unit target. Melee RANGE 1 and any AOE that includes that tile hit both occupants. The carried ally cannot spend MOV or use their Action until dropped. They do not block the rider's movement. Drop requires an empty tile.
 CANTO: After executing a Skill or basic attack, Max MOV is fully refunded for remaining movement.
 OVERCLOCK: A friendly Construct immediately triggers its once-per-turn effect again this phase.
 TRAMPLED: Difficult terrain (MOVE cost x2) created by a charge. Lasts 1 turn unless specified.
@@ -191,7 +191,7 @@ Active Skills & Upgrades
 (The Sentinel) Phalanx Stance: SELF | DEF +5 | Gain STURDY until next turn. Upgrade: Gain infinite RANGE for "Retaliation Protocol" this turn.
 (The Juggernaut / The Cataphract) Taunting Strike: RANGE 2 | ATK 1 | PULL 1 | Apply TAUNT. Upgrade: RANGE 3 | 3x3 square centered on the target | PULL 2 all enemies in that square toward the target | TAUNT those enemies.
 (The Cataphract) Seismic Stomp: RANGE 0 | AOE 1 | ATK 2 | PURGE all enemies. Upgrade: Create CRACKED terrain (MOVE cost x2).
-(The Cataphract / The Sentinel) Fortify: RANGE 3 | Target Ally's DEF becomes equal to your DEF for 1 turn (replaced for the duration, not added on top). Upgrade: Target gains THORNS 50% (Reflects half damage back to attacker, rounded down).
+(The Cataphract / The Sentinel) Fortify: RANGE 3 | Target Ally's DEF is increased by your current DEF for 1 turn (added on top of their DEF, not replaced). Upgrade: Target gains THORNS 50% (Reflects half damage back to attacker, rounded down).
 (The Juggernaut) Bowling Charge: DASH 3 | On collision: ATK 3, PUSH 2. Upgrade: Target collision with another enemy: ATK 3 to both units.
 (The Sentinel / The Juggernaut) Iron Grip: RANGE 1 | Apply ROOT. Target DEF halved next turn (rounded up). Upgrade: Refund 1 AP if target already has ROOT or STAGGER.
 (The Cataphract / The Sentinel) Redirect Strike: RANGE 2 | Target Ally. You INTERCEPT 50% of damage dealt to that ally this turn (rounded down), even if they are not adjacent. Upgrade: Gain +2 DEF for every redirected hit.

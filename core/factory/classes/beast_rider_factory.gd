@@ -20,7 +20,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.promotion_stat_bonuses = {
 		&"griffin_rider": {"strength": 4, "constitution": 2, "movement": 2},
 		&"wyvern_lord": {"strength": 4, "defense": 2, "constitution": 2},
-		&"apex_predator": {"strength": 4, "movement": 3},
+		&"apex_predator": {"strength": 4, "constitution": 2, "movement": 3},
 	}
 
 	definition.innate_passives.append(_passive(
@@ -69,7 +69,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		"Take 0 hazard damage when landing. Create a 3x3 PUSH 1 shockwave.",
 		"Shockwave PUSH increases to 2.",
 		{"promotion": &"griffin_rider", "airborne": true, "safe_landing": true,
-		"landing_shockwave_size": 3, "landing_shockwave_push": 1,
+		"landing_shockwave_size": 1, "landing_shockwave_push": 1,
 		"upgraded_landing_shockwave_push": 2},
 	))
 	definition.passives.append(_passive(
@@ -517,7 +517,7 @@ static func _tail_swipe() -> AbilityData:
 		GameEnums.EffectType.PUSH, 2, 0, 0,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE
 			| GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 3,
+		GameEnums.TargetShape.AOE_SQUARE, 1,
 	)
 	var damage := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
 	swipe.layers = [_layer(damage)]

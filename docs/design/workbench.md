@@ -2,12 +2,41 @@
 
 **Updated by:** lead agent during gauntlet runs  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md` Rule 6 + Rule 6b  
+**Run:** Bible consistency + Bible-to-code (`docs/design/runs/BIBLE-ALIGN.md`)
+
+---
+
+## Score ticker
+
+```text
+══════════════════════════════════════
+GAUNTLET SCORE │ BIBLE-CONSISTENCY │ Round 0 │ SELF-GRADED: yes (invalid) until critic
+SCORE: —/100 │ THRESHOLD: 88 │ pending critic
+STOP_CONDITION_MET: no
+══════════════════════════════════════
+```
+
+`STOP_CONDITION_MET: no`
+
+### Wave 1 (2026-08-14) — largest gaps closed before first critic
+
+- Bible: Fortify adds caster DEF (does not set/replace). SHARED TILE occupants are each selectable; melee/AOE hits both. CALTROPS glossary matches Caltrop Trap (no ATK) vs Caltrop Toss (ATK).
+- Code: Knight/Bruiser/Archer/Lancer promotion stats; Lancer Push 1 MOV; Seismic Stomp AOE 1 cross; Fortify amount 0 + DEF scaling; Kinetic Armor Floor(DEF/2); Adrenaline Junkie per 25% cap 3; Scar Tissue step 15 on upgrade; Engineer 3x3 size 1; EMP AOE 2 cross; Mage Fireball/Meteor/Black Hole/Gravity Well crosses; Explosive Arrow cross; Tail Swipe 3x3 size 1; Safe Landing shockwave size 1; Apex +2 CON.
+
+Bowling Charge / Trampling Advance untouched.
+
+---
+
+## Prior run (AbilityData modular — paused)
+
+**Updated by:** lead agent during gauntlet runs  
+**Spec:** `docs/design/00-gauntlet-loop-cursor.md` Rule 6 + Rule 6b  
 **Run:** AbilityData modular refactor (`docs/design/UNATTENDED_RUN.md`)  
 **PR:** https://github.com/kendikong/honor-and-iron-3/pull/5
 
 ---
 
-## Score ticker
+## Score ticker (AbilityData — paused)
 
 ```text
 ══════════════════════════════════════

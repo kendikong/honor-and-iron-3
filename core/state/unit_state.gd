@@ -202,7 +202,7 @@ func _recalculate_stats(board: BoardState = null) -> void:
 	
 	if has_passive(&"adrenaline_junkie"):
 		var missing_pct = (health.max_hp - health.current_hp) / float(health.max_hp)
-		stat_mov += floori(missing_pct / 0.10)
+		stat_mov += mini(3, floori(missing_pct / 0.25))
 		
 	if is_passive_upgraded(&"enraged"):
 		stat_mov += CombatSystem.count_enraged_debuff_hazard_sources(board, self)

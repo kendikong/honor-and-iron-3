@@ -183,7 +183,7 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 			
 		if unit.has_passive(&"adrenaline_junkie") and unit.is_passive_upgraded(&"adrenaline_junkie"):
 			var missing_pct = (unit.health.max_hp - unit.health.current_hp) / float(unit.health.max_hp)
-			def += floori(missing_pct / 0.20)
+			def += mini(3, floori(missing_pct / 0.25))
 		for passive: PassiveData in unit.active_passives:
 			if (
 				passive != null
@@ -262,7 +262,7 @@ static func get_dynamic_strength(board: BoardState, unit: UnitState) -> int:
 		
 	if unit.has_passive(&"adrenaline_junkie"):
 		var missing_pct = (unit.health.max_hp - unit.health.current_hp) / float(unit.health.max_hp)
-		str_val += floori(missing_pct / 0.10)
+		str_val += mini(3, floori(missing_pct / 0.25))
 		
 	if unit.has_passive(&"enraged"):
 		str_val += count_enraged_debuff_hazard_sources(board, unit)
@@ -734,10 +734,9 @@ static func deal_damage(
 		)
 	if target.has_passive(&"scar_tissue"):
 		var missing_hp = target.health.max_hp - target.health.current_hp
-		var reduction = maxi(floori(target.health.max_hp / 20.0), floori(missing_hp / 20.0))
+		var scar_step := 15 if target.is_passive_upgraded(&"scar_tissue") else 20
+		var reduction = maxi(floori(target.health.max_hp / float(scar_step)), floori(missing_hp / float(scar_step)))
 		reduction = mini(reduction, floori(target.health.max_hp / 10.0))
-		if target.is_passive_upgraded(&"scar_tissue"):
-			reduction += 1
 		mitigation += reduction
 
 	if (
@@ -771,7 +770,11 @@ static func deal_damage(
 		fort = 0
 		
 	if source_type != &"hazard" and target.has_passive(&"kinetic_armor") and target.armor > 0:
-		amount -= 2 if target.is_passive_upgraded(&"kinetic_armor") else 1
+		var kinetic_def := target.current_defense
+		var kinetic_reduce := floori(kinetic_def / 2.0)
+		if target.is_passive_upgraded(&"kinetic_armor"):
+			kinetic_reduce = floori((kinetic_def + 2) / 2.0)
+		amount -= kinetic_reduce
 		amount = maxi(0, amount)
 
 	var incoming := maxi(0, amount - fort - mitigation)

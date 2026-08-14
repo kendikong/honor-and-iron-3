@@ -30,9 +30,9 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/aoe",
-		stomp != null and stomp.target_shape == GameEnums.TargetShape.AOE_SQUARE
+		stomp != null and stomp.target_shape == GameEnums.TargetShape.AOE_CROSS
 		and stomp.target_shape_size == 1,
-		"seismic stomp must be AOE 1 (3x3 square size 1)",
+		"seismic stomp must be AOE 1 (cross size 1)",
 	)
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/range",

@@ -12,6 +12,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.base_defense = 2
 	def.base_magic = 1
 	def.equipped_weapon = basic_axe
+	def.promotion_stat_bonuses = {
+		&"bloodrager": {"strength": 4, "constitution": 4, "movement": 0},
+		&"behemoth": {"constitution": 6, "defense": 2, "movement": 0},
+		&"siegebreaker": {"strength": 4, "constitution": 2, "movement": 2},
+	}
 	
 	# Movement Skill (Push Through)
 	var push_module := DataLibrary._module(
@@ -41,7 +46,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		"upgraded_adjacent_enemy_def": 1,
 	}))
 	def.passives.append(DataLibrary._make_passive(&"blood_for_blood", "Blood for Blood", "If damaged last turn, attacks apply BLEED X (X = WPN).", "[+] Attacks also gain ATK +1."))
-	def.passives.append(DataLibrary._make_passive(&"adrenaline_junkie", "Adrenaline Junkie", "Gain MOVE +1 and STR +1 per 10% missing HP.", "[+] Also gain +1 DEF for every 20% missing HP."))
+	def.passives.append(DataLibrary._make_passive(&"adrenaline_junkie", "Adrenaline Junkie", "Gain +1 MOV and +1 STR per 25% missing HP (max +3).", "[+] Also gain +1 DEF per 25% missing HP (max +3)."))
 	def.passives.append(DataLibrary._make_passive(&"enraged", "Enraged", "Gain +1 STR per unique debuff/hazard.", "[+] Also gain +1 MOV per debuff/hazard."))
 	def.passives.append(DataLibrary._make_passive(&"last_stand", "Last Stand", "When HP < 25%, gain +2 STR and +2 DEF.", "[+] Gain +3 STR and +3 DEF instead."))
 	
@@ -51,7 +56,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	}))
 	def.passives.append(DataLibrary._make_passive(&"thrill_of_pain", "Thrill of Pain", "Damage taken adds ATK +2 and PUSH 1 to NEXT attack.", "[+] Next attack gains ATK +3 instead."))
 	def.passives.append(DataLibrary._make_passive(&"momentum_of_titan", "Momentum of the Titan", "PUSH collision adds damage = 10% Max HP.", "[+] Damage increases to 20% Max HP."))
-	def.passives.append(DataLibrary._make_passive(&"scar_tissue", "Scar Tissue", "Reduce physical damage by 1 per 20 Max HP or missing HP, capped at Floor(Max HP/10).", "[+] Reduce damage by additional 1."))
+	def.passives.append(DataLibrary._make_passive(&"scar_tissue", "Scar Tissue", "Reduce physical damage by 1 per 20 Max HP or missing HP, capped at Floor(Max HP/10).", "[+] Count every 15 Max HP or 15 missing HP instead of 20."))
 	
 	def.passives.append(DataLibrary._make_passive(&"momentum_transfer", "Momentum Transfer", "Applying PUSH collision HEALS 1.", "[+] HEAL 1 and gain +1 STR."))
 	def.passives.append(DataLibrary._make_passive(&"crowd_breaker", "Crowd Breaker", "+1 STR per adjacent enemy. Splash damage ATK 1.", "[+] Splash damage ATK 2."))

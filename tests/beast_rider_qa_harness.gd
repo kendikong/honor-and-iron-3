@@ -51,7 +51,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "keys": [&"hit_count", &"bleed_weapon"]},
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_ally_attack_strength"]},
-	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 3, "keys": [&"wall_collision_stagger"]},
+	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
 	&"beast_meteor_drop": {"types": [GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE], "amount": 0, "max_range": 2, "keys": [&"meteor_drop", &"landing_vulnerable"]},
 }
 

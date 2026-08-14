@@ -540,11 +540,11 @@ static func _data_contract(
 			_assert(failures, "%s/data/range" % ability_id, module.min_range == 1 and module.max_range == 1)
 			_assert(failures, "%s/data/def_loss" % ability_id, module.legacy_modifiers.get("target_def_pct_loss", 0.0) == 0.25)
 		&"engineer_sludge_bomb":
-			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 3)
+			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
 			_assert(failures, "%s/data/hazard_layer" % ability_id, not module.layers.is_empty())
 		&"engineer_frag_bomb":
-			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 3)
+			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
 			_assert(failures, "%s/data/ignite_oil" % ability_id, module.legacy_modifiers.get("ignite_oil", false))
 		&"engineer_construct_turret":
@@ -562,10 +562,10 @@ static func _data_contract(
 			_assert(failures, "%s/data/wrench_modifier" % ability_id, module.legacy_modifiers.has(&"wrench_smack"))
 		&"engineer_emp_grenade":
 			_assert(failures, "%s/data/purge" % ability_id, module.primary_type == GameEnums.EffectType.PURGE)
-			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 2)
+			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_CROSS and module.target_shape_size == 2)
 		&"engineer_rocket_launcher":
 			_assert(failures, "%s/data/global_range" % ability_id, module.max_range == 99)
-			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 3)
+			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 		&"engineer_scrap_shield":
 			_assert(failures, "%s/data/armor" % ability_id, module.primary_type == GameEnums.EffectType.ARMOR_UP)
 			_assert(failures, "%s/data/scrap_modifier" % ability_id, module.legacy_modifiers.get("scrap_multiplier", 0) == 2)

@@ -210,7 +210,7 @@ static func _fireball() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.MAGICAL,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.MAGICAL,
 	)
 	base.legacy_modifiers["reaction_frozen_to_steam"] = true
 	base.legacy_modifiers["reaction_terrain"] = &"frozen"
@@ -219,13 +219,13 @@ static func _fireball() -> AbilityData:
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.MAGICAL,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.MAGICAL,
 	)
 	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
 	var steam := _terrain(&"steam")
 	steam.modifiers["reaction_terrain"] = &"frozen"
 	steam.modifiers["reaction_steam_splash"] = true
-	steam.modifiers["reaction_steam_splash_size"] = 3
+	steam.modifiers["reaction_steam_splash_size"] = 1
 	steam.modifiers["reaction_steam_splash_damage"] = 2
 	upgraded.layers.append(_layer(steam))
 	return _spell(
@@ -258,7 +258,7 @@ static func _ice_shard() -> AbilityData:
 	var steam := _terrain(&"steam")
 	steam.modifiers["reaction_terrain"] = &"fire"
 	steam.modifiers["reaction_steam_splash"] = true
-	steam.modifiers["reaction_steam_splash_size"] = 3
+	steam.modifiers["reaction_steam_splash_size"] = 1
 	steam.modifiers["reaction_steam_splash_damage"] = 2
 	upgraded.layers.append(_layer(steam))
 	return _spell(
@@ -334,12 +334,12 @@ static func _teleport() -> AbilityData:
 static func _meteor() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 5, 1, 5, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2, GameEnums.StatType.MAGICAL,
+		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.MAGICAL,
 	)
 	base.legacy_modifiers["delayed_next_turn"] = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 5, 1, 5, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2, GameEnums.StatType.MAGICAL,
+		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.MAGICAL,
 	)
 	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
 	upgraded.legacy_modifiers["create_crater"] = true
@@ -353,12 +353,12 @@ static func _meteor() -> AbilityData:
 static func _black_hole() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.PULL, 2, 1, 4, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2, GameEnums.StatType.NONE,
+		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.NONE,
 	)
 	base.legacy_modifiers["pull_to_center"] = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.PULL, 2, 1, 4, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2, GameEnums.StatType.NONE,
+		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.NONE,
 	)
 	upgraded.legacy_modifiers["pull_to_center"] = true
 	upgraded.legacy_modifiers["pull_surfaces"] = true
@@ -435,14 +435,14 @@ static func _gravity_well() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2,
+		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	base.status_type = GameEnums.StatusType.ROOT
 	base.status_duration = 1
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.AOE_DIAMOND, 2,
+		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	upgraded.status_type = GameEnums.StatusType.ROOT
 	upgraded.status_duration = 1

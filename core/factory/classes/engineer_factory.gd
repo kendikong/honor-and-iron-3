@@ -272,7 +272,7 @@ static func _sludge_bomb() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.DAMAGE, 1, 1, 3,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 3, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	var oil := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
 	oil.modifiers = {"terrain_id": &"oil", "hazard_duration": 3, "oil_field": true}
@@ -302,7 +302,7 @@ static func _frag_bomb() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 3,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 3, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	base.legacy_modifiers["ignite_oil"] = true
 	var upgraded := _clone([base])
@@ -375,7 +375,7 @@ static func _emp_grenade() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.PURGE, 0, 1, 4,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 2,
+		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	base.layers = [_layer(DataLibrary._status_effect(GameEnums.StatusType.SILENCE, 1))]
 	base.legacy_modifiers = {"emp_grenade": true, "mechanical_boss_damage_wpn": 3}
@@ -392,7 +392,7 @@ static func _rocket_launcher() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.DAMAGE, 4, 0, 99,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 3, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	base.legacy_modifiers = {"rocket_launcher": true, "destroy_cover_traps": true,
 		"exhaust_next_turn": true}

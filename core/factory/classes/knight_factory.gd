@@ -13,6 +13,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.base_magic = 2
 	def.preferred_stat = GameEnums.StatType.DEFENSE
 	def.equipped_weapon = basic_axe
+	def.promotion_stat_bonuses = {
+		&"sentinel": {"defense": 4, "constitution": 4, "movement": 0},
+		&"juggernaut": {"strength": 4, "defense": 4, "movement": 0},
+		&"cataphract": {"constitution": 2, "defense": 2, "movement": 2},
+	}
 	
 	# Movement Skill (Swap) — Master Bible; always granted, not part of roll pool.
 	var swap_module := DataLibrary._module(
@@ -67,7 +72,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		"kinetic_energy_cap_def_multiplier": 2,
 		"upgraded_kinetic_energy_cap_def_multiplier": 3,
 	}))
-	def.passives.append(DataLibrary._make_passive(&"kinetic_armor", "Kinetic Armor", "Incoming damage reduced by flat 1 if SHIELD active.", "[+] Reduced by 2."))
+	def.passives.append(DataLibrary._make_passive(&"kinetic_armor", "Kinetic Armor", "Incoming damage reduced by Floor(DEF / 2) if SHIELD is active.", "[+] Floor((DEF + 2) / 2)."))
 	def.passives.append(DataLibrary._make_passive(&"kinetic_converter", "Kinetic Converter", "When hit, gain STR +1 and MOVE +1 for next turn.", "[+] Gain STR +2."))
 	def.passives.append(DataLibrary._make_passive(&"kinetic_redirection", "Kinetic Redirection", "Mitigating damage adds +1 STR to next attack (Stacks to +3).", "[+] Next attack gains PIERCE."))
 	
@@ -137,7 +142,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var seismic_stomp_module := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 2, 0, 0, GameEnums.TargetingFlags.SELF,
-		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.PHYSICAL,
 	)
 	seismic_stomp_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PURGE, 0))]
 	var seismic_stomp_upgraded := DataLibrary._duplicate_modules([seismic_stomp_module])
@@ -153,7 +158,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(seismic_stomp)
 
 	var fortify_module := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.DEFENSE,
 	)
 	fortify_module.status_type = GameEnums.StatusType.STAT_BUFF_DEF

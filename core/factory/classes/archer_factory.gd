@@ -17,6 +17,11 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.base_defense = 1
 	def.base_magic = 1
 	def.equipped_weapon = basic_bow
+	def.promotion_stat_bonuses = {
+		&"sniper": {"strength": 6, "movement": 2},
+		&"trapper": {"strength": 4, "defense": 4, "movement": 0},
+		&"nomad": {"strength": 2, "constitution": 2, "movement": 3},
+	}
 
 	var sidestep_module := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
@@ -416,7 +421,7 @@ static func _explosive_arrow() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 4,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_SQUARE, 1,
+		GameEnums.TargetShape.AOE_CROSS, 1,
 	)
 	module.legacy_modifiers["destroy_terrain"] = true
 	var upgraded := _clone_modules([module])

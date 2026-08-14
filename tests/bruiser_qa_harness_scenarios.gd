@@ -1189,7 +1189,7 @@ static func run_blood_for_blood(failures: Array[String]) -> void:
 
 
 static func run_adrenaline_junkie(failures: Array[String]) -> void:
-	## Bible: Adrenaline Junkie — +MOV/+STR per 10% missing HP; [+] +DEF per 20% missing HP.
+	## Bible: Adrenaline Junkie — +MOV/+STR per 25% missing HP (max +3); [+] +DEF per 25% missing HP (max +3).
 	H.assert_passive_registered(failures, &"adrenaline_junkie")
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.with_single_passive(&"adrenaline_junkie", false)
@@ -1197,7 +1197,7 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.health.current_hp = bruiser.health.max_hp / 2
 	bruiser._recalculate_stats()
-	var expected_bonus: int = floori(0.5 / 0.10)
+	var expected_bonus: int = mini(3, floori(0.5 / 0.25))
 	var str_at_half: int = CombatSystem.get_dynamic_strength(board, bruiser)
 	var mov_at_half: int = bruiser.movement.max_points
 	var plain_board: BoardState = H.make_plain_board(Vector2i(8, 8))
@@ -1222,7 +1222,7 @@ static func run_adrenaline_junkie(failures: Array[String]) -> void:
 	var missing_pct: float = (
 		float(bruiser.health.max_hp - bruiser.health.current_hp) / float(bruiser.health.max_hp)
 	)
-	var expected_nine: int = floori(missing_pct / 0.10)
+	var expected_nine: int = mini(3, floori(missing_pct / 0.25))
 	H.assert_eq_int(
 		failures, "adrenaline_junkie/ninety_pct_missing",
 		CombatSystem.get_dynamic_strength(board, bruiser) - str_full,

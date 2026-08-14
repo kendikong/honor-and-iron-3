@@ -3,7 +3,7 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Kinetic Armor — incoming damage reduced by flat 1 if SHIELD active; [+] reduced by 2 instead.
+## Bible: Kinetic Armor — incoming damage reduced by Floor(DEF / 2) if SHIELD active; [+] Floor((DEF + 2) / 2).
 ## Globals: CombatSystem.deal_damage passive hook when target.armor > 0.
 
 
@@ -21,9 +21,9 @@ static func _sim_contract(failures: Array[String]) -> void:
 	_KnightQaHarness.assert_true(
 		failures, "kinetic_armor/contract/description",
 		passive != null
-		and passive.description == "Incoming damage reduced by flat 1 if SHIELD active.",
+		and passive.description == "Incoming damage reduced by Floor(DEF / 2) if SHIELD is active.",
 	)
 	_KnightQaHarness.assert_true(
 		failures, "kinetic_armor/contract/upgrade_text",
-		passive != null and passive.upgraded_description == "[+] Reduced by 2.",
+		passive != null and passive.upgraded_description == "[+] Floor((DEF + 2) / 2).",
 	)

@@ -915,9 +915,9 @@ static func run_adrenaline_junkie_upgrade(failures: Array[String]) -> void:
 	bruiser2.health.current_hp = bruiser2.health.max_hp / 5
 	bruiser2._recalculate_stats(board2)
 	var def_base: int = CombatSystem.get_dynamic_defense(board2, bruiser2)
-	var expected_def: int = floori(
-		(bruiser.health.max_hp - bruiser.health.current_hp) / float(bruiser.health.max_hp) / 0.20
-	)
+	var expected_def: int = mini(3, floori(
+		(bruiser.health.max_hp - bruiser.health.current_hp) / float(bruiser.health.max_hp) / 0.25
+	))
 	H.assert_eq_int(failures, "adrenaline_junkie/upgrade/def", def_low - def_base, expected_def)
 
 

@@ -47,7 +47,7 @@ const _CASES: Array[Dictionary] = [
 		"observe": &"ability"},
 	{"id": &"archer_explosive_arrow", "range": 4,
 		"flags": GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		"shape": GameEnums.TargetShape.AOE_SQUARE, "size": 1, "type": GameEnums.EffectType.DAMAGE,
+		"shape": GameEnums.TargetShape.AOE_CROSS, "size": 1, "type": GameEnums.EffectType.DAMAGE,
 		"amount": 2, "kind": &"tile", "actor": Vector2i(8, 8), "target": Vector2i(8, 6),
 		"observe": &"damage"},
 	{"id": &"archer_hunters_mark", "range": 5, "flags": GameEnums.TargetingFlags.ENEMY,
