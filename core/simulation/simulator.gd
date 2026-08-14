@@ -143,9 +143,6 @@ static func _tick_statuses(board: BoardState, events: Array[SimEvent]) -> void:
 				)
 			if not unit.has_status(GameEnums.StatusType.MARK):
 				unit.passive_flags.erase("marked_no_stealth_teleport")
-			if not unit.has_status(GameEnums.StatusType.INTERCEPT):
-				unit.passive_flags.erase("life_link_source_id")
-				unit.passive_flags.erase("life_link_damage_reduction")
 			if to_remove.size() > 0 or indomitable_will_expired:
 				unit._recalculate_stats(board)
 			if unit.passive_flags.has("chakra_shift_turns"):
@@ -186,6 +183,8 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			if unit.passive_flags.get("next_turn_move_zero", false):
 				unit.movement.points_left = 0
 				unit.passive_flags.erase("next_turn_move_zero")
+			unit.passive_flags.erase("life_link_source_id")
+			unit.passive_flags.erase("life_link_damage_reduction")
 			if unit.passive_flags.get("revived_next_turn", false):
 				unit.ability.reset()
 				unit.movement.points_left = unit.movement.max_points
@@ -223,7 +222,23 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 							GameEnums.StatusType.INVULNERABLE, 1
 						))
 				if zone_payload.get("holy_ground_zone", false):
-					CombatSystem.heal(board, unit, 1, events)
+					CombatSystem.heal_x(board, unit, 1, events)
+			for aura_source: UnitState in board.units:
+				if (
+					aura_source == null
+					or not aura_source.is_alive()
+					or not bool(aura_source.passive_flags.get("holy_aura", false))
+					or aura_source.team == unit.team
+					or GridSystem.manhattan(aura_source.position, unit.position) != 1
+				):
+					continue
+				var aura_owner := board.get_unit_by_id(
+					int(aura_source.passive_flags.get("holy_aura_owner_id", -1))
+				)
+				if aura_owner == null or not aura_owner.is_alive():
+					aura_owner = aura_source
+				CombatSystem.deal_mag_atk(board, aura_owner, unit, 1, events, "Holy Aura")
+				break
 			for status in unit.active_statuses:
 				if status.type == GameEnums.StatusType.BURN:
 					CombatSystem.deal_damage(
@@ -312,7 +327,7 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					if adjacent == null or not adjacent.is_alive():
 						continue
 					if adjacent.team == unit.team:
-						CombatSystem.heal(board, adjacent, 1, events)
+						CombatSystem.heal_x(board, adjacent, 1, events)
 					else:
 						AbilitySystem.purge_unit(adjacent, events)
 						if unit.is_passive_upgraded(passive.id):

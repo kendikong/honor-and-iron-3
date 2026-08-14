@@ -304,6 +304,43 @@ static func calculate_scaled_damage(attacker: UnitState, base_power: int, stat_t
 	var stat_val = get_dynamic_strength(board, attacker) if stat_type == GameEnums.StatType.PHYSICAL else attacker.current_magic
 	return floori((base_power + wpn) * (1.0 + stat_val / 5.0))
 
+
+static func deal_mag_atk(
+	board: BoardState,
+	attacker: UnitState,
+	target: UnitState,
+	base_power: int,
+	events: Array[SimEvent],
+	source_label: String,
+	is_intercepted: bool = false,
+) -> void:
+	if attacker == null or target == null or not target.is_alive() or base_power <= 0:
+		return
+	var raw := calculate_scaled_damage(attacker, base_power, GameEnums.StatType.MAGICAL, board)
+	if is_intercepted:
+		append_damage_telemetry(
+			board, attacker, target, base_power, GameEnums.StatType.MAGICAL, events, raw,
+		)
+		deal_damage(
+			board, target, raw, events, &"magical", false, true, attacker, source_label, base_power,
+		)
+		return
+	deal_damage_raw(
+		board, attacker, target, raw, GameEnums.StatType.MAGICAL, events, source_label, base_power,
+	)
+
+
+static func heal_x(board: BoardState, target: UnitState, heal_rank: int, events: Array[SimEvent]) -> void:
+	if target == null or not target.is_alive() or heal_rank <= 0:
+		return
+	heal(board, target, floori(heal_rank * 0.1 * target.health.max_hp), events)
+
+
+static func add_shield_x(board: BoardState, target: UnitState, shield_rank: int, events: Array[SimEvent]) -> void:
+	if target == null or not target.is_alive() or shield_rank <= 0:
+		return
+	add_armor(board, target, floori(shield_rank * 0.1 * target.health.max_hp), events)
+
 static func append_damage_telemetry(
 	board: BoardState,
 	attacker: UnitState,
@@ -660,17 +697,20 @@ static func deal_damage(
 		if partner != null and partner.is_alive():
 			target.passive_flags["magic_chain_processing"] = true
 			partner.passive_flags["magic_chain_processing"] = true
-			deal_damage(
+			var chain_owner := board.get_unit_by_id(
+				int(target.passive_flags.get("magic_chain_owner_id", -1))
+			)
+			if chain_owner == null or not chain_owner.is_alive():
+				chain_owner = attacker
+			var chain_power := 1
+			deal_mag_atk(
 				board,
+				chain_owner,
 				partner,
-				1,
+				chain_power,
 				events,
-				&"magical",
-				false,
-				true,
-				attacker,
 				"Martyr's Chains",
-				1,
+				true,
 			)
 			if target.passive_flags.get("magic_chain_blind", false) and partner.is_alive():
 				partner.active_statuses.append(DataLibrary.make_status(
@@ -1047,7 +1087,12 @@ static func deal_damage(
 			target.health.current_hp = 1
 			rescuer.passive_flags["divine_intervention_used"] = true
 			if rescuer.is_passive_upgraded(save_passive.id):
-				target.armor += int(save_passive.modifiers.get("upgraded_lethal_ally_shield", 0))
+				add_shield_x(
+					board,
+					target,
+					int(save_passive.modifiers.get("upgraded_lethal_ally_shield", 0)),
+					events,
+				)
 			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_HEALED, {
 				"unit": target.id, "amount": 1, "divine_intervention": true,
 			}))
@@ -1330,17 +1375,13 @@ static func _apply_cleric_damage_reactions(
 			for direction: Vector2i in GridSystem.DIRECTIONS:
 				var adjacent := board.get_unit_at(target.position + direction)
 				if adjacent != null and adjacent.team != target.team:
-					deal_damage(
+					deal_mag_atk(
 						board,
+						target,
 						adjacent,
 						pulse,
 						events,
-						&"magical",
-						false,
-						false,
-						target,
 						"Martyr's Blood",
-						pulse,
 					)
 		if (
 			attacker != null
@@ -1352,7 +1393,7 @@ static func _apply_cleric_damage_reactions(
 			var push_amount := int(passive.modifiers.get("melee_attacker_push", 0))
 			if target.is_passive_upgraded(passive.id):
 				push_amount = int(passive.modifiers.get("upgraded_melee_attacker_push", push_amount))
-			deal_damage(board, attacker, pulse, events, &"magical", false, true, target, "Retribution", pulse)
+			deal_mag_atk(board, target, attacker, pulse, events, "Retribution", true)
 			if push_amount > 0 and attacker.is_alive():
 				PhysicsSystem.push(
 					board,
@@ -1382,17 +1423,14 @@ static func _apply_cleric_damage_reactions(
 					"upgraded_ally_hit_retribution_damage",
 					retaliation,
 				))
-			deal_damage(
+			deal_mag_atk(
 				board,
+				source,
 				attacker,
 				retaliation,
 				events,
-				&"magical",
-				false,
-				true,
-				source,
 				"Divine Retribution",
-				retaliation,
+				true,
 			)
 			break
 	for source: UnitState in board.units:

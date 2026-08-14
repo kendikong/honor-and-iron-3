@@ -59,6 +59,13 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		).is_greater(0)
 		if actor_id < 0:
 			continue
+		if item.id == &"cleric_resurrection":
+			for board: BoardState in [director.board, director.base_board, director.projected_state]:
+				if board == null:
+					continue
+				var corpse: UnitState = board.get_unit_at(item.target)
+				if corpse != null:
+					corpse.health.current_hp = 0
 		var actor := director.board.get_unit_by_id(actor_id)
 		var ability := _ability_by_id(actor, item.id)
 		assert_object(ability).override_failure_message(

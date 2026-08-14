@@ -46,6 +46,7 @@ static func run_tier_b_commit_smoke(
 		return
 	_apply_beast_planning_setup(fix, factory_id)
 	_apply_engineer_planning_setup(fix, factory_id)
+	_apply_cleric_planning_setup(fix, factory_id)
 	fix.director.auto_run = true
 	var idx: int = _Checklist.select_ability(fix, factory_id)
 	_Checklist.assert_true(
@@ -248,6 +249,21 @@ static func _assert_shaped_footprint(
 			failures, "%s/planning/red_blast_tile" % factory_id,
 			fix, ability, origin, blast[0],
 		)
+
+
+static func _apply_cleric_planning_setup(fix: Dictionary, factory_id: StringName) -> void:
+	if factory_id != &"cleric_resurrection":
+		return
+	var ally: UnitState = fix.get("ally")
+	var board: BoardState = fix.get("board")
+	if ally == null or board == null:
+		return
+	ally.health.current_hp = 0
+	var board_ally := board.get_unit_by_id(ally.id)
+	if board_ally != null:
+		board_ally.health.current_hp = 0
+	fix.director.base_board = board.clone()
+	fix.director.projected_state = board.clone()
 
 
 static func _apply_engineer_planning_setup(fix: Dictionary, factory_id: StringName) -> void:

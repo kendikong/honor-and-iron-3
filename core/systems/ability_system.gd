@@ -603,8 +603,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		return false
 	if (
 		target_unit != null
-		and _ability_has_modifier(actor, ability, &"requires_missing_hp")
-		and target_unit.health.current_hp >= target_unit.health.max_hp
+		and _ability_has_modifier(actor, ability, &"revive_percent_max_hp")
+		and target_unit.is_alive()
 	):
 		return false
 	if (
@@ -844,6 +844,7 @@ static func _apply_healing_passive_modifiers(
 	healing_delivered: int,
 	requested_healing: int,
 	events: Array[SimEvent],
+	hp_before_heal: int = -1,
 ) -> void:
 	if healer == null or target == null:
 		return
@@ -909,7 +910,11 @@ static func _apply_healing_passive_modifiers(
 	for passive: PassiveData in healer.active_passives:
 		if passive == null:
 			continue
-		if passive.modifiers.has("full_health_heal_pulse") and target.health.current_hp >= target.health.max_hp:
+		if passive.modifiers.has("full_health_heal_pulse") and (
+			hp_before_heal >= target.health.max_hp
+			if hp_before_heal >= 0
+			else target.health.current_hp >= target.health.max_hp
+		):
 			if not healer.passive_flags.get("divine_overflow_processing", false):
 				healer.passive_flags["divine_overflow_processing"] = true
 				var pulse := int(passive.modifiers["full_health_heal_pulse"])
@@ -918,17 +923,13 @@ static func _apply_healing_passive_modifiers(
 				for direction: Vector2i in GridSystem.DIRECTIONS:
 					var adjacent := board.get_unit_at(target.position + direction)
 					if adjacent != null and adjacent.team != healer.team:
-						CombatSystem.deal_damage(
+						CombatSystem.deal_mag_atk(
 							board,
+							healer,
 							adjacent,
 							pulse,
 							events,
-							&"magical",
-							false,
-							false,
-							healer,
 							"Divine Overflow",
-							pulse,
 						)
 				healer.passive_flags.erase("divine_overflow_processing")
 		if passive.modifiers.has("adjacent_enemy_heal"):
@@ -1102,6 +1103,8 @@ static func _link_enemy_pair(
 		return
 	target.passive_flags["magic_chain_partner_id"] = partner.id
 	partner.passive_flags["magic_chain_partner_id"] = target.id
+	target.passive_flags["magic_chain_owner_id"] = actor.id
+	partner.passive_flags["magic_chain_owner_id"] = actor.id
 	if effect.modifiers.has("voodoo_link"):
 		var weapon := actor.definition.equipped_weapon.might if actor.definition.equipped_weapon != null else 1
 		var link_multiplier := 1
@@ -2993,7 +2996,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		elif actor != null:
 			if hostile and target.team == actor.team and not effect.modifiers.has("allow_friendly_target"):
 				return
-			if friendly and target.team != actor.team:
+			if friendly and target.team != actor.team and not effect.modifiers.has("enemy_mag_atk"):
 				return
 
 	match effect.type:
@@ -3866,6 +3869,22 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 		GameEnums.EffectType.HEAL:
 			if target != null:
+				if effect.modifiers.has("enemy_mag_atk") and target.team != actor.team:
+					CombatSystem.deal_mag_atk(
+						board,
+						actor,
+						target,
+						int(effect.modifiers["enemy_mag_atk"]),
+						events,
+						action.ability.display_name,
+					)
+					return
+				if effect.modifiers.has("revive_percent_max_hp"):
+					if target.is_alive():
+						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+							"actor": actor.id, "reason": "resurrection_requires_corpse",
+						}))
+						return
 				if effect.modifiers.has("revive_percent_max_hp") and not target.is_alive():
 					var self_cost := int(effect.modifiers.get("spend_self_hp", 0))
 					if actor.health.current_hp <= self_cost:
@@ -3883,7 +3902,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					)
 					target.passive_flags["revived_next_turn"] = true
 					if effect.modifiers.has("revive_shield"):
-						CombatSystem.add_armor(
+						CombatSystem.add_shield_x(
 							board,
 							target,
 							int(effect.modifiers["revive_shield"]),
@@ -3914,6 +3933,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					target.health.current_hp - hp_before,
 					heal_amount,
 					events,
+					hp_before,
 				)
 				ShamanSystems.on_healed(
 					board,
@@ -4041,6 +4061,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							action.ability.display_name,
 							adjacent_damage,
 						)
+						if effect.modifiers.has("creation_adjacent_push") and adjacent.is_alive():
+							PhysicsSystem.push(
+								board,
+								adjacent,
+								PhysicsSystem.cardinal_from_to(coord, adjacent.position),
+								int(effect.modifiers["creation_adjacent_push"]),
+								events,
+								actor,
+							)
+				if effect.modifiers.get("holy_aura", false):
+					construct.passive_flags["holy_aura"] = true
+					construct.passive_flags["holy_aura_owner_id"] = actor.id
 				EngineerSystems.on_spawned(board, actor, construct, effect, action, events)
 			else:
 				# Summoner: create a minion at target_coord from behavior.spawn_unit.
@@ -4067,6 +4099,38 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if effect.modifiers.has("link_two_enemies"):
 					_link_enemy_pair(board, actor, target, effect, events)
 					return
+				if effect.modifiers.has("life_link"):
+					target.passive_flags["life_link_source_id"] = actor.id
+					target.passive_flags["life_link_damage_reduction"] = int(
+						effect.modifiers.get("life_link_reduction", 3)
+					)
+					return
+				if effect.status_type in [GameEnums.StatusType.POISON, GameEnums.StatusType.BLEED]:
+					var purity_handled := false
+					for passive: PassiveData in target.active_passives:
+						if passive == null or not passive.modifiers.has("dot_heal"):
+							continue
+						CombatSystem.heal_x(
+							board,
+							target,
+							int(passive.modifiers["dot_heal"]),
+							events,
+						)
+						target.active_statuses.append(DataLibrary.make_status(
+							GameEnums.StatusType.STAT_BUFF_MAG,
+							1,
+							int(passive.modifiers.get("dot_mag", 1)),
+						))
+						if (
+							passive.modifiers.get("upgraded_dot_cleanse", false)
+							and target.is_passive_upgraded(passive.id)
+						):
+							AbilitySystem.cleanse_unit(target, events)
+						target._recalculate_stats(board)
+						purity_handled = true
+						break
+					if purity_handled:
+						return
 				if ShamanSystems.pre_status_application(
 					board, actor, target, effect, events,
 				):
@@ -4185,34 +4249,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"duration": effect.status_duration,
 					"amount": effect.amount,
 				}))
-				if effect.status_type in [GameEnums.StatusType.POISON, GameEnums.StatusType.BLEED]:
-					for passive: PassiveData in target.active_passives:
-						if passive == null or not passive.modifiers.has("dot_heal"):
-							continue
-						CombatSystem.heal(
-							board,
-							target,
-							int(passive.modifiers["dot_heal"]),
-							events,
-						)
-						target.active_statuses.append(DataLibrary.make_status(
-							GameEnums.StatusType.STAT_BUFF_MAG,
-							1,
-							int(passive.modifiers.get("dot_mag", 1)),
-						))
-						if passive.modifiers.get("upgraded_dot_cleanse", false) and target.is_passive_upgraded(passive.id):
-							AbilitySystem.cleanse_unit(target, events)
-						else:
-							for index: int in range(target.active_statuses.size() - 1, -1, -1):
-								if target.active_statuses[index].type == effect.status_type:
-									target.active_statuses.remove_at(index)
-						target._recalculate_stats(board)
-						break
 				if effect.modifiers.has("grant_ap"):
 					target.ability.points_left += int(effect.modifiers["grant_ap"])
-				if effect.modifiers.has("life_link"):
-					target.passive_flags["life_link_source_id"] = actor.id
-					target.passive_flags["life_link_damage_reduction"] = 3
 				if effect.modifiers.has("self_move_zero_next_turn"):
 					actor.passive_flags["next_turn_move_zero"] = true
 				if effect.modifiers.has("self_root_immune_next_turn"):

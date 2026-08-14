@@ -258,7 +258,7 @@ static func _assert_cleric_outcome(
 					actor != null and actor.position != actor_pos_before,
 				)
 			GameEnums.EffectType.ADD_STATUS:
-				if ability_id == &"cleric_martyrs_chains":
+				if ability_id == &"cleric_martyrs_chains" or ability_id == &"cleric_life_link":
 					continue
 				var status_applied := false
 				if target_id > 0:

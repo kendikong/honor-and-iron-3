@@ -93,9 +93,8 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 				terrain_owner,
 			)
 	if payload.get("holy_ground", false) and terrain_owner != null and unit.team != terrain_owner.team:
-		CombatSystem.deal_damage(
-			board, unit, 1, events, &"magical", false, false,
-			terrain_owner, "Holy Ground", 1,
+		CombatSystem.deal_mag_atk(
+			board, terrain_owner, unit, 1, events, "Holy Ground",
 		)
 		var def_down := int(payload.get("holy_ground_def_down", 0))
 		if def_down > 0:

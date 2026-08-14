@@ -1,0 +1,1997 @@
+﻿{
+    "generated":  "2026-08-14T01:49:27",
+    "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
+    "counts":  {
+                   "MATCH":  287,
+                   "MISSING":  4,
+                   "FAIL":  86,
+                   "DATA-ONLY":  20
+               },
+    "rows":  [
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Stats",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Promotion boosts",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Bastion Front",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Swap",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Kinetic Dissipation",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Thorny Carapace",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Concussive Shatter",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Stand Ground",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Kinetic Momentum",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Indestructible Bastion",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Phalanx Deflection",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Kinetic Armor",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Kinetic Converter",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Kinetic Redirection",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Bulwark",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Living Barricade",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Shield Wall",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Rallying Presence",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Intercept Tactics",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Shield Bash",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Phalanx Stance",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Taunting Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Seismic Stomp",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Fortify",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Bowling Charge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Iron Grip",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Redirect Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Indomitable Will",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Retaliation Protocol",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Shield Slam",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Defensive Formation",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Chain Hook",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Knight",
+                     "skill":  "Trampling Advance",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Stats",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Promotion boosts",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Sanguine Regeneration",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Push Through",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Reactive Adrenaline",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Blood for Blood",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Adrenaline Junkie",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Enraged",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Last Stand",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Colossal Mass",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Overwhelming Bulk",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Thrill of Pain",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Momentum of the Titan",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Scar Tissue",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Momentum Transfer",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Crowd Breaker",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Juggernaut (passive)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Battering Ram",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Unstoppable Force",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Charge Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Concussion Blow",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Cleave",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Suplex",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Adrenaline Surge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Earthshatter",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Meat Shield",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Frenzy",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Guttural Roar",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Headbutt",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Blood Boil",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Violent Collision",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Crimson Whirlwind",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Belly Flop",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Bruiser",
+                     "skill":  "Breaching Dash",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Predatory Momentum",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Pullback",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Calculated Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Weapon Master",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Dual Wield Momentum",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Precision Edge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Duelist\u0027s Focus",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Tactical Versatility",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Swift Feet",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Hit and Run",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Evasive",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Flanking Maneuver (passive)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Dirty Fighting",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Executioner",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Blood Scent",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Ruthless",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Coup de Grace",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Swift Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Defense Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Blade Storm",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Caltrop Toss",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Feint",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Riposte Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Sever",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Second Wind",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Tactical Retreat",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Executioner\u0027s Blade",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Precision Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Flank \u0026 Run",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Hamstring",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Acrobatic Vault",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mercenary",
+                     "skill":  "Duelist\u0027s Challenge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Pass (innate)",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Slip Past",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Backstab",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Blink Mastery",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Lethal Position",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Killing Intent",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Clone",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Phase Shift",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Blink Strike",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Meld",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Slip",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Miasma Spreader",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Panic Cascade",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Debuff Overload",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Mind Static",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Board Scrambler",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Step",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Kidney Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Smoke Bomb",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Evasive Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Grappling Hook",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Switcheroo",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Blindside",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Throat Slit",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Amnesia Dust",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Death Mark",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Lethal Flourish",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shadow Swap",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Kidnap",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Shuriken Volley",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Rogue",
+                     "skill":  "Poison Flask",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Way of the Weaver",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Leap",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Elemental Attunement",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Chakra Burn",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Elemental Harmony",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Catalyst",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Elemental Shield",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Weaver\u0027s Resonance",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Mind over Matter",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Inner Peace",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Zen Defense",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Perfect Form",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Vaulting Strike",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Flowing Ki",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Evasive Acrobat",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Momentum Transfer (Monk)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Light Step",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Scorching Kick",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Thunder Palm",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Yin-Yang Flurry",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Chakra Shift",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Phase Throw",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Flying Crane Kick",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Spirit Palm",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Soul Punch",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Hundred Fists",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Mantra of Peace",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Inner Fire",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Void Step",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Cyclone Sweep",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Updraft",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Monk",
+                     "skill":  "Geyser Strike",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Stats",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Gallop",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Griffin / Wyvern AIRBORNE",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Apex Predator promo",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Reposition",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Isolation Tactics",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Terminal Velocity",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Snatch \u0026 Grab",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Safe Landing",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Aerial Superiority",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Mount Resilience",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Beast\u0027s Instinct",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Territorial",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Intimidating Presence",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Dive Bomber",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Pack Hunter",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Blood Scent (Beast)",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Vantage Striker",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Predatory Drive",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Furious Charge",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Pounce",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Feral Drag",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Maul",
+                     "verdict":  "MISSING"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Bestial Roar",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Raking Claws",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Rest \u0026 Recover",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Intimidate",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Fetch",
+                     "verdict":  "MISSING"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Savage Bite",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Run Down (Beast)",
+                     "verdict":  "MISSING"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Thrash",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Defensive Posture",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Airlift",
+                     "verdict":  "MISSING"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Tail Swipe",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Beast Rider",
+                     "skill":  "Meteor Drop (Beast)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Overchannel",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Blink",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Elementalist",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Feedback",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Elemental Master",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Lasting Terrain",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Surface Syphoner",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Mana Leak",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Overdrive",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Mana Well",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Mana Siphon",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Overload",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Wild Magic",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Tether",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Mastery",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Attunement",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Gravity Anchor",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Fireball",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Ice Shard",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Chain Lightning",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Push",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Teleport",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Meteor",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Black Hole",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Time Warp",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Mana Shield",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Disintegrate",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Gravity Well",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Elemental Surge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Earth Spike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Density Shift",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Mage",
+                     "skill":  "Arcane Barrage",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Stats",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Snap Shot",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Promotion boosts",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Steady Aim",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Sidestep",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Overwatch",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "High Ground",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Vantage Anchor",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "True Sight",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Piercing Momentum",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Camouflage",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Area Denial",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Caltrop Expert",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Zone Control",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Sticky Mud",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Fletching Hoarder",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Prey Sighted",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Barrage",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Target Painter",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Rapid Fire",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Power Shot",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Volley",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Pinning Arrow",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Piercing Shot",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Toxic Spore Arrow",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Grapple Arrow",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Explosive Arrow",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Hunter\u0027s Mark",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Repelling Shot",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Bear Trap",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Suppressing Fire",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Caltrop Trap",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Parting Shot",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Archer",
+                     "skill":  "Scout\u0027s Eye",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Selfless Siphon",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Guardian Step",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Blood Donation",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Sacred Shield",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Blessing",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Frontline Medic",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Armor of Faith",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Overflow",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Intervention",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Holy Ground (passive)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Prayer",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Purity",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Martyr\u0027s Blood",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Retribution",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Holy Radiance",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Retribution",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Zealous Protection",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Holy Light",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Smite",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Cleansing Aura",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Sanctuary",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Blinding Ray",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Hammer",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Life Link",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Prayer of Fortitude",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Resurrection",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Consecrate Ground",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Holy Wrath",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Divine Guidance",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Shield of Faith",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Cleric",
+                     "skill":  "Martyr\u0027s Chains",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Stats / promotions",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Hexing Presence",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Usher",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Echoing Spirits",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Spiritual Offering",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Spiritual Guardian",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Miasma Resonance",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Voodoo Conduit",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Voodoo Doll",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Spirit Link",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Pain Sharing",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Sympathetic Magic",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Chain Reaction (Shaman)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Soul Collector",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Hexing Touch",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Ritual Sacrifice",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Soul Burn",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Soul Weaver",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Curse of Weakness",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Healing Totem",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Flame Totem",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Bloodlust",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Hex",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Voodoo Link",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Terrify",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Miasma",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Bone Spear",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Ancestral Spirit",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Totem Guard",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Sympathetic Bond",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Earthbind Totem",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Soul Siphon",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Shaman",
+                     "skill":  "Pain Spike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Stats",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Promotion boosts",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Polearm Mastery",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Push",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Kinetic Charge",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Unstoppable Mass",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Canto",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Frontline Defense",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Flanking Strike",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Plunging Attack",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Crashing Impact",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Pole-Plant",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Spear Drop",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Springboard",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Pivot Leverage",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Reach Advantage",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Disengage",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Zone of Control",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Leverage",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Piercing Charge",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Sweeping Halberd",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Vaulting Leap",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Run Down (Lancer)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Rallying Cry",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Flanking Maneuver",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Brace",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Harpoon Toss",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Glorious Charge",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Pole Vault",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Line Breaker",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Spear Wall",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Lancer",
+                     "skill":  "Meteor Drop (Lancer)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Stats / promotions / construct HP",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Blueprint Tread",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Recall",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Turret Syndrome",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Automation",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Master Builder",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Reinforced Constructs",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Shield Generator",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Blast Shielding",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Explosive Expert",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Chain Reaction (Engineer)",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Shrapnel",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Expanded Blast",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Scrap Mechanic",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Recycling Protocol",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Overclock",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Overclocked Maintenance",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Field Technician",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Dismantle",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Sludge Bomb",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Construct Turret",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Frag Bomb",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Magnetic Mine",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Tesla Barricade",
+                     "verdict":  "DATA-ONLY"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Flak Cannon",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Wrench Smack",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "EMP Grenade",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Rocket Launcher",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Scrap Shield",
+                     "verdict":  "MATCH"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Manual Detonation",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Overdrive Injection",
+                     "verdict":  "FAIL"
+                 },
+                 {
+                     "cls":  "Engineer",
+                     "skill":  "Barbed Wire",
+                     "verdict":  "DATA-ONLY"
+                 }
+             ]
+}

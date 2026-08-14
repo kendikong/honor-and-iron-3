@@ -227,6 +227,11 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				stat_str += int(passive.modifiers.get("aura_str", 0))
 				if source.is_passive_upgraded(passive.id):
 					stat_def += int(passive.modifiers.get("upgraded_aura_def", 0))
+			if (
+				bool(source.passive_flags.get("holy_aura", false))
+				and GridSystem.manhattan(source.position, position) == 1
+			):
+				stat_def += 1
 
 	for passive: PassiveData in active_passives:
 		if passive == null:

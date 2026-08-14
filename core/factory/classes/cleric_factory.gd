@@ -180,14 +180,18 @@ static func _holy_light() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	base.legacy_modifiers["mag_heal"] = true
+	base.legacy_modifiers["enemy_mag_atk"] = 2
 	var upgraded := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 4, 1, 3, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.HEAL, 3, 1, 3,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
+	upgraded.legacy_modifiers["mag_heal"] = true
+	upgraded.legacy_modifiers["enemy_mag_atk"] = 4
 	return _ability(
 		&"cleric_holy_light", "Holy Light", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
-		"Target enemies instead for MAG ATK 4.",
+		"Enemy MAG ATK 4. Ally MAG HEAL 3 unchanged.",
 	)
 
 
@@ -256,6 +260,7 @@ static func _blinding_ray() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 1, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL,
 	)
+	upgraded.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)))
 	upgraded.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)))
 	return _ability(
 		&"cleric_blinding_ray", "Blinding Ray", [base], [upgraded],
@@ -270,16 +275,16 @@ static func _divine_hammer() -> AbilityData:
 	)
 	base.spawn_unit_id = &"cleric_holy_hammer"
 	base.legacy_modifiers["construct_hp_pct"] = 0.25
-	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
-	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
+	base.legacy_modifiers["creation_adjacent_damage"] = 2
+	base.legacy_modifiers["creation_adjacent_push"] = 1
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
 	upgraded.spawn_unit_id = &"cleric_holy_hammer"
 	upgraded.legacy_modifiers["construct_hp_pct"] = 0.25
+	upgraded.legacy_modifiers["creation_adjacent_damage"] = 2
+	upgraded.legacy_modifiers["creation_adjacent_push"] = 1
 	upgraded.legacy_modifiers["holy_aura"] = true
-	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
-	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
 	return _ability(
 		&"cleric_divine_hammer", "Divine Hammer", [base], [upgraded],
 		GameEnums.TargetingFlags.TILE,
@@ -289,19 +294,16 @@ static func _divine_hammer() -> AbilityData:
 
 static func _life_link() -> AbilityData:
 	var base := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	base.status_type = GameEnums.StatusType.INTERCEPT
-	base.status_duration = 1
 	base.legacy_modifiers["life_link"] = true
+	base.legacy_modifiers["life_link_reduction"] = 3
 	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 2)))
 	var upgraded := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
+		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	upgraded.status_type = GameEnums.StatusType.INTERCEPT
-	upgraded.status_duration = 1
 	upgraded.legacy_modifiers["life_link"] = true
-	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 0)))
+	upgraded.legacy_modifiers["life_link_reduction"] = 3
 	return _ability(
 		&"cleric_life_link", "Life Link", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -401,8 +403,7 @@ static func _divine_guidance() -> AbilityData:
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["self_root_immune_next_turn"] = true
+	upgraded.legacy_modifiers["grant_ap"] = 1
 	return _ability(
 		&"cleric_divine_guidance", "Divine Guidance", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -413,10 +414,12 @@ static func _divine_guidance() -> AbilityData:
 static func _shield_of_faith() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAX_HP,
 	)
 	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)))
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAX_HP,
 	)
 	var intercept := DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)
 	intercept.modifiers["counterattack_on_intercept"] = true

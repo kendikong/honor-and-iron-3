@@ -16,7 +16,7 @@ Owner rulings that stay MATCH even if an old audit disagreed: Bowling Charge, Tr
 | Piece | Threshold | Machine checks |
 |-------|-----------|----------------|
 | BIBLE-CONSISTENCY | **88** | Glossary vs class lines: Fortify ADD, SHARED TILE, CALTROPS; no global-example-as-definition |
-| BIBLE-TO-CODE | **85** | Class gates + live for every factory touched; planning QA if planning files change |
+| BIBLE-TO-CODE | **85** | Class gates + live for every factory touched; planning QA if planning files change; `.\scripts\run_bible_alignment_gate.ps1` FAIL while any canvas `verdict: "FAIL"` remains |
 
 ## STOP_ON
 
