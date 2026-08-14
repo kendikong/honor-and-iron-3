@@ -48,6 +48,17 @@ static func facing_to_vector(facing: GameEnums.Facing) -> Vector2i:
 			return Vector2i(-1, 0)
 	return Vector2i(0, 1)
 
+
+## True when `from` sits on the facing axis in front of `origin` (not a 180° wedge).
+static func is_frontal_lane(origin: Vector2i, facing: GameEnums.Facing, from: Vector2i) -> bool:
+	var front: Vector2i = facing_to_vector(facing)
+	var delta: Vector2i = from - origin
+	if front == Vector2i.ZERO:
+		return false
+	if front.x != 0:
+		return delta.x * front.x > 0 and delta.y == 0
+	return delta.y * front.y > 0 and delta.x == 0
+
 static func facing_from_vector(v: Vector2i) -> GameEnums.Facing:
 	if absi(v.x) >= absi(v.y):
 		if v.x > 0:

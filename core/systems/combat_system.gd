@@ -868,27 +868,24 @@ static func deal_damage(
 		source_type == &"physical"
 		and attacker != null
 		and phalanx_passive != null
-		and GridSystem.manhattan(target.position, attacker.position) <= 3
+		and PhysicsSystem.is_frontal_lane(target.position, target.facing, attacker.position)
 	):
-		var attacker_vector := attacker.position - target.position
-		var front_vector := PhysicsSystem.facing_to_vector(target.facing)
-		if front_vector.x * attacker_vector.x + front_vector.y * attacker_vector.y > 0:
-			var energy_cap_multiplier := int(
-				phalanx_passive.modifiers.get("kinetic_energy_cap_def_multiplier", 2)
-			)
-			if target.is_passive_upgraded(phalanx_passive.id):
-				energy_cap_multiplier = int(
-					phalanx_passive.modifiers.get(
-						"upgraded_kinetic_energy_cap_def_multiplier",
-						energy_cap_multiplier,
-					)
+		var energy_cap_multiplier := int(
+			phalanx_passive.modifiers.get("kinetic_energy_cap_def_multiplier", 2)
+		)
+		if target.is_passive_upgraded(phalanx_passive.id):
+			energy_cap_multiplier = int(
+				phalanx_passive.modifiers.get(
+					"upgraded_kinetic_energy_cap_def_multiplier",
+					energy_cap_multiplier,
 				)
-			var energy_cap := target.current_defense * energy_cap_multiplier
-			var energy_gain := floori(mitigated_amount * 0.5)
-			target.passive_flags["kinetic_energy"] = mini(
-				energy_cap,
-				int(target.passive_flags.get("kinetic_energy", 0)) + energy_gain,
 			)
+		var energy_cap := target.current_defense * energy_cap_multiplier
+		var energy_gain := floori(mitigated_amount * 0.5)
+		target.passive_flags["kinetic_energy"] = mini(
+			energy_cap,
+			int(target.passive_flags.get("kinetic_energy", 0)) + energy_gain,
+		)
 	if incoming <= 0:
 		if (
 			source_type != &"hazard"

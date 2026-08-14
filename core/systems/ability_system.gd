@@ -3015,7 +3015,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		var is_redirect = false
 		for effect in effects_to_apply:
 			if effect.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF] \
-					and effect.status_type in [GameEnums.StatusType.INTERCEPT, GameEnums.StatusType.TAUNT]:
+					and effect.status_type == GameEnums.StatusType.INTERCEPT:
 				is_redirect = true
 				break
 		if is_redirect:
@@ -3289,20 +3289,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		var is_ranged = dist > 1
 		var is_aoe = action.ability.target_shape != GameEnums.TargetShape.SINGLE
 		
-		if is_ranged or is_aoe:
+		if is_ranged and not is_aoe:
 			var dir_to_target = PhysicsSystem.cardinal_from_to(actor.position, target.position)
 			var front_tile = target.position - dir_to_target
 			var knight = board.get_unit_at(front_tile)
 			if knight != null and knight.team == target.team and knight.has_passive(&"living_barricade"):
 				var dir_to_actor := PhysicsSystem.cardinal_from_to(knight.position, actor.position)
 				if PhysicsSystem.facing_to_vector(knight.facing) == dir_to_actor:
-					var protects_aoe = knight.is_passive_upgraded(&"living_barricade")
-					if (is_ranged and not is_aoe) or (is_aoe and protects_aoe):
-						events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-							"actor": actor.id, "reason": "blocked_by_living_barricade",
-							"target": target.id
-						}))
-						return
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "blocked_by_living_barricade",
+						"target": target.id
+					}))
+					return
 					
 	if target != null:
 		var hostile := false

@@ -698,7 +698,22 @@ static func run_shield_mastery(failures: Array[String]) -> void:
 	assert_true(
 		failures, "phalanx_deflection/energy",
 		knight != null and int(knight.passive_flags.get("kinetic_energy", 0)) > 0,
-		"front-arc mitigation must store Kinetic Energy",
+		"front-lane mitigation must store Kinetic Energy",
+	)
+	var board_side: BoardState = make_plain_board(Vector2i(8, 5))
+	place_knight(board_side, 20, Vector2i(3, 2), cfg)
+	unit_on_board(board_side, 20).facing = GameEnums.Facing.EAST
+	place_enemy_basher(board_side, 21, Vector2i(3, 3))
+	boost_striker(unit_on_board(board_side, 21))
+	var bash_side: AbilityData = ability_on_unit(unit_on_board(board_side, 21), &"knight_shield_bash")
+	var plan_side := Timeline.new()
+	plan_side.add(plan_ability(21, bash_side, Vector2i(3, 2), 20))
+	var result_side: SimResult = simulate_player_turn(board_side, plan_side)
+	var knight_side: UnitState = result_side.final_state.get_unit_by_id(20)
+	assert_eq_int(
+		failures, "phalanx_deflection/side_no_energy",
+		int(knight_side.passive_flags.get("kinetic_energy", 0)) if knight_side else -1,
+		0,
 	)
 	var cfg_up: Dictionary = with_single_passive(&"shield_mastery", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 5))
@@ -1735,6 +1750,23 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 		failures, "intercept_tactics/upgrade/def_mitigates_more",
 		loss_up < loss_base_redirect,
 		"upgraded intercept tactics must mitigate more damage than base +2 DEF",
+	)
+	var board_taunt: BoardState = make_plain_board(Vector2i(8, 8))
+	place_knight(board_taunt, 30, Vector2i(3, 3), cfg)
+	place_dummy(board_taunt, 31, Vector2i(5, 3))
+	var taunt: AbilityData = ability_on_unit(unit_on_board(board_taunt, 30), &"knight_taunting_strike")
+	var plan_taunt := Timeline.new()
+	plan_taunt.add(plan_ability(30, taunt, Vector2i(5, 3), 31))
+	var result_taunt: SimResult = simulate_player_turn(board_taunt, plan_taunt)
+	var after_taunt: UnitState = result_taunt.final_state.get_unit_by_id(30)
+	var taunt_def: int = 0
+	for s: StatusData in after_taunt.active_statuses if after_taunt else []:
+		if s.type == GameEnums.StatusType.STAT_BUFF_DEF:
+			taunt_def = s.value
+	assert_eq_int(
+		failures, "intercept_tactics/taunt_does_not_buff",
+		taunt_def,
+		0,
 	)
 
 
@@ -3069,4 +3101,24 @@ static func run_living_barricade(failures: Array[String]) -> void:
 		failures, "living_barricade/no_block_wrong_facing",
 		ally_exposed != null and ally_exposed.health.current_hp < hp_exposed_before,
 		"ally not behind knight facing must not be protected from ranged fire",
+	)
+	var board_aoe: BoardState = make_plain_board(Vector2i(10, 8))
+	place_knight(board_aoe, 40, Vector2i(4, 3), cfg_up)
+	unit_on_board(board_aoe, 40).facing = GameEnums.Facing.EAST
+	place_unit(board_aoe, 41, ally_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
+	place_enemy_artillery(board_aoe, 42, Vector2i(6, 3))
+	var aoe_shot: AbilityData = unit_on_board(board_aoe, 42).active_abilities[0].duplicate(true)
+	aoe_shot.target_shape = GameEnums.TargetShape.AOE_CROSS
+	aoe_shot.target_shape_size = 1
+	var hp_aoe_before: int = unit_on_board(board_aoe, 41).health.current_hp
+	var plan_aoe := Timeline.new()
+	plan_aoe.add(plan_ability(42, aoe_shot, Vector2i(3, 3), 41))
+	var result_aoe: SimResult = simulate_player_turn(board_aoe, plan_aoe)
+	var ally_aoe: UnitState = result_aoe.final_state.get_unit_by_id(41)
+	assert_true(
+		failures, "living_barricade/upgrade/aoe_not_blocked",
+		ally_aoe != null and ally_aoe.health.current_hp < hp_aoe_before,
+		"Living Barricade upgrade is +1 DEF only; it must not block AOE",
 	)
