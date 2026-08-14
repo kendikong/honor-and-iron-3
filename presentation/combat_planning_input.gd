@@ -1177,6 +1177,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 	else:
 		_schedule_hover_sim_refresh()
 	_run_hover_overlay_refresh()
+	if not dragging:
+		refresh_mouse_cursor(cell)
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
@@ -1241,6 +1243,12 @@ func _hover_sim_min_interval_sec() -> float:
 
 func _begin_hover_sim_throttled_flush() -> void:
 	if _director == null or not _is_planning() or dragging:
+		return
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	if (
+		cell == _last_sim_hover_refresh_cell
+		and _hover_preview_fresh_at(cell)
+	):
 		return
 	var min_interval: float = _hover_sim_min_interval_sec()
 	var now_usec: int = Time.get_ticks_usec()
@@ -1340,6 +1348,18 @@ func is_live_preview_active() -> bool:
 	if selected_phase_action_exhausted():
 		return false
 	return preview_state.preview_board != null
+
+
+## True when the last hover sim is for the tile under the mouse.
+## Cursor / path / tiles may already have moved; sim paint must not follow a stale cell.
+func live_sim_matches_hover() -> bool:
+	if dragging:
+		return true
+	if _planning != null and _planning.qa_static_overlay:
+		return true
+	if _intent_state == null:
+		return false
+	return _last_sim_hover_refresh_cell == _intent_state.hover_coord
 
 
 func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) -> bool:

@@ -564,7 +564,7 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_add_section(vbox, "Hover rate throttle")
 	_add_hint(
 		vbox,
-		"Slows how often hover sim and path arrows update. 0 is the current full rate. Does not skip preview, intent, or commit.",
+		"Only delays the heavy turn replay. Cursor, path, and tiles follow the mouse immediately. 0 is the fastest sim catch-up. Commit always flushes first.",
 	)
 	_hover_rate_throttle_slider = _add_dev_value_slider(
 		vbox,

@@ -1356,10 +1356,15 @@ func _display_intent_list() -> Array:
 	if _planning_input != null:
 		var use_live: bool = (
 			_planning_input.dragging
-			or _planning_input.skill_interaction_active()
-			or _planning_input.aiming
-			or _planning_input.run_mode_selected()
-			or _planning_input.is_live_preview_active()
+			or (
+				_planning_input.live_sim_matches_hover()
+				and (
+					_planning_input.skill_interaction_active()
+					or _planning_input.aiming
+					or _planning_input.run_mode_selected()
+					or _planning_input.is_live_preview_active()
+				)
+			)
 		)
 		if use_live:
 			var live: Array = _live_preview.live_intents
@@ -1378,10 +1383,15 @@ func _active_preview() -> CombatPlanningPreview:
 	if _planning_input != null:
 		var use_live: bool = (
 			_planning_input.dragging
-			or _planning_input.skill_interaction_active()
-			or _planning_input.aiming
-			or _planning_input.run_mode_selected()
-			or _planning_input.is_live_preview_active()
+			or (
+				_planning_input.live_sim_matches_hover()
+				and (
+					_planning_input.skill_interaction_active()
+					or _planning_input.aiming
+					or _planning_input.run_mode_selected()
+					or _planning_input.is_live_preview_active()
+				)
+			)
 		)
 		if use_live and _live_preview.preview_board != null:
 			return _live_preview
@@ -1695,7 +1705,10 @@ func _draw_forced_movement_arrows() -> void:
 	if not _should_draw_forced_movement_arrows():
 		return
 	var sources: Array[CombatPlanningPreview] = []
-	if _live_preview.preview_board != null:
+	if (
+		_live_preview.preview_board != null
+		and (_planning_input == null or _planning_input.dragging or _planning_input.live_sim_matches_hover())
+	):
 		sources.append(_live_preview)
 	if (
 		_committed_preview.preview_board != null
@@ -2337,10 +2350,11 @@ func _draw_move_ghosts() -> void:
 		var action_split: int = -1
 		if _planning_input != null:
 			drag_route = _planning_input.get_drag_route()
-			var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-			if hover_preview != null:
-				sim_path = hover_preview.preview_paths.get(unit.id, [])
-				action_split = int(hover_preview.action_splits.get(unit.id, -1))
+			if _planning_input.live_sim_matches_hover():
+				var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+				if hover_preview != null:
+					sim_path = hover_preview.preview_paths.get(unit.id, [])
+					action_split = int(hover_preview.action_splits.get(unit.id, -1))
 		var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
 			origin, _hover_coord, drag_route, sim_path, action_split,
 		)
