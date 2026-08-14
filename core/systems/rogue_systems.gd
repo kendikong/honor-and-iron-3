@@ -399,6 +399,7 @@ static func on_kill(
 				continue
 			if not CombatSystem.try_resist_crowd_control(adjacent, GameEnums.StatusType.SILENCE, events):
 				adjacent.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.SILENCE, 1))
+			break
 	if int(ability_mods.get("kill_grant_ap", 0)) > 0:
 		attacker.ability.points_left += int(ability_mods["kill_grant_ap"])
 	if has_passive_modifier(attacker, &"on_kill_decoy_taunt"):

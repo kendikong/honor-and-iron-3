@@ -159,7 +159,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	))
 	def.abilities.append(_flanking_maneuver())
 	def.abilities.append(_self_status(
-		&"lancer_brace", "Brace", GameEnums.StatusType.BRACED, 2,
+		&"lancer_brace", "Brace", GameEnums.StatusType.BRACED, 1,
 		"Your MOVEMENT becomes 0 this turn. The next incoming melee attack is negated; attacker suffers ATK 2.",
 		{"brace_attacker_stagger": true}, 2,
 	))

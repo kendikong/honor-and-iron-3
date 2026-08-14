@@ -686,9 +686,9 @@ static func _duelists_challenge() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY,
 	)
 	module.status_type = GameEnums.StatusType.TAUNT
-	module.status_duration = 2
+	module.status_duration = 1
 	module.legacy_modifiers["duelist_mark_target"] = true
-	var mark := DataLibrary._status_effect(GameEnums.StatusType.MARK, 2)
+	var mark := DataLibrary._status_effect(GameEnums.StatusType.MARK, 1)
 	module.layers.append(_layer(mark))
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["marked_target_defense"] = 2

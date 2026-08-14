@@ -311,6 +311,11 @@ static func run_duelists_challenge(failures: Array[String]) -> void:
 		failures, "duelists/taunt",
 		H.has_status(H.unit_on_board(result.final_state, 2), GameEnums.StatusType.TAUNT),
 	)
+	var taunt_turns: int = 0
+	for s: StatusData in H.unit_on_board(result.final_state, 2).active_statuses:
+		if s.type == GameEnums.StatusType.TAUNT:
+			taunt_turns = s.duration
+	H.assert_eq_int(failures, "duelists/taunt_duration", taunt_turns, 1)
 
 
 static func run_calculated_strike(failures: Array[String]) -> void:

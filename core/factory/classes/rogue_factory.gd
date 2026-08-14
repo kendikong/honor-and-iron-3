@@ -415,7 +415,7 @@ static func _throat_slit() -> AbilityData:
 	return _ability(
 		&"rogue_throat_slit", "Throat Slit", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
-		"On Kill, spread SILENCE to adjacent enemies.",
+		"On Kill, spread SILENCE to an adjacent enemy.",
 	)
 
 

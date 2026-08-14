@@ -701,6 +701,7 @@ static func _run_conditional_upgrade(ability_id: StringName, failures: Array[Str
 			var victim := _place_dummy(board, 3, Vector2i(3, 3))
 			victim.health.current_hp = 1
 			var neighbor := _place_dummy(board, 4, Vector2i(4, 3))
+			var extra := _place_dummy(board, 5, Vector2i(3, 4))
 			var ability := _ability(FactoryTestHelpers.build_unit(&"rogue"), ability_id)
 			var plan := Timeline.new()
 			plan.add(TimelineAction.make_ability(1, ability, victim.position, victim.id))
@@ -709,6 +710,11 @@ static func _run_conditional_upgrade(ability_id: StringName, failures: Array[Str
 				failures,
 				"upgrade/rogue_throat_slit/spread_silence",
 				neighbor.has_status(GameEnums.StatusType.SILENCE),
+			)
+			_assert(
+				failures,
+				"upgrade/rogue_throat_slit/spread_one_enemy",
+				not extra.has_status(GameEnums.StatusType.SILENCE),
 			)
 		&"rogue_lethal_flourish":
 			var board := _plain_board(Vector2i(8, 6))
