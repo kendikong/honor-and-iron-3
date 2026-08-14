@@ -48,10 +48,12 @@ func _on_scene_changed() -> void:
 	_latest_timeline.clear()
 	_latest_rejection = ""
 	_preview_update_count = 0
+	var scene_path := ""
+	if get_tree().current_scene != null:
+		scene_path = get_tree().current_scene.scene_file_path
 	_append_event({
 		"kind": "scene_changed",
-		"scene_path": get_tree().current_scene.scene_file_path
-			if get_tree().current_scene != null else "",
+		"scene_path": scene_path,
 	})
 
 
@@ -311,12 +313,15 @@ func _capture_scene_context() -> Dictionary:
 
 func _runtime_metadata() -> Dictionary:
 	var scene := get_tree().current_scene
+	var scene_path := ""
+	if scene != null:
+		scene_path = scene.scene_file_path
 	return {
 		"engine": Engine.get_version_info(),
 		"project": ProjectSettings.get_setting("application/config/name", ""),
 		"project_version": ProjectSettings.get_setting("application/config/version", "dev"),
 		"git_commit": _read_git_commit_hash(),
-		"scene_path": scene.scene_file_path if scene != null else "",
+		"scene_path": scene_path,
 		"fps_at_capture": Engine.get_frames_per_second(),
 		"paused_at_capture": get_tree().paused,
 		"window_size": _sanitize(get_viewport().get_visible_rect().size),
@@ -354,12 +359,15 @@ func _write_text(path: String, text: String) -> bool:
 
 
 func _append_index(report: Dictionary) -> void:
+	var title_text: String = String(report.title)
+	if title_text.is_empty():
+		title_text = "(untitled)"
 	var line := "- `%s` **%s** — %s — %s — %s\n" % [
 		report.report_id,
 		report.get("status", "open"),
 		report.severity,
 		report.category,
-		report.title if not String(report.title).is_empty() else "(untitled)",
+		title_text,
 	]
 	var project_index := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("index.md")
 	_append_index_line(project_index, line)
@@ -489,7 +497,8 @@ static func _limit_text(value: String, max_length: int) -> String:
 
 static func _make_report_id() -> String:
 	var stamp := Time.get_datetime_string_from_system(false).replace("-", "").replace(":", "")
-	return "BUG-%s-%03d" % [stamp, Time.get_ticks_msec() % 1000]
+	var suffix: int = Time.get_ticks_msec() % 1000
+	return "BUG-%s-%03d" % [stamp, suffix]
 
 
 func _read_git_commit_hash() -> String:

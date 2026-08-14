@@ -73,11 +73,7 @@ func _build_ui() -> void:
 		comp.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_root.add_child(comp),
 	)
-	_add_button(vbox, "Report Bug", func() -> void:
-		close_menu()
-		if DebugReportService != null:
-			DebugReportService.open_report_dialog(),
-	)
+	_add_button(vbox, "Report Bug", _on_report_bug_pressed)
 	_add_button(vbox, "Restart Turn", func() -> void:
 		close_menu()
 		if _director != null:
@@ -91,6 +87,12 @@ func _build_ui() -> void:
 	_add_button(vbox, "Exit to Main Menu", func() -> void:
 		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn"),
 	)
+
+
+func _on_report_bug_pressed() -> void:
+	close_menu()
+	if DebugReportService != null:
+		DebugReportService.open_report_dialog()
 
 
 func _add_button(parent: VBoxContainer, text: String, callback: Callable) -> void:

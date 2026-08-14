@@ -63,8 +63,8 @@ func _build_ui() -> void:
 	var explanation := Label.new()
 	explanation.text = (
 		"Describe what you saw. The report automatically includes the current "
-		"scene, board, units, timeline, preview, recent actions, runtime metadata, "
-		"and optional screenshot."
+		+ "scene, board, units, timeline, preview, recent actions, runtime metadata, "
+		+ "and optional screenshot."
 	)
 	explanation.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	MenuTheme.style_muted_label(explanation)
@@ -153,7 +153,9 @@ func _save_report() -> void:
 		if _save_button != null:
 			_save_button.disabled = false
 		return
-	_status.text = "Saved %s\n%s" % [result.get("report_id", "report"), "\n".join(paths)]
+	var report_id_text: String = str(result.get("report_id", "report"))
+	var path_text: String = "\n".join(paths)
+	_status.text = "Saved %s\n%s" % [report_id_text, path_text]
 	await get_tree().create_timer(1.0, true).timeout
 	_service.close_report_dialog()
 
