@@ -38,7 +38,7 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"shadow_meld", "keys": [&"smoke_spell_magic", &"smoke_spell_free_ap"]},
 	{"id": &"shadow_slip", "keys": [&"cross_enemy_blind_mark", &"marked_attack_weapon_bonus"]},
 	{"id": &"miasma_spreader", "keys": [&"spread_debuffs_on_attack", &"miasma_spreader_range"]},
-	{"id": &"panic_cascade", "keys": [&"debuff_damage_per_status"]},
+	{"id": &"panic_cascade", "keys": [&"panic_on_debuff"]},
 	{"id": &"debuff_overload", "keys": [&"turn_start_damage_per_debuff"]},
 	{"id": &"mind_static", "keys": [&"mind_static_range", &"mind_static_def_pct"]},
 	{"id": &"board_scrambler", "keys": [&"damage_swap_highest_hp_range"]},
@@ -124,6 +124,50 @@ static func run_single_ability(ability_id: StringName, failures: Array[String]) 
 		result.final_state,
 		target_id,
 	)
+	match ability_id:
+		&"rogue_slip_past":
+			var slipped := result.final_state.get_unit_by_id(1)
+			var blocker := result.final_state.get_unit_by_id(3)
+			_assert(
+				failures,
+				"rogue_slip_past/land_opposite",
+				slipped != null and blocker != null
+					and slipped.position == blocker.position + Vector2i(1, 0)
+					and blocker.position == rogue_pos + Vector2i(1, 0),
+			)
+		&"rogue_amnesia_dust":
+			var dusted := result.final_state.get_unit_by_id(target_id)
+			_assert(
+				failures,
+				"rogue_amnesia_dust/blind_now",
+				dusted != null and dusted.has_status(GameEnums.StatusType.BLIND),
+			)
+			_assert(
+				failures,
+				"rogue_amnesia_dust/confusion_deferred",
+				dusted != null
+					and not dusted.has_status(GameEnums.StatusType.CONFUSION)
+					and bool(dusted.passive_flags.get("confusion_next_turn", false)),
+			)
+		&"rogue_kidnap":
+			var kidnapper := result.final_state.get_unit_by_id(1)
+			var victim := result.final_state.get_unit_by_id(target_id)
+			_assert(
+				failures,
+				"rogue_kidnap/push_away_from_caster",
+				kidnapper != null and victim != null and kidnapper.id != victim.id
+					and kidnapper.position != victim.position
+					and GridSystem.manhattan(kidnapper.position, victim.position) >= 2,
+			)
+		&"rogue_grappling_hook":
+			var hook_user := result.final_state.get_unit_by_id(1)
+			var hooked := result.final_state.get_unit_by_id(target_id)
+			_assert(
+				failures,
+				"rogue_grappling_hook/adjacent",
+				hook_user != null and hooked != null
+					and GridSystem.manhattan(hook_user.position, hooked.position) == 1,
+			)
 	if ability.target_shape != GameEnums.TargetShape.SINGLE:
 		run_shaped_footprint(ability_id, failures)
 
@@ -227,10 +271,13 @@ static func run_passive_upgrade_for(passive_id: StringName, failures: Array[Stri
 			)
 		&"lethal_position":
 			rogue.passive_flags["rogue_tiles_moved"] = 2
-			var moved_bonus := _ROGUE_SYSTEMS.damage_bonus(
-				board, rogue, _place_dummy(board, 14, Vector2i(5, 2)), null,
+			rogue._recalculate_stats(board)
+			_assert(
+				failures,
+				"passive/lethal_position/upgraded_move_scaling",
+				rogue.current_defense >= 4
+					and _ROGUE_SYSTEMS.moved_tiles_range_bonus(rogue) >= 2,
 			)
-			_assert(failures, "passive/lethal_position/upgraded_move_scaling", moved_bonus >= 2)
 		&"board_scrambler":
 			var scrambler_target := _place_dummy(board, 12, Vector2i(4, 2))
 			_place_dummy(board, 13, Vector2i(5, 2))
@@ -245,12 +292,22 @@ static func run_passive_upgrade_for(passive_id: StringName, failures: Array[Stri
 				99, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(6, 2),
 			)
 			corpse.health.current_hp = 0
+			var blast_dummy := _place_dummy(board, 20, Vector2i(6, 3))
+			var blast_hp := blast_dummy.health.current_hp
 			var clone_events: Array[SimEvent] = []
 			_ROGUE_SYSTEMS.on_kill(board, rogue, corpse, clone_events)
+			var decoy: UnitState = null
+			for unit: UnitState in board.units:
+				if unit != null and unit.passive_flags.get("rogue_decoy", false):
+					decoy = unit
+					break
+			if decoy != null:
+				decoy.health.current_hp = 0
+				_ROGUE_SYSTEMS.on_unit_died(board, decoy, clone_events)
 			_assert(
 				failures,
 				"passive/shadow_clone/upgraded_explode",
-				_events_have_spawn(clone_events),
+				blast_dummy.health.current_hp < blast_hp or _events_have_damage_to(clone_events, blast_dummy.id),
 			)
 		&"phase_shift":
 			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), [])
@@ -265,9 +322,13 @@ static func run_passive_upgrade_for(passive_id: StringName, failures: Array[Stri
 			var confused := _place_dummy(board, 10, Vector2i(4, 2))
 			confused.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CONFUSION, 1))
 			confused.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
-			rogue.passive_flags["__current_ability"] = _ability(definition, &"rogue_lethal_flourish")
-			var panic_bonus := _ROGUE_SYSTEMS.damage_bonus(board, rogue, confused, null)
-			_assert(failures, "passive/panic_cascade/upgraded_bonus", panic_bonus >= 6)
+			var panic_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.on_debuff_applied(board, rogue, confused, panic_events)
+			_assert(
+				failures,
+				"passive/panic_cascade/upgraded_bonus",
+				_events_have_damage_to(panic_events, confused.id),
+			)
 		&"backstab":
 			var bleed_board := _plain_board(Vector2i(8, 6))
 			var bleed_rogue := _place_rogue(bleed_board, 1, Vector2i(2, 2), &"rogue_kidney_strike")
@@ -306,6 +367,8 @@ static func run_shaped_footprint(ability_id: StringName, failures: Array[String]
 			_run_shuriken_volley_footprint(failures, ability)
 		&"rogue_smoke_bomb":
 			_run_smoke_bomb_footprint(failures, ability)
+		&"rogue_poison_flask":
+			_run_poison_flask_footprint(failures, ability)
 		_:
 			failures.append("footprint/%s/unhandled_shaped_skill" % ability_id)
 
@@ -382,6 +445,49 @@ static func _run_smoke_bomb_footprint(failures: Array[String], ability: AbilityD
 		failures,
 		"smoke/footprint/ability_used",
 		_events_have_ability(events, &"rogue_smoke_bomb"),
+	)
+	var smoke_ally := board.get_unit_by_id(2)
+	_assert(
+		failures,
+		"smoke/footprint/no_cast_stealth",
+		smoke_ally == null or not smoke_ally.has_status(GameEnums.StatusType.STEALTH),
+	)
+
+
+static func _run_poison_flask_footprint(failures: Array[String], ability: AbilityData) -> void:
+	var board := _plain_board(Vector2i(10, 8))
+	var origin := Vector2i(3, 4)
+	var target := Vector2i(5, 4)
+	var rogue := _place_rogue(board, 1, origin, &"rogue_poison_flask")
+	var inside := _place_dummy(board, 2, target)
+	var outside := _place_dummy(board, 3, Vector2i(8, 8))
+	var inside_hp := inside.health.current_hp
+	var outside_hp := outside.health.current_hp
+	assert_grid_footprint_excludes(
+		failures, "flask/footprint/grid", board, origin, target,
+		ability.target_shape, ability.target_shape_size, Vector2i(8, 8),
+	)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, ability, target, 2))
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, plan, events)
+	var inside_after := board.get_unit_by_id(2)
+	var outside_after := board.get_unit_by_id(3)
+	_assert(
+		failures,
+		"flask/footprint/inside_damaged",
+		inside_after != null and inside_after.health.current_hp < inside_hp,
+	)
+	_assert(
+		failures,
+		"flask/footprint/outside_untouched",
+		outside_after != null and outside_after.health.current_hp == outside_hp,
+	)
+	var hazard_tile := board.get_tile(target)
+	_assert(
+		failures,
+		"flask/footprint/poison_hazard",
+		hazard_tile != null and hazard_tile.definition != null and hazard_tile.definition.id == &"poison",
 	)
 
 
@@ -703,17 +809,43 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 				"passive/shadow_slip/blind_mark",
 				enemy.has_status(GameEnums.StatusType.BLIND) and enemy.has_status(GameEnums.StatusType.MARK),
 			)
+			rogue.movement.points_left = 0
+			_ROGUE_SYSTEMS.on_attack_hit(board, rogue, enemy, [])
+			_assert(
+				failures,
+				"passive/shadow_slip/mov_refund_on_attack",
+				rogue.movement.points_left >= 1,
+			)
 		&"blink_strike":
 			_assert(
 				failures,
 				"passive/blink_strike/range",
 				_ROGUE_SYSTEMS.basic_attack_range_bonus(rogue) >= 2,
 			)
+			var blink_dummy := _place_dummy(board, 22, Vector2i(4, 2))
+			var basic: AbilityData = null
+			for ability: AbilityData in definition.abilities:
+				if ability != null and DataLibrary.is_basic_ability(ability.id):
+					basic = ability
+					break
+			_ROGUE_SYSTEMS.try_blink_strike(board, rogue, blink_dummy, [], basic)
+			_assert(
+				failures,
+				"passive/blink_strike/teleport",
+				GridSystem.manhattan(rogue.position, blink_dummy.position) == 1,
+			)
 		&"pass":
 			_assert(
 				failures,
 				"passive/pass/trap_skip",
 				_ROGUE_SYSTEMS.should_skip_trap_entry(rogue),
+			)
+			var pass_enemy := _place_dummy(board, 23, Vector2i(3, 2))
+			_ROGUE_SYSTEMS.on_moved_through_enemy(board, rogue, [pass_enemy.id], [])
+			_assert(
+				failures,
+				"passive/pass/base_no_pierce",
+				int(rogue.passive_flags.get("rogue_pierce_target_id", -1)) != pass_enemy.id,
 			)
 		&"shadow_strike":
 			var strike_target := _place_dummy(board, 4, Vector2i(3, 2))
@@ -729,10 +861,12 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			)
 		&"lethal_position":
 			rogue.passive_flags["rogue_tiles_moved"] = 3
-			var dmg_bonus := _ROGUE_SYSTEMS.damage_bonus(
-				board, rogue, _place_dummy(board, 5, Vector2i(4, 2)), null,
+			rogue._recalculate_stats(board)
+			_assert(
+				failures,
+				"passive/lethal_position/str",
+				rogue.current_strength >= 7 and _ROGUE_SYSTEMS.moved_tiles_range_bonus(rogue) == 2,
 			)
-			_assert(failures, "passive/lethal_position/str", dmg_bonus >= 3)
 		&"killing_intent":
 			var low_hp := _place_dummy(board, 6, Vector2i(3, 2))
 			low_hp.health.current_hp = 1
@@ -762,7 +896,18 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 		&"phase_shift":
 			var phase_events: Array[SimEvent] = []
 			_ROGUE_SYSTEMS.after_teleport(board, rogue, null, _ability(definition, &"rogue_shadow_step"), phase_events)
-			_assert(failures, "passive/phase_shift/stealth", rogue.has_status(GameEnums.StatusType.STEALTH))
+			_assert(
+				failures,
+				"passive/phase_shift/stealth",
+				rogue.has_status(GameEnums.StatusType.STEALTH)
+					and bool(rogue.passive_flags.get("stealth_until_attack", false)),
+			)
+			_ROGUE_SYSTEMS.on_attack_hit(board, rogue, _place_dummy(board, 21, Vector2i(3, 2)), [])
+			_assert(
+				failures,
+				"passive/phase_shift/consume_on_attack",
+				not rogue.has_status(GameEnums.StatusType.STEALTH),
+			)
 		&"shadow_meld":
 			board.set_tile_terrain(rogue.position, DataLibrary.get_terrain(&"smoke"))
 			_ROGUE_SYSTEMS.apply_smoke_spell_bonus(board, rogue, _ability(definition, &"rogue_smoke_bomb"))
@@ -784,9 +929,13 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 		&"panic_cascade":
 			var debuffed := _place_dummy(board, 10, Vector2i(4, 2))
 			debuffed.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
-			rogue.passive_flags["__current_ability"] = _ability(definition, &"rogue_lethal_flourish")
-			var panic_bonus := _ROGUE_SYSTEMS.damage_bonus(board, rogue, debuffed, null)
-			_assert(failures, "passive/panic_cascade/bonus", panic_bonus >= 2)
+			var panic_events: Array[SimEvent] = []
+			_ROGUE_SYSTEMS.on_debuff_applied(board, rogue, debuffed, panic_events)
+			_assert(
+				failures,
+				"passive/panic_cascade/bonus",
+				_events_have_damage_to(panic_events, debuffed.id),
+			)
 		&"mind_static":
 			var knight_def := FactoryTestHelpers.build_unit(&"knight")
 			var def_target := UnitState.create(

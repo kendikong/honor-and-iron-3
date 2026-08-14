@@ -138,10 +138,10 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	definition.passives.append(_passive(
 		&"panic_cascade",
 		"Panic Cascade",
-		"Applying any debuff causes +2 damage per active debuff for the turn.",
-		"Confused enemies take +3 damage per active debuff.",
-		{"promotion": &"saboteur", "debuff_damage_per_status": 2,
-		"upgraded_confused_damage_per_status": 3},
+		"Applying any debuff causes extra damage equal to WPN per active unique debuff this turn.",
+		"If the target has CONFUSION, extra damage is 2×WPN per unique debuff.",
+		{"promotion": &"saboteur", "panic_on_debuff": true,
+		"upgraded_confused_wpn_mult": 2},
 	))
 	definition.passives.append(_passive(
 		&"debuff_overload",
@@ -266,15 +266,13 @@ static func _movement(
 
 static func _slip_past() -> AbilityData:
 	var base := _module(
-		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ALLY
-			| GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 1,
+		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.BEHIND_TARGET,
 	)
 	base.legacy_modifiers["slip_past"] = true
+	base.legacy_modifiers["land_opposite_target"] = true
 	base.legacy_modifiers["move_through_adjacent_unit"] = true
-	base.legacy_modifiers["end_behind_target"] = true
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["target_def_debuff"] = 1
 	return _movement(
@@ -368,7 +366,7 @@ static func _evasive_strike() -> AbilityData:
 
 
 static func _grappling_hook() -> AbilityData:
-	var base := _module(GameEnums.EffectType.PULL, 1, 1, 4, GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE)
+	var base := _module(GameEnums.EffectType.PULL, 4, 1, 4, GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE)
 	base.legacy_modifiers["grapple_bidirectional"] = true
 	base.legacy_modifiers["pull_self_or_target"] = true
 	var upgraded := _clone([base])
@@ -424,9 +422,11 @@ static func _throat_slit() -> AbilityData:
 static func _amnesia_dust() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 0, 1, 2, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	base.legacy_modifiers["target_unacted_only"] = true
+	var confusion := DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)
+	confusion.modifiers["next_turn"] = true
 	base.layers = [
 		_layer(DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)),
-		_layer(DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)),
+		_layer(confusion),
 	]
 	base.legacy_modifiers["confusion_next_turn"] = true
 	var upgraded := _clone([base])
@@ -490,6 +490,7 @@ static func _kidnap() -> AbilityData:
 	base.legacy_modifiers["kidnap"] = true
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["swap_collision_stagger_both"] = true
+	upgraded[0].legacy_modifiers["enemy_collision_stagger_both"] = true
 	return _ability(
 		&"rogue_kidnap", "Kidnap", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -518,18 +519,21 @@ static func _shuriken_volley() -> AbilityData:
 static func _poison_flask() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.DAMAGE, 1, 1, 3, GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.PHYSICAL,
 	)
-	var poison := DataLibrary._status_effect(GameEnums.StatusType.POISON, 1)
 	var hazard := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)
 	hazard.modifiers = {
 		"terrain_id": &"poison",
 		"hazard_duration": 2,
 		"poison_hazard": true,
 	}
-	base.layers = [_layer(poison), _layer(hazard)]
+	base.layers = [_layer(hazard)]
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["hazard_blind_on_entry"] = true
+	for layer: AbilityLayer in upgraded[0].layers:
+		if layer != null and layer.effect != null \
+				and layer.effect.type == GameEnums.EffectType.CREATE_HAZARD:
+			layer.effect.modifiers["hazard_blind_on_entry"] = true
 	return _ability(
 		&"rogue_poison_flask", "Poison Flask", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,

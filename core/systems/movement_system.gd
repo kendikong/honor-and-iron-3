@@ -861,6 +861,8 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 					events[tag_i].data["trample_step"] = step_index
 
 		var passed_construct := board.get_unit_at(step)
+		if passed_construct != null and passed_construct.team != unit.team:
+			RogueSystems.track_crossed_enemy(unit, passed_construct.id)
 		if EngineerSystems.can_pass_through_friendly_construct(unit, passed_construct):
 			EngineerSystems.on_construct_passed(board, unit, passed_construct, events)
 		elif passed_construct != null:
@@ -915,6 +917,7 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 	_apply_canto_keyword(unit)
 	_resolve_zone_of_control(board, unit, events)
 	BeastRiderSystems.after_standard_move(board, unit, events)
+	RogueSystems.after_skill_move(board, unit, action.ability, events)
 
 
 static func _apply_canto_keyword(unit: UnitState) -> void:

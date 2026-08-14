@@ -55,6 +55,12 @@ static func should_skip_trap_entry(unit: UnitState) -> bool:
 static func turn_start(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
 	if unit == null or not unit.is_alive() or board == null:
 		return
+	unit.passive_flags["rogue_turn_origin"] = unit.position
+	if unit.passive_flags.get("confusion_next_turn", false):
+		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.CONFUSION, 1))
+		unit.passive_flags.erase("confusion_next_turn")
+		unit._recalculate_stats(board)
+	_tick_smoke_ally_heal(board, unit, events)
 	var per_debuff: int = int(passive_value(
 		unit, &"turn_start_damage_per_debuff", &"upgraded_turn_start_damage_per_debuff", 0,
 	))
@@ -166,11 +172,14 @@ static func on_moved_through_enemy(
 		if enemy == null or not enemy.is_alive():
 			continue
 		if has_passive_modifier(unit, &"cross_enemy_blind_mark"):
-			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
-			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.MARK, 1))
+			_append_debuff(board, unit, enemy, GameEnums.StatusType.BLIND, 1, events)
+			_append_debuff(board, unit, enemy, GameEnums.StatusType.MARK, 1, events)
 			if unit.is_passive_upgraded(&"shadow_slip"):
-				enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
-		if has_passive_modifier(unit, &"upgraded_pass_setup_pierce"):
+				_append_debuff(board, unit, enemy, GameEnums.StatusType.POISON, 1, events)
+		if (
+			unit.is_passive_upgraded(&"pass")
+			and has_passive_modifier(unit, &"upgraded_pass_setup_pierce")
+		):
 			unit.passive_flags["rogue_pierce_target_id"] = enemy.id
 		if ability_mods.get("blind_on_pass_over", false):
 			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
@@ -212,7 +221,8 @@ static func after_teleport(
 	if actor == null:
 		return
 	if has_passive_modifier(actor, &"teleport_stealth"):
-		actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1))
+		actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 99))
+		actor.passive_flags["stealth_until_attack"] = true
 		actor._recalculate_stats(board)
 	var teleport_bonus: int = int(passive_value(
 		actor, &"after_teleport_attack_bonus", &"upgraded_after_teleport_attack_bonus", 0,
@@ -264,7 +274,8 @@ static func apply_attack_ignore_def(board: BoardState, actor: UnitState, target:
 		)
 		actor.passive_flags.erase("rogue_pierce_target_id")
 	if (
-		has_passive_modifier(actor, &"upgraded_stealth_attack_ignore_def")
+		actor.is_passive_upgraded(&"phase_shift")
+		and has_passive_modifier(actor, &"upgraded_stealth_attack_ignore_def")
 		and actor.has_status(GameEnums.StatusType.STEALTH)
 	):
 		var stealth_def := CombatSystem.get_dynamic_defense(board, target)
@@ -293,19 +304,6 @@ static func damage_bonus(
 	if teleport_bonus > 0:
 		bonus += teleport_bonus
 		attacker.passive_flags.erase("rogue_after_teleport_attack_bonus")
-	var moved_tiles: int = int(attacker.passive_flags.get("rogue_tiles_moved", 0))
-	if moved_tiles > 0 and has_passive_modifier(attacker, &"moved_tiles_attack_strength"):
-		bonus += moved_tiles * int(passive_value(attacker, &"moved_tiles_attack_strength", &"", 1))
-	if _has_debuff(target):
-		var per_status: int = int(passive_value(attacker, &"debuff_damage_per_status", &"", 0))
-		if per_status > 0:
-			bonus += per_status * _unique_debuff_count(target)
-		if target.has_status(GameEnums.StatusType.CONFUSION):
-			var confused_bonus: int = int(passive_value(
-				attacker, &"upgraded_confused_damage_per_status", &"", 0,
-			))
-			if confused_bonus > 0:
-				bonus += confused_bonus * _unique_debuff_count(target)
 	if has_passive_modifier(attacker, &"marked_attack_weapon_bonus") and target.has_status(GameEnums.StatusType.MARK):
 		var wpn := 0
 		if attacker.definition != null and attacker.definition.equipped_weapon != null:
@@ -340,6 +338,14 @@ static func on_attack_hit(
 			attacker, &"miasma_spreader_range", &"upgraded_miasma_spreader_range", 1,
 		))
 		_spread_debuffs(board, target, spread_range)
+	if (
+		has_passive_modifier(attacker, &"marked_attack_refund_move")
+		and target.has_status(GameEnums.StatusType.MARK)
+	):
+		attacker.movement.points_left += int(passive_value(
+			attacker, &"marked_attack_refund_move", &"", 1,
+		))
+	_consume_stealth_until_attack(attacker)
 
 
 static func on_dealt_damage(
@@ -399,11 +405,6 @@ static func on_kill(
 		_spawn_decoy(board, attacker, target.position, events)
 	if ability_mods.get("on_kill_refresh_mark_zero_ap", false):
 		attacker.passive_flags["rogue_free_mark_refresh"] = true
-	if (
-		has_passive_modifier(attacker, &"marked_attack_refund_move")
-		and target.has_status(GameEnums.StatusType.MARK)
-	):
-		attacker.movement.points_left += int(passive_value(attacker, &"marked_attack_refund_move", &"", 1))
 
 
 static func can_gain_shield(board: BoardState, target: UnitState) -> bool:
@@ -453,6 +454,15 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 		)
 		if def_basis > 0:
 			result.defense -= floori(def_basis * reduction_pct)
+	var lethal_tiles := _lethal_tiles_moved(unit)
+	if lethal_tiles > 0 and has_passive_modifier(unit, &"moved_tiles_attack_strength"):
+		result.strength += lethal_tiles * int(passive_value(
+			unit, &"moved_tiles_attack_strength", &"", 1,
+		))
+		if unit.is_passive_upgraded(&"lethal_position"):
+			result.defense += lethal_tiles * int(passive_value(
+				unit, &"upgraded_moved_tiles_defense", &"", 1,
+			))
 	return result
 
 
@@ -460,6 +470,13 @@ static func basic_attack_range_bonus(unit: UnitState) -> int:
 	return int(passive_value(
 		unit, &"basic_attack_range", &"upgraded_basic_attack_range", 0,
 	))
+
+
+static func moved_tiles_range_bonus(unit: UnitState) -> int:
+	if unit == null or not has_passive_modifier(unit, &"moved_tiles_attack_range"):
+		return 0
+	var per_tile: int = int(passive_value(unit, &"moved_tiles_attack_range", &"", 1))
+	return mini(2, _lethal_tiles_moved(unit) * per_tile)
 
 
 static func after_ability_execute(
@@ -474,31 +491,18 @@ static func after_ability_execute(
 	if ability_mods.get("target_def_debuff", false):
 		var target := board.get_unit_at(action.target_coord)
 		if target != null and target.team != actor.team:
-			target.active_statuses.append(DataLibrary.make_status(
-				GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1,
-			))
-			target._recalculate_stats(board)
+			_append_debuff(board, actor, target, GameEnums.StatusType.STAT_DEBUFF_DEF, 1, events, 1)
 	if ability_mods.get("if_target_unacted_stagger", false):
 		var stagger_target := board.get_unit_at(action.target_coord)
 		if stagger_target != null and not stagger_target.turn_action_used:
 			if not CombatSystem.try_resist_crowd_control(stagger_target, GameEnums.StatusType.STAGGER, events):
 				stagger_target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				stagger_target._recalculate_stats(board)
-	if ability_mods.get("target_unacted_only", false):
-		var dust_target := board.get_unit_at(action.target_coord)
-		if dust_target != null and dust_target.turn_action_used:
-			return
 	if ability_mods.get("inherit_incoming_attacks", false):
 		var swap_target := board.get_unit_by_id(action.target_unit_id)
 		if swap_target != null:
 			actor.passive_flags["rogue_inherit_attacks_target_id"] = swap_target.id
 			swap_target.passive_flags["rogue_redirect_attacks_to_id"] = actor.id
-	if ability_mods.get("smoke_stealth_outside_attackers", false):
-		_apply_smoke_stealth(board, actor, events)
-	if ability_mods.get("smoke_ally_heal_per_turn", false):
-		_apply_smoke_heal(board, actor, events)
-	if ability_mods.get("hazard_blind_on_entry", false):
-		actor.passive_flags["rogue_hazard_blind_on_entry"] = true
 
 
 static func apply_smoke_spell_bonus(board: BoardState, actor: UnitState, ability: AbilityData) -> void:
@@ -537,31 +541,26 @@ static func _is_in_smoke(board: BoardState, unit: UnitState) -> bool:
 	return tile != null and tile.definition != null and tile.definition.id == &"smoke"
 
 
-static func _apply_smoke_stealth(
-	board: BoardState,
-	actor: UnitState,
-	_events: Array[SimEvent],
-) -> void:
-	for unit: UnitState in board.units:
-		if unit == null or not unit.is_alive() or unit.team != actor.team:
-			continue
-		if not _is_in_smoke(board, unit):
-			continue
-		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1))
-		unit._recalculate_stats(board)
+static func outside_smoke_cannot_target(board: BoardState, actor: UnitState, target: UnitState) -> bool:
+	if actor == null or target == null:
+		return false
+	if not _is_in_smoke(board, target):
+		return false
+	if _is_in_smoke(board, actor):
+		return false
+	return true
 
 
-static func _apply_smoke_heal(
-	board: BoardState,
-	actor: UnitState,
-	events: Array[SimEvent],
-) -> void:
-	for unit: UnitState in board.units:
-		if unit == null or not unit.is_alive() or unit.team != actor.team:
-			continue
-		if not _is_in_smoke(board, unit):
-			continue
-		CombatSystem.heal(board, unit, 1, events)
+static func _tick_smoke_ally_heal(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
+	if not _is_in_smoke(board, unit):
+		return
+	var payload: Dictionary = board.terrain_payloads.get(unit.position, {})
+	if int(payload.get("smoke_ally_heal_per_turn", 0)) <= 0:
+		return
+	var owner := board.get_unit_by_id(int(payload.get("terrain_owner_id", -1)))
+	if owner != null and unit.team != owner.team:
+		return
+	CombatSystem.heal_x(board, unit, 1, events)
 
 
 static func _spawn_decoy(
@@ -581,13 +580,20 @@ static func _spawn_decoy(
 	decoy.health.current_hp = 1
 	decoy.passive_flags["rogue_decoy"] = true
 	decoy.passive_flags["rogue_decoy_owner_id"] = owner.id
-	var taunt_turns: int = int(passive_value(owner, &"on_kill_decoy_taunt", &"", 1))
-	decoy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.TAUNT, taunt_turns))
 	board.add_unit(decoy)
 	GridSystem.set_occupant(board, coord, decoy_id)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_SPAWNED, {
 		"unit": decoy_id, "coord": coord, "decoy": true,
 	}))
+	var taunt_turns: int = int(passive_value(owner, &"on_kill_decoy_taunt", &"", 1))
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var adjacent := board.get_unit_at(coord + direction)
+		if adjacent == null or not adjacent.is_alive() or adjacent.team == owner.team:
+			continue
+		adjacent.active_statuses.append(DataLibrary.make_status(
+			GameEnums.StatusType.TAUNT, taunt_turns,
+		))
+		adjacent._recalculate_stats(board)
 
 
 static func _spread_debuffs(board: BoardState, source: UnitState, spread_range: int) -> void:
@@ -668,14 +674,148 @@ static func resolve_grapple_pull(
 		return {"pull_self": false, "pull_target": target}
 	if target != null:
 		return {"pull_self": false, "pull_target": target}
+	var max_range: int = maxi(int(effect.amount), 4)
 	if (
 		effect.modifiers.get("pull_self_or_target", false)
 		and GridSystem.is_in_bounds(board, tile_coord)
 		and not GridSystem.is_occupied(board, tile_coord)
-		and GridSystem.manhattan(actor.position, tile_coord) <= int(effect.amount)
+		and not GridSystem.is_wall(board, tile_coord)
+		and GridSystem.manhattan(actor.position, tile_coord) <= max_range
 	):
 		return {"pull_self": true, "pull_target": null, "destination": tile_coord}
 	return {"pull_self": false, "pull_target": target}
+
+
+static func try_blink_strike(
+	board: BoardState,
+	actor: UnitState,
+	target: UnitState,
+	events: Array[SimEvent],
+	ability: AbilityData,
+) -> void:
+	if (
+		board == null
+		or actor == null
+		or target == null
+		or ability == null
+		or not DataLibrary.is_basic_ability(ability.id)
+		or not has_passive_modifier(actor, &"basic_attack_range")
+	):
+		return
+	if GridSystem.manhattan(actor.position, target.position) <= 1:
+		return
+	var destination := _first_empty_adjacent(board, target.position)
+	if destination == Vector2i(-1, -1):
+		return
+	GridSystem.set_occupant(board, actor.position, -1)
+	actor.position = destination
+	GridSystem.set_occupant(board, destination, actor.id)
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"unit": actor.id, "to": destination, "blink_strike": true,
+	}))
+	TerrainSystem.apply_landing(board, actor, events)
+	after_teleport(board, actor, target, ability, events)
+
+
+static func on_debuff_applied(
+	board: BoardState,
+	source: UnitState,
+	target: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if source == null or target == null or board == null:
+		return
+	if not has_passive_modifier(source, &"panic_on_debuff"):
+		return
+	if source.passive_flags.get("rogue_panic_resolving", false):
+		return
+	var unique := _unique_debuff_count(target)
+	if unique <= 0:
+		return
+	var wpn := 0
+	if source.definition != null and source.definition.equipped_weapon != null:
+		wpn = source.definition.equipped_weapon.might
+	if wpn <= 0:
+		return
+	var extra := wpn * unique
+	if (
+		source.is_passive_upgraded(&"panic_cascade")
+		and target.has_status(GameEnums.StatusType.CONFUSION)
+	):
+		extra = wpn * 2 * unique
+	source.passive_flags["rogue_panic_resolving"] = true
+	CombatSystem.deal_damage(
+		board, target, extra, events, &"true", true, false, source, "Panic Cascade", extra,
+	)
+	source.passive_flags.erase("rogue_panic_resolving")
+
+
+static func on_unit_died(board: BoardState, unit: UnitState, events: Array[SimEvent]) -> void:
+	if board == null or unit == null:
+		return
+	if not unit.passive_flags.get("rogue_decoy", false):
+		return
+	var owner := board.get_unit_by_id(int(unit.passive_flags.get("rogue_decoy_owner_id", -1)))
+	if owner == null or not owner.is_passive_upgraded(&"shadow_clone"):
+		return
+	var explode_atk: int = int(passive_value(owner, &"upgraded_decoy_explode_atk", &"", 2))
+	if explode_atk <= 0:
+		return
+	var blast: Array[Vector2i] = GridSystem.get_affected_tiles(
+		board, unit.position, unit.position,
+		GameEnums.TargetShape.AOE_SQUARE, 1,
+	)
+	for coord: Vector2i in blast:
+		var victim := board.get_unit_at(coord)
+		if (
+			victim == null
+			or not victim.is_alive()
+			or victim.id == unit.id
+			or victim.team == owner.team
+		):
+			continue
+		var raw := CombatSystem.calculate_scaled_damage(
+			owner, explode_atk, GameEnums.StatType.PHYSICAL, board,
+		)
+		CombatSystem.deal_damage(
+			board, victim, raw, events, &"physical", false, false, owner, "Shadow Clone", raw,
+		)
+
+
+static func _lethal_tiles_moved(unit: UnitState) -> int:
+	if unit == null:
+		return 0
+	if unit.passive_flags.has("rogue_turn_origin"):
+		var origin: Vector2i = unit.passive_flags["rogue_turn_origin"]
+		return GridSystem.manhattan(origin, unit.position)
+	return int(unit.passive_flags.get("rogue_tiles_moved", 0))
+
+
+static func _consume_stealth_until_attack(unit: UnitState) -> void:
+	if unit == null or not unit.passive_flags.get("stealth_until_attack", false):
+		return
+	unit.passive_flags.erase("stealth_until_attack")
+	for i: int in range(unit.active_statuses.size() - 1, -1, -1):
+		if unit.active_statuses[i].type == GameEnums.StatusType.STEALTH:
+			unit.active_statuses.remove_at(i)
+			break
+	unit._recalculate_stats(null)
+
+
+static func _append_debuff(
+	board: BoardState,
+	source: UnitState,
+	target: UnitState,
+	status_type: GameEnums.StatusType,
+	duration: int,
+	events: Array[SimEvent],
+	value: int = 0,
+) -> void:
+	if target == null:
+		return
+	target.active_statuses.append(DataLibrary.make_status(status_type, duration, value))
+	target._recalculate_stats(board)
+	on_debuff_applied(board, source, target, events)
 
 
 static func on_hazard_entry(

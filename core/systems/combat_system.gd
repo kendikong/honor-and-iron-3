@@ -1108,6 +1108,7 @@ static func deal_damage(
 		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DIED, {
 			"unit": target.id,
 		}))
+		RogueSystems.on_unit_died(board, target, events)
 		EngineerSystems.on_construct_destroyed(board, target, events)
 		EngineerSystems.on_kill(board, attacker, target, events)
 		

@@ -1,10 +1,10 @@
 ﻿{
-    "generated":  "2026-08-14T01:49:27",
+    "generated":  "2026-08-14T02:16:12",
     "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  287,
+                   "MATCH":  300,
+                   "FAIL":  73,
                    "MISSING":  4,
-                   "FAIL":  86,
                    "DATA-ONLY":  20
                },
     "rows":  [
@@ -516,12 +516,12 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Pass (innate)",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
                      "skill":  "Slip Past",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -536,7 +536,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Lethal Position",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -551,17 +551,17 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Shadow Clone",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
                      "skill":  "Phase Shift",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
                      "skill":  "Blink Strike",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -571,7 +571,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Shadow Slip",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -581,7 +581,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Panic Cascade",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -611,7 +611,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Smoke Bomb",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -621,7 +621,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Grappling Hook",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -641,7 +641,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Amnesia Dust",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -661,7 +661,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Kidnap",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -671,7 +671,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Poison Flask",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",

@@ -70,10 +70,14 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		
 	# Damage + entry payload flow through the shared terrain/combat stages.
 	if dmg > 0:
+		var trap_mult := int(unit.passive_flags.get("trap_collision_damage_multiplier", 1))
+		if trap_mult > 1:
+			dmg *= trap_mult
 		CombatSystem.deal_damage(
 			board, unit, dmg, events, &"hazard", false, false, null,
 			tile.definition.display_name, dmg,
 		)
+	unit.passive_flags.erase("trap_collision_damage_multiplier")
 	if not unit.is_alive():
 		return
 	RogueSystems.on_hazard_entry(board, unit, coord, events)

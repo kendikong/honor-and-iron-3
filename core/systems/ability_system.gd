@@ -645,6 +645,19 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				and not _passive_has_modifier(actor, &"ignore_stealth")
 			):
 				return false
+			if (
+				target != null
+				and RogueSystems.outside_smoke_cannot_target(board, actor, target)
+				and not _passive_has_modifier(actor, &"ignore_stealth")
+			):
+				return false
+
+	if _ability_has_modifier(actor, ability, &"target_unacted_only"):
+		var dust_target := target_unit
+		if dust_target == null:
+			dust_target = board.get_unit_at(action.target_coord)
+		if dust_target == null or dust_target.turn_action_used:
+			return false
 
 	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
@@ -2949,6 +2962,16 @@ static func apply_external_effect(
 
 
 static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: TimelineAction, effect: EffectData, events: Array[SimEvent], tile_coord: Vector2i, target: UnitState) -> void:
+	if (
+		effect != null
+		and effect.type == GameEnums.EffectType.PUSH
+		and actor != null
+		and action != null
+		and _ability_has_modifier(actor, action.ability, &"kidnap")
+	):
+		var kidnap_target := board.get_unit_by_id(action.target_unit_id)
+		if kidnap_target != null:
+			target = kidnap_target
 	if target != null and actor != target and actor != null:
 		var dist = GridSystem.manhattan(actor.position, target.position)
 		var is_ranged = dist > 1
@@ -3007,6 +3030,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					and not _is_side_attack(actor, target)
 				):
 					return
+				RogueSystems.try_blink_strike(board, actor, target, events, action.ability)
 				if effect.modifiers.has("true_damage"):
 					CombatSystem.deal_damage(
 						board,
@@ -3684,6 +3708,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 				return
 			if target != null:
+				if _ability_has_modifier(actor, action.ability, &"kidnap"):
+					var kidnap_target := board.get_unit_by_id(action.target_unit_id)
+					if kidnap_target != null:
+						target = kidnap_target
 				var is_immune = false
 				if target.has_status(GameEnums.StatusType.INVULNERABLE) or (not target.has_status(GameEnums.StatusType.VULNERABLE) and target.has_status(GameEnums.StatusType.STURDY)):
 					is_immune = true
@@ -3769,6 +3797,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						GridSystem.is_in_bounds(board, pull_dest)
 						and not GridSystem.is_occupied(board, pull_dest)
 					):
+						if int(effect.modifiers.get("trap_collision_damage_multiplier", 0)) > 0:
+							actor.passive_flags["trap_collision_damage_multiplier"] = int(
+								effect.modifiers["trap_collision_damage_multiplier"]
+							)
 						var from := actor.position
 						GridSystem.set_occupant(board, from, -1)
 						actor.position = pull_dest
@@ -3776,6 +3808,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 							"actor": actor.id, "from": from, "to": pull_dest, "grapple": true,
 						}))
+						TerrainSystem.apply_landing(board, actor, events)
 						return
 				target = grapple_plan.get("pull_target", target) as UnitState
 				if effect.modifiers.has("grapple_pass_through_damage"):
@@ -3813,14 +3846,21 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						if is_immune: break
 				if not is_immune:
 					var dir := PhysicsSystem.cardinal_from_to(target.position, actor.position)
+					var pull_amount := effect.amount + _push_synergy_bonus(
+						actor, effect, "pull_bonus_if_push_used"
+					)
+					if effect.modifiers.get("grapple_bidirectional", false):
+						pull_amount = maxi(0, GridSystem.manhattan(actor.position, target.position) - 1)
+					if effect.modifiers.get("trap_collision_damage_multiplier", 0) > 0:
+						target.passive_flags["trap_collision_damage_multiplier"] = int(
+							effect.modifiers["trap_collision_damage_multiplier"]
+						)
 					
 					var pending := {
 						"type": "pull",
 						"target_id": target.id,
 						"dir": dir,
-						"amount": effect.amount + _push_synergy_bonus(
-							actor, effect, "pull_bonus_if_push_used"
-						),
+						"amount": pull_amount,
 						"actor_id": actor.id,
 						"ability_id": action.ability.id
 					}
@@ -4209,6 +4249,19 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var delayed_move := effect.modifiers.has("next_turn") or effect.modifiers.has(
 					"next_turn_max_move"
 				)
+				if (
+					effect.modifiers.get("next_turn", false)
+					and effect.status_type == GameEnums.StatusType.CONFUSION
+				):
+					target.passive_flags["confusion_next_turn"] = true
+					events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+						"unit": target.id,
+						"status_type": effect.status_type,
+						"duration": effect.status_duration,
+						"amount": effect.amount,
+						"next_turn": true,
+					}))
+					return
 				if delayed_move and effect.status_type == GameEnums.StatusType.STAT_BUFF_MOV:
 					target.passive_flags["next_turn_max_move_bonus"] = int(
 						target.passive_flags.get("next_turn_max_move_bonus", 0)
@@ -4249,6 +4302,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"duration": effect.status_duration,
 					"amount": effect.amount,
 				}))
+				if GameEnums.is_debuff(effect.status_type):
+					RogueSystems.on_debuff_applied(board, actor, target, events)
 				if effect.modifiers.has("grant_ap"):
 					target.ability.points_left += int(effect.modifiers["grant_ap"])
 				if effect.modifiers.has("self_move_zero_next_turn"):
@@ -4647,6 +4702,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						terrain_payload["trap_damage_bonus"] = int(
 							passive.modifiers["caltrop_damage_bonus"]
 						)
+				if terrain_id == &"smoke" or terrain_payload.get("smoke_field", false):
+					terrain_payload["terrain_owner_id"] = actor.id
+				if _ability_has_modifier(actor, action.ability, &"hazard_blind_on_entry"):
+					terrain_payload["hazard_blind_on_entry"] = true
 				board.terrain_payloads[tile_coord] = terrain_payload
 				MonkSystems.on_terrain_created(board, actor, tile_coord, events)
 				var standing_unit := board.get_unit_at(tile_coord)

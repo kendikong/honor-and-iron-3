@@ -555,6 +555,9 @@ func get_ability_range(ability_data: AbilityData) -> int:
 		var blink_bonus := RogueSystems.basic_attack_range_bonus(self)
 		if blink_bonus > 0 and DataLibrary.is_basic_ability(ability_data.id):
 			authored_range = maxi(authored_range, blink_bonus)
+	var lethal_range := RogueSystems.moved_tiles_range_bonus(self)
+	if lethal_range > 0:
+		authored_range += lethal_range
 	return authored_range
 
 func get_ability_by_id(ability_id: StringName) -> AbilityData:
