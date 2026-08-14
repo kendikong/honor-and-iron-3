@@ -8,6 +8,7 @@ const _MOVEMENT_SMOKE := preload("res://tests/movement_planning_smoke_registry.g
 
 static func run_all(failures: Array[String]) -> void:
 	_HARNESS.run_factory_matrix(failures)
+	_HARNESS.run_bible_parity_cluster(failures)
 	for entry: Dictionary in _REGISTRY.all_entries():
 		var name := String(entry.get("name", "?"))
 		var factory_id: StringName = entry.get("factory_id", &"") as StringName

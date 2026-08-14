@@ -1046,7 +1046,7 @@ static func _cracked() -> TerrainData:
 
 
 static func _arcane_trail() -> TerrainData:
-	return _hazard(&"arcane_trail", "Arcane Trail", 1, false)
+	return _hazard(&"arcane_trail", "Arcane Trail", 0, false)
 
 
 static func _crater() -> TerrainData:

@@ -105,6 +105,20 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 			unit.active_statuses.append(DataLibrary.make_status(
 				GameEnums.StatusType.STAT_DEBUFF_DEF, 1, def_down,
 			))
+	if (
+		payload.get("arcane_trail", false)
+		and int(payload.get("arcane_trail_mag_atk", 0)) > 0
+		and terrain_owner != null
+		and unit.team != terrain_owner.team
+	):
+		CombatSystem.deal_mag_atk(
+			board,
+			terrain_owner,
+			unit,
+			int(payload["arcane_trail_mag_atk"]),
+			events,
+			"Arcane Trail",
+		)
 	if payload.get("crossing_weapon_damage", false):
 		var weapon_damage := 0
 		if payload.get("weapon_damage_owner", -1) >= 0:

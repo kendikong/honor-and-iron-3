@@ -56,6 +56,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		"Fire leaves FIRE; Ice leaves FROZEN; Lightning hits all on WATER/FROZEN.",
 		"Enemies on new terrain take WPN unmitigated damage.",
 		{"promotion": &"geomancer", "elementalist": true,
+		"elementalist_lightning_all_surface": true,
 		"elementalist_terrain_damage_weapon": true}))
 	definition.passives.append(_passive(&"feedback", "Feedback",
 		"Creating terrain grants +1 MAG and SHIELD 1 for 1 turn.",
@@ -102,10 +103,10 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		{"promotion": &"archmage", "mana_siphon": true,
 		"mana_siphon_heal": 1}))
 	definition.passives.append(_passive(&"overload", "Overload",
-		"Gain +2 MAG and take 1 damage per turn, never below 1 HP.",
+		"Gain +2 MAG. You cannot gain SHIELD.",
 		"Gain +3 MAG instead.",
 		{"promotion": &"archmage", "overload_magic": 2,
-		"upgraded_overload_magic": 3, "overload_tick_damage": 1}))
+		"upgraded_overload_magic": 3, "overload_no_shield": true}))
 
 	# Graviturge passives.
 	definition.passives.append(_passive(&"wild_magic", "Wild Magic",
@@ -212,22 +213,18 @@ static func _fireball() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["reaction_frozen_to_steam"] = true
-	base.legacy_modifiers["reaction_terrain"] = &"frozen"
-	base.legacy_modifiers["reaction_damage"] = 2
 	base.layers.append(_layer(_terrain(&"fire")))
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	var steam := _terrain(&"steam")
-	steam.modifiers["reaction_terrain"] = &"frozen"
-	steam.modifiers["reaction_steam_splash"] = true
-	steam.modifiers["reaction_steam_splash_size"] = 1
-	steam.modifiers["reaction_steam_splash_damage"] = 2
-	upgraded.layers.append(_layer(steam))
+	var fire_or_steam := _terrain(&"fire")
+	fire_or_steam.modifiers["reaction_terrain"] = &"frozen"
+	fire_or_steam.modifiers["reaction_steam_splash"] = true
+	fire_or_steam.modifiers["reaction_steam_splash_size"] = 1
+	fire_or_steam.modifiers["reaction_steam_splash_damage"] = 2
+	upgraded.layers.append(_layer(fire_or_steam))
 	return _spell(
 		&"mage_fireball", "Fireball", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -276,6 +273,7 @@ static func _chain_lightning() -> AbilityData:
 	base.legacy_modifiers["bounce_count"] = 2
 	base.legacy_modifiers["bounce_range"] = 2
 	base.legacy_modifiers["surface_chain"] = true
+	base.legacy_modifiers["lightning"] = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,

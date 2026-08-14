@@ -22,7 +22,7 @@ const ABILITY_IDS: Array[StringName] = [
 ]
 
 const PASSIVE_ROWS: Array[Dictionary] = [
-	{"id": &"elementalist", "keys": [&"elementalist"]},
+	{"id": &"elementalist", "keys": [&"elementalist", &"elementalist_lightning_all_surface"]},
 	{"id": &"feedback", "keys": [&"feedback_magic", &"feedback_shield"]},
 	{"id": &"elemental_master", "keys": [&"elemental_master_magic"]},
 	{"id": &"lasting_terrain", "keys": [&"lasting_terrain_duration", &"lasting_terrain_damage"]},
@@ -31,7 +31,7 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 	{"id": &"arcane_overdrive", "keys": [&"arcane_overdrive_magic", &"arcane_overdrive_hp_pct"]},
 	{"id": &"mana_well", "keys": [&"mana_well"]},
 	{"id": &"mana_siphon", "keys": [&"mana_siphon"]},
-	{"id": &"overload", "keys": [&"overload_magic", &"overload_tick_damage"]},
+	{"id": &"overload", "keys": [&"overload_magic", &"overload_no_shield"]},
 	{"id": &"wild_magic", "keys": [&"wild_magic"]},
 	{"id": &"arcane_tether", "keys": [&"arcane_tether"]},
 	{"id": &"arcane_mastery", "keys": [&"arcane_mastery_radius"]},
@@ -267,14 +267,52 @@ static func run_arcane_overchannel(failures: Array[String]) -> void:
 	_assert(failures, "arcane_overchannel/id", innate.id == &"arcane_overchannel")
 	_assert(failures, "arcane_overchannel/modifier", innate.modifiers.has("arcane_overchannel"))
 	var board := _plain_board(Vector2i(8, 6))
-	var mage_unit := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
-	_place_dummy(board, 3, Vector2i(4, 2))
-	var fireball := _ability(mage, &"mage_fireball")
-	_player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
+	var mage_unit := _place_mage(board, 1, Vector2i(2, 2), &"mage_elemental_surge")
+	var surge := _ability(mage, &"mage_elemental_surge")
+	for _i: int in range(3):
+		mage_unit.reset_for_turn()
+		var surge_plan := Timeline.new()
+		surge_plan.add(TimelineAction.make_ability(1, surge, mage_unit.position, mage_unit.id))
+		_player_turn(board, surge_plan)
 	_assert(
 		failures, "arcane_overchannel/stacks",
-		int(mage_unit.passive_flags.get("arcane_overchannel_stacks", 0)) > 0,
+		int(mage_unit.passive_flags.get("arcane_overchannel_stacks", 0)) == 3,
 	)
+	_assert(
+		failures, "arcane_overchannel/base_no_refund",
+		mage_unit.ability.points_left == 0,
+	)
+	_assert(
+		failures, "arcane_overchannel/base_no_shield",
+		mage_unit.armor == 0,
+	)
+	var upgraded_board := _plain_board(Vector2i(8, 6))
+	var upgraded_mage := _place_mage(upgraded_board, 1, Vector2i(2, 2), &"mage_elemental_surge")
+	upgraded_mage.upgraded_passives.append(&"arcane_overchannel")
+	for _j: int in range(3):
+		upgraded_mage.reset_for_turn()
+		var upgraded_plan := Timeline.new()
+		upgraded_plan.add(TimelineAction.make_ability(1, surge, upgraded_mage.position, upgraded_mage.id))
+		_player_turn(upgraded_board, upgraded_plan)
+	_assert(
+		failures, "arcane_overchannel/upgrade_refund",
+		upgraded_mage.ability.points_left >= 1,
+	)
+	_assert(
+		failures, "arcane_overchannel/upgrade_shield",
+		upgraded_mage.armor > 0,
+	)
+
+
+static func run_bible_parity_cluster(failures: Array[String]) -> void:
+	run_arcane_overchannel(failures)
+	_bible_elementalist_lightning(failures)
+	_bible_fireball_steam(failures)
+	_bible_arcane_trail_mag(failures)
+	_bible_meteor_delay(failures)
+	_bible_black_hole_center(failures)
+	_bible_mana_shield_formula(failures)
+	_bible_gravity_well_enemies(failures)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
@@ -399,13 +437,25 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 	if _passive_should_run(only_id, &"overload"):
 		var board := _plain_board(Vector2i(8, 6))
 		var mage := _place_mage(board, 1, Vector2i(2, 2), &"mage_fireball")
+		var mag_before := mage.current_magic
 		mage.active_passives.append(_passive(mage_def, &"overload"))
 		mage._recalculate_stats(board)
-		var hp_before := mage.health.current_hp
-		_player_turn(board, Timeline.new())
 		_assert(
-			failures, "passive/overload/tick",
-			mage.health.current_hp < hp_before,
+			failures, "passive/overload/magic",
+			mage.current_magic == mag_before + 2,
+		)
+		var shield_events: Array[SimEvent] = []
+		var armor_before := mage.armor
+		CombatSystem.add_armor(board, mage, 4, shield_events)
+		_assert(
+			failures, "passive/overload/no_shield",
+			mage.armor == armor_before,
+		)
+		mage.upgraded_passives.append(&"overload")
+		mage._recalculate_stats(board)
+		_assert(
+			failures, "passive/overload/upgraded_magic",
+			mage.current_magic == mag_before + 3,
 		)
 
 	if _passive_should_run(only_id, &"arcane_overdrive"):
@@ -504,6 +554,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 			failures, "passive/elementalist/terrain",
 			board.get_tile(Vector2i(4, 2)).definition.id == &"fire",
 		)
+		_bible_elementalist_lightning(failures)
 
 	if _passive_should_run(only_id, &"gravity_anchor"):
 		var board := _plain_board(Vector2i(8, 6))
@@ -532,12 +583,15 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 		&"mage_blink":
 			_assert(failures, "upgrade/mage_blink/surface", effects[0].modifiers.get("leave_elemental_surface", false))
 		&"mage_fireball":
-			_assert(failures, "upgrade/mage_fireball/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"frozen")
-			_assert(failures, "upgrade/mage_fireball/aoe", ability.upgraded_modules[0].target_shape_size == 1)
 			_assert(
 				failures,
 				"upgrade/mage_fireball/steam_splash",
 				_has_reaction_steam_splash(ability.upgraded_effects),
+			)
+			_assert(
+				failures,
+				"upgrade/mage_fireball/no_base_steam",
+				not _has_reaction_steam_splash(ability.effects),
 			)
 		&"mage_ice_shard":
 			_assert(failures, "upgrade/mage_ice_shard/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"fire")
@@ -573,6 +627,173 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 			_assert(failures, "upgrade/mage_density_shift/weaken", effects[0].modifiers.get("apply_weaken_enemy", false))
 		&"mage_arcane_barrage":
 			_assert(failures, "upgrade/mage_arcane_barrage/pierce", effects[0].modifiers.get("ignore_target_magic_pct", 0.0) == 0.25)
+
+static func _bible_elementalist_lightning(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), &"mage_chain_lightning")
+	mage.active_passives.append(_passive(mage_def, &"elementalist"))
+	var primary := _place_dummy(board, 3, Vector2i(4, 3))
+	var water_coord := Vector2i(7, 3)
+	board.tiles[water_coord] = TileState.create(water_coord, DataLibrary.get_terrain(&"water"))
+	var soaked := _place_dummy(board, 4, water_coord)
+	var hp_before := soaked.health.current_hp
+	var lightning := _ability(mage_def, &"mage_chain_lightning")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, lightning, primary.position, primary.id))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"passive/elementalist/lightning_all",
+		soaked.health.current_hp < hp_before,
+	)
+
+
+static func _bible_fireball_steam(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), &"mage_fireball")
+	mage.upgraded_abilities.append(&"mage_fireball")
+	var frozen := Vector2i(4, 3)
+	board.tiles[frozen] = TileState.create(frozen, DataLibrary.get_terrain(&"frozen"))
+	_place_dummy(board, 3, frozen)
+	var splash := _place_dummy(board, 4, Vector2i(5, 4))
+	var splash_hp := splash.health.current_hp
+	var fireball := _ability(mage_def, &"mage_fireball")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, fireball, frozen, 3))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"bible/fireball/steam",
+		board.get_tile(frozen).definition.id == &"steam",
+	)
+	_assert(
+		failures,
+		"bible/fireball/steam_splash",
+		splash.health.current_hp < splash_hp,
+	)
+
+
+static func _bible_arcane_trail_mag(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), &"mage_arcane_push")
+	mage.upgraded_abilities.append(&"mage_arcane_push")
+	var dummy := _place_dummy(board, 3, Vector2i(4, 3))
+	var push := _ability(mage_def, &"mage_arcane_push")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, push, dummy.position, dummy.id))
+	_player_turn(board, plan)
+	var trail_coord := Vector2i(4, 3)
+	_assert(
+		failures,
+		"bible/arcane_push/trail_tile",
+		board.get_tile(trail_coord).definition.id == &"arcane_trail",
+	)
+	var walker := _place_dummy(board, 5, Vector2i(4, 4))
+	var hp_before := walker.health.current_hp
+	walker.position = trail_coord
+	TerrainSystem.apply_landing(board, walker, [])
+	_assert(
+		failures,
+		"bible/arcane_push/trail_mag_atk",
+		walker.health.current_hp < hp_before,
+	)
+
+
+static func _bible_meteor_delay(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	_place_mage(board, 1, Vector2i(2, 3), &"mage_meteor")
+	var dummy := _place_dummy(board, 3, Vector2i(4, 3))
+	var hp_before := dummy.health.current_hp
+	var meteor := _ability(mage_def, &"mage_meteor")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, meteor, dummy.position, dummy.id))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"bible/meteor/queued",
+		not board.delayed_effects.is_empty() and dummy.health.current_hp == hp_before,
+	)
+	_player_turn(board, Timeline.new())
+	_assert(
+		failures,
+		"bible/meteor/impact",
+		dummy.health.current_hp < hp_before,
+	)
+	var crater_board := _plain_board(Vector2i(10, 8))
+	var crater_mage := _place_mage(crater_board, 1, Vector2i(2, 3), &"mage_meteor")
+	crater_mage.upgraded_abilities.append(&"mage_meteor")
+	_place_dummy(crater_board, 3, Vector2i(4, 3))
+	var crater_plan := Timeline.new()
+	crater_plan.add(TimelineAction.make_ability(1, meteor, Vector2i(4, 3), 3))
+	_player_turn(crater_board, crater_plan)
+	_player_turn(crater_board, Timeline.new())
+	_assert(
+		failures,
+		"bible/meteor/crater",
+		crater_board.get_tile(Vector2i(4, 3)).definition.id == &"crater",
+	)
+
+
+static func _bible_black_hole_center(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	_place_mage(board, 1, Vector2i(2, 3), &"mage_black_hole")
+	var dummy := _place_dummy(board, 3, Vector2i(5, 5))
+	var hole := _ability(mage_def, &"mage_black_hole")
+	var center := Vector2i(5, 3)
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, hole, center, -1))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"bible/black_hole/pull_to_center",
+		dummy.position.x == 5 and dummy.position.y < 5,
+	)
+
+
+static func _bible_mana_shield_formula(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(8, 6))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), &"mage_mana_shield")
+	var mag_at_cast := mage.current_magic
+	var max_hp := mage.health.max_hp
+	var shield := _ability(mage_def, &"mage_mana_shield")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, shield, mage.position, mage.id))
+	_player_turn(board, plan)
+	var expected := floori(float(mag_at_cast) * 0.1 * float(max_hp))
+	_assert(
+		failures,
+		"bible/mana_shield/shield_x",
+		mage.armor == expected and expected != mag_at_cast,
+	)
+
+
+static func _bible_gravity_well_enemies(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	_place_mage(board, 1, Vector2i(2, 3), &"mage_gravity_well")
+	var ally := _place_mage_ally(board, 2, Vector2i(3, 3))
+	var enemy := _place_dummy(board, 3, Vector2i(5, 3))
+	var well := _ability(mage_def, &"mage_gravity_well")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, well, Vector2i(4, 3), -1))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"bible/gravity_well/enemy_root",
+		enemy.has_status(GameEnums.StatusType.ROOT),
+	)
+	_assert(
+		failures,
+		"bible/gravity_well/ally_untouched",
+		not ally.has_status(GameEnums.StatusType.ROOT),
+	)
+
 
 static func _plain_board(size: Vector2i) -> BoardState:
 	var board := BoardState.new()

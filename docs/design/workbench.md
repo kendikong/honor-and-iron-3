@@ -67,6 +67,14 @@ Canvas FAIL remaining: Mage 9, Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next
 
 Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
+### Wave 10 (2026-08-14)
+
+Mage 9 canvas FAILs closed: Overchannel refund/SHIELD upgrade-only; Elementalist lightning-all on water/ice; Overload +3 instead of +2 and cannot SHIELD; Fireball steam splash sim; Arcane Trail MAG ATK; Meteor delay+crater; Black Hole pull-to-center; Mana Shield SHIELD X; Gravity Well enemies-only.
+
+QA: Mage gate+live PASS. Planning QA PASS.
+
+Canvas FAIL remaining: Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next cluster: **Engineer 10**.
+
 Lancer 12 canvas FAILs closed (Glorious Charge live dual-pick; Piercing Charge dash-then-RANGE 2; Polearm ignore-DEF upgrade-only; etc.). Archer 11 canvas FAILs closed (Steady Aim spends remaining MOV; Sidestep keep facing; Overwatch cone; Vantage on Steady Aim only; Camouflage Range>3; Caltrop 1 AP / Expert waiver; Target Painter PIERCE upgrade-only; Hunter's Mark ally RANGE/PIERCE; Repelling ally pick; Suppressing RANGE 4).
 
 QA: Lancer gate+live PASS. Archer gate+live PASS. Planning QA PASS.

@@ -244,9 +244,13 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				magic_bonus,
 			))
 		stat_mag += magic_bonus
-		stat_mag += int(passive.modifiers.get("overload_magic", 0))
+		var overload_magic := int(passive.modifiers.get("overload_magic", 0))
 		if is_passive_upgraded(passive.id):
-			stat_mag += int(passive.modifiers.get("upgraded_overload_magic", 0))
+			overload_magic = int(passive.modifiers.get(
+				"upgraded_overload_magic",
+				overload_magic,
+			))
+		stat_mag += overload_magic
 		if passive.modifiers.has("arcane_overchannel_magic"):
 			stat_mag += int(passive.modifiers["arcane_overchannel_magic"]) * int(
 				passive_flags.get("arcane_overchannel_stacks", 0)

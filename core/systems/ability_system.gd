@@ -2977,6 +2977,19 @@ static func execute_delayed_effect(
 			coord,
 			board.get_unit_at(coord),
 		)
+		var crater_target := board.get_unit_at(coord)
+		if crater_target != null and crater_target.team != actor.team:
+			crater_target.active_statuses.append(DataLibrary.make_status(
+				GameEnums.StatusType.BURN,
+				2,
+				actor.current_magic,
+			))
+			events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+				"unit": crater_target.id,
+				"status_type": GameEnums.StatusType.BURN,
+				"duration": 2,
+				"amount": actor.current_magic,
+			}))
 
 
 static func _create_elemental_surface(
@@ -4093,7 +4106,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 									break
 						if is_immune: break
 				if not is_immune:
-					var dir := PhysicsSystem.cardinal_from_to(target.position, actor.position)
+					var pull_anchor := actor.position
+					if effect.modifiers.get("pull_to_center", false):
+						pull_anchor = action.target_coord
+					var dir := PhysicsSystem.cardinal_from_to(target.position, pull_anchor)
 					var pull_amount := effect.amount + _push_synergy_bonus(
 						actor, effect, "pull_bonus_if_push_used"
 					)
@@ -4237,12 +4253,20 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 		GameEnums.EffectType.ARMOR_UP:
 			if target != null:
-				var shield_amount = effect.amount
 				if effect.modifiers.has("mana_shield"):
-					shield_amount = actor.current_magic
 					actor.passive_flags["mana_shield_active"] = true
 					if effect.modifiers.get("mana_shield_casting", false):
 						actor.passive_flags["mana_shield_casting"] = true
+					CombatSystem.add_shield_x(board, actor, actor.current_magic, events)
+					return
+				var blocked_by_overload := false
+				for passive: PassiveData in target.active_passives:
+					if passive != null and passive.modifiers.get("overload_no_shield", false):
+						blocked_by_overload = true
+						break
+				if blocked_by_overload:
+					return
+				var shield_amount = effect.amount
 				if effect.scaling_stat == GameEnums.StatType.MAX_HP:
 					shield_amount = floori(effect.amount * 0.1 * target.health.max_hp)
 				elif effect.scaling_stat == GameEnums.StatType.DEFENSE:
@@ -4957,6 +4981,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					terrain_payload["terrain_owner_id"] = actor.id
 				if terrain_payload.get("elemental_surface", false):
 					terrain_payload["terrain_owner_id"] = actor.id
+				if terrain_payload.get("arcane_trail", false):
+					terrain_payload["terrain_owner_id"] = actor.id
+					terrain_payload["arcane_trail_mag_atk"] = 1
 				for passive: PassiveData in actor.active_passives:
 					if passive == null:
 						continue
@@ -5331,6 +5358,7 @@ static func _begin_spellcast(
 			actor.passive_flags["arcane_overchannel_stacks"] = stacks
 			if (
 				stacks >= max_stacks
+				and actor.is_passive_upgraded(passive.id)
 				and not actor.passive_flags.get("arcane_overchannel_refunded", false)
 			):
 				actor.ability.points_left = mini(
@@ -5475,7 +5503,8 @@ static func _resolve_chain_lightning(
 			effect.amount,
 		)
 		current = next_target
-	if effect.modifiers.get("strike_all_surface", false):
+	if effect.modifiers.get("strike_all_surface", false) \
+			or _passive_has_modifier(actor, &"elementalist_lightning_all_surface"):
 		for candidate: UnitState in board.units:
 			if (
 				candidate == null

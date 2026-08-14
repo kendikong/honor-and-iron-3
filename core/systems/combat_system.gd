@@ -1497,6 +1497,9 @@ static func add_armor(board: BoardState, target: UnitState, amount: int, events:
 		return
 	if target.passive_flags.get("cannot_gain_shield", false):
 		return
+	for passive: PassiveData in target.active_passives:
+		if passive != null and passive.modifiers.get("overload_no_shield", false):
+			return
 	if not ShamanSystems.can_gain_shield(board, target):
 		return
 	if not RogueSystems.can_gain_shield(board, target):

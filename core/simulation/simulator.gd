@@ -167,18 +167,6 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			BeastRiderSystems.turn_start(board, unit, events)
 			EngineerSystems.turn_start(board, unit, events)
 			unit.passive_flags.erase("mage_ap_refunded")
-			for passive: PassiveData in unit.active_passives:
-				if passive == null or not passive.modifiers.has("overload_tick_damage"):
-					continue
-				var overload_damage := int(passive.modifiers["overload_tick_damage"])
-				unit.health.current_hp = maxi(1, unit.health.current_hp - overload_damage)
-				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
-					"unit": unit.id,
-					"amount": overload_damage,
-					"hp": unit.health.current_hp,
-					"source_label": "Overload",
-				}))
-				break
 			if unit.health.current_hp < unit.health.max_hp:
 				unit.passive_flags.erase("full_health_debuff_immunity")
 			if unit.passive_flags.get("next_turn_move_zero", false):
