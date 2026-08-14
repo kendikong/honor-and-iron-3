@@ -19,14 +19,14 @@ STOP_CONDITION_MET: yes (this piece)
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 2 │ SELF-GRADED: no (subagent)
-SCORE: 62/100 │ THRESHOLD: 85 │ FAIL │ CLIMBING
-DELTA: +12 vs round 1 (was 50)
+GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 3 │ SELF-GRADED: no (subagent)
+SCORE: 58/100 │ THRESHOLD: 85 │ FAIL │ SLIPPED
+DELTA: −4 vs round 2 (was 62)
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
-`STOP_CONDITION_MET: no` (both pieces required)
+`STOP_CONDITION_MET: no` (both pieces required; bible-consistency already PASS)
 
 ### Score progression
 
@@ -36,16 +36,21 @@ STOP_CONDITION_MET: no
 | 1 | BIBLE-TO-CODE | 50 | FAIL | no (subagent) |
 | 2 | BIBLE-CONSISTENCY | 90 | PASS | no (subagent) |
 | 2 | BIBLE-TO-CODE | 62 | FAIL | no (subagent) |
+| 3 | BIBLE-TO-CODE | 58 | FAIL | no (subagent) |
 
-### Wave 5 (2026-08-14) — in progress
+### Wave 5 (2026-08-14)
 
-Infrastructure: `scripts/run_bible_alignment_gate.ps1` parses canvas FAIL rows and exits ≠0 while any remain.
+Infrastructure ADEQUATE: `scripts/run_bible_alignment_gate.ps1` parses canvas FAIL rows, writes `docs/bible_alignment_audit.json`, exits 1 while FAIL>0.
 
-Cleric cluster (largest remaining FAIL after Mercenary): MAG ATK / HEAL X / SHIELD X go through CombatSystem helpers; Holy Light dual-faction; Blinding Ray keeps BLIND; Divine Hammer adjacent MAG+PUSH + HOLY AURA; Life Link no INTERCEPT; Resurrection corpse-only; Divine Guidance upgrade does not zero MOV; Shield of Faith SHIELD 3 formula. Martyr's Chains still auto-picks the second enemy.
+Cleric: MAG ATK / HEAL X / SHIELD X via CombatSystem helpers; Holy Light dual-faction; Blinding Ray keeps BLIND; Divine Hammer adjacent MAG+PUSH + HOLY AURA; Life Link no INTERCEPT; Resurrection corpse-only; Divine Guidance upgrade does not zero MOV; Shield of Faith SHIELD 3 formula. Martyr's Chains still auto-picks the second enemy (1 Cleric FAIL).
+
+Canvas: 101 → 86 FAIL. Next largest cluster: Rogue 13.
+
+QA: Cleric gate+live PASS. Planning QA PASS. Alignment gate FAIL (86) — expected until canvas-zero.
 
 Bowling Charge / Trampling Advance untouched.
 
-QA this wave: pending cleric gate+live, planning QA, bible alignment gate.
+**Commit:** `b4ec248ca2ae7210e0a1aab7ee3d4eb59af7b403`
 
 ### Wave 4 (2026-08-14)
 
