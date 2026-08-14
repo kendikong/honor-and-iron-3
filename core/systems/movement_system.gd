@@ -372,7 +372,7 @@ static func can_end_movement_on(
 		return true
 	if occ.id == unit.id:
 		return true
-	if AbilitySystem.ability_has_into_occupied_push_effect(ability, unit):
+	if AbilitySystem.ability_allows_occupied_landing(ability, unit):
 		return true
 	if occ.team != unit.team and has_trample(unit):
 		return true
@@ -1170,14 +1170,13 @@ static func _is_legal_walk(
 		
 	var end_tile: Vector2i = route[route.size() - 1]
 	if GridSystem.is_occupied(board, end_tile):
-		if AbilitySystem.ability_has_into_occupied_push_effect(ability, unit):
-			pass
-		elif ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
-			var end_occ := board.get_unit_at(end_tile)
-			if end_occ != null and end_occ.id != unit.id:
+		if not AbilitySystem.ability_allows_occupied_landing(ability, unit):
+			if ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.TRAMPLE) > 0:
+				var end_occ := board.get_unit_at(end_tile)
+				if end_occ != null and end_occ.id != unit.id:
+					return false
+			elif not can_pass_through_enemy(unit, ability):
 				return false
-		elif not can_pass_through_enemy(unit, ability):
-			return false
 		
 	return true
 

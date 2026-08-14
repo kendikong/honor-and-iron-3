@@ -989,11 +989,11 @@ static func run_trample_end_on_occupied_sim(failures: Array[String]) -> void:
 	var result: SimResult = simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
+	var landed_at: Vector2i = after.position if after != null else Vector2i(-1, -1)
 	assert_true(
 		failures, "trample/end_occupied/landed",
 		after != null and after.position == Vector2i(5, 4),
-		"trampling must occupy the enemy tile, got %s"
-		% [after.position if after != null else Vector2i(-1, -1)],
+		"trampling must occupy the enemy tile, got %s" % str(landed_at),
 	)
 	assert_eq_cell(
 		failures, "trample/end_occupied/pushed",

@@ -99,11 +99,22 @@ static func motion_requires_occupied_target(actor: UnitState, ability: AbilityDa
 	)
 
 
+## True for MOVE_INTO_AND_PUSH (Push Through): paired occupy-and-shove presentation.
+## TILE MOVE with INTO_OCCUPIED_PUSH (Trampling) is a walk, not this.
 static func ability_has_into_occupied_push_effect(
 	ability: AbilityData,
 	actor: UnitState = null,
 ) -> bool:
-	if motion_requires_occupied_target(actor, ability):
+	return motion_requires_occupied_target(actor, ability)
+
+
+## Walk may land on an occupant; execution pushes them off.
+## Covers MOVE_INTO_AND_PUSH and MotionMode.INTO_OCCUPIED_PUSH. Not a skill-id branch.
+static func ability_allows_occupied_landing(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	if ability_has_into_occupied_push_effect(ability, actor):
 		return true
 	var module: AbilityModule = active_motion_module(actor, ability)
 	return module != null and module.motion_mode == GameEnums.MotionMode.INTO_OCCUPIED_PUSH

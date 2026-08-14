@@ -3195,6 +3195,8 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 	if action.type == GameEnums.ActionType.MOVE:
 		return true
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		## Swap and MOVE_INTO_AND_PUSH use paired displacement presentation.
+		## TILE MOVE + INTO_OCCUPIED_PUSH still uses the normal premove walk tween.
 		if (
 			AbilitySystem.ability_has_swap_effect(action.ability)
 			or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
