@@ -706,12 +706,16 @@ func _commit_piercing_charge(
 	ability: AbilityData,
 	dash_cell: Vector2i,
 ) -> Dictionary:
+	## Bible: DASH 3 to an empty tile, then ATK 2 at RANGE 2 from the landing tile.
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, ability, dash_cell, &"lancer_piercing_charge",
 	)
 	var slots := await _commit_live_click(runner, actor_id, dash_cell)
+	var strike_cell := Vector2i(8, 4)
 	if _plan_has_awaiting(actor_id):
-		slots = await _commit_live_click(runner, actor_id, Vector2i(8, 4))
+		slots = await _commit_live_click(runner, actor_id, strike_cell)
+	if _plan_has_awaiting(actor_id):
+		slots = await _commit_live_click(runner, actor_id, strike_cell)
 	return slots
 
 

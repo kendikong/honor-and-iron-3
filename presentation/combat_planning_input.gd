@@ -4090,9 +4090,27 @@ func _build_commit_slots_at_cell(
 	var awaiting_action: TimelineAction = (
 		_director.find_awaiting_action(unit_id) if has_awaiting_action else null
 	)
+	## DASH / teleport / paired-charge primary aim stays on the waypoint endpoint
+	## pipeline below. MOVE skills (L-shape flanking) and TARGET_PICK keep module 0.
+	var skip_primary_endpoint_aim := false
+	if awaiting_action != null and awaiting_action.awaiting_module_index == 0:
+		var armed: AbilityData = awaiting_action.ability
+		if _is_awaiting_movement_endpoint(actor, armed):
+			var motion: AbilityModule = AbilitySystem.active_motion_module(actor, armed)
+			skip_primary_endpoint_aim = (
+				AbilitySystem.ability_has_modifier(armed, &"paired_ally_charge", actor)
+				or (
+					motion != null
+					and motion.primary_type in [
+						GameEnums.EffectType.DASH,
+						GameEnums.EffectType.TELEPORT_CASTER,
+					]
+				)
+			)
 	if (
 		awaiting_action != null
 		and awaiting_action.awaiting_module_index >= 0
+		and not skip_primary_endpoint_aim
 		and (cell != actor.position or awaiting_action.awaiting_module_index > 0)
 	):
 		if _append_module_awaiting_target(
