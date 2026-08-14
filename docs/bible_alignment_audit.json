@@ -1,9 +1,8 @@
 ﻿{
-    "generated":  "2026-08-14T02:16:12",
+    "generated":  "2026-08-14T04:34:50",
     "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  300,
-                   "FAIL":  73,
+                   "MATCH":  373,
                    "MISSING":  4,
                    "DATA-ONLY":  20
                },
@@ -686,7 +685,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Leap",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -701,7 +700,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Elemental Harmony",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -716,7 +715,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Weaver\u0027s Resonance",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -741,7 +740,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Vaulting Strike",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -791,12 +790,12 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Flying Crane Kick",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
                      "skill":  "Spirit Palm",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -811,12 +810,12 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Mantra of Peace",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
                      "skill":  "Inner Fire",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -826,7 +825,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Cyclone Sweep",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -836,7 +835,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Geyser Strike",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -846,12 +845,12 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Gallop",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Griffin / Wyvern AIRBORNE",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -861,12 +860,12 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Reposition",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Isolation Tactics",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -916,7 +915,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Pack Hunter",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -926,7 +925,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Vantage Striker",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -936,12 +935,12 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Furious Charge",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Pounce",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -956,7 +955,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Bestial Roar",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -966,7 +965,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Rest \u0026 Recover",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1006,7 +1005,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Tail Swipe",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1021,7 +1020,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Arcane Overchannel",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1031,7 +1030,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Elementalist",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1076,7 +1075,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Overload",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1106,7 +1105,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Fireball",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1121,7 +1120,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Arcane Push",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1131,12 +1130,12 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Meteor",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
                      "skill":  "Black Hole",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1146,7 +1145,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Mana Shield",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1156,7 +1155,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Gravity Well",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1196,17 +1195,17 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Steady Aim",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
                      "skill":  "Sidestep",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
                      "skill":  "Overwatch",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1216,7 +1215,7 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Vantage Anchor",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1231,7 +1230,7 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Camouflage",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1241,7 +1240,7 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Caltrop Expert",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1271,7 +1270,7 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Target Painter",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1316,12 +1315,12 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Hunter\u0027s Mark",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
                      "skill":  "Repelling Shot",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1331,12 +1330,12 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Suppressing Fire",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
                      "skill":  "Caltrop Trap",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1506,7 +1505,7 @@
                  {
                      "cls":  "Cleric",
                      "skill":  "Martyr\u0027s Chains",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1521,7 +1520,7 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Usher",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1601,17 +1600,17 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Curse of Weakness",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
                      "skill":  "Healing Totem",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
                      "skill":  "Flame Totem",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1626,12 +1625,12 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Voodoo Link",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
                      "skill":  "Terrify",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1641,12 +1640,12 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Bone Spear",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
                      "skill":  "Ancestral Spirit",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1656,7 +1655,7 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Sympathetic Bond",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",
@@ -1686,7 +1685,7 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Polearm Mastery",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1731,7 +1730,7 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Pole-Plant",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1741,12 +1740,12 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Springboard",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
                      "skill":  "Pivot Leverage",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1761,7 +1760,7 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Zone of Control",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1771,17 +1770,17 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Piercing Charge",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
                      "skill":  "Sweeping Halberd",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
                      "skill":  "Vaulting Leap",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1806,17 +1805,17 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Harpoon Toss",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
                      "skill":  "Glorious Charge",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
                      "skill":  "Pole Vault",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1826,7 +1825,7 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Spear Wall",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1851,7 +1850,7 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Turret Syndrome",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
@@ -1896,12 +1895,12 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Expanded Blast",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
                      "skill":  "Scrap Mechanic",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
@@ -1916,12 +1915,12 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Overclocked Maintenance",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
                      "skill":  "Field Technician",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
@@ -1961,17 +1960,17 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Wrench Smack",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
                      "skill":  "EMP Grenade",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
                      "skill":  "Rocket Launcher",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
@@ -1981,12 +1980,12 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Manual Detonation",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
                      "skill":  "Overdrive Injection",
-                     "verdict":  "FAIL"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",

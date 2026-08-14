@@ -321,6 +321,8 @@ static func pre_status_application(
 ) -> bool:
 	if actor == null or target == null or effect == null:
 		return false
+	if effect.modifiers.get("push_mitigation_zero", false):
+		target.passive_flags["no_push_mitigation"] = true
 	if (
 		GameEnums.is_buff(effect.status_type)
 		and effect.amount > 0
@@ -367,8 +369,6 @@ static func pre_status_application(
 		return true
 	if effect.modifiers.get("poison_spread_on_push_collision", false):
 		target.passive_flags["shaman_poison_spread_on_push"] = true
-	if effect.modifiers.get("push_mitigation_zero", false):
-		target.passive_flags["no_push_mitigation"] = true
 	if effect.modifiers.get("sympathetic_bond", false):
 		var ally: UnitState = target if target.team == actor.team else null
 		var enemy: UnitState = target if target.team != actor.team else null
@@ -380,42 +380,16 @@ static func pre_status_application(
 			if picked_enemy != null and picked_enemy.team != actor.team:
 				enemy = picked_enemy
 		if ally == null or enemy == null:
-			var counterpart: UnitState = _nearest_counterpart(board, actor, target)
-			if counterpart != null:
-				if target.team == actor.team:
-					ally = target
-					enemy = counterpart
-				else:
-					ally = counterpart
-					enemy = target
-		if ally != null and enemy != null:
-			link_ally_enemy(board, actor, ally, enemy, effect, events)
+			var module_count: int = AbilitySystem.active_modules_for(
+				actor, action.ability if action != null else null,
+			).size()
+			if module_count >= 2:
+				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+					"actor": actor.id, "reason": "sympathetic_bond_requires_ally_and_enemy",
+				}))
+			return true
+		link_ally_enemy(board, actor, ally, enemy, effect, events)
 	return false
-
-
-static func _nearest_counterpart(
-	board: BoardState,
-	actor: UnitState,
-	target: UnitState,
-) -> UnitState:
-	var closest: UnitState = null
-	var distance := 1_000_000
-	for candidate: UnitState in board.units:
-		if (
-			candidate == null
-			or not candidate.is_alive()
-			or candidate.id == target.id
-			or candidate.team == target.team
-		):
-			continue
-		var candidate_distance := GridSystem.manhattan(actor.position, candidate.position)
-		if candidate_distance < distance or (
-			candidate_distance == distance
-			and (closest == null or candidate.id < closest.id)
-		):
-			closest = candidate
-			distance = candidate_distance
-	return closest
 
 
 static func link_ally_enemy(

@@ -91,6 +91,25 @@ Canvas FAIL remaining ~50 (Beast Rider, Monk, Mage, Engineer, Shaman, Cleric dua
 
 Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
+### Wave 12 (2026-08-14)
+
+Shaman + Cleric dual-pick canvas FAILs closed. Alignment gate **FAIL 0**.
+
+- Usher: ally then empty tile; caster stays
+- Curse: STR−2 DEF−2, no WEAKEN/MAG; [+] Push Mit 0
+- Healing Totem: Bible HEAL 1
+- Flame Totem: FIRE upgrade-only
+- Voodoo Link / Sympathetic Bond / Martyr's Chains: second NEW_AIM pick required
+- Terrify: boss SHIELD strip upgrade-only
+- Bone Spear: MAG ATK 2 + furthest empty barricade
+- Ancestral Spirit: ally corpse gate + echo_upgraded
+
+QA: Shaman live PASS. Shaman harness PASS. Planning QA PASS. Alignment gate PASS (MATCH 373, DATA-ONLY 20, MISSING 4, FAIL 0).
+
+Bowling Charge / Trampling Advance untouched. No class LOCK claim.
+
+`STOP_CONDITION_MET: no` until critic PASS on BIBLE-TO-CODE.
+
 ### Wave 6 (2026-08-14)
 
 Audits collapsed to 1 finding (Rogue 13 canvas FAILs). Implemented in `RogueSystems` + factory data + harness:

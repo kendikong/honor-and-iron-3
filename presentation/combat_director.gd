@@ -455,8 +455,11 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			if not action.module_target_coords.is_empty():
 				awaiting.module_target_coords = action.module_target_coords.duplicate()
 				awaiting.module_target_unit_ids = action.module_target_unit_ids.duplicate()
-			awaiting.awaiting_target = false
-			awaiting.awaiting_module_index = -1
+			awaiting.awaiting_target = action.awaiting_target
+			awaiting.awaiting_module_index = action.awaiting_module_index
+			if not action.awaiting_target:
+				awaiting.awaiting_target = false
+				awaiting.awaiting_module_index = -1
 			return true
 	return false
 

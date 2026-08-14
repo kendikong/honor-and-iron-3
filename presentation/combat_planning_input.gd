@@ -4469,6 +4469,19 @@ func _build_ally_commit_slots(
 		awaiting_charge.target_unit_id = ally.id
 		slots[_ability_plan_column(ability)].append(awaiting_charge)
 		return slots
+	if AbilitySystem.ability_has_modifier(ability, &"relocate_subject_only", actor):
+		var relocate_action := TimelineAction.make_ability(
+			unit_id,
+			ability,
+			ally.position,
+			ally.id,
+			GameEnums.MoveTiming.PRE_ACTION,
+			[],
+		)
+		AbilitySystem.set_module_target(relocate_action, 0, ally.position, ally.id)
+		AbilitySystem.prepare_planning_action(_proj(), relocate_action)
+		slots[_ability_plan_column(ability)].append(relocate_action)
+		return slots
 	if not ability.is_movement_kind():
 		if _can_target_unit_with_selected_ability(actor, ally):
 			slots["action"].append(
@@ -4816,7 +4829,12 @@ func _append_module_awaiting_target(
 	var targeting_flags: int = AbilitySystem.active_targeting_flags(
 		actor, awaiting_action.ability, module_index,
 	)
-	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0:
+	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0 \
+			and (targeting_flags & (
+				GameEnums.TargetingFlags.ALLY
+				| GameEnums.TargetingFlags.ENEMY
+				| GameEnums.TargetingFlags.SELF
+			)) == 0:
 		target_unit_id = -1
 	if not AbilitySystem.planning_module_target_valid(
 		_proj(), awaiting_action, module_index, cell, target_unit_id,
@@ -4831,7 +4849,8 @@ func _append_module_awaiting_target(
 		committed.target_coord = cell
 		committed.target_unit_id = target_unit_id
 		committed.waypoints = waypoints.duplicate()
-	slots["action"].append(committed)
+	AbilitySystem.prepare_planning_action(_proj(), committed)
+	slots[_ability_plan_column(awaiting_action.ability)].append(committed)
 	return true
 
 
@@ -4908,7 +4927,29 @@ func _final_commit_slots_for_click_at_cell(
 	):
 		return _empty_commit_slots()
 	var unit_at: UnitState = _unit_at_input_cell(cell)
-	if unit_at != null and not unit_at.is_enemy() and unit_at.is_alive():
+	var caster_for_corpse: UnitState = _proj_unit(unit_id)
+	var selected_ability: AbilityData = (
+		_selected_ability_data(caster_for_corpse) if caster_for_corpse != null else null
+	)
+	if (
+		selected_ability != null
+		and AbilitySystem.ability_has_modifier(selected_ability, &"ally_corpse", caster_for_corpse)
+	):
+		var corpse: UnitState = AbilitySystem.ally_corpse_at(
+			_director.board, caster_for_corpse, cell,
+		)
+		if corpse == null:
+			corpse = AbilitySystem.ally_corpse_at(_proj(), caster_for_corpse, cell)
+		if corpse != null:
+			unit_at = corpse
+	if (
+		unit_at != null
+		and not unit_at.is_enemy()
+		and (
+			unit_at.is_alive()
+			or AbilitySystem.ability_has_modifier(selected_ability, &"ally_corpse", caster_for_corpse)
+		)
+	):
 		if unit_at.id != unit_id:
 			var caster: UnitState = _proj_unit(unit_id)
 			if caster != null:
@@ -5128,6 +5169,17 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
 	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
 		return null
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	var ability: AbilityData = _selected_ability_data(actor) if actor != null else null
+	if (
+		ability != null
+		and AbilitySystem.ability_has_modifier(ability, &"ally_corpse", actor)
+	):
+		var corpse: UnitState = AbilitySystem.ally_corpse_at(_director.board, actor, cell)
+		if corpse == null:
+			corpse = AbilitySystem.ally_corpse_at(_proj(), actor, cell)
+		if corpse != null:
+			return corpse
 	var live: UnitState = _director.board.get_unit_at(cell)
 	if live == null:
 		return null

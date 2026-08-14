@@ -299,7 +299,7 @@ static func _miasma() -> AbilityData:
 
 static func _bone_spear() -> AbilityData:
 	var hit := DataLibrary._module(GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.PHYSICAL)
+		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL)
 	hit.legacy_modifiers["bone_spear"] = true
 	var spawn := DataLibrary._module(GameEnums.EffectType.SPAWN, 0, 1, 4, GameEnums.TargetingFlags.TILE)
 	spawn.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N

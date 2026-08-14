@@ -76,11 +76,19 @@ func test_live_shaman_every_skill(timeout := 600000) -> void:
 						DataLibrary.make_status(GameEnums.StatusType.WEAKEN, 1)
 					)
 		elif ability_id == &"shaman_ancestral_spirit":
-			for corpse_board: BoardState in [director.base_board, director.board]:
-				var corpse := corpse_board.get_unit_at(_ALLY_CELL)
-				if corpse != null:
-					corpse.health.current_hp = 0
-					GridSystem.set_occupant(corpse_board, corpse.position, -1)
+			var corpse_boards: Array[BoardState] = [director.base_board, director.board]
+			if director.projected_state != null:
+				corpse_boards.append(director.projected_state)
+			for corpse_board: BoardState in corpse_boards:
+				for unit: UnitState in corpse_board.units:
+					if (
+						unit != null
+						and unit.position == _ALLY_CELL
+						and unit.team == GameEnums.Team.PLAYER
+						and unit.id != actor_id
+					):
+						unit.health.current_hp = 0
+						GridSystem.set_occupant(corpse_board, unit.position, -1)
 		director.select_unit(actor_id)
 		if ability_id == &"shaman_usher":
 			target = _ALLY_CELL
@@ -100,17 +108,17 @@ func test_live_shaman_every_skill(timeout := 600000) -> void:
 			"%s: valid preview target rejected: %s" % [ability_id, slots],
 		).is_false()
 		assert_bool(_plan_has_ability(director, ability_id)).override_failure_message(
-			"%s: commit did not ratify preview intent" % ability_id,
+			"%s: commit did not ratify preview intent plan=[%s]" % [ability_id, _plan_debug(director)],
 		).is_true()
 
 
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	if ability_id in [
 		&"shaman_healing_totem", &"shaman_flame_totem", &"shaman_totem_guard",
-		&"shaman_earthbind_totem", &"shaman_ancestral_spirit",
+		&"shaman_earthbind_totem",
 	]:
 		return [_ALLY_CELL]
-	if ability_id == &"shaman_usher":
+	if ability_id in [&"shaman_usher", &"shaman_ancestral_spirit"]:
 		return []
 	return [_TARGET_CELL, Vector2i(7, 5)]
 
@@ -162,6 +170,18 @@ func _plan_has_ability(director: CombatDirector, ability_id: StringName) -> bool
 	return false
 
 
+func _plan_debug(director: CombatDirector) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for action: TimelineAction in director.get_player_plan().entries:
+		if action.ability != null:
+			parts.append("%s await=%s" % [action.ability.id, action.awaiting_target])
+		elif action.type == GameEnums.ActionType.MOVE:
+			parts.append("MOVE %s" % action.target_coord)
+		else:
+			parts.append("type=%s" % action.type)
+	return ", ".join(parts)
+
+
 func _commit_live_click(
 	runner: GdUnitSceneRunner,
 	director: CombatDirector,
@@ -179,36 +199,44 @@ func _commit_live_click(
 	var selected_ability := CombatDirector.resolve_selected_ability(
 		actor, director.selected_ability_index,
 	)
-	var should_arm := (
+	var needs_arm := (
 		director.find_awaiting_action(actor_id) == null
 		and actor != null
 		and selected_ability != null
 		and AbilitySystem.planning_commit_flow(actor, selected_ability)
 			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+		and director.board.get_unit_at(cell) == null
+		and AbilitySystem.ally_corpse_at(director.board, actor, cell) == null
 	)
-	var stand_cell := CombatPlanningPreview.planning_latest_stand_cell(
-		director, director.board, actor_id,
-	)
-	var first_cell := stand_cell if should_arm else cell
-	var slots: Dictionary
-	slots = input._final_commit_slots_for_click_at_cell(actor_id, first_cell, Vector2.ZERO)
-	if _slots_invalid(slots):
-		return slots
-	input.call("_paint_intent_slots_before_commit", actor_id, slots)
-	if not director.commit_from_slots(actor_id, slots):
-		return {"invalid": "initial arm rejected"}
-	if director.find_awaiting_action(actor_id) != null:
-		var followup := second_cell if second_cell != Vector2i(-1, -1) else cell
-		input.on_hover_moved(followup)
-		input._flush_hover_heavy_sync()
-		slots = input._build_commit_slots_at_cell(actor_id, followup)
-	else:
-		slots = slots
+	var slots: Dictionary = {}
+	if needs_arm:
+		var stand_cell := CombatPlanningPreview.planning_latest_stand_cell(
+			director, director.board, actor_id,
+		)
+		slots = input._final_commit_slots_for_click_at_cell(actor_id, stand_cell, Vector2.ZERO)
+		if _slots_invalid(slots):
+			return slots
+		input.call("_paint_intent_slots_before_commit", actor_id, slots)
+		if not director.commit_from_slots(actor_id, slots):
+			return {"invalid": "initial arm rejected"}
+	slots = input._final_commit_slots_for_click_at_cell(actor_id, cell, Vector2.ZERO)
 	if _slots_invalid(slots):
 		return slots
 	input.call("_paint_intent_slots_before_commit", actor_id, slots)
 	if not director.commit_from_slots(actor_id, slots):
 		return {"invalid": "preview commit rejected"}
+	if director.find_awaiting_action(actor_id) != null:
+		var finish_cell: Vector2i = (
+			second_cell if second_cell != Vector2i(-1, -1) else cell
+		)
+		input.on_hover_moved(finish_cell)
+		input._flush_hover_heavy_sync()
+		slots = input._final_commit_slots_for_click_at_cell(actor_id, finish_cell, Vector2.ZERO)
+		if _slots_invalid(slots):
+			return slots
+		input.call("_paint_intent_slots_before_commit", actor_id, slots)
+		if not director.commit_from_slots(actor_id, slots):
+			return {"invalid": "second pick rejected"}
 	input.call("_promote_intent_preview_after_commit")
 	director.flush_plan_refresh_signals_if_pending()
 	input.clear_qa_pointer_override()

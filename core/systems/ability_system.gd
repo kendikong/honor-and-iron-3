@@ -604,6 +604,19 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		target_unit = board.get_unit_by_id(action.target_unit_id)
 	else:
 		target_unit = board.get_unit_at(action.target_coord)
+	if _ability_has_modifier(actor, ability, &"ally_corpse"):
+		if (
+			target_unit == null
+			or target_unit.is_alive()
+			or target_unit.team != actor.team
+		):
+			target_unit = ally_corpse_at(board, actor, action.target_coord)
+		if (
+			target_unit == null
+			or target_unit.is_alive()
+			or target_unit.team != actor.team
+		):
+			return false
 	if (
 		target_unit == null
 		and _ability_has_modifier(actor, ability, &"target_after_move_adjacent")
@@ -723,6 +736,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			)
 		)
 		and not ability_has_post_attack_move(ability, actor)
+		and not ability_has_modifier(ability, &"relocate_target", actor)
+		and not ability_has_modifier(ability, &"relocate_subject_only", actor)
 	)
 	var requires_l_shape: bool = _ability_has_modifier(actor, ability, &"l_shape_move")
 	if requires_l_shape and action.target_coord != actor.position:
@@ -1286,6 +1301,21 @@ static func can_target_self(_actor: UnitState, ability: AbilityData) -> bool:
 	return (
 		active_targeting_flags(_actor, ability) & GameEnums.TargetingFlags.SELF
 	) != 0
+
+
+static func ally_corpse_at(board: BoardState, actor: UnitState, coord: Vector2i) -> UnitState:
+	if board == null or actor == null:
+		return null
+	for unit: UnitState in board.units:
+		if (
+			unit != null
+			and unit.position == coord
+			and not unit.is_alive()
+			and unit.team == actor.team
+			and unit.id != actor.id
+		):
+			return unit
+	return null
 
 
 static func target_passes_mode(actor: UnitState, ability: AbilityData, target: UnitState) -> bool:
@@ -4375,6 +4405,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				var corpse: UnitState = target
 				if corpse == null and action.target_unit_id >= 0:
 					corpse = board.get_unit_by_id(action.target_unit_id)
+				if corpse == null or corpse.is_alive() or corpse.team != actor.team:
+					corpse = ally_corpse_at(board, actor, tile_coord)
 				if (
 					corpse == null
 					or corpse.is_alive()
@@ -4480,6 +4512,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				}))
 		GameEnums.EffectType.ADD_STATUS:
 			if target != null:
+				if ability_has_modifier(action.ability, &"push_mitigation_zero", actor):
+					target.passive_flags["no_push_mitigation"] = true
 				if effect.modifiers.has("link_two_enemies"):
 					_link_enemy_pair(board, actor, action, target, effect, events)
 					return
@@ -4637,12 +4671,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							GameEnums.StatusType.WEAKEN,
 							effect.status_duration,
 							1,
-						))
-					if effect.modifiers.get("curse_of_weakness", false):
-						target.active_statuses.append(DataLibrary.make_status(
-							GameEnums.StatusType.STAT_DEBUFF_DEF,
-							effect.status_duration,
-							2,
 						))
 					target._recalculate_stats()
 					if (
@@ -4834,6 +4862,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					return
 				var max_steps := 2 if is_totem else 1
 				var relocate_dest := tile_coord
+				if action.module_target_coords.size() > 1:
+					relocate_dest = module_target_coord(action, 1)
 				if (
 					GridSystem.is_occupied(board, relocate_dest)
 					or GridSystem.is_wall(board, relocate_dest)
