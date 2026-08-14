@@ -1,10 +1,8 @@
 ﻿{
-    "generated":  "2026-08-14T04:43:07",
+    "generated":  "2026-08-14T08:44:56",
     "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  374,
-                   "MISSING":  4,
-                   "DATA-ONLY":  19
+                   "MATCH":  397
                },
     "rows":  [
                  {
@@ -625,7 +623,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Switcheroo",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -645,7 +643,7 @@
                  {
                      "cls":  "Rogue",
                      "skill":  "Death Mark",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Rogue",
@@ -805,7 +803,7 @@
                  {
                      "cls":  "Monk",
                      "skill":  "Hundred Fists",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Monk",
@@ -870,7 +868,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Terminal Velocity",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -885,7 +883,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Aerial Superiority",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -895,7 +893,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Beast\u0027s Instinct",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -920,7 +918,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Blood Scent (Beast)",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -945,12 +943,12 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Feral Drag",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Maul",
-                     "verdict":  "MISSING"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -960,7 +958,7 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Raking Claws",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -970,12 +968,12 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Intimidate",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Fetch",
-                     "verdict":  "MISSING"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -985,22 +983,22 @@
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Run Down (Beast)",
-                     "verdict":  "MISSING"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Thrash",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Defensive Posture",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
                      "skill":  "Airlift",
-                     "verdict":  "MISSING"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1040,7 +1038,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Elemental Master",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1140,7 +1138,7 @@
                  {
                      "cls":  "Mage",
                      "skill":  "Time Warp",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Mage",
@@ -1290,12 +1288,12 @@
                  {
                      "cls":  "Archer",
                      "skill":  "Pinning Arrow",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
                      "skill":  "Piercing Shot",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Archer",
@@ -1750,7 +1748,7 @@
                  {
                      "cls":  "Lancer",
                      "skill":  "Reach Advantage",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Lancer",
@@ -1950,7 +1948,7 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Tesla Barricade",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Engineer",
@@ -1990,7 +1988,7 @@
                  {
                      "cls":  "Engineer",
                      "skill":  "Barbed Wire",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  }
              ]
 }

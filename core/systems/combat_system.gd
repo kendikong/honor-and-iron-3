@@ -98,6 +98,9 @@ static func deal_collision_damage(
 		"pusher_id": pusher.id,
 	}))
 	deal_damage(board, victim, scaled, events, &"collision", false, false, pusher, _collision_source_label(pusher))
+	BeastRiderSystems.apply_collision_riders(
+		board, pusher, victim, events, bool(pusher.passive_flags.get("beast_drop_collision", false)),
+	)
 	
 	if pusher.has_passive(&"momentum_transfer"):
 		var heal_amt = 1
@@ -216,6 +219,7 @@ static func get_dynamic_defense(board: BoardState, unit: UnitState) -> int:
 				if owner != null and owner.team == unit.team and owner.has_passive(&"shield_generator"):
 					def += 1
 					break
+		def += EngineerSystems.barbed_wire_adjacent_defense(board, unit)
 		
 	if unit.has_passive(&"bulwark"):
 		var bonus = adjacent_units
@@ -645,6 +649,13 @@ static func deal_damage(
 		return
 
 	var was_alive := target.is_alive()
+
+	if not is_intercepted:
+		target = BeastRiderSystems.redirect_incoming_target(board, target)
+		if target.passive_flags.get("rogue_redirect_attacks_to_id", -1) >= 0:
+			var inherit := board.get_unit_by_id(int(target.passive_flags["rogue_redirect_attacks_to_id"]))
+			if inherit != null and inherit.is_alive():
+				target = inherit
 		
 	if target.has_status(GameEnums.StatusType.INVULNERABLE):
 		return
@@ -754,6 +765,14 @@ static func deal_damage(
 				CombatSystem.deal_damage(
 					board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
 				)
+				if int(ally.passive_flags.get("intercept_push_attacker", 0)) > 0 and attacker != null:
+					var intercept_push := PhysicsSystem.cardinal_from_to(ally.position, attacker.position)
+					if intercept_push != Vector2i.ZERO:
+						PhysicsSystem.push(
+							board, attacker, intercept_push,
+							int(ally.passive_flags["intercept_push_attacker"]),
+							events, ally,
+						)
 				if (
 					ally.passive_flags.get("counterattack_on_intercept", false)
 					and attacker != null
@@ -777,6 +796,7 @@ static func deal_damage(
 		mitigation = target.current_magic
 	mitigation += MercenarySystems.marked_defense_bonus(target, attacker)
 	mitigation += ShamanSystems.guard_melee_defense_bonus(board, target, attacker)
+	mitigation += BeastRiderSystems.grounded_melee_defense_bonus(board, target, attacker)
 	if attacker != null:
 		mitigation = maxi(
 			0,
@@ -836,6 +856,8 @@ static func deal_damage(
 		amount = maxi(0, amount)
 
 	var incoming := maxi(0, amount - fort - mitigation)
+	if incoming <= 0 and not is_intercepted:
+		BeastRiderSystems.on_zero_incoming_damage(board, target, events)
 	var mitigated_amount = amount - incoming
 	var phalanx_passive: PassiveData = null
 	for passive: PassiveData in target.active_passives:
@@ -1233,6 +1255,12 @@ static func try_resist_crowd_control(
 	if (
 		status_type == GameEnums.StatusType.ROOT
 		and target.passive_flags.get("root_immune_this_turn", false)
+	):
+		return true
+	if (
+		status_type == GameEnums.StatusType.ROOT
+		and source != null
+		and BeastRiderSystems.resists_grounded_root(target, source)
 	):
 		return true
 	if target.is_boss() and _is_hard_crowd_control(status_type):

@@ -70,6 +70,10 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		
 	# Damage + entry payload flow through the shared terrain/combat stages.
 	if dmg > 0:
+		var entry_mult := float(unit.passive_flags.get("trap_entry_damage_multiplier", 1.0))
+		if not is_equal_approx(entry_mult, 1.0):
+			dmg = floori(float(dmg) * entry_mult)
+			unit.passive_flags.erase("trap_entry_damage_multiplier")
 		var trap_mult := int(unit.passive_flags.get("trap_collision_damage_multiplier", 1))
 		if trap_mult > 1:
 			dmg *= trap_mult

@@ -994,7 +994,6 @@ func _on_preview_updated(_result: SimResult) -> void:
 		return
 	_schedule_plan_refresh_followup()
 	if _suppress_post_commit_hover_refresh:
-		_suppress_post_commit_hover_refresh = false
 		if _result != null and _director != null:
 			CombatPlanningPreview.apply_movement_result(
 				preview_state,
@@ -1042,6 +1041,8 @@ func _flush_hover_preview_refresh() -> void:
 
 func _refresh_hover_if_planning() -> void:
 	if dragging or not _is_planning() or _intent_state == null or _director == null:
+		return
+	if _suppress_post_commit_hover_refresh:
 		return
 	var cell: Vector2i = _intent_state.hover_coord
 	if _director.board == null or not _director.board.is_in_bounds(cell):
@@ -1120,6 +1121,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 		return
 	var planning_cell_changed: bool = cell != _last_planning_hover_cell
 	if planning_cell_changed:
+		_suppress_post_commit_hover_refresh = false
 		_last_planning_hover_cell = cell
 	if (
 		not dragging
@@ -1363,6 +1365,8 @@ func live_sim_matches_hover() -> bool:
 
 
 func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) -> bool:
+	if _suppress_post_commit_hover_refresh and not planning_cell_changed:
+		return false
 	if planning_cell_changed:
 		return true
 	if _ability_hover_settle_pending:

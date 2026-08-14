@@ -176,7 +176,7 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 	if module == null:
 		return false
 	var key_text: String = String(key)
-	if module.legacy_modifiers.has(key_text):
+	if module.legacy_modifiers.has(key) or module.legacy_modifiers.has(key_text):
 		return true
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
@@ -281,6 +281,7 @@ static func pass_through_modifiers_from_modules(modules: Array[AbilityModule]) -
 				push = keyword.push_amount
 		bulldoze = maxi(bulldoze, module_modifier_value(module, &"bulldoze", 0))
 		push = maxi(push, module_modifier_value(module, &"push", 0))
+		trample_atk = maxi(trample_atk, module_modifier_value(module, &"trample_atk", 0))
 		for layer: AbilityLayer in module.layers:
 			if (
 				layer != null

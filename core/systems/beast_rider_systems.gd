@@ -75,6 +75,8 @@ static func turn_end(_board: BoardState, unit: UnitState, _events: Array[SimEven
 	unit.passive_flags.erase("beast_split_attack_ready")
 	unit.passive_flags.erase("beast_post_move_defense")
 	unit.passive_flags.erase("beast_furious_charge_push")
+	unit.passive_flags.erase("beast_maul_used")
+	_drop_carried_ally(_board, unit, null, _events)
 
 
 static func can_post_move(unit: UnitState) -> bool:
@@ -129,6 +131,15 @@ static func can_use_extra(
 		var drag_range := int(passive_value(actor, &"grapple_range", &"upgraded_grapple_range", 1))
 		if GridSystem.manhattan(actor.position, action.target_coord) > drag_range:
 			return false
+	if modules.get("maul_dragged_enemy", false):
+		var dragged := board.get_unit_by_id(int(actor.passive_flags.get("beast_drag_target_id", -1)))
+		if dragged == null or not dragged.is_alive():
+			return false
+		if action.target_unit_id >= 0 and action.target_unit_id != dragged.id:
+			return false
+	if modules.get("fetch_item_or_corpse", false):
+		if not _fetch_has_legal_target(board, actor, action, modules):
+			return false
 	return true
 
 
@@ -181,6 +192,9 @@ static func after_standard_move(
 		))
 		if push_amount > 0:
 			unit.passive_flags["beast_furious_charge_push"] = push_amount
+	_grant_blood_scent_move(board, unit, move_start, unit.position)
+	_sync_carried_ally(board, unit)
+	_try_airlift_drop(board, unit, events)
 	events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
 		"beast_tiles_moved": int(unit.passive_flags.get("beast_tiles_moved", 0)),
 		"unit": unit.id,
@@ -226,6 +240,8 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 		result.movement -= int(passive_value(source, &"intimidating_presence_move", &"", 1))
 	if int(unit.passive_flags.get("beast_post_move_defense", 0)) > 0:
 		result.defense += int(unit.passive_flags["beast_post_move_defense"])
+	if int(unit.passive_flags.get("beast_airlift_next_strength", 0)) > 0:
+		result.strength += int(unit.passive_flags["beast_airlift_next_strength"])
 	return result
 
 
@@ -482,6 +498,20 @@ static func before_ability_execute(
 		if drag_target_id < 0:
 			drag_target_id = AbilitySystem.module_target_unit_id(action, 0)
 		actor.passive_flags["beast_drag_target_id"] = drag_target_id
+	if mods.get("run_down_pass_adjacent_push", 0) > 0:
+		actor.passive_flags["beast_dash_start"] = actor.position
+	if int(mods.get("pull_before_attack", 0)) > 0:
+		var claws_target := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
+		if claws_target == null and _board != null:
+			claws_target = _board.get_unit_at(action.target_coord)
+		if claws_target != null and claws_target.team != actor.team:
+			var pull_dir := PhysicsSystem.cardinal_from_to(claws_target.position, actor.position)
+			if pull_dir != Vector2i.ZERO:
+				var pull_events: Array[SimEvent] = []
+				PhysicsSystem.push(
+					_board, claws_target, pull_dir, int(mods["pull_before_attack"]),
+					pull_events, actor, action.ability.id,
+				)
 
 
 static func after_ability_execute(
@@ -500,6 +530,30 @@ static func after_ability_execute(
 		on_landing(board, actor, events)
 	if mods.get("drag_remaining_movement", false):
 		_drag_target_for_remaining_movement(board, actor, action.ability, events)
+	if mods.get("redirect_incoming_damage", false):
+		actor.passive_flags["beast_redirect_to_id"] = int(
+			actor.passive_flags.get("beast_drag_target_id", -1),
+		)
+	if mods.get("maul_dragged_enemy", false):
+		_resolve_maul_drop(board, actor, action, mods, events)
+	if mods.get("fetch_item_or_corpse", false):
+		_resolve_fetch(board, actor, action, mods, events)
+	if mods.get("airlift_pickup_step", 0) > 0:
+		_resolve_airlift(board, actor, action, mods, events)
+	if int(mods.get("run_down_pass_adjacent_push", 0)) > 0:
+		_resolve_run_down_pass(board, actor, action, mods, events)
+	if int(mods.get("intercept_push_attacker", 0)) > 0:
+		actor.passive_flags["intercept_push_attacker"] = int(mods["intercept_push_attacker"])
+		var ward := board.get_unit_by_id(AbilitySystem.module_target_unit_id(action, 1))
+		if ward == null:
+			for dir: Vector2i in GridSystem.DIRECTIONS:
+				var adjacent := board.get_unit_at(actor.position + dir)
+				if adjacent != null and adjacent.team == actor.team and adjacent.id != actor.id:
+					ward = adjacent
+					break
+		if ward != null:
+			actor.passive_flags["intercept_ward_id"] = ward.id
+			actor.passive_flags["intercept_range"] = 1
 
 
 static func resolve_reposition_destination(
@@ -618,3 +672,363 @@ static func _weapon_might(unit: UnitState) -> int:
 	if unit == null or unit.definition == null or unit.definition.equipped_weapon == null:
 		return 0
 	return unit.definition.equipped_weapon.might
+
+
+static func grounded_melee_defense_bonus(
+	_board: BoardState,
+	target: UnitState,
+	attacker: UnitState,
+) -> int:
+	if target == null or attacker == null:
+		return 0
+	if not has_passive_modifier(target, &"grounded_melee_defense"):
+		return 0
+	if attacker.has_status(GameEnums.StatusType.AIRBORNE):
+		return 0
+	if GridSystem.manhattan(target.position, attacker.position) > 1:
+		return 0
+	return int(passive_value(target, &"grounded_melee_defense", &"", 2))
+
+
+static func resists_grounded_root(target: UnitState, attacker: UnitState) -> bool:
+	if target == null or attacker == null:
+		return false
+	if not target.is_passive_upgraded(&"aerial_superiority"):
+		return false
+	if not has_passive_modifier(target, &"upgraded_grounded_root_immunity"):
+		return false
+	return not attacker.has_status(GameEnums.StatusType.AIRBORNE)
+
+
+static func apply_collision_riders(
+	board: BoardState,
+	pusher: UnitState,
+	victim: UnitState,
+	events: Array[SimEvent],
+	from_drop: bool,
+) -> void:
+	if pusher == null or victim == null:
+		return
+	if has_passive_modifier(pusher, &"collision_weapon_true_damage"):
+		var extra := _weapon_might(pusher)
+		if extra > 0:
+			CombatSystem.deal_damage(
+				board, victim, extra, events, &"true", true, false, pusher, "Terminal Velocity", extra,
+			)
+	if has_passive_modifier(pusher, &"collision_vulnerable"):
+		if not CombatSystem.try_resist_crowd_control(victim, GameEnums.StatusType.VULNERABLE, events, board, pusher):
+			victim.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1))
+			victim._recalculate_stats(board)
+	if from_drop and pusher.is_passive_upgraded(&"terminal_velocity"):
+		if not CombatSystem.try_resist_crowd_control(victim, GameEnums.StatusType.STAGGER, events, board, pusher):
+			victim.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+			victim._recalculate_stats(board)
+
+
+static func on_zero_incoming_damage(board: BoardState, defender: UnitState, events: Array[SimEvent]) -> void:
+	if defender == null or not has_passive_modifier(defender, &"miss_zero_damage_strength"):
+		return
+	defender.active_statuses.append(DataLibrary.make_status(
+		GameEnums.StatusType.STAT_BUFF_STR, 1,
+		int(passive_value(defender, &"miss_zero_damage_strength", &"", 1)),
+	))
+	defender.ability.points_left += int(passive_value(defender, &"miss_zero_damage_ap", &"", 1))
+	if defender.is_passive_upgraded(&"beasts_instinct"):
+		CombatSystem.add_armor(
+			board, defender,
+			int(passive_value(defender, &"upgraded_miss_zero_damage_shield", &"", 1)),
+			events,
+		)
+	defender._recalculate_stats(board)
+
+
+static func redirect_incoming_target(board: BoardState, target: UnitState) -> UnitState:
+	if board == null or target == null:
+		return target
+	var redirect_id := int(target.passive_flags.get("beast_redirect_to_id", -1))
+	if redirect_id < 0:
+		return target
+	var redirected := board.get_unit_by_id(redirect_id)
+	if redirected == null or not redirected.is_alive():
+		return target
+	return redirected
+
+
+static func _grant_blood_scent_move(
+	board: BoardState,
+	unit: UnitState,
+	from: Vector2i,
+	to: Vector2i,
+) -> void:
+	if not has_passive_modifier(unit, &"blood_scent_pierce"):
+		return
+	var bonus := int(passive_value(unit, &"blood_scent_move", &"upgraded_blood_scent_move", 0))
+	if bonus <= 0:
+		return
+	var before := _nearest_bleed_distance(board, unit, from)
+	var after := _nearest_bleed_distance(board, unit, to)
+	if before < 0 or after < 0 or after >= before:
+		return
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, bonus))
+	unit._recalculate_stats(board)
+	unit.movement.points_left += bonus
+
+
+static func _nearest_bleed_distance(board: BoardState, actor: UnitState, from: Vector2i) -> int:
+	var best := -1
+	for unit: UnitState in board.units:
+		if unit == null or not unit.is_alive() or unit.team == actor.team:
+			continue
+		if not _is_bleeding(unit):
+			continue
+		var dist := GridSystem.manhattan(from, unit.position)
+		if best < 0 or dist < best:
+			best = dist
+	return best
+
+
+static func _fetch_has_legal_target(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	mods: Dictionary,
+) -> bool:
+	var coord := action.target_coord
+	if board.items.find(coord) >= 0:
+		return true
+	var occupant := board.get_unit_at(coord)
+	if occupant != null and not occupant.is_alive():
+		return true
+	if int(mods.get("pull_light_ally", 0)) > 0:
+		var ally := board.get_unit_by_id(action.target_unit_id)
+		if ally == null:
+			ally = occupant
+		if (
+			ally != null
+			and ally.team == actor.team
+			and ally.is_alive()
+			and int(ally.health.max_hp / 5) <= actor.current_strength
+		):
+			return true
+	return false
+
+
+static func _first_empty_adjacent(board: BoardState, origin: Vector2i) -> Vector2i:
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		var dest := origin + dir
+		if (
+			GridSystem.is_in_bounds(board, dest)
+			and not GridSystem.is_occupied(board, dest)
+			and not GridSystem.is_wall(board, dest)
+		):
+			return dest
+	return Vector2i(-1, -1)
+
+
+static func _resolve_maul_drop(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	mods: Dictionary,
+	events: Array[SimEvent],
+) -> void:
+	var dragged := board.get_unit_by_id(int(actor.passive_flags.get("beast_drag_target_id", -1)))
+	if dragged == null:
+		dragged = board.get_unit_by_id(action.target_unit_id)
+	if dragged == null:
+		return
+	var dest := _first_empty_adjacent(board, actor.position)
+	if dest == Vector2i(-1, -1):
+		dest = _first_empty_adjacent(board, dragged.position)
+	if dest == Vector2i(-1, -1):
+		return
+	GridSystem.set_occupant(board, dragged.position, -1)
+	dragged.position = dest
+	GridSystem.set_occupant(board, dest, dragged.id)
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"unit": dragged.id, "to": dest, "maul_drop": true,
+	}))
+	actor.passive_flags.erase("beast_drag_target_id")
+	var tile := board.get_tile(dest)
+	if (
+		float(mods.get("drop_trap_damage_multiplier", 0.0)) > 0.0
+		and tile != null
+		and tile.definition != null
+		and tile.definition.is_trap
+	):
+		actor.passive_flags["trap_collision_damage_multiplier"] = int(
+			mods["drop_trap_damage_multiplier"],
+		)
+		dragged.passive_flags["trap_entry_damage_multiplier"] = float(
+			mods["drop_trap_damage_multiplier"],
+		)
+		TerrainSystem.apply_entry_at(board, dragged, dest, events)
+
+
+static func _resolve_fetch(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	mods: Dictionary,
+	events: Array[SimEvent],
+) -> void:
+	var dest := _first_empty_adjacent(board, actor.position)
+	if dest == Vector2i(-1, -1):
+		return
+	var item_idx := board.items.find(action.target_coord)
+	if item_idx >= 0:
+		board.items[item_idx] = dest
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+			"item": true, "from": action.target_coord, "to": dest,
+		}))
+		return
+	var occupant := board.get_unit_at(action.target_coord)
+	if occupant != null and not occupant.is_alive():
+		GridSystem.set_occupant(board, occupant.position, -1)
+		occupant.position = dest
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+			"unit": occupant.id, "to": dest, "fetch_corpse": true,
+		}))
+		return
+	if int(mods.get("pull_light_ally", 0)) > 0:
+		var ally := board.get_unit_by_id(action.target_unit_id)
+		if ally == null:
+			ally = occupant
+		if ally != null and ally.team == actor.team and ally.is_alive():
+			var pull_dir := PhysicsSystem.cardinal_from_to(ally.position, actor.position)
+			if pull_dir != Vector2i.ZERO:
+				PhysicsSystem.push(
+					board, ally, pull_dir, int(mods["pull_light_ally"]),
+					events, actor, action.ability.id,
+				)
+
+
+static func _resolve_airlift(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	mods: Dictionary,
+	events: Array[SimEvent],
+) -> void:
+	var ally := board.get_unit_by_id(action.target_unit_id)
+	if ally == null:
+		ally = board.get_unit_at(action.target_coord)
+	if ally == null or ally.team != actor.team or ally.id == actor.id:
+		return
+	GridSystem.set_occupant(board, ally.position, -1)
+	ally.position = actor.position
+	ally.passive_flags["beast_carried_by"] = actor.id
+	ally.passive_flags["airlift_cannot_act"] = true
+	actor.passive_flags["beast_carried_ally_id"] = ally.id
+	var drop_range := int(mods.get("airlift_drop_step", 3))
+	var drop := AbilitySystem.module_target_coord(action, 1)
+	if drop == Vector2i.ZERO or drop == action.target_coord:
+		drop = _first_empty_adjacent(board, actor.position)
+	if (
+		drop != Vector2i(-1, -1)
+		and GridSystem.manhattan(actor.position, drop) <= drop_range
+		and GridSystem.is_in_bounds(board, drop)
+		and not GridSystem.is_occupied(board, drop)
+		and not GridSystem.is_wall(board, drop)
+	):
+		_place_carried_ally(board, actor, ally, drop, events)
+	if int(mods.get("airlift_ally_attack_strength", 0)) > 0:
+		ally.passive_flags["beast_airlift_next_strength"] = int(mods["airlift_ally_attack_strength"])
+	actor.passive_flags["beast_drop_collision"] = true
+
+
+static func _sync_carried_ally(board: BoardState, rider: UnitState) -> void:
+	var ally := board.get_unit_by_id(int(rider.passive_flags.get("beast_carried_ally_id", -1)))
+	if ally == null or not ally.is_alive():
+		return
+	ally.position = rider.position
+
+
+static func _try_airlift_drop(board: BoardState, rider: UnitState, events: Array[SimEvent]) -> void:
+	var drop: Vector2i = rider.passive_flags.get("beast_airlift_drop_coord", Vector2i(-1, -1))
+	if drop == Vector2i(-1, -1):
+		return
+	var ally := board.get_unit_by_id(int(rider.passive_flags.get("beast_carried_ally_id", -1)))
+	if ally == null:
+		return
+	_place_carried_ally(board, rider, ally, drop, events)
+
+
+static func _place_carried_ally(
+	board: BoardState,
+	rider: UnitState,
+	ally: UnitState,
+	drop: Vector2i,
+	events: Array[SimEvent],
+) -> void:
+	ally.position = drop
+	GridSystem.set_occupant(board, drop, ally.id)
+	ally.passive_flags.erase("beast_carried_by")
+	ally.passive_flags.erase("airlift_cannot_act")
+	rider.passive_flags.erase("beast_carried_ally_id")
+	rider.passive_flags.erase("beast_airlift_drop_coord")
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"unit": ally.id, "to": drop, "airlift_drop": true,
+	}))
+
+
+static func _drop_carried_ally(
+	board: BoardState,
+	rider: UnitState,
+	preferred: Variant,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or rider == null:
+		return
+	var ally := board.get_unit_by_id(int(rider.passive_flags.get("beast_carried_ally_id", -1)))
+	if ally == null:
+		return
+	var drop := _first_empty_adjacent(board, rider.position)
+	if preferred is Vector2i and preferred != Vector2i(-1, -1):
+		drop = preferred
+	if drop == Vector2i(-1, -1):
+		return
+	_place_carried_ally(board, rider, ally, drop, events)
+
+
+static func _resolve_run_down_pass(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	mods: Dictionary,
+	events: Array[SimEvent],
+) -> void:
+	var start: Vector2i = actor.passive_flags.get("beast_dash_start", actor.position)
+	var dest := action.target_coord
+	var dir := PhysicsSystem.straight_line_dir(start, dest)
+	var steps := PhysicsSystem.straight_line_distance(start, dest)
+	if dir == Vector2i.ZERO or steps <= 0:
+		return
+	var push_amt := int(mods.get("run_down_pass_adjacent_push", 1))
+	var pushed_ids: Dictionary = {}
+	for step_i: int in range(1, steps + 1):
+		var cell := start + dir * step_i
+		for side: Vector2i in GridSystem.DIRECTIONS:
+			var adj := cell + side
+			var enemy := board.get_unit_at(adj)
+			if (
+				enemy == null
+				or not enemy.is_alive()
+				or enemy.team == actor.team
+				or pushed_ids.has(enemy.id)
+			):
+				continue
+			if PhysicsSystem.straight_line_dir(start, enemy.position) == dir:
+				continue
+			pushed_ids[enemy.id] = true
+			var away := PhysicsSystem.cardinal_from_to(cell, enemy.position)
+			if away == Vector2i.ZERO:
+				away = side
+			PhysicsSystem.push(board, enemy, away, push_amt, events, actor, action.ability.id)
+			if mods.get("run_down_push_bleed_weapon", false):
+				enemy.active_statuses.append(DataLibrary.make_status(
+					GameEnums.StatusType.BLEED, 1, _weapon_might(actor),
+				))
+				enemy._recalculate_stats(board)
+	actor.passive_flags.erase("beast_dash_start")
+

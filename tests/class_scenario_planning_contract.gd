@@ -150,6 +150,15 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			enemy_pos = Vector2i(3, 3)
 			commit_cell = Vector2i(3, 3)
 			select_only = true
+		&"beast_maul":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+		&"beast_airlift":
+			actor_pos = Vector2i(2, 3)
+			ally_pos = Vector2i(3, 3)
+			commit_cell = ally_pos
+			enemy_pos = Vector2i(-1, -1)
 		&"beast_savage_bite":
 			actor_pos = Vector2i(2, 3)
 			enemy_pos = Vector2i(3, 3)
@@ -300,12 +309,26 @@ static func _apply_engineer_planning_setup(fix: Dictionary, factory_id: StringNa
 
 
 static func _apply_beast_planning_setup(fix: Dictionary, factory_id: StringName) -> void:
-	if factory_id not in [&"beast_savage_bite", &"beast_bestial_roar"]:
-		return
 	var enemy: UnitState = fix.get("enemy")
-	if enemy == null:
-		return
-	enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+	var actor: UnitState = fix.get("actor")
+	if factory_id in [&"beast_savage_bite", &"beast_bestial_roar"] and enemy != null:
+		enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+	if factory_id == &"beast_maul" and enemy != null:
+		var director: CombatDirector = fix.get("director")
+		var boards: Array = [fix.board]
+		if director != null:
+			if director.board != null:
+				boards.append(director.board)
+			if director.base_board != null:
+				boards.append(director.base_board)
+			if director.projected_state != null:
+				boards.append(director.projected_state)
+		for stamped: Variant in boards:
+			if stamped == null:
+				continue
+			var rider: UnitState = (stamped as BoardState).get_unit_by_id(1)
+			if rider != null:
+				rider.passive_flags["beast_drag_target_id"] = enemy.id
 
 
 static func _class_id_from_factory(factory_id: StringName) -> StringName:

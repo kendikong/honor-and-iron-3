@@ -263,6 +263,13 @@ func _recalculate_stats(board: BoardState = null) -> void:
 				if tile.definition.id in [&"fire", &"frozen", &"water", &"steam", &"oil"]:
 					elemental_tiles += 1
 			stat_mag += elemental_tiles * int(passive.modifiers["elemental_master_magic"])
+			if (
+				is_passive_upgraded(passive.id)
+				and elemental_tiles >= int(
+					passive.modifiers.get("upgraded_elemental_master_def_threshold", 999)
+				)
+			):
+				stat_def += int(passive.modifiers.get("upgraded_elemental_master_def", 1))
 		if passive.modifiers.has("mana_well_magic"):
 			stat_mag += int(passive_flags.get("mana_well_magic_bonus", 0))
 		var current_tile: TileState = board.get_tile(position) if board != null else null

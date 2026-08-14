@@ -209,6 +209,23 @@ static func active_target_shape_size(
 	return ability.target_shape_size
 
 
+static func _ability_affected_tiles(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	target: Vector2i,
+	shape: GameEnums.TargetShape,
+	shape_size: int,
+) -> Array[Vector2i]:
+	if (
+		shape == GameEnums.TargetShape.LINE
+		and _ability_has_modifier(actor, ability, &"bounce_walls_45")
+	):
+		return GridSystem.line_with_wall_bounce_45(board, origin, target, shape_size)
+	return GridSystem.get_affected_tiles(board, origin, target, shape, shape_size)
+
+
 static func active_range_tiles(
 	actor: UnitState,
 	ability: AbilityData,
@@ -879,6 +896,11 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 			return 0
 	if _caltrop_expert_waives(actor, ability):
 		return 0
+	if (
+		actor.passive_flags.get("rogue_free_mark_refresh", false)
+		and _ability_has_modifier(actor, ability, &"on_kill_refresh_mark_zero_ap")
+	):
+		return 0
 	if active_modules_for(actor, ability).is_empty():
 		for eff: EffectData in legacy_effects_for(actor, ability):
 			if (
@@ -1112,6 +1134,24 @@ static func purge_unit(target: UnitState, events: Array[SimEvent]) -> void:
 			}))
 	target.armor = 0
 	target._recalculate_stats()
+
+
+static func _apply_cooldown_reduction(unit: UnitState, amount: int) -> void:
+	if unit == null or amount <= 0:
+		return
+	var cooldowns: Dictionary = unit.passive_flags.get("ability_cooldowns", {})
+	for key: Variant in cooldowns.keys():
+		cooldowns[key] = maxi(0, int(cooldowns[key]) - amount)
+	unit.passive_flags["ability_cooldowns"] = cooldowns
+	var used_keys: Array = []
+	for flag_key: Variant in unit.passive_flags.keys():
+		if String(flag_key).begins_with("ability_used_once:"):
+			used_keys.append(flag_key)
+	for flag_key: Variant in used_keys:
+		unit.passive_flags.erase(flag_key)
+	unit.passive_flags["cooldown_reduction"] = int(
+		unit.passive_flags.get("cooldown_reduction", 0)
+	) + amount
 
 
 static func cleanse_unit(target: UnitState, events: Array[SimEvent]) -> int:
@@ -1350,9 +1390,14 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 				continue
 			if module.primary_type in [
 				GameEnums.EffectType.DASH,
-				GameEnums.EffectType.TELEPORT_CASTER,
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			]:
+				return true
+			if (
+				module.primary_type == GameEnums.EffectType.TELEPORT_CASTER
+				and not bool(module.legacy_modifiers.get("airlift_keep_caster", false))
+				and not AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
+			):
 				return true
 			if (
 				module.primary_type == GameEnums.EffectType.MOVE
@@ -1365,9 +1410,13 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 	for eff: EffectData in legacy_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
-			GameEnums.EffectType.TELEPORT_CASTER,
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
+			return true
+		if (
+			eff.type == GameEnums.EffectType.TELEPORT_CASTER
+			and not eff.modifiers.get("airlift_keep_caster", false)
+		):
 			return true
 		if (
 			eff.type == GameEnums.EffectType.MOVE
@@ -1426,9 +1475,14 @@ static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> 
 			if module != null and module.primary_type in [
 				GameEnums.EffectType.DASH,
 				GameEnums.EffectType.MOVE,
-				GameEnums.EffectType.TELEPORT_CASTER,
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			]:
+				return true
+			if (
+				module != null
+				and module.primary_type == GameEnums.EffectType.TELEPORT_CASTER
+				and not AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
+			):
 				return true
 		return false
 	for eff: EffectData in legacy_effects_for(actor, ability):
@@ -2421,6 +2475,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			):
 				actor.passive_flags["predatory_free_move_pending"] = true
 		
+	var free_mark_refresh: bool = (
+		bool(actor.passive_flags.get("rogue_free_mark_refresh", false))
+		and _ability_has_modifier(actor, ability, &"on_kill_refresh_mark_zero_ap")
+	)
 	if not wild_magic_repeat and not shaman_echo_repeat:
 		_spend_ability_cost(actor, ability, board, events)
 	if not wild_magic_repeat and not shaman_echo_repeat and _ability_has_modifier(actor, ability, &"limit_once_per_turn"):
@@ -2430,9 +2488,14 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		and not shaman_echo_repeat
 		and not actor.has_unlimited_training_actions()
 		and ability.consumes_action_slot()
+		and not _ability_has_modifier(actor, ability, &"does_not_consume_action_slot")
 		and not _caltrop_expert_waives(actor, ability)
+		and not free_mark_refresh
 	):
 		actor.turn_action_used = true
+	if free_mark_refresh:
+		actor.passive_flags.erase("rogue_free_mark_refresh")
+		actor.turn_action_used = false
 	if _caltrop_expert_waives(actor, ability):
 		actor.passive_flags["caltrop_expert_used"] = true
 
@@ -2476,7 +2539,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if _is_spell(action.ability) and shape != GameEnums.TargetShape.SINGLE:
 		shape_size += int(actor.passive_flags.get("mage_spell_shape_bonus", 0))
 			
-	var affected_tiles := GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
+	var affected_tiles := _ability_affected_tiles(
+		board, actor, action.ability, actor.position, target_coord, shape, shape_size,
+	)
 	
 	var pres_anim: int = resolve_presentation_anim(action.ability, actor)
 	BeastRiderSystems.before_ability_execute(board, actor, action)
@@ -2606,7 +2671,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		BeastRiderSystems.after_skill_move(board, actor, ability, events)
 			
 		# Recompute affected tiles after movement since actor position and facing may have changed
-		affected_tiles = GridSystem.get_affected_tiles(board, actor.position, target_coord, shape, shape_size)
+		affected_tiles = _ability_affected_tiles(
+			board, actor, ability, actor.position, target_coord, shape, shape_size,
+		)
 
 	var heal_per_target_hit = false
 	var buff_per_object = false
@@ -2736,12 +2803,23 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					gated_effects,
 					effect_module.max_range,
 				)
-				affected_tiles = GridSystem.get_affected_tiles(
-					board, actor.position, effect_target_coord, shape, shape_size,
+				affected_tiles = _ability_affected_tiles(
+					board, actor, ability, actor.position, effect_target_coord, shape, shape_size,
 				)
 			effect_index += 1
 			continue
 		if effect.type == GameEnums.EffectType.TELEPORT_CASTER:
+			var keep_caster: bool = (
+				bool(effect.modifiers.get("airlift_keep_caster", false))
+				or (
+					effect_module != null
+					and AbilityModuleBridge.module_has_modifier(effect_module, &"airlift_keep_caster")
+				)
+				or _ability_has_modifier(actor, ability, &"airlift_keep_caster")
+			)
+			if keep_caster:
+				effect_index += 1
+				continue
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			if effect.modifiers.has("paired_ally_charge"):
@@ -3472,6 +3550,14 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					):
 						actor.passive_flags["next_attack_pierce"] = true
 			if (
+				target != null
+				and actor.is_ability_upgraded(action.ability.id)
+				and int(effect.modifiers.get("bonus_per_target_status", 0)) > 0
+			):
+				base_amt += target.active_statuses.size() * int(
+					effect.modifiers["bonus_per_target_status"],
+				)
+			if (
 				effect.modifiers.has("bonus_atk_vs_fear_or_lower_movement")
 				and target != null
 				and (
@@ -3663,6 +3749,21 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							debuff,
 						)
 						target_def = maxi(0, target_def - debuff)
+					if (
+						GridSystem.manhattan(actor.position, target.position) == 2
+						and actor.is_passive_upgraded(passive.id)
+						and passive.modifiers.get("upgraded_range_two_def_debuff_weapon", false)
+					):
+						var weapon_debuff := 1
+						if actor.definition != null and actor.definition.equipped_weapon != null:
+							weapon_debuff = actor.definition.equipped_weapon.might
+						target.active_statuses.append(
+							DataLibrary.make_status(
+								GameEnums.StatusType.STAT_DEBUFF_DEF, 1, weapon_debuff,
+							)
+						)
+						target._recalculate_stats(board)
+						target_def = maxi(0, target.current_defense)
 					if (
 						GridSystem.manhattan(actor.position, target.position)
 						>= int(passive.modifiers.get("long_shot_pierce_distance", 999))
@@ -3907,7 +4008,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			)
 			if effect.modifiers.has("bounce_count") and target != null:
 				_resolve_chain_lightning(board, actor, target, effect, events)
-			if effect.modifiers.has("repeat_hits") and target != null:
+			if (
+				(
+					effect.modifiers.has("repeat_hits")
+					or effect.modifiers.has("hit_count")
+				)
+				and target != null
+			):
 				_resolve_repeat_hits(board, actor, target, effect, events)
 			if (
 				target != null
@@ -4584,8 +4691,20 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					
 				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events, board, actor):
 					return
+				if (
+					effect.status_type == GameEnums.StatusType.ROOT
+					and BeastRiderSystems.resists_grounded_root(target, actor)
+				):
+					return
 				if effect.modifiers.get("from_behind_only", false) and not _is_backstab(actor, target):
 					return
+				if (
+					effect.modifiers.get("lower_hp_only", false)
+					and target.health.current_hp >= actor.health.current_hp
+				):
+					return
+				if effect.modifiers.get("purge_buffs", false):
+					purge_unit(target, events)
 				if effect.modifiers.get("density_shift", false):
 					if target.team == actor.team:
 						target.active_statuses.append(
@@ -4621,6 +4740,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if effect.modifiers.has("weapon_scaled"):
 					if actor.definition != null and actor.definition.equipped_weapon != null:
 						stat_val = actor.definition.equipped_weapon.might
+				if effect.modifiers.get("bleed_weapon", false):
+					if actor.definition != null and actor.definition.equipped_weapon != null:
+						stat_val = actor.definition.equipped_weapon.might
+					else:
+						stat_val = 1
 				if effect.scaling_stat == GameEnums.StatType.DEFENSE:
 					stat_val = effect.amount + actor.current_defense
 				if effect.modifiers.has("target_def_set"):
@@ -4632,9 +4756,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							target.ability.points_left + int(effect.modifiers["grant_ap"]),
 						)
 					if effect.modifiers.has("cooldown_reduction"):
-						target.passive_flags["cooldown_reduction"] = int(
-							target.passive_flags.get("cooldown_reduction", 0)
-						) + int(effect.modifiers["cooldown_reduction"])
+						_apply_cooldown_reduction(
+							target, int(effect.modifiers["cooldown_reduction"]),
+						)
 					return
 				var delayed_move := effect.modifiers.has("next_turn") or effect.modifiers.has(
 					"next_turn_max_move"
@@ -4883,6 +5007,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 		GameEnums.EffectType.TELEPORT_CASTER:
 			if effect.modifiers.get("reposition_opposite_side", false):
+				return
+			if (
+				effect.modifiers.get("airlift_keep_caster", false)
+				or _ability_has_modifier(actor, action.ability, &"airlift_keep_caster")
+			):
 				return
 			var destination := tile_coord
 			if effect.modifiers.get("land_opposite_target", false):
@@ -5649,7 +5778,9 @@ static func _resolve_repeat_hits(
 	effect: EffectData,
 	events: Array[SimEvent],
 ) -> void:
-	var hit_count := int(effect.modifiers.get("repeat_hits", 1))
+	var hit_count := int(effect.modifiers.get(
+		"repeat_hits", effect.modifiers.get("hit_count", 1),
+	))
 	for _hit: int in range(1, hit_count):
 		var raw := CombatSystem.calculate_scaled_damage(
 			actor,

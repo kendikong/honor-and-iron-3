@@ -124,8 +124,10 @@ func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
 
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
-		&"beast_reposition", &"beast_feral_drag", &"beast_maul", &"beast_fetch":
-			return [Vector2i(3, 3)]
+		&"beast_reposition", &"beast_feral_drag", &"beast_maul":
+			return [Vector2i(5, 5)]
+		&"beast_fetch":
+			return [Vector2i(6, 5)]
 		&"beast_pounce", &"beast_savage_bite", &"beast_thrash":
 			return [Vector2i(5, 5)]
 		&"beast_bestial_roar", &"beast_raking_claws":
@@ -142,7 +144,7 @@ func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 
 func _actor_cell_for(ability_id: StringName) -> Vector2i:
 	match ability_id:
-		&"beast_reposition", &"beast_pounce", &"beast_run_down":
+		&"beast_pounce", &"beast_run_down":
 			return Vector2i(2, 3)
 		&"beast_airlift":
 			return Vector2i(4, 5)
@@ -176,6 +178,14 @@ func _prepare_live_board(
 			var enemy := board.get_unit_at(target)
 			if enemy != null:
 				enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+		&"beast_maul":
+			var dragged := board.get_unit_at(target)
+			var rider := board.get_unit_at(actor_cell)
+			if dragged != null and rider != null:
+				rider.passive_flags["beast_drag_target_id"] = dragged.id
+		&"beast_fetch":
+			if board.items.find(target) < 0:
+				board.items.append(target)
 		_:
 			pass
 
@@ -206,7 +216,7 @@ func _target_for(
 		return actor_cell
 	match ability_id:
 		&"beast_reposition":
-			return Vector2i(3, 3)
+			return Vector2i(5, 5)
 		&"beast_pounce":
 			return Vector2i(5, 5)
 		&"beast_run_down":
@@ -217,6 +227,10 @@ func _target_for(
 			return Vector2i(6, 5)
 		&"beast_raking_claws":
 			return Vector2i(5, 5)
+		&"beast_maul":
+			return Vector2i(5, 5)
+		&"beast_fetch":
+			return Vector2i(6, 5)
 		_:
 			return actor_cell + Vector2i(2, 0)
 

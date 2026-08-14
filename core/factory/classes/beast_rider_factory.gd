@@ -317,14 +317,19 @@ static func _maul() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	hit.legacy_modifiers = {"maul_dragged_enemy": true, "drop_adjacent": true}
+	hit.legacy_modifiers = {
+		"maul_dragged_enemy": true, "drop_adjacent": true,
+		"does_not_consume_action_slot": true, "limit_once_per_turn": true,
+	}
 	var upgraded := _clone([hit])
 	upgraded[0].legacy_modifiers["drop_trap_damage_multiplier"] = 2.0
-	return _ability(
+	var ability := _ability(
 		&"beast_maul", "Maul", [hit], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
 		"Drop the dragged enemy adjacent; dropping it on a trap doubles trap damage.",
 	)
+	ability.action_point_cost = 0
+	return ability
 
 
 static func _bestial_roar() -> AbilityData:
@@ -393,7 +398,7 @@ static func _intimidate() -> AbilityData:
 		GameEnums.EffectType.ADD_STATUS, 1, 0, 0,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE
 			| GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.AOE_DIAMOND, 2,
+		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	stagger.status_type = GameEnums.StatusType.STAGGER
 	stagger.status_duration = 1
@@ -450,6 +455,7 @@ static func _run_down() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	dash.legacy_modifiers["run_down_pass_adjacent_push"] = 1
+	dash.legacy_modifiers["trample_atk"] = 2
 	var upgraded := _clone([dash])
 	upgraded[0].legacy_modifiers["run_down_push_bleed_weapon"] = true
 	return _ability(
@@ -467,6 +473,7 @@ static func _thrash() -> AbilityData:
 		GameEnums.StatType.PHYSICAL,
 	)
 	thrash.legacy_modifiers["hit_count"] = 3
+	thrash.legacy_modifiers["repeat_hits"] = 3
 	var upgraded := _clone([thrash])
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
 	bleed.modifiers["bleed_weapon"] = true
@@ -501,9 +508,11 @@ static func _airlift() -> AbilityData:
 		GameEnums.EffectType.TELEPORT_CASTER, 1, 1, 1,
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.ALLY_STEP,
+		GameEnums.MotionMode.NONE,
 	)
-	lift.legacy_modifiers = {"airlift_pickup_step": 1, "airlift_drop_step": 3}
+	lift.legacy_modifiers = {
+		"airlift_pickup_step": 1, "airlift_drop_step": 3, "airlift_keep_caster": true,
+	}
 	var upgraded := _clone([lift])
 	upgraded[0].legacy_modifiers["airlift_ally_attack_strength"] = 1
 	return _ability(

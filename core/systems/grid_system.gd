@@ -130,3 +130,44 @@ static func get_affected_tiles(board: BoardState, origin: Vector2i, target: Vect
 	var fallback: Array[Vector2i] = []
 	fallback.append(target)
 	return fallback
+
+
+static func line_with_wall_bounce_45(
+	board: BoardState,
+	origin: Vector2i,
+	target: Vector2i,
+	size: int,
+) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	var dir := PhysicsSystem.cardinal_from_to(origin, target)
+	if dir == Vector2i.ZERO or size <= 0:
+		return tiles
+	var pos := origin
+	var remaining := size
+	while remaining > 0:
+		var next := pos + dir
+		if GridSystem.is_wall(board, next) or not GridSystem.is_in_bounds(board, next):
+			var perp := Vector2i(-dir.y, dir.x)
+			var bounce_a := dir + perp
+			var bounce_b := dir - perp
+			var choice := Vector2i.ZERO
+			if (
+				GridSystem.is_in_bounds(board, pos + bounce_a)
+				and not GridSystem.is_wall(board, pos + bounce_a)
+			):
+				choice = bounce_a
+			elif (
+				GridSystem.is_in_bounds(board, pos + bounce_b)
+				and not GridSystem.is_wall(board, pos + bounce_b)
+			):
+				choice = bounce_b
+			if choice == Vector2i.ZERO:
+				break
+			dir = Vector2i(signi(choice.x), signi(choice.y))
+			next = pos + dir
+			if GridSystem.is_wall(board, next) or not GridSystem.is_in_bounds(board, next):
+				break
+		tiles.append(next)
+		pos = next
+		remaining -= 1
+	return tiles

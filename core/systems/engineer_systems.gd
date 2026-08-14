@@ -50,6 +50,20 @@ static func has_ability_modifier(
 	return false
 
 
+static func barbed_wire_adjacent_defense(board: BoardState, unit: UnitState) -> int:
+	if board == null or unit == null:
+		return 0
+	var bonus := 0
+	for direction: Vector2i in GridSystem.DIRECTIONS:
+		var coord := unit.position + direction
+		var tile := board.get_tile(coord)
+		if tile == null or tile.definition == null or tile.definition.id != &"barbed_wire":
+			continue
+		var payload: Dictionary = board.terrain_payloads.get(coord, {})
+		bonus = maxi(bonus, int(payload.get("adjacent_defense_bonus", 0)))
+	return bonus
+
+
 static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> bool:
 	if actor == null or ability == null:
 		return false
@@ -939,6 +953,17 @@ static func _detonate_device(
 		CombatSystem.deal_damage(
 			board, victim, 2, events, &"physical", false, false, owner, source_label, 2,
 		)
+		var spawn_modifiers: Dictionary = device.passive_flags.get(
+			"engineer_spawn_modifiers", {},
+		)
+		if spawn_modifiers.get("manual_detonation_stagger", false):
+			if not CombatSystem.try_resist_crowd_control(
+				victim, GameEnums.StatusType.STAGGER, events, board, owner,
+			):
+				victim.active_statuses.append(
+					DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1)
+				)
+				victim._recalculate_stats(board)
 		if has_passive_modifier(owner, &"detonation_bleed_weapon"):
 			var weapon_damage := (
 				owner.definition.equipped_weapon.might

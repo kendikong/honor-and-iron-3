@@ -418,6 +418,8 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 	var has_stand_ground = target.has_passive(&"stand_ground")
 	
 	if target.has_status(GameEnums.StatusType.INVULNERABLE) or (not is_vulnerable and (target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STURDY) or has_stand_ground)):
+		if target.has_status(GameEnums.StatusType.ROOT):
+			_apply_rooted_push_bleed(pusher, target)
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": target.id, "reason": "push_prevented_by_status",
 		}))
@@ -789,3 +791,25 @@ static func swap(board: BoardState, a: UnitState, b: UnitState, events: Array[Si
 	}))
 	TerrainSystem.apply_landing(board, a, events)
 	TerrainSystem.apply_landing(board, b, events)
+
+
+static func _apply_rooted_push_bleed(pusher: UnitState, target: UnitState) -> void:
+	if pusher == null or target == null or not target.is_alive():
+		return
+	var apply := false
+	for ability: AbilityData in pusher.active_abilities:
+		if ability == null or not pusher.is_ability_upgraded(ability.id):
+			continue
+		for module: AbilityModule in ability.get_active_modules(true):
+			if module != null and module.legacy_modifiers.get("rooted_push_bleed_weapon", false):
+				apply = true
+				break
+		if apply:
+			break
+	if not apply:
+		return
+	var amount := 1
+	if pusher.definition != null and pusher.definition.equipped_weapon != null:
+		amount = pusher.definition.equipped_weapon.might
+	target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, amount))
+	target._recalculate_stats()

@@ -1023,13 +1023,17 @@ static func assert_commit_no_jump(
 		PlanningQAGateTest._intent_slot_signature(slots) == before_sig,
 		"committed slots must match pre-commit preview signature",
 	)
-	hover(fix, cell)
+	## Read the committed ghost from the promoted preview / projection.
+	## Re-hovering `cell` after commit is a new intent: ally-relocate skills vacate the
+	## target tile, and auto_run then paints a walk onto that empty cell.
 	var after_ghost: Vector2i = preview_unit_pos(fix, 1)
 	if (
 		ability != null
 		and AbilitySystem.ability_has_swap_effect(ability)
 		and fix.director != null
 	):
+		hover(fix, cell)
+		after_ghost = preview_unit_pos(fix, 1)
 		var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 			fix.director, fix.director.board, unit_id,
 		)
