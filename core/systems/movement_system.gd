@@ -234,6 +234,8 @@ static func step_mp_cost(board: BoardState, coord: Vector2i, unit: UnitState) ->
 				if passive != null and passive.modifiers.has("ignore_difficult_terrain"):
 					terrain_cost = 1
 					break
+			if unit.passive_flags.get("ignore_difficult_terrain", false):
+				terrain_cost = 1
 	return unit_cost * terrain_cost
 
 
@@ -393,6 +395,28 @@ static func execute_skill_walk(
 ) -> void:
 	if unit == null or not unit.is_alive() or ability == null:
 		return
+	if _has_modifier(effects, &"move_to_target_adjacent"):
+		var occupied := board.get_unit_at(goal)
+		if occupied != null and occupied.id != unit.id:
+			var approach := PhysicsSystem.cardinal_from_to(unit.position, occupied.position)
+			var preferred: Vector2i = occupied.position - approach
+			if (
+				preferred != occupied.position
+				and GridSystem.is_in_bounds(board, preferred)
+				and not GridSystem.is_occupied(board, preferred)
+				and not GridSystem.is_wall(board, preferred)
+			):
+				goal = preferred
+			else:
+				for direction: Vector2i in GridSystem.DIRECTIONS:
+					var candidate: Vector2i = occupied.position + direction
+					if (
+						GridSystem.is_in_bounds(board, candidate)
+						and not GridSystem.is_occupied(board, candidate)
+						and not GridSystem.is_wall(board, candidate)
+					):
+						goal = candidate
+						break
 	var mods: Dictionary = AbilitySystem.pass_through_modifiers_from(effects)
 	var trample_atk: int = int(mods.get("trample_atk", 0))
 	var bulldoze: int = int(mods.get("bulldoze", 0))
@@ -940,6 +964,8 @@ static func _resolve_zone_of_control(
 	events: Array[SimEvent],
 ) -> void:
 	if moved_unit == null or moved_unit.team != GameEnums.Team.ENEMY:
+		return
+	if moved_unit.passive_flags.get("ignore_zoc", false):
 		return
 	for watcher: UnitState in board.units:
 		if (

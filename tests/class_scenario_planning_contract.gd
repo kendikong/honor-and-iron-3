@@ -130,6 +130,11 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			enemy_pos = Vector2i(5, 3)
 			commit_cell = enemy_pos
 			verify_no_jump = false
+		&"mercenary_acrobatic_vault":
+			actor_pos = Vector2i(2, 3)
+			enemy_pos = Vector2i(5, 3)
+			commit_cell = enemy_pos
+			verify_no_jump = false
 		&"mercenary_executioners_blade":
 			actor_pos = Vector2i(2, 3)
 			enemy_pos = Vector2i(3, 3)

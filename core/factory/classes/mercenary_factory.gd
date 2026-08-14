@@ -26,8 +26,8 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	definition.innate_passives.append(_passive(
 		&"predatory_momentum",
 		"Predatory Momentum",
-		"Basic attacks against targets below 50% HP cost 0 AP and grant a free 1-tile move. Dealing damage grants +1 STR and +1 MOV next turn.",
-		"Basic attacks against targets below 75% HP cost 0 AP and grant a free 1-tile move. The following-turn bonus is +2 STR and +2 MOV.",
+		"Basic attacks against targets below 50% HP grant a free 1-tile move. Dealing damage grants +1 STR and +1 MOV next turn.",
+		"Threshold increases to below 75% HP. The following-turn bonus is +2 STR and +2 MOV.",
 		{
 			"predatory_momentum": true,
 			"predatory_threshold": 0.50,
@@ -82,7 +82,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	))
 	definition.passives.append(_passive(
 		&"dual_wield_momentum", "Dual Wield Momentum",
-		"After spending AP on an active skill, execute a 0-AP ATK 1 basic attack against the same target.",
+		"After spending AP on an active skill, immediately execute a 0-AP ATK 1 basic attack against the same target (does not consume the Action slot).",
 		"The bonus basic attack ignores 50% DEF.",
 		{"promotion": &"swordmaster", "active_skill_bonus_basic_attack": 1,
 		"upgraded_bonus_basic_ignore_def_pct": 0.50},
@@ -432,6 +432,9 @@ static func _caltrop_toss() -> AbilityData:
 	var hazard := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)
 	hazard.modifiers["terrain_id"] = &"caltrop_trap"
 	hazard.modifiers["hazard_duration"] = 3
+	hazard.modifiers["skip_terrain_entry_status"] = true
+	hazard.modifiers["skip_terrain_entry_bleed"] = true
+	hazard.modifiers["hazard_damage_bonus"] = 1
 	module.layers.append(_layer(hazard))
 	var upgraded := _clone_modules([module])
 	upgraded[0].layers[0].effect.modifiers["trap_damage_bonus"] = 2
@@ -573,9 +576,9 @@ static func _executioners_blade() -> AbilityData:
 		"Executioner's Blade",
 		5,
 		1,
-		"Threshold becomes below 50% HP; on kill, gain 1 AP.",
-		{"target_hp_below_pct": 0.30},
-		{"target_hp_below_pct": 0.50, "kill_grant_ap": 1},
+		"Threshold becomes below 75% HP; on kill, gain 1 AP.",
+		{"target_hp_below_pct": 0.50},
+		{"target_hp_below_pct": 0.75, "kill_grant_ap": 1},
 	)
 
 
@@ -620,7 +623,7 @@ static func _flank_and_run() -> AbilityData:
 
 static func _hamstring() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	var slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 1)
+	var slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 0)
 	slow.modifiers["set_max_move"] = 1
 	module.layers.append(_layer(slow))
 	var upgraded := _clone_modules([module])
@@ -638,21 +641,35 @@ static func _hamstring() -> AbilityData:
 
 
 static func _acrobatic_vault() -> AbilityData:
-	var module := _module(
+	var vault := _module(
+		GameEnums.EffectType.TELEPORT_CASTER,
+		0,
+		1,
+		2,
+		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE,
+		1,
+		GameEnums.StatType.NONE,
+	)
+	vault.legacy_modifiers["land_opposite_target"] = true
+	vault.legacy_modifiers["vault_over"] = true
+	var strike := _module(
 		GameEnums.EffectType.DAMAGE,
 		1,
 		1,
 		2,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	module.legacy_modifiers["vault_over"] = true
-	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["pierce"] = true
+	strike.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	strike.aim_module_index = 0
+	var modules: Array[AbilityModule] = [vault, strike]
+	var upgraded := _clone_modules(modules)
+	upgraded[1].legacy_modifiers["pierce"] = true
 	return _ability(
 		&"mercenary_acrobatic_vault",
 		"Acrobatic Vault",
 		1,
-		[module],
+		modules,
 		GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Jump over the target to the opposite empty tile; attack gains PIERCE.",

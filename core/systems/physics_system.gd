@@ -442,7 +442,7 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 				and pusher.has_passive(&"battering_ram")
 				and pusher.is_passive_upgraded(&"battering_ram")
 			):
-				if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+				if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
 					target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 					target._recalculate_stats()
 			break
@@ -573,16 +573,16 @@ static func _emit_collision(
 						stun_on_hit = e.data["stagger_on_collision"]
 					break
 		if stun_on_hit:
-			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
 				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				target._recalculate_stats()
 			
 	if blocker != null:
 		if enemy_collision_stagger_both:
-			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
 				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				target._recalculate_stats()
-			if not CombatSystem.try_resist_crowd_control(blocker, GameEnums.StatusType.STAGGER, events):
+			if not CombatSystem.try_resist_crowd_control(blocker, GameEnums.StatusType.STAGGER, events, board, pusher):
 				blocker.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				blocker._recalculate_stats()
 		if (
@@ -633,7 +633,7 @@ static func _emit_collision(
 				)
 	else:
 		if object_collision_stagger:
-			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events):
+			if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
 				target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				target._recalculate_stats()
 			

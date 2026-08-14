@@ -118,7 +118,7 @@ static func deal_collision_damage(
 				base_amount = wpn
 			elif passive.modifiers.has("collision_apply_target_status_amount"):
 				base_amount = int(passive.modifiers["collision_apply_target_status_amount"])
-			if not try_resist_crowd_control(victim, base_status, events):
+			if not try_resist_crowd_control(victim, base_status, events, board, pusher):
 				victim.active_statuses.append(DataLibrary.make_status(base_status, 1, base_amount))
 				victim._recalculate_stats()
 		if is_upgraded and passive.modifiers.has("collision_apply_target_status_upgraded"):
@@ -126,7 +126,7 @@ static func deal_collision_damage(
 			var upgraded_amount: int = 1
 			if passive.modifiers.has("collision_apply_target_status_upgraded_amount"):
 				upgraded_amount = int(passive.modifiers["collision_apply_target_status_upgraded_amount"])
-			if not try_resist_crowd_control(victim, upgraded_status, events):
+			if not try_resist_crowd_control(victim, upgraded_status, events, board, pusher):
 				victim.active_statuses.append(DataLibrary.make_status(upgraded_status, 1, upgraded_amount))
 				victim._recalculate_stats()
 			
@@ -870,6 +870,7 @@ static func deal_damage(
 			target.active_statuses.erase(status)
 		target._recalculate_stats()
 	
+	var was_full_hp := target.health.current_hp >= target.health.max_hp
 	if hp_dmg > 0:
 		target.passive_flags["exact_lethal_damage"] = hp_dmg == target.health.current_hp
 		target.health.current_hp = maxi(0, target.health.current_hp - hp_dmg)
@@ -943,6 +944,7 @@ static func deal_damage(
 				MercenarySystems._is_basic_attack(
 					attacker.passive_flags.get("__current_ability", null) as AbilityData,
 				),
+				was_full_hp,
 			)
 			MonkSystems.on_dealt_damage(board, attacker, target, events)
 			RogueSystems.on_dealt_damage(board, attacker, target, events)
@@ -1176,6 +1178,8 @@ static func try_resist_crowd_control(
 	target: UnitState,
 	status_type: int,
 	events: Array[SimEvent],
+	board: BoardState = null,
+	source: UnitState = null,
 ) -> bool:
 	if target == null or not target.is_alive():
 		return false
@@ -1183,6 +1187,9 @@ static func try_resist_crowd_control(
 		status_type == GameEnums.StatusType.ROOT
 		and target.passive_flags.get("root_immune_this_turn", false)
 	):
+		return true
+	if target.is_boss() and _is_hard_crowd_control(status_type):
+		_apply_boss_hard_cc_fallback(board, source, target, status_type, events)
 		return true
 	if not target.has_passive(&"unstoppable_force"):
 		return false
@@ -1195,6 +1202,64 @@ static func try_resist_crowd_control(
 		"reason": "status_prevented_by_unstoppable_force",
 	}))
 	return true
+
+
+static func _is_hard_crowd_control(status_type: int) -> bool:
+	return status_type in [
+		GameEnums.StatusType.STAGGER,
+		GameEnums.StatusType.ROOT,
+		GameEnums.StatusType.SILENCE,
+		GameEnums.StatusType.PACIFY,
+		GameEnums.StatusType.FEAR,
+		GameEnums.StatusType.CONFUSION,
+		GameEnums.StatusType.POLYMORPH,
+		GameEnums.StatusType.TAUNT,
+	]
+
+
+static func _apply_boss_hard_cc_fallback(
+	board: BoardState,
+	source: UnitState,
+	target: UnitState,
+	status_type: int,
+	events: Array[SimEvent],
+) -> void:
+	if target == null:
+		return
+	events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+		"actor": target.id, "reason": "boss_immune_to_cc",
+	}))
+	match status_type:
+		GameEnums.StatusType.STAGGER:
+			var wpn := 0
+			if source != null and source.definition != null and source.definition.equipped_weapon != null:
+				wpn = source.definition.equipped_weapon.might
+			if wpn > 0 and board != null:
+				deal_damage(
+					board, target, wpn, events, &"true", true, false, source,
+					"Boss CC Fallback", wpn,
+				)
+		GameEnums.StatusType.ROOT:
+			target.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 2),
+			)
+			target._recalculate_stats(board)
+		GameEnums.StatusType.SILENCE:
+			target.passive_flags["cannot_gain_shield"] = true
+		GameEnums.StatusType.PACIFY:
+			target.active_statuses.append(
+				DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, -2),
+			)
+			target._recalculate_stats(board)
+		GameEnums.StatusType.FEAR:
+			if board != null and source != null:
+				var away := PhysicsSystem.cardinal_from_to(source.position, target.position)
+				if away != Vector2i.ZERO:
+					PhysicsSystem.push(board, target, away, 2, events, source)
+		GameEnums.StatusType.CONFUSION:
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
+		_:
+			pass
 
 
 static func _apply_generic_damage_passives(
@@ -1388,6 +1453,10 @@ static func heal(board: BoardState, target: UnitState, amount: int, events: Arra
 
 static func add_armor(board: BoardState, target: UnitState, amount: int, events: Array[SimEvent]) -> void:
 	if target == null or not target.is_alive() or amount <= 0:
+		return
+	if target.passive_flags.get("shield_blocked", false):
+		return
+	if target.passive_flags.get("cannot_gain_shield", false):
 		return
 	if not ShamanSystems.can_gain_shield(board, target):
 		return

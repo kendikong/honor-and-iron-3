@@ -69,6 +69,12 @@ static func turn_start(board: BoardState, unit: UnitState, events: Array[SimEven
 	if unit.passive_flags.get("next_turn_root_immune", false):
 		unit.passive_flags["root_immune_this_turn"] = true
 		unit.passive_flags.erase("next_turn_root_immune")
+	if unit.passive_flags.get("next_turn_pull_immune", false):
+		unit.passive_flags["pull_immune_this_turn"] = true
+		unit.passive_flags.erase("next_turn_pull_immune")
+	if unit.passive_flags.get("next_turn_slow_immune", false):
+		unit.passive_flags["slow_immune_this_turn"] = true
+		unit.passive_flags.erase("next_turn_slow_immune")
 	var adj_enemies := _adjacent_enemy_count(board, unit)
 	var per_enemy_mov: int = passive_mod_value(unit, &"adjacent_enemy_move")
 	if per_enemy_mov > 0 and adj_enemies > 0:
@@ -103,13 +109,6 @@ static func adjust_action_point_cost(
 		return base_cost
 	if actor.passive_flags.get("next_skill_zero_ap", false) and not _is_basic_attack(ability):
 		return 0
-	if _is_basic_attack(ability) and _has_predatory_momentum(actor):
-		var target_id: int = int(actor.passive_flags.get("__predatory_target_id", -1))
-		var target: UnitState = (
-			board.get_unit_by_id(target_id) if board != null and target_id >= 0 else null
-		)
-		if target != null and _hp_below_threshold(target, _predatory_threshold(actor)):
-			return 0
 	return base_cost
 
 
@@ -189,10 +188,10 @@ static func adjust_attack_base(
 			amount += int(mods["if_target_attacked_caster_last_turn_bonus"])
 	if actor.passive_flags.has("flank_run_attack_bonus"):
 		amount += int(actor.passive_flags["flank_run_attack_bonus"])
+		actor.passive_flags.erase("flank_run_attack_bonus")
 	if actor.passive_flags.has("ruthless_next_attack_bonus"):
 		amount += int(actor.passive_flags["ruthless_next_attack_bonus"])
-	if actor.passive_flags.has("next_attack_strength_bonus"):
-		amount += int(actor.passive_flags["next_attack_strength_bonus"])
+		actor.passive_flags.erase("ruthless_next_attack_bonus")
 	if actor.passive_flags.has("active_next_basic_bonus") and _is_basic_attack(ability):
 		amount += int(actor.passive_flags["active_next_basic_bonus"])
 	if target != null and _target_has_not_acted(target):
@@ -201,8 +200,6 @@ static func adjust_attack_base(
 			pass
 	if target != null and target.health.current_hp >= target.health.max_hp:
 		amount += passive_mod_value(actor, &"full_hp_attack_bonus", &"upgraded_full_hp_attack_bonus")
-	if target != null and _is_isolated(board, actor):
-		amount += passive_mod_value(actor, &"isolated_attack_strength", &"upgraded_isolated_attack_strength")
 	if target != null and _is_controlled(target):
 		amount += passive_mod_value(
 			actor, &"controlled_target_attack_bonus", &"upgraded_controlled_target_attack_bonus",
@@ -216,9 +213,26 @@ static func adjust_attack_base(
 	)
 	if ally_bonus != null and ally_adj:
 		amount += int(ally_bonus)
-	if actor.passive_flags.get("movement_before_attack", false):
-		amount += passive_mod_value(actor, &"movement_before_attack_strength")
 	return amount
+
+
+static func attack_strength_bonus(
+	board: BoardState,
+	actor: UnitState,
+	target: UnitState,
+	ability: AbilityData,
+) -> int:
+	if actor == null:
+		return 0
+	var bonus := 0
+	if actor.passive_flags.has("next_attack_strength_bonus"):
+		bonus += int(actor.passive_flags["next_attack_strength_bonus"])
+		actor.passive_flags.erase("next_attack_strength_bonus")
+	if target != null and _is_isolated(board, actor):
+		bonus += passive_mod_value(
+			actor, &"isolated_attack_strength", &"upgraded_isolated_attack_strength",
+		)
+	return bonus
 
 
 static func extra_def_ignore_pct(
@@ -273,6 +287,7 @@ static func on_dealt_damage(
 	target: UnitState,
 	events: Array[SimEvent],
 	is_basic: bool,
+	was_full_hp: bool = false,
 ) -> void:
 	if actor == null or not actor.is_alive():
 		return
@@ -286,7 +301,7 @@ static func on_dealt_damage(
 	if passive_mod_value(actor, &"after_damage_move") > 0:
 		var move_amt: int = passive_mod_value(actor, &"after_damage_move", &"upgraded_after_damage_move")
 		actor.movement.points_left = mini(actor.movement.max_points, actor.movement.points_left + move_amt)
-	if target != null and target.health.current_hp >= target.health.max_hp:
+	if target != null and was_full_hp:
 		if passive_modifiers(actor, &"full_hp_attack_bleed_weapon") != null:
 			var wpn: int = 0
 			if actor.definition != null and actor.definition.equipped_weapon != null:
@@ -377,12 +392,9 @@ static func after_ability_execute(
 		return
 	var ability: AbilityData = action.ability
 	actor.passive_flags.erase("__current_ability")
-	actor.passive_flags.erase("flank_run_attack_bonus")
-	actor.passive_flags.erase("next_attack_strength_bonus")
-	actor.passive_flags.erase("active_next_basic_bonus")
-	actor.passive_flags.erase("active_next_basic_ignore_def")
-	actor.passive_flags.erase("bonus_basic_ignore_def")
 	if ability != null and not _is_basic_attack(ability):
+		if _ability_has_movement_tag(ability):
+			_apply_calculated_strike(board, actor)
 		if passive_mod_value(actor, &"active_next_basic_bonus") > 0:
 			actor.passive_flags["active_next_basic_bonus"] = passive_mod_value(actor, &"active_next_basic_bonus")
 			actor.passive_flags["active_free_move_pending"] = passive_mod_value(actor, &"active_free_move")
@@ -391,7 +403,10 @@ static func after_ability_execute(
 				actor.passive_flags["active_next_basic_ignore_def_pct"] = float(
 					passive_modifiers(actor, &"upgraded_active_next_basic_ignore_def_pct")
 				)
-		if passive_mod_value(actor, &"active_skill_bonus_basic_attack") > 0 and attack_was_used:
+		if (
+			passive_mod_value(actor, &"active_skill_bonus_basic_attack") > 0
+			and action.target_unit_id >= 0
+		):
 			_queue_bonus_basic(board, actor, action, events)
 	if actor.passive_flags.get("active_free_move_pending", 0) > 0:
 		var pending: int = int(actor.passive_flags["active_free_move_pending"])
@@ -458,7 +473,7 @@ static func track_movement_tiles(
 		if def_bonus > 0:
 			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus))
 		if passive_modifiers(unit, &"moved_tiles_root_immunity") != null:
-			unit.passive_flags["next_turn_root_immune"] = true
+			unit.passive_flags["root_immune_this_turn"] = true
 		if unit.is_passive_upgraded(&"evasive"):
 			if passive_modifiers(unit, &"upgraded_moved_pull_immunity") != null:
 				unit.passive_flags["pull_immune_this_turn"] = true
@@ -670,8 +685,40 @@ static func _hp_below_threshold(unit: UnitState, threshold: float) -> bool:
 	return float(unit.health.current_hp) / float(unit.health.max_hp) < threshold
 
 
+static func consume_next_skill_zero_ap(actor: UnitState, ability: AbilityData) -> void:
+	if actor == null or ability == null:
+		return
+	if actor.passive_flags.get("next_skill_zero_ap", false) and not _is_basic_attack(ability):
+		actor.passive_flags.erase("next_skill_zero_ap")
+
+
+static func _ability_has_movement_tag(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	return ability.tags.has(&"movement")
+
+
+static func _apply_calculated_strike(board: BoardState, actor: UnitState) -> void:
+	if actor == null or passive_mod_value(actor, &"movement_before_attack_strength") <= 0:
+		return
+	actor.passive_flags["movement_before_attack"] = true
+	var str_bonus: int = passive_mod_value(actor, &"movement_before_attack_strength")
+	var def_bonus: int = passive_mod_value(actor, &"movement_before_attack_defense")
+	if str_bonus > 0:
+		actor.active_statuses.append(
+			DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, str_bonus),
+		)
+	if def_bonus > 0:
+		actor.active_statuses.append(
+			DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, def_bonus),
+		)
+	actor._recalculate_stats(board)
+
+
 static func _target_has_not_acted(target: UnitState) -> bool:
-	return not target.passive_flags.get("attacked_this_turn", false)
+	if target == null:
+		return false
+	return not target.turn_action_used
 
 
 static func _is_isolated(board: BoardState, actor: UnitState) -> bool:

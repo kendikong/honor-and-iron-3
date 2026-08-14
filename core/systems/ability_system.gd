@@ -742,6 +742,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			and not has_pass_through_effects(ability, actor)
 			and not _ability_has_modifier(actor, ability, &"target_after_move_adjacent")
 			and not _ability_has_modifier(actor, ability, &"move_to_target_adjacent")
+			and not _ability_has_modifier(actor, ability, &"land_opposite_target")
 		):
 			var end_unit := board.get_unit_at(action.target_coord)
 			if end_unit != null and end_unit.id != actor.id:
@@ -2881,6 +2882,7 @@ static func _spend_ability_cost(
 	var ap_cost = get_action_point_cost(actor, ability, board)
 	if RogueSystems.consume_smoke_free_ap(actor, ability):
 		ap_cost = 0
+	MercenarySystems.consume_next_skill_zero_ap(actor, ability)
 	if _is_spell(ability) and actor.passive_flags.get("mana_shield_casting", false):
 		actor.armor = maxi(0, actor.armor - 1)
 		return
@@ -3203,16 +3205,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				
 			if actor.has_passive(&"blood_for_blood") and actor.is_passive_upgraded(&"blood_for_blood") and actor.passive_flags.get("damaged_last_turn", false):
 				base_amt += 1
-			if actor.movement_points_spent_this_turn > 0:
-				actor.passive_flags["movement_before_attack"] = true
-				var calc_def: int = MercenarySystems.passive_mod_value(
-					actor, &"movement_before_attack_defense",
-				)
-				if calc_def > 0:
-					actor.active_statuses.append(
-						DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, calc_def),
-					)
-					actor._recalculate_stats(board)
 			base_amt = MercenarySystems.adjust_attack_base(board, actor, target, action.ability, base_amt)
 				
 			var amount := base_amt
@@ -3231,6 +3223,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					actor.passive_flags.get("mage_spell_magic_bonus", 0)
 				)
 				stat_name = "MAG"
+			temporary_strength_bonus += MercenarySystems.attack_strength_bonus(
+				board, actor, target, action.ability,
+			)
 			stat_val += temporary_strength_bonus
 				
 			if base_amt > 0:
@@ -3796,6 +3791,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						CombatSystem.counter_attack(board, target, actor, stand_amt, events, "Stand Ground")
 				if EngineerSystems.is_pull_immune(board, target):
 					is_immune = true
+				if target.passive_flags.get("pull_immune_this_turn", false):
+					is_immune = true
 				for dir in GridSystem.DIRECTIONS:
 					var adj_unit = board.get_unit_at(target.position + dir)
 					if adj_unit != null and adj_unit.team == target.team and adj_unit.has_passive(&"shield_wall"):
@@ -4086,12 +4083,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					return
 					
 				if target.is_boss() and GameEnums.is_debuff(effect.status_type) and effect.status_type in [GameEnums.StatusType.STAGGER, GameEnums.StatusType.ROOT, GameEnums.StatusType.SILENCE, GameEnums.StatusType.PACIFY, GameEnums.StatusType.FEAR, GameEnums.StatusType.CONFUSION, GameEnums.StatusType.POLYMORPH, GameEnums.StatusType.TAUNT]:
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": target.id, "reason": "boss_immune_to_cc",
-					}))
+					CombatSystem.try_resist_crowd_control(
+						target, effect.status_type, events, board, actor,
+					)
 					return
 					
-				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events):
+				if CombatSystem.try_resist_crowd_control(target, effect.status_type, events, board, actor):
 					return
 				if effect.modifiers.get("from_behind_only", false) and not _is_backstab(actor, target):
 					return
@@ -4175,7 +4172,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							2,
 						))
 					target._recalculate_stats()
-					if effect.modifiers.has("set_max_move"):
+					if (
+						effect.modifiers.has("set_max_move")
+						and not target.passive_flags.get("slow_immune_this_turn", false)
+					):
 						var move_cap: int = int(effect.modifiers["set_max_move"])
 						target.movement.max_points = mini(target.movement.max_points, move_cap)
 						target.movement.points_left = mini(target.movement.points_left, move_cap)
@@ -4385,7 +4385,25 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 		GameEnums.EffectType.TELEPORT_CASTER:
 			var destination := tile_coord
-			if effect.modifiers.has("warp_adjacent_to_target"):
+			if effect.modifiers.get("land_opposite_target", false):
+				if target == null:
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "vault_missing_target",
+					}))
+					return
+				var opposite_dir := PhysicsSystem.cardinal_from_to(actor.position, target.position)
+				destination = target.position + opposite_dir
+				if (
+					opposite_dir == Vector2i.ZERO
+					or not GridSystem.is_in_bounds(board, destination)
+					or GridSystem.is_occupied(board, destination)
+					or GridSystem.is_wall(board, destination)
+				):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "vault_no_landing",
+					}))
+					return
+			elif effect.modifiers.has("warp_adjacent_to_target"):
 				if target == null:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": actor.id, "reason": "guardian_step_missing_ally",

@@ -152,6 +152,8 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 		if not unit.is_alive():
 			return
 	var bleed_amount := tile.definition.entry_bleed_amount
+	if payload.get("skip_terrain_entry_bleed", false):
+		bleed_amount = 0
 	if payload.get("trap_bleed_weapon", false):
 		bleed_amount = 0
 		if unit.definition != null and unit.definition.equipped_weapon != null:
@@ -168,6 +170,7 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 				unit.active_statuses.remove_at(i)
 	if (
 		tile.definition.entry_status_duration > 0
+		and not payload.get("skip_terrain_entry_status", false)
 		and not CombatSystem.try_resist_crowd_control(unit, tile.definition.entry_status, events)
 	):
 		unit.active_statuses.append(StatusData.new(

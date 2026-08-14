@@ -292,6 +292,11 @@ static func run_acrobatic_vault(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_true(failures, "acrobatic_vault/damage", H.unit_hp(result.final_state, 2) < hp)
+	H.assert_eq_cell(
+		failures, "acrobatic_vault/land",
+		H.unit_on_board(result.final_state, 1).position,
+		Vector2i(5, 3),
+	)
 
 
 static func run_duelists_challenge(failures: Array[String]) -> void:
@@ -485,7 +490,7 @@ static func run_evasive(failures: Array[String]) -> void:
 	)
 	H.assert_true(
 		failures, "evasive/root_flag",
-		result.final_state.get_unit_by_id(1).passive_flags.get("next_turn_root_immune", false),
+		result.final_state.get_unit_by_id(1).passive_flags.get("root_immune_this_turn", false),
 	)
 
 

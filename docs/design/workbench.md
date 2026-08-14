@@ -10,7 +10,15 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 1 pending critic
+GAUNTLET SCORE │ BIBLE-CONSISTENCY │ Round 2 pending critic
+SCORE: —/100 │ THRESHOLD: 88 │ pending critic
+STOP_CONDITION_MET: no
+══════════════════════════════════════
+```
+
+```text
+══════════════════════════════════════
+GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 2 pending critic
 SCORE: —/100 │ THRESHOLD: 85 │ pending critic
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
@@ -18,7 +26,36 @@ STOP_CONDITION_MET: no
 
 `STOP_CONDITION_MET: no`
 
-### Wave 2–3 (2026-08-14)
+### Wave 4 (2026-08-14)
+
+Bible consistency:
+- Action Economy now defines the global 1 AP refund cap (Mana Siphon cites it).
+- Keyword Parity example is `AOE 3` (cross), matching the glossary.
+
+Bible-to-code (Mercenary cluster + Knight Shield Bash):
+- Predatory: Bible is free MOVE 1, not 0 AP. Dead unused target-id 0-AP path removed.
+- Calculated Strike: TAG_MOVEMENT skills only; STR/DEF are turn buffs.
+- Dual Wield: 0-AP basic vs same unit after any AP active (not damage-gated).
+- Precision Edge BLEED uses pre-hit full HP.
+- Duelist/Precision Strike: `turn_action_used`.
+- Swift Feet ZOC + difficult terrain flags read.
+- Evasive immunities apply the same turn.
+- Flanking/Feint STR go through the ATK formula.
+- Ruthless and Flank & Run bonuses consume on the next attack.
+- Second Wind 0-AP consumes on spend.
+- Defense Strike `shield_blocked` blocks SHIELD.
+- Caltrop Toss skips Archer ROOT+BLEED; entry ATK 1.
+- Swift Strike lands adjacent to the aimed unit.
+- Hamstring caps MOV at 1 only.
+- Acrobatic Vault TELEPORT to opposite empty tile.
+- Executioner's Blade 50%/75%.
+- Boss hard-CC fallback in `CombatSystem.try_resist_crowd_control` (STAGGER → +WPN).
+
+Bowling Charge / Trampling Advance untouched.
+
+QA this wave: pending mercenary gate+live, knight gate, planning QA.
+
+---
 
 - Charge Strike: MOVE 2, GHOST through occupied, land adjacent empty, +2 from occupied tiles. `can_use` walk budget includes chained melee range.
 - Concussion Blow upgrade keeps object STAGGER and adds enemy-collision STAGGER both.
