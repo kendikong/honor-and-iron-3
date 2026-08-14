@@ -215,10 +215,6 @@ func apply_settings(settings: GameSettings) -> void:
 	queue_redraw()
 
 
-func game_settings() -> GameSettings:
-	return _game_settings
-
-
 func _preview_range_overlays_enabled() -> bool:
 	return _game_settings == null or _game_settings.preview_show_range_overlays
 
@@ -603,7 +599,7 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if _planning_input == null:
 		_update_hover_action_icon()
 	_hover_redraw_immediate = true
-	if redraw and _should_immediate_overlay_redraw():
+	if redraw:
 		queue_redraw()
 
 
@@ -649,16 +645,12 @@ func set_drag_attack_target(unit_id: int) -> void:
 
 func set_drag_route(route: Array[Vector2i]) -> void:
 	_route = route
-	_hover_redraw_immediate = true
-	if _should_immediate_overlay_redraw():
-		queue_redraw()
+	queue_redraw()
 
 
 func clear_drag_route() -> void:
 	_route.clear()
-	_hover_redraw_immediate = true
-	if _should_immediate_overlay_redraw():
-		queue_redraw()
+	queue_redraw()
 
 
 func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: StringName = &"knight") -> void:
@@ -1031,53 +1023,17 @@ func _process(delta: float) -> void:
 		need_redraw = true
 	if need_redraw:
 		queue_redraw()
-		return
-	var interval_sec: float = _overlay_redraw_interval_sec()
-	if _hover_redraw_immediate:
-		if interval_sec <= 0.0:
+	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
+		_anim_redraw_accum += delta
+		if _hover_redraw_immediate or _anim_redraw_accum >= _FLOW_ANIM_REDRAW_INTERVAL_SEC:
 			_hover_redraw_immediate = false
 			_anim_redraw_accum = 0.0
 			queue_redraw()
-			return
-		_anim_redraw_accum += delta
-		if _anim_redraw_accum >= interval_sec:
-			_hover_redraw_immediate = false
-			_anim_redraw_accum = 0.0
-			queue_redraw()
-		return
-	if CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		if interval_sec <= 0.0:
-			return
-		_anim_redraw_accum += delta
-		if _anim_redraw_accum >= interval_sec:
-			_anim_redraw_accum = 0.0
-			queue_redraw()
-
-
-func _overlay_redraw_interval_sec() -> float:
-	if qa_static_overlay:
-		return _FLOW_ANIM_REDRAW_INTERVAL_SEC
-	if _game_settings == null:
-		return _FLOW_ANIM_REDRAW_INTERVAL_SEC
-	var fps: float = _game_settings.planning_overlay_fps
-	if fps <= 0.05:
-		return 0.0
-	return 1.0 / fps
-
-
-func _should_immediate_overlay_redraw() -> bool:
-	if qa_static_overlay:
-		return true
-	if _game_settings == null:
-		return true
-	return _game_settings.planning_overlay_fps >= 28.0
 
 
 func _overlay_needs_flow_animation() -> bool:
 	if qa_static_overlay:
 		return _planning_input != null and _planning_input.dragging
-	if _game_settings != null and _game_settings.planning_overlay_fps <= 0.05:
-		return false
 	if _resolve_overlay_attack_target_id() >= 0:
 		return true
 	if _planning_input != null and _planning_input.dragging:

@@ -1174,10 +1174,9 @@ func on_hover_moved(cell: Vector2i) -> void:
 		return
 	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
-	elif not _hover_throttle_skips_sim():
+	else:
 		_schedule_hover_sim_refresh()
-	if not _hover_throttle_skips_overlay_refresh():
-		_run_hover_overlay_refresh()
+	_run_hover_overlay_refresh()
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
@@ -1231,32 +1230,7 @@ func _deferred_begin_hover_sim_flush() -> void:
 func _hover_sim_min_interval_sec() -> float:
 	if dragging:
 		return _HOVER_HEAVY_MIN_INTERVAL_SEC
-	if _planning != null and _planning.qa_static_overlay:
-		return _HOVER_SIM_MIN_INTERVAL_SEC
-	var settings: GameSettings = _planning_game_settings()
-	if settings != null:
-		return maxf(0.0, settings.hover_sim_interval_ms) / 1000.0
 	return _HOVER_SIM_MIN_INTERVAL_SEC
-
-
-func _planning_game_settings() -> GameSettings:
-	if _planning != null:
-		return _planning.game_settings()
-	return null
-
-
-func _hover_throttle_skips_sim() -> bool:
-	if _planning != null and _planning.qa_static_overlay:
-		return false
-	var settings: GameSettings = _planning_game_settings()
-	return settings != null and settings.hover_throttle_skips_sim()
-
-
-func _hover_throttle_skips_overlay_refresh() -> bool:
-	if _planning != null and _planning.qa_static_overlay:
-		return false
-	var settings: GameSettings = _planning_game_settings()
-	return settings != null and settings.hover_throttle_skips_overlay_refresh()
 
 
 func _begin_hover_sim_throttled_flush() -> void:

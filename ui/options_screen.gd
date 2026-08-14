@@ -92,13 +92,6 @@ var _show_tod_check: CheckButton
 var _effect_checks: Dictionary = {}
 var _dev_shadow_checks: Dictionary = {}
 var _planning_preview_checks: Dictionary = {}
-var _hover_throttle_slider: HSlider
-var _hover_sim_ms_slider: HSlider
-var _overlay_fps_slider: HSlider
-var _hover_throttle_label: Label
-var _hover_sim_ms_label: Label
-var _overlay_fps_label: Label
-var _updating_hover_sliders: bool = false
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
@@ -566,63 +559,6 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
-	_add_section(vbox, "Hover FPS throttle")
-	_add_hint(
-		vbox,
-		"0 = full quality. 100 = max FPS while circling. Click still commits for real.",
-	)
-	_hover_throttle_slider = _add_dev_value_slider(
-		vbox,
-		"Throttle",
-		0.0,
-		100.0,
-		1.0,
-		_game_settings.hover_throttle_pct,
-		"%",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.apply_hover_throttle_preset(v)
-			_sync_hover_throttle_sliders()
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_hover_throttle_label = _hover_throttle_slider.get_meta("value_label") as Label
-	_hover_sim_ms_slider = _add_dev_value_slider(
-		vbox,
-		"Hover sim delay",
-		0.0,
-		400.0,
-		5.0,
-		_game_settings.hover_sim_interval_ms,
-		"ms",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.hover_sim_interval_ms = v
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_hover_sim_ms_label = _hover_sim_ms_slider.get_meta("value_label") as Label
-	_overlay_fps_slider = _add_dev_value_slider(
-		vbox,
-		"Overlay anim FPS",
-		0.0,
-		30.0,
-		1.0,
-		_game_settings.planning_overlay_fps,
-		"fps",
-		func(v: float) -> void:
-			if _updating_hover_sliders:
-				return
-			_game_settings.planning_overlay_fps = v
-			_save_game_settings()
-			EventBus.interface_settings_changed.emit(),
-	)
-	_overlay_fps_label = _overlay_fps_slider.get_meta("value_label") as Label
-	_sync_hover_throttle_sliders()
-
-	vbox.add_child(HSeparator.new())
 	_dev_tile_labels_check = _add_dev_check(
 		vbox,
 		"Tile ID labels (sandbox map)",
@@ -852,58 +788,6 @@ func _add_dev_check(
 	)
 	parent.add_child(check)
 	return check
-
-
-func _sync_hover_throttle_sliders() -> void:
-	if _game_settings == null:
-		return
-	_updating_hover_sliders = true
-	if _hover_throttle_slider != null:
-		_hover_throttle_slider.value = _game_settings.hover_throttle_pct
-	if _hover_sim_ms_slider != null:
-		_hover_sim_ms_slider.value = _game_settings.hover_sim_interval_ms
-	if _overlay_fps_slider != null:
-		_overlay_fps_slider.value = _game_settings.planning_overlay_fps
-	_updating_hover_sliders = false
-	if _hover_throttle_label != null:
-		_hover_throttle_label.text = "%d%%" % int(_game_settings.hover_throttle_pct)
-	if _hover_sim_ms_label != null:
-		_hover_sim_ms_label.text = "%dms" % int(_game_settings.hover_sim_interval_ms)
-	if _overlay_fps_label != null:
-		_overlay_fps_label.text = "%dfps" % int(_game_settings.planning_overlay_fps)
-
-
-func _add_dev_value_slider(
-	parent: VBoxContainer,
-	title: String,
-	min_value: float,
-	max_value: float,
-	step: float,
-	initial: float,
-	suffix: String,
-	on_changed: Callable,
-) -> HSlider:
-	parent.add_child(_label(title))
-	var row := HBoxContainer.new()
-	var slider := HSlider.new()
-	slider.min_value = min_value
-	slider.max_value = max_value
-	slider.step = step
-	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	slider.value = initial
-	var value_lbl := Label.new()
-	value_lbl.custom_minimum_size.x = 56
-	MenuInterfaceApplier.stamp_font_tier(value_lbl, MenuInterfaceApplier.TIER_VALUE)
-	value_lbl.text = "%d%s" % [int(initial), suffix]
-	slider.set_meta("value_label", value_lbl)
-	slider.value_changed.connect(func(v: float) -> void:
-		value_lbl.text = "%d%s" % [int(v), suffix]
-		on_changed.call(v)
-	)
-	row.add_child(slider)
-	row.add_child(value_lbl)
-	parent.add_child(row)
-	return slider
 
 
 func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HSlider:
