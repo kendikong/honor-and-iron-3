@@ -4,7 +4,7 @@ extends CanvasLayer
 ## Training-mode debug controls — class swap, level, passives, skills, dummy management.
 
 const PANEL_WIDTH: int = 340
-const PANEL_HEIGHT_EXPANDED: float = 440.0
+const PANEL_HEIGHT_EXPANDED: float = 640.0
 const PANEL_HEIGHT_COLLAPSED: float = 48.0
 
 var _map_view: TestBattleMapView
@@ -25,6 +25,13 @@ var _unkillable_check: CheckBox
 var _infinite_ap_check: CheckBox
 var _status_label: Label
 var _populating_class_options: bool = false
+var _updating_hover_sliders: bool = false
+var _hover_throttle_slider: HSlider
+var _hover_sim_slider: HSlider
+var _overlay_fps_slider: HSlider
+var _hover_throttle_value: Label
+var _hover_sim_value: Label
+var _overlay_fps_value: Label
 
 
 func setup(
@@ -110,6 +117,65 @@ func _build_ui() -> void:
 	_status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_status_label.add_theme_color_override("font_color", Color(0.75, 0.9, 1.0))
 	body.add_child(_status_label)
+
+	_add_heading(body, "FPS / Hover throttle")
+	_add_label(body, "Drag right if circling drops frames. 0 = full quality. 100 = max FPS. Click still commits for real.")
+	_hover_throttle_slider = _add_debug_slider(
+		body,
+		"Throttle",
+		0.0,
+		100.0,
+		1.0,
+		_game_settings_or_default().hover_throttle_pct,
+		"%",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			var settings := _game_settings()
+			if settings == null:
+				return
+			settings.apply_hover_throttle_preset(v)
+			_sync_hover_slider_displays()
+			_persist_hover_settings(),
+	)
+	_hover_throttle_value = _hover_throttle_slider.get_meta("value_label") as Label
+	_hover_sim_slider = _add_debug_slider(
+		body,
+		"Hover sim delay",
+		0.0,
+		400.0,
+		5.0,
+		_game_settings_or_default().hover_sim_interval_ms,
+		"ms",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			var settings := _game_settings()
+			if settings == null:
+				return
+			settings.hover_sim_interval_ms = v
+			_persist_hover_settings(),
+	)
+	_hover_sim_value = _hover_sim_slider.get_meta("value_label") as Label
+	_overlay_fps_slider = _add_debug_slider(
+		body,
+		"Overlay anim FPS",
+		0.0,
+		30.0,
+		1.0,
+		_game_settings_or_default().planning_overlay_fps,
+		"fps",
+		func(v: float) -> void:
+			if _updating_hover_sliders:
+				return
+			var settings := _game_settings()
+			if settings == null:
+				return
+			settings.planning_overlay_fps = v
+			_persist_hover_settings(),
+	)
+	_overlay_fps_value = _overlay_fps_slider.get_meta("value_label") as Label
+	_sync_hover_slider_displays()
 
 	# --- Player Class ---
 	_add_heading(body, "Player Class")
@@ -343,3 +409,79 @@ static func _add_button(parent: Control, text: String, callback: Callable) -> vo
 	btn.text = text
 	btn.pressed.connect(callback)
 	parent.add_child(btn)
+
+
+func _game_settings() -> GameSettings:
+	if _map_view != null:
+		return _map_view.get_game_settings()
+	return null
+
+
+func _game_settings_or_default() -> GameSettings:
+	var settings := _game_settings()
+	if settings != null:
+		return settings
+	return GameSettings.new()
+
+
+func _persist_hover_settings() -> void:
+	var settings := _game_settings()
+	if settings == null:
+		return
+	settings.save_to_disk()
+	settings.changed.emit()
+	EventBus.interface_settings_changed.emit()
+
+
+func _sync_hover_slider_displays() -> void:
+	var settings := _game_settings_or_default()
+	_updating_hover_sliders = true
+	if _hover_throttle_slider != null:
+		_hover_throttle_slider.value = settings.hover_throttle_pct
+	if _hover_sim_slider != null:
+		_hover_sim_slider.value = settings.hover_sim_interval_ms
+	if _overlay_fps_slider != null:
+		_overlay_fps_slider.value = settings.planning_overlay_fps
+	_updating_hover_sliders = false
+	if _hover_throttle_value != null:
+		_hover_throttle_value.text = "%d%%" % int(settings.hover_throttle_pct)
+	if _hover_sim_value != null:
+		_hover_sim_value.text = "%dms" % int(settings.hover_sim_interval_ms)
+	if _overlay_fps_value != null:
+		_overlay_fps_value.text = "%dfps" % int(settings.planning_overlay_fps)
+
+
+func _add_debug_slider(
+	parent: Control,
+	title: String,
+	min_value: float,
+	max_value: float,
+	step: float,
+	initial: float,
+	suffix: String,
+	on_changed: Callable,
+) -> HSlider:
+	var caption := Label.new()
+	caption.text = title
+	parent.add_child(caption)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	parent.add_child(row)
+	var slider := HSlider.new()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.custom_minimum_size.x = 160.0
+	slider.value = initial
+	var value_lbl := Label.new()
+	value_lbl.custom_minimum_size.x = 56.0
+	value_lbl.text = "%d%s" % [int(initial), suffix]
+	slider.set_meta("value_label", value_lbl)
+	slider.value_changed.connect(func(v: float) -> void:
+		value_lbl.text = "%d%s" % [int(v), suffix]
+		on_changed.call(v)
+	)
+	row.add_child(slider)
+	row.add_child(value_lbl)
+	return slider

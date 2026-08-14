@@ -66,6 +66,12 @@ var _settings: GameSettings
 
 func bind_settings(settings: GameSettings) -> void:
 	_settings = settings
+	if not EventBus.interface_settings_changed.is_connected(_on_interface_settings_changed):
+		EventBus.interface_settings_changed.connect(_on_interface_settings_changed)
+	_apply_ui_settings()
+
+
+func _on_interface_settings_changed() -> void:
 	_apply_ui_settings()
 
 

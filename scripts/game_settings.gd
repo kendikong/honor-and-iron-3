@@ -38,6 +38,11 @@ const TEXT_SIZE_LABELS: PackedStringArray = ["Small", "Medium", "Large"]
 const TEXT_SIZE_BODY: PackedInt32Array = [16, 20, 24]
 const TEXT_SIZE_TITLE: PackedInt32Array = [22, 26, 30]
 const TEXT_SIZE_HINT: PackedInt32Array = [13, 17, 20]
+const HOVER_THROTTLE_SKIP_SIM_PCT: float = 55.0
+const HOVER_THROTTLE_SKIP_OVERLAY_PCT: float = 75.0
+const HOVER_SIM_INTERVAL_MS_MIN: float = 45.0
+const HOVER_SIM_INTERVAL_MS_MAX: float = 400.0
+const PLANNING_OVERLAY_FPS_MAX: float = 30.0
 
 var resolution: Vector2i = Vector2i(3840, 1800)
 var window_mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_WINDOWED
@@ -69,6 +74,10 @@ var preview_show_routes: bool = true
 var preview_show_live_ghosts: bool = true
 var preview_show_arrows: bool = true
 var preview_show_committed_intents: bool = true
+## 0 = full hover quality. 100 = max FPS while circling (preview-only; commit still validates).
+var hover_throttle_pct: float = 80.0
+var hover_sim_interval_ms: float = 329.0
+var planning_overlay_fps: float = 6.0
 
 
 func preview_hover_sim_enabled() -> bool:
@@ -85,6 +94,21 @@ func preview_dynamic_overlay_enabled() -> bool:
 		or preview_show_live_ghosts
 		or preview_show_arrows
 	)
+
+
+func apply_hover_throttle_preset(pct: float) -> void:
+	hover_throttle_pct = clampf(pct, 0.0, 100.0)
+	var t: float = hover_throttle_pct / 100.0
+	hover_sim_interval_ms = lerpf(HOVER_SIM_INTERVAL_MS_MIN, HOVER_SIM_INTERVAL_MS_MAX, t)
+	planning_overlay_fps = lerpf(PLANNING_OVERLAY_FPS_MAX, 0.0, t)
+
+
+func hover_throttle_skips_sim() -> bool:
+	return hover_throttle_pct >= HOVER_THROTTLE_SKIP_SIM_PCT
+
+
+func hover_throttle_skips_overlay_refresh() -> bool:
+	return hover_throttle_pct >= HOVER_THROTTLE_SKIP_OVERLAY_PCT
 
 
 var screen_index: int = 0
@@ -146,6 +170,21 @@ func load_from_disk() -> void:
 	)
 	preview_show_committed_intents = bool(
 		cfg.get_value("planning_preview", "show_committed_intents", preview_show_committed_intents),
+	)
+	hover_throttle_pct = clampf(
+		float(cfg.get_value("planning_preview", "hover_throttle_pct", hover_throttle_pct)),
+		0.0,
+		100.0,
+	)
+	hover_sim_interval_ms = clampf(
+		float(cfg.get_value("planning_preview", "hover_sim_interval_ms", hover_sim_interval_ms)),
+		0.0,
+		HOVER_SIM_INTERVAL_MS_MAX,
+	)
+	planning_overlay_fps = clampf(
+		float(cfg.get_value("planning_preview", "planning_overlay_fps", planning_overlay_fps)),
+		0.0,
+		PLANNING_OVERLAY_FPS_MAX,
 	)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
@@ -215,6 +254,9 @@ func save_to_disk() -> void:
 	cfg.set_value("planning_preview", "show_live_ghosts", preview_show_live_ghosts)
 	cfg.set_value("planning_preview", "show_arrows", preview_show_arrows)
 	cfg.set_value("planning_preview", "show_committed_intents", preview_show_committed_intents)
+	cfg.set_value("planning_preview", "hover_throttle_pct", hover_throttle_pct)
+	cfg.set_value("planning_preview", "hover_sim_interval_ms", hover_sim_interval_ms)
+	cfg.set_value("planning_preview", "planning_overlay_fps", planning_overlay_fps)
 	cfg.set_value("display", "screen_index", screen_index)
 	cfg.set_value("display", "window_position_x", window_position.x)
 	cfg.set_value("display", "window_position_y", window_position.y)

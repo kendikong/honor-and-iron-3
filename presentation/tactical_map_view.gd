@@ -273,6 +273,10 @@ func get_effects_settings() -> EffectsSettings:
 	return _effects.settings
 
 
+func get_game_settings() -> GameSettings:
+	return _settings
+
+
 ## Tier 3 QA: disable ambient VFX tick and staticize planning overlay animations.
 func apply_qa_performance_mode(overlay: TacticalPlanningOverlay) -> void:
 	_qa_perf_mode = true

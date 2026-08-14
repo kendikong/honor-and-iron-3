@@ -2575,8 +2575,6 @@ func _process(delta: float) -> void:
 	if not _hit_bursts.is_empty():
 		_tick_hit_bursts(delta)
 		need_redraw = true
-	if _any_predicted_change():
-		need_redraw = true
 	if not _move_tweens.is_empty():
 		need_redraw = true
 	if need_redraw:
