@@ -5060,6 +5060,8 @@ func refresh_mouse_cursor(cell: Vector2i) -> void:
 	_overlay_cursor_cell = cell
 	if _planning != null:
 		_planning.set_hover_action_icon(icon)
+	if _planning != null and _planning.is_system_mouse_override():
+		return
 	if icon != "" and (_planning == null or _planning.planning_cursor_display_enabled()):
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	else:

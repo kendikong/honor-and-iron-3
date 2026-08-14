@@ -13,6 +13,7 @@ var _icon: String = ""
 var _font_size: int = BASE_ICON_SIZE
 var _drawer: Control
 var _last_draw_mouse_pos: Vector2 = Vector2(-99999.0, -99999.0)
+var _system_mouse_override: bool = false
 
 
 func _ready() -> void:
@@ -39,8 +40,27 @@ func set_icon(icon: String) -> void:
 		_drawer.queue_redraw()
 
 
+func is_system_mouse_override() -> bool:
+	return _system_mouse_override
+
+
+func set_system_mouse_override(enabled: bool) -> void:
+	if _system_mouse_override == enabled:
+		return
+	_system_mouse_override = enabled
+	if enabled:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	elif _icon != "":
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	else:
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	_last_draw_mouse_pos = Vector2(-99999.0, -99999.0)
+	if _drawer != null:
+		_drawer.queue_redraw()
+
+
 func _process(_delta: float) -> void:
-	if _icon == "" or _drawer == null:
+	if _system_mouse_override or _icon == "" or _drawer == null:
 		return
 	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
 	if mouse_pos.distance_squared_to(_last_draw_mouse_pos) < 0.25:
@@ -50,7 +70,7 @@ func _process(_delta: float) -> void:
 
 
 func _on_draw() -> void:
-	if _icon == "":
+	if _system_mouse_override or _icon == "":
 		return
 	var center: Vector2 = get_viewport().get_mouse_position() + ICON_OFFSET
 	var composite: PackedStringArray = _composite_icon_parts(_icon)

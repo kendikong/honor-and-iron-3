@@ -718,6 +718,10 @@ func set_hover_action_icon(icon: String) -> void:
 	queue_redraw()
 
 
+func is_system_mouse_override() -> bool:
+	return _planning_cursor != null and _planning_cursor.is_system_mouse_override()
+
+
 func clear_planning_cursor_icon() -> void:
 	_hover_action_icon = ""
 	if _planning_cursor != null:
