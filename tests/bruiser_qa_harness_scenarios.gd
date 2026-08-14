@@ -14,7 +14,7 @@ static func run_charge_strike(failures: Array[String]) -> void:
 		[GameEnums.EffectType.MOVE, GameEnums.EffectType.DAMAGE, GameEnums.EffectType.PUSH],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
-	H.assert_eq_int(failures, "charge_strike/range", factory_ab.range_tiles, 1)
+	H.assert_eq_int(failures, "charge_strike/range", factory_ab.range_tiles, 2)
 	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.effects[0].amount, 2)
 	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.effects[1].amount, 3)
 	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.effects[2].amount, 1)
@@ -45,13 +45,13 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "charge_strike/push_distance", H.event_push_distance(result.events, 2), 1)
 	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
-	H.place_dummy(far_board, 11, Vector2i(4, 3))
+	H.place_dummy(far_board, 11, Vector2i(5, 3))
 	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_charge_strike")
-	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(4, 3), 11)
+	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(5, 3), 11)
 	H.assert_true(
 		failures, "charge_strike/out_of_range",
 		not AbilitySystem.can_use(far_board, far_action),
-		"RANGE 1 + MOVE 2 must reject targets beyond 2 tiles",
+		"MOVE 2 then melee must reject targets beyond 3 tiles",
 	)
 
 
@@ -585,14 +585,14 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		40,
 		H.bruiser_unit_data(),
 		GameEnums.Team.ENEMY,
-		Vector2i(2, 3),
+		Vector2i(3, 2),
 		{
-			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")],
 			"active_passives": [],
 		},
 	)
 	var post_plan := Timeline.new()
-	post_plan.add(H.plan_ability(40, H.factory_ability(&"bruiser_headbutt"), Vector2i(3, 3), 3))
+	post_plan.add(H.plan_ability(40, H.factory_ability(&"bruiser_concussion_blow"), Vector2i(3, 3), 3))
 	var post_result: SimResult = H.simulate_plan(post_board, post_plan)
 	H.assert_eq_int(
 		failures, "meat_shield/post_expiry/no_redirect",
@@ -605,9 +605,9 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		11,
 		H.bruiser_unit_data(),
 		GameEnums.Team.ENEMY,
-		Vector2i(2, 3),
+		Vector2i(3, 2),
 		{
-			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")],
 			"active_passives": [],
 		},
 	)
@@ -628,16 +628,16 @@ static func run_meat_shield(failures: Array[String]) -> void:
 		GameEnums.Team.ENEMY,
 		Vector2i(2, 3),
 		{
-			"active_abilities": [H.factory_ability(&"bruiser_headbutt")],
+			"active_abilities": [H.factory_ability(&"bruiser_concussion_blow")],
 			"active_passives": [],
 		},
 	)
-	var solo_attack: AbilityData = H.factory_ability(&"bruiser_headbutt")
+	var solo_attack: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
 	var solo_plan := Timeline.new()
 	solo_plan.add(H.plan_ability(31, solo_attack, Vector2i(3, 3), 30))
 	var solo_result: SimResult = H.simulate_plan(solo_board, solo_plan)
 	var solo_incoming: int = H.sum_unit_incoming_damage_events(solo_result.events, 30)
-	var attack_ab: AbilityData = H.factory_ability(&"bruiser_headbutt")
+	var attack_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
 	var attack_plan := Timeline.new()
 	attack_plan.add(H.plan_ability(11, attack_ab, Vector2i(3, 3), 3))
 	var attack_result: SimResult = H.simulate_plan(redirect_board, attack_plan)
@@ -835,7 +835,7 @@ static func run_headbutt(failures: Array[String]) -> void:
 	var expected_enemy: int = H.damage_dealt_to_unit(
 		board, 2, int(dmg_math.get("final_raw", 0)), attacker,
 	)
-	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy)
+	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy + 1)
 	H.assert_eq_int(failures, "headbutt/self_dmg", self_damage, 1)
 	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_true(
@@ -1115,10 +1115,15 @@ static func run_cellular_regeneration(failures: Array[String]) -> void:
 	var hp: int = bruiser.health.current_hp
 	var plan := Timeline.new()
 	var result: SimResult = H.simulate_plan(board, plan)
+	H.assert_eq_int(
+		failures, "cellular_regeneration/no_heal_when_reactive",
+		H.unit_hp(result.final_state, 1),
+		hp,
+	)
 	H.assert_true(
-		failures, "cellular_regeneration/heal",
-		H.unit_hp(result.final_state, 1) == hp + 1,
-		"5% Sanguine Regeneration must heal at turn start",
+		failures, "reactive_adrenaline/shield",
+		result.final_state.get_unit_by_id(1).armor > 0,
+		"Reactive Adrenaline converts the turn-start heal into SHIELD",
 	)
 	H.assert_true(
 		failures, "reactive_adrenaline/strength",

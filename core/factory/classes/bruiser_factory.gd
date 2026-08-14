@@ -81,16 +81,17 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
 	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
-	charge_upgraded[1].legacy_modifiers["bonus_dmg_from_terrain"] = 2
+	charge_upgraded[0].legacy_modifiers["ghost_move"] = 1
+	charge_upgraded[1].legacy_modifiers["bonus_dmg_from_occupied"] = 2
 	charge_upgraded[1].layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_strike := DataLibrary._make_modular_ability(
 		&"bruiser_charge_strike", "Charge Strike", [charge_move, charge_attack],
 		charge_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [],
-		"Gain GHOST during MOVE. Gain ATK +2 if passing through terrain.",
+		"Gain GHOST during MOVE. Gain ATK +2 if you passed through an occupied tile.",
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 	)
-	charge_strike.range_tiles = 1
+	charge_strike.range_tiles = 2
 	def.abilities.append(charge_strike)
 
 	var concussion_module := DataLibrary._module(
@@ -102,6 +103,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	concussion_module.layers = [DataLibrary._layer(concussion_push)]
 	var concussion_upgraded := DataLibrary._duplicate_modules([concussion_module])
 	var upgraded_concussion_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	upgraded_concussion_push.modifiers["object_collision_stagger"] = 1
 	upgraded_concussion_push.modifiers["enemy_collision_stagger_both"] = 1
 	concussion_upgraded[0].layers = [DataLibrary._layer(upgraded_concussion_push)]
 	var concussion_blow := DataLibrary._make_modular_ability(
@@ -164,7 +166,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var earthshatter_module := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 1,
-		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
 	)
 	earthshatter_module.layers = [
@@ -176,7 +178,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"bruiser_earthshatter", "Earthshatter", [earthshatter_module],
 		earthshatter_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Gain ATK +1 per destroyed object.",
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE,
 	)
 	def.abilities.append(earthshatter)
 
@@ -228,6 +230,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var roar_upgraded := DataLibrary._duplicate_modules([roar_module])
 	roar_upgraded[0].legacy_modifiers["push_board_items"] = 1
 	roar_upgraded[0].legacy_modifiers["item_collision_damage"] = 1
+	roar_upgraded[0].legacy_modifiers["item_collision_str_div"] = 2
+	roar_upgraded[0].legacy_modifiers["item_collision_vulnerable"] = 1
 	var guttural_roar := DataLibrary._make_modular_ability(
 		&"bruiser_guttural_roar", "Guttural Roar", [roar_module], roar_upgraded,
 		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
@@ -240,7 +244,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
+	var headbutt_true := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
+	headbutt_true.modifiers["true_damage"] = 1
 	headbutt_module.layers = [
+		DataLibrary._layer(headbutt_true),
 		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1)),
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1)),
 		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)),
@@ -278,7 +285,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	]
 	collision_dash.legacy_modifiers["violent_collision_recast"] = 1
 	var collision_recast := DataLibrary._module(
-		GameEnums.EffectType.MOVE, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)

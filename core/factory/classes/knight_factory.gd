@@ -52,9 +52,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	}))
 	def.passives.append(DataLibrary._make_passive(&"thorny_carapace", "Thorny Carapace", "Melee hit reflects 50% damage (rounded down) & PUSH 1.", "[+] Reflects 100% damage instead."))
 	
-	def.passives.append(DataLibrary._make_passive(&"concussive_shatter", "Concussive Shatter", "Enemy collision suffers extra damage equal to 50% of your DEF, and target loses -1 DEF.", "[+] Target also suffers VULNERABLE.", {
+	def.passives.append(DataLibrary._make_passive(&"concussive_shatter", "Concussive Shatter", "Enemy collision suffers extra damage equal to 50% of your DEF, and target loses DEF equal to your WPN.", "[+] Target also suffers VULNERABLE.", {
 		"collision_add_def_pct": 0.5,
 		"collision_apply_target_status": GameEnums.StatusType.STAT_DEBUFF_DEF,
+		"collision_def_loss_wpn": true,
 		"collision_apply_target_status_upgraded": GameEnums.StatusType.VULNERABLE
 	}))
 	
@@ -120,7 +121,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(phalanx_stance)
 
 	var taunting_strike_module := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 1, 1, 2, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.DAMAGE, 1, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	taunting_strike_module.layers = [
@@ -136,7 +137,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"knight_taunting_strike", "Taunting Strike", [taunting_strike_module],
 		taunting_strike_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "RANGE 3 | AOE 3x3 | PULL 2 all.",
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE,
 	)
 	def.abilities.append(taunting_strike)
 
@@ -210,7 +211,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(iron_grip)
 
 	var redirect_module := DataLibrary._module(
-		GameEnums.EffectType.ADD_STATUS_SELF, 0, 1, 2, GameEnums.TargetingFlags.SELF,
+		GameEnums.EffectType.ADD_STATUS_SELF, 0, 1, 2, GameEnums.TargetingFlags.ALLY,
 	)
 	redirect_module.status_type = GameEnums.StatusType.INTERCEPT
 	var redirect_upgraded := DataLibrary._duplicate_modules([redirect_module])
@@ -219,7 +220,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"knight_redirect_strike", "Redirect Strike", [redirect_module],
 		redirect_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Gain DEF +2 per redirected hit.",
-		GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetingFlags.ALLY,
 	)
 	redirect_strike.range_tiles = 2
 	def.abilities.append(redirect_strike)
@@ -273,7 +274,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	def.abilities.append(shield_slam)
 
-	var defensive_module := DataLibrary._module(
+	var 	defensive_module := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 2, 0, 0,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.AOE_DIAMOND, 3,
@@ -291,7 +292,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"knight_defensive_formation", "Defensive Formation", [defensive_module],
 		defensive_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Allies gain SHIELD 2.",
-		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetingFlags.SELF,
 	)
 	def.abilities.append(defensive_formation)
 
@@ -333,7 +334,4 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(trampling_advance)
 
 	DataLibrary.finalize_unit_abilities(def)
-	for ability: AbilityData in def.abilities:
-		if ability != null and ability.id == &"knight_redirect_strike":
-			ability.range_tiles = 2
 	return def

@@ -1488,14 +1488,14 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	})
 	var knight: UnitState = unit_on_board(board, 10)
 	var redirect: AbilityData = ability_on_unit(knight, &"knight_redirect_strike")
-	var cast_action: TimelineAction = plan_ability(10, redirect, knight.position, knight.id)
+	var cast_action: TimelineAction = plan_ability(10, redirect, Vector2i(4, 3), 11)
 	assert_true(
-		failures, "redirect_strike/ability_system/can_use_self",
+		failures, "redirect_strike/ability_system/can_use_ally",
 		AbilitySystem.can_use(board, cast_action),
-		"AbilitySystem must allow self-cast redirect strike at RANGE 2",
+		"AbilitySystem must allow RANGE 2 ally-targeted redirect strike",
 	)
 	var plan := Timeline.new()
-	plan.add(plan_ability(10, redirect, knight.position, knight.id))
+	plan.add(plan_ability(10, redirect, Vector2i(4, 3), 11))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(10)
 	assert_true(
@@ -1610,21 +1610,21 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var knight_far: UnitState = unit_on_board(board_far, 30)
 	var redirect_far: AbilityData = ability_on_unit(knight_far, &"knight_redirect_strike")
 	var plan_far := Timeline.new()
-	plan_far.add(plan_ability(30, redirect_far, knight_far.position, knight_far.id))
+	plan_far.add(plan_ability(30, redirect_far, Vector2i(5, 3), 31))
 	var result_far: SimResult = simulate_player_turn(board_far, plan_far)
 	var board_far_hit: BoardState = result_far.final_state.clone()
 	var knight_far_before: int = board_far_hit.get_unit_by_id(30).health.current_hp
 	var loss_far_ally: int = damage_taken_pierce(board_far_hit, 31, 20)
 	var knight_far_loss: int = knight_far_before - board_far_hit.get_unit_by_id(30).health.current_hp
 	assert_eq_int(
-		failures, "redirect_strike/non_adjacent/no_redirect",
+		failures, "redirect_strike/range2/redirect",
 		knight_far_loss,
-		0,
+		10,
 	)
 	assert_eq_int(
-		failures, "redirect_strike/non_adjacent/full_ally_damage",
+		failures, "redirect_strike/range2/ally_half",
 		loss_far_ally,
-		20,
+		10,
 	)
 	var cfg_up: Dictionary = with_upgraded_ability(cfg, &"knight_redirect_strike")
 	var board_up: BoardState = make_plain_board(Vector2i(8, 8))
@@ -1640,7 +1640,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 		"upgraded redirect strike must mark INTERCEPT with value 1 for [+] DEF",
 	)
 	var plan_up := Timeline.new()
-	plan_up.add(plan_ability(20, redirect_up, knight_up.position, knight_up.id))
+	plan_up.add(plan_ability(20, redirect_up, Vector2i(4, 3), 21))
 	var result_up: SimResult = simulate_player_turn(board_up, plan_up)
 	var board_up_hit: BoardState = result_up.final_state.clone()
 	damage_taken_pierce(board_up_hit, 21, 20)
@@ -1672,10 +1672,13 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	var cfg: Dictionary = with_single_passive(&"intercept_tactics", false)
 	var board: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board, 1, Vector2i(3, 3), cfg)
+	place_unit(board, 2, knight_unit_data(), GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
 	var knight: UnitState = unit_on_board(board, 1)
 	var redirect: AbilityData = ability_on_unit(knight, &"knight_redirect_strike")
 	var plan := Timeline.new()
-	plan.add(plan_ability(1, redirect, knight.position, knight.id))
+	plan.add(plan_ability(1, redirect, Vector2i(4, 3), 2))
 	var result: SimResult = simulate_player_turn(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	var def_amt: int = 0
@@ -1699,10 +1702,13 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	var cfg_up: Dictionary = with_single_passive(&"intercept_tactics", true)
 	var board2: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board2, 10, Vector2i(3, 3), cfg_up)
+	place_unit(board2, 11, knight_unit_data(), GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
 	var knight2: UnitState = unit_on_board(board2, 10)
 	var redirect2: AbilityData = ability_on_unit(knight2, &"knight_redirect_strike")
 	var plan2 := Timeline.new()
-	plan2.add(plan_ability(10, redirect2, knight2.position, knight2.id))
+	plan2.add(plan_ability(10, redirect2, Vector2i(4, 3), 11))
 	var result2: SimResult = simulate_player_turn(board2, plan2)
 	var after2: UnitState = result2.final_state.get_unit_by_id(10)
 	def_amt = 0
@@ -1717,9 +1723,12 @@ static func run_intercept_tactics(failures: Array[String]) -> void:
 	var loss_up: int = damage_taken_on_unit(result2.final_state, 10, 12)
 	var board_base: BoardState = make_plain_board(Vector2i(8, 8))
 	place_knight(board_base, 12, Vector2i(3, 3), cfg)
+	place_unit(board_base, 13, knight_unit_data(), GameEnums.Team.PLAYER, Vector2i(4, 3), {
+		"active_abilities": [DataLibrary.get_universal_run()],
+	})
 	var redirect_base: AbilityData = ability_on_unit(unit_on_board(board_base, 12), &"knight_redirect_strike")
 	var plan_base := Timeline.new()
-	plan_base.add(plan_ability(12, redirect_base, Vector2i(3, 3), 12))
+	plan_base.add(plan_ability(12, redirect_base, Vector2i(4, 3), 13))
 	var result_base: SimResult = simulate_player_turn(board_base, plan_base)
 	var loss_base_redirect: int = damage_taken_on_unit(result_base.final_state, 12, 12)
 	assert_true(

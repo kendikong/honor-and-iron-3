@@ -55,12 +55,12 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		1,
 	)
 	H.assert_true(
-		failures, "charge_strike/upgrade/terrain_bonus",
-		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_terrain"),
+		failures, "charge_strike/upgrade/occupied_bonus",
+		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_occupied"),
 	)
 	H.assert_eq_int(
-		failures, "charge_strike/upgrade/terrain_bonus_val",
-		int(ab.upgraded_effects[1].modifiers["bonus_dmg_from_terrain"]),
+		failures, "charge_strike/upgrade/occupied_bonus_val",
+		int(ab.upgraded_effects[1].modifiers["bonus_dmg_from_occupied"]),
 		2,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -68,27 +68,37 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		&"bruiser_charge_strike",
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
-	H.set_tile_terrain(board, Vector2i(2, 3), &"tall_grass")
 	H.place_bruiser(board, 1, Vector2i(1, 3), cfg)
-	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.place_dummy(board, 2, Vector2i(2, 3))
+	H.place_dummy(board, 3, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
-	var hp: int = H.unit_hp(board, 2)
+	var hp: int = H.unit_hp(board, 3)
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_charge_strike")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 3))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_true(
-		failures, "charge_strike/upgrade/terrain_flag",
-		bruiser.passive_flags.get("passed_through_terrain", false),
+	H.assert_eq_cell(
+		failures, "charge_strike/upgrade/ghost_path",
+		result.final_state.get_unit_by_id(1).position,
+		Vector2i(3, 3),
 	)
-	var dmg_cracked: int = hp - H.unit_hp(result.final_state, 2)
+	H.assert_eq_cell(
+		failures, "charge_strike/upgrade/ghost_blocker",
+		result.final_state.get_unit_by_id(2).position,
+		Vector2i(2, 3),
+	)
+	H.assert_true(
+		failures, "charge_strike/upgrade/occupied_flag",
+		result.final_state.get_unit_by_id(1).passive_flags.get("passed_through_occupied", false),
+	)
+	var dmg_occupied: int = hp - H.unit_hp(result.final_state, 3)
 	var board_plain: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board_plain, 10, Vector2i(1, 3), cfg)
-	H.place_dummy(board_plain, 11, Vector2i(3, 3))
+	H.place_dummy(board_plain, 11, Vector2i(4, 3))
 	var hp_plain: int = H.unit_hp(board_plain, 11)
 	var plain_skill: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 10), &"bruiser_charge_strike")
 	var plain_plan := Timeline.new()
-	plain_plan.add(H.plan_ability(10, plain_skill, Vector2i(3, 3), 11))
+	plain_plan.add(H.plan_ability(10, plain_skill, Vector2i(4, 3), 11))
 	var plain_result: SimResult = H.simulate_plan(board_plain, plain_plan)
 	var dmg_plain: int = hp_plain - H.unit_hp(plain_result.final_state, 11)
 	var base_power: int = ab.upgraded_effects[1].amount
@@ -97,22 +107,9 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 		- CombatSystem.calculate_scaled_damage(bruiser, base_power, GameEnums.StatType.PHYSICAL, board)
 	)
 	H.assert_eq_int(
-		failures, "charge_strike/upgrade/terrain_dmg",
-		dmg_cracked - dmg_plain,
+		failures, "charge_strike/upgrade/occupied_dmg",
+		dmg_occupied - dmg_plain,
 		expected_delta,
-	)
-	var ghost_board: BoardState = H.make_plain_board(Vector2i(10, 8))
-	H.place_bruiser(ghost_board, 20, Vector2i(2, 3), cfg)
-	H.place_dummy(ghost_board, 21, Vector2i(3, 3))
-	H.place_dummy(ghost_board, 22, Vector2i(4, 3))
-	var ghost_skill: AbilityData = H.ability_on_unit(H.unit_on_board(ghost_board, 20), &"bruiser_charge_strike")
-	var ghost_plan := Timeline.new()
-	ghost_plan.add(H.plan_ability(20, ghost_skill, Vector2i(4, 3), 22))
-	var ghost_result: SimResult = H.simulate_plan(ghost_board, ghost_plan)
-	H.assert_eq_cell(
-		failures, "charge_strike/upgrade/ghost_path",
-		ghost_result.final_state.get_unit_by_id(20).position,
-		Vector2i(4, 3),
 	)
 
 
@@ -458,7 +455,13 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/item_collision",
 		hp - H.unit_hp(result.final_state, 2),
-		1,
+		floori(float(H.unit_on_board(board, 1).current_strength) / 2.0),
+	)
+	var roar_victim: UnitState = result.final_state.get_unit_by_id(2)
+	H.assert_true(
+		failures, "guttural_roar/upgrade/item_vulnerable",
+		roar_victim != null and H.has_status(roar_victim, GameEnums.StatusType.VULNERABLE),
+		"item collision must apply VULNERABLE",
 	)
 
 
@@ -847,9 +850,14 @@ static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(
-		failures, "reactive_adrenaline/upgrade/heal",
+		failures, "reactive_adrenaline/upgrade/no_heal",
 		after.health.current_hp,
-		hp + 1,
+		hp,
+	)
+	H.assert_true(
+		failures, "reactive_adrenaline/upgrade/shield",
+		after.armor > 0,
+		"Reactive Adrenaline converts Sanguine heal into SHIELD even when wounded",
 	)
 	H.assert_true(
 		failures, "reactive_adrenaline/upgrade/str",

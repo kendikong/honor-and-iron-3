@@ -3,8 +3,8 @@ extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
 
-## Bible: Redirect Strike - SELF INTERCEPT (50% adjacent-ally damage, rounded down); [+] DEF +2 per redirected hit.
-## Globals: ADD_STATUS_SELF(INTERCEPT) via AbilitySystem; split in CombatSystem.deal_damage.
+## Bible: Redirect Strike - RANGE 2 | Target Ally. INTERCEPT 50% of that ally's damage this turn. [+] DEF +2 per redirected hit.
+## Globals: ADD_STATUS_SELF(INTERCEPT) with ALLY aim; split in CombatSystem.deal_damage.
 ## Planning tier: fixture (run_planning_qa_gate.ps1)
 
 
@@ -22,9 +22,8 @@ static func _sim_contract(failures: Array[String]) -> void:
 		),
 	)
 	_KnightQaHarness.assert_true(
-		failures, "redirect/contract/self_target",
-		redirect != null and redirect.can_target_self
-		and redirect.targeting_mode == GameEnums.TargetingMode.SELF,
+		failures, "redirect/contract/ally_target",
+		redirect != null and redirect.targeting_mode == GameEnums.TargetingMode.ALLY_UNIT,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "redirect/contract/range",

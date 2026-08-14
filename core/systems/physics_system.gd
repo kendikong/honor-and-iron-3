@@ -476,7 +476,7 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 				if AbilitySystem.ability_has_modifier(ability, &"buff_on_push", pusher):
 					pusher.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, 1))
 					pusher._recalculate_stats()
-				if ability.movement_point_cost == 0:
+				if ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL:
 					for passive: PassiveData in pusher.active_passives:
 						if passive == null or not passive.modifiers.has("push_next_attack_pierce"):
 							continue
@@ -612,51 +612,16 @@ static func _emit_collision(
 				)
 			
 		if blocker.has_passive(&"collision_retaliator") and blocker.team != target.team:
-			var collision_shield := 0
-			var shockwave_damage := 0
-			var shockwave_radius := 0
-			var kinetic_dissipation_upgraded := false
-			for passive: PassiveData in blocker.active_passives:
-				if passive == null or not passive.modifiers.has("collision_grant_shield_def"):
-					continue
-				collision_shield = blocker.current_defense
-				shockwave_damage = blocker.current_defense
-				shockwave_radius = int(passive.modifiers.get("collision_shockwave_radius", 1))
-				kinetic_dissipation_upgraded = blocker.is_passive_upgraded(passive.id)
-				break
-			if collision_shield > 0:
-				CombatSystem.add_armor(board, blocker, collision_shield, events)
 			if blocker.is_passive_upgraded(&"collision_retaliator"):
 				CombatSystem.add_armor(board, blocker, 2, events)
-			if shockwave_damage > 0:
-				for direction: Vector2i in GridSystem.DIRECTIONS:
-					var shockwave_target := board.get_unit_at(blocker.position + direction)
-					if (
-						shockwave_target != null
-						and shockwave_target.team != blocker.team
-						and GridSystem.manhattan(blocker.position, shockwave_target.position)
-							<= shockwave_radius
-					):
-						CombatSystem.deal_damage(
-							board,
-							shockwave_target,
-							shockwave_damage,
-							events,
-							&"physical",
-							false,
-							false,
-							blocker,
-							"Kinetic Dissipation",
-							shockwave_damage,
-						)
 			if target.id != collision_immune_id:
 				CombatSystem.deal_collision_damage(
 					board, pusher, target, push_distance, tiles_moved, events,
 					CombatSystem.COLLISION_RETALIATOR_BASE_BONUS,
 				)
-			if kinetic_dissipation_upgraded:
-				var push_dir := cardinal_from_to(blocker.position, target.position)
-				push(board, target, push_dir, 1, events, blocker, ability_id, collision_immune_id)
+			_apply_kinetic_dissipation(
+				board, blocker, target, events, ability_id, collision_immune_id,
+			)
 		else:
 			if target.id != collision_immune_id:
 				CombatSystem.deal_collision_damage(
@@ -676,6 +641,16 @@ static func _emit_collision(
 			CombatSystem.deal_collision_damage(
 				board, pusher, target, push_distance, tiles_moved, events, collision_base_bonus
 			)
+	_apply_kinetic_dissipation(
+		board, target, blocker, events, ability_id, collision_immune_id,
+	)
+	if (
+		blocker != null
+		and not blocker.has_passive(&"collision_retaliator")
+	):
+		_apply_kinetic_dissipation(
+			board, blocker, target, events, ability_id, collision_immune_id,
+		)
 	var collision_ability := pusher.get_ability_by_id(ability_id) \
 		if pusher != null and ability_id != &"" else null
 	var splash_damage := _ability_modifier_value(
@@ -707,6 +682,58 @@ static func _emit_collision(
 				splash_target._recalculate_stats(board)
 	for i: int in range(start_idx, events.size()):
 		events[i].data["is_collision_side_effect"] = true
+
+
+static func _apply_kinetic_dissipation(
+	board: BoardState,
+	collider: UnitState,
+	other: UnitState,
+	events: Array[SimEvent],
+	ability_id: StringName,
+	collision_immune_id: int,
+) -> void:
+	if collider == null or not collider.is_alive():
+		return
+	var collision_shield := 0
+	var shockwave_damage := 0
+	var shockwave_radius := 1
+	var kinetic_upgraded := false
+	for passive: PassiveData in collider.active_passives:
+		if passive == null or not passive.modifiers.has("collision_grant_shield_def"):
+			continue
+		collision_shield = collider.current_defense
+		shockwave_damage = collider.current_defense
+		shockwave_radius = int(passive.modifiers.get("collision_shockwave_radius", 1))
+		kinetic_upgraded = collider.is_passive_upgraded(passive.id)
+		break
+	if collision_shield <= 0:
+		return
+	CombatSystem.add_armor(board, collider, collision_shield, events)
+	if shockwave_damage > 0:
+		for direction: Vector2i in GridSystem.DIRECTIONS:
+			var shockwave_target := board.get_unit_at(collider.position + direction)
+			if (
+				shockwave_target != null
+				and shockwave_target.team != collider.team
+				and GridSystem.manhattan(collider.position, shockwave_target.position)
+					<= shockwave_radius
+			):
+				CombatSystem.deal_damage(
+					board,
+					shockwave_target,
+					shockwave_damage,
+					events,
+					&"physical",
+					false,
+					false,
+					collider,
+					"Kinetic Dissipation",
+					shockwave_damage,
+				)
+	if kinetic_upgraded and other != null and other.is_alive():
+		var push_dir := cardinal_from_to(collider.position, other.position)
+		if push_dir != Vector2i.ZERO:
+			push(board, other, push_dir, 1, events, collider, ability_id, collision_immune_id)
 
 
 static func _ability_modifier_value(

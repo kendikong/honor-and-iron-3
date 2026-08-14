@@ -52,8 +52,9 @@ static func deal_collision_damage(
 	events: Array[SimEvent],
 	base_bonus: int = 0,
 ) -> void:
-	assert(pusher != null, "Collision damage requires an instigating pusher")
-	if victim == null or not victim.is_alive():
+	if victim.has_passive(&"collision_retaliator"):
+		if victim.is_passive_upgraded(&"collision_retaliator"):
+			add_armor(board, victim, 2, events)
 		return
 	var excess := maxi(0, push_distance - tiles_moved)
 	var base := collision_base(excess, base_bonus)
@@ -109,21 +110,24 @@ static func deal_collision_damage(
 	for passive: PassiveData in pusher.active_passives:
 		var is_upgraded := pusher.is_passive_upgraded(passive.id)
 		
-		# Target status debuffs
-		var apply_status = -1
-		var status_amount = 1
+		# Target status debuffs — base and upgrade both apply when both keys exist.
+		if passive.modifiers.has("collision_apply_target_status"):
+			var base_status: int = int(passive.modifiers["collision_apply_target_status"])
+			var base_amount: int = 1
+			if passive.modifiers.has("collision_def_loss_wpn"):
+				base_amount = wpn
+			elif passive.modifiers.has("collision_apply_target_status_amount"):
+				base_amount = int(passive.modifiers["collision_apply_target_status_amount"])
+			if not try_resist_crowd_control(victim, base_status, events):
+				victim.active_statuses.append(DataLibrary.make_status(base_status, 1, base_amount))
+				victim._recalculate_stats()
 		if is_upgraded and passive.modifiers.has("collision_apply_target_status_upgraded"):
-			apply_status = passive.modifiers["collision_apply_target_status_upgraded"]
+			var upgraded_status: int = int(passive.modifiers["collision_apply_target_status_upgraded"])
+			var upgraded_amount: int = 1
 			if passive.modifiers.has("collision_apply_target_status_upgraded_amount"):
-				status_amount = passive.modifiers["collision_apply_target_status_upgraded_amount"]
-		elif passive.modifiers.has("collision_apply_target_status"):
-			apply_status = passive.modifiers["collision_apply_target_status"]
-			if passive.modifiers.has("collision_apply_target_status_amount"):
-				status_amount = passive.modifiers["collision_apply_target_status_amount"]
-			
-		if apply_status >= 0:
-			if not try_resist_crowd_control(victim, apply_status, events):
-				victim.active_statuses.append(DataLibrary.make_status(apply_status, 1, status_amount))
+				upgraded_amount = int(passive.modifiers["collision_apply_target_status_upgraded_amount"])
+			if not try_resist_crowd_control(victim, upgraded_status, events):
+				victim.active_statuses.append(DataLibrary.make_status(upgraded_status, 1, upgraded_amount))
 				victim._recalculate_stats()
 			
 		# Shield granting
@@ -677,42 +681,47 @@ static func deal_damage(
 			partner.passive_flags.erase("magic_chain_processing")
 
 	if not is_intercepted and source_type != &"hazard":
-		for dir in GridSystem.DIRECTIONS:
-			var adj = target.position + dir
-			if GridSystem.is_in_bounds(board, adj):
-				var adj_tile = board.get_tile(adj)
-				if adj_tile != null and not adj_tile.is_empty() and adj_tile.occupant_id != target.id:
-					var ally = board.get_unit_by_id(adj_tile.occupant_id)
-					if ally != null and ally.is_alive() and ally.team == target.team and ally.has_status(GameEnums.StatusType.INTERCEPT):
-						var is_upgraded = false
-						for status in ally.active_statuses:
-							if status.type == GameEnums.StatusType.INTERCEPT and status.value == 1:
-								is_upgraded = true
-								break
-						
-						var intercept_amount = floori(amount * 0.5)
-						if intercept_amount > 0:
-							amount -= intercept_amount
-							if is_upgraded:
-								ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
-								ally._recalculate_stats()
-							var intercept_str: int = int(ally.passive_flags.get("meat_shield_intercept_str", 0))
-							if intercept_str > 0:
-								ally.active_statuses.append(
-									DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, intercept_str),
-								)
-								ally._recalculate_stats()
-							CombatSystem.deal_damage(
-								board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
-							)
-							if (
-								ally.passive_flags.get("counterattack_on_intercept", false)
-								and attacker != null
-								and attacker.is_alive()
-							):
-								counter_attack(board, ally, attacker, 1, events, "Shield of Faith")
-								ally.passive_flags.erase("counterattack_on_intercept")
-						break # Only one interceptor triggers
+		for ally: UnitState in board.units:
+			if ally == null or not ally.is_alive() or ally.id == target.id:
+				continue
+			if ally.team != target.team or not ally.has_status(GameEnums.StatusType.INTERCEPT):
+				continue
+			var ward_id: int = int(ally.passive_flags.get("intercept_ward_id", -1))
+			var intercept_range: int = int(ally.passive_flags.get("intercept_range", 1))
+			var dist: int = GridSystem.manhattan(ally.position, target.position)
+			if ward_id >= 0:
+				if target.id != ward_id or dist > maxi(1, intercept_range):
+					continue
+			elif dist != 1:
+				continue
+			var is_upgraded = false
+			for status in ally.active_statuses:
+				if status.type == GameEnums.StatusType.INTERCEPT and status.value == 1:
+					is_upgraded = true
+					break
+			var intercept_amount = floori(amount * 0.5)
+			if intercept_amount > 0:
+				amount -= intercept_amount
+				if is_upgraded:
+					ally.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2))
+					ally._recalculate_stats()
+				var intercept_str: int = int(ally.passive_flags.get("meat_shield_intercept_str", 0))
+				if intercept_str > 0:
+					ally.active_statuses.append(
+						DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 1, intercept_str),
+					)
+					ally._recalculate_stats()
+				CombatSystem.deal_damage(
+					board, ally, intercept_amount, events, source_type, pierce, true, attacker, source_label, intercept_amount
+				)
+				if (
+					ally.passive_flags.get("counterattack_on_intercept", false)
+					and attacker != null
+					and attacker.is_alive()
+				):
+					counter_attack(board, ally, attacker, 1, events, "Shield of Faith")
+					ally.passive_flags.erase("counterattack_on_intercept")
+			break
 
 	var fort := 0
 	var tile := board.get_tile(target.position)
@@ -748,7 +757,15 @@ static func deal_damage(
 		var attacker_vector := attacker.position - target.position
 		var front_vector := PhysicsSystem.facing_to_vector(target.facing)
 		if front_vector.x * attacker_vector.x + front_vector.y * attacker_vector.y > 0:
-			mitigation += 4 if target.is_passive_upgraded(&"collision_retaliator") else 2
+			var frontal_def := 2
+			for passive: PassiveData in target.active_passives:
+				if passive == null or not passive.modifiers.has("bastion_front_def"):
+					continue
+				frontal_def = int(passive.modifiers["bastion_front_def"])
+				if target.is_passive_upgraded(passive.id):
+					frontal_def = int(passive.modifiers.get("upgraded_bastion_front_def", frontal_def))
+				break
+			mitigation += frontal_def
 		
 	if source_type == &"magical":
 		var target_magic := target.current_magic

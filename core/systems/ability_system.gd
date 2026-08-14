@@ -240,7 +240,15 @@ static func planning_max_target_distance(actor: UnitState, ability: AbilityData)
 			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 		)
 		if move_steps > 0:
-			max_range = maxi(max_range, move_steps)
+			var followup_range := 0
+			for module: AbilityModule in active_modules_for(actor, ability):
+				if (
+					module != null
+					and module.primary_type == GameEnums.EffectType.DAMAGE
+					and module.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N
+				):
+					followup_range = maxi(followup_range, module.max_range)
+			max_range = maxi(max_range, move_steps + followup_range)
 	return max_range
 
 
@@ -552,6 +560,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		)
 		if legacy_move_range > 0:
 			max_range = maxi(max_range, legacy_move_range)
+	if motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE:
+		max_range = maxi(max_range, planning_max_target_distance(actor, ability))
 	if dist > max_range:
 		return false
 	if dist == 0 and active_range_tiles(actor, ability) > 0 and not can_target_self(actor, ability):
@@ -718,9 +728,12 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			if walk_steps <= 0:
 				return false
 			var walk_distance: int = GridSystem.manhattan(actor.position, action.target_coord)
+			var max_walk_target: int = walk_steps
+			if motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE:
+				max_walk_target = maxi(max_walk_target, planning_max_target_distance(actor, ability))
 			if has_authored_modules and not active_motion_range_valid(actor, ability):
 				return false
-			if walk_distance < walk_min or walk_distance > walk_steps:
+			if walk_distance < walk_min or walk_distance > max_walk_target:
 				return false
 				
 	if is_move or is_dash:
@@ -1472,7 +1485,12 @@ static func _ability_has_modifier(
 		return false
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
-		return AbilityModuleBridge.modules_have_modifier(modules, key)
+		if AbilityModuleBridge.modules_have_modifier(modules, key):
+			return true
+		for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(modules):
+			if effect != null and (effect.modifiers.has(key) or effect.modifiers.has(String(key))):
+				return true
+		return false
 	for effect: EffectData in legacy_effects_for(actor, ability):
 		if effect != null and effect.modifiers.has(key):
 			return true
@@ -2157,6 +2175,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
+		actor.passive_flags.erase("passed_through_occupied")
 		actor.passive_flags["__current_ability"] = ability
 		actor.passive_flags["__engineer_event_start"] = events.size()
 		if EngineerSystems.ability_has_explosion(actor, ability):
@@ -2325,11 +2344,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			}))
 			return
 			
-		var has_ghost: bool = (
-			AbilityModuleBridge.modules_have_modifier(runtime_modules, &"ghost_move")
-			if not runtime_modules.is_empty()
-			else _effects_have_modifier(legacy_runtime_effects, &"ghost_move")
-		)
+		var has_ghost: bool = ability_has_modifier(ability, &"ghost_move", actor)
 				
 		var ghost_status = null
 		if has_ghost:
@@ -2347,8 +2362,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if (
 			goal_unit != null
 			and goal_unit.team != actor.team
-			and not actor.has_status(GameEnums.StatusType.GHOST)
-			and not MovementSystem.can_pass_through_enemy(actor, ability)
+			and not MovementSystem.has_trample(actor)
+			and not AbilitySystem.has_pass_through_effects(ability, actor)
 		):
 			var attack_target: UnitState = (
 				board.get_unit_by_id(action.target_unit_id)
@@ -2569,10 +2584,21 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					and effect.modifiers.has("item_collision_damage")
 				):
 					var item_dmg: int = int(effect.modifiers["item_collision_damage"])
+					if effect.modifiers.has("item_collision_str_div"):
+						var divisor: int = maxi(1, int(effect.modifiers["item_collision_str_div"]))
+						item_dmg = floori(float(actor.current_strength) / float(divisor))
 					CombatSystem.deal_damage(
 						board, hit_unit, item_dmg, events, &"true", true, false, actor,
 						action.ability.display_name, item_dmg,
 					)
+					if effect.modifiers.has("item_collision_vulnerable"):
+						if not CombatSystem.try_resist_crowd_control(
+							hit_unit, GameEnums.StatusType.VULNERABLE, events
+						):
+							hit_unit.active_statuses.append(
+								DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1)
+							)
+							hit_unit._recalculate_stats(board)
 		if effect.modifiers.has("target_after_move_adjacent"):
 			var adjacent_target := board.get_unit_by_id(action.target_unit_id)
 			if adjacent_target == null:
@@ -2976,6 +3002,20 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					and not _is_side_attack(actor, target)
 				):
 					return
+				if effect.modifiers.has("true_damage"):
+					CombatSystem.deal_damage(
+						board,
+						target,
+						effect.amount,
+						events,
+						&"true",
+						true,
+						false,
+						actor,
+						action.ability.display_name,
+						effect.amount,
+					)
+					return
 				_apply_range_one_attack_passives(board, actor, target, events)
 			actor.passive_flags.erase("attack_ignore_def")
 			var pierce = false
@@ -3043,6 +3083,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				base_amt += floori(actor.health.max_hp * float(effect.modifiers["bonus_dmg_pct_max_hp"]))
 			if effect.modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
 				base_amt += effect.modifiers["bonus_dmg_from_terrain"]
+			if effect.modifiers.has("bonus_dmg_from_occupied") and actor.passive_flags.get("passed_through_occupied", false):
+				base_amt += effect.modifiers["bonus_dmg_from_occupied"]
 			if effect.modifiers.has("damage_multiplier"):
 				base_amt *= int(effect.modifiers["damage_multiplier"])
 			for passive: PassiveData in actor.active_passives:
@@ -4593,7 +4635,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					and terrain_id == &"steam"
 					and effect.modifiers.get("reaction_steam_splash", false)
 				):
-					var splash_size := int(effect.modifiers.get("reaction_steam_splash_size", 3))
+					var splash_size := int(effect.modifiers.get("reaction_steam_splash_size", 1))
 					var splash_power := int(effect.modifiers.get("reaction_steam_splash_damage", 2))
 					var splash_coords := GridSystem.get_affected_tiles(
 						board,
@@ -4678,6 +4720,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 			var status := StatusData.new(effect.status_type, effect.status_duration, effect.amount)
 			actor.active_statuses.append(status)
+			if effect.status_type == GameEnums.StatusType.INTERCEPT and action.target_unit_id >= 0 and action.target_unit_id != actor.id:
+				actor.passive_flags["intercept_ward_id"] = action.target_unit_id
+				actor.passive_flags["intercept_range"] = maxi(1, action.ability.range_tiles)
 			if effect.modifiers.has("brace_attacker_stagger"):
 				actor.passive_flags["braced_attacker_stagger"] = true
 			actor._recalculate_stats()
@@ -5100,7 +5145,6 @@ static func _can_push_destructible_target(
 		or actor == null
 		or ability == null
 		or ability.kind != GameEnums.AbilityKind.MOVEMENT_SKILL
-		or movement_point_cost(actor, ability) != 0
 		or not _passive_has_modifier(actor, &"push_destroy_obstacles")
 	):
 		return false

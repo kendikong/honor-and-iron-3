@@ -777,7 +777,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		"passive/pole_plant",
 		pole_board.get_tile(Vector2i(3, 2)).definition.id == &"plain"
 		and planter.armor == 2,
-		"0-AP Push must destroy traps and grant SHIELD 2",
+		"Push must destroy traps and grant SHIELD 2",
 		)
 
 	if _passive_should_run(only_id, &"spear_drop"):
@@ -994,7 +994,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		"passive/leverage",
 		leverager.passive_flags.get("next_attack_pierce", false)
 		and leverager.armor == 1,
-		"0-AP Push must prime PIERCE and upgraded SHIELD",
+		"Push must prime PIERCE and upgraded SHIELD",
 		)
 
 

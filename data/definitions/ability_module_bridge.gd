@@ -585,12 +585,14 @@ static func finalize_ability(ability: AbilityData) -> void:
 		var module: AbilityModule = ability.modules[index]
 		if module != null:
 			normalize_module_authoring_fields(module, ability.planner_group, index)
+			_stamp_keyword_modifiers_on_module(module)
 	for index: int in ability.upgraded_modules.size():
 		var upgraded_module: AbilityModule = ability.upgraded_modules[index]
 		if upgraded_module != null:
 			normalize_module_authoring_fields(
 				upgraded_module, ability.planner_group, index
 			)
+			_stamp_keyword_modifiers_on_module(upgraded_module)
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
@@ -834,6 +836,24 @@ static func _ensure_bulldoze_keyword(mod: AbilityModule) -> Array[AbilityKeyword
 		kw.push_amount = int(mod.legacy_modifiers.get("push", 1))
 		kws.append(kw)
 	return kws
+
+
+static func _stamp_keyword_modifiers_on_module(mod: AbilityModule) -> void:
+	if mod == null:
+		return
+	for kw: AbilityKeyword in mod.keywords:
+		if kw == null:
+			continue
+		match kw.keyword_id:
+			GameEnums.AbilityKeywordId.GHOST:
+				mod.legacy_modifiers["ghost_move"] = 1
+			GameEnums.AbilityKeywordId.PIERCE:
+				mod.legacy_modifiers["next_attack_pierce"] = 1
+			GameEnums.AbilityKeywordId.BULLDOZE:
+				if not mod.legacy_modifiers.has("bulldoze"):
+					mod.legacy_modifiers["bulldoze"] = kw.amount
+			_:
+				pass
 
 
 static func _strip_promoted_modifier_keys(mod: AbilityModule) -> void:

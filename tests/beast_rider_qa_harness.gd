@@ -562,8 +562,10 @@ static func _place_actor(
 
 static func _place_target(board: BoardState, row_id: StringName) -> UnitState:
 	var coord := Vector2i(3, 3)
-	if row_id in [&"beast_meteor_drop", &"beast_tail_swipe"]:
+	if row_id == &"beast_meteor_drop":
 		coord = Vector2i(4, 4)
+	if row_id == &"beast_tail_swipe":
+		coord = Vector2i(3, 4)
 	if row_id == &"beast_pounce":
 		coord = Vector2i(4, 3)
 	if row_id == &"beast_airlift":

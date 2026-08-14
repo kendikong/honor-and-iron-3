@@ -45,7 +45,8 @@ static func module_uses_range(module: AbilityModule) -> bool:
 	if module == null:
 		return false
 	if module.primary_type == GameEnums.EffectType.ADD_STATUS_SELF:
-		return false
+		return (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0 \
+			or (module.targeting_flags & GameEnums.TargetingFlags.ENEMY) != 0
 	return true
 
 
@@ -99,7 +100,8 @@ static func targeting_flag_applies(module: AbilityModule, flag: int) -> bool:
 	if flag == GameEnums.TargetingFlags.DASH_LINE:
 		return module.primary_type == GameEnums.EffectType.DASH
 	if module.primary_type == GameEnums.EffectType.ADD_STATUS_SELF:
-		return flag == GameEnums.TargetingFlags.SELF
+		return flag == GameEnums.TargetingFlags.SELF \
+			or flag == GameEnums.TargetingFlags.ALLY
 	if flag == GameEnums.TargetingFlags.TILE and module.primary_type == GameEnums.EffectType.SWAP:
 		return false
 	return true
@@ -192,7 +194,8 @@ static func normalize_module_targeting_flags(module: AbilityModule) -> void:
 		if not targeting_flag_applies(module, flag):
 			module.targeting_flags &= ~flag
 	if module.primary_type == GameEnums.EffectType.ADD_STATUS_SELF:
-		module.targeting_flags |= GameEnums.TargetingFlags.SELF
+		if (module.targeting_flags & GameEnums.TargetingFlags.ALLY) == 0:
+			module.targeting_flags |= GameEnums.TargetingFlags.SELF
 
 
 static func module_has_only_self_targeting(module: AbilityModule) -> bool:

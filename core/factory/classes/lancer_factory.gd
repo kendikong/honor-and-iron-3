@@ -80,7 +80,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		"Landing from a jump applies PUSH 1 to all adjacent enemies; wall collisions apply STAGGER.",
 		{"promotion": &"skystriker", "landing_adjacent_push": 1, "upgraded_landing_collision_stagger": true}))
 	def.passives.append(_passive(&"pole_plant", "Pole-Plant",
-		"Your 0-AP Push can target destructible obstacles and traps. Destroying a trap grants SHIELD 2.",
+		"Your Push can target destructible obstacles and traps. Destroying a trap grants SHIELD 2.",
 		"Destroying a trap also deals 2 unmitigated damage to adjacent enemies.",
 		{"promotion": &"skystriker", "push_destroy_obstacles": true, "trap_destroy_shield": 2,
 		"upgraded_trap_destroy_adjacent_damage": 2}))
@@ -117,8 +117,8 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		{"promotion": &"halberdier", "enemy_end_range_two_attack": true,
 		"upgraded_zone_attack_pierce": true}))
 	def.passives.append(_passive(&"leverage", "Leverage",
-		"Using your 0-AP Push grants your next attack PIERCE and +1 MOV.",
-		"Using your 0-AP Push grants your next attack PIERCE, +1 MOV, and SHIELD 1.",
+		"Using Push grants your next attack PIERCE and +1 MOV.",
+		"Using Push grants your next attack PIERCE, +1 MOV, and SHIELD 1.",
 		{"promotion": &"halberdier", "push_next_attack_pierce": true, "push_mov": 1,
 		"upgraded_push_shield": 1}))
 

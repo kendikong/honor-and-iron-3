@@ -10,20 +10,28 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-CONSISTENCY │ Round 0 │ SELF-GRADED: yes (invalid) until critic
-SCORE: —/100 │ THRESHOLD: 88 │ pending critic
+GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 1 pending critic
+SCORE: —/100 │ THRESHOLD: 85 │ pending critic
 STOP_CONDITION_MET: no
 ══════════════════════════════════════
 ```
 
 `STOP_CONDITION_MET: no`
 
-### Wave 1 (2026-08-14) — largest gaps closed before first critic
+### Wave 2–3 (2026-08-14)
 
-- Bible: Fortify adds caster DEF (does not set/replace). SHARED TILE occupants are each selectable; melee/AOE hits both. CALTROPS glossary matches Caltrop Trap (no ATK) vs Caltrop Toss (ATK).
-- Code: Knight/Bruiser/Archer/Lancer promotion stats; Lancer Push 1 MOV; Seismic Stomp AOE 1 cross; Fortify amount 0 + DEF scaling; Kinetic Armor Floor(DEF/2); Adrenaline Junkie per 25% cap 3; Scar Tissue step 15 on upgrade; Engineer 3x3 size 1; EMP AOE 2 cross; Mage Fireball/Meteor/Black Hole/Gravity Well crosses; Explosive Arrow cross; Tail Swipe 3x3 size 1; Safe Landing shockwave size 1; Apex +2 CON.
+- Charge Strike: MOVE 2, GHOST through occupied, land adjacent empty, +2 from occupied tiles. `can_use` walk budget includes chained melee range.
+- Concussion Blow upgrade keeps object STAGGER and adds enemy-collision STAGGER both.
+- Bruiser: Sanguine overflow SHIELD; Reactive Adrenaline always converts turn-start heal to SHIELD; Earthshatter TILE; Headbutt extra true 1; Guttural item Floor(STR/2)+VULNERABLE; Violent Collision recast MOVE 2.
+- Knight: Bastion 0 collision when shoved; Kinetic Dissipation when you collide (wall or unit); Concussive DEF=WPN plus upgrade VULNERABLE; Redirect RANGE 2 pick ally; Defensive Formation self-aim; Taunting TILE; deleted Redirect `ability.id` range loop.
+- ADD_STATUS_SELF may designate an ALLY (range kept) so Redirect can aim without a per-skill branch.
+- Canvas FAIL count after this wave: 119 (was 135).
 
 Bowling Charge / Trampling Advance untouched.
+
+QA this wave: Bruiser gate PASS (Tier 1 + live). Knight gate PASS (Tier 1). Planning QA PASS.
+
+---
 
 ---
 

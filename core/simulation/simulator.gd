@@ -280,12 +280,13 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 						)
 					break
 				if sanguine_regeneration and adj_enemies == 0:
+					var missing_hp: int = maxi(0, unit.health.max_hp - unit.health.current_hp)
 					CombatSystem.heal(board, unit, regeneration, events)
+					var overflow: int = maxi(0, regeneration - missing_hp)
+					if overflow > 0:
+						CombatSystem.add_armor(board, unit, overflow, events)
 				elif adj_enemies >= 1 and reactive_adrenaline:
-					if unit.health.current_hp >= unit.health.max_hp:
-						unit.armor += regeneration if sanguine_regeneration else 0
-					else:
-						CombatSystem.heal(board, unit, regeneration, events)
+					CombatSystem.add_armor(board, unit, regeneration, events)
 					var adjacent_str := mini(adj_enemies, 3)
 					if adjacent_str > 0:
 						unit.active_statuses.append(

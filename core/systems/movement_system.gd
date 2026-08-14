@@ -323,7 +323,9 @@ static func can_pass_through_enemy(unit: UnitState, ability: AbilityData = null)
 		for passive: PassiveData in unit.active_passives:
 			if passive != null and passive.modifiers.get("ghost_move", false):
 				return true
-	if ability != null and AbilitySystem.has_pass_through_effects(ability):
+	if ability != null and AbilitySystem.ability_has_modifier(ability, &"ghost_move", unit):
+		return true
+	if ability != null and AbilitySystem.has_pass_through_effects(ability, unit):
 		return true
 	return false
 
@@ -440,6 +442,8 @@ static func execute_skill_walk(
 			exit_dir = PhysicsSystem.cardinal_from_to(step, path[step_index + 1])
 		var pre_trample_ev_count: int = events.size()
 		var crossed_enemy := board.get_unit_at(step)
+		if crossed_enemy != null and crossed_enemy.id != unit.id:
+			unit.passive_flags["passed_through_occupied"] = true
 		if (
 			crossed_enemy != null
 			and crossed_enemy.team != unit.team
@@ -454,6 +458,7 @@ static func execute_skill_walk(
 				crossed_ids.append(crossed_enemy.id)
 				unit.passive_flags["monk_crossed_enemy_ids"] = crossed_ids
 			RogueSystems.track_crossed_enemy(unit, crossed_enemy.id)
+			unit.passive_flags["passed_through_occupied"] = true
 		if not PhysicsSystem.resolve_pass_through_tile(
 			board, unit, step, move_dir, exit_dir, is_final_step,
 			trample_atk, bulldoze, trample_push, events, ability_id,
