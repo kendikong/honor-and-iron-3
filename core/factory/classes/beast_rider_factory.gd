@@ -18,8 +18,8 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.preferred_stat = GameEnums.StatType.PHYSICAL
 	definition.equipped_weapon = basic_lance
 	definition.promotion_stat_bonuses = {
-		&"griffin_rider": {"strength": 4, "constitution": 2, "movement": 2},
-		&"wyvern_lord": {"strength": 4, "defense": 2, "constitution": 2},
+		&"griffin_rider": {"strength": 4, "constitution": 2, "movement": 2, "airborne": true},
+		&"wyvern_lord": {"strength": 4, "defense": 2, "constitution": 2, "airborne": true},
 		&"apex_predator": {"strength": 4, "constitution": 2, "movement": 3},
 	}
 
@@ -27,7 +27,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		&"gallop",
 		"Gallop",
 		"Standard movement points can be split before and after a Skill or basic attack.",
-		"Using movement both before and after an Action grants ATK +1 and DEF +1 during post-action movement.",
+		"Using movement both before and after an Action grants +1 STR to the attack and +1 DEF during post-action movement.",
 		{
 			"gallop": true,
 			"split_movement": true,
@@ -42,8 +42,8 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.passives.append(_passive(
 		&"isolation_tactics",
 		"Isolation Tactics",
-		"Attacks against isolated enemies gain ATK +2.",
-		"Gain ATK +1 per tile moved this turn instead.",
+		"Attacks against isolated enemies gain +2 STR.",
+		"Also gain ATK +1 per tile moved this turn.",
 		{"promotion": &"griffin_rider", "airborne": true,
 		"isolation_attack_strength": 2, "upgraded_moved_tile_attack_strength": 1},
 	))
@@ -148,8 +148,8 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.passives.append(_passive(
 		&"vantage_striker",
 		"Vantage Striker",
-		"Ignore difficult terrain. Gain ATK +1 in hazards or at higher elevation.",
-		"That attack bonus increases to +2.",
+		"Ignore difficult terrain. Gain +1 STR attacking in hazards or at higher elevation.",
+		"That STR bonus increases to +2.",
 		{"promotion": &"apex_predator", "ignore_difficult_terrain": true,
 		"vantage_attack_strength": 1, "upgraded_vantage_attack_strength": 2},
 	))
@@ -272,6 +272,7 @@ static func _pounce() -> AbilityData:
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.legacy_modifiers["pounce_land_adjacent"] = true
+	move.legacy_modifiers["move_to_target_adjacent"] = true
 	var attack := _module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 1,
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
@@ -333,7 +334,7 @@ static func _bestial_roar() -> AbilityData:
 		GameEnums.TargetShape.CONE, 3,
 	)
 	var fear := DataLibrary._status_effect(GameEnums.StatusType.FEAR, 1)
-	fear.modifiers["requires_debuff"] = true
+	fear.modifiers["status_requires_debuff"] = true
 	push.layers = [_layer(fear)]
 	var upgraded := _clone([push])
 	var defense := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, -1, 1)
@@ -523,6 +524,7 @@ static func _tail_swipe() -> AbilityData:
 	swipe.layers = [_layer(damage)]
 	var upgraded := _clone([swipe])
 	upgraded[0].legacy_modifiers["wall_collision_stagger"] = true
+	upgraded[0].legacy_modifiers["object_collision_stagger"] = true
 	return _ability(
 		&"beast_tail_swipe", "Tail Swipe", [swipe], upgraded,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE

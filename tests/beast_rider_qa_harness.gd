@@ -38,10 +38,10 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 
 const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_reposition": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 2, "max_range": 1, "keys": [&"reposition_opposite_side", &"reposition_movement_cost"]},
-	&"beast_pounce": {"types": [GameEnums.EffectType.MOVE, GameEnums.EffectType.DAMAGE], "amount": 3, "max_range": 3, "keys": [&"pounce_land_adjacent", &"landing_push"]},
+	&"beast_pounce": {"types": [GameEnums.EffectType.MOVE, GameEnums.EffectType.DAMAGE], "amount": 3, "max_range": 3, "keys": [&"pounce_land_adjacent", &"move_to_target_adjacent", &"landing_push"]},
 	&"beast_feral_drag": {"types": [GameEnums.EffectType.PULL], "amount": 0, "max_range": 1, "keys": [&"feral_drag", &"target_constitution_at_most_strength", &"drag_remaining_movement"]},
 	&"beast_maul": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"maul_dragged_enemy", &"drop_adjacent", &"drop_trap_damage_multiplier"]},
-	&"beast_bestial_roar": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "max_range": 3, "shape": GameEnums.TargetShape.CONE, "shape_size": 3, "keys": [&"requires_debuff", &"cone_all_targets"]},
+	&"beast_bestial_roar": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "max_range": 3, "shape": GameEnums.TargetShape.CONE, "shape_size": 3, "keys": [&"status_requires_debuff", &"cone_all_targets"]},
 	&"beast_raking_claws": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "shape": GameEnums.TargetShape.ARC, "keys": [&"bleed_weapon", &"pull_before_attack"]},
 	&"beast_rest_recover": {"types": [GameEnums.EffectType.HEAL], "amount": 1, "keys": [&"cost_all_movement"]},
 	&"beast_intimidate": {"types": [GameEnums.EffectType.ADD_STATUS], "amount": 1, "shape": GameEnums.TargetShape.AOE_DIAMOND, "shape_size": 2, "keys": [&"lower_hp_only", &"purge_buffs"]},
@@ -194,15 +194,33 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 			_assert(failures, "passive/gallop/post_move", _BEAST.can_post_move(actor))
 			actor.passive_flags["beast_split_attack_ready"] = true
 			var gallop_target := _place_enemy(board, 2, Vector2i(4, 3))
-			var gallop_bonus := _BEAST.damage_bonus(board, actor, gallop_target, null)
+			var gallop_bonus := _BEAST.attack_strength_bonus(board, actor, gallop_target)
 			_assert(failures, "passive/gallop/split_attack_bonus", gallop_bonus >= 1)
+			var promo_board := _plain_board(Vector2i(10, 8))
+			var promo_actor := UnitState.create(
+				9,
+				definition,
+				GameEnums.Team.PLAYER,
+				Vector2i(2, 3),
+				{
+					"promotion_id": &"griffin_rider",
+					"active_abilities": [_ability(definition, &"beast_thrash")],
+					"active_passives": [],
+				},
+			)
+			promo_board.add_unit(promo_actor)
+			_assert(
+				failures,
+				"passive/gallop/promotion_airborne",
+				promo_actor.has_status(GameEnums.StatusType.AIRBORNE),
+			)
 		&"isolation_tactics":
 			var isolated := _place_enemy(board, 2, Vector2i(5, 5))
-			var isolated_bonus := _BEAST.damage_bonus(board, actor, isolated, null)
+			var isolated_bonus := _BEAST.attack_strength_bonus(board, actor, isolated)
 			_assert(failures, "passive/isolation_tactics/isolated_bonus", isolated_bonus >= 2)
 			actor.passive_flags["beast_tiles_moved"] = 2
 			var moved_bonus := _BEAST.damage_bonus(board, actor, isolated, null)
-			_assert(failures, "passive/isolation_tactics/moved_tile_bonus", moved_bonus >= 4)
+			_assert(failures, "passive/isolation_tactics/moved_tile_bonus", moved_bonus >= 2)
 		&"terminal_velocity":
 			_assert(
 				failures,
@@ -395,10 +413,8 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 			_assert(failures, "passive/dive_bomber/bonus", dive_bonus >= 2)
 		&"pack_hunter":
 			var pack_target := _place_enemy(board, 2, Vector2i(5, 5))
-			pack_target.health.max_hp = 1
-			pack_target.health.current_hp = 1
 			actor.passive_flags["__current_ability"] = _ability(definition, &"beast_savage_bite")
-			_BEAST.on_kill(board, actor, pack_target, events)
+			_BEAST.on_attack_hit(board, actor, pack_target, events)
 			_assert(
 				failures,
 				"passive/pack_hunter/bite",
@@ -418,7 +434,7 @@ static func run_passive_row(passive_id: StringName, failures: Array[String]) -> 
 			_set_hazard_tile(board, actor.position)
 			actor._recalculate_stats(board)
 			var vantage_target := _place_enemy(board, 2, Vector2i(4, 3))
-			var vantage_bonus := _BEAST.damage_bonus(board, actor, vantage_target, null)
+			var vantage_bonus := _BEAST.attack_strength_bonus(board, actor, vantage_target)
 			_assert(failures, "passive/vantage_striker/bonus", vantage_bonus >= 1)
 		&"predatory_drive":
 			var predatory_target := _place_enemy(board, 2, Vector2i(4, 3))
@@ -708,9 +724,9 @@ static func _apply_sim_action_overrides(
 		action.target_unit_id = -1
 		action.target_coord = actor.position
 	if ability_id == &"beast_pounce" and target != null:
-		action.target_coord = Vector2i(3, 3)
-		action.target_unit_id = -1
-		AbilitySystem.set_module_target(action, 0, Vector2i(3, 3), -1)
+		action.target_coord = target.position
+		action.target_unit_id = target.id
+		AbilitySystem.set_module_target(action, 0, target.position, target.id)
 		AbilitySystem.set_module_target(action, 1, target.position, target.id)
 	if ability_id == &"beast_run_down":
 		action.target_unit_id = -1
@@ -778,18 +794,38 @@ static func _assert_ability_sim_outcome(
 	match ability_id:
 		&"beast_reposition":
 			if target != null:
+				var after_actor := board_after.get_unit_by_id(1)
 				var after_target := board_after.get_unit_by_id(target.id)
 				_assert(
 					failures,
-					"%s/outcome/opposite_side" % ability_id,
-					after_target != null and after_target.position == Vector2i(0, 3),
+					"%s/outcome/caster_stays" % ability_id,
+					after_actor != null and after_actor.position == Vector2i(2, 3),
 				)
+				_assert(
+					failures,
+					"%s/outcome/opposite_side" % ability_id,
+					after_target != null and after_target.position == Vector2i(1, 3),
+				)
+		&"beast_rest_recover":
+			var after_rest := board_after.get_unit_by_id(1)
+			_assert(
+				failures,
+				"%s/outcome/consumed_mov" % ability_id,
+				after_rest != null and after_rest.movement.points_left == 0,
+			)
 		&"beast_pounce":
+			var after_pounce := board_after.get_unit_by_id(1)
+			var after_prey: UnitState = (
+				board_after.get_unit_by_id(target_id) if target_id >= 0 else null
+			)
 			_assert(
 				failures,
 				"%s/outcome/pounce" % ability_id,
 				not _has_action_failure(events, 1)
-					and _events_have_ability(events, ability_id),
+					and _events_have_ability(events, ability_id)
+					and after_pounce != null
+					and after_prey != null
+					and GridSystem.manhattan(after_pounce.position, after_prey.position) == 1,
 			)
 		&"beast_feral_drag":
 			_assert(

@@ -552,6 +552,10 @@ static func _emit_collision(
 				ability,
 				&"object_collision_stagger",
 				pusher,
+			) or AbilitySystem.ability_has_modifier(
+				ability,
+				&"wall_collision_stagger",
+				pusher,
 			)
 			enemy_collision_stagger_both = AbilitySystem.ability_has_modifier(
 				ability,

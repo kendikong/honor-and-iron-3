@@ -208,7 +208,7 @@ func _target_for(
 		&"beast_reposition":
 			return Vector2i(3, 3)
 		&"beast_pounce":
-			return Vector2i(3, 2)
+			return Vector2i(5, 5)
 		&"beast_run_down":
 			return Vector2i(4, 3)
 		&"beast_airlift":

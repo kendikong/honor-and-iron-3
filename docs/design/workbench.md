@@ -39,7 +39,27 @@ STOP_CONDITION_MET: no
 | 3 | BIBLE-TO-CODE | 58 | FAIL | no (subagent) |
 | 4 | BIBLE-TO-CODE | 56 | FAIL | no (subagent) |
 
-### Wave 7 (2026-08-14)
+### Wave 8 (2026-08-14)
+
+Beast Rider 11 canvas FAILs closed:
+
+- Gallop [+] +1 STR (not flat ATK) + +1 DEF post-move
+- Griffin/Wyvern promotions grant AIRBORNE from `promotion_stat_bonuses` even without an aerial passive
+- Reposition: caster stays; target flips to opposite empty
+- Isolation: +2 STR; per-tile ATK is upgrade-only
+- Pack Hunter: follow-up on hit, ignore 50% DEF
+- Vantage: STR in hazards or elevated tiles
+- Furious Charge: straight tiles only
+- Pounce: land adjacent via `move_to_target_adjacent` (preview=commit); [+] PUSH on that hit
+- Bestial Roar: PUSH always; FEAR only if already debuffed
+- Rest & Recover: remaining MOV consumed on CLASS_SKILL
+- Tail Swipe [+] wall STAGGER
+
+QA: Beast Rider gate+live PASS. Planning QA PASS.
+
+Canvas FAIL remaining: Monk 10, Mage 9, Engineer 10, Shaman 9, Cleric 1 (dual-pick). Next cluster: **Monk 10**.
+
+Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
 Lancer 12 canvas FAILs closed (Glorious Charge live dual-pick; Piercing Charge dash-then-RANGE 2; Polearm ignore-DEF upgrade-only; etc.). Archer 11 canvas FAILs closed (Steady Aim spends remaining MOV; Sidestep keep facing; Overwatch cone; Vantage on Steady Aim only; Camouflage Range>3; Caltrop 1 AP / Expert waiver; Target Painter PIERCE upgrade-only; Hunter's Mark ally RANGE/PIERCE; Repelling ally pick; Suppressing RANGE 4).
 

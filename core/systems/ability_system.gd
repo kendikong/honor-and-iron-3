@@ -3093,6 +3093,8 @@ static func _spend_ability_cost(
 		GameEnums.AbilityKind.CLASS_SKILL:
 			if not ritual_sacrifice:
 				actor.ability.points_left -= ap_cost
+			if _ability_has_modifier(actor, ability, &"cost_all_movement"):
+				actor.movement.points_left = 0
 		_:
 			pass
 
@@ -3418,6 +3420,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				stat_name = "MAG"
 			temporary_strength_bonus += MercenarySystems.attack_strength_bonus(
 				board, actor, target, action.ability,
+			)
+			temporary_strength_bonus += BeastRiderSystems.attack_strength_bonus(
+				board, actor, target,
 			)
 			stat_val += temporary_strength_bonus
 				
@@ -4410,6 +4415,16 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				):
 					return
 				if (
+					effect.modifiers.get("status_requires_debuff", false)
+					and not _target_has_debuff(target)
+				):
+					return
+				if (
+					effect.modifiers.get("cone_all_targets", false)
+					and target.team == actor.team
+				):
+					return
+				if (
 					target.passive_flags.get("full_health_debuff_immunity", false)
 					and GameEnums.is_debuff(effect.status_type)
 				):
@@ -4717,6 +4732,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				}))
 				return
 		GameEnums.EffectType.TELEPORT_CASTER:
+			if effect.modifiers.get("reposition_opposite_side", false):
+				return
 			var destination := tile_coord
 			if effect.modifiers.get("land_opposite_target", false):
 				if target == null:

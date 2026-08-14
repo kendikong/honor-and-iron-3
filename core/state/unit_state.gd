@@ -111,6 +111,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 			unit.active_abilities = def.abilities.duplicate()
 		
 	unit._recalculate_stats()
+	BeastRiderSystems.apply_promotion_airborne(unit)
 	unit.health.current_hp = unit.health.max_hp
 	unit.turn_start_movement_points = unit.movement.max_points
 	return unit

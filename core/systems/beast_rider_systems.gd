@@ -48,11 +48,23 @@ static func active_module_modifiers(actor: UnitState, ability: AbilityData) -> D
 static func turn_start(board: BoardState, unit: UnitState, _events: Array[SimEvent]) -> void:
 	if unit == null or not unit.is_alive():
 		return
-	if has_passive_modifier(unit, &"airborne") and not unit.has_status(GameEnums.StatusType.AIRBORNE):
-		unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.AIRBORNE, 1))
-		unit._recalculate_stats(board)
+	apply_promotion_airborne(unit, board)
 	unit.passive_flags.erase("beast_split_attack_ready")
 	unit.passive_flags.erase("beast_post_move_defense")
+
+
+static func apply_promotion_airborne(unit: UnitState, board: BoardState = null) -> void:
+	if unit == null or unit.has_status(GameEnums.StatusType.AIRBORNE):
+		return
+	var from_passive := has_passive_modifier(unit, &"airborne")
+	var from_promotion := false
+	if unit.definition != null:
+		var bonuses: Dictionary = unit.definition.promotion_stat_bonuses.get(unit.promotion_id, {})
+		from_promotion = bool(bonuses.get("airborne", false))
+	if not from_passive and not from_promotion:
+		return
+	unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.AIRBORNE, 1))
+	unit._recalculate_stats(board)
 
 
 static func turn_end(_board: BoardState, unit: UnitState, _events: Array[SimEvent]) -> void:
@@ -143,7 +155,6 @@ static func after_skill_move(
 	_record_move_segment(unit)
 	var modules := active_module_modifiers(unit, ability)
 	if modules.get("pounce_land_adjacent", false):
-		_land_adjacent_to_target(board, unit, events)
 		on_landing(board, unit, events)
 	if modules.get("drag_remaining_movement", false):
 		_drag_target_for_remaining_movement(board, unit, ability, events)
@@ -156,11 +167,15 @@ static func after_standard_move(
 ) -> void:
 	if unit == null or board == null:
 		return
+	var move_start: Vector2i = unit.passive_flags.get("beast_move_start", unit.position)
 	_record_move_segment(unit)
 	var min_charge_tiles: int = int(passive_value(
 		unit, &"furious_charge_min_tiles", &"", 0,
 	))
-	if min_charge_tiles > 0 and int(unit.passive_flags.get("beast_tiles_moved", 0)) >= min_charge_tiles:
+	var straight_tiles := unit.continuous_straight_tiles_this_turn
+	if straight_tiles <= 0 and PhysicsSystem.straight_line_dir(move_start, unit.position) != Vector2i.ZERO:
+		straight_tiles = GridSystem.manhattan(move_start, unit.position)
+	if min_charge_tiles > 0 and straight_tiles >= min_charge_tiles:
 		var push_amount: int = int(passive_value(
 			unit, &"furious_charge_push", &"upgraded_furious_charge_push", 0,
 		))
@@ -214,11 +229,10 @@ static func dynamic_stat_adjustments(board: BoardState, unit: UnitState) -> Dict
 	return result
 
 
-static func damage_bonus(
+static func attack_strength_bonus(
 	board: BoardState,
 	attacker: UnitState,
 	target: UnitState,
-	_effect: EffectData,
 ) -> int:
 	if board == null or attacker == null or target == null:
 		return 0
@@ -230,16 +244,6 @@ static func damage_bonus(
 		and attacker.is_passive_upgraded(&"gallop")
 	):
 		bonus += int(passive_value(attacker, &"upgraded_split_attack_strength", &"", 1))
-	var moved_tile_bonus := int(passive_value(
-		attacker, &"upgraded_moved_tile_attack_strength", &"", 0,
-	))
-	if moved_tile_bonus > 0:
-		bonus += moved_tile_bonus * int(attacker.passive_flags.get("beast_tiles_moved", 0))
-	var dive_min := int(passive_value(
-		attacker, &"dive_bomber_min_tiles", &"upgraded_dive_bomber_min_tiles", 0,
-	))
-	if dive_min > 0 and int(attacker.passive_flags.get("beast_tiles_moved", 0)) >= dive_min:
-		bonus += int(passive_value(attacker, &"dive_bomber_attack_strength", &"", 2))
 	if (
 		has_passive_modifier(attacker, &"vantage_attack_strength")
 		and _is_hazard_or_elevated(board, attacker)
@@ -247,9 +251,32 @@ static func damage_bonus(
 		bonus += int(passive_value(
 			attacker, &"vantage_attack_strength", &"upgraded_vantage_attack_strength", 1,
 		))
-	var pounce_push := int(attacker.passive_flags.get("beast_pounce_push", 0))
-	if pounce_push > 0:
-		attacker.passive_flags.erase("beast_pounce_push")
+	return bonus
+
+
+static func damage_bonus(
+	board: BoardState,
+	attacker: UnitState,
+	target: UnitState,
+	_effect: EffectData,
+) -> int:
+	if board == null or attacker == null or target == null:
+		return 0
+	var bonus := 0
+	if (
+		attacker.is_passive_upgraded(&"isolation_tactics")
+		and has_passive_modifier(attacker, &"upgraded_moved_tile_attack_strength")
+	):
+		var moved_tile_bonus := int(passive_value(
+			attacker, &"upgraded_moved_tile_attack_strength", &"", 0,
+		))
+		if moved_tile_bonus > 0:
+			bonus += moved_tile_bonus * int(attacker.passive_flags.get("beast_tiles_moved", 0))
+	var dive_min := int(passive_value(
+		attacker, &"dive_bomber_min_tiles", &"upgraded_dive_bomber_min_tiles", 0,
+	))
+	if dive_min > 0 and int(attacker.passive_flags.get("beast_tiles_moved", 0)) >= dive_min:
+		bonus += int(passive_value(attacker, &"dive_bomber_attack_strength", &"", 2))
 	var furious_push := int(attacker.passive_flags.get("beast_furious_charge_push", 0))
 	if furious_push > 0:
 		attacker.passive_flags["beast_pending_push"] = furious_push
@@ -290,8 +317,13 @@ static func on_attack_hit(
 		if attacker.is_passive_upgraded(&"predatory_drive"):
 			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.POISON, 1))
 		target._recalculate_stats(board)
-	if mods.get("landing_push", 0):
-		attacker.passive_flags["beast_pounce_push"] = int(mods["landing_push"])
+	if int(mods.get("landing_push", 0)) > 0:
+		var land_dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
+		if land_dir != Vector2i.ZERO:
+			PhysicsSystem.push(
+				board, target, land_dir, int(mods["landing_push"]), events, attacker,
+			)
+	_try_pack_hunter_bite(board, attacker, target, events)
 	var pending_push := int(attacker.passive_flags.get("beast_pending_push", 0))
 	if pending_push > 0:
 		var push_dir := PhysicsSystem.cardinal_from_to(attacker.position, target.position)
@@ -311,21 +343,39 @@ static func on_kill(
 	var mods := active_module_modifiers(attacker, ability)
 	if int(mods.get("on_kill_shield", 0)) > 0:
 		CombatSystem.add_armor(board, attacker, int(mods["on_kill_shield"]), events)
+
+
+static func _try_pack_hunter_bite(
+	board: BoardState,
+	attacker: UnitState,
+	target: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or attacker == null or target == null:
+		return
+	if attacker.passive_flags.get("pack_hunter_resolving", false):
+		return
 	var bite := int(passive_value(
 		attacker, &"pack_hunter_bite", &"upgraded_pack_hunter_bite", 0,
 	))
-	if bite > 0 and _is_isolated(board, target):
-		var bite_amount := calculate_true_bite_damage(attacker, bite)
-		CombatSystem.deal_damage_raw(
-			board, attacker, target, bite_amount, GameEnums.StatType.PHYSICAL,
-			events, "Pack Hunter", bite,
-		)
-
-
-static func calculate_true_bite_damage(attacker: UnitState, base_amount: int) -> int:
-	if attacker == null:
-		return base_amount
-	return maxi(0, floori(float(base_amount) * 0.5))
+	if bite <= 0 or not _is_isolated(board, target):
+		return
+	var ignore_pct := float(passive_value(
+		attacker, &"pack_hunter_def_ignore_pct", &"", 0.50,
+	))
+	var prev_ignore := int(attacker.passive_flags.get("attack_ignore_def", 0))
+	var target_def := CombatSystem.get_dynamic_defense(board, target)
+	attacker.passive_flags["pack_hunter_resolving"] = true
+	attacker.passive_flags["attack_ignore_def"] = prev_ignore + floori(float(target_def) * ignore_pct)
+	var scaled := CombatSystem.calculate_scaled_damage(
+		attacker, bite, GameEnums.StatType.PHYSICAL, board,
+	)
+	CombatSystem.deal_damage_raw(
+		board, attacker, target, scaled, GameEnums.StatType.PHYSICAL,
+		events, "Pack Hunter", bite,
+	)
+	attacker.passive_flags["attack_ignore_def"] = prev_ignore
+	attacker.passive_flags.erase("pack_hunter_resolving")
 
 
 static func incoming_damage_reduction(
@@ -512,26 +562,6 @@ static func _drag_target_for_remaining_movement(
 	actor.movement.points_left = 0
 
 
-static func _land_adjacent_to_target(
-	board: BoardState,
-	actor: UnitState,
-	events: Array[SimEvent],
-) -> void:
-	var target_id := int(actor.passive_flags.get("beast_pounce_target_id", -1))
-	var target := board.get_unit_by_id(target_id)
-	if target == null:
-		return
-	var destination := _first_empty_adjacent(board, target.position)
-	if destination == Vector2i(-1, -1) or actor.position == destination:
-		return
-	GridSystem.set_occupant(board, actor.position, -1)
-	actor.position = destination
-	GridSystem.set_occupant(board, destination, actor.id)
-	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-		"unit": actor.id, "to": destination, "pounce_landing": true,
-	}))
-
-
 static func _apply_landing_vulnerable(
 	board: BoardState,
 	actor: UnitState,
@@ -545,18 +575,6 @@ static func _apply_landing_vulnerable(
 				GameEnums.StatusType.VULNERABLE, 1,
 			))
 			candidate._recalculate_stats(board)
-
-
-static func _first_empty_adjacent(board: BoardState, center: Vector2i) -> Vector2i:
-	for direction: Vector2i in GridSystem.DIRECTIONS:
-		var candidate := center + direction
-		if (
-			GridSystem.is_in_bounds(board, candidate)
-			and not GridSystem.is_occupied(board, candidate)
-			and not GridSystem.is_wall(board, candidate)
-		):
-			return candidate
-	return Vector2i(-1, -1)
 
 
 static func _is_isolated(board: BoardState, unit: UnitState) -> bool:
@@ -589,7 +607,11 @@ static func _is_hazard_or_elevated(board: BoardState, unit: UnitState) -> bool:
 	if board == null or unit == null:
 		return false
 	var tile := board.get_tile(unit.position)
-	return tile != null and tile.definition != null and tile.definition.hazard_damage > 0
+	if tile == null or tile.definition == null:
+		return false
+	if tile.definition.hazard_damage > 0:
+		return true
+	return bool(tile.definition.elevated)
 
 
 static func _weapon_might(unit: UnitState) -> int:
