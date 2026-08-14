@@ -1757,7 +1757,8 @@ func _refresh_live_interaction_preview(
 		res = _preview_at_interaction_cell(
 			unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 		)
-		_store_hover_preview_lru(cache_key, res)
+		if not bool(res.get("intent_preview", false)):
+			_store_hover_preview_lru(cache_key, res)
 	_apply_hover_preview_from_result(res, unit_id, move_coord, cache_key)
 
 
@@ -2260,6 +2261,10 @@ func _intent_snapshot_key_for(
 	var wp_parts: PackedStringArray = PackedStringArray()
 	for wp: Vector2i in waypoints:
 		wp_parts.append("%d,%d" % [wp.x, wp.y])
+	var awaiting_bit: int = 1 if awaiting_targeting_active() else 0
+	var force_bit: int = 1 if force_basic_movement else 0
+	var legal_fp: int = _legal_move_tiles_fingerprint(legal_move_tiles)
+	var wp_joined: String = ",".join(wp_parts)
 	return "%d|%d|%s|%s|%d|%d|%d|%s|%d|%d" % [
 		plan_rev,
 		unit_id,
@@ -2267,18 +2272,22 @@ func _intent_snapshot_key_for(
 		str(preferred_approach),
 		ability_index,
 		face_dir,
-		1 if awaiting_targeting_active() else 0,
-		",".join(wp_parts),
-		_legal_move_tiles_fingerprint(legal_move_tiles),
-		1 if force_basic_movement else 0,
+		awaiting_bit,
+		wp_joined,
+		legal_fp,
+		force_bit,
 	]
+
+
+func _legal_move_tile_sort_less(a: Vector2i, b: Vector2i) -> bool:
+	if a.x != b.x:
+		return a.x < b.x
+	return a.y < b.y
 
 
 func _legal_move_tiles_fingerprint(legal_move_tiles: Array[Vector2i]) -> int:
 	var legal_sorted: Array[Vector2i] = legal_move_tiles.duplicate()
-	legal_sorted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool:
-		return a.x < b.x or (a.x == b.x and a.y < b.y)
-	)
+	legal_sorted.sort_custom(_legal_move_tile_sort_less)
 	return hash(legal_sorted)
 
 
@@ -2479,12 +2488,9 @@ func _preview_from_commit_slots_at_cell(
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
 ) -> Dictionary:
-	var empty_board: BoardState = (
-		_director.base_board.clone() if _director != null and _director.base_board != null else BoardState.new()
-	)
 	if _director == null or unit_id < 0:
 		_clear_intent_snapshot()
-		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
+		return {"intents": [], "events": [], "temp_board": BoardState.new(), "invalid": true}
 	var effective_face: int = face_dir
 	if effective_face < 0 and _map_view != null:
 		effective_face = _facing_from_drop(_mouse_local_for_facing(), cell)
@@ -2494,12 +2500,63 @@ func _preview_from_commit_slots_at_cell(
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
-		return {"intents": [], "events": [], "temp_board": empty_board, "invalid": true}
+		return {"intents": [], "events": [], "temp_board": BoardState.new(), "invalid": true}
 	var snapshot_key: String = _intent_snapshot_key_for(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
 	_store_intent_snapshot(snapshot_key, slots)
-	return _director.preview_actions(unit_id, _actions_from_slots(slots))
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	if _hover_can_preview_move_without_simulate(slots, cell):
+		return {
+			"intents": [],
+			"events": [],
+			"temp_board": _hover_empty_move_preview_board(cell),
+			"actions": actions,
+			"intent_preview": true,
+		}
+	return _director.preview_actions(unit_id, actions)
+
+
+func _hover_empty_move_preview_board(cell: Vector2i) -> BoardState:
+	var source: BoardState = _director.projected_state
+	if source == null:
+		source = _director.board
+	if source == null:
+		return BoardState.new()
+	var cheap: BoardState = source.clone()
+	var uid: int = _director.selected_unit_id
+	var u: UnitState = cheap.get_unit_by_id(uid)
+	if u == null or u.position == cell:
+		return cheap
+	GridSystem.set_occupant(cheap, u.position, -1)
+	u.position = cell
+	GridSystem.set_occupant(cheap, cell, uid)
+	return cheap
+
+
+func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
+	## Live hover of an empty walk tile: painted slots are the intent. Simulator
+	## still runs on commit (`_commit_at_cell` flushes) and in QA fixtures.
+	if _planning == null or _planning.qa_static_overlay:
+		return false
+	if awaiting_targeting_active() or dragging:
+		return false
+	if _director == null or _director.board == null:
+		return false
+	var occupant: UnitState = _director.board.get_unit_at(cell)
+	if occupant != null and occupant.id != _director.selected_unit_id:
+		return false
+	var has_move: bool = false
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.ABILITY:
+				return false
+			if action.type == GameEnums.ActionType.MOVE:
+				has_move = true
+	return has_move
 
 
 func _hover_interaction_cache_key(
@@ -2692,6 +2749,13 @@ func _drag_max_steps(unit: UnitState) -> int:
 	return max_steps
 
 
+func _route_has_left_origin_ring(move_origin: Vector2i) -> bool:
+	for c: Vector2i in _drag_route:
+		if GridSystem.manhattan(move_origin, c) > 1:
+			return true
+	return false
+
+
 func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.is_empty():
 		return
@@ -2708,11 +2772,14 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		return
 	var move_origin: Vector2i = _proj_move_origin(unit)
 	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
+	# Keep this when a skill is armed / auto-run is on — circling is not a painted path.
+	# Once the route has left the origin ring (manhattan > 1), keep corridor paint
+	# so U-shaped selection paths (K4 east-then-south) still extend.
 	if (
 		not dragging
-		and not _selection_hover_corridor_paint_active()
 		and last != cell
 		and GridSystem.manhattan(move_origin, cell) == 1
+		and not _route_has_left_origin_ring(move_origin)
 	):
 		_drag_route = [move_origin]
 		_append_route_tile(cell)

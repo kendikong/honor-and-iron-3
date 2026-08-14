@@ -115,12 +115,13 @@ static func unit_info(
 	ap_left_override: int = -1,
 ) -> String:
 	var lines: Array[String] = []
+	var team_label: String = "Player" if not unit.is_enemy() else "Enemy"
 	lines.append(
 		(
 			"[color=#4DB8FF][font_size=%d][b]%s[/b][/font_size][/color]"
 			+ "  [font_size=%d][color=#aaaaaa](%s)[/color][/font_size]"
 		)
-		% [scaled_font_size(13), unit.definition.display_name, scaled_font_size(10), "Player" if not unit.is_enemy() else "Enemy"],
+		% [scaled_font_size(13), unit.definition.display_name, scaled_font_size(10), team_label],
 	)
 	var move_type: String = GameEnums.MovementType.keys()[unit.definition.movement_type].capitalize()
 	lines.append(
@@ -175,9 +176,10 @@ static func unit_info(
 			names.append(
 				"[hint=\"%s\"]%s[/hint]" % [ability_tooltip_text(ability, unit), ability.display_name],
 			)
+		var ability_list: String = ", ".join(names) if not names.is_empty() else "None"
 		lines.append(
 			"[font_size=%d]Abilities: %s[/font_size]"
-			% [scaled_font_size(8), ", ".join(names) if not names.is_empty() else "None"],
+			% [scaled_font_size(8), ability_list],
 		)
 		var passives: Array[String] = []
 		for p: PassiveData in unit.active_passives:
