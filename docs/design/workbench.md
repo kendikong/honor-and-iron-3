@@ -19,14 +19,14 @@ STOP_CONDITION_MET: yes (this piece)
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 4 │ SELF-GRADED: no (subagent)
-SCORE: 56/100 │ THRESHOLD: 85 │ FAIL │ SLIPPED
-DELTA: −2 vs round 3 (was 58)
-STOP_CONDITION_MET: no
+GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 5 │ SELF-GRADED: no (subagent)
+SCORE: 86/100 │ THRESHOLD: 85 │ PASS │ CLIMBING
+DELTA: +30 vs round 4 (was 56)
+STOP_CONDITION_MET: yes (this piece)
 ══════════════════════════════════════
 ```
 
-`STOP_CONDITION_MET: no` (both pieces required; bible-consistency already PASS)
+`STOP_CONDITION_MET: yes` (both pieces critic-PASS: consistency 90, bible-to-code 86)
 
 ### Score progression
 
@@ -38,6 +38,7 @@ STOP_CONDITION_MET: no
 | 2 | BIBLE-TO-CODE | 62 | FAIL | no (subagent) |
 | 3 | BIBLE-TO-CODE | 58 | FAIL | no (subagent) |
 | 4 | BIBLE-TO-CODE | 56 | FAIL | no (subagent) |
+| 5 | BIBLE-TO-CODE | 86 | PASS | no (subagent) |
 
 ### Wave 8 (2026-08-14)
 
@@ -108,7 +109,7 @@ QA: Shaman live PASS. Shaman harness PASS. Planning QA PASS. Alignment gate PASS
 
 Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
-`STOP_CONDITION_MET: no` until critic PASS on BIBLE-TO-CODE.
+**Round 5 critic:** BIBLE-TO-CODE **86 PASS** ([Bible-to-code R5](3ff91942-c408-4214-8a80-f7fe7e10bd6a)). Residual (not FAIL): DATA-ONLY 20 including Totem Guard `[+]` `melee_def`; MISSING 4 Beast Rider. `STOP_CONDITION_MET: yes`.
 
 ### Wave 6 (2026-08-14)
 
