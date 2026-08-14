@@ -215,6 +215,10 @@ func apply_settings(settings: GameSettings) -> void:
 	queue_redraw()
 
 
+func game_settings() -> GameSettings:
+	return _game_settings
+
+
 func _preview_range_overlays_enabled() -> bool:
 	return _game_settings == null or _game_settings.preview_show_range_overlays
 
@@ -1025,10 +1029,16 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
 		_anim_redraw_accum += delta
-		if _hover_redraw_immediate or _anim_redraw_accum >= _FLOW_ANIM_REDRAW_INTERVAL_SEC:
+		if _hover_redraw_immediate or _anim_redraw_accum >= _overlay_flow_interval_sec():
 			_hover_redraw_immediate = false
 			_anim_redraw_accum = 0.0
 			queue_redraw()
+
+
+func _overlay_flow_interval_sec() -> float:
+	if qa_static_overlay or _game_settings == null:
+		return _FLOW_ANIM_REDRAW_INTERVAL_SEC
+	return _game_settings.overlay_flow_interval_sec()
 
 
 func _overlay_needs_flow_animation() -> bool:

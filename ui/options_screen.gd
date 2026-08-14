@@ -92,6 +92,8 @@ var _show_tod_check: CheckButton
 var _effect_checks: Dictionary = {}
 var _dev_shadow_checks: Dictionary = {}
 var _planning_preview_checks: Dictionary = {}
+var _hover_rate_throttle_slider: HSlider
+var _hover_rate_throttle_label: Label
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
@@ -559,6 +561,27 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
+	_add_section(vbox, "Hover rate throttle")
+	_add_hint(
+		vbox,
+		"Slows how often hover sim and path arrows update. 0 is the current full rate. Does not skip preview, intent, or commit.",
+	)
+	_hover_rate_throttle_slider = _add_dev_value_slider(
+		vbox,
+		"Throttle",
+		0.0,
+		100.0,
+		1.0,
+		_game_settings.hover_rate_throttle_pct,
+		"%",
+		func(v: float) -> void:
+			_game_settings.hover_rate_throttle_pct = v
+			_save_game_settings()
+			EventBus.interface_settings_changed.emit(),
+	)
+	_hover_rate_throttle_label = _hover_rate_throttle_slider.get_meta("value_label") as Label
+
+	vbox.add_child(HSeparator.new())
 	_dev_tile_labels_check = _add_dev_check(
 		vbox,
 		"Tile ID labels (sandbox map)",
@@ -788,6 +811,39 @@ func _add_dev_check(
 	)
 	parent.add_child(check)
 	return check
+
+
+func _add_dev_value_slider(
+	parent: VBoxContainer,
+	title: String,
+	min_value: float,
+	max_value: float,
+	step: float,
+	initial: float,
+	suffix: String,
+	on_changed: Callable,
+) -> HSlider:
+	parent.add_child(_label(title))
+	var row := HBoxContainer.new()
+	var slider := HSlider.new()
+	slider.min_value = min_value
+	slider.max_value = max_value
+	slider.step = step
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value = initial
+	var value_lbl := Label.new()
+	value_lbl.custom_minimum_size.x = 56
+	MenuInterfaceApplier.stamp_font_tier(value_lbl, MenuInterfaceApplier.TIER_VALUE)
+	value_lbl.text = "%d%s" % [int(initial), suffix]
+	slider.set_meta("value_label", value_lbl)
+	slider.value_changed.connect(func(v: float) -> void:
+		value_lbl.text = "%d%s" % [int(v), suffix]
+		on_changed.call(v)
+	)
+	row.add_child(slider)
+	row.add_child(value_lbl)
+	parent.add_child(row)
+	return slider
 
 
 func _add_volume_row(parent: VBoxContainer, title: String, initial: float) -> HSlider:

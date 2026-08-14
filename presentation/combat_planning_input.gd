@@ -1230,6 +1230,12 @@ func _deferred_begin_hover_sim_flush() -> void:
 func _hover_sim_min_interval_sec() -> float:
 	if dragging:
 		return _HOVER_HEAVY_MIN_INTERVAL_SEC
+	if _planning != null and _planning.qa_static_overlay:
+		return _HOVER_SIM_MIN_INTERVAL_SEC
+	if _planning != null:
+		var settings: GameSettings = _planning.game_settings()
+		if settings != null:
+			return settings.hover_sim_interval_sec()
 	return _HOVER_SIM_MIN_INTERVAL_SEC
 
 

@@ -38,6 +38,10 @@ const TEXT_SIZE_LABELS: PackedStringArray = ["Small", "Medium", "Large"]
 const TEXT_SIZE_BODY: PackedInt32Array = [16, 20, 24]
 const TEXT_SIZE_TITLE: PackedInt32Array = [22, 26, 30]
 const TEXT_SIZE_HINT: PackedInt32Array = [13, 17, 20]
+const HOVER_SIM_INTERVAL_MS_DEFAULT: float = 45.0
+const HOVER_SIM_INTERVAL_MS_MAX: float = 400.0
+const OVERLAY_FLOW_FPS_DEFAULT: float = 30.0
+const OVERLAY_FLOW_FPS_MIN: float = 8.0
 
 var resolution: Vector2i = Vector2i(3840, 1800)
 var window_mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_WINDOWED
@@ -69,6 +73,8 @@ var preview_show_routes: bool = true
 var preview_show_live_ghosts: bool = true
 var preview_show_arrows: bool = true
 var preview_show_committed_intents: bool = true
+## 0 = current full-rate hover. 100 = slower hover sim / arrow anim. Never skips preview.
+var hover_rate_throttle_pct: float = 0.0
 
 
 func preview_hover_sim_enabled() -> bool:
@@ -85,6 +91,17 @@ func preview_dynamic_overlay_enabled() -> bool:
 		or preview_show_live_ghosts
 		or preview_show_arrows
 	)
+
+
+func hover_sim_interval_sec() -> float:
+	var t: float = clampf(hover_rate_throttle_pct, 0.0, 100.0) / 100.0
+	return lerpf(HOVER_SIM_INTERVAL_MS_DEFAULT, HOVER_SIM_INTERVAL_MS_MAX, t) / 1000.0
+
+
+func overlay_flow_interval_sec() -> float:
+	var t: float = clampf(hover_rate_throttle_pct, 0.0, 100.0) / 100.0
+	var fps: float = lerpf(OVERLAY_FLOW_FPS_DEFAULT, OVERLAY_FLOW_FPS_MIN, t)
+	return 1.0 / maxf(fps, OVERLAY_FLOW_FPS_MIN)
 
 
 var screen_index: int = 0
@@ -146,6 +163,11 @@ func load_from_disk() -> void:
 	)
 	preview_show_committed_intents = bool(
 		cfg.get_value("planning_preview", "show_committed_intents", preview_show_committed_intents),
+	)
+	hover_rate_throttle_pct = clampf(
+		float(cfg.get_value("planning_preview", "hover_rate_throttle_pct", hover_rate_throttle_pct)),
+		0.0,
+		100.0,
 	)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
@@ -215,6 +237,7 @@ func save_to_disk() -> void:
 	cfg.set_value("planning_preview", "show_live_ghosts", preview_show_live_ghosts)
 	cfg.set_value("planning_preview", "show_arrows", preview_show_arrows)
 	cfg.set_value("planning_preview", "show_committed_intents", preview_show_committed_intents)
+	cfg.set_value("planning_preview", "hover_rate_throttle_pct", hover_rate_throttle_pct)
 	cfg.set_value("display", "screen_index", screen_index)
 	cfg.set_value("display", "window_position_x", window_position.x)
 	cfg.set_value("display", "window_position_y", window_position.y)
