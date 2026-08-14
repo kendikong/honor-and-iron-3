@@ -10,6 +10,15 @@
 
 ```text
 ══════════════════════════════════════
+GAUNTLET SCORE │ BIBLE-TO-CODE — 100% canvas MATCH lock │ Round 7 │ SELF-GRADED: no (subagent)
+SCORE: 96/100 │ THRESHOLD: 95 │ PASS │ STALLED
+DELTA: +0 vs Round 3 honesty (96)
+STOP_CONDITION_MET: yes (this piece)
+══════════════════════════════════════
+```
+
+```text
+══════════════════════════════════════
 GAUNTLET SCORE │ BIBLE-CONSISTENCY │ Round 2 │ SELF-GRADED: no (subagent)
 SCORE: 90/100 │ THRESHOLD: 88 │ PASS │ CLIMBING
 DELTA: +4 vs round 1 (was 86)
@@ -17,16 +26,7 @@ STOP_CONDITION_MET: yes (this piece)
 ══════════════════════════════════════
 ```
 
-```text
-══════════════════════════════════════
-GAUNTLET SCORE │ BIBLE-TO-CODE │ Round 6 │ SELF-GRADED: no (subagent)
-SCORE: 87/100 │ THRESHOLD: 85 │ PASS │ STALLED
-DELTA: +1 vs round 5 (was 86)
-STOP_CONDITION_MET: yes (this piece)
-══════════════════════════════════════
-```
-
-`STOP_CONDITION_MET: yes` (both pieces critic-PASS: consistency 90, bible-to-code 87; Correct QA wrapper used)
+`STOP_CONDITION_MET: yes` (bible-to-code canvas **397 MATCH**, FAIL=DATA-ONLY=MISSING=DISHONEST=0; critic 96 ≥ 95)
 
 ### Score progression
 
@@ -40,6 +40,7 @@ STOP_CONDITION_MET: yes (this piece)
 | 4 | BIBLE-TO-CODE | 56 | FAIL | no (subagent) |
 | 5 | BIBLE-TO-CODE | 86 | PASS | no (subagent) |
 | 6 | BIBLE-TO-CODE | 87 | PASS | no (subagent) |
+| 7 | BIBLE-TO-CODE 100% MATCH lock | 96 | PASS | no (subagent) |
 
 ### Wave 8 (2026-08-14)
 
@@ -117,6 +118,14 @@ Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 Totem Guard `[+]` +1 DEF vs melee wired: factory `melee_def` → `shaman_guard_melee_def` → `ShamanSystems.guard_melee_defense_bonus` → `CombatSystem` mitigation. Correct QA: `run_shaman_qa_gate.ps1` wrapper PASS (manifest uses class `pass_threshold` 85). Alignment FAIL 0 (MATCH 374, DATA-ONLY 19, MISSING 4).
 
 **Round 6 critic:** BIBLE-TO-CODE **87 PASS** ([Bible-to-code R6](e00c8c1d-e2bd-4ffe-b44e-a4d50aca31c3)). `STOP_CONDITION_MET: yes`. No class LOCK.
+
+### Wave 14 (2026-08-14)
+
+Canvas **397 MATCH**. Alignment gate now fails on DATA-ONLY, MISSING, and MATCH deltas that admit `invented.` / `superset`.
+
+Glorious Charge dual-pick + Piercing Charge dash-then-strike: commit `7b1339c4e794ee11041c72dbfbaacec58d4677b6`. Lancer gate+live PASS. Planning QA PASS.
+
+**Round 7 critic:** BIBLE-TO-CODE **96 PASS** ([Bible MATCH lock](302ef077-bb61-403c-b731-694bd6efd6c0)). No class LOCK.
 
 ### Wave 6 (2026-08-14)
 

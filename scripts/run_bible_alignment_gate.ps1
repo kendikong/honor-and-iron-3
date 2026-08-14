@@ -24,17 +24,18 @@ foreach ($path in $candidates) {
 }
 
 Write-Output "=== Bible alignment QA gate ==="
-Write-Output "Spec: canvas/JSON FAIL rows must be 0 for bible-to-code."
+Write-Output "Spec: canvas 100% MATCH (FAIL=0, DATA-ONLY=0, MISSING=0); MATCH deltas must not admit invented./superset extras."
 
 $rows = @()
 if ($null -ne $canvas) {
 	Write-Output "Canvas: $canvas"
-	$pattern = 'cls: "(?<cls>[^"]+)".*?skill: "(?<skill>[^"]+)".*?verdict: "(?<verdict>MATCH|FAIL|DATA-ONLY|MISSING)"'
+	$pattern = 'cls: "(?<cls>[^"]+)".*?skill: "(?<skill>[^"]+)".*?verdict: "(?<verdict>MATCH|FAIL|DATA-ONLY|MISSING)", delta: "(?<delta>[^"]*)"'
 	Select-String -LiteralPath $canvas -Pattern $pattern | ForEach-Object {
 		$rows += [pscustomobject]@{
 			cls = $_.Matches[0].Groups["cls"].Value
 			skill = $_.Matches[0].Groups["skill"].Value
 			verdict = $_.Matches[0].Groups["verdict"].Value
+			delta = $_.Matches[0].Groups["delta"].Value
 		}
 	}
 } elseif (Test-Path -LiteralPath $auditJson) {
@@ -70,6 +71,13 @@ foreach ($group in $byVerdict) {
 }
 
 $fails = @($rows | Where-Object { $_.verdict -eq "FAIL" })
+$dataOnly = @($rows | Where-Object { $_.verdict -eq "DATA-ONLY" })
+$missing = @($rows | Where-Object { $_.verdict -eq "MISSING" })
+$dishonestMatch = @($rows | Where-Object {
+	$_.verdict -eq "MATCH" -and
+	$_.delta -match 'invented\.|superset' -and
+	$_.delta -notmatch '(?i)no invented'
+})
 $byClass = $fails | Group-Object cls | Sort-Object Count -Descending
 Write-Output ""
 Write-Output "FAIL by class:"
@@ -80,6 +88,9 @@ if ($byClass.Count -eq 0) {
 		Write-Output ("  {0}: {1}" -f $group.Name, $group.Count)
 	}
 }
+Write-Output ("DATA-ONLY: {0}" -f $dataOnly.Count)
+Write-Output ("MISSING: {0}" -f $missing.Count)
+Write-Output ("DISHONEST MATCH deltas: {0}" -f $dishonestMatch.Count)
 
 $docsDir = Join-Path $projectRoot "docs"
 if (-not (Test-Path -LiteralPath $docsDir)) {
@@ -89,11 +100,20 @@ $snapshot | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $auditJson -Encod
 Write-Output ""
 Write-Output "Wrote $auditJson"
 
-if ($fails.Count -gt 0) {
+if ($fails.Count -gt 0 -or $dataOnly.Count -gt 0 -or $missing.Count -gt 0 -or $dishonestMatch.Count -gt 0) {
 	Write-Output ""
-	Write-Output ("--- Bible alignment gate: FAIL ({0} rows) ---" -f $fails.Count)
+	Write-Output ("--- Bible alignment gate: FAIL (FAIL={0} DATA-ONLY={1} MISSING={2} DISHONEST={3}) ---" -f $fails.Count, $dataOnly.Count, $missing.Count, $dishonestMatch.Count)
 	$fails | Select-Object -First 20 | ForEach-Object {
 		Write-Output ("[FAIL] {0} / {1}" -f $_.cls, $_.skill)
+	}
+	$dataOnly | Select-Object -First 10 | ForEach-Object {
+		Write-Output ("[DATA-ONLY] {0} / {1}" -f $_.cls, $_.skill)
+	}
+	$missing | Select-Object -First 10 | ForEach-Object {
+		Write-Output ("[MISSING] {0} / {1}" -f $_.cls, $_.skill)
+	}
+	$dishonestMatch | Select-Object -First 10 | ForEach-Object {
+		Write-Output ("[DISHONEST] {0} / {1}: {2}" -f $_.cls, $_.skill, $_.delta)
 	}
 	exit 1
 }

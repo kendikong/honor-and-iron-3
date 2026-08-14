@@ -1,7 +1,7 @@
 # Run card — Bible consistency + Bible-to-code
 
 **Started:** 2026-08-14  
-**Closed:** 2026-08-14 Round 6 — both pieces critic PASS with Correct QA  
+**Closed:** 2026-08-14 Round 7 — canvas 397 MATCH (FAIL=DATA-ONLY=MISSING=DISHONEST=0); critic 96 ≥ 95  
 **Lead:** this Agent chat  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md`
 
