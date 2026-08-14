@@ -1,7 +1,7 @@
 # Run card — Bible consistency + Bible-to-code
 
 **Started:** 2026-08-14  
-**Reopened:** 2026-08-14 — owner added Correct QA; bible-to-code residual DATA-ONLY/MISSING  
+**Closed:** 2026-08-14 Round 6 — both pieces critic PASS with Correct QA  
 **Lead:** this Agent chat  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md`
 
