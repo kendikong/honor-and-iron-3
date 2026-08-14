@@ -152,6 +152,8 @@ func _ready() -> void:
 	_pause_menu = TacticalPauseMenu.new()
 	_pause_menu.name = "PauseMenu"
 	add_child(_pause_menu)
+	_pause_menu.opened.connect(_on_pause_menu_opened)
+	_pause_menu.closed.connect(_on_pause_menu_closed)
 
 	_autobattler_panel = AutobattlerControlPanel.new()
 	_autobattler_panel.name = "AutobattlerPanel"
@@ -369,10 +371,23 @@ func _on_options_opened() -> void:
 	if _input_controller != null:
 		_input_controller.cancel_drag()
 		_input_controller.cancel_aim()
+	_apply_off_map_hover()
 
 
 func _on_options_closed() -> void:
+	_last_polled_mouse_pos = Vector2i(-99999, -99999)
 	_apply_effects()
+
+
+func _on_pause_menu_opened() -> void:
+	if _input_controller != null:
+		_input_controller.cancel_drag()
+		_input_controller.cancel_aim()
+	_apply_off_map_hover()
+
+
+func _on_pause_menu_closed() -> void:
+	_last_polled_mouse_pos = Vector2i(-99999, -99999)
 
 
 func _on_effects_settings_changed() -> void:
@@ -548,19 +563,16 @@ func _sync_overlay_huds(map_origin: Vector2, map_size: Vector2) -> void:
 func _update_hover_coord() -> void:
 	if _director == null or _director.board == null:
 		return
+	if _ui_menus_capture_mouse():
+		_apply_off_map_hover()
+		return
 	var mouse_pos: Vector2i = Vector2i(get_viewport().get_mouse_position())
 	if mouse_pos == _last_polled_mouse_pos:
 		return
 	_last_polled_mouse_pos = mouse_pos
 	var hc: Control = get_viewport().gui_get_hovered_control()
 	if hc != null and _hover_blocked_by_ui(hc):
-		var blocked_cell := Vector2i(-999, -999)
-		if _last_polled_hover_cell != blocked_cell:
-			_last_polled_hover_cell = blocked_cell
-			if _planning_input != null:
-				_planning_input.on_hover_moved(blocked_cell)
-			elif _side_panels != null:
-				_side_panels.set_hover_coord(blocked_cell)
+		_apply_off_map_hover()
 		return
 	var cell: Vector2i
 	if _planning_input != null:
@@ -577,6 +589,26 @@ func _update_hover_coord() -> void:
 			_side_panels.set_hover_coord(cell)
 		if _planning_overlay != null:
 			_planning_overlay.set_hover_coord(cell)
+
+
+func _ui_menus_capture_mouse() -> bool:
+	return (
+		(_options != null and _options.is_open())
+		or (_pause_menu != null and _pause_menu.is_open())
+	)
+
+
+func _apply_off_map_hover() -> void:
+	var blocked_cell := Vector2i(-999, -999)
+	if _last_polled_hover_cell != blocked_cell:
+		_last_polled_hover_cell = blocked_cell
+		if _planning_input != null:
+			_planning_input.on_hover_moved(blocked_cell)
+		elif _side_panels != null:
+			_side_panels.set_hover_coord(blocked_cell)
+		return
+	if _planning_input != null:
+		_planning_input.refresh_mouse_cursor(blocked_cell)
 
 
 func _hover_blocked_by_ui(ctrl: Control) -> bool:

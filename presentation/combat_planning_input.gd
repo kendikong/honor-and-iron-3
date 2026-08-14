@@ -1167,6 +1167,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			):
 				_clear_hover_drag_route()
 	if not _director.board.is_in_bounds(cell):
+		refresh_mouse_cursor(cell)
 		_flush_hover_heavy_sync()
 		return
 	if _should_restore_stand_hover_preview(cell):
@@ -1329,6 +1330,8 @@ func _run_hover_sim_refresh() -> void:
 		else:
 			_sync_intent_live_board()
 		_last_sim_hover_refresh_cell = cell
+		if not dragging:
+			refresh_mouse_cursor(cell)
 		return
 	var sim_cell_changed: bool = cell != _last_sim_hover_refresh_cell
 	if _director.selected_unit_id >= 0:
