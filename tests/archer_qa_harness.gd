@@ -186,7 +186,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		&"archer_hunters_mark": [GameEnums.EffectType.ADD_STATUS, 1, 5, GameEnums.TargetShape.SINGLE],
 		&"archer_repelling_shot": [GameEnums.EffectType.DAMAGE, 1, 2, GameEnums.TargetShape.SINGLE],
 		&"archer_bear_trap": [GameEnums.EffectType.CREATE_HAZARD, 3, 3, GameEnums.TargetShape.SINGLE],
-		&"archer_suppressing_fire": [GameEnums.EffectType.CREATE_HAZARD, 1, 5, GameEnums.TargetShape.ARC],
+		&"archer_suppressing_fire": [GameEnums.EffectType.CREATE_HAZARD, 1, 4, GameEnums.TargetShape.ARC],
 		&"archer_caltrop_trap": [GameEnums.EffectType.CREATE_HAZARD, 1, 3, GameEnums.TargetShape.SINGLE],
 		&"archer_parting_shot": [GameEnums.EffectType.DAMAGE, 2, 3, GameEnums.TargetShape.SINGLE],
 		&"archer_scouts_eye": [GameEnums.EffectType.PURGE, 0, 5, GameEnums.TargetShape.SINGLE],
@@ -388,7 +388,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 	var patient_board := _plain_board(Vector2i(8, 4))
 	var patient := _make_unit(
 		definition, 1, GameEnums.Team.PLAYER, Vector2i(1, 1), [basic],
-		[factory_passive(&"patient_hunter")],
+		[factory_passive(&"lightfoot"), factory_passive(&"patient_hunter")],
 	)
 	var patient_target := _make_unit(
 		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 1), [], [],

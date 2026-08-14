@@ -119,6 +119,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 			{"active_abilities": [basic], "active_passives": [H.factory_passive(&"overwatch")]},
 		)
 		archer.ability.points_left = archer.ability.max_points
+		archer.facing = GameEnums.Facing.EAST
 		var enemy := _place_enemy(board, 2, Vector2i(6, 1))
 		var hp_before := enemy.health.current_hp
 		var plan := Timeline.new()
@@ -139,6 +140,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		if low_wpn.definition != null and low_wpn.definition.equipped_weapon != null:
 			low_wpn.definition.equipped_weapon.might = 0
 		low_wpn.ability.points_left = low_wpn.ability.max_points
+		low_wpn.facing = GameEnums.Facing.EAST
 		var high_wpn := H.place_archer(
 			wpn_board, 21, Vector2i(2, 3),
 			{"active_abilities": [wpn_basic], "active_passives": [H.factory_passive(&"overwatch")]},
@@ -146,6 +148,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		if high_wpn.definition != null and high_wpn.definition.equipped_weapon != null:
 			high_wpn.definition.equipped_weapon.might = 5
 		high_wpn.ability.points_left = high_wpn.ability.max_points
+		high_wpn.facing = GameEnums.Facing.EAST
 		var low_enemy := _place_enemy(wpn_board, 22, Vector2i(6, 1))
 		var high_enemy := _place_enemy(wpn_board, 23, Vector2i(6, 3))
 		var low_hp := low_enemy.health.current_hp
@@ -219,7 +222,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		var basic := DataLibrary._make_class_basic_attack(&"archer")
 		var patient := H.place_archer(
 			board, 1, Vector2i(1, 1),
-			{"active_abilities": [basic], "active_passives": [H.factory_passive(&"patient_hunter")]},
+			{"active_abilities": [basic], "active_passives": [H.factory_passive(&"lightfoot"), H.factory_passive(&"patient_hunter")]},
 		)
 		var patient_target := H.place_dummy(board, 2, Vector2i(3, 1))
 		var events: Array[SimEvent] = []

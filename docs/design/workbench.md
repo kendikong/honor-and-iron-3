@@ -39,6 +39,16 @@ STOP_CONDITION_MET: no
 | 3 | BIBLE-TO-CODE | 58 | FAIL | no (subagent) |
 | 4 | BIBLE-TO-CODE | 56 | FAIL | no (subagent) |
 
+### Wave 7 (2026-08-14)
+
+Lancer 12 canvas FAILs closed (Glorious Charge live dual-pick; Piercing Charge dash-then-RANGE 2; Polearm ignore-DEF upgrade-only; etc.). Archer 11 canvas FAILs closed (Steady Aim spends remaining MOV; Sidestep keep facing; Overwatch cone; Vantage on Steady Aim only; Camouflage Range>3; Caltrop 1 AP / Expert waiver; Target Painter PIERCE upgrade-only; Hunter's Mark ally RANGE/PIERCE; Repelling ally pick; Suppressing RANGE 4).
+
+QA: Lancer gate+live PASS. Archer gate+live PASS. Planning QA PASS.
+
+Canvas FAIL remaining ~50 (Beast Rider, Monk, Mage, Engineer, Shaman, Cleric dual-pick). Next cluster: **Beast Rider 11**.
+
+Bowling Charge / Trampling Advance untouched. No class LOCK claim.
+
 ### Wave 6 (2026-08-14)
 
 Audits collapsed to 1 finding (Rogue 13 canvas FAILs). Implemented in `RogueSystems` + factory data + harness:

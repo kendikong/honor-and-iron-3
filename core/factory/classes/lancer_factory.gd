@@ -29,7 +29,11 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		"Polearm Mastery",
 		"Basic attacks have RANGE 2. Extended-reach attacks deal 30% less damage at RANGE 1.",
 		"Attacks from exactly RANGE 2 gain +1 STR and ignore 2 DEF.",
-		{"polearm_mastery": true, "range_two_strength": 1, "range_two_ignore_def": 2},
+		{
+			"polearm_mastery": true,
+			"upgraded_range_two_strength": 1,
+			"upgraded_range_two_ignore_def": 2,
+		},
 	))
 
 	var push := _make_movement(
@@ -81,19 +85,18 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		{"promotion": &"skystriker", "landing_adjacent_push": 1, "upgraded_landing_collision_stagger": true}))
 	def.passives.append(_passive(&"pole_plant", "Pole-Plant",
 		"Your Push can target destructible obstacles and traps. Destroying a trap grants SHIELD 2.",
-		"Destroying a trap also deals 2 unmitigated damage to adjacent enemies.",
+		"Destroying a trap also deals WPN unmitigated damage to adjacent enemies.",
 		{"promotion": &"skystriker", "push_destroy_obstacles": true, "trap_destroy_shield": 2,
-		"upgraded_trap_destroy_adjacent_damage": 2}))
+		"upgraded_trap_destroy_adjacent_wpn": true}))
 	def.passives.append(_passive(&"spear_drop", "Spear Drop",
 		"Attacking an enemy you vaulted over ignores 2 DEF and applies BLEED X, where X is WPN.",
 		"Attacking an enemy you vaulted over ignores 4 DEF and applies BLEED X, where X is WPN.",
 		{"promotion": &"skystriker", "vaulted_target_ignore_def": 2,
 		"upgraded_vaulted_target_ignore_def": 4, "vaulted_target_bleed_weapon": true}))
 	def.passives.append(_passive(&"springboard", "Springboard",
-		"On Kill: you may vault into the defeated enemy's space for 0 AP and gain +1 MOV on landing.",
-		"On Kill: you may vault into the defeated enemy's space for 0 AP, gain +1 MOV, and gain 1 AP on landing once per turn.",
-		{"promotion": &"skystriker", "kill_vault": true, "kill_vault_mov": 1,
-		"upgraded_kill_vault_ap": 1}))
+		"On Kill: vault into the defeated enemy's space for 0 AP before corpse removal.",
+		"On Kill: vault into the defeated enemy's space for 0 AP and gain +1 AP on landing once per turn.",
+		{"promotion": &"skystriker", "kill_vault": true, "upgraded_kill_vault_ap": 1}))
 
 	# Halberdier passives.
 	def.passives.append(_passive(&"sweet_spot", "Pivot Leverage",
@@ -125,24 +128,22 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	# Shared / promoted actives.
 	def.abilities.append(_charge_skill(
 		&"lancer_piercing_charge", "Piercing Charge", 3, 2, 2,
-		"Create TRAMPLED terrain behind you (MOVE cost x2). If Push was used earlier this turn, PUSH 3 instead.",
+		"Create TRAMPLED terrain on tiles you left (MOVE cost x2).",
 		{"create_trampled_terrain": true},
 	))
 	def.abilities.append(_attack_with_layer(
 		&"lancer_sweeping_halberd", "Sweeping Halberd", 2, GameEnums.TargetShape.ARC,
 		2, GameEnums.EffectType.PULL, 1,
-		"Sweeping Halberd's PULL collision applies STAGGER. If Push was used earlier this turn, PULL 2 instead.",
+		"PULL collision applies STAGGER.",
 		{},
 		GameEnums.StatusType.STAT_BUFF_STR,
-		{"stagger_on_collision": true, "pull_bonus_if_push_used": 1},
+		{"stagger_on_collision": true},
 	))
-	def.abilities.append(_attack_with_layer(
-		&"lancer_vaulting_leap", "Vaulting Leap", 2, GameEnums.TargetShape.SINGLE,
-		2, GameEnums.EffectType.ADD_STATUS, 1,
-		"Armor explodes: ATK 1 in AOE 1 around the target.",
-		{"target_def_set": 0},
-		GameEnums.StatusType.STAT_DEBUFF_DEF,
-		{"target_def_set": 0, "armor_explosion_atk": 1},
+	def.abilities.append(_attack(
+		&"lancer_vaulting_leap", "Vaulting Leap", 2, 2,
+		"On hit, deal ATK 1 to enemies adjacent to the target.",
+		{"halve_target_def_one_turn": true},
+		{"halve_target_def_one_turn": true, "armor_explosion_atk": 1},
 	))
 	def.abilities.append(_attack(
 		&"lancer_run_down", "Run Down", 2, 3,
@@ -164,11 +165,11 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	))
 	def.abilities.append(_attack_with_layer(
 		&"lancer_harpoon_toss", "Harpoon Toss", 4, GameEnums.TargetShape.SINGLE,
-		1, GameEnums.EffectType.PULL, 3,
-		"If SELF has ROOT or target is heavier, PULL SELF to target.",
-		{"pull_self_if_rooted_or_heavier": true},
+		1, GameEnums.EffectType.PULL, 1,
+		"If SELF is ROOTED, PULL SELF to the target.",
+		{"pull_until_adjacent": true},
 		GameEnums.StatusType.STAT_BUFF_STR,
-		{"pull_self_if_rooted_or_heavier": true},
+		{"pull_until_adjacent": true, "pull_self_if_rooted": true},
 	))
 	def.abilities.append(_glorious_charge())
 	def.abilities.append(_pole_vault())
@@ -393,20 +394,26 @@ static func _charge_skill(
 	upgrade_description: String,
 	upgrade_modifiers: Dictionary,
 ) -> AbilityData:
-	var module := _module(
+	var dash := _module(
 		GameEnums.EffectType.DASH, dash_range, 1, dash_range,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL, GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, damage)))
-	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, push_amount)))
-	var upgraded := _clone_modules([module])
+	dash.execution_phase = GameEnums.ModulePhase.ON_PRE
+	var strike := _module(
+		GameEnums.EffectType.DAMAGE, damage, 1, 2,
+		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
+		GameEnums.StatType.PHYSICAL,
+	)
+	strike.aim_binding = GameEnums.AimBinding.NEW_AIM
+	strike.execution_phase = GameEnums.ModulePhase.ON_ACTION
+	strike.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, push_amount)))
+	var modules: Array[AbilityModule] = [dash, strike]
+	var upgraded := _clone_modules(modules)
 	upgraded[0].legacy_modifiers = upgrade_modifiers.duplicate(true)
-	for layer: AbilityLayer in upgraded[0].layers:
-		if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
-			layer.effect.modifiers["push_bonus_if_push_used"] = 1
 	return _ability(
-		id, name, 1, [module], GameEnums.TargetingFlags.TILE,
+		id, name, 1, modules,
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		upgrade_description, upgraded,
 	)
@@ -491,9 +498,11 @@ static func _glorious_charge() -> AbilityData:
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	module.legacy_modifiers["paired_ally_charge"] = true
+	module.legacy_modifiers["paired_ally_strike_atk"] = 2
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["paired_ally_charge"] = true
+	upgraded[0].legacy_modifiers["paired_ally_strike_atk"] = 2
 	upgraded[0].legacy_modifiers["on_kill_both_ap"] = 1
 	var ability := _ability(
 		&"lancer_glorious_charge", "Glorious Charge", 1, [module],
@@ -517,15 +526,17 @@ static func _pole_vault() -> AbilityData:
 		GameEnums.MotionMode.VAULT_OVER,
 	)
 	module.legacy_modifiers["vault_over"] = true
+	module.legacy_modifiers["vault_obstacle_or_gap_only"] = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["vault_over"] = true
-	upgraded[0].legacy_modifiers["landing_adjacent_push_if_push_used"] = 1
+	upgraded[0].legacy_modifiers["vault_obstacle_or_gap_only"] = true
+	upgraded[0].legacy_modifiers["landing_adjacent_push"] = 1
 	upgraded[0].legacy_modifiers["landing_adjacent_push_stagger"] = true
 	return _ability(
 		&"lancer_pole_vault", "Pole Vault", 1, [module],
 		GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_MOVEMENT, AbilityModuleBridge.TAG_POSITIONING],
-		"If Push was used earlier this turn, landing applies PUSH 1 to adjacent enemies; collisions STAGGER.",
+		"Landing applies PUSH 1 to adjacent enemies; collisions STAGGER.",
 		upgraded,
 	)
 
@@ -552,7 +563,7 @@ static func _line_breaker() -> AbilityData:
 static func _spear_wall() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.CREATE_HAZARD, 2, 1, 2, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.ARC, 2, GameEnums.StatType.PHYSICAL,
+		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
 	)
 	module.legacy_modifiers["terrain_id"] = &"spear_wall"
 	module.legacy_modifiers["hazard_status"] = GameEnums.StatusType.ROOT

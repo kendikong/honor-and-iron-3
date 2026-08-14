@@ -55,9 +55,10 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.passives.append(_passive(
 		&"overwatch",
 		"Overwatch",
-		"If you end planning without spending AP, the first enemy entering your line of sight suffers a basic attack scaling off WPN.",
-		"If you end planning without spending AP, the first enemy entering your line of sight suffers a basic attack scaling off WPN.",
-		{"planning_unused_ap_reaction": 1, "overwatch_basic_attack": true},
+		"If you do not spend your Action this turn, pre-plot a cone reaction. First enemy entering that cone in LOS suffers a WPN basic attack.",
+		"That reaction also applies ROOT.",
+		{"planning_unused_ap_reaction": 1, "overwatch_basic_attack": true,
+		"overwatch_cone_size": 4, "upgraded_overwatch_root": true},
 	))
 	def.passives.append(_passive(
 		&"high_ground",
@@ -95,7 +96,7 @@ static func build(basic_bow: WeaponData) -> UnitData:
 		"Camouflage",
 		"If you spend 0 MOV, gain STEALTH for attacks beyond RANGE 3 until next turn.",
 		"Next attack out of STEALTH gains +2 STR.",
-		{"zero_move_stealth_range": 3, "stealth_attack_bonus": 2},
+		{"zero_move_stealth_range": 3, "upgraded_stealth_attack_bonus": 2},
 	))
 	def.passives.append(_passive(
 		&"area_denial",
@@ -157,7 +158,7 @@ static func build(basic_bow: WeaponData) -> UnitData:
 		"Target Painter",
 		"Attacks against debuffed enemies gain +2 STR.",
 		"Those attacks also gain PIERCE.",
-		{"debuffed_attack_bonus": 2, "debuffed_attack_pierce": true},
+		{"debuffed_attack_bonus": 2, "upgraded_debuffed_attack_pierce": true},
 	))
 	def.passives.append(_passive(
 		&"rapid_fire",
@@ -184,10 +185,6 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	def.abilities.append(_scouts_eye())
 
 	DataLibrary.finalize_unit_abilities(def)
-	for ability: AbilityData in def.abilities:
-		if ability != null and ability.id == &"archer_repelling_shot":
-			ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
-			break
 	return def
 
 
@@ -493,7 +490,7 @@ static func _bear_trap() -> AbilityData:
 
 static func _suppressing_fire() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 5,
+		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 4,
 		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.ARC, 1,
 	)
@@ -523,7 +520,7 @@ static func _caltrop_trap() -> AbilityData:
 	var upgraded := _clone_modules([module])
 	upgraded[0].legacy_modifiers["trap_def_debuff"] = 2
 	return _ability(
-		&"archer_caltrop_trap", "Caltrop Trap", 0, [module],
+		&"archer_caltrop_trap", "Caltrop Trap", 1, [module],
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
 		"Place a trap that applies ROOT and BLEED WPN. Upgraded trap also applies -2 DEF.",
 		upgraded,

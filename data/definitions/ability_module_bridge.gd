@@ -636,7 +636,7 @@ static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[
 			ability.target_shape = mod.target_shape
 			ability.target_shape_size = mod.target_shape_size
 			if mod.targeting_flags != 0:
-				ability.targeting_flags = mod.targeting_flags
+				ability.targeting_flags |= mod.targeting_flags
 			return
 	## A motion-owned landing footprint (e.g. Meteor Drop) is still the
 	## ability's authored card shape when no later non-motion aim exists.

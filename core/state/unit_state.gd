@@ -536,7 +536,10 @@ func get_ability_range(ability_data: AbilityData) -> int:
 			ability_data.has_tag(AbilityModuleBridge.TAG_ATTACK)
 			or DataLibrary.is_basic_ability(ability_data.id)
 		)
-		and movement_points_spent_this_turn == 0
+		and (
+			movement_points_spent_this_turn == 0
+			or passive_flags.get("steady_aim_triggered", false)
+		)
 	):
 		for passive: PassiveData in active_passives:
 			if passive == null:

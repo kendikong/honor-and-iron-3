@@ -530,7 +530,7 @@ static func execute_skill_walk(
 	unit.record_movement(path, route_mp_cost(board, path, unit), from)
 	_apply_movement_passives(board, unit, events)
 	ShamanSystems.collect_soul_orb(board, unit, unit.position, events)
-	if path.size() >= 1:
+	if path.size() >= 1 and not _has_modifier(effects, &"preserve_facing"):
 		var prev_pos: Vector2i = from if path.size() == 1 else path[path.size() - 2]
 		unit.facing = PhysicsSystem.facing_from_vector(unit.position - prev_pos)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
@@ -698,11 +698,19 @@ static func _execute_free_reaction_move(
 	GridSystem.set_occupant(board, from, -1)
 	unit.position = action.target_coord
 	GridSystem.set_occupant(board, unit.position, unit.id)
-	unit.active_statuses.append(
-		DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)
-	)
-	unit._recalculate_stats(board)
-	unit.movement.points_left = mini(unit.movement.max_points, unit.movement.points_left + 1)
+	var vault_mov := 0
+	for passive: PassiveData in unit.active_passives:
+		if passive != null and passive.modifiers.has("kill_vault_mov"):
+			vault_mov = int(passive.modifiers["kill_vault_mov"])
+			break
+	if vault_mov > 0:
+		unit.active_statuses.append(
+			DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, vault_mov)
+		)
+		unit._recalculate_stats(board)
+		unit.movement.points_left = mini(
+			unit.movement.max_points, unit.movement.points_left + vault_mov
+		)
 	if (
 		unit.is_passive_upgraded(&"springboard")
 		and not unit.passive_flags.get("springboard_ap_used", false)
@@ -1085,6 +1093,7 @@ static func _resolve_zone_of_control(
 			or not _has_passive_modifier(watcher, &"planning_unused_ap_reaction")
 			or watcher.ability.points_left < watcher.ability.max_points
 			or not _line_of_sight(board, watcher.position, moved_unit.position)
+			or not _overwatch_cone_contains(watcher, moved_unit.position)
 		):
 			continue
 		var overwatch_basic := _basic_attack(watcher)
@@ -1101,6 +1110,7 @@ static func _resolve_zone_of_control(
 			AbilitySystem.execute(board, reaction, events)
 			watcher.ability.points_left = ap_before
 			watcher.turn_action_used = action_used_before
+			_apply_overwatch_root(board, watcher, moved_unit, events)
 			continue
 		var overwatch_raw := CombatSystem.calculate_scaled_damage(
 			watcher, 1, GameEnums.StatType.PHYSICAL, board,
@@ -1118,6 +1128,49 @@ static func _resolve_zone_of_control(
 			overwatch_raw,
 		)
 		watcher.passive_flags["overwatch_used"] = true
+		_apply_overwatch_root(board, watcher, moved_unit, events)
+
+
+static func _overwatch_cone_contains(watcher: UnitState, cell: Vector2i) -> bool:
+	if watcher == null:
+		return false
+	var cone_size: int = _passive_modifier_value(watcher, &"overwatch_cone_size")
+	if cone_size <= 0:
+		return true
+	var facing_dir: Vector2i = PhysicsSystem.facing_to_vector(watcher.facing)
+	if facing_dir == Vector2i.ZERO:
+		return false
+	var aim: Vector2i = watcher.position + facing_dir
+	var cone: Array[Vector2i] = GridSystem.get_affected_tiles(
+		null, watcher.position, aim, GameEnums.TargetShape.CONE, cone_size,
+	)
+	return cone.has(cell)
+
+
+static func _apply_overwatch_root(
+	board: BoardState,
+	watcher: UnitState,
+	moved_unit: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if (
+		watcher == null
+		or moved_unit == null
+		or not moved_unit.is_alive()
+		or not watcher.is_passive_upgraded(&"overwatch")
+		or not _has_passive_modifier(watcher, &"upgraded_overwatch_root")
+	):
+		return
+	moved_unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.ROOT, 1))
+	moved_unit._recalculate_stats(board)
+	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+		"unit": moved_unit.id,
+		"status_type": GameEnums.StatusType.ROOT,
+		"duration": 1,
+		"overwatch": true,
+	}))
+
+
 static func _has_passive_modifier(unit: UnitState, key: StringName) -> bool:
 	if unit == null:
 		return false

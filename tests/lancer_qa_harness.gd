@@ -304,26 +304,26 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 		failures,
 		"push_synergy/charge_modifier",
 		charge != null and _has_modifier(
-			charge.upgraded_effects, GameEnums.EffectType.PUSH, "push_bonus_if_push_used"
+			charge.upgraded_effects, GameEnums.EffectType.DASH, "create_trampled_terrain"
 		),
-		"Piercing Charge [+] must gain PUSH 3 after Push",
+		"Piercing Charge [+] must create TRAMPLED terrain on tiles left",
 	)
 	assert_true(
 		failures,
 		"push_synergy/sweep_modifier",
 		sweep != null and _has_modifier(
-			sweep.upgraded_effects, GameEnums.EffectType.PULL, "pull_bonus_if_push_used"
+			sweep.upgraded_effects, GameEnums.EffectType.PULL, "stagger_on_collision"
 		),
-		"Sweeping Halberd [+] must gain PULL 2 after Push",
+		"Sweeping Halberd [+] must STAGGER on PULL collision",
 	)
 	assert_true(
 		failures,
 		"push_synergy/vault_modifier",
 		vault != null and _has_modifier(
 			vault.upgraded_effects, GameEnums.EffectType.TELEPORT_CASTER,
-			"landing_adjacent_push_if_push_used",
+			"landing_adjacent_push",
 		),
-		"Pole Vault [+] must require Push before its landing displacement",
+		"Pole Vault [+] must PUSH adjacent enemies on landing",
 	)
 	if charge == null or sweep == null or vault == null:
 		return
@@ -334,7 +334,7 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 		"active_passives": [],
 		"upgraded_abilities": [charge.id, sweep.id, vault.id],
 	})
-	actor.passive_flags["push_used_this_turn"] = true
+	actor.passive_flags.erase("push_used_this_turn")
 	var landing_enemy := UnitState.create(
 		2, definition, GameEnums.Team.ENEMY, Vector2i(4, 3), {
 			"active_abilities": [],
@@ -354,7 +354,7 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 		failures,
 		"push_synergy/vault_sim",
 		landing_enemy.position == Vector2i(4, 4),
-		"Pole Vault [+] must push adjacent enemies after Push",
+		"Pole Vault [+] must push adjacent enemies on landing",
 	)
 
 
@@ -443,6 +443,8 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 	if ability.id == &"lancer_flanking_maneuver":
 		enemy.position = Vector2i(4, 4)
 		enemy.facing = GameEnums.Facing.NORTH
+	if ability.id == &"lancer_piercing_charge":
+		enemy.position = Vector2i(5, 5)
 	var ally := UnitState.create(
 		3,
 		definition,
@@ -473,7 +475,13 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 	if ability.id == &"lancer_meteor_drop" or ability.id == &"lancer_pole_vault":
 		target_coord = Vector2i(3, 2)
 		target_id = -1
+	if ability.id == &"lancer_piercing_charge":
+		target_coord = Vector2i(5, 3)
+		target_id = -1
 	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
+	if ability.id == &"lancer_piercing_charge":
+		action.module_target_coords = [Vector2i(5, 3), enemy.position]
+		action.module_target_unit_ids = [-1, enemy.id]
 	var before_pos: Vector2i = actor.position
 	var events: Array[SimEvent] = []
 	Simulator.simulate_player_turn(board, _single_action_plan(action), events)
@@ -848,7 +856,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		assert_true(
 		failures,
 		"passive/springboard",
-		springer.position == Vector2i(3, 2) and springer.movement.max_points == 5,
+		springer.position == Vector2i(3, 2) and springer.movement.max_points == 4,
 		"kill reaction must vault into the defeated enemy's space for free",
 		)
 

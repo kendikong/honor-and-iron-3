@@ -51,8 +51,8 @@ const _CASES: Array[Dictionary] = [
 	},
 	{
 		"id": &"lancer_piercing_charge",
-		"range": 3,
-		"flags": GameEnums.TargetingFlags.TILE,
+		"range": 2,
+		"flags": GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE,
 		"shape_size": 1,
 		"primary_type": GameEnums.EffectType.DASH,
@@ -61,7 +61,7 @@ const _CASES: Array[Dictionary] = [
 		"target_kind": &"tile",
 		"target": Vector2i(6, 5),
 		"dummies": [Vector2i(5, 5)],
-		"upgrade_keys": [&"create_trampled_terrain", &"push_bonus_if_push_used"],
+		"upgrade_keys": [&"create_trampled_terrain"],
 	},
 	{
 		"id": &"lancer_sweeping_halberd",
@@ -75,7 +75,7 @@ const _CASES: Array[Dictionary] = [
 		"target_kind": &"enemy",
 		"target": Vector2i(6, 5),
 		"dummies": [Vector2i(6, 5)],
-		"upgrade_keys": [&"stagger_on_collision", &"pull_bonus_if_push_used"],
+		"upgrade_keys": [&"stagger_on_collision"],
 	},
 	{
 		"id": &"lancer_vaulting_leap",
@@ -159,7 +159,7 @@ const _CASES: Array[Dictionary] = [
 		"target_kind": &"enemy",
 		"target": Vector2i(8, 5),
 		"dummies": [Vector2i(8, 5)],
-		"upgrade_keys": [&"pull_self_if_rooted_or_heavier"],
+		"upgrade_keys": [&"pull_self_if_rooted"],
 	},
 	{
 		"id": &"lancer_glorious_charge",
@@ -191,7 +191,7 @@ const _CASES: Array[Dictionary] = [
 		"target_kind": &"tile",
 		"target": Vector2i(6, 5),
 		"dummies": [Vector2i(5, 5)],
-		"upgrade_keys": [&"vault_over", &"landing_adjacent_push_if_push_used"],
+		"upgrade_keys": [&"vault_over", &"landing_adjacent_push"],
 	},
 	{
 		"id": &"lancer_line_breaker",
@@ -212,7 +212,7 @@ const _CASES: Array[Dictionary] = [
 		"range": 2,
 		"flags": GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.ARC,
-		"shape_size": 2,
+		"shape_size": 1,
 		"primary_type": GameEnums.EffectType.CREATE_HAZARD,
 		"primary_amount": 2,
 		"observation": &"terrain",
@@ -291,7 +291,7 @@ const _FIXTURES: Dictionary = {
 	},
 	&"lancer_piercing_charge": {
 		"extra_players": [Vector2i(5, 5), Vector2i(2, 8), Vector2i(8, 8)],
-		"dummies": [Vector2i(2, 6), Vector2i(8, 6)],
+		"dummies": [Vector2i(2, 6), Vector2i(8, 4)],
 	},
 	&"lancer_sweeping_halberd": {
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
@@ -503,13 +503,18 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		var slots: Dictionary
 		if skill_id == &"lancer_glorious_charge":
 			slots = await _commit_glorious_charge(runner, actor_id, case)
+		elif skill_id == &"lancer_piercing_charge":
+			slots = await _commit_piercing_charge(runner, actor_id, ability, target_cell)
 		elif tile_move_commit:
 			await _OVERLAY_QA.assert_live_overlay_parity(
 				self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
 			)
 			slots = await _commit_live_click(runner, actor_id, target_cell)
 			if _plan_has_awaiting(actor_id):
-				slots = await _commit_live_click(runner, actor_id, target_cell)
+				var follow_up := target_cell
+				if skill_id == &"lancer_piercing_charge":
+					follow_up = Vector2i(8, 4)
+				slots = await _commit_live_click(runner, actor_id, follow_up)
 		elif is_awaiting_skill:
 			slots = await _commit_awaiting_skill(
 				runner, actor_id, ability, arm_cell, target_cell, skill_id,
@@ -541,16 +546,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				_input,
 				actor_id,
 				Vector2i(3, 3),
-				true,
-			)
-		elif skill_id == &"lancer_glorious_charge":
-			await _MOVEMENT_QA.commit_universal_run(
-				self,
-				runner,
-				_director,
-				_input,
-				actor_id,
-				Vector2i(8, 5),
 				true,
 			)
 		await _MOVEMENT_QA.assert_committed(
@@ -705,6 +700,21 @@ func _commit_glorious_charge(
 	return await _commit_live_click(runner, actor_id, target_cell)
 
 
+func _commit_piercing_charge(
+	runner: GdUnitSceneRunner,
+	actor_id: int,
+	ability: AbilityData,
+	dash_cell: Vector2i,
+) -> Dictionary:
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, ability, dash_cell, &"lancer_piercing_charge",
+	)
+	var slots := await _commit_live_click(runner, actor_id, dash_cell)
+	if _plan_has_awaiting(actor_id):
+		slots = await _commit_live_click(runner, actor_id, Vector2i(8, 4))
+	return slots
+
+
 func _commit_awaiting_skill(
 	runner: GdUnitSceneRunner,
 	actor_id: int,
@@ -730,6 +740,8 @@ func _commit_awaiting_skill(
 					self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
 				)
 			slots = await _commit_live_click(runner, actor_id, target_cell)
+			if skill_id == &"lancer_piercing_charge" and _plan_has_awaiting(actor_id):
+				slots = await _commit_live_click(runner, actor_id, Vector2i(8, 4))
 	return slots
 
 
