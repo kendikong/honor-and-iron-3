@@ -12,6 +12,9 @@ const REPORT_DIR_PROJECT: String = "res://reports/bug_reports"
 const MAX_RECENT_EVENTS: int = 64
 const MAX_REPORT_DESCRIPTION_LENGTH: int = 4000
 
+signal report_dialog_opened
+signal report_dialog_closed
+
 var _recent_events: Array[Dictionary] = []
 var _latest_preview: Dictionary = {}
 var _latest_timeline: Dictionary = {}
@@ -92,6 +95,7 @@ func open_report_dialog() -> void:
 	_report_dialog.process_mode = Node.PROCESS_MODE_ALWAYS
 	_overlay.add_child(_report_dialog)
 	_report_dialog.setup(self)
+	report_dialog_opened.emit()
 
 
 func close_report_dialog() -> void:
@@ -100,6 +104,11 @@ func close_report_dialog() -> void:
 	_report_dialog.queue_free()
 	_report_dialog = null
 	_restore_pause_after_debug_capture()
+	report_dialog_closed.emit()
+
+
+func is_report_dialog_open() -> bool:
+	return _report_dialog != null
 
 
 func submit_report(

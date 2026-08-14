@@ -154,6 +154,9 @@ func _ready() -> void:
 	add_child(_pause_menu)
 	_pause_menu.opened.connect(_on_pause_menu_opened)
 	_pause_menu.closed.connect(_on_pause_menu_closed)
+	if DebugReportService != null:
+		DebugReportService.report_dialog_opened.connect(_on_report_dialog_opened)
+		DebugReportService.report_dialog_closed.connect(_on_report_dialog_closed)
 
 	_autobattler_panel = AutobattlerControlPanel.new()
 	_autobattler_panel.name = "AutobattlerPanel"
@@ -372,7 +375,7 @@ func _on_options_opened() -> void:
 
 func _on_options_closed() -> void:
 	_last_polled_mouse_pos = Vector2i(-99999, -99999)
-	_set_planning_cursor_system_mouse(false)
+	_set_planning_cursor_system_mouse(_ui_menus_open())
 	_apply_effects()
 
 
@@ -385,7 +388,19 @@ func _on_pause_menu_opened() -> void:
 
 func _on_pause_menu_closed() -> void:
 	_last_polled_mouse_pos = Vector2i(-99999, -99999)
-	_set_planning_cursor_system_mouse(false)
+	_set_planning_cursor_system_mouse(_ui_menus_open())
+
+
+func _on_report_dialog_opened() -> void:
+	if _input_controller != null:
+		_input_controller.cancel_drag()
+		_input_controller.cancel_aim()
+	_set_planning_cursor_system_mouse(true)
+
+
+func _on_report_dialog_closed() -> void:
+	_last_polled_mouse_pos = Vector2i(-99999, -99999)
+	_set_planning_cursor_system_mouse(_ui_menus_open())
 
 
 func _on_effects_settings_changed() -> void:
@@ -416,7 +431,7 @@ func _on_display_settings_applied() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _camera.handle_input(event, _options.is_open() or _pause_menu.is_open()):
+	if _camera.handle_input(event, _ui_menus_open()):
 		_center_map()
 		get_viewport().set_input_as_handled()
 		return
@@ -604,6 +619,7 @@ func _ui_menus_open() -> bool:
 	return (
 		(_options != null and _options.is_open())
 		or (_pause_menu != null and _pause_menu.is_open())
+		or (DebugReportService != null and DebugReportService.is_report_dialog_open())
 	)
 
 
