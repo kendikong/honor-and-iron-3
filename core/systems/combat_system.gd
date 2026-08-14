@@ -776,6 +776,7 @@ static func deal_damage(
 	):
 		mitigation = target.current_magic
 	mitigation += MercenarySystems.marked_defense_bonus(target, attacker)
+	mitigation += ShamanSystems.guard_melee_defense_bonus(board, target, attacker)
 	if attacker != null:
 		mitigation = maxi(
 			0,

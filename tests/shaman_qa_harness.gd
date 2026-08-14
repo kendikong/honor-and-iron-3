@@ -253,6 +253,59 @@ static func _assert_upgrade_outcome(
 				failures, "upgrade/shaman_flame_totem/fire_surface",
 				_terrain_has_fire(flame_board),
 			)
+		&"shaman_totem_guard":
+			var guard: UnitState = null
+			for unit: UnitState in board_after.units:
+				if unit != null and unit.passive_flags.get("shaman_totem_kind", &"") == &"guard":
+					guard = unit
+					break
+			_assert(
+				failures, "upgrade/shaman_totem_guard/melee_def_flag",
+				guard != null and int(guard.passive_flags.get("shaman_guard_melee_def", 0)) == 1,
+			)
+			if guard == null:
+				return
+			var ally := board_after.get_unit_by_id(2)
+			if ally == null or GridSystem.manhattan(guard.position, ally.position) > 1:
+				ally = _place_ally(board_after, 2, guard.position + Vector2i(1, 0))
+			var melee_spot := ally.position + Vector2i(0, 1)
+			if melee_spot == guard.position or board_after.get_unit_at(melee_spot) != null:
+				melee_spot = ally.position + Vector2i(-1, 0)
+			if melee_spot == guard.position or board_after.get_unit_at(melee_spot) != null:
+				melee_spot = ally.position + Vector2i(1, 0)
+			var melee_enemy := _place_dummy(board_after, 9, melee_spot)
+			_assert(
+				failures, "upgrade/shaman_totem_guard/melee_def_bonus",
+				_SHAMAN_SYSTEMS.guard_melee_defense_bonus(board_after, ally, melee_enemy) == 1,
+			)
+			var control := board_after.clone()
+			for unit: UnitState in control.units:
+				if unit != null and unit.passive_flags.get("shaman_totem_kind", &"") == &"guard":
+					unit.passive_flags["shaman_guard_melee_def"] = 0
+			var control_ally := control.get_unit_by_id(ally.id)
+			var control_enemy := control.get_unit_by_id(melee_enemy.id)
+			var hp_live := ally.health.current_hp
+			var hp_ctrl := control_ally.health.current_hp
+			var live_events: Array[SimEvent] = []
+			var ctrl_events: Array[SimEvent] = []
+			CombatSystem.deal_damage(
+				board_after, ally, 8, live_events, &"physical", false, false, melee_enemy,
+			)
+			CombatSystem.deal_damage(
+				control, control_ally, 8, ctrl_events, &"physical", false, false, control_enemy,
+			)
+			_assert(
+				failures, "upgrade/shaman_totem_guard/melee_def_mitigation",
+				(hp_live - ally.health.current_hp) < (hp_ctrl - control_ally.health.current_hp),
+			)
+			var ranged_spot := ally.position + Vector2i(3, 0)
+			if board_after.get_unit_at(ranged_spot) != null:
+				ranged_spot = ally.position + Vector2i(0, 3)
+			var ranged_enemy := _place_dummy(board_after, 10, ranged_spot)
+			_assert(
+				failures, "upgrade/shaman_totem_guard/ranged_no_melee_def",
+				_SHAMAN_SYSTEMS.guard_melee_defense_bonus(board_after, ally, ranged_enemy) == 0,
+			)
 		&"shaman_hex":
 			var target := board_after.get_unit_by_id(target_id)
 			_assert(

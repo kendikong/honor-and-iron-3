@@ -1,10 +1,10 @@
 ﻿{
-    "generated":  "2026-08-14T04:34:50",
+    "generated":  "2026-08-14T04:43:07",
     "source":  "C:\\Users\\Kendy\\.cursor\\projects\\c-Users-Kendy-Downloads-honor-and-iron-3\\canvases\\bible-skill-alignment-audit.canvas.tsx",
     "counts":  {
-                   "MATCH":  373,
+                   "MATCH":  374,
                    "MISSING":  4,
-                   "DATA-ONLY":  20
+                   "DATA-ONLY":  19
                },
     "rows":  [
                  {
@@ -1650,7 +1650,7 @@
                  {
                      "cls":  "Shaman",
                      "skill":  "Totem Guard",
-                     "verdict":  "DATA-ONLY"
+                     "verdict":  "MATCH"
                  },
                  {
                      "cls":  "Shaman",

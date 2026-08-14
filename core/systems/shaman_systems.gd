@@ -618,6 +618,28 @@ static func incoming_damage_reduction(
 	return 0
 
 
+static func guard_melee_defense_bonus(
+	board: BoardState,
+	target: UnitState,
+	attacker: UnitState,
+) -> int:
+	if board == null or target == null or attacker == null:
+		return 0
+	if GridSystem.manhattan(target.position, attacker.position) > 1:
+		return 0
+	for source: UnitState in board.units:
+		if (
+			source != null
+			and source.is_alive()
+			and source.id != target.id
+			and source.team == target.team
+			and source.passive_flags.get("shaman_totem_kind", &"") == &"guard"
+			and GridSystem.manhattan(source.position, target.position) <= 1
+		):
+			return int(source.passive_flags.get("shaman_guard_melee_def", 0))
+	return 0
+
+
 static func apply_spiritual_offering_on_hp_spend(
 	board: BoardState,
 	actor: UnitState,
@@ -679,6 +701,9 @@ static func on_spawned(
 	)
 	construct.passive_flags["shaman_guard_ranged_reduction"] = int(
 		effect.modifiers.get("ranged_reduction", 0),
+	)
+	construct.passive_flags["shaman_guard_melee_def"] = int(
+		effect.modifiers.get("melee_def", 0),
 	)
 	construct.passive_flags["shaman_guardian_def"] = _passive_value(
 		actor, &"guardian_aura_def", &"upgraded_guardian_aura_def", 1,

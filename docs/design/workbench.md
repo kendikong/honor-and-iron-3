@@ -26,7 +26,7 @@ STOP_CONDITION_MET: yes (this piece)
 ══════════════════════════════════════
 ```
 
-`STOP_CONDITION_MET: yes` (both pieces critic-PASS: consistency 90, bible-to-code 86)
+`STOP_CONDITION_MET: no` (owner reopened: Correct QA + remaining DATA-ONLY/MISSING)
 
 ### Score progression
 

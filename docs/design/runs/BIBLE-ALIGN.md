@@ -1,7 +1,7 @@
 # Run card — Bible consistency + Bible-to-code
 
 **Started:** 2026-08-14  
-**Closed:** 2026-08-14 — both pieces critic PASS  
+**Reopened:** 2026-08-14 — owner added Correct QA; bible-to-code residual DATA-ONLY/MISSING  
 **Lead:** this Agent chat  
 **Spec:** `docs/design/00-gauntlet-loop-cursor.md`
 
@@ -17,7 +17,7 @@ Owner rulings that stay MATCH even if an old audit disagreed: Bowling Charge, Tr
 | Piece | Threshold | Machine checks |
 |-------|-----------|----------------|
 | BIBLE-CONSISTENCY | **88** | Glossary vs class lines: Fortify ADD, SHARED TILE, CALTROPS; no global-example-as-definition |
-| BIBLE-TO-CODE | **85** | Class gates + live for every factory touched; planning QA if planning files change; `.\scripts\run_bible_alignment_gate.ps1` FAIL while any canvas `verdict: "FAIL"` remains |
+| BIBLE-TO-CODE | **85** | **Correct QA:** `.\scripts\run_<class>_qa_gate.ps1` (not raw `.tscn` bypass) + live for every factory touched; planning QA if planning files change; `.\scripts\run_bible_alignment_gate.ps1` FAIL while any canvas `verdict: "FAIL"` remains. Manifest `last_score` uses that class `pass_threshold`. |
 
 ## STOP_ON
 

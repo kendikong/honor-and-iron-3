@@ -45,11 +45,15 @@ function Test-ManifestScore {
 	}
 	$manifest = Get-Content -Path $ManifestPath -Raw | ConvertFrom-Json
 	$errors = @()
-	if ($null -ne $manifest.pass_threshold -and [int]$manifest.pass_threshold -gt $MinScore) {
-		$errors += "manifest pass_threshold $([int]$manifest.pass_threshold) -gt gate minimum $MinScore"
+	$effective_min = $MinScore
+	if (-not $PSBoundParameters.ContainsKey("MinScore") -and $null -ne $manifest.pass_threshold) {
+		$effective_min = [int]$manifest.pass_threshold
 	}
-	if ($null -ne $manifest.last_score -and [int]$manifest.last_score -lt $MinScore) {
-		$errors += "manifest last_score $([int]$manifest.last_score) -lt minimum $MinScore"
+	if ($null -ne $manifest.pass_threshold -and [int]$manifest.pass_threshold -gt $effective_min) {
+		$errors += "manifest pass_threshold $([int]$manifest.pass_threshold) -gt gate minimum $effective_min"
+	}
+	if ($null -ne $manifest.last_score -and [int]$manifest.last_score -lt $effective_min) {
+		$errors += "manifest last_score $([int]$manifest.last_score) -lt minimum $effective_min"
 	}
 	if ($manifest.last_result -ne 'PASS') {
 		$errors += "manifest last_result is not PASS"
