@@ -1417,6 +1417,8 @@ func _planning_commit_walk_steps(from_cell: Vector2i, event: SimEvent) -> Array[
 	var to_cell: Vector2i = event.data["to"]
 	if from_cell == to_cell:
 		return []
+	if bool(event.data.get("teleport", false)):
+		return [to_cell]
 	var full_path: Array = event.data.get("path", [])
 	var steps: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
 		full_path, from_cell, to_cell,
@@ -1436,7 +1438,24 @@ func _planning_commit_walk_steps(from_cell: Vector2i, event: SimEvent) -> Array[
 			for i: int in range(start_i + 1, end_i + 1):
 				if full_path[i] is Vector2i:
 					steps.append(full_path[i] as Vector2i)
-	if steps.is_empty() and to_cell != from_cell:
+	if steps.is_empty() and full_path.size() >= 1:
+		var prev_cell: Vector2i = from_cell
+		var walk_ok: bool = true
+		for raw: Variant in full_path:
+			if not raw is Vector2i:
+				walk_ok = false
+				break
+			var cell: Vector2i = raw as Vector2i
+			if cell == prev_cell:
+				continue
+			if GridSystem.manhattan(prev_cell, cell) != 1:
+				walk_ok = false
+				break
+			steps.append(cell)
+			prev_cell = cell
+		if not walk_ok or (not steps.is_empty() and steps.back() != to_cell):
+			steps.clear()
+	if steps.is_empty() and GridSystem.manhattan(from_cell, to_cell) == 1:
 		steps = [to_cell]
 	return steps
 

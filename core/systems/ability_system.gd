@@ -1473,6 +1473,47 @@ static func ability_has_teleport(ability: AbilityData, actor: UnitState = null) 
 	return false
 
 
+## Target slides to the opposite empty tile (Reposition). Not a caster walk.
+static func ability_slides_reposition_target(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	if ability == null:
+		return false
+	var motion: AbilityModule = active_motion_module(actor, ability)
+	if motion != null:
+		if motion.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE:
+			return true
+		if AbilityModuleBridge.module_has_modifier(motion, &"reposition_opposite_side"):
+			return true
+	return ability_has_modifier(ability, &"reposition_opposite_side", actor)
+
+
+## Caster warps to a tile. Walks, dashes, and Reposition-of-another-unit are not this.
+static func ability_uses_caster_teleport(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	if not ability_has_teleport(ability, actor):
+		return false
+	if ability_slides_reposition_target(ability, actor):
+		return false
+	if ability_has_modifier(ability, &"airlift_keep_caster", actor):
+		return false
+	return true
+
+
+## Straight hop presentation: caster teleport or Reposition slide. Never Walk/Run.
+static func ability_uses_direct_relocation(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	return (
+		ability_uses_caster_teleport(ability, actor)
+		or ability_slides_reposition_target(ability, actor)
+	)
+
+
 static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
@@ -5097,11 +5138,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 								return
 							actor.passive_flags["vaulted_target_id"] = vaulted.id
 							break
+				var teleport_from: Vector2i = actor.position
 				GridSystem.set_occupant(board, actor.position, -1)
 				actor.position = destination
 				GridSystem.set_occupant(board, actor.position, actor.id)
 				events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-					"unit": actor.id, "to": actor.position
+					"actor": actor.id,
+					"unit": actor.id,
+					"from": teleport_from,
+					"to": actor.position,
+					"path": [teleport_from, actor.position],
+					"teleport": true,
 				}))
 				if actor.passive_flags.has("vaulted_target_id"):
 					MonkSystems.on_moved_through_enemy(

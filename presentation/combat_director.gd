@@ -3146,48 +3146,78 @@ func _finalize_planning_commit_move_event(
 	elif moved_id == action.actor_id:
 		to_cell = action.target_coord
 		move_event.data["to"] = to_cell
+	var caster: UnitState = before_board.get_unit_by_id(action.actor_id)
+	var hop: bool = (
+		action.type == GameEnums.ActionType.ABILITY
+		and action.ability != null
+		and AbilitySystem.ability_uses_direct_relocation(action.ability, caster)
+	)
 	var path_cells: Array = []
-	if move_event.data.get("path") is Array and (move_event.data["path"] as Array).size() >= 2:
-		path_cells = move_event.data["path"] as Array
-	elif moved_id == action.actor_id:
-		if not action.waypoints.is_empty():
+	if hop:
+		path_cells = [from_cell, to_cell]
+		move_event.data["teleport"] = true
+	else:
+		if _planning_path_is_tile_walk(move_event.data.get("path", []), from_cell, to_cell):
+			path_cells = move_event.data["path"] as Array
+		elif moved_id == action.actor_id and not action.waypoints.is_empty():
 			path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
-		elif not _commit_intent_preview_paths.is_empty():
+		elif moved_id == action.actor_id and not _commit_intent_preview_paths.is_empty():
 			var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
 			preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
 			var leg: Array = CombatPlanningPreview.committed_action_route_leg(
 				action.actor_id, preview_stub, action, from_cell,
 			)
-			if leg.size() >= 2:
+			if _planning_path_is_tile_walk(leg, from_cell, to_cell):
 				path_cells = leg
 			else:
 				var route: Variant = _commit_intent_preview_paths.get(action.actor_id, [])
 				if route is Array and (route as Array).size() >= 2:
 					var dest: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
-						route, from_cell, action.target_coord,
+						route, from_cell, to_cell,
 					)
 					if not dest.is_empty():
-						path_cells = [from_cell]
-						path_cells.append_array(dest)
+						var built: Array = [from_cell]
+						built.append_array(dest)
+						if _planning_path_is_tile_walk(built, from_cell, to_cell):
+							path_cells = built
 		if path_cells.size() < 2:
 			path_cells = [from_cell]
 			var found: Array[Vector2i] = MovementSystem.find_path(
-				before_board, from_cell, action.target_coord, moved.movement.points_left,
+				before_board, from_cell, to_cell, moved.movement.points_left,
 			)
 			if not found.is_empty():
 				path_cells.append_array(found)
-			elif GridSystem.manhattan(from_cell, action.target_coord) == 1:
-				path_cells.append(action.target_coord)
-	if path_cells.size() < 2 and from_cell != to_cell:
-		path_cells = [from_cell, to_cell]
+			elif GridSystem.manhattan(from_cell, to_cell) == 1:
+				path_cells.append(to_cell)
 	move_event.data["path"] = path_cells
 	move_event.data["planning_commit_move"] = true
 	move_event.data["move_timing"] = action.move_timing
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		var caster: UnitState = before_board.get_unit_by_id(action.actor_id)
 		move_event.data["presentation_anim"] = AbilitySystem.resolve_presentation_anim(
 			action.ability, caster,
 		)
+
+
+func _planning_path_is_tile_walk(path: Variant, from_cell: Vector2i, to_cell: Vector2i) -> bool:
+	if not path is Array:
+		return false
+	var cells: Array = path as Array
+	if cells.size() < 2:
+		return false
+	var prev: Vector2i = from_cell
+	var start_i: int = 0
+	if cells[0] is Vector2i and (cells[0] as Vector2i) == from_cell:
+		start_i = 1
+	if start_i >= cells.size():
+		return false
+	for i: int in range(start_i, cells.size()):
+		if not cells[i] is Vector2i:
+			return false
+		var cell: Vector2i = cells[i] as Vector2i
+		if GridSystem.manhattan(prev, cell) != 1:
+			return false
+		prev = cell
+	return prev == to_cell
 
 
 func _finalize_planning_commit_push_event(

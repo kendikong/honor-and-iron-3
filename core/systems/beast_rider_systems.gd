@@ -598,6 +598,7 @@ static func apply_reposition(
 		"to": destination,
 		"path": [from_cell, destination],
 		"reposition": true,
+		"teleport": true,
 	}))
 
 

@@ -1384,12 +1384,7 @@ func _draw_ability_intents() -> void:
 			if draw_route.size() >= 2:
 				var from_cell: Vector2i = draw_route[0] as Vector2i
 				var to_cell: Vector2i = draw_route[draw_route.size() - 1] as Vector2i
-				if (
-					action.ability != null
-					and AbilitySystem.ability_has_effect(
-						action.ability, GameEnums.EffectType.TELEPORT_CASTER,
-					)
-				):
+				if AbilitySystem.ability_uses_caster_teleport(action.ability, actor):
 					_draw_dashed_route([from_cell, to_cell], p_col)
 				elif (
 					action.ability != null
@@ -1901,19 +1896,13 @@ func _draw_interaction_overlay() -> void:
 	var p_col: Color = _player_color_for_unit(actor)
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
-	var caster_teleport_hover: bool = (
-		sel_ability != null
-		and AbilitySystem.ability_has_effect(sel_ability, GameEnums.EffectType.TELEPORT_CASTER)
-		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
-	)
-	if not caster_teleport_hover and _planning_input != null and _planning_input.dragging:
+	if _planning_input != null and _planning_input.dragging:
 		if route.size() >= 2 and _unit_can_still_move(actor.id):
 			var drag_route: Array = _interaction_move_route(actor.id, prev, route)
 			if drag_route.size() >= 2:
 				_draw_route_line(drag_route, p_col, true, true)
 	elif (
-		not caster_teleport_hover
-		and _planning_input != null
+		_planning_input != null
 		and not _planning_input.drag_preview_failed
 		and _planning_input.is_live_preview_active()
 	):
@@ -1928,7 +1917,9 @@ func _draw_interaction_overlay() -> void:
 			if draw_move_line:
 				_draw_route_line(draw_route, p_col, true, true)
 	if (
-		_planning_input != null
+		sel_ability != null
+		and AbilitySystem.ability_slides_reposition_target(sel_ability, actor)
+		and _planning_input != null
 		and _planning_input.is_live_preview_active()
 		and not _planning_input.drag_preview_failed
 	):
@@ -2493,14 +2484,12 @@ func _draw_move_ghosts() -> void:
 	draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
 	var dash_face: int = _facing_toward(origin, _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
-	if ability != null and AbilitySystem.ability_has_effect(
-		ability, GameEnums.EffectType.TELEPORT_CASTER,
-	):
+	if AbilitySystem.ability_uses_caster_teleport(ability, unit):
 		_draw_dashed_route(
 			[origin, _hover_coord],
 			Color(p_col.r, p_col.g, p_col.b, 0.85),
 		)
-	elif ability != null and AbilitySystem.ability_has_movement_effect(ability):
+	elif AbilitySystem.ability_has_movement_effect(ability, unit):
 		var drag_route: Array = []
 		var sim_path: Array = []
 		var action_split: int = -1
