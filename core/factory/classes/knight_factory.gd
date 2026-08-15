@@ -173,8 +173,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	def.abilities.append(fortify)
 
+	var bowling_flags: int = GameEnums.TargetingFlags.DASH_LINE
 	var bowling_module := DataLibrary._module(
-		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.EffectType.DASH, 3, 1, 3, bowling_flags,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 		GameEnums.MotionMode.VAULT_OVER,
 	)
@@ -188,7 +189,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var bowling_charge := DataLibrary._make_modular_ability(
 		&"knight_bowling_charge", "Bowling Charge", [bowling_module],
 		bowling_upgraded, 1, GameEnums.PlannerGroup.ACTION,
-		GameEnums.CostResource.AP, [], "", GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.CostResource.AP, [], "", bowling_flags,
 	)
 	def.abilities.append(bowling_charge)
 

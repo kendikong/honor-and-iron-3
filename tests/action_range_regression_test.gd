@@ -302,6 +302,19 @@ static func _test_bowling_enemy_hover_red_at_origin(failures: Array[String]) -> 
 	director.selected_ability_index = bowling_idx
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
 	_attack_hover_sync(input, overlay, ENEMY_POS)
+	var enemy_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, ENEMY_POS)
+	var enemy_actions: Array = enemy_slots.get("action", []) as Array
+	if enemy_actions.is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_enemy_hover_red: occupied enemy dash end must build an action, not ∅",
+		)
+	elif enemy_actions[0] is TimelineAction:
+		var charge: TimelineAction = enemy_actions[0] as TimelineAction
+		if charge.target_coord != ENEMY_POS or charge.target_unit_id != -1:
+			failures.append(
+				"ActionRangeRegression bowling_enemy_hover_red: occupied end must be a TILE dash (coord %s, unit -1), got %s / %s"
+				% [ENEMY_POS, charge.target_coord, charge.target_unit_id],
+			)
 	if input.awaiting_targeting_active():
 		failures.append(
 			"ActionRangeRegression bowling_enemy_hover_red: enemy hover preview must not require self-arm",
@@ -374,11 +387,19 @@ static func _test_bowling_dash_only_tiles_not_blue(failures: Array[String]) -> v
 				% dash_tile,
 			)
 	_hover_sync(input, overlay, DASH_ONLY_A)
-	var icon: String = input.compute_hover_action_icon(DASH_ONLY_A)
-	if icon != PlanningIcons.GLYPH_NULL:
+	var dash_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, DASH_ONLY_A)
+	if not (dash_slots.get("pre", []) as Array).is_empty():
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_not_blue: dash-only hover cursor must be null, got %s"
-			% icon,
+			"ActionRangeRegression bowling_dash_only_not_blue: dash-only hover must not commit a walk premove",
+		)
+	if (dash_slots.get("action", []) as Array).is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_not_blue: valid dash endpoint must build Bowling Charge, not ∅",
+		)
+	var icon: String = input.compute_hover_action_icon(DASH_ONLY_A)
+	if icon == PlanningIcons.GLYPH_NULL:
+		failures.append(
+			"ActionRangeRegression bowling_dash_only_not_blue: dash endpoint cursor must show the charge, got ∅",
 		)
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(KNIGHT, DASH_ONLY_A, ability):

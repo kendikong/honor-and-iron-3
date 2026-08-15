@@ -2291,22 +2291,29 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		if run_id != _run_id:
 			return
 	
-	# --- Attack batch: sequential, one action at a time ---
+	# --- Attack batch: one ability windup, then all of that ability's impacts together ---
 	var attack_i: int = 0
 	while attack_i < attack_events.size():
 		if run_id != _run_id:
 			return
 		var e: SimEvent = attack_events[attack_i]
 		EventBus.sim_event.emit(e)
-		if e.type == GameEnums.SimEventType.ABILITY_USED and _event_uses_spellcast_animation(e):
-			await get_tree().create_timer(LpcConstants.spellcast_release_delay_sec()).timeout
+		if e.type == GameEnums.SimEventType.ABILITY_USED:
+			if _event_uses_spellcast_animation(e):
+				await get_tree().create_timer(LpcConstants.spellcast_release_delay_sec()).timeout
+			else:
+				await get_tree().create_timer(_playback_delay_for_event(e)).timeout
 			if run_id != _run_id:
 				return
 			attack_i += 1
-			while attack_i < attack_events.size() and _is_spellcast_impact_event(attack_events[attack_i]):
+			while attack_i < attack_events.size() \
+					and attack_events[attack_i].type != GameEnums.SimEventType.ABILITY_USED:
 				EventBus.sim_event.emit(attack_events[attack_i])
 				attack_i += 1
-			await get_tree().create_timer(LpcConstants.spellcast_flash_hold_sec()).timeout
+			if _event_uses_spellcast_animation(e):
+				await get_tree().create_timer(LpcConstants.spellcast_flash_hold_sec()).timeout
+			else:
+				await get_tree().create_timer(0.05).timeout
 			continue
 		var delay: float = _playback_delay_for_event(e)
 		await get_tree().create_timer(delay).timeout
@@ -2637,8 +2644,8 @@ func _refresh_plan_core() -> void:
 
 	# Premoves (walk + movement skills like Swap) apply immediately on live board.
 	# Action-phase displacement (bash push, hook pull, etc.) stays preview-only until execute.
+	# Do not snap enemies back to turn-start: that undoes premoves that displace enemies.
 	board = _build_live_planning_board()
-	_sync_live_enemy_positions_to_turn_start(board)
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
 	board.intents = new_intents
@@ -2957,25 +2964,6 @@ func _player_positions_match_turn_start(candidate: BoardState) -> bool:
 	return true
 
 
-## Planning live board: player premoves snap; enemies stay on turn-start tiles until execute.
-func _sync_live_enemy_positions_to_turn_start(live: BoardState) -> void:
-	if turn_start_board == null or live == null:
-		return
-	for start_unit: UnitState in turn_start_board.units:
-		if not start_unit.is_alive() or not start_unit.is_enemy():
-			continue
-		var live_unit: UnitState = live.get_unit_by_id(start_unit.id)
-		if live_unit == null or not live_unit.is_alive():
-			continue
-		var from_pos: Vector2i = live_unit.position
-		var to_pos: Vector2i = start_unit.position
-		if from_pos == to_pos:
-			continue
-		GridSystem.set_occupant(live, from_pos, -1)
-		live_unit.position = to_pos
-		GridSystem.set_occupant(live, to_pos, live_unit.id)
-
-
 func _prepend_swap_walk_commit_anims(
 	swap_action: TimelineAction,
 	plan: Timeline,
@@ -3135,6 +3123,11 @@ func _finalize_planning_commit_move_event(
 	before_board: BoardState,
 ) -> void:
 	if move_event == null or action == null or before_board == null:
+		return
+	var moved_id: int = int(move_event.data.get("unit", action.actor_id))
+	if moved_id != action.actor_id:
+		move_event.data["planning_commit_move"] = true
+		move_event.data["move_timing"] = action.move_timing
 		return
 	var actor: UnitState = before_board.get_unit_by_id(action.actor_id)
 	if actor == null:

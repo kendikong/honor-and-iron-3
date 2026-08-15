@@ -63,7 +63,7 @@ static func manual_keywords() -> Dictionary:
 		"RANGE": "Maximum target distance in tiles. Line of sight required unless otherwise specified.",
 		"RANGE 0": "Anchored to the caster's current tile (Self).",
 		"AOE": "Cross-shaped area — expands X tiles from the center.",
-		"AOE SQUARE": "Square array of tiles (e.g., 2x2, 3x3).",
+		"AOE SQUARE": "Chebyshev square. Shape size is radius: 1 = 3x3, 2 = 5x5.",
 		"ARC": "3-tile sweep attack (1x3 or 3x1 perpendicular line).",
 		"CONE": "Directional arc expanding outward from the caster for X tiles.",
 		"SKEWER": "X tiles in one cardinal direction.",
@@ -942,7 +942,7 @@ static func _target_shape_tooltip(k: String) -> String:
 		"SINGLE":
 			return "Single tile"
 		"AOE_SQUARE":
-			return "Square AoE"
+			return "Chebyshev square. Shape size 1 is 3x3 (radius), not a 3-tile diamond."
 		"AOE_CROSS":
 			return "Cross AoE"
 		"ARC":

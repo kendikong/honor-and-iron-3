@@ -116,6 +116,8 @@ static func ability_allows_occupied_landing(
 ) -> bool:
 	if ability_has_into_occupied_push_effect(ability, actor):
 		return true
+	if has_pass_through_effects(ability, actor):
+		return true
 	var module: AbilityModule = active_motion_module(actor, ability)
 	return module != null and module.motion_mode == GameEnums.MotionMode.INTO_OCCUPIED_PUSH
 
@@ -1581,9 +1583,15 @@ static func planning_is_valid_awaiting_endpoint(
 	return dist >= module.min_range and dist <= module.max_range
 
 
-## TILE-aim abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
+## TILE / DASH_LINE abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
 static func planning_commit_target_unit_id(ability: AbilityData, occupant_unit_id: int) -> int:
-	if ability != null and (ability.targeting_flags & GameEnums.TargetingFlags.TILE) != 0:
+	if ability == null:
+		return occupant_unit_id
+	var flags: int = ability.targeting_flags
+	if (
+		(flags & GameEnums.TargetingFlags.TILE) != 0
+		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
+	):
 		return -1
 	return occupant_unit_id
 
@@ -4013,7 +4021,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 				and target != null
 			):
-				_resolve_repeat_hits(board, actor, target, effect, events)
+				_resolve_repeat_hits(
+					board, actor, target, effect, events, action.ability.display_name,
+				)
 			if (
 				target != null
 				and target.is_alive()
@@ -5775,15 +5785,20 @@ static func _resolve_repeat_hits(
 	target: UnitState,
 	effect: EffectData,
 	events: Array[SimEvent],
+	source_label: String = "",
 ) -> void:
 	var hit_count := int(effect.modifiers.get(
 		"repeat_hits", effect.modifiers.get("hit_count", 1),
 	))
+	var stat: GameEnums.StatType = effect.scaling_stat
+	if stat == GameEnums.StatType.NONE:
+		stat = GameEnums.StatType.PHYSICAL
+	var label: String = source_label if source_label != "" else "Repeat Hit"
 	for _hit: int in range(1, hit_count):
 		var raw := CombatSystem.calculate_scaled_damage(
 			actor,
 			effect.amount,
-			GameEnums.StatType.MAGICAL,
+			stat,
 			board,
 		)
 		if effect.modifiers.has("ignore_target_magic_pct"):
@@ -5795,9 +5810,9 @@ static func _resolve_repeat_hits(
 			actor,
 			target,
 			raw,
-			GameEnums.StatType.MAGICAL,
+			stat,
 			events,
-			"Arcane Barrage",
+			label,
 			effect.amount,
 		)
 		actor.passive_flags.erase("mage_target_magic_ignore_pct")

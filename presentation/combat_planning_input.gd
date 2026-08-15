@@ -4145,6 +4145,11 @@ func _build_commit_slots_at_cell(
 	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
 	## do not divert into enemy/ally unit-target commit slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
+	if (
+		ability != null
+		and AbilitySystem.ability_has_dash(ability, actor)
+	):
+		awaiting_tile_endpoint = true
 	var target_pick_skill: bool = (
 		ability != null
 		and _awaiting_flow_selected(actor, ability)
@@ -4309,6 +4314,23 @@ func _build_commit_slots_at_cell(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
 					)
 					return slots
+			if (
+				AbilitySystem.ability_has_dash(ability, actor)
+				and AbilitySystem.planning_is_valid_awaiting_endpoint(
+					_awaiting_endpoint_origin(actor), cell, ability, actor,
+				)
+			):
+				slots[_ability_plan_column(ability)].append(
+					TimelineAction.make_ability(
+						unit_id,
+						ability,
+						cell,
+						-1,
+						GameEnums.MoveTiming.PRE_ACTION,
+						effective_waypoints,
+					),
+				)
+				return slots
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				if target_pick_skill and not has_awaiting_action:
 					slots["action"].append(

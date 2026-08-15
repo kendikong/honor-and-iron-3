@@ -524,13 +524,13 @@ static func _airlift() -> AbilityData:
 
 static func _tail_swipe() -> AbilityData:
 	var swipe := _module(
-		GameEnums.EffectType.PUSH, 2, 0, 0,
+		GameEnums.EffectType.DAMAGE, 1, 0, 0,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE
 			| GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.AOE_SQUARE, 1,
+		GameEnums.StatType.PHYSICAL,
 	)
-	var damage := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
-	swipe.layers = [_layer(damage)]
+	swipe.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
 	var upgraded := _clone([swipe])
 	upgraded[0].legacy_modifiers["wall_collision_stagger"] = true
 	upgraded[0].legacy_modifiers["object_collision_stagger"] = true

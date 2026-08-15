@@ -51,7 +51,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "keys": [&"hit_count", &"repeat_hits", &"bleed_weapon"]},
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_keep_caster", &"airlift_ally_attack_strength"]},
-	&"beast_tail_swipe": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
+	&"beast_tail_swipe": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
 	&"beast_gore": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"bleed_bonus_damage"]},
 }
 
@@ -909,6 +909,19 @@ static func _assert_ability_sim_outcome(
 						before_actor.position != after_actor.position
 						or _events_have_ability(events, ability_id)
 					),
+			)
+		&"beast_thrash":
+			var thrash_hits := 0
+			for event: SimEvent in events:
+				if event.type != GameEnums.SimEventType.UNIT_DAMAGED:
+					continue
+				if int(event.data.get("unit", -1)) != target_id:
+					continue
+				thrash_hits += 1
+			_assert(
+				failures,
+				"%s/outcome/three_physical_hits" % ability_id,
+				thrash_hits == 3,
 			)
 		_:
 			ClassScenarioSimOutcome.assert_from_events(

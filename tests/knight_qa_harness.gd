@@ -2452,6 +2452,31 @@ static func run_bowling_charge(failures: Array[String]) -> void:
 		victim.position if victim != null else Vector2i(-1, -1),
 		Vector2i(3, 4),
 	)
+	var land_board: BoardState = make_plain_board(Vector2i(12, 6))
+	place_knight(land_board, 21, Vector2i(2, 3))
+	place_dummy(land_board, 22, Vector2i(5, 3))
+	var land_charge: AbilityData = ability_on_unit(unit_on_board(land_board, 21), &"knight_bowling_charge")
+	var land_action := plan_ability(21, land_charge, Vector2i(5, 3), -1)
+	assert_true(
+		failures, "bowling_charge/can_use_occupied_end",
+		AbilitySystem.can_use(land_board, land_action),
+		"BULLDOZE dash must be legal when the end tile is occupied",
+	)
+	var land_plan := Timeline.new()
+	land_plan.add(land_action)
+	var land_result: SimResult = simulate_player_turn(land_board, land_plan)
+	var land_knight: UnitState = land_result.final_state.get_unit_by_id(21)
+	var land_dummy: UnitState = land_result.final_state.get_unit_by_id(22)
+	assert_true(
+		failures, "bowling_charge/land_on_enemy_tile",
+		land_knight != null and land_knight.position == Vector2i(5, 3),
+		"Bowling Charge must be able to end on the enemy tile",
+	)
+	assert_true(
+		failures, "bowling_charge/occupied_end_displaces",
+		land_dummy != null and land_dummy.position != Vector2i(5, 3),
+		"ending on the enemy tile must displace them",
+	)
 	var cfg_up: Dictionary = with_upgraded_ability({}, &"knight_bowling_charge")
 	var board2: BoardState = make_plain_board(Vector2i(12, 6))
 	place_knight(board2, 10, Vector2i(2, 3), cfg_up)

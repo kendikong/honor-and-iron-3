@@ -226,7 +226,7 @@ const R: Finding[] = [
   { cls: "Beast Rider", skill: "Fetch", bible: "RANGE 4 item/corpse to adj. [+] light allies 2", verdict: "MATCH", delta: "fetch_item_or_corpse pulls items/corpses; upgraded PULL light allies." },
   { cls: "Beast Rider", skill: "Savage Bite", bible: "RANGE 1 ATK 4 requires BLEED/POISON. [+] On Kill SHIELD 2", verdict: "MATCH", delta: "can_use_extra + on_kill_shield." },
   { cls: "Beast Rider", skill: "Run Down (Beast)", bible: "DASH 3 ATK 2; pass adj PUSH 1. [+] BLEED WPN", verdict: "MATCH", delta: "trample_atk 2, pass-adj PUSH, upgraded BLEED WPN." },
-  { cls: "Beast Rider", skill: "Thrash", bible: "RANGE 1 ATK 1 ×3. [+] each BLEED WPN", verdict: "MATCH", delta: "repeat_hits 3. Upgrade BLEED WPN." },
+	{ cls: "Beast Rider", skill: "Thrash", bible: "RANGE 1 ATK 1 ×3. [+] each BLEED WPN", verdict: "MATCH", delta: "3 physical ATK 1 hits via repeat_hits using the damage effect scaling_stat." },
   { cls: "Beast Rider", skill: "Defensive Posture", bible: "SELF INTERCEPT 50% +2 DEF. [+] if hit PUSH 2", verdict: "MATCH", delta: "intercept_push_attacker consumed in CombatSystem intercept." },
   { cls: "Beast Rider", skill: "Airlift", bible: "Pick ally Step 1; drop empty Step 3. [+] ally +1 STR", verdict: "MATCH", delta: "airlift_keep_caster skips rider teleport; pickup/drop on shared-tile path." },
   { cls: "Beast Rider", skill: "Tail Swipe", bible: "RANGE 0 AOE 3x3 ATK 1 PUSH 2. [+] wall STAGGER", verdict: "MATCH", delta: "Square size 1 = 3x3. [+] wall_collision_stagger on object collision." },
