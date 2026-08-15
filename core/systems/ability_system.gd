@@ -127,17 +127,19 @@ static func _occupied_push_target_valid(
 	actor: UnitState,
 	ability: AbilityData,
 	target_coord: Vector2i,
+	origin: Vector2i = Vector2i(-999999, -999999),
 ) -> bool:
 	if board == null or actor == null or ability == null:
 		return false
-	if target_coord == actor.position:
+	var from_coord: Vector2i = origin if origin.x > -999000 else actor.position
+	if target_coord == from_coord:
 		return false
 	var occupant: UnitState = board.get_unit_at(target_coord)
 	if occupant == null or occupant.id == actor.id:
 		return false
 	if not _target_allowed(actor, ability, occupant, target_coord):
 		return false
-	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, target_coord)
+	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(from_coord, target_coord)
 	if push_dir == Vector2i.ZERO:
 		return false
 	var behind_coord: Vector2i = target_coord + push_dir
@@ -148,6 +150,16 @@ static func _occupied_push_target_valid(
 	if GridSystem.is_occupied(board, behind_coord):
 		return false
 	return true
+
+
+static func occupied_push_from_origin_valid(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	target_coord: Vector2i,
+) -> bool:
+	return _occupied_push_target_valid(board, actor, ability, target_coord, origin)
 
 
 static func active_module_for_index(

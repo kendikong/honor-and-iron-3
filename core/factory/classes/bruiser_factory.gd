@@ -284,6 +284,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	collision_recast.gate = GameEnums.ModuleGate.IF_COLLIDED
+	## Recast is refund + reopen via violent_collision_recast, not a second planning aim.
+	collision_recast.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	collision_recast.aim_module_index = 0
 	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_recast])
 	var collision_stagger := DataLibrary._effect(GameEnums.EffectType.PUSH, 0)
 	collision_stagger.modifiers["stagger_on_collision"] = 1

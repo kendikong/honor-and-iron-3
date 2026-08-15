@@ -1568,7 +1568,7 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 	var ability: AbilityData = _selected_ability_data(p_unit)
 	if ability == null or not AbilitySystem.planning_allows_paired_premove(ability):
 		return {}
-	var slots: Dictionary = _final_commit_slots_for_interaction(p_unit.id, cell)
+	var slots: Dictionary = _build_commit_slots_at_cell(p_unit.id, cell)
 	return {} if _is_invalid_dict(slots) else slots
 
 
@@ -1942,7 +1942,10 @@ func _selection_hover_corridor_paint_active() -> bool:
 	var ability := _selected_ability_data(p_unit)
 	if ability == null:
 		return false
-	if AbilitySystem.ability_has_movement_effect(ability):
+	if (
+		AbilitySystem.ability_has_movement_effect(ability)
+		and not AbilitySystem.motion_requires_occupied_target(p_unit, ability)
+	):
 		return true
 	return auto_run_movement_active(p_unit)
 
@@ -2041,6 +2044,7 @@ func _final_commit_slots_for_interaction(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
+	sim_validate: bool = true,
 ) -> Dictionary:
 	var slots: Dictionary = _build_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
@@ -2080,7 +2084,7 @@ func _final_commit_slots_for_interaction(
 				unit_id, cell, [], legal_move_tiles, preferred, face_dir,
 			)
 			_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
-	slots = _finalize_commit_slots(slots, unit_id)
+	slots = _finalize_commit_slots(slots, unit_id, sim_validate)
 	if _is_invalid_dict(slots) and not waypoints.is_empty():
 		var actor := _proj_unit(unit_id)
 		var ability := _selected_ability_data(actor)
@@ -2096,7 +2100,7 @@ func _final_commit_slots_for_interaction(
 			unit_id, cell, [], legal_move_tiles, preferred, face_dir,
 		)
 		_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
-		slots = _finalize_commit_slots(slots, unit_id)
+		slots = _finalize_commit_slots(slots, unit_id, sim_validate)
 	return slots
 
 
@@ -2556,8 +2560,10 @@ func _preview_from_commit_slots_at_cell(
 	var effective_face: int = face_dir
 	if effective_face < 0 and _map_view != null:
 		effective_face = _facing_from_drop(_mouse_local_for_facing(), cell)
+	var hover_sim_validate: bool = _planning != null and _planning.qa_static_overlay
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+		hover_sim_validate,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
 	if _is_invalid_dict(slots):
@@ -2573,6 +2579,14 @@ func _preview_from_commit_slots_at_cell(
 			"intents": [],
 			"events": [],
 			"temp_board": _hover_empty_move_preview_board(cell),
+			"actions": actions,
+			"intent_preview": true,
+		}
+	if _hover_can_preview_occupy_push_without_simulate(slots, cell):
+		return {
+			"intents": [],
+			"events": [],
+			"temp_board": _hover_occupy_push_preview_board(slots, cell),
 			"actions": actions,
 			"intent_preview": true,
 		}
@@ -2619,6 +2633,96 @@ func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i)
 			if action.type == GameEnums.ActionType.MOVE:
 				has_move = true
 	return has_move
+
+
+func _hover_can_preview_occupy_push_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
+	if _planning == null or _planning.qa_static_overlay:
+		return false
+	if awaiting_targeting_active() or dragging:
+		return false
+	if _director == null or _director.board == null:
+		return false
+	var occupant: UnitState = _director.board.get_unit_at(cell)
+	if occupant == null or occupant.id == _director.selected_unit_id or occupant.is_enemy():
+		return false
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	var occupy_ability: AbilityData = null
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.MOVE:
+				continue
+			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+				return false
+			if not AbilitySystem.motion_requires_occupied_target(actor, action.ability):
+				return false
+			if occupy_ability != null:
+				return false
+			occupy_ability = action.ability
+	if occupy_ability == null or actor == null:
+		return false
+	var origin: Vector2i = actor.position
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var move_action: TimelineAction = raw as TimelineAction
+			if move_action.type == GameEnums.ActionType.MOVE:
+				origin = move_action.target_coord
+	return AbilitySystem.occupied_push_from_origin_valid(
+		_proj(), actor, occupy_ability, origin, occupant.position,
+	)
+
+
+func _hover_occupy_push_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
+	var source: BoardState = _director.projected_state
+	if source == null:
+		source = _director.board
+	if source == null:
+		return BoardState.new()
+	var cheap: BoardState = source.clone()
+	var uid: int = _director.selected_unit_id
+	var actor: UnitState = cheap.get_unit_by_id(uid)
+	if actor == null:
+		return cheap
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var move_action: TimelineAction = raw as TimelineAction
+			if move_action.type != GameEnums.ActionType.MOVE:
+				continue
+			var dest: Vector2i = move_action.target_coord
+			if dest != actor.position:
+				GridSystem.set_occupant(cheap, actor.position, -1)
+				actor.position = dest
+				GridSystem.set_occupant(cheap, dest, uid)
+	var occupant: UnitState = cheap.get_unit_at(cell)
+	if occupant == null or occupant.id == uid:
+		occupant = cheap.get_unit_at(actor.position)
+		if occupant == null or occupant.id == uid:
+			return cheap
+	var old_pos: Vector2i = occupant.position
+	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, old_pos)
+	if push_dir == Vector2i.ZERO:
+		return cheap
+	var behind: Vector2i = old_pos + push_dir
+	if (
+		not cheap.is_in_bounds(behind)
+		or GridSystem.is_wall(cheap, behind)
+		or GridSystem.is_occupied(cheap, behind)
+	):
+		return cheap
+	GridSystem.set_occupant(cheap, old_pos, -1)
+	occupant.position = behind
+	GridSystem.set_occupant(cheap, behind, occupant.id)
+	if actor.position != old_pos:
+		GridSystem.set_occupant(cheap, actor.position, -1)
+	actor.position = old_pos
+	GridSystem.set_occupant(cheap, old_pos, uid)
+	return cheap
 
 
 func _hover_interaction_cache_key(
@@ -3008,9 +3112,25 @@ func _route_pathfinding_ability(unit: UnitState) -> AbilityData:
 	var ability := _selected_ability_data(unit)
 	if ability == null:
 		return null
+	if AbilitySystem.motion_requires_occupied_target(unit, ability):
+		return null
 	if awaiting_targeting_active() or _is_awaiting_movement_endpoint(unit, ability):
 		return ability
 	return null
+
+
+## Walk/dash tile pathfinding only. Unit-target occupy-push is not a walk ability.
+func _walk_pathfinding_ability(unit: UnitState) -> AbilityData:
+	if unit == null or force_basic_movement or _director == null:
+		return null
+	if _director.selected_ability_index < 0:
+		return null
+	var ability := _selected_ability_data(unit)
+	if ability == null:
+		return null
+	if AbilitySystem.motion_requires_occupied_target(unit, ability):
+		return null
+	return ability
 
 
 func _awaiting_flow_selected(actor: UnitState, ability: AbilityData) -> bool:
@@ -3704,9 +3824,7 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	var board := _proj()
 	if not MovementSystem.can_end_movement_on(board, coord, unit):
 		return false
-	var ability: AbilityData = null
-	if not force_basic_movement and _director.selected_ability_index >= 0:
-		ability = _selected_ability_data(unit)
+	var ability: AbilityData = _walk_pathfinding_ability(unit)
 	var mt := unit.definition.movement_type if unit.definition != null else GameEnums.MovementType.WALK
 	return not MovementSystem.find_path(
 		board, move_origin, coord, _move_budget(unit), mt, 1, ability,
@@ -4454,7 +4572,7 @@ func _build_commit_slots_at_cell(
 		var move_waypoints: Array[Vector2i] = waypoints
 		if move_waypoints.is_empty():
 			move_waypoints = _director.preview_waypoints_for_hover(
-				_proj(), actor, cell, move_waypoints, ability,
+				_proj(), actor, cell, move_waypoints, _walk_pathfinding_ability(actor),
 			)
 		if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 			_append_move_to_commit_slots(slots, unit_id, cell, move_waypoints, actor)
@@ -4496,6 +4614,10 @@ func _ally_hover_respects_painted_route(
 	_append_movement_skill_to_premove_slots(slots, actor.id, ability, ally, [])
 	if _director == null:
 		return true
+	if AbilitySystem.motion_requires_occupied_target(actor, ability):
+		return AbilitySystem.occupied_push_from_origin_valid(
+			_proj(), actor, ability, stand_cell, ally.position,
+		)
 	return _director.preview_commit_valid(actor.id, _actions_from_slots(slots)) == ""
 
 
@@ -4932,7 +5054,11 @@ func _append_module_awaiting_target(
 	return true
 
 
-func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
+func _finalize_commit_slots(
+	slots: Dictionary,
+	unit_id: int,
+	sim_validate: bool = true,
+) -> Dictionary:
 	if _is_invalid_dict(slots):
 		return slots
 	if slots.get("_noop", false) == true:
@@ -4947,6 +5073,8 @@ func _finalize_commit_slots(slots: Dictionary, unit_id: int) -> Dictionary:
 		return slots
 	for action: TimelineAction in actions:
 		AbilitySystem.prepare_planning_action(_proj(), action)
+	if not sim_validate:
+		return slots
 	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
 	if error_reason != "":
 		slots["invalid"] = error_reason

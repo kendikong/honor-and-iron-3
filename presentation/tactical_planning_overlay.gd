@@ -1040,6 +1040,13 @@ func recompute_hover_ranges(
 			var move_ability: AbilityData = null
 			if is_selected_player and selected_ability >= 0:
 				move_ability = _selected_ability_data(unit, selected_ability)
+				if (
+					move_ability != null
+					and AbilitySystem.motion_requires_occupied_target(
+						p_unit if p_unit != null else unit, move_ability,
+					)
+				):
+					move_ability = null
 			_hover_move_tiles = MovementSystem.get_reachable_tiles(
 				move_board,
 				move_from,
