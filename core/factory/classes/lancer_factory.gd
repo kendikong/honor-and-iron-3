@@ -579,9 +579,8 @@ static func _spear_wall() -> AbilityData:
 
 static func _meteor_drop() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.JUMP, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
 	var upgraded := _clone_modules([module])

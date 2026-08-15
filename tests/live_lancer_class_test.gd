@@ -227,7 +227,7 @@ const _CASES: Array[Dictionary] = [
 		"flags": GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.AOE_CROSS,
 		"shape_size": 1,
-		"primary_type": GameEnums.EffectType.TELEPORT_CASTER,
+		"primary_type": GameEnums.EffectType.JUMP,
 		"primary_amount": 2,
 		"observation": &"movement_damage",
 		"target_kind": &"tile",

@@ -242,10 +242,9 @@ static func _movement(
 
 static func _recall() -> AbilityData:
 	var base := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 99,
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 99,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE,
 	)
-	base.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
 	base.legacy_modifiers["recall_adjacent_construct"] = true
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["arrival_overclock"] = true

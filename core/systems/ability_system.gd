@@ -152,6 +152,8 @@ static func _unit_matches_motion_anchor(
 ) -> bool:
 	if actor == null or ability == null or unit == null or not unit.is_alive() or unit.id == actor.id:
 		return false
+	if _ability_has_modifier(actor, ability, &"recall_adjacent_construct"):
+		return unit.definition != null and unit.definition.is_construct and unit.team == actor.team
 	var flags: int = ability.targeting_flags
 	var module: AbilityModule = active_motion_module(actor, ability)
 	if module != null:

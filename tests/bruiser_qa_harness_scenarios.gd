@@ -1023,8 +1023,8 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 static func run_belly_flop(failures: Array[String]) -> void:
 	## Bible: Belly Flop — RANGE 2 | ATK 2 | jump to empty tile; [+] landing PUSH 1 adjacent.
 	H.run_active_smoke(
-		failures, &"bruiser_belly_flop", "RANGE 2 | TELEPORT + ATK 2",
-		[GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.DAMAGE],
+		failures, &"bruiser_belly_flop", "RANGE 2 | JUMP + ATK 2",
+		[GameEnums.EffectType.JUMP, GameEnums.EffectType.DAMAGE],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
@@ -1042,7 +1042,7 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
-	H.assert_eq_cell(failures, "belly_flop/teleport", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
+	H.assert_eq_cell(failures, "belly_flop/jump", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
 	var damaged_adjacent := false
 	for e: Variant in result.events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:

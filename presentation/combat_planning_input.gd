@@ -3281,6 +3281,16 @@ func _tile_target_movement_skill_commits_at_cell(
 		)
 	):
 		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
+	if (
+		motion != null
+		and (
+			GameEnums.is_jump_motion(motion.primary_type)
+			or GameEnums.is_teleport_motion(motion.primary_type)
+		)
+	):
+		if not _in_ability_range_of_coord(actor, cell):
+			return false
+		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
 	if not _in_ability_range_of_coord(actor, cell):
 		return false
 	if ability.is_pre_move_planner():
@@ -3404,8 +3414,18 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	if actor == null:
 		return false
 	var selected: AbilityData = _selected_ability_data(actor)
-	if selected != null and selected.is_pre_move_planner() and not selected.is_universal_run():
-		return false
+	if selected != null and not selected.is_universal_run():
+		if selected.is_pre_move_planner():
+			return false
+		var dest_motion: AbilityModule = AbilitySystem.active_motion_module(actor, selected)
+		if (
+			dest_motion != null
+			and (
+				GameEnums.is_jump_motion(dest_motion.primary_type)
+				or GameEnums.is_teleport_motion(dest_motion.primary_type)
+			)
+		):
+			return false
 	return AbilitySystem.can_afford_run(actor)
 
 

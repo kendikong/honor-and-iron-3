@@ -1,7 +1,7 @@
 extends RefCounted
 
-## Bible: lancer_meteor_drop - Lancer factory row via shared Simulator harness.
-## Globals: AbilitySystem / Simulator (Rule A).
+## Bible: lancer_meteor_drop - jump to empty tile, AOE_CROSS ATK 2 on landing.
+## Globals: EffectType.JUMP + DAMAGE layer / Simulator (Rule A).
 
 const _H := preload("res://tests/lancer_qa_harness.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")

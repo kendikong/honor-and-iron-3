@@ -555,7 +555,7 @@ static func _data_contract(
 	match ability_id:
 		&"engineer_recall":
 			_assert(failures, "%s/data/mp_cost" % ability_id, ability.movement_point_cost == 3)
-			_assert(failures, "%s/data/teleport" % ability_id, module.primary_type == GameEnums.EffectType.TELEPORT_CASTER)
+			_assert(failures, "%s/data/teleport" % ability_id, module.primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO)
 			_assert(failures, "%s/data/recall_modifier" % ability_id, module.legacy_modifiers.has(&"recall_adjacent_construct"))
 		&"engineer_dismantle":
 			_assert(failures, "%s/data/amount" % ability_id, module.amount == 3)

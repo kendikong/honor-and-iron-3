@@ -73,7 +73,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		&"lancer_pole_vault": [GameEnums.EffectType.JUMP_TO_BEHIND, 3],
 		&"lancer_line_breaker": [GameEnums.EffectType.DASH, 4],
 		&"lancer_spear_wall": [GameEnums.EffectType.CREATE_HAZARD, 2],
-		&"lancer_meteor_drop": [GameEnums.EffectType.TELEPORT_CASTER, 2],
+		&"lancer_meteor_drop": [GameEnums.EffectType.JUMP, 2],
 	}
 	for ability_id: StringName in expected_skills:
 		var ability := factory_ability(ability_id)

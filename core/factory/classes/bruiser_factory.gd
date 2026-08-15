@@ -316,9 +316,8 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(crimson_whirlwind)
 
 	var belly_teleport := DataLibrary._module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.JUMP, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	var belly_damage := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 2, 0, 0, GameEnums.TargetingFlags.TILE,

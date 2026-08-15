@@ -117,7 +117,7 @@ Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PASS | SELF HP → STR; `[+]` 10 HP → STR +5 |
 | `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH bulldoze + recast; `[+]` STAGGER on collision |
 | `bruiser_crimson_whirlwind` | Active | `tests/skills/bruiser_crimson_whirlwind_scenario.gd` | PASS | AOE DAMAGE; `[+]` heal per hit |
-| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | 1 AP (Bible default); RANGE 2 TELEPORT + ATK 2; `[+]` landing PUSH |
+| `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | 1 AP (Bible default); RANGE 2 JUMP + ATK 2; `[+]` landing PUSH |
 | `bruiser_breaching_dash` | Active | `tests/skills/bruiser_breaching_dash_scenario.gd` | PASS | DASH + destroy cover; `[+]` next attack PIERCE |
 
 ### Passives (trigger-based)

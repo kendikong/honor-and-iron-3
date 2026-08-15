@@ -97,6 +97,8 @@ func _check_module_ranges(
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			GameEnums.EffectType.TELEPORT_CASTER,
+			GameEnums.EffectType.JUMP,
+			GameEnums.EffectType.TELEPORT_ADJACENT_TO,
 		]:
 			if module.min_range < 1 or module.max_range < module.min_range:
 				failures.append("%s module[%d] has invalid motion range" % [label, index])

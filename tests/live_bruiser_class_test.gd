@@ -843,7 +843,7 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			).is_true()
 		&"bruiser_belly_flop":
 			assert_that(final_actor.position).override_failure_message(
-				"belly_flop: final actor position must be the TELEPORT landing tile",
+				"belly_flop: final actor position must be the JUMP landing tile",
 			).is_equal(_case_target_cell(skill_id))
 			var landing_target_id: int = _unit_id_at(_director.base_board, Vector2i(5, 4))
 			var landing_target: UnitState = final_state.get_unit_by_id(landing_target_id)
