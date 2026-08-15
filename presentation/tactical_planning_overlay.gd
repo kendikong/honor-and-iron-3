@@ -103,6 +103,7 @@ var _game_settings: GameSettings
 var _hover_perimeter_cache_key: int = 0
 var _cached_hover_perimeter_segments: Array = []
 var _static_tiles_layer: Node2D
+var _hover_tile_layer: Node2D
 var _anim_redraw_accum: float = 0.0
 var _hover_redraw_immediate: bool = false
 const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 30.0
@@ -156,17 +157,11 @@ func setup(
 	if _intent_state != null:
 		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
-			if coord == _hover_coord:
-				return
-			_hover_coord = coord
-			if _director != null and _director.selected_unit_id < 0:
-				_invalidate_hover_cache()
-				_recompute_hover_ranges_from_inputs()
-			_hover_redraw_immediate = true
-			queue_redraw(),
+			set_hover_coord(coord, true),
 		)
 	set_process(true)
 	_ensure_static_tiles_layer()
+	_ensure_hover_tile_layer()
 
 
 func _ensure_static_tiles_layer() -> void:
@@ -177,6 +172,26 @@ func _ensure_static_tiles_layer() -> void:
 	_static_tiles_layer.show_behind_parent = true
 	_static_tiles_layer.draw.connect(_draw_static_tile_layers)
 	add_child(_static_tiles_layer)
+
+
+func _ensure_hover_tile_layer() -> void:
+	if _hover_tile_layer != null:
+		return
+	_hover_tile_layer = Node2D.new()
+	_hover_tile_layer.name = "HoverTile"
+	_hover_tile_layer.draw.connect(_draw_hover_tile_layer)
+	add_child(_hover_tile_layer)
+
+
+func _queue_hover_tile_redraw() -> void:
+	if _hover_tile_layer != null:
+		_hover_tile_layer.queue_redraw()
+
+
+func _draw_hover_tile_layer() -> void:
+	if _hover_tile_layer == null:
+		return
+	_draw_hover_tile_on(_hover_tile_layer)
 
 
 func _queue_static_tiles_redraw() -> void:
@@ -198,6 +213,9 @@ func _draw_static_tile_layers() -> void:
 
 func teardown() -> void:
 	set_process(false)
+	if _hover_tile_layer != null:
+		_hover_tile_layer.queue_free()
+		_hover_tile_layer = null
 	if _static_tiles_layer != null:
 		_static_tiles_layer.queue_free()
 		_static_tiles_layer = null
@@ -492,10 +510,11 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 		return []
 	var sim_path: Array = []
 	var action_split: int = -1
-	var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-	if hover_preview != null:
-		sim_path = hover_preview.preview_paths.get(unit.id, [])
-		action_split = int(hover_preview.action_splits.get(unit.id, -1))
+	if _planning_input.live_sim_matches_hover():
+		var hover_preview: CombatPlanningPreview = _planning_input.preview_state
+		if hover_preview != null:
+			sim_path = hover_preview.preview_paths.get(unit.id, [])
+			action_split = int(hover_preview.action_splits.get(unit.id, -1))
 	return CombatPlanningPreview.awaiting_movement_route_cells(
 		_proj_origin(unit),
 		_hover_coord,
@@ -602,9 +621,8 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 		_recompute_hover_ranges_from_inputs()
 	if _planning_input == null:
 		_update_hover_action_icon()
-	_hover_redraw_immediate = true
 	if redraw:
-		queue_redraw()
+		_queue_hover_tile_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:
@@ -1178,8 +1196,6 @@ func _draw() -> void:
 			_draw_forced_movement_arrows()
 	elif _preview_routes_enabled() and _route.size() >= 2:
 		_draw_route_line(_route, _COLOR_ROUTE, true, true)
-	if _preview_routes_enabled():
-		_draw_hover_tile()
 	if _aiming:
 		var aim_scale: float = 0.55 / _ui_scale()
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
@@ -1245,7 +1261,11 @@ func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: 
 			draw_line(bottom_left, top_left, color, 1.0)
 
 
-func _draw_hover_tile() -> void:
+func _draw_hover_tile_on(canvas: CanvasItem) -> void:
+	if canvas == null or _board == null or _map_view == null:
+		return
+	if not _preview_routes_enabled():
+		return
 	if not _board.is_in_bounds(_hover_coord):
 		return
 	if _planning_input != null and _director != null and _director.selected_unit_id >= 0:
@@ -1256,8 +1276,9 @@ func _draw_hover_tile() -> void:
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
-	draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
-	draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
+	canvas.draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
+	canvas.draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
+	_draw_hover_follow_route_on(canvas)
 
 
 func _draw_ability_intents() -> void:
@@ -1913,9 +1934,36 @@ func _unit_can_still_move(unit_id: int) -> bool:
 	return true
 
 
-func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: bool) -> void:
-	if route.size() < 2:
+func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
+	if canvas == null or _map_view == null or _director == null or _planning_input == null:
 		return
+	if _planning_input.dragging:
+		return
+	var cells: Array[Vector2i] = awaiting_movement_hover_route_cells()
+	if cells.size() < 2:
+		var drag_route: Array = _planning_input.get_drag_route()
+		if drag_route.size() >= 2:
+			cells.clear()
+			for tile: Variant in drag_route:
+				if tile is Vector2i:
+					cells.append(tile as Vector2i)
+	if cells.size() < 2:
+		return
+	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	var p_col: Color = _player_color_for_unit(unit) if unit != null else _COLOR_HOVER
+	_draw_route_line(cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true, canvas)
+
+
+func _draw_route_line(
+	route: Array,
+	color: Color,
+	trim_start: bool,
+	with_head: bool,
+	canvas: CanvasItem = null,
+) -> void:
+	if route.size() < 2 or _map_view == null:
+		return
+	var draw_on: CanvasItem = canvas if canvas != null else self
 	var pts := PackedVector2Array()
 	for tile: Variant in route:
 		if tile is Vector2i:
@@ -1944,9 +1992,9 @@ func _draw_route_line(route: Array, color: Color, trim_start: bool, with_head: b
 			end_dir,
 			_ROUTE_HEAD_LEN * _ROUTE_SHAFT_HEAD_OVERLAP,
 		)
-	draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
+	draw_on.draw_polyline(shaft, flat_col, _ROUTE_LINE_W, _ROUTE_AA)
 	if with_head:
-		_draw_route_arrowhead(dest_center, end_dir, flat_col)
+		_draw_route_arrowhead_on(draw_on, dest_center, end_dir, flat_col)
 
 
 func _rounded_route_polyline(pts: PackedVector2Array, corner_r: float) -> PackedVector2Array:
@@ -2033,6 +2081,12 @@ func _route_terminal_direction_tiles(route: Array) -> Vector2:
 
 
 func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
+	_draw_route_arrowhead_on(self, tip, dir, fill)
+
+
+func _draw_route_arrowhead_on(canvas: CanvasItem, tip: Vector2, dir: Vector2, fill: Color) -> void:
+	if canvas == null:
+		return
 	var travel_dir: Vector2 = dir
 	if travel_dir.length_squared() < 0.0001:
 		travel_dir = Vector2.RIGHT
@@ -2043,7 +2097,7 @@ func _draw_route_arrowhead(tip: Vector2, dir: Vector2, fill: Color) -> void:
 	var wing_l: Vector2 = base + perp * _ROUTE_HEAD_HALF_W
 	var wing_r: Vector2 = base - perp * _ROUTE_HEAD_HALF_W
 	var head := PackedVector2Array([tip, wing_l, wing_r])
-	draw_colored_polygon(head, fill)
+	canvas.draw_colored_polygon(head, fill)
 
 
 func _route_end_direction(path: PackedVector2Array) -> Vector2:

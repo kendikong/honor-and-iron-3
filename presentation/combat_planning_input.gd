@@ -1176,11 +1176,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 		return
 	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
+		_run_hover_overlay_refresh()
+		if not dragging:
+			refresh_mouse_cursor(cell)
 	else:
 		_schedule_hover_sim_refresh()
-	_run_hover_overlay_refresh()
-	if not dragging:
-		refresh_mouse_cursor(cell)
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
@@ -1252,29 +1252,29 @@ func _begin_hover_sim_throttled_flush() -> void:
 		and _hover_preview_fresh_at(cell)
 	):
 		return
-	var min_interval: float = _hover_sim_min_interval_sec()
-	var now_usec: int = Time.get_ticks_usec()
-	var elapsed_sec: float = (
-		float(now_usec - _hover_sim_last_flush_usec) / 1_000_000.0
-		if _hover_sim_last_flush_usec > 0
-		else min_interval
-	)
-	if elapsed_sec < min_interval:
-		_hover_sim_throttle_gen += 1
-		var gen: int = _hover_sim_throttle_gen
-		var wait_sec: float = maxf(min_interval - elapsed_sec, 0.001)
-		if _map_view == null or not _map_view.is_inside_tree():
-			_run_hover_sim_refresh()
-			return
-		_map_view.get_tree().create_timer(wait_sec).timeout.connect(
-			func() -> void:
-				if gen != _hover_sim_throttle_gen:
-					return
-				_run_hover_sim_refresh(),
-			CONNECT_ONE_SHOT,
-		)
+	## Settle on the current tile before the expensive replay. Circling cancels
+	## in-flight work so intermediate tiles are never simulated.
+	_hover_sim_throttle_gen += 1
+	var gen: int = _hover_sim_throttle_gen
+	var wait_sec: float = maxf(_hover_sim_min_interval_sec(), 0.001)
+	if _map_view == null or not _map_view.is_inside_tree():
+		_run_hover_sim_refresh()
+		_run_hover_overlay_refresh()
+		if not dragging:
+			refresh_mouse_cursor(cell)
 		return
-	_run_hover_sim_refresh()
+	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
+		func() -> void:
+			if gen != _hover_sim_throttle_gen:
+				return
+			if _intent_state != null and _intent_state.hover_coord != cell:
+				return
+			_run_hover_sim_refresh()
+			_run_hover_overlay_refresh()
+			if not dragging:
+				refresh_mouse_cursor(cell),
+		CONNECT_ONE_SHOT,
+	)
 
 
 func _flush_hover_heavy_sync() -> void:
