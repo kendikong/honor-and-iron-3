@@ -180,39 +180,27 @@ static func _ensure_init() -> void:
 	# 7. CLERIC (STAFF)
 	var cleric: UnitData = ClericFactoryScript.build(basic_staff)
 
-	# 8. ASSASSIN
-	var p_assassin = _make_passive(&"lethal", "Lethal", "Backstabs do extra damage.")
-	var assassin_execute := _make_ability(&"assassin_execute", "Assassinate", 1, [_effect(GameEnums.EffectType.DAMAGE, 3)], 1, GameEnums.StatType.PHYSICAL)
-	var assassin_swap := _make_movement_ability(&"assassin_swap", "Shadow Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 1)
-	var assassin := _make_unit_data(&"assassin", "Assassin", 3, 4, 1, [assassin_execute, assassin_swap], null, GameEnums.MovementType.WALK, 4, 0, 1, basic_sword, [p_assassin])
-
-	# 9. MERCENARY (SWORD)
+	# 8. MERCENARY (SWORD)
 	var mercenary: UnitData = MercenaryFactoryScript.build(basic_sword)
 
-	# 10. GRYPHON RIDER (LANCE)
-	var p_gryphon = _make_passive(&"air_superiority", "Air Superiority", "Evades ground attacks.")
-	var gryphon_swoop := _make_ability(&"gryphon_swoop", "Swoop Attack", 2, [_effect(GameEnums.EffectType.DAMAGE, 2)], 1, GameEnums.StatType.PHYSICAL)
-	var gryphon_shove := _make_movement_ability(&"gryphon_shove", "Wing Buffet", 2, [_effect(GameEnums.EffectType.PUSH, 1)], 2)
-	var gryphon := _make_unit_data(&"gryphon", "Gryphon Rider", 4, 5, 1, [gryphon_swoop, gryphon_shove], null, GameEnums.MovementType.FLY, 3, 0, 2, basic_lance, [p_gryphon])
-
-	# 11. MONK (FIST)
+	# 9. MONK (FIST)
 	var monk: UnitData = MonkFactoryScript.build(basic_fist)
 
-	# 12. ENGINEER (GUN/EXPLOSIVES)
+	# 10. ENGINEER (GUN/EXPLOSIVES)
 	var engineer: UnitData = EngineerFactoryScript.build(basic_gun)
 
-	# 13. SHAMAN (STAFF)
+	# 11. SHAMAN (STAFF)
 	var shaman: UnitData = ShamanFactoryScript.build(basic_staff)
 
-	# 14. ROGUE (SWORD)
+	# 12. ROGUE (SWORD)
 	var rogue: UnitData = RogueFactoryScript.build(basic_sword)
 
-	# 15. BEAST RIDER (LANCE)
+	# 13. BEAST RIDER (LANCE)
 	var beast_rider: UnitData = BeastRiderFactoryScript.build(basic_lance)
 
 	_player_units = [
-		knight, fighter, lancer, archer, mage, cleric,
-		assassin, mercenary, gryphon, monk, engineer, shaman, rogue, beast_rider
+		knight, fighter, mercenary, rogue, monk, beast_rider,
+		mage, archer, cleric, shaman, lancer, engineer,
 	]
 	for u in _player_units:
 		_ensure_player_basic_attack(u)
@@ -828,16 +816,9 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			display_name = "Mending Touch"
 			effects = [_effect(GameEnums.EffectType.HEAL, 1)]
 			stat = GameEnums.StatType.MAGICAL
-		&"assassin":
-			id = &"assassin_basic"
-			display_name = "Knife Slash"
 		&"mercenary":
 			id = &"mercenary_basic"
 			display_name = "Quick Cut"
-		&"gryphon":
-			id = &"gryphon_basic"
-			display_name = "Lance Jab"
-			rng = 2
 		&"monk":
 			id = &"monk_basic"
 			display_name = "Finger Jab"

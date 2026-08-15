@@ -71,7 +71,7 @@ static func build() -> Dictionary:
 				"clothes": 0.85,
 			},
 		},
-		"assassin": {
+		"rogue": {
 			"forced_items": {
 				"weapon": "weapon_sword_dagger",
 				"clothes": "torso_clothes_shortsleeve",
@@ -90,7 +90,7 @@ static func build() -> Dictionary:
 				"armour": 0.6,
 			},
 		},
-		"gryphon": {
+		"beast_rider": {
 			"forced_items": {
 				"weapon": "weapon_polearm_spear",
 				"wings": "wings_feathered",

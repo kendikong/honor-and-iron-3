@@ -14,8 +14,8 @@ const LPC_CLASS_OVERRIDE_SLOTS: Array[String] = [
 ]
 
 const LPC_PLAYER_CLASS_IDS: Array[String] = [
-	"knight", "bruiser", "lancer", "archer", "mage", "cleric",
-	"assassin", "mercenary", "gryphon", "monk", "engineer", "shaman",
+	"knight", "bruiser", "mercenary", "rogue", "monk", "beast_rider",
+	"mage", "archer", "cleric", "shaman", "lancer", "engineer",
 ]
 
 

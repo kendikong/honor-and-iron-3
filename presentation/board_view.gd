@@ -2222,7 +2222,7 @@ func _draw_class_icon(c: Vector2, class_id: StringName, color: Color) -> void:
 				c + Vector2(3, 5)
 			])
 			draw_polygon(arrow_right, [color])
-		&"fighter":
+		&"bruiser", &"fighter":
 			draw_rect(Rect2(c.x - 5, c.y - 4, 10, 8), color, true)
 			draw_rect(Rect2(c.x - 6, c.y - 6, 3, 3), color, true)
 			draw_rect(Rect2(c.x - 2, c.y - 7, 3, 4), color, true)
@@ -2234,7 +2234,7 @@ func _draw_class_icon(c: Vector2, class_id: StringName, color: Color) -> void:
 			draw_line(c + Vector2(6, -1), c + Vector2(6, 6), color, 3.0)
 			draw_line(c + Vector2(-6, 6), c + Vector2(-3, 6), color, 2.0)
 			draw_line(c + Vector2(6, 6), c + Vector2(3, 6), color, 2.0)
-		&"assassin":
+		&"rogue":
 			draw_line(c + Vector2(-6, -6), c + Vector2(6, 6), color, 2.0)
 			draw_line(c + Vector2(-7, -3), c + Vector2(-3, -7), color, 2.0)
 			draw_line(c + Vector2(-6, 6), c + Vector2(6, -6), color, 2.0)
@@ -2246,7 +2246,7 @@ func _draw_class_icon(c: Vector2, class_id: StringName, color: Color) -> void:
 			draw_polygon(ax1, [color])
 			var ax2 := PackedVector2Array([c + Vector2(-3, -7), c + Vector2(-8, -3), c + Vector2(-4, -1)])
 			draw_polygon(ax2, [color])
-		&"gryphon":
+		&"beast_rider":
 			draw_line(c + Vector2(-1, 4), c + Vector2(-7, -4), color, 2.0)
 			draw_line(c + Vector2(-7, -4), c + Vector2(-3, -2), color, 2.0)
 			draw_line(c + Vector2(-3, -2), c + Vector2(-5, 0), color, 2.0)
@@ -5136,14 +5136,14 @@ func _get_action_autobattler_scores(action: TimelineAction) -> Dictionary:
 func _class_symbol(unit: UnitState) -> String:
 	match unit.definition.id:
 		&"knight": return "♞"
-		&"fighter": return "✊"
+		&"bruiser", &"fighter": return "✊"
 		&"lancer": return "🧲"
 		&"archer": return "🏹"
 		&"mage": return "✨"
 		&"cleric": return "➕"
-		&"assassin": return "⚔️"
+		&"rogue": return "⚔️"
 		&"mercenary": return "🪓"
-		&"gryphon": return "🦅"
+		&"beast_rider": return "🦅"
 		&"monk": return "📿"
 		&"engineer": return "🔧"
 		&"shaman": return "👁️"
