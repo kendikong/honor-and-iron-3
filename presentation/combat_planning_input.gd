@@ -1253,11 +1253,11 @@ func _begin_hover_sim_throttled_flush() -> void:
 	):
 		return
 	## Settle on the current tile before the expensive replay. Circling cancels
-	## in-flight work so intermediate tiles are never simulated.
+	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
 	_hover_sim_throttle_gen += 1
 	var gen: int = _hover_sim_throttle_gen
-	var wait_sec: float = maxf(_hover_sim_min_interval_sec(), 0.001)
-	if _map_view == null or not _map_view.is_inside_tree():
+	var wait_sec: float = _hover_sim_min_interval_sec()
+	if wait_sec <= 0.0 or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
 		_run_hover_overlay_refresh()
 		if not dragging:

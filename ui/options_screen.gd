@@ -561,21 +561,21 @@ func _build_developer_tab(parent: TabContainer) -> void:
 	_developer_tab_root = parent.get_node("Developer") as Control
 	_add_hint(vbox, "Sandbox / debug tools — apply in test map and tactical scenes.")
 
-	_add_section(vbox, "Hover rate throttle")
+	_add_section(vbox, "Hover catch-up delay")
 	_add_hint(
 		vbox,
-		"Only delays the heavy turn replay. Cursor, path, and tiles follow the mouse immediately. 0 is the fastest sim catch-up. Commit always flushes first.",
+		"How long the mouse must sit on a tile before ghosts catch up. 0 is immediate (may hitch while circling). 100 is a longer pause. Cursor and path still follow the mouse. Click always uses the current tile.",
 	)
 	_hover_rate_throttle_slider = _add_dev_value_slider(
 		vbox,
-		"Throttle",
+		"Delay",
 		0.0,
-		100.0,
-		1.0,
-		_game_settings.hover_rate_throttle_pct,
-		"%",
+		GameSettings.HOVER_SETTLE_MS_MAX,
+		5.0,
+		_game_settings.hover_settle_ms,
+		" ms",
 		func(v: float) -> void:
-			_game_settings.hover_rate_throttle_pct = v
+			_game_settings.hover_settle_ms = v
 			_save_game_settings()
 			EventBus.interface_settings_changed.emit(),
 	)
