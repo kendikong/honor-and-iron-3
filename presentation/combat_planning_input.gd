@@ -932,6 +932,12 @@ func _on_ability_selected(index: int) -> void:
 		refresh_live_preview()
 		return
 	_ability_hover_settle_pending = true
+	## Scroll settle delays the new skill's sim. Drop the previous skill's leftover
+	## live path/ghost immediately so it cannot flash for 75 ms.
+	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
+	_clear_hover_preview()
+	if _planning != null:
+		_planning.queue_redraw()
 	_schedule_ability_settled_refresh()
 
 
