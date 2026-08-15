@@ -798,12 +798,12 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 static func run_belly_flop_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_true(
-		failures, "belly_flop/upgrade/push_mod",
-		ab.upgraded_effects[2].modifiers.has("belly_flop_push"),
+		failures, "belly_flop/upgrade/push_layer",
+		ab.upgraded_effects.size() > 2 and ab.upgraded_effects[2].type == GameEnums.EffectType.PUSH,
 	)
 	H.assert_eq_int(
-		failures, "belly_flop/upgrade/mod_val",
-		int(ab.upgraded_effects[2].modifiers["belly_flop_push"]),
+		failures, "belly_flop/upgrade/push_amount",
+		ab.upgraded_effects[2].amount if ab.upgraded_effects.size() > 2 else 0,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(

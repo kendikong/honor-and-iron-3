@@ -639,7 +639,7 @@ static func _assert_belly_flop_modules(
 	_assert_true(
 		failures, "%s/modules/teleport" % tag,
 		bruiser != null and bruiser.position == commit_cell,
-		"Belly Flop TELEPORT must land on committed tile %s" % commit_cell,
+		"Belly Flop JUMP must land on committed tile %s" % commit_cell,
 	)
 	# Damage modules require a real teleport hop; oracle from turn-start (Bible layout).
 	var oracle_board: BoardState = start_board.clone()

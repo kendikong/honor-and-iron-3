@@ -315,23 +315,17 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	def.abilities.append(crimson_whirlwind)
 
-	var belly_teleport := DataLibrary._module(
-		GameEnums.EffectType.JUMP, 0, 1, 2, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
+	var belly := DataLibrary._module(
+		GameEnums.EffectType.JUMP, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.NONE,
 	)
-	var belly_damage := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 2, 0, 0, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-	)
-	belly_damage.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	belly_damage.aim_module_index = 0
-	belly_damage.legacy_modifiers["damage_adjacent_on_landing"] = 1
-	var belly_upgraded := DataLibrary._duplicate_modules([belly_teleport, belly_damage])
-	var belly_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	belly_push.modifiers["belly_flop_push"] = 1
-	belly_upgraded[1].layers = [DataLibrary._layer(belly_push)]
+	var belly_damage := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+	belly_damage.scaling_stat = GameEnums.StatType.PHYSICAL
+	belly.layers.append(DataLibrary._layer(belly_damage))
+	var belly_upgraded := DataLibrary._duplicate_modules([belly])
+	belly_upgraded[0].layers.append(DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
 	var belly_flop := DataLibrary._make_modular_ability(
-		&"bruiser_belly_flop", "Belly Flop", [belly_teleport, belly_damage],
+		&"bruiser_belly_flop", "Belly Flop", [belly],
 		belly_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Landing applies PUSH 1 to all adjacent enemies.",
 		GameEnums.TargetingFlags.TILE,

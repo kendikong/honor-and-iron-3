@@ -1029,7 +1029,23 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
 	H.assert_eq_int(failures, "belly_flop/ap_cost", factory_ab.action_point_cost, 1)
+	H.assert_eq_int(failures, "belly_flop/jump_amount", factory_ab.effects[0].amount, 2)
 	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.effects[1].amount, 2)
+	H.assert_eq_int(failures, "belly_flop/aoe", factory_ab.target_shape, GameEnums.TargetShape.AOE_CROSS)
+	H.assert_eq_int(failures, "belly_flop/aoe_size", factory_ab.target_shape_size, 1)
+	var flop_footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
+		null, Vector2i(5, 3), Vector2i(5, 3), GameEnums.TargetShape.AOE_CROSS, 1,
+	)
+	H.assert_true(
+		failures, "belly_flop/footprint_in",
+		flop_footprint.has(Vector2i(5, 4)),
+		"AOE_CROSS 1 must include cardinal tiles around the landing",
+	)
+	H.assert_true(
+		failures, "belly_flop/footprint_out",
+		not flop_footprint.has(Vector2i(6, 4)),
+		"AOE_CROSS 1 must exclude diagonal tiles",
+	)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
@@ -1037,22 +1053,30 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	var bruiser_ap: UnitState = H.unit_on_board(board, 1)
 	bruiser_ap.ability.points_left = 1
 	H.place_dummy(board, 2, Vector2i(5, 4))
-	var hp: int = H.unit_hp(board, 2)
+	H.place_dummy(board, 3, Vector2i(6, 4))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_belly_flop")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(failures, "belly_flop/jump", result.final_state.get_unit_by_id(1).position, Vector2i(5, 3))
 	var damaged_adjacent := false
+	var damaged_outside := false
 	for e: Variant in result.events:
 		if e is SimEvent and e.type == GameEnums.SimEventType.UNIT_DAMAGED:
-			if int(e.data.get("unit", -1)) == 2:
+			var hit_id: int = int(e.data.get("unit", -1))
+			if hit_id == 2:
 				damaged_adjacent = true
-				break
+			elif hit_id == 3:
+				damaged_outside = true
 	H.assert_true(
 		failures, "belly_flop/adjacent_damage",
 		damaged_adjacent,
 		"belly flop must emit UNIT_DAMAGED for enemy adjacent to landing tile",
+	)
+	H.assert_true(
+		failures, "belly_flop/outside_unharmed",
+		not damaged_outside,
+		"belly flop AOE_CROSS must not damage a diagonal tile outside the blast",
 	)
 	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	var far_cfg: Dictionary = H.bruiser_with_ability(&"bruiser_belly_flop")

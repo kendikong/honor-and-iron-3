@@ -3090,14 +3090,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				resolve_pending_pushes(board, events)
 			effect_index += 1
 			continue
-			
-		if effect.modifiers.has("belly_flop_push"):
-			for dir in GridSystem.DIRECTIONS:
-				var adj_coord = actor.position + dir
-				var adj_unit = board.get_unit_at(adj_coord)
-				_apply_effect_to_tile(board, actor, action, effect, events, adj_coord, adj_unit)
-			effect_index += 1
-			continue
 
 		if effect.modifiers.has("damage_adjacent_on_landing"):
 			if (

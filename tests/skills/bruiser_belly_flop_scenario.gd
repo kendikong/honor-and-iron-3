@@ -9,7 +9,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Bible: Belly Flop - RANGE 2 | ATK 2 | jump to empty tile.
 ## [+] landing PUSH 1 to all adjacent enemies.
-## Globals: EffectType.JUMP + DAMAGE; damage_adjacent_on_landing modifier.
+## Globals: EffectType.JUMP + AOE_CROSS DAMAGE layer at resolution.
 
 
 static func run_all(failures: Array[String]) -> void:

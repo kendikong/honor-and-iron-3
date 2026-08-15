@@ -771,7 +771,7 @@ These already work in sim/factories; modular design should **absorb** them as na
 | `buff_per_destroyed_object` | Layer after DESTROY_OBSTACLE |
 | `intercept_grant_str` | Status/INTERCEPT layer params |
 | `push_board_items`, `item_collision_damage` | Layer flags on PUSH AoE |
-| `damage_adjacent_on_landing`, `belly_flop_push` | Layer `ON_LAND` |
+| `damage_adjacent_on_landing` | Layer `ON_LAND` (Monk landing strike) |
 | `exclude_caster` | Targeting checkbox |
 | `buff_on_push` | Layer on PUSH (Push Through [+]) |
 

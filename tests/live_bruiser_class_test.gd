@@ -43,7 +43,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": []},
 	{"id": &"bruiser_violent_collision", "observation": &"movement", "upgrade_keys": [&"stagger_on_collision"]},
 	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_per_target_hit"]},
-	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": [&"belly_flop_push"]},
+	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": []},
 	{"id": &"bruiser_breaching_dash", "observation": &"movement", "upgrade_keys": [&"next_attack_pierce"]},
 ]
 

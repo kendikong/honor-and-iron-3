@@ -757,7 +757,7 @@ static func _layers_on_motion_module(eff: EffectData) -> bool:
 
 
 static func _infer_layer_condition(eff: EffectData) -> GameEnums.LayerCondition:
-	if eff.modifiers.has("damage_adjacent_on_landing") or eff.modifiers.has("belly_flop_push"):
+	if eff.modifiers.has("damage_adjacent_on_landing"):
 		return GameEnums.LayerCondition.ON_LAND
 	if eff.modifiers.has("heal_per_target_hit"):
 		return GameEnums.LayerCondition.PER_TARGET_HIT

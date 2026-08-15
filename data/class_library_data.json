@@ -2735,43 +2735,33 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Belly Flop",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
-							"amount": 0,
+							"amount": 2,
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
 							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 29,
-							"target_shape": 0,
-							"targeting_flags": 8
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"damage_adjacent_on_landing": 1
-							},
-							"max_range": 0,
-							"min_range": 0,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
-							"target_shape": 0,
+							"target_shape": 2,
+							"target_shape_size": 1,
 							"targeting_flags": 8
 						}
 					],
@@ -2785,27 +2775,10 @@
 					"secondary_value": 0,
 					"tags": [],
 					"upgrade_description": "Landing applies PUSH 1 to all adjacent enemies.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
-							"amount": 0,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"max_range": 2,
-							"min_range": 1,
-							"motion_mode": 0,
-							"presentation_anim": 0,
-							"primary_type": 29,
-							"target_shape": 0,
-							"targeting_flags": 8
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
 							"amount": 2,
 							"execution_phase": 0,
 							"gate": 0,
@@ -2814,25 +2787,29 @@
 								{
 									"condition": 0,
 									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
 										"amount": 1,
-										"modifiers": {
-											"belly_flop_push": 1
-										},
+										"modifiers": {},
 										"type": 1
 									}
 								}
 							],
-							"legacy_modifiers": {
-								"damage_adjacent_on_landing": 1
-							},
-							"max_range": 0,
-							"min_range": 0,
+							"legacy_modifiers": {},
+							"max_range": 2,
+							"min_range": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
-							"target_shape": 0,
+							"primary_type": 29,
+							"target_shape": 2,
+							"target_shape_size": 1,
 							"targeting_flags": 8
 						}
 					],
