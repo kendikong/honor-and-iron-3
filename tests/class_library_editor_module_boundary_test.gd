@@ -5,6 +5,7 @@ const EDITOR_PATH: String = "res://ui/class_library_editor.gd"
 const SCHEMA_PATH: String = "res://ui/class_library_schema.gd"
 const OVERRIDES_PATH: String = "res://data/class_library_data.json"
 const LEGACY_FIXTURE_PATH: String = "user://class_library_legacy_read_test.json"
+const _BibleText := preload("res://ui/class_library_bible_text.gd")
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -26,6 +27,7 @@ static func run_all(failures: Array[String]) -> void:
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_runtime_legacy_read_migrates(failures)
 	_assert_non_status_modules_clear_status_type(failures)
+	_assert_bible_text_lookup(failures)
 
 
 static func _assert_non_status_modules_clear_status_type(failures: Array[String]) -> void:
@@ -126,3 +128,22 @@ static func _assert_runtime_legacy_read_migrates(failures: Array[String]) -> voi
 	if not ability_data.has("modules") or ability_data.has("effects") or ability_data.has("kind"):
 		failures.append("runtime legacy read did not return module-first payload")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(LEGACY_FIXTURE_PATH))
+
+
+static func _assert_bible_text_lookup(failures: Array[String]) -> void:
+	var bash: String = _BibleText.lookup("Shield Bash", "Knight", "knight_shield_bash")
+	if not bash.contains("RANGE 1 | ATK 1 | PUSH 2"):
+		failures.append("Bible lookup missed Shield Bash base line")
+	if not bash.contains("Upgrade:"):
+		failures.append("Bible lookup missed Shield Bash Upgrade line")
+	var innate: String = _BibleText.lookup("Bastion Front", "Knight", "collision_retaliator")
+	if not innate.contains("Innate Trait: Bastion Front"):
+		failures.append("Bible lookup missed Bastion Front header")
+	if not innate.contains("Base Mechanic:"):
+		failures.append("Bible lookup missed Bastion Front Base Mechanic")
+	var swap: String = _BibleText.lookup("Swap", "Knight", "knight_swap")
+	if not swap.contains("Reposition Skill: Swap"):
+		failures.append("Bible lookup missed Swap reposition line")
+	var missing: String = _BibleText.lookup("Not A Real Skill", "Knight")
+	if not missing.begins_with("No Master Bible entry found"):
+		failures.append("Bible lookup should fail loud for unknown skills")

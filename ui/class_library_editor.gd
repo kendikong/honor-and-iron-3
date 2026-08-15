@@ -10,6 +10,7 @@ const CANONICAL_ABILITY_TAGS: Array[StringName] = [
 	AbilityModuleBridge.TAG_HEAL,
 ]
 const ModuleAuthoringRules = preload("res://data/definitions/module_authoring_rules.gd")
+const _BibleText = preload("res://ui/class_library_bible_text.gd")
 
 static var _restore_unit_id: StringName = &""
 
@@ -793,6 +794,29 @@ func _preview_unit() -> UnitState:
 	return _preview_unit_state
 
 
+func _bible_list_tooltip(display_name: String, item_id: String) -> String:
+	var class_display: String = ""
+	if _selected_unit != null:
+		class_display = _selected_unit.display_name
+	return _BibleText.lookup(display_name, class_display, item_id)
+
+
+func _apply_bible_tooltip(
+	card: Control,
+	title: Label,
+	preview: RichTextLabel,
+	display_name: String,
+	item_id: String,
+) -> void:
+	var tip: String = _bible_list_tooltip(display_name, item_id)
+	if card != null:
+		card.tooltip_text = tip
+	if title != null:
+		title.tooltip_text = tip
+	if preview != null:
+		preview.tooltip_text = tip
+
+
 func _make_list_preview_chip(emoji: String, val: String, tip: String) -> Dictionary:
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -866,10 +890,6 @@ func _add_selectable_preview_card(
 	name_lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_TITLE))
 	name_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
 	name_lbl.mouse_filter = Control.MOUSE_FILTER_PASS
-	if ability != null:
-		name_lbl.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
-	elif passive != null and not passive.description.is_empty():
-		name_lbl.tooltip_text = passive.description
 	head.add_child(name_lbl)
 	var sub_lbl: Label = null
 	if not subtitle_text.is_empty():
@@ -929,7 +949,14 @@ func _add_selectable_preview_card(
 		_sync_list_preview_width(preview, preview_wrap)
 	preview_wrap.resized.connect(sync_preview_width)
 	preview.tree_entered.connect(sync_preview_width)
+	var bible_id: String = ""
+	if ability != null:
+		bible_id = String(ability.id)
+	elif passive != null:
+		bible_id = String(passive.id)
+	_apply_bible_tooltip(card, name_lbl, preview, title_text, bible_id)
 	return {
+		"card": card,
 		"preview": preview,
 		"title": name_lbl,
 		"sub_lbl": sub_lbl if not subtitle_text.is_empty() else null,
@@ -1277,10 +1304,13 @@ func _refresh_passive_ui(passive: PassiveData) -> void:
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = passive.display_name
-		if not passive.description.is_empty():
-			title.tooltip_text = passive.description
-		else:
-			title.tooltip_text = ""
+	_apply_bible_tooltip(
+		refs.get("card") as Control,
+		title,
+		refs.get("preview") as RichTextLabel,
+		passive.display_name,
+		String(passive.id),
+	)
 	if refs.has("impl") and refs["impl"] != null:
 		refs["impl"].text = ClassLibrarySchema.passive_implementation_notes(passive)
 	if refs.has("dump") and refs["dump"] != null:
@@ -2153,13 +2183,19 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
-		title.tooltip_text = CombatUiFormatters.ability_tooltip_text(ability, _preview_unit())
 		if is_unsaved:
 			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
 		elif is_saved_override:
 			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
 		else:
 			title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+	_apply_bible_tooltip(
+		refs.get("card") as Control,
+		title,
+		refs.get("preview") as RichTextLabel,
+		ability.display_name,
+		String(ability.id),
+	)
 			
 	var reset_btn: Button = refs.get("reset_btn")
 	if reset_btn != null:
