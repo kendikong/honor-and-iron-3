@@ -688,6 +688,7 @@ func _build_editor_column_shell(
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.follow_focus = false
 	outer.add_child(scroll)
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -750,6 +751,7 @@ func _clear_pane(vbox: VBoxContainer) -> void:
 	if vbox == null:
 		return
 	for child: Node in vbox.get_children():
+		vbox.remove_child(child)
 		child.queue_free()
 
 
@@ -938,17 +940,18 @@ func _add_selectable_preview_card(
 		chips.add_child(range_row)
 	var preview := RichTextLabel.new()
 	preview.bbcode_enabled = true
-	preview.scroll_active = true
+	preview.scroll_active = false
+	preview.fit_content = false
 	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	preview.custom_minimum_size.y = ClassLibraryTheme.px(72 if ability != null else 88)
 	preview.add_theme_color_override("default_color", ClassLibraryTheme.TEXT_PRIMARY)
 	preview.add_theme_font_size_override("normal_font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
-	preview.mouse_filter = Control.MOUSE_FILTER_PASS
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	preview_inner.add_child(preview)
 	var sync_preview_width := func() -> void:
 		_sync_list_preview_width(preview, preview_wrap)
-	preview_wrap.resized.connect(sync_preview_width)
 	preview.tree_entered.connect(sync_preview_width)
+	preview_wrap.resized.connect(sync_preview_width)
 	var bible_id: String = ""
 	if ability != null:
 		bible_id = String(ability.id)
@@ -1135,6 +1138,7 @@ func _select_ability_entry(ability: AbilityData) -> void:
 	_selected_passive = null
 	_set_active_list_item(_entry_key_ability(ability), ClassLibraryTheme.ACCENT_INGAME)
 	_rebuild_ability_detail_panes(ability)
+	_reveal_selected_list_card(_list_item_cards, _entry_key_ability(ability), _list_scroll)
 
 
 func _select_passive_entry(passive: PassiveData) -> void:
@@ -1142,6 +1146,7 @@ func _select_passive_entry(passive: PassiveData) -> void:
 	_selected_ability = null
 	_set_active_class_list_item(_entry_key_passive(passive), ClassLibraryTheme.ACCENT_PASSIVE)
 	_rebuild_passive_detail_panes(passive)
+	_reveal_selected_list_card(_class_list_item_cards, _entry_key_passive(passive), _class_list_scroll)
 
 
 func _show_ability_placeholder() -> void:
@@ -1428,6 +1433,18 @@ func _build_weapon_section(unit: UnitData, parent: VBoxContainer) -> void:
 	_bind_int(grid, "MOV +", wpn.bonus_move, func(v: int) -> void: wpn.bonus_move = v)
 
 
+func _reveal_selected_list_card(card_registry: Dictionary, key: String, scroll: ScrollContainer) -> void:
+	if scroll == null or key.is_empty() or not card_registry.has(key):
+		return
+	var card: PanelContainer = card_registry[key]
+	if not is_instance_valid(card):
+		return
+	if card.size.y <= 1.0:
+		scroll.call_deferred("ensure_control_visible", card)
+		return
+	scroll.ensure_control_visible(card)
+
+
 func _sync_list_preview_width(preview: RichTextLabel, host: PanelContainer) -> void:
 	if preview == null or host == null:
 		return
@@ -1436,7 +1453,10 @@ func _sync_list_preview_width(preview: RichTextLabel, host: PanelContainer) -> v
 	if panel_style is StyleBoxFlat:
 		var flat: StyleBoxFlat = panel_style as StyleBoxFlat
 		margin = flat.content_margin_left + flat.content_margin_right
-	preview.custom_minimum_size.x = maxf(host.size.x - margin, 1.0)
+	var next_w: float = maxf(host.size.x - margin, 1.0)
+	if is_equal_approx(preview.custom_minimum_size.x, next_w):
+		return
+	preview.custom_minimum_size.x = next_w
 
 
 func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> void:
