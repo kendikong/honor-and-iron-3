@@ -27,6 +27,7 @@ The project owner is **not** a coder. Default replies must be **readable in plai
 - Long fenced code blocks copied from the repo “so you can see it.”
 - Stack-walking multiple files with line-number citations when a summary suffices.
 - Repeating the same code in the reply **and** changelog **and** plan.
+- Owner QA sign-off / class LOCK / “Knight is the only PASS” recitals — kits are drafts (`.cursor/rules/skill-lists-are-drafts.mdc`).
 
 ## Does not relax
 

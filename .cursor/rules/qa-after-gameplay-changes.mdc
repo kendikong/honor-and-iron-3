@@ -39,8 +39,7 @@ Any edit under these paths (or equivalent behavior owners):
 | Action | Run |
 |--------|-----|
 | Any class factory or per-class scenario change | `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1` |
-| Changelog | Matrix counts: `PASS` / `HARNESS_ONLY` / `PLANNED` from `docs/<CLASS>_QA_GATE.md` |
-| Claim **class LOCK** or **owner QA PASS** | Forbidden unless row is **PASS** in [`docs/CLASS_QA_SIGNOFF.md`](../docs/CLASS_QA_SIGNOFF.md) (Knight only today) |
+| Changelog | Suite **PASS** / **FAIL** for the class you touched. Do not recite owner sign-off or LOCK. |
 
 **Headless harness green alone is not class QA PASS.** Planning QA does not substitute for class gates.
 
@@ -85,6 +84,6 @@ Authoritative checklist mapping: `docs/PLANNING_QA_GATE.md`.
 ## Relationship to other rules
 
 - **Parent:** `global-systems-first.mdc` — preview/commit parity tests live in planning QA.
-- **Class work:** `class-qa-knight-bar.mdc` — Knight-depth matrix; planning QA ≠ class LOCK.
+- **Class work:** `class-qa-knight-bar.mdc` — Knight-depth automated tests when you touch a class; planning QA is not a substitute. Kits are drafts (`.cursor/rules/skill-lists-are-drafts.mdc`).
 - **Complements:** `phase-audit.mdc` (phase gates), `move-preview-intent-truth.mdc` (drag E2E catches release path).
 - **Wins over:** convenience, "small fix", ending the turn without running tests.

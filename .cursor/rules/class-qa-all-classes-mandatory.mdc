@@ -18,7 +18,7 @@ Every shipped Bible class (**Bruiser, Archer, Lancer, Mage, Cleric**, and every 
 - Movement planning smoke for every movement skill (or dedicated scenario that proves the same commit path — **no silent skips**)
 - Matrix rows promoted toward **`PASS`** (not left at `HARNESS_ONLY` while claiming done)
 
-**Knight is the only class with owner sign-off today.** All others are **in scope until they match that bar** — not "optional next work."
+Class kits are **drafts** (`.cursor/rules/skill-lists-are-drafts.mdc`). Run thorough automated QA for work you touch. Do **not** recite owner sign-off / LOCK in replies.
 
 ## Forbidden (instant rule violation)
 
@@ -53,4 +53,4 @@ If any row is FAIL: **fix or report exact `[FAIL]` lines** — never imply the t
 
 - `.cursor/rules/class-qa-knight-bar.mdc` — what "full" means (matrix, scenarios, overlay parity)
 - `.cursor/rules/qa-after-gameplay-changes.mdc` — which suite to run after gameplay edits
-- `docs/CLASS_QA_SIGNOFF.md` — owner sign-off registry (only Knight PASS today)
+- `.cursor/rules/skill-lists-are-drafts.mdc` — kits are not final; no sign-off recitals

@@ -1,0 +1,26 @@
+---
+description: Class skill lists are drafts — never recite owner QA sign-off or treat a class as finished
+alwaysApply: true
+---
+
+# Skill lists are drafts (ABSOLUTE — ALWAYS ON)
+
+**Owner (2026-08-15):** skill kits are **not final**. They will change many times. Reciting owner QA sign-off / class LOCK / “Knight is the only PASS” is the **wrong viewpoint**.
+
+## Owner-facing replies
+
+**Forbidden** (do not say, even as a footer or Changelog note):
+
+- `docs/CLASS_QA_SIGNOFF.md`, owner QA PASS / NOT PASS
+- class LOCK / “this class is complete”
+- “Knight is the only class with owner sign-off”
+
+Automated suites prove **this turn’s change**. They do not mean a class is finished.
+
+## Still required
+
+Run the matching automated QA after gameplay edits (`qa-after-gameplay-changes.mdc`). Report that suite **PASS** or **FAIL**. Do not ask the owner to F5-test for you.
+
+## Wins over
+
+`class-qa-knight-bar.mdc`, `class-qa-all-classes-mandatory.mdc`, `AGENTS.md` sign-off recitals, and any gate doc that tells the agent to remind the owner about LOCK / sign-off.
