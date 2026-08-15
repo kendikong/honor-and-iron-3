@@ -1121,10 +1121,20 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_planning.set_hover_coord(cell, true)
 	if not _is_planning():
 		return
-	var planning_cell_changed: bool = cell != _last_planning_hover_cell
+	var previous_hover: Vector2i = _last_planning_hover_cell
+	var planning_cell_changed: bool = cell != previous_hover
 	if planning_cell_changed:
 		_suppress_post_commit_hover_refresh = false
 		_last_planning_hover_cell = cell
+		## Drop leftover live path/ghost as soon as the cursor leaves the last
+		## simulated tile. Hover follow-route already moved; the parent overlay
+		## otherwise keeps the old 30 fps frame until the next settle.
+		if (
+			not dragging
+			and _planning != null
+			and _last_sim_hover_refresh_cell == previous_hover
+		):
+			_planning.queue_redraw()
 	if (
 		not dragging
 		and _director.board.is_in_bounds(cell)
