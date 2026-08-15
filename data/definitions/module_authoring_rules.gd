@@ -82,6 +82,10 @@ static func module_uses_shape_size(module: AbilityModule) -> bool:
 	return module.target_shape != GameEnums.TargetShape.SINGLE
 
 
+static func module_uses_hit_count(module: AbilityModule) -> bool:
+	return module != null and module.primary_type == GameEnums.EffectType.DAMAGE
+
+
 static func excluded_module_gates(module: AbilityModule) -> PackedStringArray:
 	var excluded := PackedStringArray()
 	if module == null:

@@ -472,8 +472,7 @@ static func _thrash() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	thrash.legacy_modifiers["hit_count"] = 3
-	thrash.legacy_modifiers["repeat_hits"] = 3
+	thrash.hit_count = 3
 	var upgraded := _clone([thrash])
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
 	bleed.modifiers["bleed_weapon"] = true

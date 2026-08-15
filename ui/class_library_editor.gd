@@ -1636,6 +1636,7 @@ func _apply_module_field_greying(
 		rows.get("range_origin", []),
 		not ModuleAuthoringRules.module_uses_range_origin(module, module_index),
 	)
+	_grey_row(rows.get("hit_count", []), not ModuleAuthoringRules.module_uses_hit_count(module))
 	_grey_row(rows.get("adjacent_bonus", []), module.primary_type != GameEnums.EffectType.DAMAGE)
 	_grey_row(rows.get("def_debuff", []), module.primary_type != GameEnums.EffectType.DAMAGE)
 	_grey_row(rows.get("aim_module", []), module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N)
@@ -1750,6 +1751,10 @@ func _build_module_fields(
 		module.amount = v
 		changed.call()
 	)
+	grey_rows["hit_count"] = _bind_int(grid, "Hit Count", module.hit_count, func(v: int) -> void:
+		module.hit_count = v
+		changed.call()
+	, 1)
 	if GameEnums.effect_type_applies_status(module.primary_type):
 		_bind_enum_excluding(
 			grid,

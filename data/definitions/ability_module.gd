@@ -44,6 +44,8 @@ extends Resource
 ## DAMAGE-only typed fields (migrated from EffectData exports).
 @export var bonus_if_adjacent_at_cast: int = 0
 @export var def_debuff_before_damage: int = 0
+## DAMAGE-only. 1 = single hit. Compile copies values > 1 onto the effect for AbilitySystem.
+@export var hit_count: int = 1
 
 ## Transitional bag for modifier keys not yet typed (ability-data.md §12.9). Prefer typed fields.
 @export var legacy_modifiers: Dictionary = {}
@@ -77,4 +79,15 @@ func primary_as_effect() -> EffectData:
 		eff.bonus_if_adjacent_at_cast = 0
 		eff.def_debuff_before_damage = 0
 	eff.modifiers = legacy_modifiers.duplicate(true)
+	eff.modifiers.erase("hit_count")
+	eff.modifiers.erase("repeat_hits")
+	var hits: int = resolved_hit_count()
+	if hits > 1:
+		eff.modifiers["hit_count"] = hits
 	return eff
+
+
+func resolved_hit_count() -> int:
+	if primary_type != GameEnums.EffectType.DAMAGE:
+		return 1
+	return maxi(1, hit_count)

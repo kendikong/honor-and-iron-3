@@ -682,6 +682,8 @@ static func module_to_dict(
 			out["bonus_if_adjacent_at_cast"] = src.bonus_if_adjacent_at_cast
 		if src.def_debuff_before_damage != 0:
 			out["def_debuff_before_damage"] = src.def_debuff_before_damage
+		if src.hit_count != 1:
+			out["hit_count"] = src.hit_count
 	if (
 		GameEnums.effect_type_uses_spawn_unit(src.primary_type)
 		and src.spawn_unit_id != StringName()
@@ -730,6 +732,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.def_debuff_before_damage = int(
 		data.get("def_debuff_before_damage", dst.def_debuff_before_damage)
 	)
+	dst.hit_count = int(data.get("hit_count", dst.hit_count))
 	var modifiers: Variant = data.get("legacy_modifiers", dst.legacy_modifiers)
 	if modifiers is Dictionary:
 		dst.legacy_modifiers = (modifiers as Dictionary).duplicate(true)
@@ -894,6 +897,8 @@ static func _module_dump_line(index: int, module: AbilityModule) -> String:
 		line += " keywords=%d" % module.keywords.size()
 	if not module.layers.is_empty():
 		line += " layers=%d" % module.layers.size()
+	if module.hit_count > 1:
+		line += " hit_count=%d" % module.hit_count
 	if module.gate != GameEnums.ModuleGate.ALWAYS:
 		line += " gate=%s" % GameEnums.ModuleGate.keys()[module.gate]
 	return line
@@ -910,6 +915,8 @@ static func _module_impl_note(module: AbilityModule) -> String:
 		note += " %d keyword(s)." % module.keywords.size()
 	if not module.layers.is_empty():
 		note += " %d layer(s)." % module.layers.size()
+	if module.hit_count > 1:
+		note += " hit_count %d." % module.hit_count
 	return note
 
 

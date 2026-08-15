@@ -66,6 +66,7 @@ static func normalize_module_authoring_fields(
 	if module.primary_type != GameEnums.EffectType.DAMAGE:
 		module.bonus_if_adjacent_at_cast = 0
 		module.def_debuff_before_damage = 0
+	_promote_hit_count_from_legacy(module)
 	if module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N:
 		module.aim_module_index = 0
 	if not GameEnums.effect_type_uses_spawn_unit(module.primary_type):
@@ -453,6 +454,7 @@ static func _copy_effect_to_module(effect: EffectData, module: AbilityModule) ->
 	module.bonus_if_adjacent_at_cast = effect.bonus_if_adjacent_at_cast
 	module.def_debuff_before_damage = effect.def_debuff_before_damage
 	module.legacy_modifiers = effect.modifiers.duplicate(true)
+	_promote_hit_count_from_legacy(module)
 
 
 static func _copy_effect_to_effect(source: EffectData, target: EffectData) -> void:
@@ -709,6 +711,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
 	mod.def_debuff_before_damage = eff.def_debuff_before_damage
 	mod.legacy_modifiers = eff.modifiers.duplicate(true)
+	_promote_hit_count_from_legacy(mod)
 	var is_motion: bool = is_motion_type(eff.type)
 	mod.min_range = 1 if is_motion else 0
 	mod.max_range = (
@@ -857,10 +860,27 @@ static func _stamp_keyword_modifiers_on_module(mod: AbilityModule) -> void:
 				pass
 
 
+static func _promote_hit_count_from_legacy(module: AbilityModule) -> void:
+	if module == null:
+		return
+	var bag_hits := int(module.legacy_modifiers.get(
+		"repeat_hits",
+		module.legacy_modifiers.get("hit_count", 0),
+	))
+	if bag_hits > module.hit_count:
+		module.hit_count = bag_hits
+	module.legacy_modifiers.erase("hit_count")
+	module.legacy_modifiers.erase("repeat_hits")
+	if module.primary_type != GameEnums.EffectType.DAMAGE:
+		module.hit_count = 1
+	elif module.hit_count < 1:
+		module.hit_count = 1
+
+
 static func _strip_promoted_modifier_keys(mod: AbilityModule) -> void:
 	## Keep keys that AbilitySystem still reads from modifiers until typed runtime lands.
 	## Do not strip bulldoze/push/ghost_move/violent_collision_recast yet.
-	pass
+	_promote_hit_count_from_legacy(mod)
 
 
 static func _apply_keywords_to_effect(eff: EffectData, mod: AbilityModule) -> void:

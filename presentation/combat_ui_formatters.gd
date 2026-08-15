@@ -1613,11 +1613,27 @@ static func _damage_atk_label(effect: EffectData, prefix: String = "ATK") -> Str
 	if effect == null:
 		return "%s 0" % prefix
 	var amount: String = str(effect.amount)
+	var label: String
 	if effect.scaling_stat == GameEnums.StatType.MAGICAL:
 		if prefix == "ATK":
-			return "MAG ATK %s" % amount
-		return "%s MAG ATK %s" % [prefix, amount]
-	return "%s %s" % [prefix, amount]
+			label = "MAG ATK %s" % amount
+		else:
+			label = "%s MAG ATK %s" % [prefix, amount]
+	else:
+		label = "%s %s" % [prefix, amount]
+	var hits: int = _effect_hit_count(effect)
+	if hits > 1:
+		return "%s × %d" % [label, hits]
+	return label
+
+
+static func _effect_hit_count(effect: EffectData) -> int:
+	if effect == null:
+		return 1
+	return maxi(1, int(effect.modifiers.get(
+		"repeat_hits",
+		effect.modifiers.get("hit_count", 1),
+	)))
 
 
 static func _damage_atk_hint(effect: EffectData) -> String:

@@ -520,12 +520,12 @@ static func _arcane_barrage() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 1, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["repeat_hits"] = 3
+	base.hit_count = 3
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 1, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	upgraded.hit_count = 3
 	upgraded.legacy_modifiers["ignore_target_magic_pct"] = 0.25
 	return _spell(
 		&"mage_arcane_barrage", "Arcane Barrage", [base], [upgraded],

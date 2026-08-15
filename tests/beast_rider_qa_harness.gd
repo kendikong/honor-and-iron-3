@@ -48,7 +48,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_fetch": {"types": [GameEnums.EffectType.PULL], "amount": 1, "max_range": 4, "keys": [&"fetch_item_or_corpse", &"pull_light_ally"]},
 	&"beast_savage_bite": {"types": [GameEnums.EffectType.DAMAGE], "amount": 4, "max_range": 1, "keys": [&"requires_bleed_or_poison", &"on_kill_shield"]},
 	&"beast_run_down": {"types": [GameEnums.EffectType.DASH], "amount": 3, "max_range": 3, "keys": [&"run_down_pass_adjacent_push", &"run_down_push_bleed_weapon", &"trample_atk"]},
-	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "keys": [&"hit_count", &"repeat_hits", &"bleed_weapon"]},
+	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "hit_count": 3, "keys": [&"bleed_weapon"]},
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
 	&"beast_airlift": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 1, "max_range": 1, "keys": [&"airlift_pickup_step", &"airlift_drop_step", &"airlift_keep_caster", &"airlift_ally_attack_strength"]},
 	&"beast_tail_swipe": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "shape": GameEnums.TargetShape.AOE_SQUARE, "shape_size": 1, "keys": [&"wall_collision_stagger"]},
@@ -102,7 +102,7 @@ static func _run_ability_contract(ability: AbilityData, failures: Array[String])
 	if modules.is_empty():
 		return
 	var primary := modules[0]
-	for field: StringName in [&"amount", &"max_range", &"shape_size"]:
+	for field: StringName in [&"amount", &"max_range", &"shape_size", &"hit_count"]:
 		if contract.has(field):
 			_assert(
 				failures,
@@ -943,6 +943,8 @@ static func _read_module_int(module: AbilityModule, field: StringName) -> int:
 			return module.max_range
 		&"shape_size":
 			return module.target_shape_size
+		&"hit_count":
+			return module.hit_count
 	return -1
 
 
