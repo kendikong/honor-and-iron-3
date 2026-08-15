@@ -865,15 +865,31 @@ static func _assert_ability_sim_outcome(
 			var after_prey: UnitState = (
 				board_after.get_unit_by_id(target_id) if target_id >= 0 else null
 			)
-			_assert(
-				failures,
-				"%s/outcome/pounce" % ability_id,
-				not _has_action_failure(events, 1)
-					and _events_have_ability(events, ability_id)
-					and after_pounce != null
-					and after_prey != null
-					and GridSystem.manhattan(after_pounce.position, after_prey.position) == 1,
+			var prey_before: UnitState = (
+				board_before.get_unit_by_id(target_id) if target_id >= 0 else null
 			)
+			var pounce_used: bool = (
+				not _has_action_failure(events, 1)
+				and _events_have_ability(events, ability_id)
+				and after_pounce != null
+				and after_prey != null
+				and prey_before != null
+			)
+			if after_pounce != null and after_pounce.is_ability_upgraded(&"beast_pounce"):
+				_assert(
+					failures,
+					"%s/outcome/pounce" % ability_id,
+					pounce_used
+						and GridSystem.manhattan(after_pounce.position, prey_before.position) == 1
+						and after_prey.position != prey_before.position,
+				)
+			else:
+				_assert(
+					failures,
+					"%s/outcome/pounce" % ability_id,
+					pounce_used
+						and GridSystem.manhattan(after_pounce.position, after_prey.position) == 1,
+				)
 		&"beast_feral_drag":
 			_assert(
 				failures,

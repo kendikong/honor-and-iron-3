@@ -3139,6 +3139,21 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 								DataLibrary.make_status(GameEnums.StatusType.VULNERABLE, 1)
 							)
 							hit_unit._recalculate_stats(board)
+		## Placement resolves once at the module aim. Footprint tiles are for
+		## damage/status, not one spawn per LINE/AOE cell.
+		if effect.type == GameEnums.EffectType.SPAWN:
+			_apply_effect_to_tile(
+				board,
+				actor,
+				action,
+				effect,
+				events,
+				effect_target_coord,
+				board.get_unit_at(effect_target_coord),
+			)
+			effect_index += 1
+			continue
+
 		if effect.modifiers.has("target_after_move_adjacent"):
 			var adjacent_target := board.get_unit_by_id(action.target_unit_id)
 			if adjacent_target == null:

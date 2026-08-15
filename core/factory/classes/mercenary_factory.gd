@@ -367,19 +367,9 @@ static func _swift_strike() -> AbilityData:
 
 static func _defense_strike() -> AbilityData:
 	var strike := _module(GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	var guard := _module(
-		GameEnums.EffectType.ADD_STATUS_SELF,
-		2,
-		0,
-		0,
-		GameEnums.TargetingFlags.SELF,
-		GameEnums.TargetShape.SINGLE,
-		1,
-		GameEnums.StatType.NONE,
-	)
-	guard.status_type = GameEnums.StatusType.STAT_BUFF_DEF
-	guard.status_duration = 1
-	var modules: Array[AbilityModule] = [strike, guard]
+	var guard := DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2)
+	strike.layers.append(_layer(guard))
+	var modules: Array[AbilityModule] = [strike]
 	var upgraded := _clone_modules(modules)
 	upgraded[0].legacy_modifiers["remove_push_mitigation"] = true
 	upgraded[0].legacy_modifiers["prevent_target_shield"] = true
@@ -388,7 +378,7 @@ static func _defense_strike() -> AbilityData:
 		"Defense Strike",
 		1,
 		modules,
-		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.SELF,
+		GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
 		"Target loses Push Mitigation and cannot gain SHIELD.",
 		upgraded,

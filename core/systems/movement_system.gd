@@ -613,6 +613,18 @@ static func _l_shape_path(
 	return []
 
 
+static func _motion_walk_budget(unit: UnitState, ability: AbilityData) -> int:
+	var motion_module: AbilityModule = AbilitySystem.active_motion_module(unit, ability)
+	var move_budget: int = AbilitySystem.active_motion_max_range(unit, ability)
+	if move_budget <= 0 and motion_module != null:
+		move_budget = motion_module.amount
+	if move_budget <= 0:
+		move_budget = AbilitySystem.effect_amount(
+			ability, GameEnums.EffectType.MOVE, unit,
+		)
+	return move_budget
+
+
 static func l_shape_attack_endpoint(
 	board: BoardState,
 	unit: UnitState,
@@ -621,9 +633,7 @@ static func l_shape_attack_endpoint(
 ) -> Vector2i:
 	if board == null or unit == null or target == null or ability == null:
 		return Vector2i(-1, -1)
-	var move_budget: int = AbilitySystem.effect_amount(
-		ability, GameEnums.EffectType.MOVE, unit,
-	)
+	var move_budget: int = _motion_walk_budget(unit, ability)
 	if move_budget <= 0:
 		return Vector2i(-1, -1)
 	for dir: Vector2i in GridSystem.DIRECTIONS:
@@ -653,9 +663,7 @@ static func adjacent_attack_endpoint(
 ) -> Vector2i:
 	if board == null or unit == null or target == null or ability == null:
 		return Vector2i(-1, -1)
-	var move_budget: int = AbilitySystem.effect_amount(
-		ability, GameEnums.EffectType.MOVE, unit,
-	)
+	var move_budget: int = _motion_walk_budget(unit, ability)
 	if move_budget <= 0:
 		return Vector2i(-1, -1)
 	var best := Vector2i(-1, -1)

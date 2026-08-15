@@ -347,15 +347,14 @@ static func _evasive_strike() -> AbilityData:
 	var strike := _module(GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	strike.aim_binding = GameEnums.AimBinding.NEW_AIM
 	strike.execution_phase = GameEnums.ModulePhase.ON_ACTION
-	var guard := _module(GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF)
-	guard.status_type = GameEnums.StatusType.STAT_BUFF_DEF
-	guard.status_duration = 1
-	guard.amount = 1
-	var modules: Array[AbilityModule] = [move, strike, guard]
+	var guard := DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 1)
+	strike.layers.append(_layer(guard))
+	var modules: Array[AbilityModule] = [move, strike]
 	var upgraded := _clone(modules)
 	upgraded[0].amount = 3
 	upgraded[1].amount = 2
-	upgraded[2].amount = 2
+	if not upgraded[1].layers.is_empty() and upgraded[1].layers[0].effect != null:
+		upgraded[1].layers[0].effect.amount = 2
 	return _ability(
 		&"rogue_evasive_strike", "Evasive Strike", modules, upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,

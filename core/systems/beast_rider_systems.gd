@@ -488,9 +488,9 @@ static func before_ability_execute(
 		return
 	var mods := active_module_modifiers(actor, action.ability)
 	if mods.get("pounce_land_adjacent", false):
-		var pounce_target := AbilitySystem.module_target_unit_id(action, 1)
+		var pounce_target := action.target_unit_id
 		if pounce_target < 0:
-			pounce_target = action.target_unit_id
+			pounce_target = AbilitySystem.module_target_unit_id(action, 0)
 		if pounce_target >= 0:
 			actor.passive_flags["beast_pounce_target_id"] = pounce_target
 	if mods.get("feral_drag", false):

@@ -8487,7 +8487,7 @@
 					"presentation_key": "lancer_piercing_charge",
 					"primary_resource": 1,
 					"primary_value": 1,
-					"range_tiles": 2,
+					"range_tiles": 3,
 					"secondary_resource": 0,
 					"secondary_value": 0,
 					"tags": [
@@ -10754,7 +10754,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Defense Strike",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -10762,7 +10762,19 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								}
+							],
 							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
@@ -10772,22 +10784,6 @@
 							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"presentation_anim": 0,
-							"primary_type": 9,
-							"scaling_stat": 0,
-							"status_duration": 1,
-							"status_type": 4,
-							"target_shape": 0,
-							"targeting_flags": 1
 						}
 					],
 					"planner_group": 0,
@@ -10803,7 +10799,7 @@
 						"positioning"
 					],
 					"upgrade_description": "Target loses Push Mitigation and cannot gain SHIELD.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -10811,7 +10807,19 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								}
+							],
 							"legacy_modifiers": {
 								"prevent_target_shield": true,
 								"remove_push_mitigation": true
@@ -10824,22 +10832,6 @@
 							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"presentation_anim": 0,
-							"primary_type": 9,
-							"scaling_stat": 0,
-							"status_duration": 1,
-							"status_type": 4,
-							"target_shape": 0,
-							"targeting_flags": 1
 						}
 					],
 					"upgraded_primary_value": -1,
@@ -13402,7 +13394,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Evasive Strike",
-					"module_count": 3,
+					"module_count": 2,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -13428,7 +13420,19 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								}
+							],
 							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
@@ -13439,22 +13443,6 @@
 							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 0,
-							"amount": 1,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"presentation_anim": 0,
-							"primary_type": 9,
-							"scaling_stat": 0,
-							"status_duration": 1,
-							"status_type": 4,
-							"target_shape": 0,
-							"targeting_flags": 1
 						}
 					],
 					"planner_group": 0,
@@ -13462,7 +13450,7 @@
 					"presentation_key": "rogue_evasive_strike",
 					"primary_resource": 1,
 					"primary_value": 1,
-					"range_tiles": 1,
+					"range_tiles": 2,
 					"secondary_resource": 0,
 					"secondary_value": 0,
 					"tags": [
@@ -13470,7 +13458,7 @@
 						"movement"
 					],
 					"upgrade_description": "MOVE 3 | ATK 2 | DEF +2.",
-					"upgraded_module_count": 3,
+					"upgraded_module_count": 2,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -13494,7 +13482,19 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 0,
+										"status_duration": 1,
+										"status_type": 4,
+										"type": 9
+									}
+								}
+							],
 							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
@@ -13505,22 +13505,6 @@
 							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"presentation_anim": 0,
-							"primary_type": 9,
-							"scaling_stat": 0,
-							"status_duration": 1,
-							"status_type": 4,
-							"target_shape": 0,
-							"targeting_flags": 1
 						}
 					],
 					"upgraded_primary_value": -1,
