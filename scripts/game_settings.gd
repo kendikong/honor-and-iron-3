@@ -40,6 +40,7 @@ const TEXT_SIZE_TITLE: PackedInt32Array = [22, 26, 30]
 const TEXT_SIZE_HINT: PackedInt32Array = [13, 17, 20]
 const HOVER_SETTLE_MS_DEFAULT: float = 45.0
 const HOVER_SETTLE_MS_MAX: float = 100.0
+const OVERLAY_FLOW_FPS_DEFAULT: float = 30.0
 
 var resolution: Vector2i = Vector2i(3840, 1800)
 var window_mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_WINDOWED
@@ -93,6 +94,10 @@ func preview_dynamic_overlay_enabled() -> bool:
 
 func hover_sim_interval_sec() -> float:
 	return clampf(hover_settle_ms, 0.0, HOVER_SETTLE_MS_MAX) / 1000.0
+
+
+func overlay_flow_interval_sec() -> float:
+	return 1.0 / OVERLAY_FLOW_FPS_DEFAULT
 
 
 var screen_index: int = 0

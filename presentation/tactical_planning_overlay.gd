@@ -50,6 +50,8 @@ const _PUSH_INTENT_DASH_GAP: float = 4.0
 const _PUSH_INTENT_CHEVRON_LEN: float = 5.0
 const _PUSH_INTENT_CHEVRON_HALF_W: float = 3.5
 const _INTENT_DOT_FLOW_SPEED: float = _TARGETING_INTENT_FLOW_SPEED * 0.4
+## Intentional chevron-layer cap only — never applied to ghosts/routes/intents.
+const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 30.0
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -104,6 +106,9 @@ var _hover_perimeter_cache_key: int = 0
 var _cached_hover_perimeter_segments: Array = []
 var _static_tiles_layer: Node2D
 var _hover_tile_layer: Node2D
+var _flow_arrows_layer: Node2D
+var _draw_target: CanvasItem = null
+var _anim_redraw_accum: float = 0.0
 
 
 func setup(
@@ -130,7 +135,7 @@ func setup(
 		if _director == null:
 			return
 		_update_hover_action_icon()
-		queue_redraw(),
+		_queue_overlay_redraw(),
 	)
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		var was_planning: bool = CombatDirector.is_planning_phase(_phase)
@@ -148,16 +153,17 @@ func setup(
 			_hover_action_range_tiles.clear()
 			_queue_static_tiles_redraw()
 		mark_danger_dirty()
-		queue_redraw(),
+		_queue_overlay_redraw(),
 	)
 	EventBus.sim_event.connect(_on_sim_event)
 	if _intent_state != null:
-		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: queue_redraw())
+		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: _queue_overlay_redraw())
 		_intent_state.hover_coord_changed.connect(func(coord: Vector2i) -> void:
 			set_hover_coord(coord, true),
 		)
 	set_process(true)
 	_ensure_static_tiles_layer()
+	_ensure_flow_arrows_layer()
 	_ensure_hover_tile_layer()
 
 
@@ -169,6 +175,36 @@ func _ensure_static_tiles_layer() -> void:
 	_static_tiles_layer.show_behind_parent = true
 	_static_tiles_layer.draw.connect(_draw_static_tile_layers)
 	add_child(_static_tiles_layer)
+
+
+func _ensure_flow_arrows_layer() -> void:
+	if _flow_arrows_layer != null:
+		return
+	_flow_arrows_layer = Node2D.new()
+	_flow_arrows_layer.name = "FlowArrows"
+	_flow_arrows_layer.draw.connect(_draw_flow_arrows_layer)
+	add_child(_flow_arrows_layer)
+
+
+func _queue_flow_arrows_redraw() -> void:
+	if _flow_arrows_layer != null:
+		_flow_arrows_layer.queue_redraw()
+
+
+func _queue_overlay_redraw() -> void:
+	_anim_redraw_accum = 0.0
+	queue_redraw()
+	_queue_flow_arrows_redraw()
+
+
+func _overlay_draw_target() -> CanvasItem:
+	return _draw_target if _draw_target != null else self
+
+
+func _overlay_flow_interval_sec() -> float:
+	if qa_static_overlay or _game_settings == null:
+		return _FLOW_ANIM_REDRAW_INTERVAL_SEC
+	return _game_settings.overlay_flow_interval_sec()
 
 
 func _ensure_hover_tile_layer() -> void:
@@ -213,6 +249,9 @@ func teardown() -> void:
 	if _hover_tile_layer != null:
 		_hover_tile_layer.queue_free()
 		_hover_tile_layer = null
+	if _flow_arrows_layer != null:
+		_flow_arrows_layer.queue_free()
+		_flow_arrows_layer = null
 	if _static_tiles_layer != null:
 		_static_tiles_layer.queue_free()
 		_static_tiles_layer = null
@@ -227,7 +266,7 @@ func apply_settings(settings: GameSettings) -> void:
 	if _planning_input != null:
 		_planning_input.refresh_mouse_cursor(_hover_coord)
 	_queue_static_tiles_redraw()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func game_settings() -> GameSettings:
@@ -549,7 +588,7 @@ func restore_committed_display() -> void:
 	_preview_board = _committed_preview.preview_board
 	_push_predicted_stats_to_unit_layer(_committed_preview)
 	live_preview_changed.emit()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 ## HP/armor preview on unit bars — always during planning; independent of ghost toggles.
@@ -567,7 +606,7 @@ func _clear_forced_movement_intent_cache() -> void:
 	_live_preview.preview_pushes.clear()
 	_deferred_preview_pending = false
 	_deferred_preview_result = null
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 ## Promote the painted live intent to committed display (move-preview intent truth).
@@ -592,22 +631,22 @@ func apply_preview_state(
 	_attack_target_id = attack_target_id
 	_push_predicted_stats_to_unit_layer(state)
 	live_preview_changed.emit()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
 	_live_preview = state
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_board(board: BoardState) -> void:
 	_board = board
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_preview_board(board: BoardState) -> void:
 	_preview_board = board
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
@@ -727,12 +766,12 @@ func set_drag_attack_target(unit_id: int) -> void:
 
 func set_drag_route(route: Array[Vector2i]) -> void:
 	_route = route
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func clear_drag_route() -> void:
 	_route.clear()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: StringName = &"knight") -> void:
@@ -747,7 +786,7 @@ func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: Str
 		_planning_input.refresh_mouse_cursor(_hover_coord)
 	elif active:
 		_update_hover_action_icon()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func set_fixed_range_origin(coord: Vector2i) -> void:
@@ -793,7 +832,7 @@ func set_hover_action_icon(icon: String) -> void:
 			_planning_cursor.set_icon(icon)
 		else:
 			_planning_cursor.set_icon("")
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func is_system_mouse_override() -> bool:
@@ -804,7 +843,7 @@ func clear_planning_cursor_icon() -> void:
 	_hover_action_icon = ""
 	if _planning_cursor != null:
 		_planning_cursor.set_icon("")
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func _is_selected_player_unit(unit: UnitState) -> bool:
@@ -1115,36 +1154,21 @@ func _process(delta: float) -> void:
 			_hit_markers.remove_at(i)
 		need_redraw = true
 	if need_redraw:
-		queue_redraw()
-	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		queue_redraw()
+		_queue_overlay_redraw()
+		return
+	if not CombatDirector.is_planning_phase(_phase) or not _overlay_needs_flow_animation():
+		_anim_redraw_accum = 0.0
+		return
+	_anim_redraw_accum += delta
+	if _anim_redraw_accum >= _overlay_flow_interval_sec():
+		_anim_redraw_accum = 0.0
+		_queue_flow_arrows_redraw()
 
 
 func _overlay_needs_flow_animation() -> bool:
 	if qa_static_overlay:
 		return _planning_input != null and _planning_input.dragging
-	if _resolve_overlay_attack_target_id() >= 0:
-		return true
-	if _planning_input != null and _planning_input.dragging:
-		return true
-	var prev: CombatPlanningPreview = _active_preview()
-	if prev != null:
-		for push_list: Variant in prev.preview_pushes.values():
-			if push_list is Array and not push_list.is_empty():
-				return true
-	if _director != null:
-		var plan: Timeline = _director.get_player_plan()
-		if plan != null:
-			for action: TimelineAction in plan.entries:
-				if action.type == GameEnums.ActionType.ABILITY:
-					return true
-	if _route.size() >= 2 and (
-		_planning_input == null
-		or _planning_input.dragging
-		or _planning_input.get_drag_route().size() >= 2
-	):
-		return true
-	return false
+	return _preview_arrows_enabled() or _preview_committed_intents_enabled()
 
 
 func _on_sim_event(event: SimEvent) -> void:
@@ -1190,7 +1214,7 @@ func _on_preview_updated(result: SimResult) -> void:
 	if _lock_committed_from_intent:
 		_lock_committed_from_intent = false
 		_has_stashed_committed = false
-		queue_redraw()
+		_queue_overlay_redraw()
 		return
 	if _director != null and _director.plan_refresh_defer_overlay:
 		_deferred_preview_result = result
@@ -1231,11 +1255,13 @@ func _apply_committed_preview_update(result: SimResult, light_refresh: bool = fa
 	if _planning_input == null or not _planning_input.is_live_preview_active():
 		_push_predicted_stats_to_unit_layer(_committed_preview)
 		live_preview_changed.emit()
-	queue_redraw()
+	_queue_overlay_redraw()
 
 
 func _draw() -> void:
+	_draw_target = self
 	if _board == null or _map_view == null or _director == null:
+		_draw_target = null
 		return
 	var show_planning: bool = CombatDirector.is_planning_phase(_phase)
 	if show_planning:
@@ -1246,11 +1272,9 @@ func _draw() -> void:
 		if _preview_arrows_enabled():
 			_draw_preview_arrows()
 		if _preview_routes_enabled() and _should_draw_interaction_overlay():
-			_draw_interaction_overlay()
+			_draw_interaction_overlay(false)
 		if _preview_committed_intents_enabled():
-			_draw_ability_intents()
-		if _preview_arrows_enabled():
-			_draw_forced_movement_arrows()
+			_draw_ability_intents(false)
 	elif _preview_routes_enabled() and _route.size() >= 2:
 		_draw_route_line(_route, _COLOR_ROUTE, true, true)
 	if _aiming:
@@ -1259,6 +1283,22 @@ func _draw() -> void:
 	for entry: Array in _hit_markers:
 		if entry.size() >= 2 and entry[0] is Vector2i:
 			_draw_death_marker(entry[0] as Vector2i)
+	_draw_target = null
+
+
+func _draw_flow_arrows_layer() -> void:
+	if _flow_arrows_layer == null or _board == null or _map_view == null or _director == null:
+		return
+	if not CombatDirector.is_planning_phase(_phase):
+		return
+	_draw_target = _flow_arrows_layer
+	if _preview_arrows_enabled():
+		if _preview_routes_enabled() and _should_draw_interaction_overlay():
+			_draw_interaction_overlay(true)
+		_draw_forced_movement_arrows()
+	if _preview_committed_intents_enabled():
+		_draw_ability_intents(true)
+	_draw_target = null
 
 
 func _draw_hover_tiles(canvas: CanvasItem) -> void:
@@ -1338,7 +1378,7 @@ func _draw_hover_tile_on(canvas: CanvasItem) -> void:
 	_draw_hover_follow_route_on(canvas)
 
 
-func _draw_ability_intents() -> void:
+func _draw_ability_intents(flowing: bool) -> void:
 	if _director == null or _board == null:
 		return
 	var plan_to_use: Timeline = _director.get_player_plan()
@@ -1384,13 +1424,15 @@ func _draw_ability_intents() -> void:
 						action.ability, GameEnums.EffectType.TELEPORT_CASTER,
 					)
 				):
-					_draw_dashed_route([from_cell, to_cell], p_col)
+					if flowing:
+						_draw_dashed_route([from_cell, to_cell], p_col)
 				elif (
 					action.ability != null
 					and AbilitySystem.ability_has_movement_effect(action.ability)
 				):
-					_draw_route_line(draw_route, p_col, true, true)
-				else:
+					if not flowing:
+						_draw_route_line(draw_route, p_col, true, true)
+				elif flowing:
 					if action.target_unit_id >= 0:
 						var tgt: UnitState = _board.get_unit_by_id(action.target_unit_id)
 						if tgt != null:
@@ -1414,6 +1456,8 @@ func _draw_ability_intents() -> void:
 		for action: TimelineAction in row.actions:
 			match action.type:
 				GameEnums.ActionType.ABILITY:
+					if not flowing:
+						continue
 					_draw_dashed_route(
 						[enemy_pos, action.target_coord],
 						Color(
@@ -1424,6 +1468,8 @@ func _draw_ability_intents() -> void:
 						),
 					)
 				GameEnums.ActionType.MOVE:
+					if flowing:
+						continue
 					if action.target_coord != enemy_pos:
 						var preview_for_push: CombatPlanningPreview = _active_preview()
 						if _is_push_preview_segment(
@@ -1542,7 +1588,7 @@ func _draw_dashed_route(cells: Array, color: Color) -> void:
 		var d: float = start_d
 		while d < end_d:
 			var draw_end: float = minf(d + dash, end_d)
-			draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
+			_overlay_draw_target().draw_line(p1 + dir * d, p1 + dir * draw_end, color, _DASH_LINE_W)
 			d += dash + gap
 	_draw_flowing_arrowheads_for_route(
 		cells, color, _ROUTE_LINE_W, _DASH_WING_LEN, 30.0, 0.0,
@@ -1566,6 +1612,7 @@ func _draw_flowing_arrowheads_on_line(
 	if total_len < 0.001:
 		return
 	var dir: Vector2 = delta / total_len
+	var draw_on: CanvasItem = _overlay_draw_target()
 	var t: float = Time.get_ticks_msec() / 1000.0
 	var path_offset: float = fmod(t * flow_speed, head_spacing)
 	var arrow_pos: float = path_offset
@@ -1574,8 +1621,8 @@ func _draw_flowing_arrowheads_on_line(
 			var tip: Vector2 = start_pt + dir * arrow_pos
 			var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
 			var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
-			draw_line(tip, wing1, color, line_w)
-			draw_line(tip, wing2, color, line_w)
+			draw_on.draw_line(tip, wing1, color, line_w)
+			draw_on.draw_line(tip, wing2, color, line_w)
 		arrow_pos += head_spacing
 
 
@@ -1595,7 +1642,7 @@ func _draw_dashed_shaft_on_line(
 	var d: float = 0.0
 	while d < dist:
 		var draw_end: float = minf(d + dash_len, dist)
-		draw_line(start_pt + travel_dir * d, start_pt + travel_dir * draw_end, color, line_w)
+		_overlay_draw_target().draw_line(start_pt + travel_dir * d, start_pt + travel_dir * draw_end, color, line_w)
 		d += dash_len + gap_len
 
 
@@ -1620,7 +1667,7 @@ func _draw_filled_chevron_at(
 		Vector2(round(wing_l.x), round(wing_l.y)),
 		Vector2(round(wing_r.x), round(wing_r.y)),
 	])
-	draw_colored_polygon(head, color)
+	_overlay_draw_target().draw_colored_polygon(head, color)
 
 
 func _draw_flowing_filled_chevrons_on_line(
@@ -1694,8 +1741,9 @@ func _draw_flowing_arrowheads_for_route(
 				var tip: Vector2 = p1 + dir * current_d
 				var wing1: Vector2 = tip - dir.rotated(deg_to_rad(wing_angle_deg)) * wing_len
 				var wing2: Vector2 = tip - dir.rotated(deg_to_rad(-wing_angle_deg)) * wing_len
-				draw_line(tip, wing1, color, line_w)
-				draw_line(tip, wing2, color, line_w)
+				var draw_on: CanvasItem = _overlay_draw_target()
+				draw_on.draw_line(tip, wing1, color, line_w)
+				draw_on.draw_line(tip, wing2, color, line_w)
 		arrow_pos += wave_spacing
 
 
@@ -1881,7 +1929,7 @@ func _resolve_overlay_attack_target_id() -> int:
 	return _attack_target_id
 
 
-func _draw_interaction_overlay() -> void:
+func _draw_interaction_overlay(flowing: bool) -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
 	var prev: CombatPlanningPreview = _active_preview()
@@ -1900,27 +1948,29 @@ func _draw_interaction_overlay() -> void:
 		and AbilitySystem.ability_has_effect(sel_ability, GameEnums.EffectType.TELEPORT_CASTER)
 		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
 	)
-	if not caster_teleport_hover and _planning_input != null and _planning_input.dragging:
-		if route.size() >= 2 and _unit_can_still_move(actor.id):
-			var drag_route: Array = _interaction_move_route(actor.id, prev, route)
-			if drag_route.size() >= 2:
-				_draw_route_line(drag_route, p_col, true, true)
-	elif (
-		not caster_teleport_hover
-		and _planning_input != null
-		and not _planning_input.drag_preview_failed
-		and _planning_input.is_live_preview_active()
-	):
-		var draw_route: Array = _interaction_move_route(actor.id, prev, route)
-		if draw_route.size() >= 2:
-			var draw_move_line: bool = _interaction_move_hover_active(actor.id)
-			# Skill targeting on enemy: draw pre-move approach leg (solid), not only dotted target arrow.
-			if not draw_move_line and _resolve_overlay_attack_target_id() >= 0:
-				var hover_ability := _selected_ability_data(actor, _director.selected_ability_index)
-				if hover_ability == null or not AbilitySystem.can_target_self(actor, hover_ability):
-					draw_move_line = true
-			if draw_move_line:
-				_draw_route_line(draw_route, p_col, true, true)
+	if not flowing:
+		if not caster_teleport_hover and _planning_input != null and _planning_input.dragging:
+			if route.size() >= 2 and _unit_can_still_move(actor.id):
+				var drag_route: Array = _interaction_move_route(actor.id, prev, route)
+				if drag_route.size() >= 2:
+					_draw_route_line(drag_route, p_col, true, true)
+		elif (
+			not caster_teleport_hover
+			and _planning_input != null
+			and not _planning_input.drag_preview_failed
+			and _planning_input.is_live_preview_active()
+		):
+			var draw_route: Array = _interaction_move_route(actor.id, prev, route)
+			if draw_route.size() >= 2:
+				var draw_move_line: bool = _interaction_move_hover_active(actor.id)
+				# Skill targeting on enemy: draw pre-move approach leg (solid), not only dotted target arrow.
+				if not draw_move_line and _resolve_overlay_attack_target_id() >= 0:
+					var hover_ability := _selected_ability_data(actor, _director.selected_ability_index)
+					if hover_ability == null or not AbilitySystem.can_target_self(actor, hover_ability):
+						draw_move_line = true
+				if draw_move_line:
+					_draw_route_line(draw_route, p_col, true, true)
+		return
 	if (
 		_planning_input != null
 		and _planning_input.is_live_preview_active()
@@ -2185,8 +2235,9 @@ func _draw_line_arrowhead(tip: Vector2, dir: Vector2, color: Color, line_w: floa
 		travel_dir = travel_dir.normalized()
 	var wing1: Vector2 = tip - travel_dir.rotated(deg_to_rad(angle_deg)) * head_len
 	var wing2: Vector2 = tip - travel_dir.rotated(deg_to_rad(-angle_deg)) * head_len
-	draw_line(tip, wing1, color, line_w)
-	draw_line(tip, wing2, color, line_w)
+	var draw_on: CanvasItem = _overlay_draw_target()
+	draw_on.draw_line(tip, wing1, color, line_w)
+	draw_on.draw_line(tip, wing2, color, line_w)
 
 
 func _forced_movement_intent_color(_pushed_unit: UnitState = null) -> Color:
@@ -2301,7 +2352,7 @@ func _draw_dotted_intent_segment(
 		var t: float = Time.get_ticks_msec() / 1000.0
 		d = fmod(t * _INTENT_DOT_FLOW_SPEED, _INTENT_DOT_SPACING)
 	while d < dist:
-		draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
+		_overlay_draw_target().draw_circle(start_pt + travel_dir * d, _INTENT_DOT_RADIUS, color)
 		d += _INTENT_DOT_SPACING
 	if with_head:
 		if flowing_head:
