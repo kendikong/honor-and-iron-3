@@ -22,7 +22,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var push_module := DataLibrary._module(
 		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
+		GameEnums.MotionMode.NONE,
 	)
 	var push_upgraded := DataLibrary._duplicate_modules([push_module])
 	push_upgraded[0].legacy_modifiers["buff_on_push"] = 1
@@ -272,7 +272,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var collision_dash := DataLibrary._module(
 		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.INTO_OCCUPIED_PUSH,
+		GameEnums.MotionMode.NONE,
 	)
 	collision_dash.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),

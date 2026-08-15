@@ -61,7 +61,7 @@ static func normalize_module_authoring_fields(
 	normalize_module_status_fields(module)
 	if not GameEnums.effect_type_uses_module_scaling(module.primary_type):
 		module.scaling_stat = GameEnums.StatType.NONE
-	if not is_motion_type(module.primary_type):
+	if not _ModuleAuthoringRules.module_uses_motion_mode(module.primary_type):
 		module.motion_mode = GameEnums.MotionMode.NONE
 	if module.primary_type != GameEnums.EffectType.DAMAGE:
 		module.bonus_if_adjacent_at_cast = 0
@@ -552,7 +552,7 @@ static func infer_modules_from_effects(
 		move_mod.primary_type = GameEnums.EffectType.MOVE
 		move_mod.min_range = 1
 		move_mod.max_range = 2
-		move_mod.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
+		move_mod.motion_mode = GameEnums.MotionMode.NONE
 		move_mod.targeting_flags = GameEnums.TargetingFlags.TILE
 		move_mod.gate = GameEnums.ModuleGate.IF_COLLIDED
 		move_mod.aim_binding = GameEnums.AimBinding.NEW_AIM
@@ -687,9 +687,10 @@ static func _infer_tags(ability: AbilityData) -> Array[StringName]:
 
 static func is_motion_type(t: GameEnums.EffectType) -> bool:
 	return (
-		t == GameEnums.EffectType.MOVE
+		GameEnums.is_walk_motion(t)
+		or GameEnums.is_jump_motion(t)
+		or GameEnums.is_teleport_motion(t)
 		or t == GameEnums.EffectType.DASH
-		or t == GameEnums.EffectType.TELEPORT_CASTER
 		or t == GameEnums.EffectType.SWAP
 		or t == GameEnums.EffectType.MOVE_INTO_AND_PUSH
 	)
@@ -778,16 +779,8 @@ static func _infer_layer_condition(eff: EffectData) -> GameEnums.LayerCondition:
 	return GameEnums.LayerCondition.AT_RESOLUTION
 
 
-static func _infer_motion_mode(eff: EffectData) -> GameEnums.MotionMode:
-	match eff.type:
-		GameEnums.EffectType.MOVE_INTO_AND_PUSH:
-			return GameEnums.MotionMode.INTO_OCCUPIED_PUSH
-		GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER:
-			return GameEnums.MotionMode.TO_EMPTY_TILE
-		GameEnums.EffectType.SWAP:
-			return GameEnums.MotionMode.TO_TARGET_UNIT
-		_:
-			return GameEnums.MotionMode.NONE
+static func _infer_motion_mode(_eff: EffectData) -> GameEnums.MotionMode:
+	return GameEnums.MotionMode.NONE
 
 
 static func _infer_phase(_eff: EffectData, _idx: int, _ability: AbilityData) -> GameEnums.ModulePhase:

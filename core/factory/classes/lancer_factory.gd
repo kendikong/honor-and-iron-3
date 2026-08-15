@@ -521,14 +521,12 @@ static func _glorious_charge() -> AbilityData:
 
 static func _pole_vault() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 3, 1, 3, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.JUMP_TO_BEHIND, 3, 1, 3, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.VAULT_OVER,
+		GameEnums.MotionMode.NONE,
 	)
-	module.legacy_modifiers["vault_over"] = true
 	module.legacy_modifiers["vault_obstacle_or_gap_only"] = true
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["vault_over"] = true
 	upgraded[0].legacy_modifiers["vault_obstacle_or_gap_only"] = true
 	upgraded[0].legacy_modifiers["landing_adjacent_push"] = 1
 	upgraded[0].legacy_modifiers["landing_adjacent_push_stagger"] = true

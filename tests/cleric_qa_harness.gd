@@ -45,7 +45,7 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "guardian_step/all_mov",
 		guardian != null and guardian.movement_point_cost == 0
 		and guardian.effects[0].modifiers.get("cost_all_movement", false)
-		and guardian.effects[0].modifiers.get("warp_adjacent_to_target", false)
+		and guardian.effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
 		and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
 	var holy_light := _ability(definition, &"cleric_holy_light")
 	_assert(failures, "holy_light/mag_heal",
@@ -80,8 +80,9 @@ static func run_ability_row(ability_id: StringName, failures: Array[String]) -> 
 		_assert(failures, "guardian_step/all_mov",
 			guardian != null and guardian.movement_point_cost == 0
 			and guardian.effects[0].modifiers.get("cost_all_movement", false)
-			and guardian.effects[0].modifiers.get("warp_adjacent_to_target", false)
+			and guardian.effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
 			and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
+		_sim_ability_used(failures, ability_id, guardian, false)
 	elif ability_id == &"cleric_holy_light":
 		var holy_light := _ability(definition, ability_id)
 		_assert(failures, "holy_light/mag_heal",
@@ -262,7 +263,7 @@ static func _assert_cleric_outcome(
 		if effect == null:
 			continue
 		match effect.type:
-			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH:
+			GameEnums.EffectType.MOVE, GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_CASTER:
 				var actor: UnitState = board.get_unit_by_id(1)
 				_assert(
 					failures, "sim/%s/outcome/move" % ability_id,

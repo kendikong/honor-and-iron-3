@@ -81,6 +81,16 @@ enum EffectType {
 	MOVE_INTO_AND_PUSH, ## Caster moves to target tile; target is pushed away in the same direction.
 	THROW_BEHIND, ## Target is picked up and placed in the empty tile directly behind the caster.
 	CREATE_HAZARD, ## Create a temporary hazard line/area from the authored module.
+	JUMP, ## Gloomhaven jump to a clicked empty tile.
+	MOVE_ADJACENT_TO, ## Walk to a clicked empty tile adjacent to a unit in range.
+	JUMP_ADJACENT_TO, ## Jump to a clicked empty tile adjacent to a unit in range.
+	TELEPORT_ADJACENT_TO, ## Warp to a clicked empty tile adjacent to a unit in range.
+	MOVE_TO_BEHIND, ## Walk to the empty far-side tile of a 1-tile blocker.
+	JUMP_TO_BEHIND, ## Jump to the empty far-side tile of a 1-tile blocker.
+	TELEPORT_TO_BEHIND, ## Warp to the empty far-side tile of a 1-tile blocker.
+	MOVE_TOWARD, ## Walk the default path toward an aimed unit.
+	JUMP_TOWARD, ## Jump the default path toward an aimed unit.
+	TELEPORT_TOWARD, ## Warp toward / onto the approach tile of an aimed unit.
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -156,6 +166,61 @@ static func effect_type_uses_module_scaling(effect_type: EffectType) -> bool:
 
 static func effect_type_uses_spawn_unit(effect_type: EffectType) -> bool:
 	return effect_type == EffectType.SPAWN
+
+
+static func is_walk_motion(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.MOVE,
+		EffectType.MOVE_ADJACENT_TO,
+		EffectType.MOVE_TO_BEHIND,
+		EffectType.MOVE_TOWARD,
+	]
+
+
+static func is_jump_motion(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.JUMP,
+		EffectType.JUMP_ADJACENT_TO,
+		EffectType.JUMP_TO_BEHIND,
+		EffectType.JUMP_TOWARD,
+	]
+
+
+static func is_teleport_motion(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.TELEPORT_CASTER,
+		EffectType.TELEPORT_ADJACENT_TO,
+		EffectType.TELEPORT_TO_BEHIND,
+		EffectType.TELEPORT_TOWARD,
+	]
+
+
+static func is_path_motion(effect_type: EffectType) -> bool:
+	return is_walk_motion(effect_type) or is_jump_motion(effect_type)
+
+
+static func is_adjacent_destination(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.MOVE_ADJACENT_TO,
+		EffectType.JUMP_ADJACENT_TO,
+		EffectType.TELEPORT_ADJACENT_TO,
+	]
+
+
+static func is_behind_destination(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.MOVE_TO_BEHIND,
+		EffectType.JUMP_TO_BEHIND,
+		EffectType.TELEPORT_TO_BEHIND,
+	]
+
+
+static func is_toward_destination(effect_type: EffectType) -> bool:
+	return effect_type in [
+		EffectType.MOVE_TOWARD,
+		EffectType.JUMP_TOWARD,
+		EffectType.TELEPORT_TOWARD,
+	]
 
 
 static func keyword_uses_push_amount(keyword_id: AbilityKeywordId) -> bool:

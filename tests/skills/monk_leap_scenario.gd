@@ -1,8 +1,8 @@
 extends RefCounted
 
 ## Bible: Leap — cost 2 MOV; vault over one obstacle, gap, trap, or unit to the empty tile behind it.
-## Globals: EffectType.TELEPORT_CASTER + MotionMode.VAULT_OVER; preview/commit slots.
-## Modules: M0 ON_ACTION TELEPORT_CASTER range 1; [+] max range 3 and elemental landing absorption.
+## Globals: EffectType.JUMP_TO_BEHIND; preview/commit slots.
+## Modules: M0 ON_ACTION JUMP_TO_BEHIND range 2; [+] max range 3 and elemental landing absorption.
 ## Planning tier: B
 ## Data/Sim delegate: tests/monk_qa_harness.gd::run_single_ability
 const _H := preload("res://tests/monk_qa_harness.gd")

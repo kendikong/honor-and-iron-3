@@ -39,6 +39,10 @@ func test_live_monk_every_skill(timeout := 600000) -> void:
 		session.set_all_passives_enabled(&"monk", true)
 		session.set_all_skills_enabled(&"monk", true)
 		session.dummy_coords = _dummy_coords_for(ability_id)
+		session.extra_player_coords = []
+		if ability_id == &"monk_void_step":
+			session.extra_player_coords = [Vector2i(6, 5)]
+			session.dummy_coords = [Vector2i(8, 8)]
 		session.unkillable_dummies = true
 		scene.apply_training_board()
 		await runner.simulate_frames(8, 16)

@@ -7,7 +7,7 @@ const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
-	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(3, 2)},
+	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(4, 2)},
 	{"id": &"cleric_holy_light", "actor": Vector2i(4, 2), "target": Vector2i(3, 2)},
 	{"id": &"cleric_smite", "actor": Vector2i(2, 5), "target": Vector2i(4, 5)},
 	{"id": &"cleric_cleansing_aura", "actor": Vector2i(5, 5), "target": Vector2i(5, 5)},
@@ -76,7 +76,7 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		director.select_unit(actor_id)
 		actor.ability.points_left = maxi(actor.ability.points_left, 1)
 		actor.movement.points_left = maxi(actor.movement.points_left, 3)
-		director.auto_run = item.id == &"cleric_guardian_step"
+		director.auto_run = false
 		await _MOVEMENT_QA.commit_premove_run_if_needed(
 			self,
 			runner,
@@ -158,7 +158,10 @@ func _player_coords(item: Dictionary) -> Array[Vector2i]:
 		&"cleric_prayer_of_fortitude", &"cleric_resurrection",
 		&"cleric_divine_guidance", &"cleric_shield_of_faith",
 	] and item.target not in result:
-		result.append(item.target)
+		if item.id == &"cleric_guardian_step":
+			result.append(Vector2i(3, 2))
+		else:
+			result.append(item.target)
 	return result
 
 

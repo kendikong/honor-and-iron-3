@@ -70,7 +70,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		&"lancer_brace": [GameEnums.EffectType.ADD_STATUS_SELF, 2],
 		&"lancer_harpoon_toss": [GameEnums.EffectType.DAMAGE, 1],
 		&"lancer_glorious_charge": [GameEnums.EffectType.DASH, 4],
-		&"lancer_pole_vault": [GameEnums.EffectType.TELEPORT_CASTER, 3],
+		&"lancer_pole_vault": [GameEnums.EffectType.JUMP_TO_BEHIND, 3],
 		&"lancer_line_breaker": [GameEnums.EffectType.DASH, 4],
 		&"lancer_spear_wall": [GameEnums.EffectType.CREATE_HAZARD, 2],
 		&"lancer_meteor_drop": [GameEnums.EffectType.TELEPORT_CASTER, 2],
@@ -320,7 +320,7 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 		failures,
 		"push_synergy/vault_modifier",
 		vault != null and _has_modifier(
-			vault.upgraded_effects, GameEnums.EffectType.TELEPORT_CASTER,
+			vault.upgraded_effects, GameEnums.EffectType.JUMP_TO_BEHIND,
 			"landing_adjacent_push",
 		),
 		"Pole Vault [+] must PUSH adjacent enemies on landing",
@@ -336,24 +336,31 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 	})
 	actor.passive_flags.erase("push_used_this_turn")
 	var landing_enemy := UnitState.create(
-		2, definition, GameEnums.Team.ENEMY, Vector2i(4, 3), {
+		2, definition, GameEnums.Team.ENEMY, Vector2i(3, 3), {
 			"active_abilities": [],
 			"active_passives": [],
 		}
 	)
-	board.units = [actor, landing_enemy]
+	var blocker := UnitState.create(
+		3, definition, GameEnums.Team.PLAYER, Vector2i(2, 2), {
+			"active_abilities": [],
+			"active_passives": [],
+		}
+	)
+	board.units = [actor, landing_enemy, blocker]
 	GridSystem.set_occupant(board, actor.position, actor.id)
 	GridSystem.set_occupant(board, landing_enemy.position, landing_enemy.id)
+	GridSystem.set_occupant(board, blocker.position, blocker.id)
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_ability(
-		actor.id, vault, Vector2i(4, 2), -1
+		actor.id, vault, Vector2i(3, 2), -1
 	))
 	var events: Array[SimEvent] = []
 	Simulator.simulate_player_turn(board, plan, events)
 	assert_true(
 		failures,
 		"push_synergy/vault_sim",
-		landing_enemy.position == Vector2i(4, 4),
+		landing_enemy.position == Vector2i(3, 4),
 		"Pole Vault [+] must push adjacent enemies on landing",
 	)
 
@@ -452,6 +459,9 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		Vector2i(2, 4),
 		{"active_abilities": [], "active_passives": []},
 	)
+	if ability.id == &"lancer_pole_vault":
+		ally.position = Vector2i(3, 3)
+		enemy.position = Vector2i(5, 3)
 	board.units = [actor, enemy, ally]
 	for unit: UnitState in board.units:
 		GridSystem.set_occupant(board, unit.position, unit.id)
@@ -472,8 +482,11 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 	if ability.id == &"lancer_spear_wall":
 		target_coord = Vector2i(4, 3)
 		target_id = -1
-	if ability.id == &"lancer_meteor_drop" or ability.id == &"lancer_pole_vault":
+	if ability.id == &"lancer_meteor_drop":
 		target_coord = Vector2i(3, 2)
+		target_id = -1
+	if ability.id == &"lancer_pole_vault":
+		target_coord = Vector2i(4, 3)
 		target_id = -1
 	if ability.id == &"lancer_piercing_charge":
 		target_coord = Vector2i(5, 3)
@@ -746,7 +759,10 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		var crash_enemy := _make_test_unit(
 		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 2), [], []
 		)
-		_add_test_units(crash_board, [crasher, crash_enemy])
+		var crash_blocker := _make_test_unit(
+		definition, 3, GameEnums.Team.PLAYER, Vector2i(2, 2), [], []
+		)
+		_add_test_units(crash_board, [crasher, crash_enemy, crash_blocker])
 		var crash_events: Array[SimEvent] = []
 		Simulator.simulate_player_turn(
 		crash_board,

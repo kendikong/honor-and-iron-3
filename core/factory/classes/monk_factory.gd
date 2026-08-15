@@ -282,14 +282,12 @@ static func _damage(
 
 static func _leap() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 2, 2, 2,
+		GameEnums.EffectType.JUMP_TO_BEHIND, 2, 2, 2,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.VAULT_OVER,
+		GameEnums.StatType.NONE, GameEnums.MotionMode.NONE,
 	)
-	module.legacy_modifiers["vault_over"] = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].max_range = 3
-	upgraded[0].legacy_modifiers["vault_over"] = true
 	upgraded[0].legacy_modifiers["leap_absorb_surface"] = true
 	return _movement(
 		&"monk_leap", "Leap", 2, module, upgraded,
@@ -484,17 +482,15 @@ static func _inner_fire() -> AbilityData:
 
 static func _void_step() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 3,
-		GameEnums.TargetingFlags.ALLY, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.ADJACENT_TO_TARGET,
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 3,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
+		GameEnums.StatType.NONE, GameEnums.MotionMode.NONE,
 	)
-	module.legacy_modifiers["warp_adjacent_to_target"] = true
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["warp_adjacent_to_target"] = true
 	upgraded[0].legacy_modifiers["landed_magic_bonus"] = 2
 	return _ability(
 		&"monk_void_step", "Void Step", [module], upgraded,
-		GameEnums.TargetingFlags.ALLY, [AbilityModuleBridge.TAG_MOVEMENT],
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_MOVEMENT],
 		"Teleport to an empty tile adjacent to an ally. [+] Landing grants +2 MAG for 1 turn.",
 	)
 

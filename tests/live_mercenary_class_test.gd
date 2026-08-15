@@ -125,7 +125,7 @@ func test_live_mercenary_every_skill(timeout := 300000) -> void:
 		session.set_all_skills_enabled(&"mercenary", true)
 		session.dummy_coords = [Vector2i(6, 5), Vector2i(7, 5)]
 		if ability_id == &"mercenary_acrobatic_vault":
-			session.dummy_coords = [Vector2i(6, 5), Vector2i(6, 7)]
+			session.dummy_coords = [Vector2i(5, 5), Vector2i(6, 7)]
 		session.unkillable_dummies = true
 		scene.apply_training_board()
 		await runner.simulate_frames(8, 16)
@@ -282,6 +282,8 @@ func _target_for(ability_id: StringName, ability: AbilityData) -> Vector2i:
 	if ability.targeting_flags & GameEnums.TargetingFlags.SELF:
 		return Vector2i(4, 5)
 	match ability_id:
+		&"mercenary_acrobatic_vault":
+			return Vector2i(6, 5)
 		&"mercenary_pullback":
 			return Vector2i(3, 5)
 		&"mercenary_tactical_retreat":

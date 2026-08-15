@@ -3271,6 +3271,16 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
+	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
+	if (
+		motion != null
+		and (
+			GameEnums.is_adjacent_destination(motion.primary_type)
+			or GameEnums.is_behind_destination(motion.primary_type)
+			or GameEnums.is_toward_destination(motion.primary_type)
+		)
+	):
+		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
 	if not _in_ability_range_of_coord(actor, cell):
 		return false
 	if ability.is_pre_move_planner():
@@ -3391,7 +3401,12 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
-	return actor != null and AbilitySystem.can_afford_run(actor)
+	if actor == null:
+		return false
+	var selected: AbilityData = _selected_ability_data(actor)
+	if selected != null and selected.is_pre_move_planner() and not selected.is_universal_run():
+		return false
+	return AbilitySystem.can_afford_run(actor)
 
 
 ## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
@@ -4348,10 +4363,18 @@ func _build_commit_slots_at_cell(
 
 	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental —
 	## do not divert into enemy/ally unit-target commit slots.
+	## First click on an ALLY-targeted dash (paired charger) still uses ally slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
 	if (
 		ability != null
 		and AbilitySystem.ability_has_dash(ability, actor)
+		and (
+			awaiting_tile_endpoint
+			or (
+				AbilitySystem.active_targeting_flags(actor, ability)
+				& GameEnums.TargetingFlags.ALLY
+			) == 0
+		)
 	):
 		awaiting_tile_endpoint = true
 	var target_pick_skill: bool = (
@@ -4466,6 +4489,7 @@ func _build_commit_slots_at_cell(
 				and move_timing >= 0
 				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 				and not _movement_skill_commits_tile_endpoint(actor, ability, cell)
+				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell)
 			):
 				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 				if not AbilitySystem.ability_has_movement_effect(ability):
@@ -4497,7 +4521,7 @@ func _build_commit_slots_at_cell(
 					slots, unit_id, actor, cell, ability, walk_waypoints,
 				)
 				return slots
-			if AbilitySystem.can_target_self(actor, ability):
+			if AbilitySystem.can_target_self(actor, ability) and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
 				if AbilitySystem.is_run_ability(ability):
 					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 						if effective_waypoints.is_empty():

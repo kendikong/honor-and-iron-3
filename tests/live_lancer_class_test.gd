@@ -185,13 +185,13 @@ const _CASES: Array[Dictionary] = [
 		"flags": GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.SINGLE,
 		"shape_size": 1,
-		"primary_type": GameEnums.EffectType.TELEPORT_CASTER,
+		"primary_type": GameEnums.EffectType.JUMP_TO_BEHIND,
 		"primary_amount": 3,
 		"observation": &"movement",
 		"target_kind": &"tile",
-		"target": Vector2i(6, 5),
-		"dummies": [Vector2i(5, 5)],
-		"upgrade_keys": [&"vault_over", &"landing_adjacent_push"],
+		"target": Vector2i(6, 4),
+		"dummies": [Vector2i(8, 8)],
+		"upgrade_keys": [&"vault_obstacle_or_gap_only", &"landing_adjacent_push"],
 	},
 	{
 		"id": &"lancer_line_breaker",
@@ -266,7 +266,7 @@ const _CASE_TARGETS: Dictionary = {
 	&"lancer_flanking_maneuver": Vector2i(3, 4),
 	&"lancer_brace": Vector2i(4, 5),
 	&"lancer_harpoon_toss": Vector2i(6, 2),
-	&"lancer_pole_vault": Vector2i(6, 5),
+	&"lancer_pole_vault": Vector2i(6, 4),
 	&"lancer_glorious_charge": Vector2i(9, 5),
 	&"lancer_line_breaker": Vector2i(8, 5),
 	&"lancer_spear_wall": Vector2i(4, 2),
@@ -275,7 +275,6 @@ const _CASE_TARGETS: Dictionary = {
 
 const _CASE_PREMOVE_RUN: Dictionary = {
 	&"lancer_piercing_charge": Vector2i(8, 7),
-	&"lancer_pole_vault": Vector2i(5, 4),
 	&"lancer_meteor_drop": Vector2i(2, 7),
 	&"lancer_line_breaker": Vector2i(5, 5),
 }
@@ -318,8 +317,8 @@ const _FIXTURES: Dictionary = {
 		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(9, 5)],
 	},
 	&"lancer_pole_vault": {
-		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],
-		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(5, 5)],
+		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 4)],
+		"dummies": [Vector2i(6, 2), Vector2i(4, 3), Vector2i(8, 8)],
 	},
 	&"lancer_glorious_charge": {
 		"extra_players": [Vector2i(2, 2), Vector2i(4, 4), Vector2i(5, 5)],

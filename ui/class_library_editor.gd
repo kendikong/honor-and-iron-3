@@ -1180,6 +1180,8 @@ func _show_passive_placeholder() -> void:
 
 
 func _rebuild_ability_detail_panes(ability: AbilityData) -> void:
+	if ability != null:
+		_field_tracks[ability.id] = []
 	_clear_pane(_data_vbox)
 	_clear_pane(_impl_vbox)
 	if ability == null:
@@ -1636,6 +1638,7 @@ func _normalize_editor_modules(ability: AbilityData) -> void:
 			continue
 		if (
 			module.primary_type == GameEnums.EffectType.MOVE
+			or GameEnums.is_path_motion(module.primary_type)
 			or module.primary_type == GameEnums.EffectType.DASH
 		):
 			module.min_range = maxi(1, module.min_range)
@@ -1652,6 +1655,7 @@ func _normalize_editor_modules(ability: AbilityData) -> void:
 			continue
 		if (
 			upgraded_module.primary_type == GameEnums.EffectType.MOVE
+			or GameEnums.is_path_motion(upgraded_module.primary_type)
 			or upgraded_module.primary_type == GameEnums.EffectType.DASH
 		):
 			upgraded_module.min_range = maxi(1, upgraded_module.min_range)
@@ -2259,9 +2263,9 @@ func _track_ability_field(ability: AbilityData, field: String, controls: Variant
 	var packed: Array[Control] = []
 	if controls is Array:
 		for ctrl: Variant in controls as Array:
-			if ctrl is Control:
+			if is_instance_valid(ctrl) and ctrl is Control:
 				packed.append(ctrl as Control)
-	elif controls is Control:
+	elif is_instance_valid(controls) and controls is Control:
 		packed.append(controls as Control)
 	rows.append({"field": field, "controls": packed})
 
@@ -2281,7 +2285,7 @@ func _ability_field_state(ability: AbilityData, field: String) -> FieldTrackStat
 
 func _apply_field_track_color(controls: Array, state: FieldTrackState) -> void:
 	for ctrl: Variant in controls:
-		if not (ctrl is Control):
+		if not is_instance_valid(ctrl) or not (ctrl is Control):
 			continue
 		var node: Control = ctrl as Control
 		if node is Label:
@@ -2656,6 +2660,8 @@ func _bind_multiline(parent: Control, label: String, value: String, setter: Call
 func _grey_row(row: Array[Control], greyed: bool) -> void:
 	var alpha: float = 0.35 if greyed else 1.0
 	for ctrl: Control in row:
+		if not is_instance_valid(ctrl):
+			continue
 		ctrl.modulate.a = alpha
 		if ctrl is BaseButton or ctrl is SpinBox or ctrl is OptionButton or ctrl is LineEdit:
 			ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE if greyed else Control.MOUSE_FILTER_STOP

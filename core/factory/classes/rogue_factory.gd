@@ -283,18 +283,17 @@ static func _slip_past() -> AbilityData:
 
 static func _shadow_step() -> AbilityData:
 	var base := _module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 4,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 4,
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.ADJACENT_TO_TARGET,
+		GameEnums.MotionMode.NONE,
 	)
 	base.legacy_modifiers["shadow_step"] = true
 	var upgraded := _clone([base])
-	upgraded[0].motion_mode = GameEnums.MotionMode.BEHIND_TARGET
 	upgraded[0].legacy_modifiers["behind_target_strength"] = 1
 	return _ability(
 		&"rogue_shadow_step", "Shadow Step", [base], upgraded,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_MOVEMENT, AbilityModuleBridge.TAG_POSITIONING],
 		"Teleport behind the target; gain +1 STR this turn.",
 	)

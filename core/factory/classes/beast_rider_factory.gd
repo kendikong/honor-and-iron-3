@@ -265,14 +265,13 @@ static func _reposition() -> AbilityData:
 
 static func _pounce() -> AbilityData:
 	var move := _module(
-		GameEnums.EffectType.MOVE, 3, 1, 3,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.MOVE_TOWARD, 3, 1, 3,
+		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
+		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.legacy_modifiers["pounce_land_adjacent"] = true
-	move.legacy_modifiers["move_to_target_adjacent"] = true
 	var attack := _module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 1,
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
@@ -285,7 +284,7 @@ static func _pounce() -> AbilityData:
 	upgraded[1].legacy_modifiers["landing_push"] = 1
 	return _ability(
 		&"beast_pounce", "Pounce", modules, upgraded,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Landing applies PUSH 1.",
 	)

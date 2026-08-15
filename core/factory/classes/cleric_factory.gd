@@ -33,12 +33,12 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	))
 
 	var guardian_module := DataLibrary._module(
-		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 5, GameEnums.TargetingFlags.ALLY,
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 5,
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.ADJACENT_TO_TARGET,
+		GameEnums.MotionMode.NONE,
 	)
 	guardian_module.legacy_modifiers["cost_all_movement"] = true
-	guardian_module.legacy_modifiers["warp_adjacent_to_target"] = true
 	var guardian_upgraded := DataLibrary._duplicate_modules([guardian_module])
 	guardian_upgraded[0].max_range = 999
 	guardian_upgraded[0].legacy_modifiers["cleanse_target"] = true
@@ -46,7 +46,8 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		&"cleric_guardian_step", "Guardian Step", [guardian_module],
 		guardian_upgraded, 0, GameEnums.PlannerGroup.PRE_MOVE,
 		GameEnums.CostResource.MP, [AbilityModuleBridge.TAG_POSITIONING],
-		"GLOBAL range; cleanse the target ally.", GameEnums.TargetingFlags.ALLY,
+		"GLOBAL range; cleanse the target ally.",
+		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE,
 	)
 	def.abilities.append(guardian_step)
 

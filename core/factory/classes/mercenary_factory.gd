@@ -335,19 +335,18 @@ static func _attack(
 
 static func _swift_strike() -> AbilityData:
 	var move := _module(
-		GameEnums.EffectType.MOVE,
+		GameEnums.EffectType.MOVE_TOWARD,
 		2,
 		1,
 		2,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
+		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.legacy_modifiers["swift_strike"] = true
-	move.legacy_modifiers["move_to_target_adjacent"] = true
 	var strike := _module(
 		GameEnums.EffectType.DAMAGE,
 		2,
@@ -365,7 +364,7 @@ static func _swift_strike() -> AbilityData:
 		"Swift Strike",
 		1,
 		modules,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Gain 1 AP if the target was already damaged.",
 		upgraded,
@@ -553,7 +552,7 @@ static func _tactical_retreat() -> AbilityData:
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.BACKWARDS,
+		GameEnums.MotionMode.NONE,
 	)
 	module.legacy_modifiers["smoke_on_start"] = true
 	var upgraded := _clone_modules([module])
@@ -642,17 +641,15 @@ static func _hamstring() -> AbilityData:
 
 static func _acrobatic_vault() -> AbilityData:
 	var vault := _module(
-		GameEnums.EffectType.TELEPORT_CASTER,
+		GameEnums.EffectType.JUMP_TO_BEHIND,
 		0,
 		1,
 		2,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
 	)
-	vault.legacy_modifiers["land_opposite_target"] = true
-	vault.legacy_modifiers["vault_over"] = true
 	var strike := _module(
 		GameEnums.EffectType.DAMAGE,
 		1,
@@ -660,8 +657,6 @@ static func _acrobatic_vault() -> AbilityData:
 		2,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	strike.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	strike.aim_module_index = 0
 	var modules: Array[AbilityModule] = [vault, strike]
 	var upgraded := _clone_modules(modules)
 	upgraded[1].legacy_modifiers["pierce"] = true
@@ -670,7 +665,7 @@ static func _acrobatic_vault() -> AbilityData:
 		"Acrobatic Vault",
 		1,
 		modules,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Jump over the target to the opposite empty tile; attack gains PIERCE.",
 		upgraded,

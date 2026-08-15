@@ -446,6 +446,9 @@ static func _configure_sim_target(
 	var target_coord := _target_for(ability_id)
 	var target_id := -1
 	match ability_id:
+		&"monk_void_step":
+			_place_ally(board, 2, monk_pos + Vector2i(2, 0))
+			target_coord = monk_pos + Vector2i(1, 0)
 		&"monk_leap":
 			_place_dummy(board, 8, monk_pos + Vector2i.RIGHT)
 			target_coord = monk_pos + Vector2i(2, 0)

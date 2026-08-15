@@ -506,8 +506,8 @@ static func _configure_sim_target(
 			target_id = 3
 		&"rogue_shadow_step":
 			_place_dummy(board, 3, rogue_pos + Vector2i(2, 0))
-			target_coord = rogue_pos + Vector2i(2, 0)
-			target_id = 3
+			target_coord = rogue_pos + Vector2i(1, 0)
+			target_id = -1
 		&"rogue_evasive_strike":
 			var move_coord := rogue_pos + Vector2i(1, 0)
 			var enemy_coord := rogue_pos + Vector2i(2, 0)
@@ -600,7 +600,7 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_shadow_step/behind_motion",
-				upgraded[0].motion_mode == GameEnums.MotionMode.BEHIND_TARGET
+				upgraded[0].primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
 					and int(upgraded[0].legacy_modifiers.get("behind_target_strength", 0)) >= 1,
 			)
 		&"rogue_smoke_bomb":

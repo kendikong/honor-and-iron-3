@@ -48,7 +48,11 @@ static func get_reachable_tiles(
 
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			var step_cost: int = step_mp_cost(board, next, unit)
+			var step_cost: int = (
+				1
+				if AbilitySystem.ability_uses_jump_path(ability, unit)
+				else step_mp_cost(board, next, unit)
+			)
 			var new_cost = cost_so_far[current] + step_cost
 			if new_cost > max_steps:
 				continue
@@ -114,7 +118,11 @@ static func find_path(
 			break
 		for dir in GridSystem.DIRECTIONS:
 			var next: Vector2i = current + dir
-			var step_cost: int = step_mp_cost(board, next, unit)
+			var step_cost: int = (
+				1
+				if AbilitySystem.ability_uses_jump_path(ability, unit)
+				else step_mp_cost(board, next, unit)
+			)
 			var new_cost: int = int(cost_so_far[current]) + step_cost
 			if new_cost > max_steps:
 				continue
@@ -138,7 +146,11 @@ static func find_path(
 	var path_cost: int = 0
 	var trimmed: Array[Vector2i] = []
 	for step_coord: Vector2i in path:
-		var step_cost_path: int = step_mp_cost(board, step_coord, unit)
+		var step_cost_path: int = (
+			1
+			if AbilitySystem.ability_uses_jump_path(ability, unit)
+			else step_mp_cost(board, step_coord, unit)
+		)
 		if path_cost + step_cost_path > max_steps:
 			break
 		path_cost += step_cost_path
@@ -333,6 +345,10 @@ static func can_pass_through_enemy(unit: UnitState, ability: AbilityData = null)
 
 
 static func _is_walkable_for(board: BoardState, coord: Vector2i, unit: UnitState, ability: AbilityData = null) -> bool:
+	if AbilitySystem.ability_uses_jump_path(ability, unit):
+		if not GridSystem.is_in_bounds(board, coord) or GridSystem.is_wall(board, coord):
+			return false
+		return true
 	if not GridSystem.is_in_bounds(board, coord) or GridSystem.is_wall(board, coord):
 		return false
 	var tile := board.get_tile(coord)
@@ -395,7 +411,10 @@ static func execute_skill_walk(
 ) -> void:
 	if unit == null or not unit.is_alive() or ability == null:
 		return
-	if _has_modifier(effects, &"move_to_target_adjacent"):
+	if (
+		_has_modifier(effects, &"move_to_target_adjacent")
+		or GameEnums.is_toward_destination(AbilitySystem._motion_primary_type(ability, unit))
+	):
 		var occupied := board.get_unit_at(goal)
 		if occupied != null and occupied.id != unit.id:
 			var approach := PhysicsSystem.cardinal_from_to(unit.position, occupied.position)
@@ -421,12 +440,12 @@ static func execute_skill_walk(
 	var trample_atk: int = int(mods.get("trample_atk", 0))
 	var bulldoze: int = int(mods.get("bulldoze", 0))
 	var trample_push: int = int(mods.get("push", 0))
-	var has_move := false
+	var has_path := false
 	for eff in effects:
-		if eff.type == GameEnums.EffectType.MOVE:
-			has_move = true
+		if eff != null and GameEnums.is_path_motion(eff.type):
+			has_path = true
 			break
-	if trample_atk <= 0 and bulldoze <= 0 and not has_move:
+	if trample_atk <= 0 and bulldoze <= 0 and not has_path:
 		return
 	var move_cost: int = move_cost_for(unit)
 	var mt: GameEnums.MovementType = (
@@ -466,6 +485,15 @@ static func execute_skill_walk(
 			exit_dir = PhysicsSystem.cardinal_from_to(step, path[step_index + 1])
 		var pre_trample_ev_count: int = events.size()
 		var crossed_enemy := board.get_unit_at(step)
+		if (
+			AbilitySystem.ability_uses_jump_path(ability, unit)
+			and not is_final_step
+			and crossed_enemy != null
+			and crossed_enemy.id != unit.id
+		):
+			trampled_restore[step] = crossed_enemy.id
+			GridSystem.set_occupant(board, step, -1)
+			crossed_enemy = null
 		if crossed_enemy != null and crossed_enemy.id != unit.id:
 			unit.passive_flags["passed_through_occupied"] = true
 		if (

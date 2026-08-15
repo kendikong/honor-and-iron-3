@@ -118,8 +118,181 @@ static func ability_allows_occupied_landing(
 		return true
 	if has_pass_through_effects(ability, actor):
 		return true
+	return false
+
+
+static func ability_uses_jump_path(ability: AbilityData, actor: UnitState = null) -> bool:
 	var module: AbilityModule = active_motion_module(actor, ability)
-	return module != null and module.motion_mode == GameEnums.MotionMode.INTO_OCCUPIED_PUSH
+	return module != null and GameEnums.is_jump_motion(module.primary_type)
+
+
+static func _motion_primary_type(ability: AbilityData, actor: UnitState = null) -> int:
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module == null:
+		return GameEnums.EffectType.DAMAGE
+	return module.primary_type
+
+
+static func _is_skill_path_walk(ability: AbilityData, actor: UnitState = null) -> bool:
+	if ability == null or ability_has_dash(ability, actor):
+		return false
+	if ability_has_post_attack_move(ability, actor):
+		return false
+	if ability_has_modifier(ability, &"relocate_target", actor):
+		return false
+	if ability_has_modifier(ability, &"relocate_subject_only", actor):
+		return false
+	return GameEnums.is_path_motion(_motion_primary_type(ability, actor))
+
+
+static func _unit_matches_motion_anchor(
+	actor: UnitState,
+	ability: AbilityData,
+	unit: UnitState,
+) -> bool:
+	if actor == null or ability == null or unit == null or not unit.is_alive() or unit.id == actor.id:
+		return false
+	var flags: int = ability.targeting_flags
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module != null:
+		flags = module.targeting_flags
+	if unit.team == actor.team:
+		return (flags & GameEnums.TargetingFlags.ALLY) != 0
+	return (flags & GameEnums.TargetingFlags.ENEMY) != 0
+
+
+static func _is_behind_blocker(
+	board: BoardState,
+	coord: Vector2i,
+	actor: UnitState,
+	allow_enemy: bool,
+) -> bool:
+	if board == null or not GridSystem.is_in_bounds(board, coord) or GridSystem.is_wall(board, coord):
+		return false
+	var occupant: UnitState = board.get_unit_at(coord)
+	if occupant != null and occupant.is_alive():
+		if occupant.team != actor.team and not allow_enemy:
+			return false
+		return true
+	var tile: TileState = board.get_tile(coord)
+	if tile != null and tile.definition != null and tile.definition.blocks_movement:
+		return true
+	return false
+
+
+static func motion_landing_legal(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	landing: Vector2i,
+) -> bool:
+	if board == null or actor == null or ability == null:
+		return false
+	if not GridSystem.is_in_bounds(board, landing) or GridSystem.is_wall(board, landing):
+		return false
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module == null:
+		return true
+	var primary: int = module.primary_type
+	if GameEnums.is_toward_destination(primary):
+		var target: UnitState = board.get_unit_at(landing)
+		if target == null:
+			return false
+		var dist: int = GridSystem.manhattan(actor.position, landing)
+		return (
+			_unit_matches_motion_anchor(actor, ability, target)
+			and dist >= module.min_range
+			and dist <= module.max_range
+		)
+	if GridSystem.is_occupied(board, landing) and not ability_allows_occupied_landing(ability, actor):
+		return false
+	if GameEnums.is_adjacent_destination(primary):
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var anchor_pos: Vector2i = landing + dir
+			var anchor: UnitState = board.get_unit_at(anchor_pos)
+			if not _unit_matches_motion_anchor(actor, ability, anchor):
+				continue
+			var dist: int = GridSystem.manhattan(actor.position, anchor.position)
+			if dist >= module.min_range and dist <= module.max_range:
+				return true
+		return false
+	if GameEnums.is_behind_destination(primary):
+		var allow_enemy: bool = not bool(module.legacy_modifiers.get("vault_obstacle_or_gap_only", false))
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var blocker: Vector2i = actor.position + dir
+			var far: Vector2i = actor.position + dir * 2
+			if far != landing:
+				continue
+			var dist: int = GridSystem.manhattan(actor.position, landing)
+			if dist < module.min_range or dist > module.max_range:
+				continue
+			if _is_behind_blocker(board, blocker, actor, allow_enemy):
+				return true
+		return false
+	return true
+
+
+static func motion_legal_landing_tiles(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if board == null or actor == null or ability == null:
+		return out
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var cell := Vector2i(x, y)
+			if motion_landing_legal(board, actor, ability, cell):
+				out.append(cell)
+	return out
+
+
+static func _queue_landing_adjacent_pushes(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+	effect: EffectData,
+) -> void:
+	if board == null or actor == null or action == null or effect == null:
+		return
+	var landing_push: int = int(effect.modifiers.get("landing_adjacent_push", 0))
+	if landing_push <= 0 and actor.passive_flags.get("push_used_this_turn", false):
+		landing_push = int(effect.modifiers.get("landing_adjacent_push_if_push_used", 0))
+	if landing_push > 0:
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var adjacent := board.get_unit_at(actor.position + dir)
+			if adjacent == null or adjacent.team == actor.team:
+				continue
+			board.pending_pushes.append({
+				"type": "push",
+				"target_id": adjacent.id,
+				"dir": dir,
+				"amount": landing_push,
+				"actor_id": actor.id,
+				"ability_id": action.ability.id,
+				"stagger_on_collision": effect.modifiers.get(
+					"landing_adjacent_push_stagger", false
+				),
+			})
+	for passive: PassiveData in actor.active_passives:
+		if passive == null or not passive.modifiers.has("landing_adjacent_push"):
+			continue
+		var crash_push: int = int(passive.modifiers["landing_adjacent_push"])
+		for dir: Vector2i in GridSystem.DIRECTIONS:
+			var adjacent := board.get_unit_at(actor.position + dir)
+			if adjacent == null or adjacent.team == actor.team:
+				continue
+			board.pending_pushes.append({
+				"type": "push",
+				"target_id": adjacent.id,
+				"dir": dir,
+				"amount": crash_push,
+				"actor_id": actor.id,
+				"ability_id": action.ability.id,
+				"stagger_on_collision": actor.is_passive_upgraded(passive.id)
+				and passive.modifiers.has("upgraded_landing_collision_stagger"),
+			})
 
 
 static func _occupied_push_target_valid(
@@ -263,6 +436,7 @@ static func planning_max_target_distance(actor: UnitState, ability: AbilityData)
 		return 0
 	var max_range: int = actor.get_ability_range(ability) if actor != null else ability.range_tiles
 	if actor != null:
+		max_range = maxi(max_range, active_motion_max_range(actor, ability))
 		if ability_has_dash(ability, actor):
 			max_range = maxi(max_range, dash_steps(ability, actor))
 		var move_steps: int = (
@@ -611,9 +785,13 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		)
 		if legacy_move_range > 0:
 			max_range = maxi(max_range, legacy_move_range)
-	if motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE:
+	if motion_module != null and GameEnums.is_path_motion(motion_module.primary_type):
 		max_range = maxi(max_range, planning_max_target_distance(actor, ability))
-	if dist > max_range:
+	var skip_landing_range: bool = (
+		motion_module != null
+		and GameEnums.is_adjacent_destination(motion_module.primary_type)
+	)
+	if not skip_landing_range and dist > max_range:
 		var mark_target: UnitState = (
 			board.get_unit_by_id(action.target_unit_id)
 			if action.target_unit_id >= 0
@@ -757,19 +935,17 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var has_displacement := has_displacement_effects(ability, actor)
 		
 	var is_dash := ability_has_dash(ability, actor)
-	var is_move := (
-		(
-			(motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE)
-			or (
-				motion_module == null
-				and not has_authored_modules
-				and effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
-			)
+	var is_move := _is_skill_path_walk(ability, actor)
+	if (
+		motion_module != null
+		and (
+			GameEnums.is_adjacent_destination(motion_module.primary_type)
+			or GameEnums.is_behind_destination(motion_module.primary_type)
+			or GameEnums.is_toward_destination(motion_module.primary_type)
 		)
-		and not ability_has_post_attack_move(ability, actor)
-		and not ability_has_modifier(ability, &"relocate_target", actor)
-		and not ability_has_modifier(ability, &"relocate_subject_only", actor)
-	)
+		and not motion_landing_legal(board, actor, ability, action.target_coord)
+	):
+		return false
 	var requires_l_shape: bool = _ability_has_modifier(actor, ability, &"l_shape_move")
 	if requires_l_shape and action.target_coord != actor.position:
 		var l_shape_budget: int = (
@@ -822,12 +998,16 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				return false
 			var walk_distance: int = GridSystem.manhattan(actor.position, action.target_coord)
 			var max_walk_target: int = walk_steps
-			if motion_module != null and motion_module.primary_type == GameEnums.EffectType.MOVE:
+			if motion_module != null and GameEnums.is_path_motion(motion_module.primary_type):
 				max_walk_target = maxi(max_walk_target, planning_max_target_distance(actor, ability))
 			if has_authored_modules and not active_motion_range_valid(actor, ability):
 				return false
-			if walk_distance < walk_min or walk_distance > max_walk_target:
-				return false
+			if (
+				motion_module == null
+				or not GameEnums.is_adjacent_destination(motion_module.primary_type)
+			):
+				if walk_distance < walk_min or walk_distance > max_walk_target:
+					return false
 				
 	if is_move or is_dash:
 		if (
@@ -835,6 +1015,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			and not has_pass_through_effects(ability, actor)
 			and not _ability_has_modifier(actor, ability, &"target_after_move_adjacent")
 			and not _ability_has_modifier(actor, ability, &"move_to_target_adjacent")
+			and not (
+				motion_module != null
+				and GameEnums.is_toward_destination(motion_module.primary_type)
+			)
 			and not _ability_has_modifier(actor, ability, &"land_opposite_target")
 			and not _ability_has_modifier(actor, ability, &"paired_ally_charge")
 			and not _ability_has_modifier(actor, ability, &"stop_adjacent_first_enemy")
@@ -1407,7 +1591,7 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			]:
 				return true
-			if module.primary_type == GameEnums.EffectType.TELEPORT_CASTER:
+			if GameEnums.is_teleport_motion(module.primary_type):
 				if (
 					module.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
 					or bool(module.legacy_modifiers.get("airlift_keep_caster", false))
@@ -1416,7 +1600,7 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 					continue
 				return true
 			if (
-				module.primary_type == GameEnums.EffectType.MOVE
+				GameEnums.is_path_motion(module.primary_type)
 				and not AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
 				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_target")
 				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_subject_only")
@@ -1429,16 +1613,10 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
 			return true
-		if (
-			eff.type == GameEnums.EffectType.TELEPORT_CASTER
-			and not eff.modifiers.get("airlift_keep_caster", false)
-			and not eff.modifiers.get("reposition_opposite_side", false)
-			and int(eff.modifiers.get("motion_mode", GameEnums.MotionMode.NONE))
-				!= GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
-		):
+		if GameEnums.is_teleport_motion(eff.type):
 			return true
 		if (
-			eff.type == GameEnums.EffectType.MOVE
+			GameEnums.is_path_motion(eff.type)
 			and not eff.modifiers.has("post_attack_move")
 			and not eff.modifiers.has("relocate_target")
 			and not eff.modifiers.has("relocate_subject_only")
@@ -1475,12 +1653,12 @@ static func ability_has_teleport(ability: AbilityData, actor: UnitState = null) 
 		return false
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
-		return AbilityModuleBridge.modules_have_effect(
-			modules,
-			GameEnums.EffectType.TELEPORT_CASTER,
-		)
+		for module: AbilityModule in modules:
+			if module != null and GameEnums.is_teleport_motion(module.primary_type):
+				return true
+		return false
 	for eff: EffectData in legacy_effects_for(actor, ability):
-		if eff != null and eff.type == GameEnums.EffectType.TELEPORT_CASTER:
+		if eff != null and GameEnums.is_teleport_motion(eff.type):
 			return true
 	return false
 
@@ -1532,26 +1710,28 @@ static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> 
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		for module: AbilityModule in modules:
-			if module != null and module.primary_type in [
-				GameEnums.EffectType.DASH,
-				GameEnums.EffectType.MOVE,
-				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-			]:
+			if module != null and (
+				module.primary_type == GameEnums.EffectType.DASH
+				or module.primary_type == GameEnums.EffectType.MOVE_INTO_AND_PUSH
+				or GameEnums.is_path_motion(module.primary_type)
+			):
 				return true
 			if (
 				module != null
-				and module.primary_type == GameEnums.EffectType.TELEPORT_CASTER
+				and GameEnums.is_teleport_motion(module.primary_type)
 				and not AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
 			):
 				return true
 		return false
 	for eff: EffectData in legacy_effects_for(actor, ability):
-		if eff.type in [
-			GameEnums.EffectType.DASH,
-			GameEnums.EffectType.MOVE,
-			GameEnums.EffectType.TELEPORT_CASTER,
-			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-		]:
+		if (
+			eff.type in [
+				GameEnums.EffectType.DASH,
+				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+			]
+			or GameEnums.is_path_motion(eff.type)
+			or GameEnums.is_teleport_motion(eff.type)
+		):
 			return true
 	return false
 
@@ -1983,6 +2163,13 @@ static func planning_threat_tiles(
 					return GridSystem.manhattan(origin, cell) >= motion.min_range
 			)
 		return dash_tiles
+	var dest_motion: AbilityModule = active_motion_module(unit, ability)
+	if dest_motion != null and (
+		GameEnums.is_adjacent_destination(dest_motion.primary_type)
+		or GameEnums.is_behind_destination(dest_motion.primary_type)
+		or GameEnums.is_toward_destination(dest_motion.primary_type)
+	):
+		return motion_legal_landing_tiles(board, unit, ability)
 	var eff_range: int = active_range_tiles(unit, ability)
 	if eff_range <= 0:
 		var shape: GameEnums.TargetShape = active_target_shape(unit, ability)
@@ -2583,12 +2770,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var will_skill_walk := false
 	if target_coord != actor.position:
-		var is_move_check := (
-			active_motion_module(actor, ability) != null
-			and active_motion_module(actor, ability).primary_type == GameEnums.EffectType.MOVE
-		)
 		will_skill_walk = (
-			(has_pass_through_effects(ability, actor) or is_move_check)
+			(has_pass_through_effects(ability, actor) or _is_skill_path_walk(ability, actor))
 			and not ability_has_dash(ability, actor)
 		)
 
@@ -2658,22 +2841,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				)
 		actor.passive_flags["__cast_cc_snapshot"] = cast_cc_snapshot
 
-	var is_move := (
-		(
-			(
-				active_motion_module(actor, ability) != null
-				and active_motion_module(actor, ability).primary_type == GameEnums.EffectType.MOVE
-			)
-			or (
-				active_motion_module(actor, ability) == null
-				and active_modules_for(actor, ability).is_empty()
-				and effect_amount(ability, GameEnums.EffectType.MOVE, actor) > 0
-			)
-		)
-		and not ability_has_post_attack_move(ability, actor)
-		and not ability_has_modifier(ability, &"relocate_target", actor)
-		and not ability_has_modifier(ability, &"relocate_subject_only", actor)
-	)
+	var is_move := _is_skill_path_walk(ability, actor)
 	if (has_pass_through_effects(ability, actor) or is_move) and not ability_has_dash(ability, actor) and target_coord != actor.position:
 		var motion_module: AbilityModule = active_motion_module(actor, ability)
 		var walk_steps: int = (
@@ -2732,6 +2900,12 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		MovementSystem.execute_skill_walk(
 			board, actor, walk_goal, action.waypoints, ability, events, effects_to_apply, walk_steps
 		)
+		if ability_uses_jump_path(ability, actor):
+			actor.passive_flags["jumped_or_teleported_this_turn"] = true
+		for walked: EffectData in effects_to_apply:
+			if walked != null and GameEnums.is_path_motion(walked.type):
+				_queue_landing_adjacent_pushes(board, actor, action, walked)
+				break
 		
 		if ghost_status != null:
 			actor.active_statuses.erase(ghost_status)
@@ -2852,7 +3026,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			)
 		if (
 			effect_module != null
-			and effect.type == GameEnums.EffectType.MOVE
+			and 			GameEnums.is_path_motion(effect.type)
 			and (
 				effect_module.gate != GameEnums.ModuleGate.ALWAYS
 				or effect_module.execution_phase == GameEnums.ModulePhase.ON_POST
@@ -2879,7 +3053,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				)
 			effect_index += 1
 			continue
-		if effect.type == GameEnums.EffectType.TELEPORT_CASTER:
+		if GameEnums.is_teleport_motion(effect.type):
 			var keep_caster: bool = (
 				bool(effect.modifiers.get("airlift_keep_caster", false))
 				or (
@@ -2892,7 +3066,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				effect_index += 1
 				continue
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
-		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_TO_BEHIND, GameEnums.EffectType.TELEPORT_TOWARD, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
 			if effect.modifiers.has("paired_ally_charge"):
 				if effect.type == GameEnums.EffectType.DASH:
 					resolve_pending_pushes(board, events)
@@ -3355,6 +3529,17 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		var kidnap_target := board.get_unit_by_id(action.target_unit_id)
 		if kidnap_target != null:
 			target = kidnap_target
+	if (
+		target == null
+		or target == actor
+	) and (
+		effect != null
+		and effect.type == GameEnums.EffectType.DAMAGE
+		and action != null
+		and GameEnums.is_behind_destination(_motion_primary_type(action.ability, actor))
+	):
+		var jumped: Vector2i = actor.position - PhysicsSystem.facing_to_vector(actor.facing)
+		target = board.get_unit_at(jumped)
 	if target != null and actor != target and actor != null:
 		var dist = GridSystem.manhattan(actor.position, target.position)
 		var is_ranged = dist > 1
@@ -5029,6 +5214,9 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
 			# Movement modifiers — applied during dash or execute_pass_through_walk, not per-tile.
 			pass
+		GameEnums.EffectType.JUMP, GameEnums.EffectType.JUMP_ADJACENT_TO, GameEnums.EffectType.JUMP_TO_BEHIND, GameEnums.EffectType.JUMP_TOWARD, GameEnums.EffectType.MOVE_ADJACENT_TO, GameEnums.EffectType.MOVE_TO_BEHIND, GameEnums.EffectType.MOVE_TOWARD:
+			# Path motion already resolved by execute_skill_walk.
+			pass
 		GameEnums.EffectType.DESTROY_OBSTACLE:
 			if target != null and target.definition.is_construct:
 				CombatSystem.deal_damage(
@@ -5076,7 +5264,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					"unit": subject.id, "to": relocate_dest,
 				}))
 				return
-		GameEnums.EffectType.TELEPORT_CASTER:
+		GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_TO_BEHIND, GameEnums.EffectType.TELEPORT_TOWARD:
 			if effect.modifiers.get("reposition_opposite_side", false):
 				return
 			if (
@@ -5085,7 +5273,30 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			):
 				return
 			var destination := tile_coord
-			if effect.modifiers.get("land_opposite_target", false):
+			if (
+				GameEnums.is_adjacent_destination(effect.type)
+				or GameEnums.is_behind_destination(effect.type)
+			):
+				if not motion_landing_legal(board, actor, action.ability, destination):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "teleport_no_landing",
+					}))
+					return
+			elif GameEnums.is_toward_destination(effect.type):
+				if target == null:
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "teleport_no_landing",
+					}))
+					return
+				destination = target.position - PhysicsSystem.cardinal_from_to(actor.position, target.position)
+				if destination == target.position or GridSystem.is_occupied(board, destination):
+					destination = _first_empty_adjacent_cell(board, target.position)
+				if destination == Vector2i(-1, -1):
+					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+						"actor": actor.id, "reason": "teleport_no_landing",
+					}))
+					return
+			elif effect.modifiers.get("land_opposite_target", false):
 				if target == null:
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": actor.id, "reason": "vault_missing_target",
@@ -5171,45 +5382,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					)
 				if effect.modifiers.has("cleanse_target"):
 					cleanse_unit(target, events)
-				var landing_push: int = int(effect.modifiers.get("landing_adjacent_push", 0))
-				if landing_push <= 0 and actor.passive_flags.get("push_used_this_turn", false):
-					landing_push = int(
-						effect.modifiers.get("landing_adjacent_push_if_push_used", 0)
-					)
-				if landing_push > 0:
-					for dir: Vector2i in GridSystem.DIRECTIONS:
-						var adjacent := board.get_unit_at(actor.position + dir)
-						if adjacent == null or adjacent.team == actor.team:
-							continue
-						board.pending_pushes.append({
-							"type": "push",
-							"target_id": adjacent.id,
-							"dir": dir,
-							"amount": landing_push,
-							"actor_id": actor.id,
-							"ability_id": action.ability.id,
-							"stagger_on_collision": effect.modifiers.get(
-								"landing_adjacent_push_stagger", false
-							),
-						})
-				for passive: PassiveData in actor.active_passives:
-					if passive == null or not passive.modifiers.has("landing_adjacent_push"):
-						continue
-					var crash_push: int = int(passive.modifiers["landing_adjacent_push"])
-					for dir: Vector2i in GridSystem.DIRECTIONS:
-						var adjacent := board.get_unit_at(actor.position + dir)
-						if adjacent == null or adjacent.team == actor.team:
-							continue
-						board.pending_pushes.append({
-							"type": "push",
-							"target_id": adjacent.id,
-							"dir": dir,
-							"amount": crash_push,
-							"actor_id": actor.id,
-							"ability_id": action.ability.id,
-							"stagger_on_collision": actor.is_passive_upgraded(passive.id)
-							and passive.modifiers.has("upgraded_landing_collision_stagger"),
-						})
+				_queue_landing_adjacent_pushes(board, actor, action, effect)
 				RogueSystems.after_teleport(board, actor, target, action.ability, events)
 		GameEnums.EffectType.CHANGE_TERRAIN:
 			# Amount parameter can be used to select terrain type, for now just hardcode cracked

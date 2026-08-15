@@ -7,17 +7,24 @@ extends RefCounted
 
 
 static func _is_motion_type(effect_type: GameEnums.EffectType) -> bool:
-	return effect_type in [
-		GameEnums.EffectType.MOVE,
-		GameEnums.EffectType.DASH,
-		GameEnums.EffectType.TELEPORT_CASTER,
-		GameEnums.EffectType.SWAP,
-		GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-	]
+	return (
+		GameEnums.is_walk_motion(effect_type)
+		or GameEnums.is_jump_motion(effect_type)
+		or GameEnums.is_teleport_motion(effect_type)
+		or effect_type == GameEnums.EffectType.DASH
+		or effect_type == GameEnums.EffectType.SWAP
+		or effect_type == GameEnums.EffectType.MOVE_INTO_AND_PUSH
+	)
 
 
 static func module_uses_motion_mode(effect_type: GameEnums.EffectType) -> bool:
-	return _is_motion_type(effect_type)
+	## Dest EffectTypes (MOVE/JUMP/TELEPORT and their landing variants) own destination.
+	## DASH, SWAP, and occupy-push still use MotionMode.
+	return effect_type in [
+		GameEnums.EffectType.DASH,
+		GameEnums.EffectType.SWAP,
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+	]
 
 
 static func effect_type_can_deal_damage(effect_type: GameEnums.EffectType) -> bool:
