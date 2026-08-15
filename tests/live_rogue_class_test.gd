@@ -526,7 +526,10 @@ func _premove_cell_for(
 	actor_cell: Vector2i,
 	target: Vector2i,
 ) -> Vector2i:
-	if ability_id in [&"rogue_smoke_bomb", &"rogue_shadow_swap", &"rogue_shadow_step"]:
+	if ability_id in [
+		&"rogue_smoke_bomb", &"rogue_shadow_swap", &"rogue_shadow_step",
+		&"rogue_grappling_hook",
+	]:
 		return Vector2i(-999999, -999999)
 	if GridSystem.manhattan(actor_cell, target) > 1:
 		return actor_cell + Vector2i(

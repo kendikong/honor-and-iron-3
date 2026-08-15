@@ -612,8 +612,20 @@ static func _make_modular_ability(
 	ability.effects = AbilityModuleBridge.compile_modules_to_effects(ability.modules)
 	ability.sync_legacy_targeting()
 	for module: AbilityModule in modules:
-		if module != null and module.scaling_stat != GameEnums.StatType.NONE:
+		if module == null:
+			continue
+		if module.scaling_stat != GameEnums.StatType.NONE:
 			ability.scaling_stat = module.scaling_stat
+			break
+		for layer: AbilityLayer in module.layers:
+			if (
+				layer != null
+				and layer.effect != null
+				and layer.effect.scaling_stat != GameEnums.StatType.NONE
+			):
+				ability.scaling_stat = layer.effect.scaling_stat
+				break
+		if ability.scaling_stat != GameEnums.StatType.NONE:
 			break
 	return ability
 

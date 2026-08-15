@@ -28,6 +28,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_planning_display_mp_left,
 		_test_undo_movement_action_preserves_premove,
 		_test_swap_undo_cascades_all_plans_after,
+		_test_swap_displacement_stays_undoable,
 		_test_swap_refresh_updates_live_board,
 		_test_walk_then_swap_commit_appends_skill,
 		_test_swap_ally_out_of_range_click_parity,
@@ -1536,6 +1537,38 @@ static func _test_swap_undo_cascades_all_plans_after(failures: Array[String]) ->
 		failures.append(
 			"PlanningInputTest: swap undo must clear all action entries after swap (both players)",
 		)
+
+
+static func _test_swap_displacement_stays_undoable(failures: Array[String]) -> void:
+	var director := _new_director()
+	var swap_events: Array[SimEvent] = []
+	swap_events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+		"unit": 1,
+		"from": Vector2i(3, 5),
+		"to": Vector2i(4, 5),
+		"distance": 1,
+		"swap_displacement": true,
+	}))
+	swap_events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+		"unit": 2,
+		"from": Vector2i(4, 5),
+		"to": Vector2i(3, 5),
+		"distance": 1,
+		"swap_displacement": true,
+	}))
+	if director._move_has_commit_side_effects(swap_events):
+		failures.append(
+			"PlanningInputTest: planned SWAP displacement must stay undoable",
+		)
+	var trample_events: Array[SimEvent] = []
+	trample_events.append(SimEvent.make(GameEnums.SimEventType.TRAMPLE_HIT, {
+		"target": 3,
+	}))
+	if not director._move_has_commit_side_effects(trample_events):
+		failures.append(
+			"PlanningInputTest: TRAMPLE_HIT must still lock undo",
+		)
+	director.free()
 
 
 static func _test_walk_then_swap_commit_appends_skill(failures: Array[String]) -> void:

@@ -1773,9 +1773,42 @@ static func planning_awaiting_phase(ability: AbilityData, actor: UnitState = nul
 		return GameEnums.PlanningAwaitingPhase.GENERIC
 	if ability_has_modifier(ability, &"paired_ally_charge", actor):
 		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	if ability_slides_reposition_target(ability, actor):
+		return GameEnums.PlanningAwaitingPhase.GENERIC
 	if ability_has_movement_effect(ability, actor):
 		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	if (active_targeting_flags(actor, ability) & GameEnums.TargetingFlags.TILE) != 0:
+		return GameEnums.PlanningAwaitingPhase.TARGET_PICK
+	return GameEnums.PlanningAwaitingPhase.GENERIC
+
+
+static func planning_awaiting_phase_for_module(
+	actor: UnitState,
+	ability: AbilityData,
+	module_index: int,
+) -> int:
+	if ability == null:
+		return GameEnums.PlanningAwaitingPhase.GENERIC
+	if module_index < 0:
+		return planning_awaiting_phase(ability, actor)
+	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
+	if module == null:
+		return planning_awaiting_phase(ability, actor)
+	if ability_has_modifier(ability, &"paired_ally_charge", actor) and module_index == 0:
+		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	if AbilityModuleBridge.is_motion_type(module.primary_type):
+		if (
+			AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
+			or AbilityModuleBridge.module_has_modifier(module, &"relocate_target")
+			or AbilityModuleBridge.module_has_modifier(module, &"relocate_subject_only")
+			or AbilityModuleBridge.module_has_modifier(module, &"reposition_opposite_side")
+			or module.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
+		):
+			pass
+		else:
+			return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	if module.has_targeting(GameEnums.TargetingFlags.TILE) \
+			or module.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
 		return GameEnums.PlanningAwaitingPhase.TARGET_PICK
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
@@ -1831,6 +1864,18 @@ static func planning_commit_target_unit_id(ability: AbilityData, occupant_unit_i
 	):
 		return -1
 	return occupant_unit_id
+
+
+static func _module_aims_cell(module: AbilityModule, ability: AbilityData) -> bool:
+	var flags: int = 0
+	if module != null:
+		flags = module.targeting_flags
+	elif ability != null:
+		flags = ability.targeting_flags
+	return (
+		(flags & GameEnums.TargetingFlags.TILE) != 0
+		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
+	)
 
 
 ## Deprecated alias: use planning_arms_on_self_tile / planning_auto_arms_after_premove.
@@ -1996,6 +2041,19 @@ static func apply_standing_aim_passives_for_unit(
 			)
 		actor._recalculate_stats(board)
 		break
+
+
+static func _damage_scaling_modifier(
+	effect: EffectData,
+	actor: UnitState,
+	action: TimelineAction,
+	key: StringName,
+) -> int:
+	if effect != null and effect.modifiers.has(key):
+		return int(effect.modifiers[key])
+	if action == null:
+		return 0
+	return _ability_modifier_int(actor, action.ability, key, 0)
 
 
 static func _ability_modifier_int(
@@ -3189,24 +3247,38 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			continue
 			
 		for tile_coord in affected_tiles:
-			var target_unit := board.get_unit_at(tile_coord)
-			if action.target_unit_id >= 0:
-				var pinned_target := board.get_unit_by_id(action.target_unit_id)
-				if pinned_target != null and pinned_target.position == tile_coord:
-					target_unit = pinned_target
+			var apply_coord: Vector2i = tile_coord
+			var target_unit := board.get_unit_at(apply_coord)
+			var pinned_id: int = action.target_unit_id
+			if effect_module_index >= 0:
+				var module_uid: int = module_target_unit_id(action, effect_module_index)
+				if module_uid >= 0:
+					pinned_id = module_uid
+			if pinned_id >= 0:
+				var pinned_target := board.get_unit_by_id(pinned_id)
+				if pinned_target != null:
+					if pinned_target.position == apply_coord:
+						target_unit = pinned_target
+					elif (
+						shape == GameEnums.TargetShape.SINGLE
+						and not _module_aims_cell(effect_module, action.ability)
+					):
+						## Unit-aimed SINGLE layers follow the target after throw/push in this module.
+						target_unit = pinned_target
+						apply_coord = pinned_target.position
 			if effect.modifiers.get("delayed_next_turn", false):
 				board.delayed_effects.append({
 					"actor_id": actor.id,
 					"ability": action.ability,
 					"effect": effect.duplicate(true),
-					"coord": tile_coord,
+					"coord": apply_coord,
 				})
 				continue
 			
 			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
 				targets_hit_count += 1
 				
-			_apply_effect_to_tile(board, actor, action, effect, events, tile_coord, target_unit)
+			_apply_effect_to_tile(board, actor, action, effect, events, apply_coord, target_unit)
 		effect_index += 1
 
 	if heal_per_target_hit and targets_hit_count > 0:
@@ -3687,14 +3759,23 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			):
 				base_amt = 0
 			
-			if effect.modifiers.has("bonus_dmg_per_10_hp"):
-				base_amt += floori(actor.health.current_hp / 10.0) * effect.modifiers["bonus_dmg_per_10_hp"]
+			var bonus_per_10: int = _damage_scaling_modifier(
+				effect, actor, action, &"bonus_dmg_per_10_hp",
+			)
+			if bonus_per_10 != 0:
+				base_amt += floori(actor.health.current_hp / 10.0) * bonus_per_10
 			if effect.modifiers.has("bonus_dmg_pct_max_hp"):
 				base_amt += floori(actor.health.max_hp * float(effect.modifiers["bonus_dmg_pct_max_hp"]))
-			if effect.modifiers.has("bonus_dmg_from_terrain") and actor.passive_flags.get("passed_through_terrain", false):
-				base_amt += effect.modifiers["bonus_dmg_from_terrain"]
-			if effect.modifiers.has("bonus_dmg_from_occupied") and actor.passive_flags.get("passed_through_occupied", false):
-				base_amt += effect.modifiers["bonus_dmg_from_occupied"]
+			var bonus_terrain: int = _damage_scaling_modifier(
+				effect, actor, action, &"bonus_dmg_from_terrain",
+			)
+			if bonus_terrain != 0 and actor.passive_flags.get("passed_through_terrain", false):
+				base_amt += bonus_terrain
+			var bonus_occupied: int = _damage_scaling_modifier(
+				effect, actor, action, &"bonus_dmg_from_occupied",
+			)
+			if bonus_occupied != 0 and actor.passive_flags.get("passed_through_occupied", false):
+				base_amt += bonus_occupied
 			if effect.modifiers.has("damage_multiplier"):
 				base_amt *= int(effect.modifiers["damage_multiplier"])
 			for passive: PassiveData in actor.active_passives:

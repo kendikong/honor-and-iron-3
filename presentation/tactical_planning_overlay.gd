@@ -544,6 +544,9 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 		or not AbilitySystem.ability_has_movement_effect(ability)
 	):
 		return []
+	if AbilitySystem.ability_uses_direct_relocation(ability, unit):
+		var hop: Array[Vector2i] = [_proj_origin(unit), _hover_coord]
+		return hop
 	var sim_path: Array = []
 	var action_split: int = -1
 	if _planning_input.live_sim_matches_hover():
@@ -1945,10 +1948,14 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 	var caster_teleport_hover: bool = (
 		sel_ability != null
-		and AbilitySystem.ability_has_effect(sel_ability, GameEnums.EffectType.TELEPORT_CASTER)
-		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
+		and AbilitySystem.ability_uses_caster_teleport(sel_ability, actor)
 	)
 	if not flowing:
+		if caster_teleport_hover:
+			var hop: Array[Vector2i] = awaiting_movement_hover_route_cells()
+			if hop.size() >= 2:
+				_draw_dashed_route(hop, p_col)
+			return
 		if not caster_teleport_hover and _planning_input != null and _planning_input.dragging:
 			if route.size() >= 2 and _unit_can_still_move(actor.id):
 				var drag_route: Array = _interaction_move_route(actor.id, prev, route)
@@ -2058,6 +2065,14 @@ func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
 		return
 	var unit: UnitState = _proj_unit(_director.selected_unit_id)
 	var p_col: Color = _player_color_for_unit(unit) if unit != null else _COLOR_HOVER
+	var ability: AbilityData = (
+		_selected_ability_data(unit, _director.selected_ability_index)
+		if unit != null
+		else null
+	)
+	if AbilitySystem.ability_uses_direct_relocation(ability, unit):
+		## Dashed hop is drawn from overlay `_draw()` via `_draw_interaction_overlay`.
+		return
 	_draw_route_line(cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true, canvas)
 
 

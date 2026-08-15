@@ -3455,7 +3455,7 @@
 							"min_range": 0,
 							"presentation_anim": 0,
 							"primary_type": 1,
-							"target_shape": 2,
+							"target_shape": 1,
 							"target_shape_size": 2,
 							"targeting_flags": 1
 						}
@@ -3501,7 +3501,7 @@
 							"min_range": 0,
 							"presentation_anim": 0,
 							"primary_type": 1,
-							"target_shape": 2,
+							"target_shape": 1,
 							"target_shape_size": 2,
 							"targeting_flags": 1
 						}
@@ -3804,7 +3804,7 @@
 					"modules": [
 						{
 							"aim_binding": 0,
-							"amount": 4,
+							"amount": 0,
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
@@ -3812,9 +3812,10 @@
 								{
 									"condition": 0,
 									"effect": {
-										"amount": 0,
+										"amount": 4,
 										"modifiers": {},
-										"type": 27
+										"scaling_stat": 1,
+										"type": 0
 									}
 								}
 							],
@@ -3822,9 +3823,8 @@
 							"max_range": 1,
 							"min_range": 1,
 							"presentation_anim": 0,
-							"primary_type": 0,
+							"primary_type": 27,
 							"requires_los": true,
-							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -3843,7 +3843,7 @@
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
-							"amount": 4,
+							"amount": 0,
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
@@ -3851,9 +3851,10 @@
 								{
 									"condition": 0,
 									"effect": {
-										"amount": 0,
+										"amount": 4,
 										"modifiers": {},
-										"type": 27
+										"scaling_stat": 1,
+										"type": 0
 									}
 								}
 							],
@@ -3863,9 +3864,8 @@
 							"max_range": 1,
 							"min_range": 1,
 							"presentation_anim": 0,
-							"primary_type": 0,
+							"primary_type": 27,
 							"requires_los": true,
-							"scaling_stat": 1,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}

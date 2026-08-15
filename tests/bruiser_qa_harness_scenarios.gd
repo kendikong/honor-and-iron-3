@@ -276,11 +276,15 @@ static func run_suplex(failures: Array[String]) -> void:
 	## Bible: Suplex — RANGE 1 | ATK 4 | THROW_BEHIND to empty tile behind caster; [+] +1 ATK per 10 current HP.
 	H.run_active_smoke(
 		failures, &"bruiser_suplex", "RANGE 1 | ATK 4 | THROW_BEHIND",
-		[GameEnums.EffectType.DAMAGE, GameEnums.EffectType.THROW_BEHIND],
+		[GameEnums.EffectType.THROW_BEHIND, GameEnums.EffectType.DAMAGE],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_suplex")
 	H.assert_eq_int(failures, "suplex/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.effects[0].amount, 4)
+	H.assert_eq_int(
+		failures, "suplex/primary",
+		factory_ab.modules[0].primary_type, GameEnums.EffectType.THROW_BEHIND,
+	)
+	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.effects[1].amount, 4)
 	H.assert_true(
 		failures, "suplex/not_swap",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.SWAP, false),
@@ -309,6 +313,27 @@ static func run_suplex(failures: Array[String]) -> void:
 		board, 2, int(dmg_math.get("final_raw", 0)), bruiser_before,
 	)
 	H.assert_eq_int(failures, "suplex/dmg_dealt", enemy_damage, expected_enemy)
+	var throw_i: int = -1
+	var dmg_i: int = -1
+	for i: int in range(result.events.size()):
+		var ev: SimEvent = result.events[i]
+		if (
+			throw_i < 0
+			and ev.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(ev.data.get("unit", -1)) == 2
+		):
+			throw_i = i
+		if (
+			dmg_i < 0
+			and ev.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(ev.data.get("unit", -1)) == 2
+		):
+			dmg_i = i
+	H.assert_true(
+		failures, "suplex/throw_then_damage",
+		throw_i >= 0 and dmg_i > throw_i,
+		"THROW_BEHIND must resolve before ATK 4",
+	)
 	var far_board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_suplex"))
 	H.place_dummy(far_board, 11, Vector2i(3, 3))
@@ -763,7 +788,7 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_eq_int(failures, "guttural_roar/range", ab.range_tiles, 0)
-	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_CROSS)
+	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
 	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
 	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
@@ -816,12 +841,17 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	)
 
 	var roar_footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
-		null, Vector2i(3, 3), Vector2i(3, 3), GameEnums.TargetShape.AOE_CROSS, 2,
+		null, Vector2i(3, 3), Vector2i(3, 3), GameEnums.TargetShape.AOE_SQUARE, 2,
+	)
+	H.assert_true(
+		failures, "guttural_roar/grid_diagonal",
+		roar_footprint.has(Vector2i(4, 4)),
+		"AOE 2 square must include diagonal tiles",
 	)
 	H.assert_true(
 		failures, "guttural_roar/grid_outside",
 		not roar_footprint.has(Vector2i(6, 3)),
-		"AOE_CROSS 2 footprint must exclude distant tiles",
+		"AOE 2 square must exclude tiles beyond radius 2",
 	)
 
 

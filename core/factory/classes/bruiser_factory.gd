@@ -130,10 +130,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(cleave)
 
 	var suplex_module := DataLibrary._module(
-		GameEnums.EffectType.DAMAGE, 4, 1, 1, GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+		GameEnums.EffectType.THROW_BEHIND, 0, 1, 1, GameEnums.TargetingFlags.ENEMY,
 	)
-	suplex_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.THROW_BEHIND, 0))]
+	var suplex_damage := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 4)
+	suplex_damage.scaling_stat = GameEnums.StatType.PHYSICAL
+	suplex_module.layers = [DataLibrary._layer(suplex_damage)]
 	var suplex_upgraded := DataLibrary._duplicate_modules([suplex_module])
 	suplex_upgraded[0].legacy_modifiers["bonus_dmg_per_10_hp"] = 1
 	var suplex := DataLibrary._make_modular_ability(
@@ -214,7 +215,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 
 	var roar_module := DataLibrary._module(
 		GameEnums.EffectType.PUSH, 1, 0, 0, GameEnums.TargetingFlags.SELF,
-		GameEnums.TargetShape.AOE_CROSS, 2,
+		GameEnums.TargetShape.AOE_SQUARE, 2,
 	)
 	roar_module.layers = [
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)),

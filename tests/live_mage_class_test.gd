@@ -101,6 +101,7 @@ func _run_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
 	)
+	_assert_teleport_direct_hop(actor, ability, target_cell, case.id)
 	var slots := await _commit_click(runner, actor_id, case.target)
 	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s: valid live target rejected by commit slots: %s" % [case.id, slots],
@@ -186,6 +187,7 @@ func _run_upgrade_case(runner: GdUnitSceneRunner, case: Dictionary) -> void:
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
 	)
+	_assert_teleport_direct_hop(actor, ability, target_cell, str(case.id) + " [+]")
 	var slots := await _commit_click(runner, actor_id, case.target)
 	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s [+]: valid live target rejected by commit slots: %s" % [case.id, slots],
@@ -232,6 +234,35 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	assert_that(ability.effects[0].type).override_failure_message(
 		"%s: primary effect type mismatch" % case.id,
 	).is_equal(case.effect)
+
+
+func _assert_teleport_direct_hop(
+	actor: UnitState,
+	ability: AbilityData,
+	target_cell: Vector2i,
+	label: String,
+) -> void:
+	if not AbilitySystem.ability_uses_caster_teleport(ability, actor):
+		return
+	if (
+		_director.find_awaiting_action(actor.id) == null
+		and not _input.awaiting_targeting_active()
+	):
+		return
+	var hop: Array[Vector2i] = _overlay.awaiting_movement_hover_route_cells()
+	assert_int(hop.size()).override_failure_message(
+		"%s: teleport hover must be a direct hop; route=%s" % [label, str(hop)],
+	).is_equal(2)
+	if hop.size() < 2:
+		return
+	assert_that(hop[1]).override_failure_message(
+		"%s: teleport hop dest must be the aimed tile; route=%s" % [label, str(hop)],
+	).is_equal(target_cell)
+	if GridSystem.manhattan(hop[0], hop[1]) <= 1:
+		return
+	assert_int(hop.size()).override_failure_message(
+		"%s: teleport must not insert cardinal walk tiles; route=%s" % [label, str(hop)],
+	).is_equal(2)
 
 
 func _assert_observation(result: SimResult, case: Dictionary, actor_id: int) -> void:

@@ -1868,7 +1868,7 @@ func _build_module_fields(
 		module.target_shape_size = v
 		changed.call()
 	var shape_size_row := _bind_int(
-		grid, "Shape Size", module.target_shape_size, shape_size_setter, 1
+		grid, "Radius (1 = 3×3)", module.target_shape_size, shape_size_setter, 1
 	)
 	grey_rows["shape_size"] = shape_size_row
 	grey_rows["gate"] = _bind_enum_excluding(

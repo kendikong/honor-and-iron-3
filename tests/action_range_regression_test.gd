@@ -28,6 +28,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_bowling_enemy_hover_not_bash_route,
 		_test_bowling_dash_only_tiles_not_blue,
 		_test_bowling_dash_only_click_no_premove,
+		_test_bowling_awaiting_occupied_end,
 		_test_hide_red_after_commit_run_icon_shield_bash,
 		_test_hide_red_after_commit_run_icon_bowling,
 		_test_hide_red_committed_run_timeline_bowling,
@@ -46,6 +47,7 @@ static func run_all(failures: Array[String]) -> void:
 		"bowling_enemy_hover_not_bash",
 		"bowling_dash_only_not_blue",
 		"bowling_dash_only_no_premove_click",
+		"bowling_awaiting_occupied_end",
 		"hide_after_commit_run_icon_bash",
 		"hide_after_commit_run_icon_bowling",
 		"hide_committed_run_timeline_bowling",
@@ -449,6 +451,58 @@ static func _test_bowling_dash_only_click_no_premove(failures: Array[String]) ->
 	if (armed_slots.get("action", []) as Array).is_empty():
 		failures.append(
 			"ActionRangeRegression bowling_dash_only_no_premove_click: armed dash-only click must build action",
+		)
+
+
+## Occupied dash end after self-arm: BULLDOZE dest-commit, not unit-target ∅.
+static func _test_bowling_awaiting_occupied_end(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression bowling_awaiting_occupied_end: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT_START, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression bowling_awaiting_occupied_end: self-arm commit failed")
+		return
+	if director.find_awaiting_action(1) == null:
+		failures.append("ActionRangeRegression bowling_awaiting_occupied_end: self click must arm awaiting dash")
+		return
+	_attack_hover_sync(input, overlay, ENEMY_POS)
+	var dest_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, ENEMY_POS, Vector2.ZERO)
+	if input._is_invalid_dict(dest_slots):
+		failures.append(
+			"ActionRangeRegression bowling_awaiting_occupied_end: occupied dash end must not be invalid (%s)"
+			% str(dest_slots.get("invalid", "")),
+		)
+	var dest_actions: Array = dest_slots.get("action", []) as Array
+	if dest_actions.is_empty():
+		failures.append(
+			"ActionRangeRegression bowling_awaiting_occupied_end: occupied enemy dash end must build an action, not ∅",
+		)
+	elif dest_actions[0] is TimelineAction:
+		var charge: TimelineAction = dest_actions[0] as TimelineAction
+		if charge.target_coord != ENEMY_POS or charge.target_unit_id != -1:
+			failures.append(
+				"ActionRangeRegression bowling_awaiting_occupied_end: occupied end must be a TILE dash (coord %s, unit -1), got %s / %s"
+				% [ENEMY_POS, charge.target_coord, charge.target_unit_id],
+			)
+	var hover_icon: String = input.compute_hover_action_icon(ENEMY_POS)
+	if hover_icon == PlanningIcons.GLYPH_NULL or hover_icon == "":
+		failures.append(
+			"ActionRangeRegression bowling_awaiting_occupied_end: occupied dash hover must not show ∅",
+		)
+	if not overlay.is_hover_action_range_tile(ENEMY_POS):
+		failures.append(
+			"ActionRangeRegression bowling_awaiting_occupied_end: enemy tile must stay red while awaiting dest",
+		)
+	if director.preview_commit_valid(1, input._actions_from_slots(dest_slots)) != "":
+		failures.append(
+			"ActionRangeRegression bowling_awaiting_occupied_end: preview must accept occupied BULLDOZE landing",
 		)
 
 

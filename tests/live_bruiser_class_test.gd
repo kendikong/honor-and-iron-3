@@ -630,6 +630,41 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				"%s: first click must leave an awaiting action; plan=%s slots=%s"
 				% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
 			).is_true()
+			if _CASE_ARM.has(skill_id):
+				var awaiting_strike := _director.find_awaiting_action(actor_id)
+				assert_object(awaiting_strike).override_failure_message(
+					"%s: dest-commit must leave a later NEW_AIM armed; plan=%s"
+					% [_scenario_diagnostic(skill_id), _plan_debug()],
+				).is_not_null()
+				if awaiting_strike != null:
+					assert_int(awaiting_strike.awaiting_module_index).override_failure_message(
+						"%s: strike aim must be the later NEW_AIM module; action=%s"
+						% [_scenario_diagnostic(skill_id), _action_debug(awaiting_strike)],
+					).is_equal(1)
+					assert_bool(
+						not _input._is_awaiting_movement_endpoint(actor, ability)
+					).override_failure_message(
+						"%s: strike aim must not reuse the walk destination preview"
+						% _scenario_diagnostic(skill_id),
+					).is_true()
+					assert_object(_input._route_pathfinding_ability(actor)).override_failure_message(
+						"%s: strike aim must not paint a walk path"
+						% _scenario_diagnostic(skill_id),
+					).is_null()
+				var strike_cell: Vector2i = _case_target_cell(skill_id)
+				await _OVERLAY_QA.sync_attack_hover(
+					runner, _input, _overlay, _director, strike_cell, _DELTA_MS,
+				)
+				var action_tiles: Array[Vector2i] = _overlay.get_hover_action_range_tiles()
+				var landing: Vector2i = _CASE_ARM[skill_id]
+				assert_bool(action_tiles.has(strike_cell)).override_failure_message(
+					"%s: strike aim range must include the enemy; tiles=%s"
+					% [_scenario_diagnostic(skill_id), str(action_tiles)],
+				).is_true()
+				assert_bool(not action_tiles.has(landing + Vector2i(2, 0))).override_failure_message(
+					"%s: strike aim must not show the walk destination bubble; tiles=%s"
+					% [_scenario_diagnostic(skill_id), str(action_tiles)],
+				).is_true()
 			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
 			var committed: TimelineAction = _committed_action_for_ability(actor_id, skill_id)
 			assert_object(committed).override_failure_message(

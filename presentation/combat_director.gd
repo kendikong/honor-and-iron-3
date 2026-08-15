@@ -2320,6 +2320,15 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			else:
 				await get_tree().create_timer(0.05).timeout
 			continue
+		if _is_spellcast_impact_event(e):
+			attack_i += 1
+			while attack_i < attack_events.size() \
+					and attack_events[attack_i].type != GameEnums.SimEventType.ABILITY_USED \
+					and _is_spellcast_impact_event(attack_events[attack_i]):
+				EventBus.sim_event.emit(attack_events[attack_i])
+				attack_i += 1
+			await get_tree().create_timer(0.05).timeout
+			continue
 		var delay: float = _playback_delay_for_event(e)
 		await get_tree().create_timer(delay).timeout
 		attack_i += 1
@@ -2445,11 +2454,13 @@ func _play_move_batch(move_events: Array[SimEvent], run_id: int) -> void:
 
 func _move_has_commit_side_effects(events: Array[SimEvent]) -> bool:
 	for e in events:
+		if e.type == GameEnums.SimEventType.UNIT_PUSHED \
+				and bool(e.data.get("swap_displacement", false)):
+			continue
 		if e.type in [
 			GameEnums.SimEventType.TRAMPLE_HIT,
 			GameEnums.SimEventType.COLLISION,
 			GameEnums.SimEventType.UNIT_DAMAGED,
-			GameEnums.SimEventType.UNIT_PUSHED,
 		]:
 			return true
 	return false

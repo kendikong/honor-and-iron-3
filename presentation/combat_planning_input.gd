@@ -3166,7 +3166,11 @@ func _route_pathfinding_ability(unit: UnitState) -> AbilityData:
 		return null
 	if AbilitySystem.motion_requires_occupied_target(unit, ability):
 		return null
-	if awaiting_targeting_active() or _is_awaiting_movement_endpoint(unit, ability):
+	if awaiting_targeting_active():
+		if _is_awaiting_movement_endpoint(unit, ability):
+			return ability
+		return null
+	if _is_awaiting_movement_endpoint(unit, ability):
 		return ability
 	return null
 
@@ -3228,8 +3232,11 @@ func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> b
 		return false
 	if not _awaiting_flow_selected(actor, ability) and armed_action == null:
 		return false
+	var module_index: int = 0
+	if armed_action != null and armed_action.awaiting_module_index >= 0:
+		module_index = armed_action.awaiting_module_index
 	return (
-		AbilitySystem.planning_awaiting_phase(ability)
+		AbilitySystem.planning_awaiting_phase_for_module(actor, ability, module_index)
 		== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	)
 
