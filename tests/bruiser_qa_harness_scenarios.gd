@@ -700,7 +700,13 @@ static func run_frenzy(failures: Array[String]) -> void:
 		if eff != null and eff.type == GameEnums.EffectType.DAMAGE:
 			dmg_count += 1
 			H.assert_eq_int(failures, "frenzy/dmg_amount", eff.amount, 1)
-	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 3)
+			H.assert_eq_int(
+				failures, "frenzy/compiled_hit_count",
+				int(eff.modifiers.get("hit_count", 1)),
+				3,
+			)
+	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 1)
+	H.assert_eq_int(failures, "frenzy/module_hit_count", ab.modules[0].hit_count, 3)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_frenzy"))
 	H.place_dummy(board, 2, Vector2i(4, 3))

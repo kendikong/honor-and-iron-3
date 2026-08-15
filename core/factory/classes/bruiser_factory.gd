@@ -200,21 +200,15 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	def.abilities.append(meat_shield)
 
-	var frenzy_modules: Array[AbilityModule] = []
-	for _i: int in range(3):
-		var hit := DataLibrary._module(
-			GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
-			GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-		)
-		if not frenzy_modules.is_empty():
-			hit.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-			hit.aim_module_index = 0
-		frenzy_modules.append(hit)
-	var frenzy_upgraded := DataLibrary._duplicate_modules(frenzy_modules)
-	for hit: AbilityModule in frenzy_upgraded:
-		hit.legacy_modifiers["frenzy_on_kill_ap"] = 1
+	var frenzy_hit := DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	)
+	frenzy_hit.hit_count = 3
+	var frenzy_upgraded := DataLibrary._duplicate_modules([frenzy_hit])
+	frenzy_upgraded[0].legacy_modifiers["frenzy_on_kill_ap"] = 1
 	var frenzy := DataLibrary._make_modular_ability(
-		&"bruiser_frenzy", "Frenzy", frenzy_modules, frenzy_upgraded, 1,
+		&"bruiser_frenzy", "Frenzy", [frenzy_hit], frenzy_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
 		"On Kill: Gain 1 AP.", GameEnums.TargetingFlags.ENEMY,
 	)
