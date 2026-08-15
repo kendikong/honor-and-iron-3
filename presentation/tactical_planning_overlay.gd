@@ -619,10 +619,73 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	_hover_coord = coord
 	if _director != null and _director.selected_unit_id < 0:
 		_recompute_hover_ranges_from_inputs()
+	elif CombatDirector.is_planning_phase(_phase):
+		_refresh_cursor_action_tiles()
 	if _planning_input == null:
 		_update_hover_action_icon()
 	if redraw:
 		_queue_hover_tile_redraw()
+
+
+## Cheap red tiles at the cursor. Uses AbilitySystem blast/range from committed
+## (or hover-as-walk) stand — not leftover live preview / preview_actions.
+func _refresh_cursor_action_tiles() -> void:
+	if _director == null or _board == null:
+		return
+	if _planning_input != null and _planning_input.dragging:
+		return
+	if _director.selected_unit_id < 0:
+		return
+	var unit: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
+	if unit == null or not unit.is_alive():
+		return
+	if _intent_tiles_blocked(unit, _director.selected_ability_index):
+		return
+	var selected_ability: int = _director.selected_ability_index
+	var force_basic: bool = (
+		_planning_input.force_basic_movement if _planning_input != null else false
+	)
+	if force_basic or selected_ability < 0:
+		return
+	var p_unit: UnitState = _proj_unit(unit.id)
+	var actor: UnitState = p_unit if p_unit != null else unit
+	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if (
+		ability == null
+		or AbilitySystem.is_wait_ability(ability)
+		or AbilitySystem.is_run_ability(ability)
+	):
+		return
+	var plan_board: BoardState = _board
+	if _director.projected_state != null:
+		plan_board = _director.projected_state
+	var origin: Vector2i = _proj_origin(unit)
+	if _hover_move_tiles.has(_hover_coord):
+		origin = _hover_coord
+	var auto_run_move: bool = false
+	if _planning_input != null:
+		auto_run_move = _planning_input.auto_run_movement_active(actor)
+		if (
+			origin != actor.position
+			and AbilitySystem.movement_requires_run(plan_board, actor, origin, [])
+		):
+			auto_run_move = true
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		plan_board, actor, ability, origin, auto_run_move,
+	):
+		if not _hover_action_range_tiles.is_empty():
+			_hover_action_range_tiles.clear()
+			_queue_static_tiles_redraw()
+		return
+	var tiles: Array[Vector2i] = []
+	if AbilitySystem.active_target_shape(actor, ability) != GameEnums.TargetShape.SINGLE:
+		tiles = AbilitySystem.planning_blast_tiles_at_target(
+			plan_board, actor, ability, origin, _hover_coord,
+		)
+	if tiles.is_empty():
+		tiles = _planning_action_range_tiles_for_unit(unit, origin, selected_ability)
+	_hover_action_range_tiles = tiles
+	_queue_static_tiles_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:

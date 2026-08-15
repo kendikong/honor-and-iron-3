@@ -33,6 +33,7 @@ const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
 const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.045
+const _HOVER_SIM_STILL_PX: float = 3.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -63,6 +64,7 @@ var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _last_sim_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_sim_throttle_gen: int = 0
 var _hover_sim_last_flush_usec: int = 0
+var _hover_sim_pointer_at_schedule: Vector2 = Vector2.INF
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -1254,8 +1256,11 @@ func _begin_hover_sim_throttled_flush() -> void:
 		return
 	## Settle on the current tile before the expensive replay. Circling cancels
 	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
+	## If the pointer is still moving inside the tile, skip leftover replay —
+	## red tiles already follow via overlay `_refresh_cursor_action_tiles`.
 	_hover_sim_throttle_gen += 1
 	var gen: int = _hover_sim_throttle_gen
+	_hover_sim_pointer_at_schedule = _mouse_local_for_facing()
 	var wait_sec: float = _hover_sim_min_interval_sec()
 	if wait_sec <= 0.0 or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
@@ -1269,12 +1274,23 @@ func _begin_hover_sim_throttled_flush() -> void:
 				return
 			if _intent_state != null and _intent_state.hover_coord != cell:
 				return
+			if not _hover_sim_pointer_is_still():
+				_begin_hover_sim_throttled_flush()
+				return
 			_run_hover_sim_refresh()
 			_run_hover_overlay_refresh()
 			if not dragging:
 				refresh_mouse_cursor(cell),
 		CONNECT_ONE_SHOT,
 	)
+
+
+func _hover_sim_pointer_is_still() -> bool:
+	if _planning != null and _planning.qa_static_overlay:
+		return true
+	if _hover_sim_pointer_at_schedule.x >= 1.0e12:
+		return true
+	return _mouse_local_for_facing().distance_to(_hover_sim_pointer_at_schedule) <= _HOVER_SIM_STILL_PX
 
 
 func _flush_hover_heavy_sync() -> void:
