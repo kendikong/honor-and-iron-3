@@ -336,16 +336,13 @@ static func _yin_yang_flurry() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	physical.legacy_modifiers["track_first_hit_zero"] = true
-	var magical := _module(
-		GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
-	)
-	magical.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	magical.aim_module_index = 0
-	var upgraded := _clone_modules([physical, magical])
-	upgraded[1].legacy_modifiers["pierce_if_first_zero"] = true
+	var magical := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
+	magical.scaling_stat = GameEnums.StatType.MAGICAL
+	physical.layers.append(_layer(magical))
+	var upgraded := _clone_modules([physical])
+	upgraded[0].layers[0].effect.modifiers["pierce_if_first_zero"] = true
 	return _ability(
-		&"monk_yin_yang_flurry", "Yin-Yang Flurry", [physical, magical],
+		&"monk_yin_yang_flurry", "Yin-Yang Flurry", [physical],
 		upgraded, GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
 		"Deal ATK 1, then MAG ATK 1. [+] If the first hit deals 0 damage, the second gains PIERCE.",
 	)

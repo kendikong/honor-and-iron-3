@@ -101,13 +101,12 @@ static func _test_base_multi_module_compatibility_order(failures: Array[String])
 	damage.min_range = 1
 	damage.max_range = 3
 	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
-	var push: AbilityModule = AbilityModule.new()
-	push.primary_type = GameEnums.EffectType.PUSH
-	push.amount = 2
-	push.min_range = 1
-	push.max_range = 3
-	push.targeting_flags = GameEnums.TargetingFlags.ENEMY
-	ability.modules = [damage, push]
+	var push := AbilityLayer.new()
+	push.effect = EffectData.new()
+	push.effect.type = GameEnums.EffectType.PUSH
+	push.effect.amount = 2
+	damage.layers.append(push)
+	ability.modules = [damage]
 	ability.effects = []
 	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(null, ability)
 	if (
@@ -135,15 +134,12 @@ static func _test_base_multi_module_native_execute_order(failures: Array[String]
 	damage.min_range = 1
 	damage.max_range = 3
 	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
-	var push: AbilityModule = AbilityModule.new()
-	push.primary_type = GameEnums.EffectType.PUSH
-	push.amount = 2
-	push.min_range = 1
-	push.max_range = 3
-	push.targeting_flags = GameEnums.TargetingFlags.ENEMY
-	push.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	push.aim_module_index = 0
-	ability.modules = [damage, push]
+	var push := AbilityLayer.new()
+	push.effect = EffectData.new()
+	push.effect.type = GameEnums.EffectType.PUSH
+	push.effect.amount = 2
+	damage.layers.append(push)
+	ability.modules = [damage]
 	ability.effects = []
 
 	var events: Array[SimEvent] = []

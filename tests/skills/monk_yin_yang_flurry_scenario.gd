@@ -1,8 +1,8 @@
 extends RefCounted
 
 ## Bible: Yin-Yang Flurry — RANGE 1, ATK 1 then MAG ATK 1; [+] second hit gets PIERCE if first deals 0.
-## Globals: ordered AbilityModule resolution and SAME_AS_MODULE_N aim binding.
-## Modules: M0 physical DAMAGE, M1 magical DAMAGE same aim; [+] conditional PIERCE.
+## Globals: ordered AbilityModule resolution; same-target extras are layers.
+## Modules: M0 physical DAMAGE + MAGICAL DAMAGE layer; [+] conditional PIERCE on that layer.
 ## Planning tier: B
 ## Data/Sim delegate: tests/monk_qa_harness.gd::run_single_ability
 const _H := preload("res://tests/monk_qa_harness.gd")

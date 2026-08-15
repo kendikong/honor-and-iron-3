@@ -114,7 +114,7 @@ Assert factory/`AbilityData` matches what the class editor would show — **befo
 | `requires_los` | LOS on/off per `ModuleAuthoringRules` |
 | `range_origin` | ACTOR / AIM / … |
 | `target_shape`, `target_shape_size` | SINGLE, AOE, ARC, LINE, … |
-| `aim_binding`, `aim_module_index` | NEW_AIM vs SAME_AS_MODULE_N |
+| `aim_binding` | Engine-only. Modules always own their aim (`NEW_AIM`). Same-target extras are **layers**. Do not assert an author-facing Aim Binding dropdown. `SAME_AS_MODULE_N` exists only for internal gated recasts (Violent Collision). |
 | `targeting_flags` | Self / Ally / Enemy / Tile / Dash line — **each checked bit** |
 | `gate` | ALWAYS, IF_KILL, IF_COLLIDED, … |
 | `keywords[]` | Each keyword id + amount |
@@ -506,7 +506,7 @@ Knight shield bash is Tier **A** (7-phase). **Today** it strongly covers Layer B
 | Premove + bash | — | — | phase7 premove then bash |
 | Commit slots | — | — | phase5 `assert_slots_match_preview_commit` |
 
-**Gold target:** add per-module asserts for `min_range`, `max_range`, `targeting_flags`, `aim_binding` to `_sim_contract` when promoting or editing this row.
+**Gold target:** add per-module asserts for `min_range`, `max_range`, `targeting_flags` to `_sim_contract` when promoting or editing this row. Same-target extras belong in `layers[]`, not a second aimed module.
 
 ---
 

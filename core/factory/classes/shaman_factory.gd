@@ -301,14 +301,12 @@ static func _bone_spear() -> AbilityData:
 	var hit := DataLibrary._module(GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL)
 	hit.legacy_modifiers["bone_spear"] = true
-	var spawn := DataLibrary._module(GameEnums.EffectType.SPAWN, 0, 1, 4, GameEnums.TargetingFlags.TILE)
-	spawn.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	spawn.aim_module_index = 0
-	spawn.spawn_unit_id = &"bone_barricade"
-	spawn.legacy_modifiers = {"construct_hp_pct": 0.50, "spawn_furthest_empty_on_line": true}
-	var up := DataLibrary._duplicate_modules([hit, spawn])
-	up[1].legacy_modifiers["lightning_rod"] = true
-	return _ability(&"shaman_bone_spear", "Bone Spear", [hit, spawn], up,
+	var spawn := DataLibrary._spawn_effect(&"bone_barricade")
+	spawn.modifiers = {"construct_hp_pct": 0.50, "spawn_furthest_empty_on_line": true}
+	hit.layers.append(_layer(spawn))
+	var up := DataLibrary._duplicate_modules([hit])
+	up[0].layers[0].effect.modifiers["lightning_rod"] = true
+	return _ability(&"shaman_bone_spear", "Bone Spear", [hit], up,
 		GameEnums.TargetingFlags.TILE, "SKEWER 4 ATK 2; create a BONE BARRICADE on the furthest empty tile.")
 
 

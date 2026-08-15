@@ -67,7 +67,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	# Actives
 	var charge_move := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
@@ -76,8 +76,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	charge_attack.execution_phase = GameEnums.ModulePhase.ON_ACTION
-	charge_attack.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	charge_attack.aim_module_index = 0
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
 	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]

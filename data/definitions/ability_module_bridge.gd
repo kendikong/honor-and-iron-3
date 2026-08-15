@@ -517,9 +517,6 @@ static func infer_modules_from_effects(
 			continue
 		if modules.is_empty() or is_motion_type(eff.type):
 			var mod: AbilityModule = _module_from_primary_effect(eff, ability)
-			if not modules.is_empty():
-				mod.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-				mod.aim_module_index = 0
 			modules.append(mod)
 			continue
 		if is_motion_type(modules[modules.size() - 1].primary_type):
@@ -529,10 +526,8 @@ static func infer_modules_from_effects(
 				motion_layer.condition = _infer_layer_condition(eff)
 				modules[modules.size() - 1].layers.append(motion_layer)
 				continue
-			## Strike after reposition — new module, shared aim (move then attack).
+			## Strike after motion — new module with its own aim (same-target extras are layers).
 			var after_move: AbilityModule = _module_from_primary_effect(eff, ability)
-			after_move.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-			after_move.aim_module_index = 0
 			modules.append(after_move)
 			continue
 		var layer := AbilityLayer.new()
@@ -624,25 +619,30 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 
 
 static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[AbilityModule]) -> void:
-	## Keep the legacy card range on non-motion aims. Motion distance remains on modules.
+	## Header range follows the first player aim (first NEW_AIM module). Shape still
+	## comes from the first non-motion NEW_AIM, or from a motion landing footprint.
 	var first_module: AbilityModule = null
+	var first_new_aim: AbilityModule = null
+	var first_non_motion_aim: AbilityModule = null
 	for mod: AbilityModule in modules:
 		if mod == null:
 			continue
 		if first_module == null:
 			first_module = mod
-		if (
-			mod.aim_binding == GameEnums.AimBinding.NEW_AIM
-			and not is_motion_type(mod.primary_type)
-		):
-			ability.range_tiles = mod.max_range
-			ability.target_shape = mod.target_shape
-			ability.target_shape_size = mod.target_shape_size
-			if mod.targeting_flags != 0:
-				ability.targeting_flags |= mod.targeting_flags
-			return
-	## A motion-owned landing footprint (e.g. Meteor Drop) is still the
-	## ability's authored card shape when no later non-motion aim exists.
+		if mod.aim_binding != GameEnums.AimBinding.NEW_AIM:
+			continue
+		if first_new_aim == null:
+			first_new_aim = mod
+		if not is_motion_type(mod.primary_type) and first_non_motion_aim == null:
+			first_non_motion_aim = mod
+	if first_new_aim != null:
+		ability.range_tiles = first_new_aim.max_range
+	if first_non_motion_aim != null:
+		ability.target_shape = first_non_motion_aim.target_shape
+		ability.target_shape_size = first_non_motion_aim.target_shape_size
+		if first_non_motion_aim.targeting_flags != 0:
+			ability.targeting_flags |= first_non_motion_aim.targeting_flags
+		return
 	if (
 		first_module != null
 		and is_motion_type(first_module.primary_type)

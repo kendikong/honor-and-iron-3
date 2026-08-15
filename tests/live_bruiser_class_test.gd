@@ -105,9 +105,12 @@ const _CASE_ACTORS: Dictionary = {
 }
 
 const _CASE_PREMOVE_RUN: Dictionary = {
-	&"bruiser_charge_strike": Vector2i(2, 3),
 	&"bruiser_violent_collision": Vector2i(2, 3),
 	&"bruiser_breaching_dash": Vector2i(4, 3),
+}
+
+const _CASE_ARM: Dictionary = {
+	&"bruiser_charge_strike": Vector2i(2, 3),
 }
 
 const _CASE_TARGETS: Dictionary = {
@@ -505,7 +508,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		assert_int(_director.selected_ability_index).override_failure_message(
 			"%s: selected ability index drifted" % _scenario_diagnostic(skill_id),
 		).is_equal(_ability_index(actor, ability))
-		var target_cell: Vector2i = _case_target_cell(skill_id)
+		var target_cell: Vector2i = _case_first_aim_cell(skill_id)
 		if ability.range_tiles <= 0:
 			target_cell = actor.position
 		await _OVERLAY_QA.assert_live_overlay_parity(
@@ -522,7 +525,10 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		var stand_cell: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 			_director, _director.board, actor_id,
 		)
-		var arm_cell: Vector2i = stand_cell if is_awaiting_skill else _case_target_cell(skill_id)
+		var dedicated_arm: Vector2i = _CASE_ARM.get(skill_id, Vector2i(-999999, -999999))
+		var arm_cell: Vector2i = dedicated_arm
+		if dedicated_arm.x <= -999000:
+			arm_cell = stand_cell if is_awaiting_skill else _case_target_cell(skill_id)
 		var preview_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
 			actor_id, arm_cell, Vector2.ZERO,
 		)
@@ -532,13 +538,15 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				_slots_debug(preview_slots), _plan_debug()],
 		).is_false()
 		var preview_action: TimelineAction = _first_slot_action(preview_slots)
-		if preview_action != null and preview_action.awaiting_target:
+		if preview_action != null and preview_action.awaiting_target and dedicated_arm.x <= -999000:
 			is_awaiting_skill = true
 			arm_cell = stand_cell
 			preview_slots = _input._final_commit_slots_for_click_at_cell(
 				actor_id, arm_cell, Vector2.ZERO,
 			)
 			preview_action = _first_slot_action(preview_slots)
+		elif preview_action != null and preview_action.awaiting_target:
+			is_awaiting_skill = true
 		assert_object(preview_action).override_failure_message(
 			"%s: hover slots must contain an action; slots=%s"
 			% [_scenario_diagnostic(skill_id), _slots_debug(preview_slots)],
@@ -636,7 +644,12 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				assert_that(committed.target_coord).override_failure_message(
 					"%s: committed target differs from hover; action=%s"
 					% [_scenario_diagnostic(skill_id), _action_debug(committed)],
-				).is_equal(_case_target_cell(skill_id))
+				).is_equal(_case_first_aim_cell(skill_id))
+				if _CASE_ARM.has(skill_id):
+					assert_that(AbilitySystem.module_target_coord(committed, 1)).override_failure_message(
+						"%s: second aim must be the enemy cell; action=%s"
+						% [_scenario_diagnostic(skill_id), _action_debug(committed)],
+					).is_equal(_case_target_cell(skill_id))
 		elif _slots_debug(slots).contains(":awaiting") or _plan_has_awaiting(actor_id):
 			slots = await _commit_live_click(runner, actor_id, _case_target_cell(skill_id))
 		assert_bool(_slots_invalid(slots)).override_failure_message(
@@ -1160,6 +1173,10 @@ func _case_actor_cell(skill_id: StringName) -> Vector2i:
 
 func _case_target_cell(skill_id: StringName) -> Vector2i:
 	return _CASE_TARGETS.get(skill_id, _case_actor_cell(skill_id))
+
+
+func _case_first_aim_cell(skill_id: StringName) -> Vector2i:
+	return _CASE_ARM.get(skill_id, _case_target_cell(skill_id))
 
 
 func _slots_invalid(slots: Dictionary) -> bool:

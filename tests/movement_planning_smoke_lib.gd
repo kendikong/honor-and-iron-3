@@ -57,6 +57,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				entry.get("ally_pos", Vector2i(-1, -1)),
 				bool(entry.get("arm_on_ally", false)),
 				entry.get("postmove_cell", Vector2i(-999999, -999999)),
+				bool(entry.get("arm_on_stand", true)),
 			)
 		_:
 			run_commit_smoke(
@@ -276,6 +277,7 @@ static func run_awaiting_smoke(
 	ally_pos: Vector2i = Vector2i(-1, -1),
 	arm_on_ally: bool = false,
 	postmove_cell: Vector2i = Vector2i(-999999, -999999),
+	arm_on_stand: bool = true,
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
@@ -304,7 +306,7 @@ static func run_awaiting_smoke(
 	var stand: Vector2i = _MovementTimeline.latest_stand_cell(director, unit_id)
 	if arm_on_ally and ally_pos.x >= 0:
 		arm_cell = ally_pos
-	elif stand.x > -900000:
+	elif arm_on_stand and stand.x > -900000:
 		arm_cell = stand
 	_Checklist.hover(fix, arm_cell)
 	_Checklist.flush_planning(fix)
@@ -521,11 +523,19 @@ static func _assert_charge_strike_modules(
 	)
 	if not action_entries.is_empty():
 		var action: TimelineAction = action_entries[0] as TimelineAction
+		var move_dest: Vector2i = AbilitySystem.module_target_coord(action, 0)
+		var strike_dest: Vector2i = AbilitySystem.module_target_coord(action, 1)
+		var expected_land: Vector2i = Vector2i(2, 3)
+		if skill_target == Vector2i(4, 3):
+			expected_land = Vector2i(3, 3)
+		elif skill_target == Vector2i(3, 3):
+			expected_land = Vector2i(2, 3)
 		_assert_true(
 			failures,
 			"%s/modules/target" % tag,
-			action != null and action.target_coord == skill_target,
-			"Charge Strike action target must be %s" % skill_target,
+			action != null and move_dest == expected_land and strike_dest == skill_target,
+			"Charge Strike MOVE dest must be %s and DAMAGE dest must be %s (move=%s strike=%s)"
+			% [expected_land, skill_target, move_dest, strike_dest],
 		)
 	var start_board: BoardState = director.turn_start_board
 	if start_board == null:

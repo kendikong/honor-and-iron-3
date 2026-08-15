@@ -38,7 +38,7 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 
 const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_reposition": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 2, "max_range": 1, "keys": [&"reposition_opposite_side", &"reposition_movement_cost"]},
-	&"beast_pounce": {"types": [GameEnums.EffectType.MOVE_TOWARD, GameEnums.EffectType.DAMAGE], "amount": 3, "max_range": 3, "keys": [&"pounce_land_adjacent", &"landing_push"]},
+	&"beast_pounce": {"types": [GameEnums.EffectType.MOVE_TOWARD], "amount": 3, "max_range": 3, "keys": [&"pounce_land_adjacent", &"landing_push"]},
 	&"beast_feral_drag": {"types": [GameEnums.EffectType.PULL], "amount": 0, "max_range": 1, "keys": [&"feral_drag", &"target_constitution_at_most_strength", &"drag_remaining_movement"]},
 	&"beast_maul": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"maul_dragged_enemy", &"drop_adjacent", &"drop_trap_damage_multiplier"]},
 	&"beast_bestial_roar": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "max_range": 3, "shape": GameEnums.TargetShape.CONE, "shape_size": 3, "keys": [&"status_requires_debuff", &"cone_all_targets"]},
@@ -778,7 +778,6 @@ static func _apply_sim_action_overrides(
 		action.target_coord = target.position
 		action.target_unit_id = target.id
 		AbilitySystem.set_module_target(action, 0, target.position, target.id)
-		AbilitySystem.set_module_target(action, 1, target.position, target.id)
 	if ability_id == &"beast_run_down":
 		action.target_unit_id = -1
 		action.target_coord = Vector2i(4, 3)

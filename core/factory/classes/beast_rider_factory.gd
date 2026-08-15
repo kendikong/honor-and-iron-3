@@ -272,16 +272,14 @@ static func _pounce() -> AbilityData:
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.legacy_modifiers["pounce_land_adjacent"] = true
-	var attack := _module(
-		GameEnums.EffectType.DAMAGE, 3, 1, 1,
-		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.PHYSICAL,
-	)
-	attack.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	attack.aim_module_index = 0
-	var modules: Array[AbilityModule] = [move, attack]
+	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)
+	strike.scaling_stat = GameEnums.StatType.PHYSICAL
+	move.layers.append(_layer(strike))
+	var modules: Array[AbilityModule] = [move]
 	var upgraded := _clone(modules)
-	upgraded[1].legacy_modifiers["landing_push"] = 1
+	var landing_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	landing_push.modifiers["landing_push"] = 1
+	upgraded[0].layers.append(_layer(landing_push))
 	return _ability(
 		&"beast_pounce", "Pounce", modules, upgraded,
 		GameEnums.TargetingFlags.ENEMY,

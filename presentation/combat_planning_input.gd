@@ -3295,6 +3295,9 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if ability.is_pre_move_planner():
 		return true
+	## First TILE MOVE aim, then a later NEW_AIM (Charge Strike walk landing then strike).
+	if AbilitySystem.planning_next_aim_module_index(actor, ability, 0) >= 0:
+		return true
 	return AbilitySystem.planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.IMMEDIATE
 
 

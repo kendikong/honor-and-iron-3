@@ -75,7 +75,7 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	var hp: int = H.unit_hp(board, 3)
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_charge_strike")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 3))
+	plan.add(_Scenarios._plan_charge_strike(1, skill, Vector2i(3, 3), Vector2i(4, 3), 3))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(
 		failures, "charge_strike/upgrade/ghost_path",
@@ -98,7 +98,7 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	var hp_plain: int = H.unit_hp(board_plain, 11)
 	var plain_skill: AbilityData = H.ability_on_unit(H.unit_on_board(board_plain, 10), &"bruiser_charge_strike")
 	var plain_plan := Timeline.new()
-	plain_plan.add(H.plan_ability(10, plain_skill, Vector2i(4, 3), 11))
+	plain_plan.add(_Scenarios._plan_charge_strike(10, plain_skill, Vector2i(3, 3), Vector2i(4, 3), 11))
 	var plain_result: SimResult = H.simulate_plan(board_plain, plain_plan)
 	var dmg_plain: int = hp_plain - H.unit_hp(plain_result.final_state, 11)
 	var base_power: int = ab.upgraded_effects[1].amount

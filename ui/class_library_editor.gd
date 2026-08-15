@@ -1693,7 +1693,6 @@ func _apply_module_field_greying(
 	_grey_row(rows.get("hit_count", []), not ModuleAuthoringRules.module_uses_hit_count(module))
 	_grey_row(rows.get("adjacent_bonus", []), module.primary_type != GameEnums.EffectType.DAMAGE)
 	_grey_row(rows.get("def_debuff", []), module.primary_type != GameEnums.EffectType.DAMAGE)
-	_grey_row(rows.get("aim_module", []), module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N)
 	_grey_row(rows.get("shape", []), not ModuleAuthoringRules.module_uses_shape(module))
 	_grey_row(rows.get("shape_size", []), not ModuleAuthoringRules.module_uses_shape_size(module))
 
@@ -1872,15 +1871,6 @@ func _build_module_fields(
 		grid, "Shape Size", module.target_shape_size, shape_size_setter, 1
 	)
 	grey_rows["shape_size"] = shape_size_row
-	_bind_enum(grid, "Aim Binding", GameEnums.AimBinding, module.aim_binding, func(v: int) -> void:
-		module.aim_binding = v
-		changed.call()
-		_refresh_module_field_greying(ability)
-	)
-	grey_rows["aim_module"] = _bind_int(grid, "Aim Module", module.aim_module_index, func(v: int) -> void:
-		module.aim_module_index = v
-		changed.call()
-	)
 	grey_rows["gate"] = _bind_enum_excluding(
 		grid,
 		"Gate",

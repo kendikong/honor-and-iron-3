@@ -378,7 +378,7 @@
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,
@@ -430,7 +430,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,
@@ -890,7 +890,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -924,7 +924,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -1898,7 +1898,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Pounce",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -1906,36 +1906,25 @@
 							"execution_phase": 1,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 3,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {
-								"motion_mode": 1,
-								"move_to_target_adjacent": true,
 								"pounce_land_adjacent": true
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 22,
-							"target_shape": 0,
-							"targeting_flags": 12
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 3,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
+							"primary_type": 36,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -1953,7 +1942,7 @@
 						"movement"
 					],
 					"upgrade_description": "Landing applies PUSH 1.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -1961,37 +1950,35 @@
 							"execution_phase": 1,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 3,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								},
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"modifiers": {
+											"landing_push": 1
+										},
+										"type": 1
+									}
+								}
+							],
 							"legacy_modifiers": {
-								"move_to_target_adjacent": true,
 								"pounce_land_adjacent": true
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 22,
-							"target_shape": 0,
-							"targeting_flags": 12
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 3,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"landing_push": 1
-							},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
+							"primary_type": 36,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -2111,7 +2098,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 8,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -2146,7 +2133,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 8,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -2976,15 +2963,14 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
-							"targeting_flags": 12
+							"targeting_flags": 8
 						},
 						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
+							"aim_binding": 0,
 							"amount": 3,
 							"execution_phase": 0,
 							"gate": 0,
@@ -3042,15 +3028,14 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
-							"targeting_flags": 12
+							"targeting_flags": 8
 						},
 						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
+							"aim_binding": 0,
 							"amount": 3,
 							"execution_phase": 0,
 							"gate": 0,
@@ -3765,12 +3750,10 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"motion_mode": 6
-							},
+							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 26,
 							"target_shape": 0,
@@ -3802,7 +3785,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 26,
 							"target_shape": 0,
@@ -3913,13 +3896,12 @@
 							"layers": [],
 							"legacy_modifiers": {
 								"bulldoze": 1,
-								"motion_mode": 6,
 								"push": 1,
 								"violent_collision_recast": 1
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 15,
 							"target_shape": 0,
@@ -3936,7 +3918,7 @@
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,
@@ -3987,7 +3969,7 @@
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 15,
 							"target_shape": 0,
@@ -4004,7 +3986,7 @@
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,
@@ -4508,17 +4490,15 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"cost_all_movement": true,
-								"motion_mode": 3,
-								"warp_adjacent_to_target": true
+								"cost_all_movement": true
 							},
 							"max_range": 5,
 							"min_range": 1,
-							"motion_mode": 3,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 2
+							"targeting_flags": 10
 						}
 					],
 					"planner_group": 1,
@@ -4543,16 +4523,15 @@
 							"layers": [],
 							"legacy_modifiers": {
 								"cleanse_target": true,
-								"cost_all_movement": true,
-								"warp_adjacent_to_target": true
+								"cost_all_movement": true
 							},
 							"max_range": 999,
 							"min_range": 1,
-							"motion_mode": 3,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 2
+							"targeting_flags": 10
 						}
 					],
 					"upgraded_primary_value": -1,
@@ -6581,7 +6560,7 @@
 							],
 							"layers": [],
 							"legacy_modifiers": {
-								"bulldoze": 1
+								"bulldoze": 1.0
 							},
 							"max_range": 3,
 							"min_range": 1,
@@ -6622,7 +6601,7 @@
 							],
 							"layers": [],
 							"legacy_modifiers": {
-								"bulldoze": 1
+								"bulldoze": 1.0
 							},
 							"max_range": 3,
 							"min_range": 1,
@@ -7562,12 +7541,10 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"motion_mode": 2
-							},
+							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 2,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 3,
 							"targeting_flags": 2
@@ -7617,7 +7594,7 @@
 							"legacy_modifiers": {},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 2,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 3,
 							"targeting_flags": 2
@@ -7756,12 +7733,11 @@
 								}
 							],
 							"legacy_modifiers": {
-								"motion_mode": 6,
 								"trample": 2
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -7815,7 +7791,7 @@
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 6,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -8026,7 +8002,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -8076,7 +8052,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -8587,14 +8563,13 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"vault_obstacle_or_gap_only": true,
-								"vault_over": true
+								"vault_obstacle_or_gap_only": true
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 5,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
 							"targeting_flags": 8
 						}
@@ -8624,14 +8599,13 @@
 							"legacy_modifiers": {
 								"landing_adjacent_push": 1,
 								"landing_adjacent_push_stagger": true,
-								"vault_obstacle_or_gap_only": true,
-								"vault_over": true
+								"vault_obstacle_or_gap_only": true
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 5,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
 							"targeting_flags": 8
 						}
@@ -9411,7 +9385,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -9444,7 +9418,7 @@
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -10257,7 +10231,7 @@
 							},
 							"max_range": 4,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -10300,7 +10274,7 @@
 							},
 							"max_range": 4,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 17,
 							"target_shape": 0,
@@ -10522,21 +10496,17 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"land_opposite_target": true,
-								"vault_over": true
-							},
+							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
 							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
-							"targeting_flags": 4
+							"targeting_flags": 8
 						},
 						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
+							"aim_binding": 0,
 							"amount": 1,
 							"execution_phase": 0,
 							"gate": 0,
@@ -10576,21 +10546,17 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"land_opposite_target": true,
-								"vault_over": true
-							},
+							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
 							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
-							"targeting_flags": 4
+							"targeting_flags": 8
 						},
 						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
+							"aim_binding": 0,
 							"amount": 1,
 							"execution_phase": 0,
 							"gate": 0,
@@ -11124,7 +11090,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -11159,7 +11125,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -11342,7 +11308,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 7,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -11377,7 +11343,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 7,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -11614,7 +11580,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Swift Strike",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -11622,36 +11588,25 @@
 							"execution_phase": 1,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {
-								"motion_mode": 2,
-								"move_to_target_adjacent": true,
 								"swift_strike": true
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 2,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 22,
-							"target_shape": 0,
-							"targeting_flags": 12
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
+							"primary_type": 36,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -11669,7 +11624,7 @@
 						"movement"
 					],
 					"upgrade_description": "Gain 1 AP if the target was already damaged.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -11677,37 +11632,26 @@
 							"execution_phase": 1,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 2,
+										"modifiers": {},
+										"scaling_stat": 1,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {
-								"move_to_target_adjacent": true,
-								"swift_strike": true
+								"swift_strike": true,
+								"target_damaged_ap": 1
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 2,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 22,
-							"target_shape": 0,
-							"targeting_flags": 12
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 2,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"target_damaged_ap": 1
-							},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 1,
+							"primary_type": 36,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -11730,12 +11674,11 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"motion_mode": 7,
 								"smoke_on_start": true
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 7,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -11770,7 +11713,7 @@
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 7,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -12351,15 +12294,12 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"motion_mode": 5,
-								"vault_over": true
-							},
+							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 2,
-							"motion_mode": 5,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
 							"targeting_flags": 8
 						}
@@ -12386,14 +12326,13 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"leap_absorb_surface": true,
-								"vault_over": true
+								"leap_absorb_surface": true
 							},
 							"max_range": 3,
 							"min_range": 2,
-							"motion_mode": 5,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 34,
 							"target_shape": 0,
 							"targeting_flags": 8
 						}
@@ -12961,17 +12900,14 @@
 							"gate": 0,
 							"keywords": [],
 							"layers": [],
-							"legacy_modifiers": {
-								"motion_mode": 3,
-								"warp_adjacent_to_target": true
-							},
+							"legacy_modifiers": {},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 3,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 2
+							"targeting_flags": 10
 						}
 					],
 					"planner_group": 0,
@@ -12996,16 +12932,15 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"landed_magic_bonus": 2,
-								"warp_adjacent_to_target": true
+								"landed_magic_bonus": 2
 							},
 							"max_range": 3,
 							"min_range": 1,
-							"motion_mode": 3,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 2
+							"targeting_flags": 10
 						}
 					],
 					"upgraded_primary_value": -1,
@@ -13016,7 +12951,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Yin-Yang Flurry",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -13024,7 +12959,17 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"modifiers": {},
+										"scaling_stat": 2,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {
 								"track_first_hit_zero": true
 							},
@@ -13034,25 +12979,6 @@
 							"primary_type": 0,
 							"requires_los": true,
 							"scaling_stat": 1,
-							"target_shape": 0,
-							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 1,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 2,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -13069,7 +12995,7 @@
 						"attack"
 					],
 					"upgrade_description": "Deal ATK 1, then MAG ATK 1. [+] If the first hit deals 0 damage, the second gains PIERCE.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -13077,7 +13003,19 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 1,
+										"modifiers": {
+											"pierce_if_first_zero": true
+										},
+										"scaling_stat": 2,
+										"type": 0
+									}
+								}
+							],
 							"legacy_modifiers": {
 								"track_first_hit_zero": true
 							},
@@ -13087,27 +13025,6 @@
 							"primary_type": 0,
 							"requires_los": true,
 							"scaling_stat": 1,
-							"target_shape": 0,
-							"targeting_flags": 4
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 1,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"pierce_if_first_zero": true
-							},
-							"max_range": 1,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 0,
-							"range_origin": 0,
-							"requires_los": true,
-							"scaling_stat": 2,
 							"target_shape": 0,
 							"targeting_flags": 4
 						}
@@ -13499,7 +13416,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -13565,7 +13482,7 @@
 							"legacy_modifiers": {},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 1,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -14028,16 +13945,15 @@
 							"keywords": [],
 							"layers": [],
 							"legacy_modifiers": {
-								"motion_mode": 3,
 								"shadow_step": true
 							},
 							"max_range": 4,
 							"min_range": 1,
-							"motion_mode": 3,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 4
+							"targeting_flags": 12
 						}
 					],
 					"planner_group": 0,
@@ -14068,11 +13984,11 @@
 							},
 							"max_range": 4,
 							"min_range": 1,
-							"motion_mode": 4,
+							"motion_mode": 0,
 							"presentation_anim": 0,
-							"primary_type": 17,
+							"primary_type": 32,
 							"target_shape": 0,
-							"targeting_flags": 4
+							"targeting_flags": 12
 						}
 					],
 					"upgraded_primary_value": -1,
@@ -14827,7 +14743,7 @@
 					"cost_modifier": 0,
 					"cost_modifier_n": 0,
 					"display_name": "Bone Spear",
-					"module_count": 2,
+					"module_count": 1,
 					"modules": [
 						{
 							"aim_binding": 0,
@@ -14835,7 +14751,20 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"modifiers": {
+											"construct_hp_pct": 0.5,
+											"spawn_furthest_empty_on_line": true
+										},
+										"spawn_unit_id": "bone_barricade",
+										"type": 7
+									}
+								}
+							],
 							"legacy_modifiers": {
 								"bone_spear": true
 							},
@@ -14847,28 +14776,6 @@
 							"scaling_stat": 2,
 							"target_shape": 5,
 							"target_shape_size": 4,
-							"targeting_flags": 8
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 0,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"construct_hp_pct": 0.5,
-								"spawn_furthest_empty_on_line": true
-							},
-							"max_range": 4,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 7,
-							"range_origin": 0,
-							"requires_los": true,
-							"spawn_unit_id": "bone_barricade",
-							"target_shape": 0,
 							"targeting_flags": 8
 						}
 					],
@@ -14884,7 +14791,7 @@
 						"spell"
 					],
 					"upgrade_description": "SKEWER 4 ATK 2; create a BONE BARRICADE on the furthest empty tile.",
-					"upgraded_module_count": 2,
+					"upgraded_module_count": 1,
 					"upgraded_modules": [
 						{
 							"aim_binding": 0,
@@ -14892,7 +14799,21 @@
 							"execution_phase": 0,
 							"gate": 0,
 							"keywords": [],
-							"layers": [],
+							"layers": [
+								{
+									"condition": 0,
+									"effect": {
+										"amount": 0,
+										"modifiers": {
+											"construct_hp_pct": 0.5,
+											"lightning_rod": true,
+											"spawn_furthest_empty_on_line": true
+										},
+										"spawn_unit_id": "bone_barricade",
+										"type": 7
+									}
+								}
+							],
 							"legacy_modifiers": {
 								"bone_spear": true
 							},
@@ -14904,29 +14825,6 @@
 							"scaling_stat": 2,
 							"target_shape": 5,
 							"target_shape_size": 4,
-							"targeting_flags": 8
-						},
-						{
-							"aim_binding": 1,
-							"aim_module_index": 0,
-							"amount": 0,
-							"execution_phase": 0,
-							"gate": 0,
-							"keywords": [],
-							"layers": [],
-							"legacy_modifiers": {
-								"construct_hp_pct": 0.5,
-								"lightning_rod": true,
-								"spawn_furthest_empty_on_line": true
-							},
-							"max_range": 4,
-							"min_range": 1,
-							"presentation_anim": 0,
-							"primary_type": 7,
-							"range_origin": 0,
-							"requires_los": true,
-							"spawn_unit_id": "bone_barricade",
-							"target_shape": 0,
 							"targeting_flags": 8
 						}
 					],
@@ -15805,7 +15703,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 9,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -15824,7 +15722,7 @@
 							},
 							"max_range": 1,
 							"min_range": 1,
-							"motion_mode": 9,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,
@@ -15857,7 +15755,7 @@
 							},
 							"max_range": 4,
 							"min_range": 1,
-							"motion_mode": 9,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"target_shape": 0,
@@ -15875,7 +15773,7 @@
 							},
 							"max_range": 2,
 							"min_range": 1,
-							"motion_mode": 9,
+							"motion_mode": 0,
 							"presentation_anim": 0,
 							"primary_type": 22,
 							"range_origin": 0,

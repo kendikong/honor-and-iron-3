@@ -25,7 +25,7 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	var hp: int = H.unit_hp(board, 2)
 	var ab: AbilityData = H.ability_on_unit(bruiser_before, &"bruiser_charge_strike")
 	var plan := Timeline.new()
-	plan.add(H.plan_ability(1, ab, Vector2i(3, 3), 2))
+	plan.add(_plan_charge_strike(1, ab, Vector2i(2, 3), Vector2i(3, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
 	var enemy: UnitState = result.final_state.get_unit_by_id(2)
@@ -47,12 +47,25 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	H.place_bruiser(far_board, 10, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
 	H.place_dummy(far_board, 11, Vector2i(5, 3))
 	var far_ab: AbilityData = H.ability_on_unit(H.unit_on_board(far_board, 10), &"bruiser_charge_strike")
-	var far_action: TimelineAction = H.plan_ability(10, far_ab, Vector2i(5, 3), 11)
+	var far_action: TimelineAction = _plan_charge_strike(10, far_ab, Vector2i(5, 3), Vector2i(5, 3), 11)
 	H.assert_true(
 		failures, "charge_strike/out_of_range",
 		not AbilitySystem.can_use(far_board, far_action),
-		"MOVE 2 then melee must reject targets beyond 3 tiles",
+		"MOVE 2 then melee must reject a landing beyond MOVE range",
 	)
+
+
+static func _plan_charge_strike(
+	actor_id: int,
+	ability: AbilityData,
+	land: Vector2i,
+	enemy_pos: Vector2i,
+	enemy_id: int,
+) -> TimelineAction:
+	var action: TimelineAction = H.plan_ability(actor_id, ability, land, -1)
+	AbilitySystem.set_module_target(action, 0, land, -1)
+	AbilitySystem.set_module_target(action, 1, enemy_pos, enemy_id)
+	return action
 
 
 static func run_concussion_blow(failures: Array[String]) -> void:

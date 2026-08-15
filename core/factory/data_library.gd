@@ -581,15 +581,21 @@ static func _make_modular_ability(
 	for module: AbilityModule in modules:
 		if module == null:
 			continue
-		if not AbilityModuleBridge.is_motion_type(module.primary_type):
-			if module.aim_binding == GameEnums.AimBinding.NEW_AIM:
-				authored_new_aim = true
+		if module.aim_binding != GameEnums.AimBinding.NEW_AIM:
+			continue
+		if AbilityModuleBridge.is_motion_type(module.primary_type):
+			if first_motion_range < 0:
+				first_motion_range = module.max_range
+			if not authored_new_aim:
 				ability.range_tiles = module.max_range
-				ability.target_shape = module.target_shape
-				ability.target_shape_size = module.target_shape_size
-				break
-		elif first_motion_range < 0:
-			first_motion_range = module.max_range
+				authored_new_aim = true
+			continue
+		if not authored_new_aim:
+			ability.range_tiles = module.max_range
+			authored_new_aim = true
+		ability.target_shape = module.target_shape
+		ability.target_shape_size = module.target_shape_size
+		break
 	if not authored_new_aim and first_motion_range >= 0:
 		ability.range_tiles = first_motion_range
 	if ability.target_shape != GameEnums.TargetShape.SINGLE and (

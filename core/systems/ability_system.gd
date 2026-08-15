@@ -447,15 +447,7 @@ static func planning_max_target_distance(actor: UnitState, ability: AbilityData)
 			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 		)
 		if move_steps > 0:
-			var followup_range := 0
-			for module: AbilityModule in active_modules_for(actor, ability):
-				if (
-					module != null
-					and module.primary_type == GameEnums.EffectType.DAMAGE
-					and module.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N
-				):
-					followup_range = maxi(followup_range, module.max_range)
-			max_range = maxi(max_range, move_steps + followup_range)
+			max_range = maxi(max_range, move_steps)
 	return max_range
 
 

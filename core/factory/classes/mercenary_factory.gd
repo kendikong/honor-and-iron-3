@@ -347,18 +347,12 @@ static func _swift_strike() -> AbilityData:
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.legacy_modifiers["swift_strike"] = true
-	var strike := _module(
-		GameEnums.EffectType.DAMAGE,
-		2,
-		1,
-		1,
-		GameEnums.TargetingFlags.ENEMY,
-	)
-	strike.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	strike.aim_module_index = 0
-	var modules: Array[AbilityModule] = [move, strike]
+	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
+	strike.scaling_stat = GameEnums.StatType.PHYSICAL
+	move.layers.append(_layer(strike))
+	var modules: Array[AbilityModule] = [move]
 	var upgraded := _clone_modules(modules)
-	upgraded[1].legacy_modifiers["target_damaged_ap"] = 1
+	upgraded[0].legacy_modifiers["target_damaged_ap"] = 1
 	return _ability(
 		&"mercenary_swift_strike",
 		"Swift Strike",

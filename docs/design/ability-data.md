@@ -255,13 +255,15 @@ Editor shows only shapes valid for the primary effect (MOVE → typically SINGLE
 
 ### 2.5 Aim binding + targeting mode
 
-**Aim binding** (how this module gets its targets):
+**Aim binding** (engine, not author-facing):
 
 | Binding | Meaning |
 |---------|---------|
-| `NEW_AIM` (default) | Player aims again — two different targets |
-| `SAME_AS_MODULE_N` | Reuse targets from module N — second effect, same aim |
-| `RULE_PICK` | Auto-pick by rule + params (e.g. highest HP enemy in R3 — Board Scrambler) |
+| `NEW_AIM` (default) | This module owns its own player aim |
+| `SAME_AS_MODULE_N` | Internal only — gated recast (Violent Collision). Same-target extras are **layers**, not a second module. |
+| `RULE_PICK` | Auto-pick by rule + params when a current skill needs it |
+
+Authors never pick “same as module N”. If two effects share one aim, the second is a **layer** on the first module. A new player click is a new module with `NEW_AIM`.
 
 **Tile mode**
 
