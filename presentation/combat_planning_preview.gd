@@ -367,6 +367,15 @@ static func _path_board_for_unit(
 	return live if live != null else start_board
 
 
+static func _paired_displace_preview_ability(action: TimelineAction, start_board: BoardState) -> bool:
+	if action == null or action.ability == null:
+		return false
+	if AbilitySystem.ability_has_swap_effect(action.ability):
+		return true
+	var actor: UnitState = start_board.get_unit_by_id(action.actor_id) if start_board != null else null
+	return AbilitySystem.motion_requires_occupied_target(actor, action.ability)
+
+
 ## Keep preview_paths aligned with movement abilities in `actions` when sim path is missing/short.
 func ensure_movement_intent_from_actions(
 	actions: Array,
@@ -411,9 +420,9 @@ func ensure_movement_intent_from_actions(
 			continue
 		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
 			continue
-		if action.ability != null and AbilitySystem.ability_has_swap_effect(action.ability):
-			## Swap is a paired displacement presentation, not an additional walk leg.
-			## Keep the preview route on the explicit approach MOVE (never sim swap tail).
+		if action.ability != null and _paired_displace_preview_ability(action, start_board):
+			## Swap / occupy-push are paired displacement, not an extra walk/dash leg.
+			## Keep the preview route on the explicit approach MOVE (never sim tail).
 			var approach: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			if move_actors.get(action.actor_id, false):
 				var planned_route: Array = movement_intents.get(action.actor_id, [])

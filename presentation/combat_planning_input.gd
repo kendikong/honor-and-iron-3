@@ -1201,6 +1201,19 @@ func on_hover_moved(cell: Vector2i) -> void:
 		_schedule_hover_sim_refresh()
 
 
+func _occupy_push_hover_tracks_immediately() -> bool:
+	## Occupy-push hover is a cheap clone (no Simulator). Do not wait for the
+	## pointer-still settle used to skip expensive dash/attack replay.
+	if _planning != null and _planning.qa_static_overlay:
+		return false
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if unit == null:
+		return false
+	return AbilitySystem.motion_requires_occupied_target(unit, _selected_ability_data(unit))
+
+
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 	## QA fixtures keep immediate sim. Live F5 uses the throttle so circling
 	## a unit does not resim every blue tile. Commit still flushes first.
@@ -1208,6 +1221,8 @@ func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 		return false
 	if not _director.board.is_in_bounds(cell):
 		return false
+	if _occupy_push_hover_tracks_immediately():
+		return true
 	if _planning != null and _planning.qa_static_overlay:
 		if _director.selected_unit_id < 0:
 			return false
@@ -2583,10 +2598,14 @@ func _preview_from_commit_slots_at_cell(
 			"intent_preview": true,
 		}
 	if _hover_can_preview_occupy_push_without_simulate(slots, cell):
+		var occupy_board: BoardState = _hover_occupy_push_preview_board(slots, cell)
+		var occupy_source: BoardState = _director.projected_state
+		if occupy_source == null:
+			occupy_source = _director.board
 		return {
 			"intents": [],
-			"events": [],
-			"temp_board": _hover_occupy_push_preview_board(slots, cell),
+			"events": _hover_displacement_events(occupy_source, occupy_board, unit_id),
+			"temp_board": occupy_board,
 			"actions": actions,
 			"intent_preview": true,
 		}
@@ -2723,6 +2742,37 @@ func _hover_occupy_push_preview_board(slots: Dictionary, cell: Vector2i) -> Boar
 	actor.position = old_pos
 	GridSystem.set_occupant(cheap, old_pos, uid)
 	return cheap
+
+
+func _hover_displacement_events(
+	source: BoardState,
+	cheap: BoardState,
+	actor_id: int,
+) -> Array:
+	var events: Array = []
+	if source == null or cheap == null:
+		return events
+	for unit: UnitState in source.units:
+		if unit == null:
+			continue
+		var after: UnitState = cheap.get_unit_by_id(unit.id)
+		if after == null or after.position == unit.position:
+			continue
+		if unit.id == actor_id:
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+				"actor": actor_id,
+				"from": unit.position,
+				"to": after.position,
+				"path": [after.position],
+			}))
+		else:
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+				"unit": unit.id,
+				"from": unit.position,
+				"to": after.position,
+				"pusher": actor_id,
+			}))
+	return events
 
 
 func _hover_interaction_cache_key(
@@ -2908,7 +2958,9 @@ func _drag_max_steps(unit: UnitState) -> int:
 	if not force_basic_movement and _director.selected_ability_index >= 0:
 		var ability := _selected_ability_data(unit)
 		if ability != null and AbilitySystem.ability_has_movement_effect(ability):
-			if _awaiting_flow_selected(unit, ability) and not awaiting_targeting_active():
+			if AbilitySystem.motion_requires_occupied_target(unit, ability):
+				pass
+			elif _awaiting_flow_selected(unit, ability) and not awaiting_targeting_active():
 				pass
 			else:
 				max_steps = AbilitySystem.active_range_tiles(unit, ability)
