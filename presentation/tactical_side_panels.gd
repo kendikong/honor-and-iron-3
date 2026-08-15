@@ -475,7 +475,6 @@ func _add_rich_panel(parent: VBoxContainer, title: String, min_h: int = 120) -> 
 
 var _last_skill_rebuild_key: String = ""
 var _skill_ui_lock: bool = false
-var _skill_scroll_generation: int = 0
 var _skill_ui_settle_generation: int = 0
 
 
@@ -536,6 +535,7 @@ func _on_ability_selected(index: int) -> void:
 		return
 	if _skill_list != null and _skill_list.get_child_count() > 0:
 		_update_skill_selection_highlight()
+		_scroll_selected_skill_into_view()
 	else:
 		_refresh_ability_buttons_if_dirty()
 	_schedule_info_refresh()
@@ -614,16 +614,19 @@ func _scroll_selected_skill_into_view() -> void:
 	var row: int = _skill_list_row_for_ability_index(_selected_ability)
 	if row < 0:
 		return
-	call_deferred("_ensure_skill_visible_by_index", row)
+	var count: int = _skill_list.get_child_count()
+	if row >= count:
+		return
+	var row_ctrl: Control = _skill_list.get_child(row) as Control
+	if row_ctrl == null or not is_instance_valid(row_ctrl):
+		return
+	if row_ctrl.size.y <= 1.0:
+		call_deferred("_ensure_skill_visible_by_index", row)
+		return
+	_apply_skill_list_scroll(row, row_ctrl)
 
 
 func _ensure_skill_visible_by_index(row: int) -> void:
-	_skill_scroll_generation += 1
-	var generation: int = _skill_scroll_generation
-	if is_inside_tree():
-		await get_tree().process_frame
-	if generation != _skill_scroll_generation:
-		return
 	if _skill_scroll == null or _skill_list == null:
 		return
 	if row != _skill_list_row_for_ability_index(_selected_ability):
@@ -634,6 +637,11 @@ func _ensure_skill_visible_by_index(row: int) -> void:
 	var row_ctrl: Control = _skill_list.get_child(row) as Control
 	if row_ctrl == null or not is_instance_valid(row_ctrl):
 		return
+	_apply_skill_list_scroll(row, row_ctrl)
+
+
+func _apply_skill_list_scroll(row: int, row_ctrl: Control) -> void:
+	var count: int = _skill_list.get_child_count()
 	var bar: VScrollBar = _skill_scroll.get_v_scroll_bar()
 	if row == 0:
 		_skill_scroll.scroll_vertical = 0
