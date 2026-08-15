@@ -17,5 +17,13 @@ static func make(p_type: GameEnums.SimEventType, p_data: Dictionary = {}) -> Sim
 	event.data = p_data
 	return event
 
+
+## Who actually moved. UNIT_MOVED may name them as `actor` (caster walk) or `unit` (someone else).
+func moved_unit_id() -> int:
+	var named: int = int(data.get("actor", -1))
+	if named >= 0:
+		return named
+	return int(data.get("unit", -1))
+
 func describe() -> String:
 	return "%s %s" % [GameEnums.SimEventType.keys()[type], data]

@@ -649,7 +649,7 @@ static func build_preview_paths(
 				if paths.has(id):
 					action_splits[id] = maxi(0, (paths[id] as Array).size() - 1)
 			GameEnums.SimEventType.UNIT_MOVED:
-				var id: int = int(d.get("actor", -1))
+				var id: int = (event as SimEvent).moved_unit_id()
 				if not paths.has(id):
 					paths[id] = []
 					splits[id] = 0
@@ -1115,7 +1115,7 @@ static func premove_displacement_realized(
 ) -> bool:
 	if director == null or action == null or action.ability == null:
 		return false
-	if action.type != GameEnums.ActionType.ABILITY or not action.ability.is_movement_kind():
+	if action.type != GameEnums.ActionType.ABILITY or not action.ability.is_pre_move_planner():
 		return false
 	if not _plan_pre_move_contains_action(director, action):
 		return false
@@ -1124,18 +1124,25 @@ static func premove_displacement_realized(
 		board = director.live_planning_board()
 	if board == null:
 		return false
-	var unit: UnitState = board.get_unit_by_id(action.actor_id)
-	if unit == null:
-		return false
-	if unit.position == action.target_coord:
-		return true
 	var turn_start: BoardState = director.base_board if director.base_board != null else director.board
 	if turn_start == null:
 		return false
-	var start_unit: UnitState = turn_start.get_unit_by_id(action.actor_id)
-	if start_unit == null:
-		return false
-	return unit.position != start_unit.position
+	var actor_live: UnitState = board.get_unit_by_id(action.actor_id)
+	var actor_start: UnitState = turn_start.get_unit_by_id(action.actor_id)
+	if actor_live != null and actor_start != null and actor_live.position != actor_start.position:
+		return true
+	if action.target_unit_id >= 0:
+		var target_live: UnitState = board.get_unit_by_id(action.target_unit_id)
+		var target_start: UnitState = turn_start.get_unit_by_id(action.target_unit_id)
+		if (
+			target_live != null
+			and target_start != null
+			and target_live.position != target_start.position
+		):
+			return true
+	if actor_live != null and actor_live.position == action.target_coord:
+		return true
+	return false
 
 
 ## After a committed pre-move, drop stale route prefix so the next leg starts at latest stand.

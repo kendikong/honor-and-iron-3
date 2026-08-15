@@ -465,7 +465,9 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 
 
 func _plan_for_ability(ability: AbilityData) -> Timeline:
-	if ability != null and ability.is_movement_kind():
+	if ability != null and (
+		ability.is_pre_move_planner() or ability.is_universal_run()
+	):
 		return plan_pre_move
 	return plan_action
 
@@ -940,7 +942,7 @@ func _slot_plan_for_action(action: TimelineAction) -> Timeline:
 			return plan_post_move
 		return plan_pre_move
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		if action.ability.is_movement_kind():
+		if action.ability.is_pre_move_planner() or action.ability.is_universal_run():
 			return plan_pre_move
 	return plan_action
 
@@ -2587,7 +2589,10 @@ func _refresh_plan_core() -> void:
 		if (
 			action.type == GameEnums.ActionType.ABILITY
 			and action.ability != null
-			and action.ability.is_movement_kind()
+			and (
+				action.ability.is_pre_move_planner()
+				or action.ability.is_universal_run()
+			)
 		):
 			var pre_board: BoardState = _board_before_planning_action(
 				action as TimelineAction, plan_to_run,
@@ -2642,9 +2647,7 @@ func _refresh_plan_core() -> void:
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(projected_state, plan_to_run, evs)
 
-	# Premoves (walk + movement skills like Swap) apply immediately on live board.
-	# Action-phase displacement (bash push, hook pull, etc.) stays preview-only until execute.
-	# Do not snap enemies back to turn-start: that undoes premoves that displace enemies.
+	# Pre-Move column applies immediately on the live board. Action / Post-Move stay preview-only.
 	board = _build_live_planning_board()
 	var new_intents := EnemyPlanner.plan(projected_state)
 	base_board.intents = new_intents
@@ -3124,52 +3127,66 @@ func _finalize_planning_commit_move_event(
 ) -> void:
 	if move_event == null or action == null or before_board == null:
 		return
-	var moved_id: int = int(move_event.data.get("unit", action.actor_id))
-	if moved_id != action.actor_id:
-		move_event.data["planning_commit_move"] = true
-		move_event.data["move_timing"] = action.move_timing
+	var moved_id: int = move_event.moved_unit_id()
+	if moved_id < 0:
+		moved_id = action.actor_id
+	move_event.data["actor"] = moved_id
+	move_event.data["unit"] = moved_id
+	var moved: UnitState = before_board.get_unit_by_id(moved_id)
+	if moved == null:
 		return
-	var actor: UnitState = before_board.get_unit_by_id(action.actor_id)
-	if actor == null:
-		return
-	var from_cell: Vector2i = actor.position
-	move_event.data["from"] = from_cell
-	move_event.data["to"] = action.target_coord
+	var from_cell: Vector2i = moved.position
+	if not move_event.data.get("from") is Vector2i:
+		move_event.data["from"] = from_cell
+	else:
+		from_cell = move_event.data["from"] as Vector2i
+	var to_cell: Vector2i = from_cell
+	if move_event.data.get("to") is Vector2i:
+		to_cell = move_event.data["to"] as Vector2i
+	elif moved_id == action.actor_id:
+		to_cell = action.target_coord
+		move_event.data["to"] = to_cell
 	var path_cells: Array = []
-	if not action.waypoints.is_empty():
-		path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
-	elif not _commit_intent_preview_paths.is_empty():
-		var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
-		preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
-		var leg: Array = CombatPlanningPreview.committed_action_route_leg(
-			action.actor_id, preview_stub, action, from_cell,
-		)
-		if leg.size() >= 2:
-			path_cells = leg
-		else:
-			var route: Variant = _commit_intent_preview_paths.get(action.actor_id, [])
-			if route is Array and (route as Array).size() >= 2:
-				var dest: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
-					route, from_cell, action.target_coord,
-				)
-				if not dest.is_empty():
-					path_cells = [from_cell]
-					path_cells.append_array(dest)
-	if path_cells.size() < 2:
-		path_cells = [from_cell]
-		var found: Array[Vector2i] = MovementSystem.find_path(
-			before_board, from_cell, action.target_coord, actor.movement.points_left,
-		)
-		if not found.is_empty():
-			path_cells.append_array(found)
-		elif GridSystem.manhattan(from_cell, action.target_coord) == 1:
-			path_cells.append(action.target_coord)
+	if move_event.data.get("path") is Array and (move_event.data["path"] as Array).size() >= 2:
+		path_cells = move_event.data["path"] as Array
+	elif moved_id == action.actor_id:
+		if not action.waypoints.is_empty():
+			path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
+		elif not _commit_intent_preview_paths.is_empty():
+			var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
+			preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
+			var leg: Array = CombatPlanningPreview.committed_action_route_leg(
+				action.actor_id, preview_stub, action, from_cell,
+			)
+			if leg.size() >= 2:
+				path_cells = leg
+			else:
+				var route: Variant = _commit_intent_preview_paths.get(action.actor_id, [])
+				if route is Array and (route as Array).size() >= 2:
+					var dest: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+						route, from_cell, action.target_coord,
+					)
+					if not dest.is_empty():
+						path_cells = [from_cell]
+						path_cells.append_array(dest)
+		if path_cells.size() < 2:
+			path_cells = [from_cell]
+			var found: Array[Vector2i] = MovementSystem.find_path(
+				before_board, from_cell, action.target_coord, moved.movement.points_left,
+			)
+			if not found.is_empty():
+				path_cells.append_array(found)
+			elif GridSystem.manhattan(from_cell, action.target_coord) == 1:
+				path_cells.append(action.target_coord)
+	if path_cells.size() < 2 and from_cell != to_cell:
+		path_cells = [from_cell, to_cell]
 	move_event.data["path"] = path_cells
 	move_event.data["planning_commit_move"] = true
 	move_event.data["move_timing"] = action.move_timing
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+		var caster: UnitState = before_board.get_unit_by_id(action.actor_id)
 		move_event.data["presentation_anim"] = AbilitySystem.resolve_presentation_anim(
-			action.ability, actor,
+			action.ability, caster,
 		)
 
 
@@ -3191,25 +3208,17 @@ func _finalize_planning_commit_push_event(
 
 
 func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
-	## Pre-move walks and reposition skills animate on planning commit.
-	## Post-move legs and action-phase displacement stay preview-only until Execute.
+	## Pre-Move column plays on commit. Action / Post-Move wait for Execute.
 	if action == null or action.move_timing == GameEnums.MoveTiming.POST_ACTION:
 		return false
 	if action.type == GameEnums.ActionType.MOVE:
 		return true
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		## Swap and MOVE_INTO_AND_PUSH use paired displacement presentation.
-		## TILE MOVE + INTO_OCCUPIED_PUSH still uses the normal premove walk tween.
-		if (
-			AbilitySystem.ability_has_swap_effect(action.ability)
-			or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
-		):
+		if AbilitySystem.ability_has_swap_effect(action.ability):
 			return false
-		if action.ability.is_movement_kind():
-			return true
 		return (
-			AbilitySystem.has_pass_through_effects(action.ability)
-			or AbilitySystem.ability_has_movement_effect(action.ability)
+			action.ability.is_pre_move_planner()
+			or action.ability.is_universal_run()
 		)
 	return false
 

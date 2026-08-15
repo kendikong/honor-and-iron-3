@@ -1395,11 +1395,13 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			]:
 				return true
-			if (
-				module.primary_type == GameEnums.EffectType.TELEPORT_CASTER
-				and not bool(module.legacy_modifiers.get("airlift_keep_caster", false))
-				and not AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
-			):
+			if module.primary_type == GameEnums.EffectType.TELEPORT_CASTER:
+				if (
+					module.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
+					or bool(module.legacy_modifiers.get("airlift_keep_caster", false))
+					or AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
+				):
+					continue
 				return true
 			if (
 				module.primary_type == GameEnums.EffectType.MOVE
@@ -1418,6 +1420,9 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 		if (
 			eff.type == GameEnums.EffectType.TELEPORT_CASTER
 			and not eff.modifiers.get("airlift_keep_caster", false)
+			and not eff.modifiers.get("reposition_opposite_side", false)
+			and int(eff.modifiers.get("motion_mode", GameEnums.MotionMode.NONE))
+				!= GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
 		):
 			return true
 		if (
@@ -1498,15 +1503,20 @@ static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> 
 	return false
 
 
-## Planning: one-click commit vs two-phase awaiting-target flow (keyword rules live here only).
+## Planning: one-click commit vs two-phase awaiting-target flow.
+## Tile / dash-line skills aim a cell. Unit-only skills (Swap, Reposition) commit on the unit.
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
-	var requires_aiming := (
-		ability_has_movement_effect(ability, actor)
-		or (active_targeting_flags(actor, ability) & GameEnums.TargetingFlags.TILE) != 0
+	var flags: int = active_targeting_flags(actor, ability)
+	var aims_cell: bool = (
+		(flags & GameEnums.TargetingFlags.TILE) != 0
+		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
+		or ability_has_dash(ability, actor)
 	)
-	if not requires_aiming or can_target_self(actor, ability):
+	if not aims_cell:
+		return GameEnums.PlanningCommitFlow.IMMEDIATE
+	if can_target_self(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
 	if not can_plan(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE

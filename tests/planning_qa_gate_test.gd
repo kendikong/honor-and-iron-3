@@ -39,6 +39,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_commit_plan_matches_hover_slots,
 		_test_undo_action_keeps_premove,
 		_test_premove_reposition_applies_live_board,
+		_test_premove_beast_reposition_applies_live_board,
 		_test_push_through_premove_moves_both_units,
 		_test_push_through_repaths_off_expensive_walk,
 		_test_move_preview_origin_premove_and_postmove,
@@ -118,6 +119,7 @@ static func run_all(failures: Array[String]) -> void:
 		"commit_matches_hover",
 		"undo_keeps_premove",
 		"premove_live_board",
+		"beast_reposition_live_board",
 		"push_through_live_both",
 		"push_through_repath",
 		"move_preview_origin",
@@ -1293,6 +1295,63 @@ static func _test_premove_reposition_applies_live_board(failures: Array[String])
 		actor.id,
 		live_actor.position,
 	)
+
+
+static func _test_premove_beast_reposition_applies_live_board(failures: Array[String]) -> void:
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var rider_def: UnitData = DataLibrary.get_unit(&"beast_rider")
+	if rider_def == null:
+		failures.append("PlanningQAGate beast reposition: beast_rider definition missing")
+		return
+	var reposition: AbilityData = null
+	for ability: AbilityData in rider_def.abilities:
+		if ability != null and ability.id == &"beast_reposition":
+			reposition = ability
+			break
+	if reposition == null:
+		failures.append("PlanningQAGate beast reposition: beast_reposition missing")
+		return
+	if not reposition.is_pre_move_planner():
+		failures.append("PlanningQAGate beast reposition: skill must be Pre-Move")
+		return
+	var actor := UnitState.create(1, rider_def, GameEnums.Team.PLAYER, Vector2i(2, 3), {
+		"active_abilities": [reposition],
+	})
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var dummy := UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, Vector2i(3, 3), {
+		"active_abilities": [],
+	})
+	var board := _plain_board(Vector2i(8, 6), [actor, dummy])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	var repos_action := TimelineAction.make_ability(actor.id, reposition, dummy.position, dummy.id)
+	var slots: Dictionary = {
+		"pre": [repos_action],
+		"action": [],
+		"post": [],
+		"_preview_validated": true,
+	}
+	if not director.commit_from_slots(actor.id, slots):
+		failures.append("PlanningQAGate beast reposition: commit rejected")
+		return
+	if director.plan_pre_move.entries.is_empty():
+		failures.append("PlanningQAGate beast reposition: must land in the Pre-Move column")
+	if not director.plan_action.entries.is_empty():
+		failures.append("PlanningQAGate beast reposition: must not land in the Action column")
+	var live_actor: UnitState = director.board.get_unit_by_id(actor.id)
+	var live_dummy: UnitState = director.board.get_unit_by_id(dummy.id)
+	if live_actor == null or live_actor.position != Vector2i(2, 3):
+		failures.append("PlanningQAGate beast reposition: caster must stay put during planning")
+	if live_dummy == null or live_dummy.position != Vector2i(1, 3):
+		failures.append(
+			"PlanningQAGate beast reposition: dummy must slide opposite during planning (got %s)"
+			% str(live_dummy.position if live_dummy != null else Vector2i(-1, -1)),
+		)
 
 
 static func _test_push_through_premove_moves_both_units(failures: Array[String]) -> void:

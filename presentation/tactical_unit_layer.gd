@@ -256,7 +256,7 @@ func reset_planning_walk_origins_for_moves(events: Array) -> void:
 		var event: SimEvent = raw as SimEvent
 		if event.type != GameEnums.SimEventType.UNIT_MOVED:
 			continue
-		var unit_id: int = int(event.data.get("actor", -1))
+		var unit_id: int = event.moved_unit_id()
 		if unit_id >= 0:
 			reset_ids[unit_id] = true
 	for unit_id: Variant in reset_ids.keys():
@@ -407,7 +407,7 @@ func _record_planning_route_event(event: SimEvent) -> void:
 			path.append(raw as Vector2i)
 	_planning_route_trace.append({
 		"kind": &"commit_event",
-		"unit_id": int(event.data.get("actor", -1)),
+		"unit_id": event.moved_unit_id(),
 		"from": event.data.get("from", Vector2i(-999, -999)),
 		"to": event.data.get("to", Vector2i(-999, -999)),
 		"path": path,
@@ -428,7 +428,7 @@ func _drain_planning_commit_queue() -> void:
 	match event.type:
 		GameEnums.SimEventType.UNIT_MOVED:
 			_planning_commit_stage = &"walk"
-			var unit_id: int = int(event.data.get("actor", -1))
+			var unit_id: int = event.moved_unit_id()
 			if _should_animate_planning_commit_move(unit_id, event):
 				_animate_planning_commit_move(event)
 				if _move_tweens.has(unit_id):
@@ -775,7 +775,7 @@ func apply_sim_event(event: SimEvent) -> void:
 	if (
 		event.type == GameEnums.SimEventType.UNIT_MOVED
 		and _is_planning_phase()
-		and _should_animate_planning_commit_move(int(event.data.get("actor", -1)), event)
+		and _should_animate_planning_commit_move(event.moved_unit_id(), event)
 	):
 		# Selection premove: owned by planning_commit_events → _animate_planning_commit_move.
 		return
@@ -1186,7 +1186,7 @@ func _update_depth(unit_id: int) -> void:
 func _should_animate_move(event: SimEvent) -> bool:
 	if event.data.get("teleport", false):
 		return false
-	var unit_id: int = int(event.data.get("actor", -1))
+	var unit_id: int = event.moved_unit_id()
 	if _is_planning_phase() and _should_animate_planning_commit_move(unit_id, event):
 		return false
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
@@ -1209,7 +1209,7 @@ func _should_animate_move(event: SimEvent) -> bool:
 
 
 func _snap_move(event: SimEvent) -> void:
-	var unit_id: int = int(event.data.get("actor", -1))
+	var unit_id: int = event.moved_unit_id()
 	var unit := _board.get_unit_by_id(unit_id) if _board != null else null
 	if unit == null:
 		return
@@ -1376,7 +1376,7 @@ func _cells_from_move_event(event: SimEvent, from_cell: Vector2i) -> Array[Vecto
 
 
 func _animate_planning_commit_move(event: SimEvent) -> void:
-	var unit_id: int = int(event.data.get("actor", -1))
+	var unit_id: int = event.moved_unit_id()
 	if unit_id < 0:
 		return
 	if not event.data.get("to") is Vector2i:

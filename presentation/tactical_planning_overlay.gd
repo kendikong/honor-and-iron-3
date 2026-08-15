@@ -1817,17 +1817,18 @@ func _draw_interaction_overlay() -> void:
 	var p_col: Color = _player_color_for_unit(actor)
 	var route: Array = prev.preview_paths.get(actor.id, [])
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
-	var teleport_hover: bool = (
+	var caster_teleport_hover: bool = (
 		sel_ability != null
 		and AbilitySystem.ability_has_effect(sel_ability, GameEnums.EffectType.TELEPORT_CASTER)
+		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
 	)
-	if not teleport_hover and _planning_input != null and _planning_input.dragging:
+	if not caster_teleport_hover and _planning_input != null and _planning_input.dragging:
 		if route.size() >= 2 and _unit_can_still_move(actor.id):
 			var drag_route: Array = _interaction_move_route(actor.id, prev, route)
 			if drag_route.size() >= 2:
 				_draw_route_line(drag_route, p_col, true, true)
 	elif (
-		not teleport_hover
+		not caster_teleport_hover
 		and _planning_input != null
 		and not _planning_input.drag_preview_failed
 		and _planning_input.is_live_preview_active()
@@ -1842,6 +1843,25 @@ func _draw_interaction_overlay() -> void:
 					draw_move_line = true
 			if draw_move_line:
 				_draw_route_line(draw_route, p_col, true, true)
+	if (
+		_planning_input != null
+		and _planning_input.is_live_preview_active()
+		and not _planning_input.drag_preview_failed
+	):
+		for other_id: Variant in prev.preview_paths.keys():
+			var other_unit_id: int = int(other_id)
+			if other_unit_id == actor.id:
+				continue
+			var other_route: Array = prev.preview_paths.get(other_unit_id, [])
+			if other_route.size() < 2:
+				continue
+			var other_unit: UnitState = _board.get_unit_by_id(other_unit_id) if _board != null else null
+			var other_col: Color = (
+				_player_color_for_unit(other_unit)
+				if other_unit != null
+				else p_col
+			)
+			_draw_dashed_route(other_route, Color(other_col.r, other_col.g, other_col.b, 0.85))
 	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
 	var self_target_skill: bool = (

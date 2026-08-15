@@ -3878,7 +3878,9 @@ func _empty_commit_slots() -> Dictionary:
 
 
 func _ability_plan_column(ability: AbilityData) -> String:
-	if ability != null and ability.is_movement_kind():
+	if ability != null and (
+		ability.is_pre_move_planner() or ability.is_universal_run()
+	):
 		return "pre"
 	return "action"
 

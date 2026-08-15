@@ -587,11 +587,17 @@ static func apply_reposition(
 	var destination := resolve_reposition_destination(board, actor, target)
 	if destination == Vector2i(-1, -1):
 		return
-	GridSystem.set_occupant(board, target.position, -1)
+	var from_cell: Vector2i = target.position
+	GridSystem.set_occupant(board, from_cell, -1)
 	target.position = destination
 	GridSystem.set_occupant(board, destination, target.id)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-		"unit": target.id, "to": destination, "reposition": true,
+		"unit": target.id,
+		"actor": target.id,
+		"from": from_cell,
+		"to": destination,
+		"path": [from_cell, destination],
+		"reposition": true,
 	}))
 
 
