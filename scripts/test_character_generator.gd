@@ -107,6 +107,43 @@ func _test_class_loadout_forced_items() -> void:
 		recipe.selections.has("shield"),
 		"knight loadout includes shield slot",
 	)
+	if recipe.selections.has("shield"):
+		_assert(
+			str(recipe.selections["shield"].get("id", "")) == "shield_heater_revised_wood",
+			"knight shield forced to heater",
+		)
+	var mage_recipe := CharacterRoller.roll(catalog, profile, 12345, "mage")
+	_assert(
+		str(mage_recipe.selections.get("weapon", {}).get("id", "")) == "weapon_magic_wand",
+		"mage weapon forced to wand",
+	)
+	var engineer_recipe := CharacterRoller.roll(catalog, profile, 12345, "engineer")
+	_assert(
+		str(engineer_recipe.selections.get("weapon", {}).get("id", "")) == "tool_smash",
+		"engineer weapon forced to smash tool",
+	)
+	var monk_recipe := CharacterRoller.roll(catalog, profile, 12345, "monk")
+	_assert(
+		not monk_recipe.selections.has("weapon"),
+		"monk loadout leaves weapon empty",
+	)
+	_assert(
+		str(monk_recipe.selections.get("sash", {}).get("id", "")) == "belt_obi",
+		"monk sash forced to obi",
+	)
+	profile.set_class_forced_item("knight", "hat", "hat_helmet_greathelm")
+	profile.set_class_slot_fill("knight", "hat", 0.0)
+	var knight_no_hat := CharacterRoller.roll(catalog, profile, 12345, "knight")
+	_assert(
+		not knight_no_hat.selections.has("hat"),
+		"forced hat at 0% fill stays empty",
+	)
+	profile.set_class_slot_fill("knight", "hat", 1.0)
+	var knight_hat := CharacterRoller.roll(catalog, profile, 12345, "knight")
+	_assert(
+		str(knight_hat.selections.get("hat", {}).get("id", "")) == "hat_helmet_greathelm",
+		"forced hat at 100% fill is greathelm",
+	)
 
 
 func _test_weight_manager_get_weight() -> void:

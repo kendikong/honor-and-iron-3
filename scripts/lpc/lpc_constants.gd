@@ -11,6 +11,7 @@ const CATALOG_PATH: String = "res://resources/character/lpc_catalog.json"
 const LPC_CLASS_OVERRIDE_SLOTS: Array[String] = [
 	"weapon", "shield", "armour", "clothes", "legs", "shoes", "hat", "cape", "quiver",
 	"belt", "sash", "shoulders", "gloves", "wings", "tail", "horns", "backpack",
+	"facial_mask", "charm", "bandages", "overalls", "headcover", "furry_ears",
 ]
 
 const LPC_PLAYER_CLASS_IDS: Array[String] = [

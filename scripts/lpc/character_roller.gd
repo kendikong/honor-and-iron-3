@@ -281,7 +281,8 @@ static func _should_fill_slot(
 	if not class_id.is_empty():
 		var forced_id: String = profile.class_forced_item(class_id, type_name)
 		if not forced_id.is_empty():
-			return true
+			var forced_chance: float = profile.class_slot_fill_chance(class_id, type_name, 1.0)
+			return rng.randf() < forced_chance
 	if catalog.is_required_slot(type_name):
 		return true
 	var default_chance: float = catalog.default_fill_chance(type_name)
@@ -368,6 +369,10 @@ static func _apply_class_forced_items(
 			)
 			continue
 		var slot: String = str(found.get("slot", slot_name))
+		var fill_chance: float = profile.class_slot_fill_chance(class_id, str(slot_name), 1.0)
+		## Optional flavor (fill < 1) only re-asserts if the roll already kept it.
+		if fill_chance < 1.0 and not recipe.selections.has(slot):
+			continue
 		var item: Dictionary = found["item"] as Dictionary
 		var selection: Dictionary = _build_selection_entry(
 			catalog,
