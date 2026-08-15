@@ -104,9 +104,6 @@ var _hover_perimeter_cache_key: int = 0
 var _cached_hover_perimeter_segments: Array = []
 var _static_tiles_layer: Node2D
 var _hover_tile_layer: Node2D
-var _anim_redraw_accum: float = 0.0
-var _hover_redraw_immediate: bool = false
-const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 30.0
 
 
 func setup(
@@ -1120,17 +1117,7 @@ func _process(delta: float) -> void:
 	if need_redraw:
 		queue_redraw()
 	elif CombatDirector.is_planning_phase(_phase) and _overlay_needs_flow_animation():
-		_anim_redraw_accum += delta
-		if _hover_redraw_immediate or _anim_redraw_accum >= _overlay_flow_interval_sec():
-			_hover_redraw_immediate = false
-			_anim_redraw_accum = 0.0
-			queue_redraw()
-
-
-func _overlay_flow_interval_sec() -> float:
-	if qa_static_overlay or _game_settings == null:
-		return _FLOW_ANIM_REDRAW_INTERVAL_SEC
-	return _game_settings.overlay_flow_interval_sec()
+		queue_redraw()
 
 
 func _overlay_needs_flow_animation() -> bool:
