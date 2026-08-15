@@ -79,9 +79,6 @@ var _turn_start_enemy_ghost_events: Array[SimEvent] = []
 var _pending_planning_commit_events: Array[SimEvent] = []
 ## Swap premoves: play planning presentation before snapping sprites to swapped board tiles.
 var _swap_planning_presentations: Array[TimelineAction] = []
-## Execute replay: skip player premove visuals already shown during planning commit.
-var _skip_committed_premove_visuals: bool = false
-var _execute_premove_skip_actions: Array[TimelineAction] = []
 var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
@@ -1163,15 +1160,28 @@ func _get_combined_plan() -> Timeline:
 	var combined = Timeline.new()
 	for a in plan_pre_move.entries:
 		combined.add(a)
+	_append_execute_plan_entries(combined)
+	return combined
+
+
+## Action + Post-Move only. Pre-Move already resolved on the live board at commit.
+func _get_execute_plan() -> Timeline:
+	var remaining := Timeline.new()
+	_append_execute_plan_entries(remaining)
+	return remaining
+
+
+func _append_execute_plan_entries(plan: Timeline) -> void:
+	if plan == null:
+		return
 	for a in plan_action.entries:
-		combined.add(a)
+		plan.add(a)
 	var wait_ids: Array = _wait_unit_ids.keys()
 	wait_ids.sort()
 	for uid_var: Variant in wait_ids:
-		combined.add(_make_wait_action(int(uid_var)))
+		plan.add(_make_wait_action(int(uid_var)))
 	for a in plan_post_move.entries:
-		combined.add(a)
-	return combined
+		plan.add(a)
 
 func _build_preview_plan(unit_id: int, new_actions: Array) -> Timeline:
 	var strip_pre: bool = false
@@ -1915,16 +1925,14 @@ func execute_turn() -> void:
 	if not is_planning_phase(phase):
 		return
 	var current_run_id: int = _run_id
-	var combined := _get_combined_plan()
-	_skip_committed_premove_visuals = not plan_pre_move.entries.is_empty()
-	_execute_premove_skip_actions.clear()
-	for action: TimelineAction in plan_pre_move.entries:
-		_execute_premove_skip_actions.append(action)
-	var result: SimResult = Simulator.simulate(base_board, combined)
+	## Pre-Move is immediate (pre-execution): already on the live board at commit.
+	## Execute only resolves Action + Post-Move from that board.
+	var execute_start: BoardState = live_planning_board()
+	if execute_start == null:
+		execute_start = base_board
+	var result: SimResult = Simulator.simulate(execute_start, _get_execute_plan())
 	_set_phase(Phase.EXECUTING)
 	await _play_events(result.events)
-	_skip_committed_premove_visuals = false
-	_execute_premove_skip_actions.clear()
 	if current_run_id != _run_id:
 		return
 	base_board = result.final_state
@@ -2232,11 +2240,6 @@ func _await_push_animations(run_id: int) -> void:
 func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
 		return
-	if _skip_committed_premove_visuals:
-		events = _filter_committed_premove_visual_events(events)
-		if events.is_empty():
-			return
-	
 	var pre_move_events: Array[SimEvent] = []
 	var post_move_events: Array[SimEvent] = []
 	var attack_events: Array[SimEvent] = []
@@ -3250,84 +3253,6 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 			action.ability.is_pre_move_planner()
 			or action.ability.is_universal_run()
 		)
-	return false
-
-
-func _filter_committed_premove_visual_events(events: Array[SimEvent]) -> Array[SimEvent]:
-	if _execute_premove_skip_actions.is_empty():
-		return events
-	var remaining: Array[TimelineAction] = _execute_premove_skip_actions.duplicate()
-	var out: Array[SimEvent] = []
-	var skip_push_unit_ids: Dictionary = {}
-	for event: SimEvent in events:
-		if (
-			event.type == GameEnums.SimEventType.UNIT_PUSHED
-			and bool(event.data.get("swap_displacement", false))
-			and _execute_premove_swap_covers_unit(int(event.data.get("unit", -1)))
-		):
-			continue
-		if remaining.is_empty():
-			if (
-				event.type == GameEnums.SimEventType.UNIT_PUSHED
-				and skip_push_unit_ids.has(int(event.data.get("unit", -1)))
-				and not event.data.has("pusher")
-			):
-				continue
-			out.append(event)
-			continue
-		if _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids):
-			continue
-		out.append(event)
-	return out
-
-
-func _consume_committed_premove_visual_event(
-	event: SimEvent,
-	remaining: Array[TimelineAction],
-	skip_push_unit_ids: Dictionary,
-) -> bool:
-	if remaining.is_empty():
-		return false
-	var action: TimelineAction = remaining[0]
-	match action.type:
-		GameEnums.ActionType.MOVE:
-			if event.type != GameEnums.SimEventType.UNIT_MOVED:
-				return false
-			if int(event.data.get("actor", -1)) != action.actor_id:
-				return false
-			remaining.pop_front()
-			return true
-		GameEnums.ActionType.ABILITY:
-			if action.ability == null:
-				remaining.pop_front()
-				return _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids)
-			if event.type == GameEnums.SimEventType.ABILITY_USED:
-				if int(event.data.get("actor", -1)) != action.actor_id:
-					return false
-				if event.data.get("ability", &"") != action.ability.id:
-					return false
-				remaining.pop_front()
-				if action.ability.is_movement_kind() and AbilitySystem.ability_has_swap_effect(action.ability):
-					if action.target_unit_id >= 0:
-						skip_push_unit_ids[action.target_unit_id] = true
-					skip_push_unit_ids[action.actor_id] = true
-				return true
-			return false
-		_:
-			remaining.pop_front()
-			return _consume_committed_premove_visual_event(event, remaining, skip_push_unit_ids)
-
-
-func _execute_premove_swap_covers_unit(unit_id: int) -> bool:
-	if unit_id < 0:
-		return false
-	for action: TimelineAction in _execute_premove_skip_actions:
-		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
-			continue
-		if not AbilitySystem.ability_has_swap_effect(action.ability):
-			continue
-		if action.actor_id == unit_id or action.target_unit_id == unit_id:
-			return true
 	return false
 
 
