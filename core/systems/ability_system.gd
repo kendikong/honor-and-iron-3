@@ -2040,6 +2040,14 @@ static func _ability_has_modifier(
 		return true
 	if key == &"cost_all_movement" and ability.cost_modifier == GameEnums.CostModifier.SPEND_ALL_MOVEMENT:
 		return true
+	if key == &"ally_corpse" and ability_occupant_is(
+		actor, ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE
+	):
+		return true
+	if key == &"l_shape_move":
+		for module: AbilityModule in active_modules_for(actor, ability):
+			if module != null and module.motion_mode == GameEnums.MotionMode.L_SHAPE:
+				return true
 	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and (
 			effect.modifiers.has(key) or effect.modifiers.has(String(key))
@@ -3351,9 +3359,22 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			effect_index += 1
 			continue
 
-		if effect.modifiers.has("target_after_move_adjacent"):
+		if (
+			effect.type == GameEnums.EffectType.DAMAGE
+			and (
+				effect.modifiers.has("target_after_move_adjacent")
+				or effect.modifiers.has(&"target_after_move_adjacent")
+			)
+		):
 			var adjacent_target: UnitState = resolve_action_target(board, action)
-			if adjacent_target == null:
+			if (
+				adjacent_target == null
+				or adjacent_target.id == actor.id
+				or adjacent_target.team == actor.team
+				or not adjacent_target.is_alive()
+				or not adjacent_target.is_enemy()
+			):
+				adjacent_target = null
 				for dir: Vector2i in GridSystem.DIRECTIONS:
 					var adj: Vector2i = actor.position + dir
 					if not board.is_in_bounds(adj):
@@ -3806,7 +3827,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.DAMAGE:
 			if target != null:
 				if (
-					effect.modifiers.has("side_attack_only")
+					(
+						effect.modifiers.has("side_attack_only")
+						or effect.modifiers.has(&"side_attack_only")
+					)
 					and not _is_side_attack(actor, target)
 				):
 					return

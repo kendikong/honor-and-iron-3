@@ -162,7 +162,10 @@ func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 			case.target,
 		)
 		if _slots_invalid(slots) or _plan_has_awaiting(actor_id):
-			slots = await _commit_live_click(runner, actor_id, case.target)
+			var follow_up: Vector2i = case.target
+			if skill_id == &"archer_parting_shot":
+				follow_up = _parting_shot_retreat_cell(case.actor, case.target)
+			slots = await _commit_live_click(runner, actor_id, follow_up)
 		assert_bool(_slots_invalid(slots)).override_failure_message(
 			"%s: preview rejected a Bible-valid target: %s" % [skill_id, _slots_debug(slots)],
 		).is_false()
@@ -250,6 +253,22 @@ func _assert_live_result(result: SimResult, case: Dictionary, actor_id: int) -> 
 	assert_bool(observed).override_failure_message(
 		"%s: authored effect was not observed in live simulation" % case.id,
 	).is_true()
+
+
+func _parting_shot_retreat_cell(actor_cell: Vector2i, enemy_cell: Vector2i) -> Vector2i:
+	## Bible: after the RANGE 3 shot, MOVE 2 onto an empty tile — not the enemy cell.
+	var candidates: Array[Vector2i] = [
+		actor_cell + Vector2i(0, 2),
+		actor_cell + Vector2i(0, -2),
+		actor_cell + Vector2i(-2, 0),
+		actor_cell + Vector2i(2, 0),
+	]
+	for cell: Vector2i in candidates:
+		if cell != enemy_cell and _director.board.is_in_bounds(cell):
+			var occ: UnitState = _director.board.get_unit_at(cell)
+			if occ == null:
+				return cell
+	return actor_cell + Vector2i(0, 2)
 
 
 func _commit_live_click(

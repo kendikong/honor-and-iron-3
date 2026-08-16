@@ -180,6 +180,20 @@ func compile_runtime_modifiers() -> Dictionary:
 					bag["trample"] = keyword.amount
 			_:
 				pass
+	if target_filter == GameEnums.ModuleTargetFilter.OCCUPANT:
+		match target_filter_occupant:
+			GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
+				bag["ally_corpse"] = true
+			GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT:
+				bag["construct_target_only"] = true
+			GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT:
+				bag["recall_adjacent_construct"] = true
+			GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE:
+				bag["fetch_item_or_corpse"] = true
+			GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY:
+				bag["maul_dragged_enemy"] = true
+			_:
+				pass
 	return bag
 
 

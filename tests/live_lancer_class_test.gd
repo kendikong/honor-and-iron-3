@@ -51,7 +51,7 @@ const _CASES: Array[Dictionary] = [
 	},
 	{
 		"id": &"lancer_piercing_charge",
-		"range": 2,
+		"range": 3,
 		"flags": GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE,
 		"shape_size": 1,
@@ -537,20 +537,12 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 			"%s: live commit did not write the selected ability; slots=%s plan=%s"
 			% [skill_id, _slots_debug(slots), _plan_debug()],
 		).is_true()
-		if skill_id == &"lancer_flanking_maneuver":
-			await _MOVEMENT_QA.commit_universal_run(
-				self,
-				runner,
-				_director,
-				_input,
-				actor_id,
-				Vector2i(3, 3),
-				true,
-			)
 		await _MOVEMENT_QA.assert_committed(
 			self, skill_id, _director, actor_id, ability, slots, _input, _overlay, runner,
 		)
 
+	if batch.skills.has(&"lancer_flanking_maneuver"):
+		_set_dummy_facing(Vector2i(4, 4), GameEnums.Facing.NORTH)
 	var result: SimResult = Simulator.simulate(_director.base_board, _director.get_player_plan())
 	for skill_id: StringName in batch.skills:
 		var case := _case_by_id(skill_id)
@@ -593,6 +585,14 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	assert_int(primary.amount).override_failure_message(
 		"%s: primary effect amount" % case.id,
 	).is_equal(int(case.primary_amount))
+	if case.id == &"lancer_piercing_charge":
+		assert_bool(ability.modules.size() >= 2).override_failure_message(
+			"%s: dash prefix must keep a RANGE 2 strike module" % case.id,
+		).is_true()
+		if ability.modules.size() >= 2:
+			assert_int(ability.modules[1].max_range).override_failure_message(
+				"%s: strike range expected 2 got %s" % [case.id, ability.modules[1].max_range],
+			).is_equal(2)
 	for key: StringName in case.upgrade_keys:
 		assert_bool(_effects_have_key(ability.upgraded_effects, key)).override_failure_message(
 			"%s: missing [+] effect modifier %s" % [case.id, key],
@@ -733,18 +733,13 @@ func _commit_awaiting_skill(
 	await runner.simulate_frames(3, _DELTA_MS)
 	var slots: Dictionary = await _commit_live_click(runner, actor_id, arm_cell)
 	if _plan_has_awaiting(actor_id):
-		if skill_id == &"lancer_flanking_maneuver":
-			var actor: UnitState = _director.board.get_unit_by_id(actor_id)
-			var route: Array[Vector2i] = _manhattan_drag_route(actor.position, target_cell)
-			slots = await _commit_drag_finalize(runner, actor_id, route, target_cell)
-		else:
-			if skill_id != &"lancer_glorious_charge":
-				await _OVERLAY_QA.assert_live_overlay_parity(
-					self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
-				)
-			slots = await _commit_live_click(runner, actor_id, target_cell)
-			if skill_id == &"lancer_piercing_charge" and _plan_has_awaiting(actor_id):
-				slots = await _commit_live_click(runner, actor_id, Vector2i(8, 4))
+		if skill_id != &"lancer_glorious_charge":
+			await _OVERLAY_QA.assert_live_overlay_parity(
+				self, runner, _overlay, _input, _director, actor_id, ability, target_cell, skill_id,
+			)
+		slots = await _commit_live_click(runner, actor_id, target_cell)
+		if skill_id == &"lancer_piercing_charge" and _plan_has_awaiting(actor_id):
+			slots = await _commit_live_click(runner, actor_id, Vector2i(8, 4))
 	return slots
 
 
@@ -810,11 +805,21 @@ func _first_slot_action(slots: Dictionary) -> TimelineAction:
 
 
 func _set_dummy_facing(cell: Vector2i, facing: GameEnums.Facing) -> void:
-	for board: BoardState in [_director.base_board, _director.board, _director.projected_state]:
+	for board: BoardState in [
+		_director.base_board, _director.board, _director.projected_state, _batch_base_board,
+	]:
 		if board == null:
 			continue
 		for unit: UnitState in board.units:
-			if unit != null and unit.position == cell:
+			if unit == null:
+				continue
+			if (
+				unit.position == cell
+				or (
+					unit.definition != null
+					and unit.definition.id == &"training_dummy"
+				)
+			):
 				unit.facing = facing
 
 

@@ -5253,7 +5253,11 @@ func _final_commit_slots_for_click_at_cell(
 	)
 	if (
 		selected_ability != null
-		and AbilitySystem.ability_has_modifier(selected_ability, &"ally_corpse", caster_for_corpse)
+		and AbilitySystem.ability_occupant_is(
+			caster_for_corpse,
+			selected_ability,
+			GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE,
+		)
 	):
 		var corpse: UnitState = AbilitySystem.ally_corpse_at(
 			_director.board, caster_for_corpse, cell,
@@ -5267,7 +5271,11 @@ func _final_commit_slots_for_click_at_cell(
 		and not unit_at.is_enemy()
 		and (
 			unit_at.is_alive()
-			or AbilitySystem.ability_has_modifier(selected_ability, &"ally_corpse", caster_for_corpse)
+			or AbilitySystem.ability_occupant_is(
+				caster_for_corpse,
+				selected_ability,
+				GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE,
+			)
 		)
 	):
 		if unit_at.id != unit_id:
@@ -5493,7 +5501,11 @@ func _resolve_hover_unit_at(cell: Vector2i) -> UnitState:
 	var ability: AbilityData = _selected_ability_data(actor) if actor != null else null
 	if (
 		ability != null
-		and AbilitySystem.ability_has_modifier(ability, &"ally_corpse", actor)
+		and AbilitySystem.ability_occupant_is(
+			actor,
+			ability,
+			GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE,
+		)
 	):
 		var corpse: UnitState = AbilitySystem.ally_corpse_at(_director.board, actor, cell)
 		if corpse == null:
