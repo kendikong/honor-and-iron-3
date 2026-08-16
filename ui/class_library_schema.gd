@@ -277,6 +277,50 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 			return GameEnums.StatusType.keys()[st].capitalize().replace("_", " ")
 
 
+## Derived click-condition line from one authored module filter.
+static func module_target_filter_line(module: AbilityModule) -> String:
+	if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
+		return ""
+	match module.target_filter:
+		GameEnums.ModuleTargetFilter.HP:
+			if module.target_filter_hp == GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP:
+				return "TARGET HP MUST BE BELOW CASTER HP"
+			return "TARGET HP MUST BE BELOW %d%%" % module.target_filter_hp_pct
+		GameEnums.ModuleTargetFilter.STATUS:
+			match module.target_filter_status_mode:
+				GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF:
+					return "TARGET MUST HAVE A DEBUFF"
+				GameEnums.ModuleTargetFilterStatus.NOT_ACTED:
+					return "TARGET MUST NOT HAVE ACTED"
+				_:
+					var names: PackedStringArray = PackedStringArray()
+					if module.target_filter_status != GameEnums.StatusType.NONE:
+						names.append(GameEnums.StatusType.keys()[module.target_filter_status])
+					if module.target_filter_status_or != GameEnums.StatusType.NONE:
+						names.append(GameEnums.StatusType.keys()[module.target_filter_status_or])
+					if names.is_empty():
+						return "TARGET MUST HAVE A STATUS"
+					return "TARGET MUST HAVE %s" % " OR ".join(names)
+		GameEnums.ModuleTargetFilter.STAT:
+			return "TARGET CON MUST BE ≤ CASTER STR"
+		GameEnums.ModuleTargetFilter.OCCUPANT:
+			match module.target_filter_occupant:
+				GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT:
+					return "TARGET MUST BE AN ALLY CONSTRUCT"
+				GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT:
+					return "TARGET TILE MUST BE ADJACENT TO AN ALLY CONSTRUCT"
+				GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE:
+					return "TARGET MUST BE AN ITEM OR CORPSE"
+				GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
+					return "TARGET MUST BE AN ALLY CORPSE"
+				GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY:
+					return "TARGET MUST BE THE DRAGGED ENEMY"
+				_:
+					return ""
+		_:
+			return ""
+
+
 ## Derived click-condition line from the first authored module filter.
 static func ability_target_filter_line(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
@@ -284,46 +328,9 @@ static func ability_target_filter_line(ability: AbilityData, unit: UnitState = n
 	var upgraded: bool = unit != null and unit.is_ability_upgraded(ability.id)
 	var modules: Array[AbilityModule] = ability.get_active_modules(upgraded)
 	for module: AbilityModule in modules:
-		if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
-			continue
-		match module.target_filter:
-			GameEnums.ModuleTargetFilter.HP:
-				if module.target_filter_hp == GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP:
-					return "TARGET HP MUST BE BELOW CASTER HP"
-				return "TARGET HP MUST BE <%d%%" % module.target_filter_hp_pct
-			GameEnums.ModuleTargetFilter.STATUS:
-				match module.target_filter_status_mode:
-					GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF:
-						return "TARGET MUST HAVE A DEBUFF"
-					GameEnums.ModuleTargetFilterStatus.NOT_ACTED:
-						return "TARGET MUST NOT HAVE ACTED"
-					_:
-						var names: PackedStringArray = PackedStringArray()
-						if module.target_filter_status != GameEnums.StatusType.NONE:
-							names.append(GameEnums.StatusType.keys()[module.target_filter_status])
-						if module.target_filter_status_or != GameEnums.StatusType.NONE:
-							names.append(GameEnums.StatusType.keys()[module.target_filter_status_or])
-						if names.is_empty():
-							return "TARGET MUST HAVE A STATUS"
-						return "TARGET MUST HAVE %s" % " OR ".join(names)
-			GameEnums.ModuleTargetFilter.STAT:
-				return "TARGET CON MUST BE ≤ CASTER STR"
-			GameEnums.ModuleTargetFilter.OCCUPANT:
-				match module.target_filter_occupant:
-					GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT:
-						return "TARGET MUST BE AN ALLY CONSTRUCT"
-					GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT:
-						return "TARGET TILE MUST BE ADJACENT TO AN ALLY CONSTRUCT"
-					GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE:
-						return "TARGET MUST BE AN ITEM OR CORPSE"
-					GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
-						return "TARGET MUST BE AN ALLY CORPSE"
-					GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY:
-						return "TARGET MUST BE THE DRAGGED ENEMY"
-					_:
-						return ""
-			_:
-				return ""
+		var line: String = module_target_filter_line(module)
+		if line != "":
+			return line
 	return ""
 
 

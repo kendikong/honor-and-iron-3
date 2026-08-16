@@ -790,6 +790,9 @@ static func _ability_module_line_bbcode(module: AbilityModule) -> String:
 		var layer_part: String = _module_effect_bbcode_part(layer.effect)
 		if layer_part != "":
 			parts.append(layer_part)
+	var filter_plain: String = ClassLibrarySchema.module_target_filter_line(module)
+	if filter_plain != "":
+		parts.append(_kw_hint(filter_plain, "Legal click condition for this skill."))
 	return " | ".join(parts)
 
 
@@ -1067,7 +1070,7 @@ static func _ability_keyword_tooltip_lines(
 			if kw.is_empty():
 				continue
 			lines.append(_kw_tooltip_line(kw, _bible_segment_hint(kw)))
-		return lines
+		return _with_target_filter_tooltip(lines, ability, unit)
 	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):
 		var line: String = _effect_tooltip_line(effect)
 		if not line.is_empty():
@@ -1081,6 +1084,17 @@ static func _ability_keyword_tooltip_lines(
 			"AOE %s %d" % [shape_name, AbilitySystem.active_target_shape_size(unit, ability)],
 			_glossary_def("AOE"),
 		))
+	return _with_target_filter_tooltip(lines, ability, unit)
+
+
+static func _with_target_filter_tooltip(
+	lines: PackedStringArray,
+	ability: AbilityData,
+	unit: UnitState,
+) -> PackedStringArray:
+	var filter_line: String = ClassLibrarySchema.ability_target_filter_line(ability, unit)
+	if filter_line != "":
+		lines.append(_kw_tooltip_line(filter_line, "Legal click condition for this skill."))
 	return lines
 
 
@@ -1383,6 +1397,9 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 		if aoe_label != "":
 			header.append(aoe_label)
 		header.append(bible_line)
+		var filter_line: String = ClassLibrarySchema.ability_target_filter_line(ability, unit)
+		if filter_line != "":
+			header.append(filter_line)
 		return " | ".join(header)
 	var parts: Array[String] = []
 	for effect: EffectData in AbilitySystem.compatibility_effects_for(unit, ability):

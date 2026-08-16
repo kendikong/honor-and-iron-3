@@ -24,6 +24,10 @@ static func run_all(failures: Array[String]) -> void:
 	var schema_source: String = FileAccess.get_file_as_string(SCHEMA_PATH)
 	if not schema_source.contains("return migrate_editor_save_to_modules(parsed as Dictionary)"):
 		failures.append("class library save reader bypasses module migration")
+	if not source.contains("ability_skill_module_lines_bbcode"):
+		failures.append(
+			"class library In-Game Preview does not use CombatUiFormatters.ability_skill_module_lines_bbcode"
+		)
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_runtime_legacy_read_migrates(failures)
 	_assert_non_status_modules_clear_status_type(failures)

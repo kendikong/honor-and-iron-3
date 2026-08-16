@@ -50,6 +50,10 @@ static func run_all(failures: Array[String]) -> void:
 	_test_schema_module_round_trip(failures)
 	_report_scenario("schema_module_round_trip", failures, scenario_failures)
 	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: skill_card_shows_condition START")
+	_test_skill_card_shows_condition(failures)
+	_report_scenario("skill_card_shows_condition", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip START")
 	_test_legacy_json_import_round_trip(failures)
 	_report_scenario("legacy_json_import_round_trip", failures, scenario_failures)
@@ -526,12 +530,37 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	var player_text: String = CombatUiFormatters.ability_effect_bbcode(authored)
 	if player_text.find("PUSH") < 0:
 		failures.append("module-first player-facing formatter lost PUSH text")
+	var card_lines: PackedStringArray = CombatUiFormatters.ability_skill_module_lines_bbcode(authored)
+	var card_text: String = " ".join(card_lines)
+	if card_text.find("TARGET HP MUST BE BELOW 50%") < 0:
+		failures.append("in-game skill-list layout omitted Condition: %s" % card_text)
 	var unknown_tag_payload: Dictionary = payload.duplicate(true)
 	unknown_tag_payload["tags"] = ["attack", "control"]
 	var unknown_tag_result: AbilityData = AbilityData.new()
 	ClassLibrarySchema.apply_ability_dict(unknown_tag_result, unknown_tag_payload)
 	if unknown_tag_result.tags.has(&"control"):
 		failures.append("module-first JSON retained an unknown tag")
+
+
+static func _test_skill_card_shows_condition(failures: Array[String]) -> void:
+	var unit_data: UnitData = FactoryTestHelpers.build_unit(&"mercenary")
+	if unit_data == null:
+		failures.append("mercenary factory unit missing for skill-card Condition check")
+		return
+	var ability: AbilityData = null
+	for candidate: AbilityData in unit_data.abilities:
+		if candidate != null and candidate.id == &"mercenary_executioners_blade":
+			ability = candidate
+			break
+	if ability == null:
+		failures.append("mercenary_executioners_blade missing from factory")
+		return
+	var lines: PackedStringArray = CombatUiFormatters.ability_skill_module_lines_bbcode(ability)
+	var joined: String = " ".join(lines)
+	if joined.find("TARGET HP MUST BE BELOW 50%") < 0:
+		failures.append(
+			"in-game skill card omitted Condition for Executioner's Blade: %s" % joined
+		)
 
 
 static func _test_legacy_json_import_round_trip(failures: Array[String]) -> void:

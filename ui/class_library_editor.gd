@@ -914,12 +914,11 @@ func _ability_effect_preview_bbcode(ability: AbilityData) -> String:
 		return ""
 	CombatUiFormatters.configure_body_font(ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	var body_px: int = ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY)
-	var body: String = CombatUiFormatters.ability_effect_bbcode(ability, _preview_unit())
-	if not ability.upgrade_description.is_empty():
-		body += "\n[color=#%s][+] %s[/color]" % [
-			ClassLibraryTheme.TEXT_DIM.to_html(false),
-			ability.upgrade_description,
-		]
+	var module_lines: PackedStringArray = CombatUiFormatters.ability_skill_module_lines_bbcode(
+		ability,
+		_preview_unit(),
+	)
+	var body: String = "\n".join(module_lines)
 	return "[font_size=%d]%s[/font_size]" % [body_px, body]
 
 
@@ -1001,21 +1000,12 @@ func _add_selectable_preview_card(
 		cost_row = cost_refs["row"] as HBoxContainer
 		cost_val_lbl = cost_refs["val_lbl"] as Label
 		chips.add_child(cost_row)
-		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
-		var range_refs: Dictionary = _make_list_preview_chip(
-			String(range_chip.get("emoji", "")),
-			String(range_chip.get("text", "")),
-			String(range_chip.get("tooltip", "")),
-		)
-		range_row = range_refs["row"] as HBoxContainer
-		range_val_lbl = range_refs["val_lbl"] as Label
-		chips.add_child(range_row)
 	var preview := RichTextLabel.new()
 	preview.bbcode_enabled = true
 	preview.scroll_active = false
-	preview.fit_content = false
+	preview.fit_content = true
 	preview.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	preview.custom_minimum_size.y = ClassLibraryTheme.px(72 if ability != null else 88)
+	preview.custom_minimum_size.y = ClassLibraryTheme.px(48 if ability != null else 88)
 	preview.add_theme_color_override("default_color", ClassLibraryTheme.TEXT_PRIMARY)
 	preview.add_theme_font_size_override("normal_font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -2326,14 +2316,6 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	if cost_row != null:
 		var cost_chip_row: Dictionary = CombatUiFormatters.ability_cost_chip(ability)
 		cost_row.tooltip_text = String(cost_chip_row.get("tooltip", ""))
-	var range_val: Label = refs.get("range_val")
-	if range_val != null:
-		var range_chip: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
-		range_val.text = String(range_chip.get("text", ""))
-	var range_row: HBoxContainer = refs.get("range_row")
-	if range_row != null:
-		var range_chip_row: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
-		range_row.tooltip_text = String(range_chip_row.get("tooltip", ""))
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
