@@ -120,6 +120,7 @@ Any response that **proposes, implements, or summarizes** a code or rule change 
 | Domain | Global owner |
 |--------|----------------|
 | Planning commit / cursor / preview | **Move preview is intent truth** (`.cursor/rules/move-preview-intent-truth.mdc`) — same slots path: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `CombatDirector.commit_from_slots` / `preview_commit_valid`; commit ratifies preview, never rewrites it |
+| Red action-range tiles / stand origin | **Latest stand** (`.cursor/rules/action-range-latest-stand.mdc`) — `_intent_stand_origin` / `planning_latest_stand_cell`; never `base_board`. Failure log: `docs/design/ACTION_RANGE_LATEST_STAND.md` |
 | Ability legality / range / targeting | `AbilitySystem` + ability data |
 | Turn resolution | `Simulator.simulate` — headless, no Nodes |
 | Skills / economy | Timeline columns, AP/MP, `EffectData` — see `skill-global-rules.mdc` |
@@ -130,6 +131,7 @@ When unsure which system owns a behavior → **read and extend that system**; do
 ## Related rules
 
 - `.cursor/rules/move-preview-intent-truth.mdc` — move preview = intent system; commit must not change what preview showed
+- `.cursor/rules/action-range-latest-stand.mdc` — red tiles from latest stand; read `docs/design/ACTION_RANGE_LATEST_STAND.md` before any origin change
 - `.cursor/rules/no-bandaid-fixes.mdc` — what counts as a bandaid; self-check table
 - `.cursor/rules/skill-global-rules.mdc` — skill-specific global mandate
 - `.cursor/rules/interpret-plan-permission.mdc` — plans still required; exception block is **in addition**

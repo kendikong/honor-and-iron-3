@@ -2186,6 +2186,7 @@ static func planning_module_range_tiles(
 	board: BoardState,
 	action: TimelineAction,
 	module_index: int,
+	stand_origin: Vector2i = Vector2i(-999999, -999999),
 ) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	if board == null or action == null or action.ability == null:
@@ -2195,6 +2196,8 @@ static func planning_module_range_tiles(
 	if actor == null or module == null:
 		return out
 	var origin: Vector2i = actor.position
+	if stand_origin.x > -900000:
+		origin = stand_origin
 	var range_board: BoardState = board
 	if module_index > 0:
 		var prefix: TimelineAction = _prefix_action(action, module_index)
@@ -2209,7 +2212,8 @@ static func planning_module_range_tiles(
 			actor = range_board.get_unit_by_id(action.actor_id)
 			if actor == null:
 				return out
-			origin = actor.position
+			if stand_origin.x <= -900000:
+				origin = actor.position
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return dash_line_threat_tiles(range_board, origin, module.max_range)
 	for y: int in range(range_board.grid_size.y):

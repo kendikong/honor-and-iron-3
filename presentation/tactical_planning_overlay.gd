@@ -404,11 +404,10 @@ func _planning_action_range_tiles_for_unit(
 	if _director != null:
 		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
 		if awaiting != null and awaiting.awaiting_module_index >= 0:
-			var range_board: BoardState = _board
-			if _director.base_board != null:
-				range_board = _director.base_board
+			## Latest stand (`origin` from `_intent_stand_origin`), projected board.
+			## Never `base_board` — that is turn start. See action-range-latest-stand.mdc.
 			return AbilitySystem.planning_module_range_tiles(
-				range_board, awaiting, awaiting.awaiting_module_index,
+				plan_board, awaiting, awaiting.awaiting_module_index, origin,
 			)
 	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 

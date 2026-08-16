@@ -2,6 +2,8 @@ class_name ActionRangeRegressionTest
 extends RefCounted
 
 ## Regression matrix — red action-range tiles (owner bugs from manual QA).
+## Permanent failure log: docs/design/ACTION_RANGE_LATEST_STAND.md
+## Rule: .cursor/rules/action-range-latest-stand.mdc
 ##
 ## Contract (every case asserts as many layers as apply):
 ##   1. action_range_visible_for_hover() matches expect_show
@@ -36,6 +38,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
 		_test_hover_step_updates_stand_and_red_tiles,
+		_test_awaiting_module_range_after_committed_premove,
 		_test_visibility_gate_parity_show,
 		_test_visibility_gate_parity_hide,
 	]
@@ -55,6 +58,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hide_no_ability",
 		"show_awaiting_trample",
 		"hover_step_updates_stand",
+		"awaiting_module_range_after_premove",
 		"parity_gate_show",
 		"parity_gate_hide",
 	]
@@ -872,6 +876,83 @@ static func _test_hover_step_updates_stand_and_red_tiles(failures: Array[String]
 		failures.append(
 			"ActionRangeRegression hover_step_updates_stand: red tiles must anchor on new stand %s"
 			% stand_b,
+		)
+
+
+## Would have failed 37b3879 — awaiting module range used base_board (turn start).
+## BUG-20260815T183841-612: pre-move (5,3)→(7,3), arm Charge Strike, red still on (5,3).
+static func _test_awaiting_module_range_after_committed_premove(failures: Array[String]) -> void:
+	const START := Vector2i(5, 3)
+	const LANDING := Vector2i(7, 3)
+	const ONLY_FROM_LANDING := Vector2i(7, 5)
+	const ONLY_FROM_START := Vector2i(3, 3)
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	var fix: Dictionary = BruiserFixture.wire_board(
+		START, Vector2i(-1, -1), Vector2i(-1, -1), &"bruiser_charge_strike",
+	)
+	if fix.is_empty():
+		failures.append("ActionRangeRegression awaiting_module_range_after_premove: bruiser fixture missing")
+		return
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	fix["overlay"] = overlay
+	director.auto_run = false
+	director.selected_ability_index = -1
+	var bruiser: UnitState = fix.bruiser as UnitState
+	bruiser.ability.points_left = maxi(bruiser.ability.points_left, 1)
+	bruiser.movement.points_left = maxi(bruiser.movement.points_left, 4)
+	var walk_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, LANDING)
+	var walk_pre: Array = walk_slots.get("pre", []) as Array
+	if walk_pre.is_empty():
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: unarmed walk to %s must build pre-move"
+			% LANDING,
+		)
+		return
+	if not director.commit_from_slots(1, walk_slots):
+		failures.append("ActionRangeRegression awaiting_module_range_after_premove: pre-move commit failed")
+		return
+	Checklist.flush_planning(fix)
+	var idx: int = Checklist.select_ability(fix, &"bruiser_charge_strike")
+	if idx < 0:
+		failures.append("ActionRangeRegression awaiting_module_range_after_premove: Charge Strike missing")
+		return
+	var arm_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, LANDING)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression awaiting_module_range_after_premove: self-arm Charge Strike failed")
+		return
+	Checklist.flush_planning(fix)
+	var awaiting: TimelineAction = director.find_awaiting_action(1)
+	if awaiting == null or awaiting.awaiting_module_index != 0:
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: must await MOVE module 0, got %s"
+			% str(awaiting.awaiting_module_index if awaiting != null else -999),
+		)
+		return
+	_hover_sync(input, overlay, LANDING)
+	var stand: Vector2i = input.action_range_intent_stand_cell(1)
+	var overlay_stand: Vector2i = overlay._intent_stand_origin(bruiser)
+	if stand != LANDING:
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: stand expected %s got %s"
+			% [LANDING, stand],
+		)
+	if overlay_stand != LANDING:
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: overlay stand expected %s got %s"
+			% [LANDING, overlay_stand],
+		)
+	if not overlay.is_hover_action_range_tile(ONLY_FROM_LANDING):
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: red missing %s (in MOVE 2 from landing %s, out from start %s)"
+			% [ONLY_FROM_LANDING, LANDING, START],
+		)
+	if overlay.is_hover_action_range_tile(ONLY_FROM_START):
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: red still on start-only tile %s (turn-start diamond around %s)"
+			% [ONLY_FROM_START, START],
 		)
 
 

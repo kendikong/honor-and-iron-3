@@ -1,0 +1,40 @@
+---
+description: ABSOLUTE — red action-range tiles always paint from the latest committed stand, never turn-start
+alwaysApply: true
+---
+
+# Action Range = Latest Stand (ABSOLUTE — ALWAYS ON)
+
+**Read the failure log first:** `docs/design/ACTION_RANGE_LATEST_STAND.md`
+
+The owner has seen red tiles on the **old** cell after a committed pre-move (or MOVE prefix) **many times**. Do not “rediscover” this. Do not invent a new origin. Read the log, then extend the **one** stand owner.
+
+## Mandate
+
+Red action-range tiles (and any overlay that claims to show skill range) **always** originate from the **latest committed stand**:
+
+1. After a committed pre-move: the pre-move landing.
+2. After a committed MOVE / JUMP / TELEPORT prefix while a later module awaits: the prefix landing.
+3. While dragging / live move preview: the live hover stand (same cell as the unit ghost).
+
+That cell is the same one `CombatPlanningPreview.planning_latest_stand_cell` / overlay `_intent_stand_origin` / `CombatPlanningInput.action_range_intent_stand_cell` already compute. **Pass that origin into range math.** Do not recompute a second origin from a different board.
+
+## Forbidden (these are how previous “fixes” failed)
+
+- Passing `CombatDirector.base_board` into `AbilitySystem.planning_module_range_tiles` / `planning_action_range_tiles` “to avoid double-applying a MOVE prefix.” Double-apply is `_prefix_already_applied`. `base_board` is **turn start**. Using it after a pre-move paints red on the old cell.
+- Ignoring the `origin` already computed by `_intent_stand_origin` and using `actor.position` on whatever board you grabbed.
+- Per-skill `if ability.id == …` origin. Charge Strike is not special.
+- A UI-only origin, cache, or flag that sim / commit / overlay disagree on.
+- Deleting or weakening `tests/action_range_regression_test.gd` cases that pin a past failure.
+
+## Required before you touch action-range origin again
+
+1. Read **every** entry in `docs/design/ACTION_RANGE_LATEST_STAND.md`.
+2. Add a regression that **would have failed the last broken commit** (name the hash in the test comment).
+3. Append a new log entry if your change is another attempt — including if it fails later.
+
+## Canonical owner
+
+`CombatPlanningPreview.planning_latest_stand_cell` → overlay `_intent_stand_origin` → `AbilitySystem.planning_module_range_tiles(..., stand_origin)` / `planning_action_range_tiles(..., origin)`.
+
+Prefix occupancy uses **projected / live** board. Never substitute `base_board` as a “safer” range board.

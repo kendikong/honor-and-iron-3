@@ -1965,10 +1965,11 @@ static func _test_committed_move_prefix_while_later_aim_awaits(failures: Array[S
 		failures.append("PlanningInputTest: later NEW_AIM must still show that module's action range")
 	if input.is_live_preview_active():
 		failures.append("PlanningInputTest: later NEW_AIM must not keep the live MOVE hover preview")
+	var strike_board: BoardState = (
+		director.projected_state if director.projected_state != null else director.board
+	)
 	var strike_tiles: Array[Vector2i] = AbilitySystem.planning_module_range_tiles(
-		director.base_board if director.base_board != null else director.board,
-		awaiting_strike,
-		1,
+		strike_board, awaiting_strike, 1, landing,
 	)
 	if not strike_tiles.has(dummy.position):
 		failures.append(
