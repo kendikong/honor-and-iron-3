@@ -40,12 +40,7 @@ static func has_ability_modifier(
 	ability: AbilityData,
 	key: StringName,
 ) -> bool:
-	if actor == null or ability == null:
-		return false
-	for module: AbilityModule in AbilitySystem.active_modules_for(actor, ability):
-		if module != null and module.legacy_modifiers.has(key):
-			return true
-	return false
+	return AbilitySystem.ability_has_modifier(ability, key, actor)
 
 
 static func barbed_wire_adjacent_defense(board: BoardState, unit: UnitState) -> int:
@@ -551,9 +546,7 @@ static func after_ability_execute(
 		if modifiers.get("emp_grenade", false):
 			_apply_emp_construct_rules(board, actor, action, module, events)
 		if modifiers.has("target_def_pct_loss"):
-			var target := board.get_unit_by_id(action.target_unit_id)
-			if target == null:
-				target = board.get_unit_at(action.target_coord)
+			var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 			if target != null:
 				target.passive_flags["engineer_target_def_pct"] = float(
 					modifiers["target_def_pct_loss"]
@@ -756,9 +749,7 @@ static func _apply_scrap_shield(
 	action: TimelineAction,
 	_events: Array[SimEvent],
 ) -> void:
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 	if target == null or actor.scrap <= 0:
 		return
 	var spent := actor.scrap
@@ -778,9 +769,7 @@ static func _apply_wrench(
 	module: AbilityModule,
 	events: Array[SimEvent],
 ) -> void:
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 	if target == null or target.team != actor.team or target.definition == null or not target.definition.is_construct:
 		return
 	CombatSystem.heal(board, target, 2, events)
@@ -799,9 +788,7 @@ static func _apply_overdrive_cost(
 	module: AbilityModule,
 	events: Array[SimEvent],
 ) -> void:
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 	if target == null or target.definition == null or not target.definition.is_construct:
 		return
 	grant_overclock(target)
@@ -822,9 +809,7 @@ static func _detonate_construct(
 	module: AbilityModule,
 	events: Array[SimEvent],
 ) -> void:
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 	if (
 		target == null
 		or target.definition == null

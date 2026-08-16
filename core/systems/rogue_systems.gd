@@ -34,12 +34,7 @@ static func passive_value(
 
 
 static func _ability_modifiers(actor: UnitState, ability: AbilityData) -> Dictionary:
-	if actor == null or ability == null:
-		return {}
-	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
-	if modules.is_empty():
-		return {}
-	return modules[0].legacy_modifiers if modules[0] != null else {}
+	return AbilitySystem.active_modifier_profile(actor, ability)
 
 
 static func has_innate_pass(unit: UnitState) -> bool:
@@ -488,17 +483,17 @@ static func after_ability_execute(
 		return
 	var ability_mods := _ability_modifiers(actor, action.ability)
 	if ability_mods.get("target_def_debuff", false):
-		var target := board.get_unit_at(action.target_coord)
+		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if target != null and target.team != actor.team:
 			_append_debuff(board, actor, target, GameEnums.StatusType.STAT_DEBUFF_DEF, 1, events, 1)
 	if ability_mods.get("if_target_unacted_stagger", false):
-		var stagger_target := board.get_unit_at(action.target_coord)
+		var stagger_target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if stagger_target != null and not stagger_target.turn_action_used:
 			if not CombatSystem.try_resist_crowd_control(stagger_target, GameEnums.StatusType.STAGGER, events):
 				stagger_target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
 				stagger_target._recalculate_stats(board)
 	if ability_mods.get("inherit_incoming_attacks", false):
-		var swap_target := board.get_unit_by_id(action.target_unit_id)
+		var swap_target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if swap_target != null:
 			actor.passive_flags["rogue_inherit_attacks_target_id"] = swap_target.id
 			swap_target.passive_flags["rogue_redirect_attacks_to_id"] = actor.id

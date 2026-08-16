@@ -855,16 +855,7 @@ static func _guardian_defense(source: UnitState) -> int:
 
 
 static func _ability_modifiers(actor: UnitState, ability: AbilityData) -> Dictionary:
-	var result := {}
-	if ability == null:
-		return result
-	for module: AbilityModule in AbilitySystem.active_modules_for(actor, ability):
-		if module != null:
-			result.merge(module.legacy_modifiers)
-			for layer: AbilityLayer in module.layers:
-				if layer != null and layer.effect != null:
-					result.merge(layer.effect.modifiers)
-	return result
+	return AbilitySystem.active_modifier_profile(actor, ability)
 
 
 static func _find_passive(unit: UnitState, passive_id: StringName) -> PassiveData:

@@ -36,6 +36,28 @@ static func active_modules_for(actor: UnitState, ability: AbilityData) -> Array[
 	return ability.get_active_modules(upgraded)
 
 
+## Canonical modifier profile for runtime readers.
+## Every active module is compiled in authored order so class systems do not
+## invent different module/layer merge rules.
+static func active_modifier_profile(actor: UnitState, ability: AbilityData) -> Dictionary:
+	var profile: Dictionary = {}
+	for module: AbilityModule in active_modules_for(actor, ability):
+		for effect: EffectData in AbilityModuleBridge.compile_module_to_effects(module):
+			if effect == null:
+				continue
+			for key: Variant in effect.modifiers.keys():
+				profile[StringName(key)] = effect.modifiers[key]
+	return profile
+
+
+static func planning_slot_for_ability(ability: AbilityData) -> StringName:
+	if ability != null and (
+		ability.is_pre_move_planner() or ability.is_universal_run()
+	):
+		return &"pre"
+	return &"action"
+
+
 ## Transitional compatibility API for presentation and unmigrated EffectData readers.
 ## Modules remain the only authored runtime profile; this is their shared compiler.
 static func compatibility_effects_for(
@@ -70,8 +92,10 @@ static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
 	if ability == null:
 		return null
-	var upgraded: bool = actor != null and actor.is_ability_upgraded(ability.id)
-	return ability.get_active_motion_module(upgraded)
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if module != null and AbilityModuleBridge.is_motion_type(module.primary_type):
+			return module
+	return null
 
 
 static func active_motion_min_range(actor: UnitState, ability: AbilityData) -> int:
@@ -672,11 +696,7 @@ static func planning_module_target_valid(
 		return true
 	if target_coord == origin:
 		return module.has_targeting(GameEnums.TargetingFlags.SELF)
-	var target: UnitState = (
-		target_board.get_unit_by_id(target_unit_id)
-		if target_unit_id >= 0
-		else target_board.get_unit_at(target_coord)
-	)
+	var target: UnitState = resolve_unit_target(target_board, target_coord, target_unit_id)
 	if target != null:
 		if target.team == actor.team:
 			return module.has_targeting(GameEnums.TargetingFlags.ALLY)
@@ -810,11 +830,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		and GameEnums.is_adjacent_destination(motion_module.primary_type)
 	)
 	if not skip_landing_range and dist > max_range:
-		var mark_target: UnitState = (
-			board.get_unit_by_id(action.target_unit_id)
-			if action.target_unit_id >= 0
-			else board.get_unit_at(action.target_coord)
-		)
+		var mark_target: UnitState = resolve_action_target(board, action)
 		if (
 			mark_target != null
 			and int(mark_target.passive_flags.get("mark_allies_team", -1)) == actor.team
@@ -824,13 +840,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 	if dist == 0 and active_range_tiles(actor, ability) > 0 and not can_target_self(actor, ability):
 		return false
-	var target_unit: UnitState = null
-	if _ability_has_modifier(actor, ability, &"paired_ally_charge"):
-		target_unit = board.get_unit_at(action.target_coord)
-	elif action.target_unit_id >= 0:
-		target_unit = board.get_unit_by_id(action.target_unit_id)
-	else:
-		target_unit = board.get_unit_at(action.target_coord)
+	var target_unit: UnitState = resolve_action_target(board, action)
 	if _ability_has_modifier(actor, ability, &"ally_corpse"):
 		if (
 			target_unit == null
@@ -2819,11 +2829,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.passive_flags["engineer_explosion_active"] = true
 		RogueSystems.apply_smoke_spell_bonus(board, actor, ability)
 		if _is_basic_attack(ability):
-			var predatory_target: UnitState = (
-				board.get_unit_by_id(action.target_unit_id)
-				if action.target_unit_id >= 0
-				else board.get_unit_at(action.target_coord)
-			)
+			var predatory_target: UnitState = resolve_action_target(board, action)
 			if (
 				predatory_target != null
 				and MercenarySystems._has_predatory_momentum(actor)
@@ -2985,11 +2991,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			and not MovementSystem.has_trample(actor)
 			and not AbilitySystem.has_pass_through_effects(ability, actor)
 		):
-			var attack_target: UnitState = (
-				board.get_unit_by_id(action.target_unit_id)
-				if action.target_unit_id >= 0
-				else goal_unit
-			)
+			var attack_target: UnitState = resolve_action_target(board, action)
 			if attack_target != null:
 				var endpoint: Vector2i = MovementSystem.adjacent_attack_endpoint(
 					board, actor, attack_target, ability,
@@ -3261,7 +3263,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			continue
 
 		if effect.modifiers.has("target_after_move_adjacent"):
-			var adjacent_target := board.get_unit_by_id(action.target_unit_id)
+			var adjacent_target: UnitState = resolve_action_target(board, action)
 			if adjacent_target == null:
 				for dir: Vector2i in GridSystem.DIRECTIONS:
 					var adj: Vector2i = actor.position + dir
@@ -3647,7 +3649,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		and action != null
 		and _ability_has_modifier(actor, action.ability, &"kidnap")
 	):
-		var kidnap_target := board.get_unit_by_id(action.target_unit_id)
+		var kidnap_target: UnitState = resolve_action_target(board, action)
 		if kidnap_target != null:
 			target = kidnap_target
 	if (
@@ -4520,7 +4522,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				return
 			if target != null:
 				if _ability_has_modifier(actor, action.ability, &"kidnap"):
-					var kidnap_target := board.get_unit_by_id(action.target_unit_id)
+					var kidnap_target: UnitState = resolve_action_target(board, action)
 					if kidnap_target != null:
 						target = kidnap_target
 				var is_immune = false
@@ -5830,18 +5832,28 @@ static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> v
 	}))
 
 
+static func resolve_unit_target(
+	board: BoardState,
+	target_coord: Vector2i,
+	target_unit_id: int = -1,
+) -> UnitState:
+	if board == null:
+		return null
+	if target_unit_id >= 0:
+		return board.get_unit_by_id(target_unit_id)
+	return board.get_unit_at(target_coord)
+
+
 ## Canonical unit-target lookup for an action.
 ## Cell-targeted modules may still resolve an occupant; paired charge keeps its
 ## authored enemy-cell semantics while all other actions prefer the committed id.
 static func resolve_action_target(board: BoardState, action: TimelineAction) -> UnitState:
-	if action == null:
+	if action == null or board == null:
 		return null
-	var actor := board.get_unit_by_id(action.actor_id)
+	var actor: UnitState = board.get_unit_by_id(action.actor_id)
 	if _ability_has_modifier(actor, action.ability, &"paired_ally_charge"):
 		return board.get_unit_at(action.target_coord)
-	if action.target_unit_id >= 0:
-		return board.get_unit_by_id(action.target_unit_id)
-	return board.get_unit_at(action.target_coord)
+	return resolve_unit_target(board, action.target_coord, action.target_unit_id)
 
 
 static func _prepare_paired_charge(
@@ -5928,10 +5940,9 @@ static func _resolve_target_coord(board: BoardState, action: TimelineAction) -> 
 		)
 	):
 		return action.target_coord
-	if action.target_unit_id >= 0:
-		var target = board.get_unit_by_id(action.target_unit_id)
-		if target != null:
-			return target.position
+	var target: UnitState = resolve_unit_target(board, action.target_coord, action.target_unit_id)
+	if target != null:
+		return target.position
 	return action.target_coord
 
 
@@ -5958,9 +5969,7 @@ static func _begin_spellcast(
 		return
 	actor.passive_flags["mage_spell_cast_this_turn"] = true
 	actor.passive_flags["mage_spell_in_progress"] = true
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = resolve_action_target(board, action)
 	for passive: PassiveData in actor.active_passives:
 		if passive == null:
 			continue
@@ -6041,9 +6050,7 @@ static func _finish_spellcast(
 ) -> void:
 	if actor == null or action == null:
 		return
-	var target := board.get_unit_by_id(action.target_unit_id)
-	if target == null:
-		target = board.get_unit_at(action.target_coord)
+	var target: UnitState = resolve_action_target(board, action)
 	if target != null and target.team == actor.team and target.id != actor.id:
 		for passive: PassiveData in actor.active_passives:
 			if passive == null or not passive.modifiers.has("arcane_attunement"):

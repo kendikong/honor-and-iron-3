@@ -36,13 +36,7 @@ static func passive_value(
 
 
 static func active_module_modifiers(actor: UnitState, ability: AbilityData) -> Dictionary:
-	if actor == null or ability == null:
-		return {}
-	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
-	for module: AbilityModule in modules:
-		if module != null and not module.legacy_modifiers.is_empty():
-			return module.legacy_modifiers
-	return {}
+	return AbilitySystem.active_modifier_profile(actor, ability)
 
 
 static func turn_start(board: BoardState, unit: UnitState, _events: Array[SimEvent]) -> void:
@@ -803,9 +797,7 @@ static func _fetch_has_legal_target(
 	if occupant != null and not occupant.is_alive():
 		return true
 	if int(mods.get("pull_light_ally", 0)) > 0:
-		var ally := board.get_unit_by_id(action.target_unit_id)
-		if ally == null:
-			ally = occupant
+		var ally: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if (
 			ally != null
 			and ally.team == actor.team
@@ -837,7 +829,7 @@ static func _resolve_maul_drop(
 ) -> void:
 	var dragged := board.get_unit_by_id(int(actor.passive_flags.get("beast_drag_target_id", -1)))
 	if dragged == null:
-		dragged = board.get_unit_by_id(action.target_unit_id)
+		dragged = AbilitySystem.resolve_action_target(board, action)
 	if dragged == null:
 		return
 	var dest := _first_empty_adjacent(board, actor.position)
@@ -894,9 +886,7 @@ static func _resolve_fetch(
 		}))
 		return
 	if int(mods.get("pull_light_ally", 0)) > 0:
-		var ally := board.get_unit_by_id(action.target_unit_id)
-		if ally == null:
-			ally = occupant
+		var ally: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if ally != null and ally.team == actor.team and ally.is_alive():
 			var pull_dir := PhysicsSystem.cardinal_from_to(ally.position, actor.position)
 			if pull_dir != Vector2i.ZERO:
@@ -913,9 +903,7 @@ static func _resolve_airlift(
 	mods: Dictionary,
 	events: Array[SimEvent],
 ) -> void:
-	var ally := board.get_unit_by_id(action.target_unit_id)
-	if ally == null:
-		ally = board.get_unit_at(action.target_coord)
+	var ally: UnitState = AbilitySystem.resolve_action_target(board, action)
 	if ally == null or ally.team != actor.team or ally.id == actor.id:
 		return
 	GridSystem.set_occupant(board, ally.position, -1)

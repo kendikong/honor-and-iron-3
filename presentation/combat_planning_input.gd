@@ -4125,11 +4125,7 @@ func _empty_commit_slots() -> Dictionary:
 
 
 func _ability_plan_column(ability: AbilityData) -> String:
-	if ability != null and (
-		ability.is_pre_move_planner() or ability.is_universal_run()
-	):
-		return "pre"
-	return "action"
+	return String(AbilitySystem.planning_slot_for_ability(ability))
 
 
 func _can_pair_run_move_with_ability(

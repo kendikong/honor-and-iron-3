@@ -761,13 +761,9 @@ static func _ability_modifier_value(
 ) -> int:
 	if actor == null or ability == null:
 		return default_value
-	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.modules_modifier_value(modules, key, default_value)
-	for effect: EffectData in AbilitySystem.legacy_effects_for(actor, ability):
-		var key_text: String = String(key)
-		if effect != null and effect.modifiers.has(key_text):
-			return int(effect.modifiers[key_text])
+	var profile: Dictionary = AbilitySystem.active_modifier_profile(actor, ability)
+	if profile.has(key):
+		return int(profile[key])
 	return default_value
 
 

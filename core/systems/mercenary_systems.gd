@@ -618,51 +618,15 @@ static func _legacy_mod_variant(
 	var str_key := String(key)
 	if mods.has(str_key):
 		return mods[str_key]
-	var modules: Array = (
-		ability.upgraded_modules
-		if actor != null and actor.is_ability_upgraded(ability.id)
-		else ability.modules
-	)
-	for module: AbilityModule in modules:
-		if module == null:
-			continue
-		if module.legacy_modifiers.has(key):
-			return module.legacy_modifiers[key]
-		if module.legacy_modifiers.has(str_key):
-			return module.legacy_modifiers[str_key]
 	return null
 
 
 static func _ability_legacy_mods(actor: UnitState, ability: AbilityData) -> Dictionary:
-	if ability == null:
-		return {}
-	var out: Dictionary = {}
-	var modules: Array = (
-		ability.upgraded_modules if actor.is_ability_upgraded(ability.id) else ability.modules
-	)
-	for module: AbilityModule in modules:
-		if module == null:
-			continue
-		for key: Variant in module.legacy_modifiers.keys():
-			out[StringName(key)] = module.legacy_modifiers[key]
-	if not out.is_empty():
-		return out
-	var effects: Array[EffectData] = (
-		ability.upgraded_effects if actor.is_ability_upgraded(ability.id) else ability.effects
-	)
-	for eff: EffectData in effects:
-		if eff == null:
-			continue
-		for key: Variant in eff.modifiers.keys():
-			if not out.has(key):
-				out[key] = eff.modifiers[key]
-	return out
+	return AbilitySystem.active_modifier_profile(actor, ability)
 
 
 static func _resolve_target_unit(board: BoardState, action: TimelineAction) -> UnitState:
-	if action.target_unit_id >= 0:
-		return board.get_unit_by_id(action.target_unit_id)
-	return board.get_unit_at(action.target_coord)
+	return AbilitySystem.resolve_action_target(board, action)
 
 
 static func _has_predatory_momentum(unit: UnitState) -> bool:

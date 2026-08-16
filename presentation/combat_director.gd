@@ -939,7 +939,7 @@ func _slot_plan_for_action(action: TimelineAction) -> Timeline:
 			return plan_post_move
 		return plan_pre_move
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		if action.ability.is_pre_move_planner() or action.ability.is_universal_run():
+		if AbilitySystem.planning_slot_for_ability(action.ability) == &"pre":
 			return plan_pre_move
 	return plan_action
 
