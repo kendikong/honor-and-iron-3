@@ -1552,6 +1552,18 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			_rebuild_ability_detail_panes(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
+	var upgrade_pre_move_row := _bind_bool(
+		grid,
+		"Upgrade is Pre-Move",
+		ability.upgraded_planner_group == GameEnums.PlannerGroup.PRE_MOVE,
+		func(v: bool) -> void:
+			ability.upgraded_planner_group = (
+				GameEnums.PlannerGroup.PRE_MOVE if v else -1
+			)
+			ability.finalize_modular()
+			_rebuild_ability_detail_panes(ability)
+	)
+	_track_ability_field(ability, "upgraded_planner_group", upgrade_pre_move_row)
 	var tags_row := _bind_string(grid, "tags", _tags_to_csv(ability.tags), func(v: String) -> void:
 		ability.tags = _validated_tags_from_csv(v)
 		_refresh_ability_ui(ability)

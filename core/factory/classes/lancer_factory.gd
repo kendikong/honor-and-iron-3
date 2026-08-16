@@ -13,7 +13,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	def.display_name = "Lancer"
 	def.base_constitution = 5
 	def.move_points = 4
-	def.action_points = 1
+	def.action_points = GameEnums.MAX_AP
 	def.base_strength = 4
 	def.base_defense = 3
 	def.base_magic = 1

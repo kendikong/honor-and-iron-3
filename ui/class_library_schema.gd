@@ -552,6 +552,8 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("id: %s" % String(ability.id))
 	lines.append("display_name: %s" % ability.display_name)
 	lines.append("planner_group: %s" % GameEnums.PlannerGroup.keys()[ability.planner_group])
+	if ability.upgraded_planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+		lines.append("upgraded_planner_group: PRE_MOVE")
 	lines.append("tags: %s" % ", ".join(tag_names))
 	lines.append("primary_resource: %s" % GameEnums.CostResource.keys()[ability.primary_resource])
 	lines.append("primary_value: %d" % ability.primary_value)
@@ -905,6 +907,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.id = src.id
 	dst.display_name = src.display_name
 	dst.planner_group = src.planner_group
+	dst.upgraded_planner_group = src.upgraded_planner_group
 	dst.tags = src.tags.duplicate()
 	dst.primary_resource = src.primary_resource
 	dst.primary_value = src.primary_value
@@ -919,17 +922,20 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
 	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules, src.planner_group))
+	var upgrade_group: int = _upgrade_planner_group(src)
 	dst.upgraded_modules = modules_from_dict_array(
-		modules_to_dict_array(src.upgraded_modules, src.planner_group)
+		modules_to_dict_array(src.upgraded_modules, upgrade_group)
 	)
 	_normalize_modules_for_ability(dst.modules, dst.planner_group)
-	_normalize_modules_for_ability(dst.upgraded_modules, dst.planner_group)
+	_normalize_modules_for_ability(dst.upgraded_modules, upgrade_group)
 	if src.is_universal_run() or src.is_universal_wait():
 		dst.kind = src.kind
 	dst.finalize_modular()
 
 
 static func _planning_note(ability: AbilityData) -> String:
+	if ability.upgraded_planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+		return "plan_action; upgraded profile is Pre-Move (skips Action slot, executes immediately)."
 	if ability.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 		return "plan_pre_move; module targeting flags define the legal aim."
 	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_RUN:
@@ -937,6 +943,14 @@ static func _planning_note(ability: AbilityData) -> String:
 	if ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 		return "plan_action (Wait); blocks further planning when set."
 	return "plan_action (class skill or basic attack)."
+
+
+static func _upgrade_planner_group(ability: AbilityData) -> int:
+	if ability != null and ability.upgraded_planner_group >= 0:
+		return ability.upgraded_planner_group
+	if ability != null:
+		return ability.planner_group
+	return GameEnums.PlannerGroup.ACTION
 
 
 static func _ability_kind_tooltip(k: String) -> String:
@@ -1348,6 +1362,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 	var payload: Dictionary = {
 		"display_name": src.display_name,
 		"planner_group": src.planner_group,
+		"upgraded_planner_group": src.upgraded_planner_group,
 		"tags": tag_strs,
 		"primary_resource": src.primary_resource,
 		"primary_value": src.primary_value,
@@ -1362,7 +1377,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
 		"modules": modules_to_dict_array(src.modules, src.planner_group),
-		"upgraded_modules": modules_to_dict_array(src.upgraded_modules, src.planner_group),
+		"upgraded_modules": modules_to_dict_array(src.upgraded_modules, _upgrade_planner_group(src)),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}
@@ -1405,6 +1420,8 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.display_name = String(data.get("display_name", dst.display_name))
 	if data.has("planner_group"):
 		dst.planner_group = int(data.get("planner_group", dst.planner_group))
+	if data.has("upgraded_planner_group"):
+		dst.upgraded_planner_group = int(data.get("upgraded_planner_group", dst.upgraded_planner_group))
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
 		dst.tags = _canonical_tags_from_variant(tags_v)
@@ -1450,7 +1467,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 			push_error("Ability JSON rejected upgraded module profile: %s" % "; ".join(upgrade_errors))
 			return
 		dst.upgraded_modules = parsed_upgraded_modules
-		_normalize_modules_for_ability(dst.upgraded_modules, dst.planner_group)
+		_normalize_modules_for_ability(dst.upgraded_modules, _upgrade_planner_group(dst))
 	elif use_legacy_upgrade and data.has("upgraded_effects"):
 		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
 	dst.finalize_modular()

@@ -88,17 +88,18 @@ static func _apply_bucket(
 			resolved = AbilitySystem.planning_committed_prefix(action)
 			if resolved == null:
 				continue
-		if not _action_in_bucket(action, bucket):
+		if not _action_in_bucket(board, action, bucket):
 			continue
 		BeastRiderSystems.prepare_action(board, plan, resolved)
 		ResolutionPipeline.apply_action(board, resolved, events)
 
 
-static func _action_in_bucket(action: TimelineAction, bucket: ActionBucket) -> bool:
+static func _action_in_bucket(board: BoardState, action: TimelineAction, bucket: ActionBucket) -> bool:
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
 		if action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
 			return bucket == ActionBucket.ACTION
-		if action.ability.is_movement_kind():
+		var actor: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
+		if AbilitySystem.ability_is_pre_move(actor, action.ability):
 			return bucket == ActionBucket.PRE_MOVE
 		if action.ability.is_class_kind():
 			return bucket == ActionBucket.ACTION

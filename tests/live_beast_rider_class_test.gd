@@ -116,7 +116,7 @@ func test_live_beast_rider_every_skill(timeout := 600000) -> void:
 
 func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
-		&"beast_airlift", &"beast_reposition":
+		&"beast_airlift", &"beast_reposition", &"beast_fetch":
 			return [Vector2i(5, 5)]
 		_:
 			return []
@@ -124,12 +124,10 @@ func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
 
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
-		&"beast_reposition":
+		&"beast_reposition", &"beast_fetch":
 			return []
 		&"beast_feral_drag", &"beast_maul":
 			return [Vector2i(5, 5)]
-		&"beast_fetch":
-			return [Vector2i(6, 5)]
 		&"beast_pounce", &"beast_savage_bite", &"beast_thrash", &"beast_gore":
 			return [Vector2i(5, 5)]
 		&"beast_bestial_roar", &"beast_raking_claws":
@@ -183,9 +181,6 @@ func _prepare_live_board(
 			var rider := board.get_unit_at(actor_cell)
 			if dragged != null and rider != null:
 				rider.passive_flags["beast_drag_target_id"] = dragged.id
-		&"beast_fetch":
-			if board.items.find(target) < 0:
-				board.items.append(target)
 		_:
 			pass
 
@@ -228,7 +223,7 @@ func _target_for(
 		&"beast_maul":
 			return Vector2i(5, 5)
 		&"beast_fetch":
-			return Vector2i(6, 5)
+			return Vector2i(5, 5)
 		_:
 			return actor_cell + Vector2i(2, 0)
 

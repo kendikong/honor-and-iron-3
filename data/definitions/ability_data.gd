@@ -12,6 +12,8 @@ extends Resource
 
 ## Timeline column for class-library cards (ability-data.md §1). Source of truth when set.
 @export var planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION
+## When >= 0, upgraded profile uses this planner column (Adrenaline Surge [+] = Pre-Move).
+@export var upgraded_planner_group: int = -1
 
 ## Classification tags: attack, movement, positioning, spell, heal (multi-tag OK).
 @export var tags: Array[StringName] = []
@@ -223,6 +225,14 @@ func is_pre_move_planner() -> bool:
 	return planner_group == GameEnums.PlannerGroup.PRE_MOVE
 
 
+func is_pre_move_for(upgraded: bool) -> bool:
+	if is_universal_run() or is_movement_kind():
+		return true
+	if upgraded and upgraded_planner_group == GameEnums.PlannerGroup.PRE_MOVE:
+		return true
+	return planner_group == GameEnums.PlannerGroup.PRE_MOVE
+
+
 func has_tag(tag: StringName) -> bool:
 	return tags.has(tag)
 
@@ -252,3 +262,9 @@ func is_class_kind() -> bool:
 
 func consumes_action_slot() -> bool:
 	return kind == GameEnums.AbilityKind.CLASS_SKILL
+
+
+func consumes_action_slot_for(upgraded: bool) -> bool:
+	if is_pre_move_for(upgraded):
+		return false
+	return consumes_action_slot()

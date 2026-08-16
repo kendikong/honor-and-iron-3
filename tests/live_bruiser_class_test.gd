@@ -34,7 +34,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_concussion_blow", "observation": &"damage_displacement", "upgrade_keys": [&"enemy_collision_stagger_both"]},
 	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"]},
 	{"id": &"bruiser_suplex", "observation": &"damage_displacement", "upgrade_keys": [&"bonus_dmg_per_10_hp"]},
-	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"on_kill_heal_shield"]},
+	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": []},
 	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
 	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
 	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
@@ -42,7 +42,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
 	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": []},
 	{"id": &"bruiser_violent_collision", "observation": &"movement", "upgrade_keys": [&"stagger_on_collision"]},
-	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_per_target_hit"]},
+	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_if_targets_gte"]},
 	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": []},
 	{"id": &"bruiser_breaching_dash", "observation": &"movement", "upgrade_keys": [&"next_attack_pierce"]},
 ]

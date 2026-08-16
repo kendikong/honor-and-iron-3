@@ -140,6 +140,14 @@ static func events_have_type(events: Array, event_type: GameEnums.SimEventType) 
 	return false
 
 
+static func events_have_ability(events: Array, ability_id: StringName) -> bool:
+	for e: Variant in events:
+		if e is SimEvent and e.type == GameEnums.SimEventType.ABILITY_USED:
+			if e.data.get("ability") == ability_id:
+				return true
+	return false
+
+
 static func factory_ability(ability_id: StringName) -> AbilityData:
 	var def: UnitData = bruiser_unit_data()
 	if def == null:

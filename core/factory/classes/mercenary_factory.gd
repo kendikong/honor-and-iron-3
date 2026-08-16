@@ -12,7 +12,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	definition.display_name = "Mercenary"
 	definition.base_constitution = 5
 	definition.move_points = 4
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 4
 	definition.base_defense = 3
 	definition.base_magic = 2
@@ -540,7 +540,7 @@ static func _tactical_retreat() -> AbilityData:
 	)
 	module.legacy_modifiers["smoke_on_start"] = true
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["ghost_move"] = 1
+	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
 	return _ability(
 		&"mercenary_tactical_retreat",
 		"Tactical Retreat",
@@ -594,7 +594,7 @@ static func _flank_and_run() -> AbilityData:
 	)
 	module.legacy_modifiers["flank_run_adjacent_enemy_bonus"] = 2
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["ghost_move"] = 1
+	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
 	return _ability(
 		&"mercenary_flank_and_run",
 		"Flank & Run",

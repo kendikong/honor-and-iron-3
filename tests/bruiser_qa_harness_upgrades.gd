@@ -227,65 +227,55 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 
 static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_adrenaline_surge")
-	H.assert_true(
-		failures, "adrenaline_surge/upgrade/mod",
-		ab.upgraded_modules[0].legacy_modifiers.has("on_kill_heal_shield"),
-	)
 	H.assert_eq_int(
-		failures, "adrenaline_surge/upgrade/mod_val",
-		int(ab.upgraded_modules[0].legacy_modifiers["on_kill_heal_shield"]),
-		1,
+		failures, "adrenaline_surge/upgrade/planner",
+		ab.upgraded_planner_group,
+		GameEnums.PlannerGroup.PRE_MOVE,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"]),
 		&"bruiser_adrenaline_surge",
 	)
-	cfg["passive_flags"] = {"training_unlimited_actions": true}
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
-	var enemy: UnitState = H.unit_on_board(board, 2)
-	enemy.health.current_hp = 1
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	bruiser.ability.max_points = 3
-	bruiser.ability.points_left = 3
-	var hp_before: int = bruiser.health.current_hp
-	var armor_before: int = bruiser.armor
+	bruiser.ability.points_left = 2
 	var surge: AbilityData = H.ability_on_unit(bruiser, &"bruiser_adrenaline_surge")
+	H.assert_true(
+		failures, "adrenaline_surge/upgrade/is_pre_move",
+		AbilitySystem.ability_is_pre_move(bruiser, surge),
+	)
+	var blow: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, surge, bruiser.position, bruiser.id))
-	var blow: AbilityData = H.ability_on_unit(bruiser, &"bruiser_concussion_blow")
 	plan.add(H.plan_ability(1, blow, Vector2i(4, 3), 2))
 	var result: SimResult = H.simulate_plan(board, plan)
-	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_true(
-		failures, "adrenaline_surge/upgrade/on_kill",
-		not result.final_state.get_unit_by_id(2).is_alive() and after != null,
+		failures, "adrenaline_surge/upgrade/action_after_pre_move",
+		H.events_have_ability(result.events, &"bruiser_concussion_blow"),
 	)
-	H.assert_eq_int(failures, "adrenaline_surge/upgrade/shield", after.armor, armor_before + 2)
-	H.assert_eq_int(failures, "adrenaline_surge/upgrade/heal", after.health.current_hp, hp_before - 4)
 	var base_cfg: Dictionary = H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"])
-	base_cfg["passive_flags"] = {"training_unlimited_actions": true}
 	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(base_board, 10, Vector2i(3, 3), base_cfg)
 	H.place_dummy(base_board, 12, Vector2i(4, 3))
-	var base_enemy: UnitState = H.unit_on_board(base_board, 12)
-	base_enemy.health.current_hp = 1
 	var base_bruiser: UnitState = H.unit_on_board(base_board, 10)
 	base_bruiser.ability.max_points = 3
-	base_bruiser.ability.points_left = 3
-	var base_armor: int = base_bruiser.armor
+	base_bruiser.ability.points_left = 2
 	var base_surge: AbilityData = H.ability_on_unit(base_bruiser, &"bruiser_adrenaline_surge")
+	H.assert_true(
+		failures, "adrenaline_surge/upgrade/base_is_action",
+		not AbilitySystem.ability_is_pre_move(base_bruiser, base_surge),
+	)
+	var base_blow: AbilityData = H.ability_on_unit(base_bruiser, &"bruiser_concussion_blow")
 	var base_plan := Timeline.new()
 	base_plan.add(H.plan_ability(10, base_surge, base_bruiser.position, base_bruiser.id))
-	var base_blow: AbilityData = H.ability_on_unit(base_bruiser, &"bruiser_concussion_blow")
 	base_plan.add(H.plan_ability(10, base_blow, Vector2i(4, 3), 12))
 	var base_result: SimResult = H.simulate_plan(base_board, base_plan)
-	var base_after: UnitState = base_result.final_state.get_unit_by_id(10)
-	H.assert_eq_int(
-		failures, "adrenaline_surge/upgrade/base_no_on_kill",
-		base_after.armor,
-		base_armor,
+	H.assert_true(
+		failures, "adrenaline_surge/upgrade/base_blocks_second_action",
+		not H.events_have_ability(base_result.events, &"bruiser_concussion_blow"),
 	)
 	var up_adj_board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	var up_cfg: Dictionary = H.with_upgraded_ability(
@@ -761,12 +751,12 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("heal_per_target_hit"),
+		ab.upgraded_modules[0].legacy_modifiers.has("heal_if_targets_gte"),
 	)
 	H.assert_eq_int(
 		failures, "crimson_whirlwind/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["heal_per_target_hit"]),
-		1,
+		int(ab.upgraded_modules[0].legacy_modifiers["heal_if_targets_gte"]),
+		3,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_crimson_whirlwind"),
@@ -775,23 +765,25 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
 	var bruiser: UnitState = H.unit_on_board(board, 1)
+	bruiser.active_passives.clear()
 	bruiser.health.current_hp = bruiser.health.max_hp - 3
 	var hp: int = bruiser.health.current_hp
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	H.place_dummy(board, 3, Vector2i(3, 4))
+	H.place_dummy(board, 4, Vector2i(2, 3))
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_crimson_whirlwind")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 1))
-	var result: SimResult = H.simulate_plan(board, plan)
+	var result: SimResult = H.simulate_player_turn(board, plan)
 	var heal_gain: int = H.unit_hp(result.final_state, 1) - hp
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/heal",
 		heal_gain > 0,
 	)
 	H.assert_eq_int(
-		failures, "crimson_whirlwind/upgrade/heal_per_target",
+		failures, "crimson_whirlwind/upgrade/heal_if_3_targets",
 		heal_gain,
-		3,
+		2,
 	)
 
 

@@ -941,7 +941,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		return false
 
 	if (
-		ability.consumes_action_slot()
+		ability.consumes_action_slot_for(ability_is_upgraded(actor, ability))
 		and not actor.can_use_action_slot()
 		and not actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false)
 		and not (
@@ -1712,6 +1712,8 @@ static func _unit_passes_module_filter(
 				_:
 					return false
 		GameEnums.ModuleTargetFilter.STAT:
+			if module.has_targeting(GameEnums.TargetingFlags.ALLY) and target.team == actor.team:
+				return true
 			return int(target.health.max_hp / 5) <= actor.current_strength
 		_:
 			return true
@@ -2709,7 +2711,7 @@ static func can_plan(actor: UnitState, ability: AbilityData, board: BoardState =
 		return false
 	if actor.has_status(GameEnums.StatusType.PACIFY) and ability_uses_attack_animation(ability):
 		return false
-	if ability.consumes_action_slot() and not actor.can_use_action_slot():
+	if ability.consumes_action_slot_for(ability_is_upgraded(actor, ability)) and not actor.can_use_action_slot():
 		return false
 	return true
 
@@ -2717,6 +2719,14 @@ static func can_plan(actor: UnitState, ability: AbilityData, board: BoardState =
 ## Deprecated: use ability.consumes_action_slot() on AbilityData.
 static func consumes_action_slot(ability: AbilityData) -> bool:
 	return ability != null and ability.consumes_action_slot()
+
+
+static func ability_is_upgraded(actor: UnitState, ability: AbilityData) -> bool:
+	return actor != null and ability != null and actor.upgraded_abilities.has(ability.id)
+
+
+static func ability_is_pre_move(actor: UnitState, ability: AbilityData) -> bool:
+	return ability != null and ability.is_pre_move_for(ability_is_upgraded(actor, ability))
 
 
 static func apply_run_boost(actor: UnitState, events: Array[SimEvent]) -> void:
@@ -2917,7 +2927,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		not wild_magic_repeat
 		and not shaman_echo_repeat
 		and not actor.has_unlimited_training_actions()
-		and ability.consumes_action_slot()
+		and ability.consumes_action_slot_for(ability_is_upgraded(actor, ability))
 		and not _ability_has_modifier(actor, ability, &"does_not_consume_action_slot")
 		and not _caltrop_expert_waives(actor, ability)
 		and not free_mark_refresh
@@ -3092,6 +3102,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		)
 
 	var heal_per_target_hit = false
+	var heal_if_targets_gte := 0
 	var buff_per_object = false
 	var targets_hit_count = 0
 	var objects_destroyed_count = 0
@@ -3111,6 +3122,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if runtime_modules.is_empty():
 		for eff: EffectData in legacy_runtime_effects:
 			if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
+			if int(eff.modifiers.get("heal_if_targets_gte", 0)) > 0:
+				heal_if_targets_gte = int(eff.modifiers["heal_if_targets_gte"])
 			if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
 			if eff.modifiers.has("destroy_corpse_on_kill"):
 				actor.passive_flags["destroy_corpse_on_kill"] = true
@@ -3129,6 +3142,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	else:
 		heal_per_target_hit = AbilityModuleBridge.modules_have_modifier(
 			runtime_modules, &"heal_per_target_hit",
+		)
+		heal_if_targets_gte = AbilityModuleBridge.modules_modifier_value(
+			runtime_modules, &"heal_if_targets_gte",
 		)
 		buff_per_object = AbilityModuleBridge.modules_have_modifier(
 			runtime_modules, &"buff_per_destroyed_object",
@@ -3394,7 +3410,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				})
 				continue
 			
-			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and heal_per_target_hit:
+			if effect.type == GameEnums.EffectType.DAMAGE and target_unit != null and target_unit != actor and target_unit.is_alive() and (heal_per_target_hit or heal_if_targets_gte > 0):
 				targets_hit_count += 1
 				
 			_apply_effect_to_tile(board, actor, action, effect, events, apply_coord, target_unit)
@@ -3402,6 +3418,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	if heal_per_target_hit and targets_hit_count > 0:
 		CombatSystem.heal(board, actor, targets_hit_count, events)
+	if heal_if_targets_gte > 0 and targets_hit_count >= heal_if_targets_gte:
+		CombatSystem.heal(board, actor, 1, events)
 	if buff_per_object and objects_destroyed_count > 0:
 		actor.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAT_BUFF_STR, 999, objects_destroyed_count))
 		actor._recalculate_stats()
@@ -4797,6 +4815,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
 						"unit": target.id, "to": target.position
 					}))
+		GameEnums.EffectType.GRANT_AP:
+			var ap_target: UnitState = target if target != null else actor
+			if ap_target != null and ap_target.ability != null:
+				ap_target.ability.grant(maxi(1, effect.amount))
 		GameEnums.EffectType.HEAL:
 			if target != null:
 				if effect.modifiers.has("enemy_mag_atk") and target.team != actor.team:

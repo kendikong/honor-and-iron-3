@@ -7,7 +7,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.display_name = "Knight"
 	def.base_constitution = 6
 	def.move_points = 3
-	def.action_points = 1
+	def.action_points = GameEnums.MAX_AP
 	def.base_strength = 4
 	def.base_defense = 5
 	def.base_magic = 2

@@ -11,7 +11,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	definition.display_name = "Mage"
 	definition.base_constitution = 3
 	definition.move_points = 4
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 1
 	definition.base_defense = 1
 	definition.base_magic = 5
@@ -372,22 +372,17 @@ static func _time_warp() -> AbilityData:
 		GameEnums.EffectType.DAMAGE_SELF, 4, 0, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	var grant := DataLibrary._effect(GameEnums.EffectType.ADD_STATUS, 1)
-	grant.modifiers["utility_only"] = true
-	grant.modifiers["grant_ap"] = 1
-	base.layers.append(_layer(grant))
+	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 1)))
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE_SELF, 4, 0, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	var upgraded_grant := DataLibrary._effect(GameEnums.EffectType.ADD_STATUS, 1)
-	upgraded_grant.modifiers = grant.modifiers.duplicate(true)
-	upgraded_grant.modifiers["cooldown_reduction"] = 1
-	upgraded.layers.append(_layer(upgraded_grant))
+	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 1)))
+	upgraded.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_MOV, 1, 2)))
 	return _spell(
 		&"mage_time_warp", "Time Warp", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
-		"Target ally cooldowns -1.",
+		"Ally also gains +2 MOV next turn.",
 	)
 
 

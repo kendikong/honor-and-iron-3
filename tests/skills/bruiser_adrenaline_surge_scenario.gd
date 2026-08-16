@@ -7,9 +7,9 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Adrenaline Surge - SELF | spend 5 HP | +1 MOV +1 STR 1 turn; 0 AP if 2+ adjacent enemies.
-## [+] on_kill_heal_shield - on kill HEAL 1 and SHIELD 2.
-## Globals: DAMAGE_SELF + STAT_BUFF_STR/MOV self; zero_ap_adjacent_enemies / on_kill_heal_shield modifiers.
+## Bible: Adrenaline Surge - SELF | spend 5 HP | +1 MOV +1 STR next turn; 0 AP if 2+ adjacent enemies.
+## [+] Pre-Move action: skip Action slot, execute immediately (1/turn).
+## Globals: ADD_STATUS_SELF STR/MOV; ZERO_IF_ADJACENT_ENEMIES_GTE_N; upgraded_planner_group PRE_MOVE.
 
 
 static func run_all(failures: Array[String]) -> void:

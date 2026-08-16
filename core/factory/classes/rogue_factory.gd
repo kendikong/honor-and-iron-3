@@ -12,7 +12,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	definition.display_name = "Rogue"
 	definition.base_constitution = 4
 	definition.move_points = 5
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 4
 	definition.base_defense = 2
 	definition.base_magic = 1

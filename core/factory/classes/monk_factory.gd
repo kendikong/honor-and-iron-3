@@ -12,7 +12,7 @@ static func build(basic_fist: WeaponData) -> UnitData:
 	definition.display_name = "Monk"
 	definition.base_constitution = 5
 	definition.move_points = 4
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 3
 	definition.base_defense = 2
 	definition.base_magic = 4

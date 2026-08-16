@@ -83,6 +83,7 @@ static func create(p_id: int, def: UnitData, p_team: GameEnums.Team, coord: Vect
 		def.move_points + int(promotion_bonuses.get("movement", 0))
 	)
 	unit.ability = AbilityComponent.new(def.action_points)
+	unit.ability.grant_turn_start()
 	
 	if config.has("level"):
 		unit.level = config.level
@@ -454,7 +455,7 @@ func reset_for_turn() -> void:
 	movement_points_spent_this_turn = 0
 	continuous_straight_tiles_this_turn = 0
 	continuous_straight_direction = Vector2i.ZERO
-	ability.reset()
+	ability.grant_turn_start()
 	turn_action_used = false
 	pre_move_used_this_turn = false
 	armor = 0

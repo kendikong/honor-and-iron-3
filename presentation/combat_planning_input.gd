@@ -4796,7 +4796,7 @@ func _build_ally_commit_slots(
 		AbilitySystem.prepare_planning_action(_proj(), relocate_action)
 		slots[_ability_plan_column(ability)].append(relocate_action)
 		return slots
-	if not ability.is_movement_kind():
+	if not AbilitySystem.ability_is_pre_move(actor, ability):
 		if _can_target_unit_with_selected_ability(actor, ally):
 			slots["action"].append(
 				TimelineAction.make_ability(
@@ -5047,7 +5047,7 @@ func _build_enemy_commit_slots(
 		slots["invalid"] = "Enemy is not attackable from legal move tiles."
 		return slots
 	if use_skill:
-		if ability.is_movement_kind():
+		if AbilitySystem.ability_is_pre_move(actor, ability):
 			slots["invalid"] = "Cannot pair this action with a pre-move."
 			return slots
 		var approach_hint: Vector2i = cell

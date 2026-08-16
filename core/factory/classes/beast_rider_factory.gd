@@ -11,7 +11,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	definition.display_name = "Beast Rider"
 	definition.base_constitution = 5
 	definition.move_points = 5
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 3
 	definition.base_defense = 2
 	definition.base_magic = 2
@@ -414,20 +414,18 @@ static func _intimidate() -> AbilityData:
 
 static func _fetch() -> AbilityData:
 	var fetch := _module(
-		GameEnums.EffectType.PULL, 1, 1, 4,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ALLY
-			| GameEnums.TargetingFlags.ENEMY,
+		GameEnums.EffectType.PULL, 2, 1, 4,
+		GameEnums.TargetingFlags.ALLY,
 	)
 	fetch.legacy_modifiers = {}
-	fetch.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE)
 	var upgraded := _clone([fetch])
-	upgraded[0].legacy_modifiers["pull_light_ally"] = 2
+	upgraded[0].targeting_flags = GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY
+	upgraded[0].set_condition_con_leq_caster_str()
 	return _ability(
-		&"beast_fetch", "Fetch", [fetch], upgraded,
-		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ALLY
-			| GameEnums.TargetingFlags.ENEMY,
+		&"beast_fetch", "Snatch", [fetch], upgraded,
+		GameEnums.TargetingFlags.ALLY,
 		[AbilityModuleBridge.TAG_POSITIONING],
-		"Pull light allies 2 tiles.",
+		"May instead PULL an enemy whose CON is <= your STR, 2 tiles toward you.",
 	)
 
 

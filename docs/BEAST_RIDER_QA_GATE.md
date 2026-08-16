@@ -34,7 +34,7 @@ Movement rows must prove blue reachable tiles and pre/post timing where applicab
 | `beast_raking_claws` | `tests/skills/beast_raking_claws_scenario.gd` | PASS | ARC ATK 2 BLEED WPN; [+] PULL |
 | `beast_rest_recover` | `tests/skills/beast_rest_recover_scenario.gd` | PASS | 1 AP/all MOV HEAL 1 DEF +5; [+] CLEANSE |
 | `beast_intimidate` | `tests/skills/beast_intimidate_scenario.gd` | PASS | AOE 2 lower-HP STAGGER; [+] PURGE |
-| `beast_fetch` | `tests/skills/beast_fetch_scenario.gd` | PASS | RANGE 4 item/corpse pull; [+] light ally pull |
+| `beast_fetch` | `tests/skills/beast_fetch_scenario.gd` | PASS | RANGE 4 PULL 2 ally (Snatch); [+] may PULL enemy if CON ≤ STR |
 | `beast_savage_bite` | `tests/skills/beast_savage_bite_scenario.gd` | PASS | ATK 4 BLEED/POISON gate; [+] SHIELD 2 |
 | `beast_run_down` | `tests/skills/beast_run_down_scenario.gd` | PASS | DASH 3 ATK 2 pass PUSH; [+] BLEED WPN |
 | `beast_thrash` | `tests/skills/beast_thrash_scenario.gd` | PASS | ATK 1 x3; [+] BLEED each hit |

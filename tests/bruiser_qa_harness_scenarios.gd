@@ -884,7 +884,7 @@ static func run_headbutt(failures: Array[String]) -> void:
 	var expected_enemy: int = H.damage_dealt_to_unit(
 		board, 2, int(dmg_math.get("final_raw", 0)), attacker,
 	)
-	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy + 1)
+	H.assert_eq_int(failures, "headbutt/enemy_dmg", enemy_damage, expected_enemy)
 	H.assert_eq_int(failures, "headbutt/self_dmg", self_damage, 1)
 	var enemy_after: UnitState = result.final_state.get_unit_by_id(2)
 	H.assert_true(

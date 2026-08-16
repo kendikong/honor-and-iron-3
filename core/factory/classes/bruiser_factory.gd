@@ -7,7 +7,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.display_name = "Bruiser"
 	def.base_constitution = 7
 	def.move_points = 4
-	def.action_points = 1
+	def.action_points = GameEnums.MAX_AP
 	def.base_strength = 4
 	def.base_defense = 2
 	def.base_magic = 1
@@ -79,7 +79,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
 	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
-	charge_upgraded[0].legacy_modifiers["ghost_move"] = 1
 	charge_upgraded[1].legacy_modifiers["bonus_dmg_from_occupied"] = 2
 	charge_upgraded[1].layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_strike := DataLibrary._make_modular_ability(
@@ -153,14 +152,15 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)),
 	]
 	var adrenaline_upgraded := DataLibrary._duplicate_modules([adrenaline_module])
-	adrenaline_upgraded[0].legacy_modifiers["on_kill_heal_shield"] = 1
 	var adrenaline_surge := DataLibrary._make_modular_ability(
 		&"bruiser_adrenaline_surge", "Adrenaline Surge", [adrenaline_module],
 		adrenaline_upgraded, 1, GameEnums.PlannerGroup.ACTION,
-		GameEnums.CostResource.AP, [], "On Kill: HEAL 1 and gain SHIELD 2.",
+		GameEnums.CostResource.AP, [],
+		"Pre-Move action: does not consume the Action slot, executes immediately (1/turn).",
 		GameEnums.TargetingFlags.SELF, GameEnums.CostResource.HP, 5,
 		GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N, 2,
 	)
+	adrenaline_surge.upgraded_planner_group = GameEnums.PlannerGroup.PRE_MOVE
 	def.abilities.append(adrenaline_surge)
 
 	var earthshatter_module := DataLibrary._module(
@@ -237,10 +237,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	var headbutt_true := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
-	headbutt_true.modifiers["true_damage"] = 1
 	headbutt_module.layers = [
-		DataLibrary._layer(headbutt_true),
 		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 1)),
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1)),
 		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)),
@@ -305,11 +302,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	var whirlwind_upgraded := DataLibrary._duplicate_modules([whirlwind_module])
-	whirlwind_upgraded[0].legacy_modifiers["heal_per_target_hit"] = 1
+	whirlwind_upgraded[0].layers.append(
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.HEAL, 1))
+	)
+	whirlwind_upgraded[0].legacy_modifiers["heal_if_targets_gte"] = 3
 	var crimson_whirlwind := DataLibrary._make_modular_ability(
 		&"bruiser_crimson_whirlwind", "Crimson Whirlwind", [whirlwind_module],
 		whirlwind_upgraded, 1, GameEnums.PlannerGroup.ACTION,
-		GameEnums.CostResource.AP, [], "HEAL 1 for every target successfully hit.",
+		GameEnums.CostResource.AP, [], "HEAL 1. If 3+ targets hit, HEAL 2 instead.",
 		GameEnums.TargetingFlags.SELF,
 	)
 	def.abilities.append(crimson_whirlwind)
@@ -344,7 +344,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var breaching_dash := DataLibrary._make_modular_ability(
 		&"bruiser_breaching_dash", "Breaching Dash", [breach_module],
 		breach_upgraded, 1, GameEnums.PlannerGroup.ACTION,
-		GameEnums.CostResource.AP, [], "Your next attack this turn gains PIERCE.",
+		GameEnums.CostResource.AP, [], "Your next attack (next turn) gains PIERCE.",
 		GameEnums.TargetingFlags.DASH_LINE,
 	)
 	def.abilities.append(breaching_dash)

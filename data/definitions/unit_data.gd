@@ -12,7 +12,7 @@ extends Resource
 
 @export var base_constitution: int = 2
 @export var move_points: int = 3
-@export var action_points: int = 1
+@export var action_points: int = 3
 
 ## How this unit moves across the grid (WALK/FLY/TELEPORT).
 @export var movement_type: GameEnums.MovementType = GameEnums.MovementType.WALK

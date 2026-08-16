@@ -920,7 +920,7 @@ static func _make_construct(p_id: StringName, p_name: String, scaling_pct: float
 	u.display_name = p_name
 	u.base_constitution = 1
 	u.move_points = 0
-	u.action_points = 1
+	u.action_points = GameEnums.MAX_AP
 	u.abilities = []
 	u.behavior = null
 	u.movement_type = GameEnums.MovementType.WALK

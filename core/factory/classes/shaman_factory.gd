@@ -12,7 +12,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	definition.display_name = "Shaman"
 	definition.base_constitution = 3
 	definition.move_points = 4
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 1
 	definition.base_defense = 1
 	definition.base_magic = 4

@@ -19,6 +19,8 @@ const RUNTIME_SPELL_AP_REFUNDED: StringName = &"spell_ap_refunded"
 const RUNTIME_WILD_MAGIC_REPEAT: StringName = &"wild_magic_repeat"
 const RUNTIME_WILD_MAGIC_PENDING: StringName = &"wild_magic_pending"
 const RUNTIME_ECHO_REPEAT: StringName = &"echo_repeat"
+const MAX_AP: int = 3
+const TURN_START_AP_GAIN: int = 1
 
 enum Team {
 	PLAYER,
@@ -104,6 +106,9 @@ enum EffectType {
 	MOVE_TOWARD, ## Walk the default path toward an aimed unit.
 	JUMP_TOWARD, ## Jump the default path toward an aimed unit.
 	TELEPORT_TOWARD, ## Warp toward / onto the approach tile of an aimed unit.
+	GRANT_AP, ## Add AP to the target's pool, capped at Max AP (3).
+	PAIRED_MOVE, ## You and another unit step together (Pullback / Glorious Charge).
+	GRANT_SCRAP, ## Add Scrap to the caster (Engineer).
 }
 
 ## Types of temporary statuses that can be applied to units.

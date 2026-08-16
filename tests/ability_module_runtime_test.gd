@@ -663,6 +663,7 @@ static func _unit(
 	unit.current_defense = 0
 	unit.health = HealthComponent.new(hp)
 	unit.ability = AbilityComponent.new(3)
+	unit.ability.points_left = unit.ability.max_points
 	return unit
 
 

@@ -222,7 +222,7 @@ Keywords (TRAMPLE, BULLDOZE, GHOST, …) are a **separate module field** (§6), 
 | `BEHIND_TARGET` | Land behind aimed unit |
 | `VAULT_OVER` | Jump over unit/obstacle to opposite empty tile |
 | `INTO_OCCUPIED_PUSH` | Enter occupied tile and push occupant (Push Through) |
-| `BACKWARDS` | Facing-constrained retreat (Tactical Retreat) |
+| `BACKWARDS` | Facing-constrained step (skills that name Backwards). Tactical Retreat is any-direction MOVE 3. |
 | `SLIDE_TARGET_OPPOSITE` | Reposition: slide targeted unit to opposite side of you |
 | `ALLY_STEP` | Usher: ally steps into empty adjacent (you may stay put) |
 
@@ -768,7 +768,7 @@ These already work in sim/factories; modular design should **absorb** them as na
 | `bonus_dmg_from_terrain`, `bonus_dmg_per_10_hp`, `bonus_dmg_pct_max_hp` | Layer/scaling rules on DAMAGE |
 | `weapon_scaled` | Scaling = WPN (or bleed X) |
 | `heal_per_target_hit` | Layer condition `PER_TARGET_HIT` + HEAL |
-| `on_kill_heal_shield`, `frenzy_on_kill_ap` | Layer `ON_KILL` + HEAL/SHIELD/GRANT_AP |
+| `frenzy_on_kill_ap` | Layer `ON_KILL` + GRANT_AP |
 | `next_attack_pierce` | Utility `GRANT_NEXT_ATTACK_MOD` |
 | `buff_per_destroyed_object` | Layer after DESTROY_OBSTACLE |
 | `intercept_grant_str` | Status/INTERCEPT layer params |

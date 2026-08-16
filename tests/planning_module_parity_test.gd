@@ -187,6 +187,7 @@ static func _unit(id: int, team: GameEnums.Team, position: Vector2i) -> UnitStat
 	unit.current_defense = 0
 	unit.health = HealthComponent.new(20)
 	unit.ability = AbilityComponent.new(3)
+	unit.ability.points_left = unit.ability.max_points
 	return unit
 
 

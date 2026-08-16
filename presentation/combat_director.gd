@@ -710,7 +710,7 @@ func rpc_plan_attack_with_approach(unit_id: int, ability_index: int, target_unit
 	var after_actor := trial.get_unit_by_id(target_unit_id)
 	var attack_action := TimelineAction.make_ability(unit_id, ability,
 		after_actor.position if after_actor != null else target.position, target_unit_id, GameEnums.MoveTiming.PRE_ACTION)
-	if ability.is_movement_kind():
+	if AbilitySystem.ability_is_pre_move(actor, ability):
 		_try_add(attack_action, plan_pre_move)
 	else:
 		_try_add(attack_action, plan_action)
@@ -1052,7 +1052,9 @@ func _try_add_multiple(actions: Array[TimelineAction], target_plans: Array[Timel
 		if not _autobattler_plan_batch and _move_commits_with_planning_anim(actions[i]):
 			_commit_animate_actor_ids[actions[i].actor_id] = true
 		if actions[i].type == GameEnums.ActionType.ABILITY and actions[i].ability != null:
-			if actions[i].ability.is_movement_kind():
+			if AbilitySystem.ability_is_pre_move(
+				board.get_unit_by_id(actions[i].actor_id), actions[i].ability
+			):
 				_cancel_ally_plans_after_movement_step(actions[i])
 				for ally_id: int in PlanDependency.ally_ids_affected_by_action(board, actions[i]):
 					if ally_id not in plan_affected_unit_ids:
@@ -1268,7 +1270,9 @@ func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions
 		if (
 			action.type != GameEnums.ActionType.ABILITY
 			or action.ability == null
-			or not action.ability.is_movement_kind()
+			or not AbilitySystem.ability_is_pre_move(
+				board.get_unit_by_id(action.actor_id), action.ability
+			)
 		):
 			continue
 		var allies: Array[int] = PlanDependency.ally_ids_affected_by_action(board, action)
@@ -1690,7 +1694,7 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 	if target == null: return
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
-	if ability.is_movement_kind() and target_timing != GameEnums.MoveTiming.PRE_ACTION:
+	if AbilitySystem.ability_is_pre_move(attacker, ability) and target_timing != GameEnums.MoveTiming.PRE_ACTION:
 		EventBus.action_rejected.emit("movement_skill_after_action")
 		return
 
@@ -1705,7 +1709,7 @@ func rpc_plan_attack(unit_id: int, ability_index: int, target_unit_id: int) -> v
 	else:
 		coord = target.position
 	var action := TimelineAction.make_ability(unit_id, ability, coord, target_unit_id, GameEnums.MoveTiming.PRE_ACTION)
-	if ability.is_movement_kind():
+	if AbilitySystem.ability_is_pre_move(attacker, ability):
 		_try_add(action, plan_pre_move)
 	else:
 		_clear_unit_wait(unit_id)
@@ -1732,7 +1736,7 @@ func rpc_plan_ability_at_coord(unit_id: int, ability_index: int, coord: Vector2i
 		return
 	var index := clampi(ability_index, 0, attacker.active_abilities.size() - 1)
 	var ability: AbilityData = attacker.active_abilities[index]
-	if ability.is_movement_kind():
+	if AbilitySystem.ability_is_pre_move(attacker, ability):
 		_try_add(
 			TimelineAction.make_ability(unit_id, ability, coord, -1, GameEnums.MoveTiming.PRE_ACTION, waypoints),
 			plan_pre_move,
@@ -1775,7 +1779,9 @@ func rpc_remove_last_for_unit(unit_id: int) -> void:
 					if (
 						removed.type == GameEnums.ActionType.ABILITY
 						and removed.ability != null
-						and removed.ability.is_movement_kind()
+						and AbilitySystem.ability_is_pre_move(
+							board.get_unit_by_id(removed.actor_id), removed.ability
+						)
 					):
 						_cancel_ally_plans_after_movement_step(removed)
 					plan_action.remove_at(i)
@@ -1836,7 +1842,9 @@ func rpc_remove_action(index: int) -> void:
 		if (
 			removed_act.type == GameEnums.ActionType.ABILITY
 			and removed_act.ability != null
-			and removed_act.ability.is_movement_kind()
+			and AbilitySystem.ability_is_pre_move(
+				board.get_unit_by_id(removed_act.actor_id), removed_act.ability
+			)
 		):
 			_cancel_ally_plans_after_movement_step(removed_act)
 		plan_action.remove_at(act_idx)

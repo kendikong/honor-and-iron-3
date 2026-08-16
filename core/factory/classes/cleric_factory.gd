@@ -11,7 +11,7 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	def.display_name = "Cleric"
 	def.base_constitution = 4
 	def.move_points = 4
-	def.action_points = 1
+	def.action_points = GameEnums.MAX_AP
 	def.base_strength = 1
 	def.base_defense = 1
 	def.base_magic = 4

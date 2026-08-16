@@ -45,7 +45,7 @@ const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_raking_claws": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "shape": GameEnums.TargetShape.ARC, "keys": [&"bleed_weapon", &"pull_before_attack"]},
 	&"beast_rest_recover": {"types": [GameEnums.EffectType.HEAL], "amount": 1, "keys": [&"cost_all_movement"]},
 	&"beast_intimidate": {"types": [GameEnums.EffectType.ADD_STATUS], "amount": 1, "shape": GameEnums.TargetShape.AOE_CROSS, "shape_size": 2, "keys": [&"purge_buffs"], "filter": GameEnums.ModuleTargetFilter.HP, "filter_hp": GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP},
-	&"beast_fetch": {"types": [GameEnums.EffectType.PULL], "amount": 1, "max_range": 4, "keys": [&"pull_light_ally"], "filter": GameEnums.ModuleTargetFilter.OCCUPANT, "filter_occupant": GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE},
+	&"beast_fetch": {"types": [GameEnums.EffectType.PULL], "amount": 2, "max_range": 4},
 	&"beast_savage_bite": {"types": [GameEnums.EffectType.DAMAGE], "amount": 4, "max_range": 1, "keys": [&"on_kill_shield"], "filter": GameEnums.ModuleTargetFilter.STATUS, "filter_status_mode": GameEnums.ModuleTargetFilterStatus.SPECIFIC},
 	&"beast_run_down": {"types": [GameEnums.EffectType.DASH], "amount": 3, "max_range": 3, "keys": [&"run_down_pass_adjacent_push", &"run_down_push_bleed_weapon", &"trample_atk"]},
 	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "hit_count": 3, "keys": [&"bleed_weapon"]},
@@ -188,10 +188,6 @@ static func run_ability_row(ability_id: StringName, failures: Array[String]) -> 
 		actor.passive_flags["beast_drag_target_id"] = maul_target.id
 		action.target_unit_id = maul_target.id
 		action.target_coord = maul_target.position
-	if ability_id == &"beast_fetch":
-		board.items.append(target_coord)
-		action.target_coord = target_coord
-		action.target_unit_id = -1
 	var board_before := board.clone()
 	var plan := Timeline.new()
 	plan.add(action)
@@ -515,10 +511,6 @@ static func run_ability_upgrade_row(ability_id: StringName, failures: Array[Stri
 	_apply_sim_action_overrides(action, ability_id, ability, actor, board, target_setup)
 	if ability_id == &"beast_maul" and target_setup.get("unit") != null:
 		actor.passive_flags["beast_drag_target_id"] = (target_setup.get("unit") as UnitState).id
-	if ability_id == &"beast_fetch":
-		board.items.append(target_setup.coord)
-		action.target_coord = target_setup.coord
-		action.target_unit_id = -1
 	_assert(
 		failures,
 		"%s/upgrade/active_profile" % ability_id,
@@ -672,7 +664,7 @@ static func _place_target(board: BoardState, row_id: StringName) -> UnitState:
 		coord = Vector2i(3, 4)
 	if row_id == &"beast_pounce":
 		coord = Vector2i(4, 3)
-	if row_id == &"beast_airlift" or row_id == &"beast_reposition":
+	if row_id == &"beast_airlift" or row_id == &"beast_reposition" or row_id == &"beast_fetch":
 		return _place_ally(board, 2, coord)
 	var target := _place_enemy(board, 2, coord, row_id)
 	if row_id == &"beast_feral_drag":

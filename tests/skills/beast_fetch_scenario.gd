@@ -4,8 +4,9 @@ extends RefCounted
 const _H := preload("res://tests/beast_rider_qa_harness.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
 
-## Bible: Fetch — RANGE 4 item/corpse to adjacent; [+] pull light allies 2 tiles.
-## Globals: AbilitySystem targeting and PhysicsSystem pull.
+## Bible: Snatch — RANGE 4 | PULL 2 an ally toward you.
+## [+] May instead PULL an enemy whose CON is <= your STR, 2 tiles toward you.
+## Globals: EffectType.PULL + ALLY targeting; upgrade adds ENEMY + CON_LEQ_CASTER_STR.
 ## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_ability_row
 
 static func run_all(failures: Array[String]) -> void:

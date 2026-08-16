@@ -12,7 +12,7 @@ static func build(basic_gun: WeaponData) -> UnitData:
 	definition.display_name = "Engineer"
 	definition.base_constitution = 4
 	definition.move_points = 4
-	definition.action_points = 1
+	definition.action_points = GameEnums.MAX_AP
 	definition.base_strength = 3
 	definition.base_defense = 3
 	definition.base_magic = 1

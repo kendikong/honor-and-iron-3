@@ -271,6 +271,7 @@ static func run_arcane_overchannel(failures: Array[String]) -> void:
 	var surge := _ability(mage, &"mage_elemental_surge")
 	for _i: int in range(3):
 		mage_unit.reset_for_turn()
+		mage_unit.ability.points_left = 1
 		var surge_plan := Timeline.new()
 		surge_plan.add(TimelineAction.make_ability(1, surge, mage_unit.position, mage_unit.id))
 		_player_turn(board, surge_plan)
@@ -291,6 +292,7 @@ static func run_arcane_overchannel(failures: Array[String]) -> void:
 	upgraded_mage.upgraded_passives.append(&"arcane_overchannel")
 	for _j: int in range(3):
 		upgraded_mage.reset_for_turn()
+		upgraded_mage.ability.points_left = 1
 		var upgraded_plan := Timeline.new()
 		upgraded_plan.add(TimelineAction.make_ability(1, surge, upgraded_mage.position, upgraded_mage.id))
 		_player_turn(upgraded_board, upgraded_plan)
@@ -612,7 +614,8 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 		&"mage_black_hole":
 			_assert(failures, "upgrade/mage_black_hole/surfaces", effects[0].modifiers.get("pull_surfaces", false))
 		&"mage_time_warp":
-			_assert(failures, "upgrade/mage_time_warp/cooldown", effects[1].modifiers.get("cooldown_reduction", 0) == 1)
+			_assert(failures, "upgrade/mage_time_warp/grant_ap", effects.size() >= 2 and effects[1].type == GameEnums.EffectType.GRANT_AP)
+			_assert(failures, "upgrade/mage_time_warp/mov", effects.size() >= 3 and effects[2].status_type == GameEnums.StatusType.STAT_BUFF_MOV)
 		&"mage_mana_shield":
 			_assert(failures, "upgrade/mage_mana_shield/casting", effects[0].modifiers.get("mana_shield_casting", false))
 		&"mage_disintegrate":
