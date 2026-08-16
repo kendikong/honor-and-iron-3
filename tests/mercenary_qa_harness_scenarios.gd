@@ -34,13 +34,13 @@ static func run_predatory_momentum(failures: Array[String]) -> void:
 static func run_pullback(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_mercenary(board, 1, Vector2i(3, 4), H.mercenary_with_ability(&"mercenary_pullback"))
-	H.place_dummy(board, 2, Vector2i(4, 4))
+	H.place_ally(board, 2, Vector2i(4, 4))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_pullback")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(2, 4)))
 	var result: SimResult = H.simulate_plan(board, plan)
 	H.assert_eq_cell(failures, "pullback/mercenary", H.unit_on_board(result.final_state, 1).position, Vector2i(2, 4))
-	H.assert_eq_cell(failures, "pullback/enemy", H.unit_on_board(result.final_state, 2).position, Vector2i(3, 4))
+	H.assert_eq_cell(failures, "pullback/ally", H.unit_on_board(result.final_state, 2).position, Vector2i(3, 4))
 
 
 static func run_swift_strike(failures: Array[String]) -> void:
@@ -324,7 +324,7 @@ static func run_calculated_strike(failures: Array[String]) -> void:
 		H.factory_ability(&"mercenary_swift_strike"),
 	]
 	H.place_mercenary(board, 1, Vector2i(3, 4), cfg)
-	H.place_dummy(board, 2, Vector2i(4, 4))
+	H.place_ally(board, 3, Vector2i(4, 4))
 	var move: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_pullback")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, move, Vector2i(2, 4)))

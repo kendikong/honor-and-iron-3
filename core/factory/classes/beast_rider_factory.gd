@@ -247,7 +247,7 @@ static func _ability(
 static func _reposition() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.TELEPORT_CASTER, 2, 1, 1,
-		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE,
 	)
@@ -258,7 +258,7 @@ static func _reposition() -> AbilityData:
 	upgraded[0].legacy_modifiers["reposition_range"] = 2
 	return _movement(
 		&"beast_reposition", "Reposition", 2, base, upgraded,
-		"Move an adjacent unit to the empty tile directly on your opposite side.",
+		"Move an adjacent ally to the empty tile directly on your opposite side.",
 		"Range increased to 2 tiles.",
 	)
 

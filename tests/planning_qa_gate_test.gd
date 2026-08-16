@@ -1321,7 +1321,7 @@ static func _test_premove_beast_reposition_applies_live_board(failures: Array[St
 		"active_abilities": [reposition],
 	})
 	var dummy_def: UnitData = DataLibrary.get_training_dummy()
-	var dummy := UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, Vector2i(3, 3), {
+	var dummy := UnitState.create(2, dummy_def, GameEnums.Team.PLAYER, Vector2i(3, 3), {
 		"active_abilities": [],
 	})
 	var board := _plain_board(Vector2i(8, 6), [actor, dummy])

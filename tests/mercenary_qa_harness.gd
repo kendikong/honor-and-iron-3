@@ -160,23 +160,25 @@ static func _run_ability(ability_id: StringName, failures: Array[String], upgrad
 		&"mercenary_pullback",
 		&"mercenary_flank_and_run",
 	]:
-		var enemy_coord := target_coord
+		var occupant_coord := target_coord
 		if ability_id == &"mercenary_pullback":
-			enemy_coord = Vector2i(4, 4)
+			occupant_coord = Vector2i(4, 4)
 		elif ability_id == &"mercenary_flank_and_run":
-			enemy_coord += Vector2i(1, 0)
-		var dummy := UnitState.create(
-			2,
-			DataLibrary.get_training_dummy(),
-			GameEnums.Team.ENEMY,
-			enemy_coord,
-		)
-		board.add_unit(dummy)
-		GridSystem.set_occupant(board, enemy_coord, dummy.id)
-		target_id = dummy.id if ability_id not in [
-			&"mercenary_pullback",
-			&"mercenary_flank_and_run",
-		] else -1
+			occupant_coord += Vector2i(1, 0)
+		if ability_id == &"mercenary_pullback":
+			place_ally(board, 2, occupant_coord)
+		else:
+			var dummy := UnitState.create(
+				2,
+				DataLibrary.get_training_dummy(),
+				GameEnums.Team.ENEMY,
+				occupant_coord,
+			)
+			board.add_unit(dummy)
+			GridSystem.set_occupant(board, occupant_coord, dummy.id)
+			target_id = dummy.id if ability_id not in [
+				&"mercenary_flank_and_run",
+			] else -1
 	actor.ability.points_left = maxi(actor.ability.max_points, 1)
 	actor.movement.points_left = maxi(actor.movement.max_points, 8)
 	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
@@ -419,6 +421,15 @@ static func place_mercenary(
 	board.add_unit(unit)
 	GridSystem.set_occupant(board, pos, unit_id)
 	return unit
+
+
+static func place_ally(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:
+	var ally := UnitState.create(
+		unit_id, mercenary_unit_data(), GameEnums.Team.PLAYER, pos,
+	)
+	board.add_unit(ally)
+	GridSystem.set_occupant(board, pos, unit_id)
+	return ally
 
 
 static func place_dummy(board: BoardState, unit_id: int, pos: Vector2i) -> UnitState:

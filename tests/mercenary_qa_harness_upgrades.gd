@@ -48,7 +48,7 @@ static func _run_pullback_upgrade(failures: Array[String]) -> void:
 		H.mercenary_with_ability(&"mercenary_pullback"), &"mercenary_pullback",
 	)
 	H.place_mercenary(board, 1, Vector2i(3, 4), cfg)
-	H.place_dummy(board, 2, Vector2i(4, 4))
+	H.place_ally(board, 2, Vector2i(4, 4))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_pullback")
 	var actor: UnitState = H.unit_on_board(board, 1)
 	H.assert_eq_int(
@@ -60,10 +60,10 @@ static func _run_pullback_upgrade(failures: Array[String]) -> void:
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(2, 4)))
 	var result: SimResult = H.simulate_plan(board, plan)
-	var enemy: UnitState = H.unit_on_board(result.final_state, 2)
+	var ally: UnitState = H.unit_on_board(result.final_state, 2)
 	H.assert_true(
-		failures, "pullback/upgrade/def_debuff",
-		H.has_status(enemy, GameEnums.StatusType.STAT_DEBUFF_DEF),
+		failures, "pullback/upgrade/ally_def_buff",
+		H.has_status(ally, GameEnums.StatusType.STAT_BUFF_DEF),
 	)
 
 
@@ -163,7 +163,8 @@ static func _run_calculated_strike_upgrade(failures: Array[String]) -> void:
 		H.factory_ability(&"mercenary_sever"),
 	]
 	H.place_mercenary(board_no, 1, Vector2i(3, 4), cfg_no)
-	H.place_dummy(board_no, 2, Vector2i(4, 4))
+	H.place_ally(board_no, 3, Vector2i(4, 4))
+	H.place_dummy(board_no, 2, Vector2i(2, 3))
 	H.unit_on_board(board_no, 2).health.current_hp = 1
 	H.unit_on_board(board_no, 1).ability.max_points = 4
 	H.unit_on_board(board_no, 1).ability.points_left = 4
@@ -171,7 +172,7 @@ static func _run_calculated_strike_upgrade(failures: Array[String]) -> void:
 	var sever: AbilityData = H.ability_on_unit(H.unit_on_board(board_no, 1), &"mercenary_sever")
 	var plan_no := Timeline.new()
 	plan_no.add(H.plan_ability(1, pull, Vector2i(2, 4)))
-	plan_no.add(H.plan_ability(1, sever, Vector2i(3, 4), 2))
+	plan_no.add(H.plan_ability(1, sever, Vector2i(2, 3), 2))
 	var ap_no: int = H.simulate_plan(board_no, plan_no).final_state.get_unit_by_id(1).ability.points_left
 
 	var board_up: BoardState = H.make_plain_board(Vector2i(10, 8))
@@ -183,13 +184,14 @@ static func _run_calculated_strike_upgrade(failures: Array[String]) -> void:
 		H.factory_ability(&"mercenary_sever"),
 	]
 	H.place_mercenary(board_up, 1, Vector2i(3, 4), cfg_up)
-	H.place_dummy(board_up, 2, Vector2i(4, 4))
+	H.place_ally(board_up, 3, Vector2i(4, 4))
+	H.place_dummy(board_up, 2, Vector2i(2, 3))
 	H.unit_on_board(board_up, 2).health.current_hp = 1
 	H.unit_on_board(board_up, 1).ability.max_points = 4
 	H.unit_on_board(board_up, 1).ability.points_left = 4
 	var plan_up := Timeline.new()
 	plan_up.add(H.plan_ability(1, pull, Vector2i(2, 4)))
-	plan_up.add(H.plan_ability(1, sever, Vector2i(3, 4), 2))
+	plan_up.add(H.plan_ability(1, sever, Vector2i(2, 3), 2))
 	var ap_up: int = H.simulate_plan(board_up, plan_up).final_state.get_unit_by_id(1).ability.points_left
 	H.assert_true(
 		failures, "calculated_strike/upgrade/kill_ap",

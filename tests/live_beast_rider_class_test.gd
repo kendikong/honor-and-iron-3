@@ -116,7 +116,7 @@ func test_live_beast_rider_every_skill(timeout := 600000) -> void:
 
 func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
-		&"beast_airlift":
+		&"beast_airlift", &"beast_reposition":
 			return [Vector2i(5, 5)]
 		_:
 			return []
@@ -124,7 +124,9 @@ func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
 
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 	match ability_id:
-		&"beast_reposition", &"beast_feral_drag", &"beast_maul":
+		&"beast_reposition":
+			return []
+		&"beast_feral_drag", &"beast_maul":
 			return [Vector2i(5, 5)]
 		&"beast_fetch":
 			return [Vector2i(6, 5)]

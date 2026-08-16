@@ -493,7 +493,9 @@ func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 			return []
 		&"rogue_shadow_swap":
 			return [Vector2i(6, 5)]
-		&"rogue_slip_past", &"rogue_kidnap":
+		&"rogue_slip_past":
+			return []
+		&"rogue_kidnap":
 			return [Vector2i(5, 5)]
 		&"rogue_shadow_step", &"rogue_kidney_strike", &"rogue_blindside", &"rogue_throat_slit", &"rogue_lethal_flourish", &"rogue_kidnap", &"rogue_switcheroo":
 			return [Vector2i(5, 5)]
@@ -508,6 +510,8 @@ func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:
 func _ally_cell_for(ability_id: StringName) -> Vector2i:
 	if ability_id == &"rogue_shadow_swap":
 		return Vector2i(3, 5)
+	if ability_id == &"rogue_slip_past":
+		return Vector2i(5, 5)
 	return Vector2i(3, 4)
 
 

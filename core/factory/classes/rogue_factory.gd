@@ -267,17 +267,17 @@ static func _movement(
 static func _slip_past() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 1,
-		GameEnums.TargetingFlags.ENEMY,
+		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	base.legacy_modifiers["slip_past"] = true
 	base.legacy_modifiers["land_opposite_target"] = true
 	base.legacy_modifiers["move_through_adjacent_unit"] = true
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["target_def_debuff"] = 1
+	upgraded[0].legacy_modifiers["ally_def_buff"] = 1
 	return _movement(
 		&"rogue_slip_past", "Slip Past", 1, base, upgraded,
-		"Move through an adjacent unit to the empty tile directly behind them; upgraded: target DEF -1 for 1 turn.",
+		"Move through an adjacent ally to the empty tile directly behind them; upgraded: that ally gains +1 DEF for 1 turn.",
 	)
 
 

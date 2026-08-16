@@ -134,6 +134,10 @@ static func can_use_extra(
 		var target: UnitState = _resolve_target_unit(board, action)
 		if target == null or not _hp_below_threshold(target, float(mods["target_hp_below_pct"])):
 			return false
+	if mods.get("pullback", false):
+		var pulled: UnitState = _pullback_front_unit(board, actor.position, action.target_coord)
+		if pulled == null or not pulled.is_alive() or pulled.team != actor.team or pulled.id == actor.id:
+			return false
 	return true
 
 
@@ -545,6 +549,19 @@ static func _queue_bonus_basic(
 	actor.passive_flags.erase("dual_wield_bonus_basic")
 
 
+static func _pullback_front_unit(
+	board: BoardState,
+	start_pos: Vector2i,
+	dest: Vector2i,
+) -> UnitState:
+	if board == null:
+		return null
+	var delta := dest - start_pos
+	if delta == Vector2i.ZERO:
+		return null
+	return board.get_unit_at(start_pos - delta)
+
+
 static func _execute_pullback(
 	board: BoardState,
 	actor: UnitState,
@@ -555,9 +572,8 @@ static func _execute_pullback(
 	var delta := actor.position - start_pos
 	if delta == Vector2i.ZERO:
 		return
-	var front_pos := start_pos - delta
-	var pulled: UnitState = board.get_unit_at(front_pos)
-	if pulled == null or not pulled.is_alive():
+	var pulled: UnitState = _pullback_front_unit(board, start_pos, actor.position)
+	if pulled == null or not pulled.is_alive() or pulled.team != actor.team or pulled.id == actor.id:
 		return
 	var dest := pulled.position + delta
 	if GridSystem.is_wall(board, dest) or GridSystem.is_occupied(board, dest):
@@ -566,10 +582,13 @@ static func _execute_pullback(
 	pulled.position = dest
 	GridSystem.set_occupant(board, dest, pulled.id)
 	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {"unit": pulled.id, "to": dest}))
-	if mods.has("pullback_enemy_def") and pulled.team != actor.team:
+	if mods.has("pullback_ally_def"):
 		pulled.active_statuses.append(
-			DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, int(mods["pullback_enemy_def"])),
+			DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_DEF, 1, int(mods["pullback_ally_def"]),
+			),
 		)
+		pulled._recalculate_stats(board)
 
 
 static func _place_smoke(board: BoardState, coord: Vector2i, events: Array[SimEvent]) -> void:

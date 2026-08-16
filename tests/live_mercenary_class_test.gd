@@ -55,6 +55,7 @@ func test_live_mercenary_passive_overlay(timeout := 600000) -> void:
 		session.passive_enabled[passive_id] = true
 		session.skill_enabled[ability_id] = true
 		session.dummy_coords = [Vector2i(6, 5), Vector2i(7, 5)]
+		session.extra_player_coords = _ally_coords_for(ability_id)
 		session.unkillable_dummies = true
 		scene.apply_training_board()
 		await runner.simulate_frames(8, 16)
@@ -126,6 +127,7 @@ func test_live_mercenary_every_skill(timeout := 300000) -> void:
 		session.dummy_coords = [Vector2i(6, 5), Vector2i(7, 5)]
 		if ability_id == &"mercenary_acrobatic_vault":
 			session.dummy_coords = [Vector2i(5, 5), Vector2i(6, 7)]
+		session.extra_player_coords = _ally_coords_for(ability_id)
 		session.unkillable_dummies = true
 		scene.apply_training_board()
 		await runner.simulate_frames(8, 16)
@@ -276,6 +278,12 @@ func _prepare_live_target(board: BoardState, ability_id: StringName, target: Vec
 	if enemy == null:
 		return
 	enemy.health.current_hp = maxi(1, enemy.health.max_hp / 4)
+
+
+func _ally_coords_for(ability_id: StringName) -> Array[Vector2i]:
+	if ability_id == &"mercenary_pullback":
+		return [Vector2i(5, 5)]
+	return []
 
 
 func _target_for(ability_id: StringName, ability: AbilityData) -> Vector2i:

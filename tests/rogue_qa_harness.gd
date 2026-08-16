@@ -501,7 +501,7 @@ static func _configure_sim_target(
 	var target_id := -1
 	match ability_id:
 		&"rogue_slip_past":
-			_place_dummy(board, 3, rogue_pos + Vector2i(1, 0))
+			_place_ally(board, 3, rogue_pos + Vector2i(1, 0))
 			target_coord = rogue_pos + Vector2i(1, 0)
 			target_id = 3
 		&"rogue_shadow_step":
@@ -574,6 +574,13 @@ static func run_upgrade_for(ability_id: StringName, failures: Array[String]) -> 
 		"upgrade/%s/ability_used" % ability_id,
 		_events_have_ability(events, ability_id),
 	)
+	if ability_id == &"rogue_slip_past":
+		var slipped_ally: UnitState = board.get_unit_by_id(target_id)
+		_assert(
+			failures,
+			"upgrade/rogue_slip_past/ally_buffed",
+			slipped_ally != null and slipped_ally.has_status(GameEnums.StatusType.STAT_BUFF_DEF),
+		)
 	_run_conditional_upgrade(ability_id, failures)
 	_assert_upgraded_bible_marker(ability_id, failures)
 
@@ -593,8 +600,8 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 		&"rogue_slip_past":
 			_assert(
 				failures,
-				"upgrade/rogue_slip_past/def_debuff",
-				upgraded[0].legacy_modifiers.has("target_def_debuff"),
+				"upgrade/rogue_slip_past/ally_def_buff",
+				int(upgraded[0].legacy_modifiers.get("ally_def_buff", 0)) >= 1,
 			)
 		&"rogue_shadow_step":
 			_assert(

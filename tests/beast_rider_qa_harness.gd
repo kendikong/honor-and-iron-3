@@ -642,7 +642,7 @@ static func _place_target(board: BoardState, row_id: StringName) -> UnitState:
 		coord = Vector2i(3, 4)
 	if row_id == &"beast_pounce":
 		coord = Vector2i(4, 3)
-	if row_id == &"beast_airlift":
+	if row_id == &"beast_airlift" or row_id == &"beast_reposition":
 		return _place_ally(board, 2, coord)
 	var target := _place_enemy(board, 2, coord, row_id)
 	if row_id == &"beast_feral_drag":

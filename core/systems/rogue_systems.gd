@@ -482,6 +482,15 @@ static func after_ability_execute(
 	if actor == null or action == null or action.ability == null:
 		return
 	var ability_mods := _ability_modifiers(actor, action.ability)
+	if ability_mods.has("ally_def_buff"):
+		var buff_target: UnitState = AbilitySystem.resolve_action_target(board, action)
+		if buff_target != null and buff_target.team == actor.team and buff_target.id != actor.id:
+			buff_target.active_statuses.append(
+				DataLibrary.make_status(
+					GameEnums.StatusType.STAT_BUFF_DEF, 1, int(ability_mods["ally_def_buff"]),
+				),
+			)
+			buff_target._recalculate_stats(board)
 	if ability_mods.get("target_def_debuff", false):
 		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if target != null and target.team != actor.team:

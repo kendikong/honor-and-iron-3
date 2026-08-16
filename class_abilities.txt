@@ -51,7 +51,7 @@ Movement Points (MOV / MP): Spent only on movement — basic tile walks, class R
 Action Points (AP): Spent only on class Active Skills and Run. Basic Attack costs 0 AP.
 Ability Classification (every ability in the game belongs to exactly one category):
 Class Active Skill — Costs AP (unless explicitly 0 AP). Consumes the unit's one Action for the turn. Appears in the Action timeline column. Includes Basic Attack (0 AP) and Active Movement Skills (Dashes, Charges, Pounces).
-Class Reposition Skill — Costs MOV (not AP). Does NOT consume the Action slot. Appears in the Pre-Move timeline column. Always granted per class; never part of the rolled skill pool. When a Reposition Skill targets a unit, it may only target an ally (never an enemy). Exception: Pullback moves the unit occupying the tile directly in front of you, ally or enemy.
+Class Reposition Skill — Costs MOV (not AP). Does NOT consume the Action slot. Appears in the Pre-Move timeline column. Always granted per class; never part of the rolled skill pool. When a Reposition Skill targets a unit, it may only target an ally (never an enemy). Reposition Skills resolve immediately during Pre-Move, so they must never act on enemies.
 Universal Run — Not a class skill. SELF. Costs 1 AP. Does not consume the Action slot. Grants +Floor(50% of Max MOV) extra movement for this turn's walk. Plotted in the Pre-Move column with a walk (Auto-Run when the path exceeds the walk budget). One Run per turn.
 Universal Wait — Not a skill and not shown in the skill list. Invoked via the Wait control / double-click unit row. Forcibly exhausts the unit for the turn (no Action, no Post-Move / CANTO) even if movement remains. Stored in a hidden exhaustion slot (not displayed as a fourth timeline column).
 Planning Timeline Columns (displayed):
@@ -253,8 +253,8 @@ Core Identity: Balanced Melee DPS. A disciplined combatant, versatile in both of
 Innate Trait: Predatory Momentum
 Base Mechanic: Basic attacks executed against targets below 50% HP grant an immediate free 1 tile move. Additionally, whenever the Mercenary deals damage to any enemy unit, they gain +1 STR and +1 MOV on the following turn.
 Upgrade: Low-HP execution threshold increases to < 75% HP. The turn-following bonus increases to +2 STR and +2 MOV.
-Reposition Skill: Pullback (Cost: 2 MOV) — You move 1 tile directly backward. The adjacent unit in front of you moves 1 tile backward with you.
-Upgrade: Cost reduced to 1 MOV. If you pull an enemy, they suffer -2 DEF for the rest of the turn.
+Reposition Skill: Pullback (Cost: 2 MOV) — You move 1 tile directly backward. The adjacent ally in front of you moves 1 tile backward with you.
+Upgrade: Cost reduced to 1 MOV. The pulled ally gains +2 DEF for the rest of the turn.
 Advanced Classes (Promotion Boosts)
 The Swordmaster: (+4 STR, +2 DEF, +2 CON, 0 MOV) Combo-focused build setting up and finishing high-value targets.
 The Blade Dancer: (+4 STR, +2 CON, +2 MOV) Discards medium armor for lightweight weaving and evasion.
@@ -298,8 +298,8 @@ Core Identity: High Mobility, Flanking Melee DPS. Positional puzzle solver. High
 Innate Trait: Pass
 Base Mechanic: Standard tile movement permanently possesses the GHOST keyword (can freely walk through enemy-occupied tiles and traps without stopping or triggering Zone of Control).
 Upgrade: Moving directly through an enemy unit counts as a setup; your next attack against them this turn completely ignores their DEF.
-Reposition Skill: Slip Past (Cost: 1 MOV) — Move through an adjacent unit to the empty tile directly behind them.
-Upgrade: Reduces target's DEF by -1 for 1 turn after slipping past.
+Reposition Skill: Slip Past (Cost: 1 MOV) — Move through an adjacent ally to the empty tile directly behind them.
+Upgrade: That ally gains +1 DEF for 1 turn after you slip past.
 Advanced Classes (Promotion Boosts)
 The Assassin: (+4 STR, +2 CON, +2 MOV) Shadow magic mobility. Focus on teleportation.
 The Ninja: (+2 STR, +2 MAG, +3 MOV) Vaults obstacles and wall-runs. High-speed elemental assassin with clones.
@@ -388,7 +388,7 @@ Core Identity: Fast Flanking Melee. Rides grounded beast companion. High mobilit
 Innate Trait: Gallop
 Base Mechanic: Standard movement points (MOV) can be split freely before AND after executing a Skill or basic attack (e.g., Move 2 tiles -> Attack -> Move 2 tiles).
 Upgrade: Executing movement both before and after taking an Action grants +1 STR to the attack and +1 DEF during the post-action move.
-Reposition Skill: Reposition (Cost: 2 MOV) — Move adjacent unit to empty tile directly on opposite side of you.
+Reposition Skill: Reposition (Cost: 2 MOV) — Move an adjacent ally to the empty tile directly on the opposite side of you.
 Upgrade: Range increased to 2 tiles.
 Advanced Classes (Promotion Boosts)
 The Griffin Rider: (+4 STR, +2 CON, +2 MOV) Gains AIRBORNE. Aerial predator isolating targets and dropping enemies into hazards.

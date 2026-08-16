@@ -53,14 +53,14 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	)
 	pullback_module.legacy_modifiers["pullback"] = true
 	var pullback_upgraded := _clone_modules([pullback_module])
-	pullback_upgraded[0].legacy_modifiers["pullback_enemy_def"] = 2
+	pullback_upgraded[0].legacy_modifiers["pullback_ally_def"] = 2
 	pullback_upgraded[0].legacy_modifiers["movement_mp_override"] = 1
 	var pullback := _movement(
 		&"mercenary_pullback",
 		"Pullback",
 		2,
 		pullback_module,
-		"Cost becomes 1 MOV. Pulled enemies suffer -2 DEF for the rest of the turn.",
+		"Cost becomes 1 MOV. The pulled ally gains +2 DEF for the rest of the turn.",
 		pullback_upgraded,
 	)
 	definition.abilities.append(pullback)

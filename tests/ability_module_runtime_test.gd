@@ -26,6 +26,10 @@ static func run_all(failures: Array[String]) -> void:
 	_test_shared_module_parity(failures)
 	_report_scenario("shared_module_parity", failures, scenario_failures)
 	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START")
+	_test_reposition_skills_ally_only(failures)
+	_report_scenario("reposition_skills_ally_only", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START")
 	_test_planned_postmove_standing_aim(failures)
 	_report_scenario("planned_postmove_standing_aim", failures, scenario_failures)
@@ -241,6 +245,30 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 		failures.append(
 			"identical authored modules diverged across ability ids in profile, animation, or timeline",
 		)
+
+
+static func _test_reposition_skills_ally_only(failures: Array[String]) -> void:
+	DataLibrary.reset_cache()
+	for unit: UnitData in DataLibrary.get_all_player_units():
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			if ability == null or not ability.is_pre_move_planner():
+				continue
+			if ability.kind != GameEnums.AbilityKind.MOVEMENT_SKILL:
+				continue
+			var flags: int = ability.targeting_flags
+			for module: AbilityModule in ability.modules:
+				if module != null:
+					flags |= module.targeting_flags
+			for module: AbilityModule in ability.upgraded_modules:
+				if module != null:
+					flags |= module.targeting_flags
+			if (flags & GameEnums.TargetingFlags.ENEMY) != 0:
+				failures.append(
+					"reposition skill %s on %s still allows ENEMY targeting"
+					% [String(ability.id), String(unit.id)],
+				)
 
 
 static func _test_planned_postmove_standing_aim(failures: Array[String]) -> void:

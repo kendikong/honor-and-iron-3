@@ -5,7 +5,7 @@ const _Scenarios := preload("res://tests/mercenary_qa_harness_scenarios.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
 const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
-## Bible: Pullback — MOVE 1 backward; pull adjacent unit.
+## Bible: Pullback — MOVE 1 backward; pull adjacent ally.
 ## Globals: MercenarySystems + AbilitySystem + Simulator.simulate_player_turn
 ## Data/Sim delegate: tests/mercenary_qa_harness_scenarios.gd::run_pullback
 

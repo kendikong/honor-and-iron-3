@@ -574,6 +574,8 @@ static func apply_reposition(
 ) -> void:
 	if board == null or actor == null or target == null:
 		return
+	if target.team != actor.team or target.id == actor.id:
+		return
 	var destination := resolve_reposition_destination(board, actor, target)
 	if destination == Vector2i(-1, -1):
 		return

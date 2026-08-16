@@ -27,6 +27,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				entry.get("commit_cell", Vector2i.ZERO),
 				entry.get("enemy_pos", Vector2i(-999999, -999999)),
 				String(entry.get("module_assert", "")),
+				entry.get("ally_pos", Vector2i(-1, -1)),
 			)
 		"ally":
 			run_ally_smoke(
@@ -87,11 +88,13 @@ static func run_premove_planner_smoke(
 	commit_cell: Vector2i,
 	enemy_pos: Vector2i = Vector2i(-999999, -999999),
 	module_assert: String = "",
+	ally_pos: Vector2i = Vector2i(-1, -1),
 ) -> void:
 	_Drag.cleanup_all()
 	var enemy: Vector2i = enemy_pos if enemy_pos.x > -999000 else Vector2i(-1, -1)
+	var ally: Vector2i = ally_pos if ally_pos.x >= 0 else Vector2i(-1, -1)
 	var fix: Dictionary = _Fixture.wire_board(
-		class_id, actor_pos, enemy, Vector2i(-1, -1), ability_id,
+		class_id, actor_pos, enemy, ally, ability_id,
 	)
 	if fix.is_empty():
 		_fail(failures, "%s/planning/fixture" % tag, "failed to wire PRE_MOVE planning board")

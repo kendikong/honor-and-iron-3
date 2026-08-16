@@ -1,5 +1,5 @@
 extends RefCounted
-## Bible: rogue_slip_past - move through adjacent unit to the empty opposite tile.
+## Bible: rogue_slip_past - move through adjacent ally to the empty opposite tile.
 ## Globals: RogueSystems + MovementSystem + Simulator
 ## Data/Sim delegate: tests/rogue_qa_harness.gd::run_single_ability
 const _H := preload("res://tests/rogue_qa_harness.gd")

@@ -4,7 +4,7 @@ extends RefCounted
 const _H := preload("res://tests/beast_rider_qa_harness.gd")
 const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
 
-## Bible: Reposition — COST 2 MOV; move adjacent unit to the empty tile directly opposite you; [+] RANGE 2.
+## Bible: Reposition — COST 2 MOV; move adjacent ally to the empty tile directly opposite you; [+] RANGE 2.
 ## Globals: MovementSystem + AbilitySystem TELEPORT_CASTER motion data.
 ## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_ability_row
 

@@ -893,6 +893,14 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	):
 		return false
 	if (
+		ability.is_pre_move_planner()
+		and ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
+		and target_unit != null
+		and target_unit.is_alive()
+		and target_unit.team != actor.team
+	):
+		return false
+	if (
 		not _target_allowed(actor, ability, target_unit, action.target_coord)
 		and not _can_push_destructible_target(
 			board,

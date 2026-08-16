@@ -277,7 +277,7 @@ static func _entries() -> Dictionary:
 			"tag": "pullback",
 			"mode": "premove",
 			"actor_pos": Vector2i(4, 5),
-			"enemy_pos": Vector2i(5, 5),
+			"ally_pos": Vector2i(5, 5),
 			"commit_cell": Vector2i(3, 5),
 		},
 		# --- Monk ---

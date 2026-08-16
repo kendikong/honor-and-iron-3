@@ -89,6 +89,12 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 	var verify_no_jump: bool = true
 	var select_only: bool = false
 	match factory_id:
+		&"rogue_slip_past":
+			actor_pos = Vector2i(2, 3)
+			ally_pos = Vector2i(3, 3)
+			commit_cell = Vector2i(3, 3)
+			enemy_pos = Vector2i(-1, -1)
+			verify_no_jump = false
 		&"bruiser_meat_shield", &"archer_repelling_shot":
 			ally_pos = Vector2i(3, 3)
 			commit_cell = ally_pos
@@ -166,8 +172,9 @@ static func _layout_for(factory_id: StringName, ability: AbilityData) -> Diction
 			select_only = true
 		&"beast_reposition":
 			actor_pos = Vector2i(2, 3)
-			enemy_pos = Vector2i(3, 3)
+			ally_pos = Vector2i(3, 3)
 			commit_cell = Vector2i(3, 3)
+			enemy_pos = Vector2i(-1, -1)
 			verify_no_jump = false
 		&"engineer_recall":
 			actor_pos = Vector2i(2, 3)
