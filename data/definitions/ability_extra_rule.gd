@@ -278,9 +278,10 @@ enum Id {
 
 
 static func key_for(extra_id: Id) -> String:
-	if extra_id == Id.NONE:
+	var names: PackedStringArray = Id.keys()
+	if extra_id <= Id.NONE or extra_id >= names.size():
 		return ""
-	return String(Id.keys()[extra_id]).to_lower()
+	return String(names[extra_id]).to_lower()
 
 
 static func id_for_key(key: String) -> Id:

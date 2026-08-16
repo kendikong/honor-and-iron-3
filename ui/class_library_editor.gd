@@ -2136,6 +2136,15 @@ func _add_module_typed_extras_editor(
 		module.bonus_dmg_per_10_hp = v
 		_on_module_field_edited(ability)
 	)
+	_bind_string(
+		grid,
+		"Bonus Dmg % Max HP",
+		str(module.bonus_dmg_pct_max_hp),
+		func(v: String) -> void:
+			if v.strip_edges().is_valid_float():
+				module.bonus_dmg_pct_max_hp = maxf(0.0, float(v))
+				_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Heal If Targets >=", module.heal_if_targets_gte, func(v: int) -> void:
 		module.heal_if_targets_gte = maxi(0, v)
 		_on_module_field_edited(ability)
@@ -2170,8 +2179,12 @@ func _add_module_extras_editor(
 		var grid := GridContainer.new()
 		grid.columns = 2
 		box.add_child(grid)
+		var custom_key_edit: LineEdit
 		_bind_enum(grid, "Extra %d" % index, AbilityExtraRule.Id, extra.id, func(v: int) -> void:
 			extra.id = v as AbilityExtraRule.Id
+			extra.override_key = ""
+			if custom_key_edit != null:
+				custom_key_edit.text = ""
 			_on_module_field_edited(ability)
 		)
 		var value_edit := LineEdit.new()
@@ -2187,6 +2200,18 @@ func _add_module_extras_editor(
 		)
 		grid.add_child(_field_label("Value"))
 		grid.add_child(value_edit)
+		custom_key_edit = LineEdit.new()
+		custom_key_edit.text = extra.override_key
+		custom_key_edit.placeholder_text = "Only for Extra = NONE"
+		custom_key_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		custom_key_edit.text_changed.connect(func(text: String) -> void:
+			extra.override_key = text.strip_edges()
+			if not extra.override_key.is_empty():
+				extra.id = AbilityExtraRule.Id.NONE
+			_on_module_field_edited(ability)
+		)
+		grid.add_child(_field_label("Custom Key"))
+		grid.add_child(custom_key_edit)
 		var remove := Button.new()
 		remove.text = "Remove Extra"
 		remove.pressed.connect(func() -> void:

@@ -32,7 +32,12 @@ const FACTORY_PATHS: Array[String] = [
 	"res://core/factory/classes/shaman_factory.gd",
 ]
 
+var _completed: bool = false
+
+
 func _ready() -> void:
+	var watchdog := get_tree().create_timer(30.0)
+	watchdog.timeout.connect(_on_watchdog_timeout)
 	call_deferred("_run")
 
 
@@ -41,7 +46,9 @@ func _run() -> void:
 	DataLibrary.reset_cache()
 	_check_factory_sources(failures)
 	for class_id: StringName in CLASS_IDS:
-		_check_unit(class_id, failures)
+		await _check_unit(class_id, failures)
+		await get_tree().process_frame
+	_completed = true
 	if failures.is_empty():
 		print("FACTORY_MODULAR_CONTRACT_TEST: PASS")
 		get_tree().quit(0)
@@ -50,6 +57,13 @@ func _run() -> void:
 	for failure: String in failures:
 		printerr("  [FAIL] %s" % failure)
 	get_tree().quit(1)
+
+
+func _on_watchdog_timeout() -> void:
+	if _completed:
+		return
+	printerr("FACTORY_MODULAR_CONTRACT_TEST: TIMEOUT after 30 seconds")
+	get_tree().quit(2)
 
 
 func _check_unit(class_id: StringName, failures: Array[String]) -> void:
@@ -66,23 +80,9 @@ func _check_unit(class_id: StringName, failures: Array[String]) -> void:
 		if not ability.upgrade_description.is_empty() and ability.upgraded_modules.is_empty():
 			failures.append("%s describes an upgrade without upgraded_modules" % label)
 		_check_header(ability, label, failures)
-		_check_no_leftover(ability, label, failures)
 		_check_module_ranges(ability.modules, label, failures)
 		_check_module_ranges(ability.upgraded_modules, "%s/upgrade" % label, failures)
-
-
-func _check_no_leftover(ability: AbilityData, label: String, failures: Array[String]) -> void:
-	for module: AbilityModule in ability.modules:
-		_fail_if_leftover(module, label, failures)
-	for module: AbilityModule in ability.upgraded_modules:
-		_fail_if_leftover(module, "%s/upgrade" % label, failures)
-
-
-func _fail_if_leftover(module: AbilityModule, label: String, failures: Array[String]) -> void:
-	if module == null:
-		return
-	if not module.legacy_modifiers.is_empty():
-		failures.append("%s still authors leftover_modifiers %s" % [label, str(module.legacy_modifiers.keys())])
+		await get_tree().process_frame
 
 
 func _check_header(ability: AbilityData, label: String, failures: Array[String]) -> void:

@@ -66,7 +66,7 @@ extends Resource
 @export var hazard_duration: int = 0
 @export var hazard_status: GameEnums.StatusType = GameEnums.StatusType.NONE
 
-## DAMAGE extras previously stuffed into legacy_modifiers.
+## DAMAGE extras that are now authored as typed module fields.
 @export var bonus_dmg_from_occupied: int = 0
 @export var bonus_dmg_per_10_hp: int = 0
 @export var bonus_dmg_pct_max_hp: float = 0.0
@@ -75,11 +75,11 @@ extends Resource
 @export var bounce_range: int = 0
 @export var buff_on_push: int = 0
 
-## Typed extras the Class Editor can add (replaces legacy_modifiers authoring).
+## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
-## Transitional bag. Factories must leave this empty; compile may still stamp runtime keys.
-@export var legacy_modifiers: Dictionary = {}
+var _runtime_modifiers_cache: Dictionary = {}
+var _runtime_modifiers_cache_valid: bool = false
 
 
 func has_targeting(flag: int) -> bool:
@@ -119,18 +119,31 @@ func primary_as_effect() -> EffectData:
 
 
 func runtime_has(key: String) -> bool:
-	return compile_runtime_modifiers().has(key)
+	_ensure_runtime_modifiers_cache()
+	return _runtime_modifiers_cache.has(key)
 
 
 func runtime_value(key: String, default_value: Variant = null) -> Variant:
-	var bag: Dictionary = compile_runtime_modifiers()
-	if bag.has(key):
-		return bag[key]
+	_ensure_runtime_modifiers_cache()
+	if _runtime_modifiers_cache.has(key):
+		return _runtime_modifiers_cache[key]
 	return default_value
 
 
 func compile_runtime_modifiers() -> Dictionary:
-	var bag: Dictionary = legacy_modifiers.duplicate(true)
+	_ensure_runtime_modifiers_cache()
+	return _runtime_modifiers_cache.duplicate(true)
+
+
+func invalidate_runtime_modifiers_cache() -> void:
+	_runtime_modifiers_cache.clear()
+	_runtime_modifiers_cache_valid = false
+
+
+func _ensure_runtime_modifiers_cache() -> void:
+	if _runtime_modifiers_cache_valid:
+		return
+	var bag: Dictionary = {}
 	if exclude_caster or has_targeting(GameEnums.TargetingFlags.EXCLUDE_CASTER):
 		bag["exclude_caster"] = true
 	if terrain_id != StringName():
@@ -194,10 +207,11 @@ func compile_runtime_modifiers() -> Dictionary:
 				bag["maul_dragged_enemy"] = true
 			_:
 				pass
-	return bag
+	_runtime_modifiers_cache = bag
+	_runtime_modifiers_cache_valid = true
 
 
-func ingest_runtime_bag(bag: Dictionary) -> void:
+func ingest_compatibility_modifiers(bag: Dictionary) -> void:
 	if bag.is_empty():
 		return
 	for key: Variant in bag:
@@ -207,6 +221,7 @@ func ingest_runtime_bag(bag: Dictionary) -> void:
 func ingest_runtime_key(key: String, value: Variant) -> void:
 	if key.is_empty():
 		return
+	invalidate_runtime_modifiers_cache()
 	match key:
 		"exclude_caster":
 			exclude_caster = bool(value)
@@ -324,6 +339,7 @@ func _ensure_keyword(keyword_id: GameEnums.AbilityKeywordId) -> void:
 	keyword.keyword_id = keyword_id
 	keyword.amount = 1
 	keywords.append(keyword)
+	invalidate_runtime_modifiers_cache()
 
 
 func resolved_hit_count() -> int:

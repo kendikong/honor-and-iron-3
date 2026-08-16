@@ -546,6 +546,7 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	for keyword: AbilityKeyword in from_module.keywords:
 		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
 			_ensure_module_keyword(to_module, GameEnums.AbilityKeywordId.GHOST)
+	to_module.invalidate_runtime_modifiers_cache()
 
 
 static func _ensure_module_keyword(
@@ -558,6 +559,7 @@ static func _ensure_module_keyword(
 		if keyword != null and keyword.keyword_id == keyword_id:
 			return
 	module.keywords.append(_keyword(keyword_id, 1, 0, false))
+	module.invalidate_runtime_modifiers_cache()
 
 
 static func _duplicate_modules(source: Array[AbilityModule]) -> Array[AbilityModule]:

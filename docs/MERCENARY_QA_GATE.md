@@ -27,7 +27,7 @@ coverage, and fix-target (implementation vs QA). Required outputs: `SCORE`,
 
 **Decision tree:** BAR fail → fix implementation if assert matches Bible clause;
 else fix QA. BAR pass → deepen scenario if shallow; else reject per-skill
-`ability.id` branches (use `legacy_modifiers` + `MercenarySystems`).
+`ability.id` branches (use typed extras + `MercenarySystems`).
 
 **Tier 2 scope:** all 15 actives in `test_live_mercenary_every_skill`; all
 innate/passives in `test_live_mercenary_passive_overlay` (overlay + commit parity
@@ -42,7 +42,7 @@ with only that passive enabled).
   `_build_commit_slots_at_cell` → `_finalize_commit_slots` →
   `preview_commit_valid` / `CombatDirector.commit_from_slots` → `Simulator`.
 - No Mercenary `ability.id` branch is added to simulation or presentation.
-  Class-scoped behavior lives in `MercenarySystems` + `legacy_modifiers` data.
+  Class-scoped behavior lives in `MercenarySystems` + typed `AbilityExtraRule` data.
 
 ## Coverage matrix
 

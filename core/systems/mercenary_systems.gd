@@ -1,6 +1,6 @@
 extends RefCounted
 
-## Data-driven Mercenary innate, promotion passives, and ability legacy_modifiers.
+## Data-driven Mercenary innate, promotion passives, and typed ability extras.
 ## Does not preload AbilitySystem (circular parse dependency).
 
 

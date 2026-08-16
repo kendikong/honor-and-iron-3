@@ -35,7 +35,7 @@
 One **headless class QA suite** per Bible class that:
 
 1. Runs **every factory row** — every active, movement skill, and passive in `<class>_factory.gd`.
-2. Proves **every editor field that applies** to that skill — per `ModuleAuthoringRules` (active fields only; greyed/inactive fields are out of scope) — plus every Bible-meaningful `legacy_modifiers` key, for skill header, each module, each layer, each keyword, base and `[+]` upgrade.
+2. Proves **every editor field that applies** to that skill — per `ModuleAuthoringRules` (active fields only; greyed/inactive fields are out of scope) — plus every Bible-meaningful typed extra or compatibility-imported key, for skill header, each module, each layer, each keyword, base and `[+]` upgrade.
 3. Uses the **production planning path** where the skill is player-facing (fixture harness → slots → commit → sim) — not a parallel test-only skill implementation.
 4. Is **thorough enough** that a green gate means you do **not** need to F5-hand-test every skill to trust the class.
 
@@ -72,7 +72,7 @@ Each scenario must include **all layers that apply** to that skill. Skipping a l
 |------|----------------|
 | Field visible/active in editor for this module | **Must assert** in `_data_contract` |
 | Field greyed / excluded by `ModuleAuthoringRules` | **Do not assert** — out of scope |
-| `legacy_modifiers` key cited in Bible or scenario header | **Must assert** outcome or value |
+| Typed extra or compatibility-imported key cited in Bible or scenario header | **Must assert** outcome or value |
 | Header `modules[]` is source of truth | Assert modules; `effects[]` cross-check optional during migration |
 
 **Adequacy levels (matrix honesty):**
@@ -120,7 +120,7 @@ Assert factory/`AbilityData` matches what the class editor would show — **befo
 | `keywords[]` | Each keyword id + amount |
 | `layers[]` | See Layer A2 |
 | `bonus_if_adjacent_at_cast`, `def_debuff_before_damage` | DAMAGE-only typed fields |
-| `legacy_modifiers` | Bible-critical keys only (name in scenario header) |
+| Typed `AbilityExtraRule` / compatibility key | Bible-critical keys only (name in scenario header) |
 
 **Layer A2 — Each `AbilityLayer` on a module:**
 

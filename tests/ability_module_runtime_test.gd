@@ -233,7 +233,7 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 		module.max_range = 4
 		module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 		module.presentation_anim = GameEnums.PresentationAnim.SPELL
-		module.legacy_modifiers = {"parity_probe": 7}
+		module.ingest_runtime_key("parity_probe", 7)
 		ability.modules = [module]
 	var left_actor: UnitState = _unit(41, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
 	var right_actor: UnitState = _unit(42, GameEnums.Team.ENEMY, Vector2i(5, 1), 20)
@@ -472,6 +472,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	module.max_range = 4
 	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	module.target_shape = GameEnums.TargetShape.SINGLE
+	module.bonus_dmg_pct_max_hp = 0.1
 	var keyword: AbilityKeyword = AbilityKeyword.new()
 	keyword.keyword_id = GameEnums.AbilityKeywordId.PIERCE
 	keyword.amount = 1
@@ -482,6 +483,10 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	layer.effect.type = GameEnums.EffectType.DAMAGE
 	layer.effect.amount = 1
 	module.layers = [layer]
+	var custom_extra := AbilityExtraRule.new()
+	custom_extra.value = 7
+	custom_extra.override_key = "parity_probe"
+	module.extras = [custom_extra]
 	authored.modules = [module]
 	var upgraded_module: AbilityModule = module.duplicate(true) as AbilityModule
 	upgraded_module.amount = 5
@@ -518,6 +523,10 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored_module.target_filter != GameEnums.ModuleTargetFilter.HP
 		or restored_module.target_filter_hp != GameEnums.ModuleTargetFilterHp.BELOW_PCT
 		or restored_module.target_filter_hp_pct != 50
+		or not is_equal_approx(restored_module.bonus_dmg_pct_max_hp, 0.1)
+		or restored_module.extras.size() != 1
+		or restored_module.extras[0].override_key != "parity_probe"
+		or int(restored_module.runtime_value("parity_probe", 0)) != 7
 		or restored.upgraded_modules.size() != 1
 		or restored.upgraded_modules[0].amount != upgraded_module.amount
 		or restored.upgraded_primary_value != authored.upgraded_primary_value

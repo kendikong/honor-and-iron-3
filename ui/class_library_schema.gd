@@ -716,6 +716,8 @@ static func extra_from_dict(data: Dictionary) -> AbilityExtraRule:
 	extra.id = int(data.get("id", extra.id)) as AbilityExtraRule.Id
 	extra.value = data.get("value", extra.value)
 	extra.override_key = str(data.get("override_key", extra.override_key))
+	if extra.id != AbilityExtraRule.Id.NONE:
+		extra.override_key = ""
 	return extra
 
 
@@ -875,10 +877,10 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		for raw: Variant in extra_data as Array:
 			if raw is Dictionary:
 				dst.extras.append(extra_from_dict(raw as Dictionary))
-	var leftover: Variant = data.get("legacy_modifiers", {})
-	if leftover is Dictionary and not (leftover as Dictionary).is_empty():
-		DataLibrary._add_extras_from_dict(dst, leftover as Dictionary)
-	dst.legacy_modifiers.clear()
+	## Import the old JSON key once; it is immediately converted into typed fields/extras.
+	var compatibility_data: Variant = data.get("legacy_modifiers", {})
+	if compatibility_data is Dictionary and not (compatibility_data as Dictionary).is_empty():
+		DataLibrary._add_extras_from_dict(dst, compatibility_data as Dictionary)
 	dst.keywords.clear()
 	var keyword_data: Variant = data.get("keywords", [])
 	if keyword_data is Array:
