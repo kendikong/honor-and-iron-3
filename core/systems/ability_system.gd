@@ -530,7 +530,20 @@ static func _prefix_action(action: TimelineAction, module_count: int) -> Timelin
 	prefix.awaiting_module_index = -1
 	prefix.module_target_coords = action.module_target_coords.slice(0, module_count)
 	prefix.module_target_unit_ids = action.module_target_unit_ids.slice(0, module_count)
+	if not prefix.module_target_coords.is_empty():
+		prefix.target_coord = prefix.module_target_coords[prefix.module_target_coords.size() - 1]
+		if prefix.module_target_unit_ids.size() == prefix.module_target_coords.size():
+			prefix.target_unit_id = prefix.module_target_unit_ids[prefix.module_target_unit_ids.size() - 1]
 	return prefix
+
+
+static func _prefix_already_applied(board: BoardState, prefix: TimelineAction) -> bool:
+	if board == null or prefix == null:
+		return false
+	var actor: UnitState = board.get_unit_by_id(prefix.actor_id)
+	if actor == null:
+		return false
+	return actor.position == prefix.target_coord
 
 
 static func planning_gate_passes(
@@ -544,6 +557,8 @@ static func planning_gate_passes(
 	var prefix: TimelineAction = _prefix_action(action, module_index)
 	if prefix == null:
 		return false
+	if _prefix_already_applied(board, prefix):
+		return _module_gate_passes(module, board.get_unit_by_id(action.actor_id), [], 0)
 	var trial: BoardState = board.clone()
 	var timeline := Timeline.new()
 	timeline.add(prefix)
@@ -557,6 +572,16 @@ static func planning_preview_action(action: TimelineAction) -> TimelineAction:
 	if action == null or not action.awaiting_target or action.awaiting_module_index <= 0:
 		return action
 	return _prefix_action(action, action.awaiting_module_index)
+
+
+## Committed modules before the open NEW_AIM. Null when nothing is locked yet.
+static func planning_committed_prefix(action: TimelineAction) -> TimelineAction:
+	if action == null or not action.awaiting_target:
+		return null
+	var preview: TimelineAction = planning_preview_action(action)
+	if preview == null or preview == action:
+		return null
+	return preview
 
 
 static func prepare_planning_action(board: BoardState, action: TimelineAction) -> void:
@@ -611,14 +636,15 @@ static func planning_module_target_valid(
 		var prefix: TimelineAction = _prefix_action(action, module_index)
 		if prefix == null:
 			return false
-		var after: BoardState = board.clone()
-		var timeline := Timeline.new()
-		timeline.add(prefix)
-		var prefix_events: Array[SimEvent] = []
-		Simulator.simulate_player_turn(after, timeline, prefix_events)
-		target_board = after
-		actor = after.get_unit_by_id(action.actor_id)
-		origin = actor.position if actor != null else origin
+		if not _prefix_already_applied(board, prefix):
+			var after: BoardState = board.clone()
+			var timeline := Timeline.new()
+			timeline.add(prefix)
+			var prefix_events: Array[SimEvent] = []
+			Simulator.simulate_player_turn(after, timeline, prefix_events)
+			target_board = after
+			actor = after.get_unit_by_id(action.actor_id)
+			origin = actor.position if actor != null else origin
 	var distance: int = GridSystem.manhattan(origin, target_coord)
 	if module.primary_type == GameEnums.EffectType.DASH:
 		if PhysicsSystem.straight_line_dir(origin, target_coord) == Vector2i.ZERO:
@@ -1745,8 +1771,8 @@ static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
 	if can_target_self(actor, ability):
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
-	if not can_plan(actor, ability):
-		return GameEnums.PlanningCommitFlow.IMMEDIATE
+	## Economy belongs in can_plan / can_use. Prefix spend must not rewrite this skill's
+	## aim shape into IMMEDIATE or later NEW_AIM looks unarmed.
 	return GameEnums.PlanningCommitFlow.AWAITING_TARGET
 
 
@@ -2174,15 +2200,16 @@ static func planning_module_range_tiles(
 		var prefix: TimelineAction = _prefix_action(action, module_index)
 		if prefix == null:
 			return out
-		range_board = board.clone()
-		var prefix_events: Array[SimEvent] = []
-		var prefix_timeline := Timeline.new()
-		prefix_timeline.add(prefix)
-		Simulator.simulate_player_turn(range_board, prefix_timeline, prefix_events)
-		actor = range_board.get_unit_by_id(action.actor_id)
-		if actor == null:
-			return out
-		origin = actor.position
+		if not _prefix_already_applied(board, prefix):
+			range_board = board.clone()
+			var prefix_events: Array[SimEvent] = []
+			var prefix_timeline := Timeline.new()
+			prefix_timeline.add(prefix)
+			Simulator.simulate_player_turn(range_board, prefix_timeline, prefix_events)
+			actor = range_board.get_unit_by_id(action.actor_id)
+			if actor == null:
+				return out
+			origin = actor.position
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return dash_line_threat_tiles(range_board, origin, module.max_range)
 	for y: int in range(range_board.grid_size.y):

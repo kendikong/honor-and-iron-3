@@ -47,5 +47,6 @@ static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 		Vector2i(-1, -1),
 		false,
 		Vector2i(1, 3),
-		false,
+		true,
+		Vector2i(2, 3),
 	)

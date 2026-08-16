@@ -246,6 +246,51 @@ static func summarize_intents(
 	return "\n".join(lines)
 
 
+## Locked NEW_AIM cells/names for a modular skill, e.g. (6,3)→(6,4)→Training Dummy.
+static func ability_module_aim_chain(
+	board: BoardState,
+	plan: Timeline,
+	action: TimelineAction,
+	unit: UnitState = null,
+) -> String:
+	if action == null or action.ability == null:
+		return ""
+	var actor: UnitState = unit
+	if board != null:
+		var from_board: UnitState = board.get_unit_by_id(action.actor_id)
+		if from_board != null:
+			actor = from_board
+	var new_aims: Array[int] = AbilitySystem.planning_new_aim_indices(actor, action.ability)
+	if (
+		new_aims.size() < 2
+		and not (action.awaiting_target and action.awaiting_module_index > 0)
+	):
+		return ""
+	var origin: Vector2i = plan_action_origin_cell(board, plan, action, actor)
+	if origin.x < -900 and actor != null:
+		origin = actor.position
+	if origin.x < -900:
+		return ""
+	var parts: Array[String] = ["(%d,%d)" % [origin.x, origin.y]]
+	var stop: int = AbilitySystem.active_modules_for(actor, action.ability).size()
+	if action.awaiting_target:
+		stop = maxi(0, action.awaiting_module_index)
+	for index: int in new_aims:
+		if index >= stop:
+			break
+		var uid: int = AbilitySystem.module_target_unit_id(action, index)
+		var coord: Vector2i = AbilitySystem.module_target_coord(action, index)
+		if uid >= 0 and board != null:
+			var tgt: UnitState = board.get_unit_by_id(uid)
+			if tgt != null and tgt.definition != null:
+				parts.append(tgt.definition.display_name)
+				continue
+		parts.append("(%d,%d)" % [coord.x, coord.y])
+	if parts.size() <= 1:
+		return ""
+	return "→".join(parts)
+
+
 static func describe_action(
 	board: BoardState,
 	action: TimelineAction,
@@ -275,9 +320,17 @@ static func describe_action(
 		GameEnums.ActionType.ABILITY:
 			var ability_name: String = action.ability.display_name if action.ability != null else "ability"
 			if action.awaiting_target:
-				return "%s %s — awaiting dash endpoint" % [
-					PlanningIcons.awaiting_phase_glyph(action.ability), ability_name,
+				var chain: String = ability_module_aim_chain(board, plan, action, actor)
+				if chain.is_empty():
+					return "%s %s — awaiting dash endpoint" % [
+						PlanningIcons.awaiting_phase_glyph(action.ability), ability_name,
+					]
+				return "%s %s %s — Awaiting Input" % [
+					PlanningIcons.awaiting_phase_glyph(action.ability), ability_name, chain,
 				]
+			var chain_done: String = ability_module_aim_chain(board, plan, action, actor)
+			if not chain_done.is_empty():
+				return "%s %s %s" % [actor_name, ability_name, chain_done]
 			var target_name: String = actor_name
 			if board != null and action.target_unit_id >= 0:
 				var tgt := board.get_unit_by_id(action.target_unit_id)
@@ -351,12 +404,20 @@ static func action_symbol_text(
 			return ""
 		if action.awaiting_target:
 			var pending_name: String = action.ability.display_name if action.ability != null else "Skill"
-			return "%s %s — Awaiting Input" % [
-				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name,
+			var chain: String = ability_module_aim_chain(board, plan, action, unit)
+			if chain.is_empty():
+				return "%s %s — Awaiting Input" % [
+					PlanningIcons.awaiting_phase_glyph(action.ability), pending_name,
+				]
+			return "%s %s %s — Awaiting Input" % [
+				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name, chain,
 			]
 		var symbol: String = PlanningIcons.ability_glyph(action.ability)
 		if action.ability != null and AbilitySystem.is_run_ability(action.ability):
 			return "%s Run" % symbol
+		var locked_chain: String = ability_module_aim_chain(board, plan, action, unit)
+		if not locked_chain.is_empty():
+			return "%s %s %s" % [symbol, action.ability.display_name, locked_chain]
 		if action.ability != null and (
 			action.ability.is_movement_kind()
 			or AbilitySystem.ability_has_movement_effect(action.ability)

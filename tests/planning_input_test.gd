@@ -33,6 +33,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_walk_then_swap_commit_appends_skill,
 		_test_swap_ally_out_of_range_click_parity,
 		_test_ability_scroll_clears_hover_preview_cache,
+		_test_unarmed_later_new_aim_does_not_steal_premove,
+		_test_committed_move_prefix_while_later_aim_awaits,
 	]
 	for test: Callable in tests:
 		test.call(failures)
@@ -1793,4 +1795,195 @@ static func _test_ability_scroll_clears_hover_preview_cache(failures: Array[Stri
 	if input._hover_preview_cache_key != "":
 		failures.append(
 			"PlanningInputTest: ability change must invalidate hover preview cache",
+		)
+
+
+static func _move_then_new_aim_fixture() -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(8, 8)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var ability := AbilityData.new()
+	ability.id = &"planning_move_then_strike"
+	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
+	ability.display_name = "Charge Strike"
+	ability.action_point_cost = 1
+	ability.primary_resource = GameEnums.CostResource.AP
+	ability.primary_value = 1
+	ability.targeting_flags = GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY
+	ability.targeting_mode = GameEnums.TargetingMode.TILE
+	var motion := AbilityModule.new()
+	motion.primary_type = GameEnums.EffectType.MOVE
+	motion.amount = 2
+	motion.min_range = 1
+	motion.max_range = 2
+	motion.targeting_flags = GameEnums.TargetingFlags.TILE
+	motion.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
+	var strike := AbilityModule.new()
+	strike.primary_type = GameEnums.EffectType.DAMAGE
+	strike.amount = 3
+	strike.min_range = 1
+	strike.max_range = 1
+	strike.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	ability.modules = [motion, strike]
+	ability.effects = []
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(2, 2)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 3
+	unit.health = HealthComponent.new(20)
+	unit.definition = UnitData.new()
+	unit.definition.display_name = "Bruiser"
+	unit.active_abilities = [ability]
+	var dummy := UnitState.new()
+	dummy.id = 2
+	dummy.team = GameEnums.Team.ENEMY
+	dummy.position = Vector2i(5, 2)
+	dummy.definition = UnitData.new()
+	dummy.definition.display_name = "Training Dummy"
+	dummy.health = HealthComponent.new(20)
+	board.units = [unit, dummy]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	GridSystem.set_occupant(board, dummy.position, dummy.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	_register_fixture(input, director)
+	return {
+		"input": input,
+		"director": director,
+		"board": board,
+		"unit": unit,
+		"dummy": dummy,
+		"ability": ability,
+	}
+
+
+static func _test_unarmed_later_new_aim_does_not_steal_premove(failures: Array[String]) -> void:
+	var fixture: Dictionary = _move_then_new_aim_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var ability: AbilityData = fixture["ability"] as AbilityData
+	var nearby: Vector2i = Vector2i(3, 2)
+	if input._tile_target_movement_skill_commits_at_cell(
+		fixture["unit"] as UnitState, ability, nearby,
+	):
+		failures.append(
+			"PlanningInputTest: unarmed TILE MOVE with a later NEW_AIM must not dest-commit",
+		)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(1, nearby)
+	var dest_stole_tile := false
+	for raw: Variant in slots.get("action", []):
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if (
+			action.ability == ability
+			and action.target_coord == nearby
+			and action.awaiting_module_index == 1
+		):
+			dest_stole_tile = true
+	if dest_stole_tile:
+		failures.append(
+			"PlanningInputTest: nearby walk tile was stolen as skill dest while unarmed",
+		)
+	var has_premove := false
+	for raw_pre: Variant in slots.get("pre", []):
+		if raw_pre is TimelineAction and (raw_pre as TimelineAction).type == GameEnums.ActionType.MOVE:
+			has_premove = true
+	if not has_premove:
+		failures.append(
+			"PlanningInputTest: unarmed tile inside a later MOVE module range must still pre-move",
+		)
+
+
+static func _test_committed_move_prefix_while_later_aim_awaits(failures: Array[String]) -> void:
+	var fixture: Dictionary = _move_then_new_aim_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var director: CombatDirector = fixture["director"] as CombatDirector
+	var unit: UnitState = fixture["unit"] as UnitState
+	var dummy: UnitState = fixture["dummy"] as UnitState
+	var landing: Vector2i = Vector2i(4, 2)
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, unit.position)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("PlanningInputTest: self click should arm the first NEW_AIM")
+		return
+	var armed: TimelineAction = director.find_awaiting_action(1)
+	if armed == null or armed.awaiting_module_index != 0:
+		failures.append("PlanningInputTest: first arm must await the MOVE module")
+		return
+	if not input._is_awaiting_movement_endpoint(unit, armed.ability):
+		failures.append("PlanningInputTest: first arm must be a movement endpoint")
+	var land_slots: Dictionary = input._final_commit_slots_for_interaction(1, landing)
+	if not director.commit_from_slots(1, land_slots):
+		failures.append("PlanningInputTest: MOVE landing should commit the first module")
+		return
+	var awaiting_strike: TimelineAction = director.find_awaiting_action(1)
+	if awaiting_strike == null or awaiting_strike.awaiting_module_index != 1:
+		failures.append("PlanningInputTest: after MOVE commit the later NEW_AIM must await")
+		return
+	if input._is_awaiting_movement_endpoint(unit, awaiting_strike.ability):
+		failures.append("PlanningInputTest: later DAMAGE aim must not keep the walk preview")
+	if input._route_pathfinding_ability(unit) != null:
+		failures.append("PlanningInputTest: later DAMAGE aim must not use skill walk pathfinding")
+	var prefix: TimelineAction = AbilitySystem.planning_committed_prefix(awaiting_strike)
+	if prefix == null or AbilitySystem.module_target_coord(awaiting_strike, 0) != landing:
+		failures.append("PlanningInputTest: committed MOVE prefix missing after later NEW_AIM armed")
+	if director._plan_is_movement_only(director.get_player_plan()):
+		failures.append("PlanningInputTest: committed MOVE prefix must not use movement-only refresh")
+	director.flush_plan_refresh_signals_if_pending()
+	var projected: UnitState = (
+		director.projected_state.get_unit_by_id(1)
+		if director.projected_state != null
+		else null
+	)
+	if projected == null or projected.position != landing:
+		failures.append(
+			"PlanningInputTest: projection must apply the committed MOVE prefix while strike awaits",
+		)
+	var label: String = CombatUiFormatters.action_symbol_text(
+		director.board, awaiting_strike, unit, director.get_player_plan(),
+	)
+	if not label.contains("(2,2)→(4,2)") or not label.contains("Awaiting Input"):
+		failures.append(
+			"PlanningInputTest: awaiting later NEW_AIM must show locked MOVE chain, got '%s'" % label,
+		)
+	if AbilitySystem.planning_commit_flow(unit, awaiting_strike.ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
+		failures.append("PlanningInputTest: later NEW_AIM must keep AWAITING_TARGET after prefix spend")
+	if not input.action_range_visible_for_hover():
+		failures.append("PlanningInputTest: later NEW_AIM must still show that module's action range")
+	if input.is_live_preview_active():
+		failures.append("PlanningInputTest: later NEW_AIM must not keep the live MOVE hover preview")
+	var strike_tiles: Array[Vector2i] = AbilitySystem.planning_module_range_tiles(
+		director.base_board if director.base_board != null else director.board,
+		awaiting_strike,
+		1,
+	)
+	if not strike_tiles.has(dummy.position):
+		failures.append(
+			"PlanningInputTest: later NEW_AIM range must include the dummy from the locked landing; tiles=%s"
+			% str(strike_tiles),
+		)
+	AbilitySystem.set_module_target(awaiting_strike, 1, dummy.position, dummy.id)
+	awaiting_strike.awaiting_target = false
+	awaiting_strike.awaiting_module_index = -1
+	awaiting_strike.target_coord = dummy.position
+	awaiting_strike.target_unit_id = dummy.id
+	var done_label: String = CombatUiFormatters.action_symbol_text(
+		director.board, awaiting_strike, unit, director.get_player_plan(),
+	)
+	if not done_label.contains("(2,2)→(4,2)→Training Dummy"):
+		failures.append(
+			"PlanningInputTest: finished multi-aim chain missing, got '%s'" % done_label,
 		)

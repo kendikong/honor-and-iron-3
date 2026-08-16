@@ -525,10 +525,7 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 		var stand_cell: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 			_director, _director.board, actor_id,
 		)
-		var dedicated_arm: Vector2i = _CASE_ARM.get(skill_id, Vector2i(-999999, -999999))
-		var arm_cell: Vector2i = dedicated_arm
-		if dedicated_arm.x <= -999000:
-			arm_cell = stand_cell if is_awaiting_skill else _case_target_cell(skill_id)
+		var arm_cell: Vector2i = stand_cell if is_awaiting_skill else _case_target_cell(skill_id)
 		var preview_slots: Dictionary = _input._final_commit_slots_for_click_at_cell(
 			actor_id, arm_cell, Vector2.ZERO,
 		)
@@ -538,15 +535,13 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				_slots_debug(preview_slots), _plan_debug()],
 		).is_false()
 		var preview_action: TimelineAction = _first_slot_action(preview_slots)
-		if preview_action != null and preview_action.awaiting_target and dedicated_arm.x <= -999000:
+		if preview_action != null and preview_action.awaiting_target:
 			is_awaiting_skill = true
 			arm_cell = stand_cell
 			preview_slots = _input._final_commit_slots_for_click_at_cell(
 				actor_id, arm_cell, Vector2.ZERO,
 			)
 			preview_action = _first_slot_action(preview_slots)
-		elif preview_action != null and preview_action.awaiting_target:
-			is_awaiting_skill = true
 		assert_object(preview_action).override_failure_message(
 			"%s: hover slots must contain an action; slots=%s"
 			% [_scenario_diagnostic(skill_id), _slots_debug(preview_slots)],
@@ -631,9 +626,27 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 				% [_scenario_diagnostic(skill_id), _plan_debug(), _slots_debug(slots)],
 			).is_true()
 			if _CASE_ARM.has(skill_id):
+				var awaiting_move := _director.find_awaiting_action(actor_id)
+				assert_object(awaiting_move).override_failure_message(
+					"%s: self-arm must leave MOVE module awaiting; plan=%s"
+					% [_scenario_diagnostic(skill_id), _plan_debug()],
+				).is_not_null()
+				if awaiting_move != null:
+					assert_int(awaiting_move.awaiting_module_index).override_failure_message(
+						"%s: first arm must await the MOVE module; action=%s"
+						% [_scenario_diagnostic(skill_id), _action_debug(awaiting_move)],
+					).is_equal(0)
+					assert_bool(
+						_input._is_awaiting_movement_endpoint(actor, ability)
+					).override_failure_message(
+						"%s: MOVE module must use the movement endpoint preview"
+						% _scenario_diagnostic(skill_id),
+					).is_true()
+				var landing: Vector2i = _CASE_ARM[skill_id]
+				slots = await _commit_live_click(runner, actor_id, landing)
 				var awaiting_strike := _director.find_awaiting_action(actor_id)
 				assert_object(awaiting_strike).override_failure_message(
-					"%s: dest-commit must leave a later NEW_AIM armed; plan=%s"
+					"%s: MOVE commit must leave a later NEW_AIM armed; plan=%s"
 					% [_scenario_diagnostic(skill_id), _plan_debug()],
 				).is_not_null()
 				if awaiting_strike != null:
@@ -656,7 +669,6 @@ func _run_live_batch(runner: GdUnitSceneRunner, batch: Dictionary) -> void:
 					runner, _input, _overlay, _director, strike_cell, _DELTA_MS,
 				)
 				var action_tiles: Array[Vector2i] = _overlay.get_hover_action_range_tiles()
-				var landing: Vector2i = _CASE_ARM[skill_id]
 				assert_bool(action_tiles.has(strike_cell)).override_failure_message(
 					"%s: strike aim range must include the enemy; tiles=%s"
 					% [_scenario_diagnostic(skill_id), str(action_tiles)],

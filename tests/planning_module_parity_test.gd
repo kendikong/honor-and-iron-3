@@ -8,6 +8,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_module_authored_motion_range(failures)
 	_test_gated_follow_up_preview_commit_parity(failures)
 	_test_module_only_empty_compatibility_effects(failures)
+	_test_committed_prefix_simulates_while_later_aim_awaits(failures)
 
 
 static func _test_module_authored_motion_range(failures: Array[String]) -> void:
@@ -115,6 +116,49 @@ static func _test_module_only_empty_compatibility_effects(failures: Array[String
 	AbilitySystem.prepare_planning_action(board, action)
 	if AbilitySystem.active_modules_for(actor, ability).is_empty() or action.awaiting_target:
 		failures.append("module-only planning ignored authored modules with empty flat compatibility data")
+
+
+static func _test_committed_prefix_simulates_while_later_aim_awaits(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(8, 4))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(2, 1))
+	actor.movement.points_left = 4
+	actor.ability.points_left = 3
+	board.units = [actor]
+	_place(board, actor)
+	var ability: AbilityData = _ability(
+		&"planning_move_then_strike",
+		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
+	)
+	ability.display_name = "Charge Strike"
+	var motion: AbilityModule = AbilityModule.new()
+	motion.primary_type = GameEnums.EffectType.MOVE
+	motion.amount = 2
+	motion.min_range = 1
+	motion.max_range = 2
+	motion.targeting_flags = GameEnums.TargetingFlags.TILE
+	motion.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
+	var strike: AbilityModule = AbilityModule.new()
+	strike.primary_type = GameEnums.EffectType.DAMAGE
+	strike.amount = 3
+	strike.min_range = 1
+	strike.max_range = 1
+	strike.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	ability.modules = [motion, strike]
+	ability.effects = []
+	var action: TimelineAction = TimelineAction.make_ability(actor.id, ability, Vector2i(4, 1))
+	AbilitySystem.set_module_target(action, 0, Vector2i(4, 1), -1)
+	action.awaiting_target = true
+	action.awaiting_module_index = 1
+	if AbilitySystem.planning_committed_prefix(action) == null:
+		failures.append("planning prefix missing for awaiting later NEW_AIM")
+	var trial: BoardState = board.clone()
+	var plan := Timeline.new()
+	plan.add(action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, plan, events)
+	var after: UnitState = trial.get_unit_by_id(actor.id)
+	if after == null or after.position != Vector2i(4, 1):
+		failures.append("simulator skipped committed MOVE prefix while a later NEW_AIM is awaiting")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

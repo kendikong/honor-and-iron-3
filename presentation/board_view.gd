@@ -5155,7 +5155,8 @@ func _class_symbol(unit: UnitState) -> String:
 	return "👤"
 
 func _action_symbol_text(action: TimelineAction, unit: UnitState) -> String:
-	return CombatUiFormatters.action_symbol_text(_board, action, unit)
+	var plan: Timeline = _director.get_player_plan() if _director != null else null
+	return CombatUiFormatters.action_symbol_text(_board, action, unit, plan)
 
 
 func _make_table_cell(parent: Control, text: String, tooltip: String = "", col: Color = Color.WHITE, is_header: bool = false, bg_color: Color = Color.TRANSPARENT) -> Label:

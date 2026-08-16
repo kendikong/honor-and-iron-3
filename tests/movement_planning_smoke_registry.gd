@@ -59,7 +59,7 @@ static func _entries() -> Dictionary:
 			"enemy_pos": Vector2i(3, 3),
 			"commit_cell": Vector2i(3, 3),
 			"verify_no_jump": false,
-			"arm_on_stand": false,
+			"landing_cell": Vector2i(2, 3),
 			"module_assert": "charge_strike",
 		},
 		&"bruiser_violent_collision": {

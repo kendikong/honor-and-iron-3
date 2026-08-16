@@ -83,6 +83,7 @@ var _action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
 var _cached_hover_proj_key: int = -1
 var _cached_hover_awaiting_targeting: bool = false
+var _cached_hover_awaiting_module: int = -1
 var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -332,6 +333,7 @@ func _invalidate_hover_cache() -> void:
 	_cached_hover_ability = -1
 	_cached_hover_proj_key = -1
 	_cached_hover_awaiting_targeting = false
+	_cached_hover_awaiting_module = -1
 	_cached_hover_coord = Vector2i(-999, -999)
 	_hover_perimeter_cache_key = 0
 	_cached_hover_perimeter_segments.clear()
@@ -402,8 +404,11 @@ func _planning_action_range_tiles_for_unit(
 	if _director != null:
 		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
 		if awaiting != null and awaiting.awaiting_module_index >= 0:
+			var range_board: BoardState = _board
+			if _director.base_board != null:
+				range_board = _director.base_board
 			return AbilitySystem.planning_module_range_tiles(
-				plan_board, awaiting, awaiting.awaiting_module_index,
+				range_board, awaiting, awaiting.awaiting_module_index,
 			)
 	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 
@@ -422,7 +427,7 @@ func _hover_action_range_uses_blast_at_coord(
 	if ability == null or not _board.is_in_bounds(_hover_coord):
 		return false
 	return AbilitySystem.active_target_shape(
-		p_unit if p_unit != null else unit, ability,
+		p_unit if p_unit != null else unit, ability, _awaiting_module_index_for(unit),
 	) != GameEnums.TargetShape.SINGLE
 
 
@@ -441,7 +446,7 @@ func _compute_hover_blast_action_range_tiles(
 	if ability == null or not _board.is_in_bounds(_hover_coord):
 		return []
 	if AbilitySystem.active_target_shape(
-		p_unit if p_unit != null else unit, ability,
+		p_unit if p_unit != null else unit, ability, _awaiting_module_index_for(unit),
 	) == GameEnums.TargetShape.SINGLE:
 		return []
 	var plan_board: BoardState = _board
@@ -534,9 +539,15 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 	):
 		return []
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability == null:
+		return []
 	if (
-		ability == null
-		or AbilitySystem.planning_commit_flow(unit, ability)
+		_planning_input != null
+		and not _planning_input._is_awaiting_movement_endpoint(unit, ability)
+	):
+		return []
+	if (
+		AbilitySystem.planning_commit_flow(unit, ability)
 		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		or not AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(unit), _hover_coord, ability,
@@ -684,11 +695,25 @@ func _refresh_cursor_action_tiles() -> void:
 	var force_basic: bool = (
 		_planning_input.force_basic_movement if _planning_input != null else false
 	)
-	if force_basic or selected_ability < 0:
+	if force_basic or (
+		selected_ability < 0
+		and (
+			_planning_input == null
+			or not _planning_input.awaiting_targeting_active()
+		)
+		and (
+			_director == null
+			or _director.find_awaiting_action(unit.id) == null
+		)
+	):
 		return
 	var p_unit: UnitState = _proj_unit(unit.id)
 	var actor: UnitState = p_unit if p_unit != null else unit
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if _director != null:
+		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
+		if awaiting != null and awaiting.ability != null:
+			ability = awaiting.ability
 	if (
 		ability == null
 		or AbilitySystem.is_wait_ability(ability)
@@ -709,7 +734,10 @@ func _refresh_cursor_action_tiles() -> void:
 			and AbilitySystem.movement_requires_run(plan_board, actor, origin, [])
 		):
 			auto_run_move = true
-	if not AbilitySystem.can_show_planning_action_range_after_premove(
+	var awaiting_aim: bool = (
+		_director != null and _director.find_awaiting_action(unit.id) != null
+	)
+	if not awaiting_aim and not AbilitySystem.can_show_planning_action_range_after_premove(
 		plan_board, actor, ability, origin, auto_run_move,
 	):
 		if not _hover_action_range_tiles.is_empty():
@@ -717,7 +745,12 @@ func _refresh_cursor_action_tiles() -> void:
 			_queue_static_tiles_redraw()
 		return
 	var tiles: Array[Vector2i] = []
-	if AbilitySystem.active_target_shape(actor, ability) != GameEnums.TargetShape.SINGLE:
+	var shape_module: int = 0
+	if awaiting_aim:
+		var awaiting_shape: TimelineAction = _director.find_awaiting_action(unit.id)
+		if awaiting_shape != null and awaiting_shape.awaiting_module_index >= 0:
+			shape_module = awaiting_shape.awaiting_module_index
+	if AbilitySystem.active_target_shape(actor, ability, shape_module) != GameEnums.TargetShape.SINGLE:
 		tiles = AbilitySystem.planning_blast_tiles_at_target(
 			plan_board, actor, ability, origin, _hover_coord,
 		)
@@ -858,6 +891,15 @@ func _is_selected_player_unit(unit: UnitState) -> bool:
 	)
 
 
+func _awaiting_module_index_for(unit: UnitState) -> int:
+	if _director == null or unit == null:
+		return 0
+	var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
+	if awaiting != null and awaiting.awaiting_module_index >= 0:
+		return awaiting.awaiting_module_index
+	return 0
+
+
 func _intent_tiles_blocked(unit: UnitState, selected_ability: int) -> bool:
 	if not _is_selected_player_unit(unit):
 		return false
@@ -865,6 +907,8 @@ func _intent_tiles_blocked(unit: UnitState, selected_ability: int) -> bool:
 		return true
 	if _director.unit_has_wait_planned(unit.id):
 		return true
+	if _director.find_awaiting_action(unit.id) != null:
+		return false
 	if _planning_input != null and _planning_input.selected_phase_action_exhausted(unit.id):
 		return true
 	return false
@@ -936,13 +980,22 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	var p_unit := _proj_unit(unit.id)
 	if p_unit == null:
 		return false
-	if not p_unit.can_use_action_slot():
-		return false
 	if p_unit.has_status(GameEnums.StatusType.STAGGER) or p_unit.has_status(GameEnums.StatusType.SILENCE):
 		return false
-	if selected_ability < 0 and not force_basic:
+	var awaiting_aim: bool = false
+	if _planning_input != null and _planning_input.awaiting_targeting_active():
+		awaiting_aim = true
+	elif _director != null and unit != null and _director.find_awaiting_action(unit.id) != null:
+		awaiting_aim = true
+	if selected_ability < 0 and not force_basic and not awaiting_aim:
+		return false
+	if not p_unit.can_use_action_slot() and not awaiting_aim:
 		return false
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
+	if awaiting_aim and (ability == null or AbilitySystem.is_wait_ability(ability)):
+		var awaiting_action: TimelineAction = _director.find_awaiting_action(unit.id)
+		if awaiting_action != null:
+			ability = awaiting_action.ability
 	if force_basic and (ability == null or AbilitySystem.is_wait_ability(ability)):
 		if not p_unit.active_abilities.is_empty():
 			ability = p_unit.active_abilities[0]
@@ -950,6 +1003,8 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
+	if awaiting_aim:
+		return true
 	if _planning_input != null:
 		if not _planning_input.action_range_visible_for_hover():
 			return false
@@ -960,14 +1015,10 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 	var premove_cell: Vector2i = _intent_stand_origin(unit)
 	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
 	var auto_run_active: bool = false
-	if not (
-		_planning_input != null
-		and _planning_input.awaiting_targeting_active()
+	if not AbilitySystem.can_show_planning_action_range_after_premove(
+		plan_board, p_unit, ability, premove_cell, auto_run_active,
 	):
-		if not AbilitySystem.can_show_planning_action_range_after_premove(
-			plan_board, p_unit, ability, premove_cell, auto_run_active,
-		):
-			return false
+		return false
 	if force_basic:
 		return true
 	return p_unit.ability.points_left >= ability.action_point_cost
@@ -1007,6 +1058,12 @@ func recompute_hover_ranges(
 	var cache_awaiting_targeting: bool = (
 		_planning_input != null and _planning_input.awaiting_targeting_active()
 	)
+	var cache_awaiting_module: int = -1
+	if _director != null:
+		var cache_awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
+		if cache_awaiting != null:
+			cache_awaiting_targeting = true
+			cache_awaiting_module = cache_awaiting.awaiting_module_index
 	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
 	var move_cache_hit: bool = (
@@ -1016,6 +1073,7 @@ func recompute_hover_ranges(
 		and _cached_hover_force == cache_force
 		and _cached_hover_proj_key == proj_key
 		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
+		and _cached_hover_awaiting_module == cache_awaiting_module
 	)
 	# Enemy / unselected hover still keys off the cursor cell.
 	if not is_selected_player or unit.id != _director.selected_unit_id:
@@ -1041,6 +1099,7 @@ func recompute_hover_ranges(
 	_cached_hover_force = cache_force
 	_cached_hover_proj_key = proj_key
 	_cached_hover_awaiting_targeting = cache_awaiting_targeting
+	_cached_hover_awaiting_module = cache_awaiting_module
 	_cached_hover_coord = _hover_coord
 	if move_cache_hit:
 		_fill_hover_action_range_tiles(
@@ -1077,15 +1136,8 @@ func recompute_hover_ranges(
 			move_budget = unit.movement.points_left
 		if move_budget > 0:
 			var move_ability: AbilityData = null
-			if is_selected_player and selected_ability >= 0:
-				move_ability = _selected_ability_data(unit, selected_ability)
-				if (
-					move_ability != null
-					and AbilitySystem.motion_requires_occupied_target(
-						p_unit if p_unit != null else unit, move_ability,
-					)
-				):
-					move_ability = null
+			if is_selected_player and p_unit != null and _planning_input != null:
+				move_ability = _planning_input._route_pathfinding_ability(p_unit)
 			_hover_move_tiles = MovementSystem.get_reachable_tiles(
 				move_board,
 				move_from,
@@ -1135,6 +1187,14 @@ func _fill_hover_action_range_tiles(
 			_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
 				unit, action_range_origin, ability_index,
 			)
+	elif (
+		is_selected_player
+		and _director != null
+		and _director.find_awaiting_action(unit.id) != null
+	):
+		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+			unit, action_range_origin, ability_index,
+		)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
 
@@ -1389,32 +1449,38 @@ func _draw_ability_intents(flowing: bool) -> void:
 		for action: TimelineAction in plan_to_use.entries:
 			if action.type != GameEnums.ActionType.ABILITY:
 				continue
+			var draw_action: TimelineAction = action
 			if action.awaiting_target:
-				continue
-			if CombatPlanningPreview.premove_displacement_realized(_director, action, _board):
+				draw_action = AbilitySystem.planning_committed_prefix(action)
+				if draw_action == null:
+					continue
+			if CombatPlanningPreview.premove_displacement_realized(_director, draw_action, _board):
 				continue
 			var base_board: BoardState = _director.base_board if _director.base_board != null else _board
-			var actor := base_board.get_unit_by_id(action.actor_id)
+			var actor := base_board.get_unit_by_id(draw_action.actor_id)
 			if actor == null:
 				continue
 			var start_pos: Vector2i = CombatUiFormatters.plan_action_origin_cell(
-				base_board, plan_to_use, action, actor,
+				base_board, plan_to_use, draw_action, actor,
 			)
-			if start_pos == action.target_coord:
+			var dest_pos: Vector2i = draw_action.target_coord
+			if not draw_action.module_target_coords.is_empty():
+				dest_pos = draw_action.module_target_coords[draw_action.module_target_coords.size() - 1]
+			if start_pos == dest_pos:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(start_pos, action)
+			var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(start_pos, draw_action)
 			var draw_route: Array = intent_cells
 			if (
-				action.ability != null
-				and AbilitySystem.ability_has_movement_effect(action.ability)
-				and action.waypoints.is_empty()
+				draw_action.ability != null
+				and AbilitySystem.ability_has_movement_effect(draw_action.ability)
+				and draw_action.waypoints.is_empty()
 			):
 				## Committed action path must not use _pending_move_route_leg — that follows the
 				## active move-timing slot (post-move) and falls back to a straight diagonal.
 				if intent_cells.size() <= 2:
 					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
-						action.actor_id, _committed_preview, action, start_pos,
+						draw_action.actor_id, _committed_preview, draw_action, start_pos,
 					)
 					if path_leg.size() >= 2:
 						draw_route = path_leg
@@ -1422,16 +1488,16 @@ func _draw_ability_intents(flowing: bool) -> void:
 				var from_cell: Vector2i = draw_route[0] as Vector2i
 				var to_cell: Vector2i = draw_route[draw_route.size() - 1] as Vector2i
 				if (
-					action.ability != null
+					draw_action.ability != null
 					and AbilitySystem.ability_has_effect(
-						action.ability, GameEnums.EffectType.TELEPORT_CASTER,
+						draw_action.ability, GameEnums.EffectType.TELEPORT_CASTER,
 					)
 				):
 					if flowing:
 						_draw_dashed_route([from_cell, to_cell], p_col)
 				elif (
-					action.ability != null
-					and AbilitySystem.ability_has_movement_effect(action.ability)
+					draw_action.ability != null
+					and AbilitySystem.ability_has_movement_effect(draw_action.ability)
 				):
 					if not flowing:
 						_draw_route_line(draw_route, p_col, true, true)
@@ -2480,12 +2546,16 @@ func _draw_ghosts() -> void:
 					and action.type == GameEnums.ActionType.ABILITY
 					and action.ability != null
 					and AbilitySystem.planning_awaiting_endpoint_range(action.ability) > 0
-					and not action.awaiting_target
 				):
+					var ghost_action: TimelineAction = action
+					if action.awaiting_target:
+						ghost_action = AbilitySystem.planning_committed_prefix(action)
+						if ghost_action == null:
+							continue
 					var leg_origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(
-						base_board, plan_to_use, action, unit,
+						base_board, plan_to_use, ghost_action, unit,
 					)
-					if action.target_coord == leg_origin:
+					if ghost_action.target_coord == leg_origin:
 						break
 					var stand: Vector2i = unit.position
 					var pv_unit: UnitState = (
@@ -2495,12 +2565,12 @@ func _draw_ghosts() -> void:
 					)
 					if pv_unit != null:
 						stand = pv_unit.position
-					if action.target_coord == stand:
+					if ghost_action.target_coord == stand:
 						break
-					var center: Vector2 = _map_view.grid_to_local(action.target_coord)
+					var center: Vector2 = _map_view.grid_to_local(ghost_action.target_coord)
 					var ghost_col: Color = _player_color_for_unit(unit)
 					var leg_face: int = CombatPlanningPreview.facing_along_planned_action(
-						base_board, plan_to_use, action, prev,
+						base_board, plan_to_use, ghost_action, prev,
 					)
 					if leg_face < 0:
 						leg_face = unit.facing

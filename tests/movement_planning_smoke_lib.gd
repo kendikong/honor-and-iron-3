@@ -58,6 +58,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				bool(entry.get("arm_on_ally", false)),
 				entry.get("postmove_cell", Vector2i(-999999, -999999)),
 				bool(entry.get("arm_on_stand", true)),
+				entry.get("landing_cell", Vector2i(-999999, -999999)),
 			)
 		_:
 			run_commit_smoke(
@@ -278,6 +279,7 @@ static func run_awaiting_smoke(
 	arm_on_ally: bool = false,
 	postmove_cell: Vector2i = Vector2i(-999999, -999999),
 	arm_on_stand: bool = true,
+	landing_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> void:
 	_Drag.cleanup_all()
 	var fix: Dictionary = _Fixture.wire_board(
@@ -333,6 +335,31 @@ static func run_awaiting_smoke(
 	)
 	if input == null or not input.awaiting_targeting_active():
 		return
+	if landing_cell.x > -900000:
+		_Checklist.flush_planning(fix)
+		_Checklist.hover(fix, landing_cell)
+		var land_slots: Dictionary = _Checklist.slots_for_hover(fix, landing_cell)
+		if _Checklist._slots_invalid(land_slots):
+			_fail(
+				failures, "%s/planning/landing" % tag,
+				"MOVE landing commit invalid at %s (%s)"
+				% [landing_cell, str(land_slots.get("invalid", "unknown"))],
+			)
+			return
+		if not _Checklist.commit_slots_production(fix, land_slots):
+			_fail(
+				failures, "%s/planning/landing" % tag,
+				"MOVE landing commit failed at %s" % landing_cell,
+			)
+			return
+		_Checklist.flush_planning(fix)
+		_assert_true(
+			failures, "%s/planning/landing" % tag,
+			input.awaiting_targeting_active(),
+			"later NEW_AIM must remain awaiting after MOVE landing at %s" % landing_cell,
+		)
+		if not input.awaiting_targeting_active():
+			return
 	if not drag_route.is_empty():
 		_paint_drag_route(fix, drag_route, commit_cell)
 	else:

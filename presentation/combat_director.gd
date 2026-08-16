@@ -1141,14 +1141,19 @@ func get_planned_move_waypoints(unit_id: int) -> Array[Vector2i]:
 ## Waypoints for a committed movement-skill leg (trample, dash tile walk, etc.).
 func get_planned_skill_walk_waypoints(unit_id: int, to_cell: Vector2i) -> Array[Vector2i]:
 	for action: TimelineAction in get_unit_plan_steps(unit_id):
-		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+		if action.type != GameEnums.ActionType.ABILITY:
 			continue
-		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
+		var path_action: TimelineAction = action
+		if action.awaiting_target:
+			path_action = AbilitySystem.planning_committed_prefix(action)
+			if path_action == null:
+				continue
+		if path_action.ability == null or not AbilitySystem.ability_has_movement_effect(path_action.ability):
 			continue
-		if action.target_coord != to_cell:
+		if path_action.target_coord != to_cell:
 			continue
-		if not action.waypoints.is_empty():
-			return action.waypoints.duplicate()
+		if not path_action.waypoints.is_empty():
+			return path_action.waypoints.duplicate()
 	return []
 
 
@@ -2586,7 +2591,18 @@ func _refresh_plan_core() -> void:
 	
 	for action in plan_to_run.entries:
 		if action.awaiting_target:
-			statuses.append("")
+			var prefix: TimelineAction = AbilitySystem.planning_committed_prefix(action)
+			if prefix == null:
+				statuses.append("")
+				continue
+			var prefix_events: Array[SimEvent] = []
+			ResolutionPipeline.apply_action(full_proj, prefix, prefix_events)
+			var prefix_reason := ""
+			for e in prefix_events:
+				if e.type == GameEnums.SimEventType.ACTION_FAILED:
+					prefix_reason = String(e.data.get("reason", "failed"))
+					break
+			statuses.append(prefix_reason)
 			continue
 		var events: Array[SimEvent] = []
 		ResolutionPipeline.apply_action(full_proj, action, events)
@@ -2798,6 +2814,8 @@ func _plan_is_movement_only(plan: Timeline) -> bool:
 	for action: TimelineAction in plan.entries:
 		if action.type == GameEnums.ActionType.ABILITY:
 			if action.awaiting_target:
+				if AbilitySystem.planning_committed_prefix(action) != null:
+					return false
 				continue
 			return false
 	return true
@@ -2808,6 +2826,8 @@ func _plan_is_wait_marker_only(plan: Timeline) -> bool:
 		return true
 	for action: TimelineAction in plan.entries:
 		if action.awaiting_target:
+			if AbilitySystem.planning_committed_prefix(action) != null:
+				return false
 			continue
 		if action.type == GameEnums.ActionType.MOVE:
 			return false

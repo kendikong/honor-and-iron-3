@@ -297,19 +297,24 @@ static func facing_along_planned_action(
 	action: TimelineAction,
 	preview: CombatPlanningPreview = null,
 ) -> int:
-	if action == null or base_board == null or plan == null or action.awaiting_target:
+	if action == null or base_board == null or plan == null:
 		return -1
-	var origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(base_board, plan, action)
-	if action.type == GameEnums.ActionType.MOVE:
-		return facing_from_intent_cells(movement_intent_cells(origin, action))
-	if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+	var face_action: TimelineAction = action
+	if action.awaiting_target:
+		face_action = AbilitySystem.planning_committed_prefix(action)
+		if face_action == null:
+			return -1
+	var origin: Vector2i = CombatUiFormatters.plan_action_origin_cell(base_board, plan, face_action)
+	if face_action.type == GameEnums.ActionType.MOVE:
+		return facing_from_intent_cells(movement_intent_cells(origin, face_action))
+	if face_action.type != GameEnums.ActionType.ABILITY or face_action.ability == null:
 		return -1
-	if AbilitySystem.ability_has_movement_effect(action.ability) and preview != null:
-		var leg: Array = committed_action_route_leg(action.actor_id, preview, action, origin)
+	if AbilitySystem.ability_has_movement_effect(face_action.ability) and preview != null:
+		var leg: Array = committed_action_route_leg(face_action.actor_id, preview, face_action, origin)
 		var route_face: int = facing_from_route_leg(leg)
 		if route_face >= 0:
 			return route_face
-	return facing_from_intent_cells(movement_intent_cells(origin, action))
+	return facing_from_intent_cells(movement_intent_cells(origin, face_action))
 
 
 ## Last displacement facing across a unit's ordered plan steps (pre → action → post).
@@ -418,8 +423,12 @@ func ensure_movement_intent_from_actions(
 						action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
 			continue
-		if action.type != GameEnums.ActionType.ABILITY or action.awaiting_target:
+		if action.type != GameEnums.ActionType.ABILITY:
 			continue
+		if action.awaiting_target:
+			action = AbilitySystem.planning_committed_prefix(action)
+			if action == null:
+				continue
 		if action.ability != null and _paired_displace_preview_ability(action, start_board):
 			## Swap / occupy-push are paired displacement, not an extra walk/dash leg.
 			## Keep the preview route on the explicit approach MOVE (never sim tail).
@@ -1081,8 +1090,13 @@ static func _walk_committed_plan_action_end_cell(
 			if act.move_timing == GameEnums.MoveTiming.POST_ACTION:
 				continue
 			origin = act.target_coord
-		elif act.type == GameEnums.ActionType.ABILITY and not act.awaiting_target:
-			origin = _plan_step_end_cell_for_action_end(origin, act)
+		elif act.type == GameEnums.ActionType.ABILITY:
+			var step: TimelineAction = act
+			if act.awaiting_target:
+				step = AbilitySystem.planning_committed_prefix(act)
+				if step == null:
+					continue
+			origin = _plan_step_end_cell_for_action_end(origin, step)
 	return origin
 
 
