@@ -38,6 +38,7 @@ N/A — see `roguelike-run.md` (P4) and `world-assets-and-map.md` (P7) for owner
 | 7 | Map assets + PixelForge MVP | `world-assets-and-map.md` | `docs/asset_manifest.md` | DRAFT *(worksheet)* |
 | 8 | Living map ROADMAP close | `world-assets-and-map.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | PLANNED |
 | 9 | UI + SFX shell | `presentation-audio-ui.md` | `presentation/sfx_player.gd` DEFS map | **Active** |
+| — | Extra Rules → modules/layers | `EXTRA_RULES_TO_MODULES_PLAN.md` | `.\scripts\run_<class>_qa_gate.ps1` + live | **ACTIVE** (owner 2026-08-16) |
 | 10 | UI gauntlets polish | `presentation-audio-ui.md` | `PLANNED — P8 UI gauntlet checklist` | PLANNED |
 | — | Verification index | `verification-matrix.md` | `.\scripts\lint_design_doc.ps1` | — |
 

@@ -6,6 +6,28 @@
 
 ---
 
+## ACTIVE — Extra Rules → real modules / layers (2026-08-16)
+
+**Binding work order:** [`docs/design/EXTRA_RULES_TO_MODULES_PLAN.md`](docs/design/EXTRA_RULES_TO_MODULES_PLAN.md)
+
+Extra Rules was a leftover-bag rename. That pass is **rejected**. Convert every Extra Rule into the skill-module bible (`docs/design/ability-data.md`): header, module primary, motion mode, keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules in the same change.
+
+Chat matrices are not a substitute. Agents must execute the on-disk matrix, not harvest keys.
+
+| Phase | Work | Exit |
+|-------|------|------|
+| **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE`; finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
+| **ER-2** | Convert class by class in plan order (Knight → … → Shaman). One skill: implement Solution → extras empty → class gate + live **PASS** | Every matrix row converted |
+| **ER-3** | Delete `AbilityExtraRule` and Extra Rules UI | Grep `_add_extra` / Extra Rules on class skills = 0 |
+
+**Forbidden:** new Extra Rules, leftover bags, `if ability.id == …`, calling Extra Rules “modules.”  
+**Out of scope:** passives (until owner asks).  
+**Owner open:** Tactical Retreat backwards; Adrenaline Surge skip-Action.
+
+Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
+
+---
+
 ## Non-Negotiables
 
 | Rule | Detail |
@@ -149,10 +171,11 @@ See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** and **`IMPLEMENTATION_STATUS.md`**
 | **15** | MP, sandbox, danger, autobattler (optional) | Deferred |
 | **16** | Options unification (optional) | Deferred |
 
-### Active — Design suite milestones
+### Active — Extra Rules conversion (supersedes leftover-bag Extra Rules)
 
-**Canonical index:** [`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md)  
-**Pillar specs:** [`docs/design/README.md`](docs/design/README.md)  
+**Work order:** [`docs/design/EXTRA_RULES_TO_MODULES_PLAN.md`](docs/design/EXTRA_RULES_TO_MODULES_PLAN.md)  
+**Index:** [`docs/design/REMAINING_WORK_MAP.md`](docs/design/REMAINING_WORK_MAP.md)  
+**Module bible:** [`docs/design/ability-data.md`](docs/design/ability-data.md)  
 **Living map bible:** [`ROADMAP.md`](ROADMAP.md) §0–10 (closed/waived; reference only)
 
 ### Phase 17+ (post-MVP)
@@ -200,4 +223,5 @@ See **`docs/TACTICAL_COMBAT_PARITY_PLAN.md`** and **`IMPLEMENTATION_STATUS.md`**
 - ❌ Duplicate `random_map.gd` fork of `test_map.gd`
 - ❌ Sim reading TileMapLayer at runtime
 - ❌ Effects panel on combat screen
+- ❌ Extra Rules / leftover modifier bags as skill authoring
 - ❌ Emoji drag cursors instead of sprite anims
