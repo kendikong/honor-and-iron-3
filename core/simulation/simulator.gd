@@ -68,7 +68,7 @@ static func simulate_player_turn(board: BoardState, plan: Timeline, events: Arra
 	_resolve_delayed_effects(board, events)
 	_apply_bucket(board, plan, ActionBucket.PRE_MOVE, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)
-	AbilitySystem.apply_standing_aim_passives(board, events)
+	AbilitySystem.apply_standing_aim_passives(board, events, plan)
 	_apply_bucket(board, plan, ActionBucket.ACTION, events)
 	ResolutionPipeline.resolve_pending_pushes(board, events)
 	_apply_bucket(board, plan, ActionBucket.POST_MOVE, events)

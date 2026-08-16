@@ -11,5 +11,6 @@ func _ready() -> void:
 
 func _run() -> void:
 	DataLibrary.reset_cache()
-	var result: Dictionary = _Runner.call("run_all") as Dictionary
+	var runner: Script = _Runner
+	var result: Dictionary = runner.call("run_all") as Dictionary
 	get_tree().quit(0 if bool(result.get("passed", false)) else 1)

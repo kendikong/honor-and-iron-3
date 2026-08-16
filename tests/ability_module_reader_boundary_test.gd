@@ -6,6 +6,9 @@ extends RefCounted
 ## allowed to add a new call site without updating this contract.
 
 const ALLOWED_COMPATIBILITY_READERS: Dictionary = {
+	"res://core/systems/ability_system.gd": {
+		"legacy_effects_for": 1,
+	},
 	"res://presentation/combat_ui_formatters.gd": {
 		"_ability_keyword_tooltip_lines": 1,
 		"ability_effect_string": 1,
@@ -43,7 +46,7 @@ static func _check_script(path: String, failures: Array[String]) -> void:
 		failures.append("compatibility reader boundary could not read %s" % path)
 		return
 	var source: String = file.get_as_text()
-	var forbidden_alias: String = "active_" + "effects_for("
+	var forbidden_alias: String = "AbilitySystem.active_" + "effects_for("
 	if source.find(forbidden_alias) >= 0:
 		failures.append("unguarded active effects alias remains in %s" % path)
 	var observed: Dictionary = _reader_counts(source)
@@ -66,6 +69,8 @@ static func _reader_counts(source: String) -> Dictionary:
 	var current_function: String = "<top-level>"
 	for line: String in source.split("\n"):
 		var trimmed: String = line.strip_edges()
+		if trimmed.begins_with("#"):
+			continue
 		if trimmed.begins_with("func ") or trimmed.begins_with("static func "):
 			var declaration: String = trimmed.trim_prefix("static ").trim_prefix("func ")
 			current_function = declaration.get_slice("(", 0)

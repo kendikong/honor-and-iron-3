@@ -10,15 +10,7 @@ const _CLASS_IDS: Array[StringName] = [
 
 
 func _init() -> void:
-	var issues: PackedStringArray = PackedStringArray()
-	for class_id: StringName in _CLASS_IDS:
-		var unit_data: UnitData = _Helpers.build_unit(class_id)
-		if unit_data == null:
-			continue
-		for ability: AbilityData in unit_data.abilities:
-			if ability == null:
-				continue
-			_check_ability(issues, ability)
+	var issues: PackedStringArray = run_all()
 	var exit_code: int = 0 if issues.is_empty() else 1
 	if issues.is_empty():
 		print("--- Ability formatter audit: PASS ---")
@@ -29,7 +21,20 @@ func _init() -> void:
 	quit(exit_code)
 
 
-func _check_ability(issues: PackedStringArray, ability: AbilityData) -> void:
+static func run_all() -> PackedStringArray:
+	var issues: PackedStringArray = PackedStringArray()
+	for class_id: StringName in _CLASS_IDS:
+		var unit_data: UnitData = _Helpers.build_unit(class_id)
+		if unit_data == null:
+			continue
+		for ability: AbilityData in unit_data.abilities:
+			if ability == null:
+				continue
+			_check_ability(issues, ability)
+	return issues
+
+
+static func _check_ability(issues: PackedStringArray, ability: AbilityData) -> void:
 	var plain: String = CombatUiFormatters.ability_effect_string(ability)
 	var bbcode: String = CombatUiFormatters.ability_effect_bbcode(ability)
 	var bbcode_stripped: String = bbcode.strip_edges()
@@ -52,7 +57,7 @@ func _check_ability(issues: PackedStringArray, ability: AbilityData) -> void:
 		issues.append("%s bbcode='%s'" % [ability.id, bbcode_stripped])
 
 
-func _is_bad_token(text: String) -> bool:
+static func _is_bad_token(text: String) -> bool:
 	var t: String = text.strip_edges()
 	if t.is_empty():
 		return false

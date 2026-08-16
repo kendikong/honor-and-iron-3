@@ -1257,7 +1257,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 	var tag_strs: Array = []
 	for t: StringName in src.tags:
 		tag_strs.append(String(t))
-	return {
+	var payload: Dictionary = {
 		"display_name": src.display_name,
 		"planner_group": src.planner_group,
 		"tags": tag_strs,
@@ -1273,12 +1273,14 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"uses_per_combat": src.uses_per_combat,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
-		"range_tiles": src.range_tiles,
 		"modules": modules_to_dict_array(src.modules, src.planner_group),
 		"upgraded_modules": modules_to_dict_array(src.upgraded_modules, src.planner_group),
 		"module_count": src.modules.size(),
 		"upgraded_module_count": src.upgraded_modules.size(),
 	}
+	if src.modules.is_empty():
+		payload["range_tiles"] = src.range_tiles
+	return payload
 
 
 static func modules_summary_bbcode(ability: AbilityData) -> String:

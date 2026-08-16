@@ -28,6 +28,9 @@ var module_target_coords: Array[Vector2i] = []
 var module_target_unit_ids: Array[int] = []
 ## Module index currently awaiting a NEW_AIM. -1 means the primary action is ready.
 var awaiting_module_index: int = -1
+## Prefix-only metadata: the authored profile used for passive interpretation while
+## `ability` contains only the already-locked module prefix.
+var authored_ability: AbilityData = null
 
 ## Desired final facing (GameEnums.Facing). -1 = derive from movement direction.
 ## Used by MOVE (override facing after moving) and FACE (turn in place).
@@ -177,6 +180,7 @@ func clone() -> TimelineAction:
 	copy.module_target_coords = module_target_coords.duplicate()
 	copy.module_target_unit_ids = module_target_unit_ids.duplicate()
 	copy.awaiting_module_index = awaiting_module_index
+	copy.authored_ability = authored_ability
 	copy.face_dir = face_dir
 	copy.waypoints = waypoints.duplicate()
 	copy.irreversible = irreversible

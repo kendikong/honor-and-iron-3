@@ -492,8 +492,8 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		var result := _player_turn(board, _fireball_plan(fireball, Vector2i(4, 2), 3))
 		_assert(
 			failures, "passive/wild_magic/pending",
-			mage.passive_flags.get("__mage_wild_magic_pending", false)
-			or mage.passive_flags.get("__mage_wild_magic_repeat", false)
+			mage.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_PENDING, false)
+			or mage.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false)
 			or _events_have_ability(result.events, &"mage_fireball"),
 		)
 

@@ -81,12 +81,12 @@ static func _assert_saved_abilities_are_module_first(failures: Array[String]) ->
 			var ability_data: Dictionary = payload
 			if not ability_data.has("modules"):
 				failures.append("%s/%s is missing module-first payload" % [unit_key, ability_key])
+			## Existing overrides may retain derived range_tiles; new module saves omit it.
 			for legacy_key: String in [
 				"effects",
 				"upgraded_effects",
 				"kind",
 				"is_movement_skill",
-				"range_tiles",
 				"targeting_mode",
 			]:
 				if ability_data.has(legacy_key):

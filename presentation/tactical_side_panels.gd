@@ -805,7 +805,9 @@ func _refresh_intent_label() -> void:
 			var live: Array = _planning_input.preview_state.live_intents
 			if not live.is_empty():
 				intent_list = live
-	var body: String = CombatUiFormatters.summarize_intents(_board, _phase, _intent_units, intent_list)
+	var body: String = CombatUiFormatters.summarize_intents(
+		_board, _phase == CombatDirector.Phase.ENEMY_TURN, _intent_units, intent_list,
+	)
 	_intent_label.text = "💀 Enemy intent:\n%s" % body
 
 

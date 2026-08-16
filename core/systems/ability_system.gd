@@ -93,7 +93,9 @@ static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
 	if ability == null:
 		return null
-	return AbilityModuleBridge.first_motion_module(active_modules_for(actor, ability))
+	return AbilityModuleBridge.first_motion_module(
+		active_modules_for(actor, ability), true, true,
+	)
 
 
 static func active_motion_min_range(actor: UnitState, ability: AbilityData) -> int:
@@ -461,11 +463,12 @@ static func planning_max_target_distance(actor: UnitState, ability: AbilityData)
 		max_range = maxi(max_range, active_motion_max_range(actor, ability))
 		if ability_has_dash(ability, actor):
 			max_range = maxi(max_range, dash_steps(ability, actor))
-		var move_steps: int = (
-			0
-			if ability_has_post_attack_move(ability, actor)
-			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
-		)
+		var move_steps: int = 0
+		if (
+			active_modules_for(actor, ability).is_empty()
+			and not ability_has_post_attack_move(ability, actor)
+		):
+			move_steps = effect_amount(ability, GameEnums.EffectType.MOVE, actor)
 		if move_steps > 0:
 			max_range = maxi(max_range, move_steps)
 	return max_range
@@ -540,6 +543,7 @@ static func _prefix_action(action: TimelineAction, module_count: int) -> Timelin
 	if module_count > profile.size():
 		return null
 	var profile_copy: Array[AbilityModule] = profile.slice(0, module_count)
+	prefix.authored_ability = action.ability
 	var ability_copy: AbilityData = action.ability.duplicate(true) as AbilityData
 	ability_copy.modules = profile_copy
 	ability_copy.upgraded_modules = profile_copy.duplicate()
@@ -704,17 +708,11 @@ static func planning_module_target_valid(
 
 
 static func active_profile_is_offensive(actor: UnitState, ability: AbilityData) -> bool:
-	for module: AbilityModule in active_modules_for(actor, ability):
-		if module == null:
+	for effect: EffectData in active_effects_for(actor, ability):
+		if effect == null:
 			continue
-		if _effect_is_offensive(module.primary_type, module.status_type):
+		if _effect_is_offensive(effect.type, effect.status_type):
 			return true
-		for layer: AbilityLayer in module.layers:
-			if layer != null and layer.effect != null and _effect_is_offensive(
-				layer.effect.type,
-				layer.effect.status_type,
-			):
-				return true
 	return false
 
 
@@ -1125,15 +1123,14 @@ static func get_action_point_cost(actor: UnitState, ability: AbilityData, board:
 		and _ability_has_modifier(actor, ability, &"on_kill_refresh_mark_zero_ap")
 	):
 		return 0
-	if active_modules_for(actor, ability).is_empty():
-		for eff: EffectData in legacy_effects_for(actor, ability):
-			if (
-				eff != null
-				and eff.type == GameEnums.EffectType.CREATE_HAZARD
-				and eff.modifiers.get("terrain_id", &"") == &"caltrop_trap"
-				and _passive_has_modifier(actor, &"caltrop_zero_ap")
-			):
-				return 0
+	for eff: EffectData in active_effects_for(actor, ability):
+		if (
+			eff != null
+			and eff.type == GameEnums.EffectType.CREATE_HAZARD
+			and eff.modifiers.get("terrain_id", &"") == &"caltrop_trap"
+			and _passive_has_modifier(actor, &"caltrop_zero_ap")
+		):
+			return 0
 	return MercenarySystems.adjust_action_point_cost(board, actor, ability, ap_cost)
 
 
@@ -1941,13 +1938,44 @@ static func _stealth_blocks_attacker(attacker: UnitState, target: UnitState) -> 
 	return dist > stealth_range
 
 
-static func apply_standing_aim_passives(board: BoardState, events: Array[SimEvent]) -> void:
+static func apply_standing_aim_passives(
+	board: BoardState,
+	events: Array[SimEvent],
+	plan: Timeline = null,
+) -> void:
 	if board == null:
 		return
 	for unit: UnitState in board.units:
 		if unit == null or not unit.is_alive() or unit.team != GameEnums.Team.PLAYER:
 			continue
+		if _plan_uses_movement_for_unit(plan, unit):
+			continue
 		apply_standing_aim_passives_for_unit(board, unit, events)
+
+
+static func _plan_uses_movement_for_unit(plan: Timeline, unit: UnitState) -> bool:
+	if plan == null or unit == null:
+		return false
+	for action: TimelineAction in plan.entries:
+		if action == null or action.actor_id != unit.id:
+			continue
+		if action.type == GameEnums.ActionType.MOVE:
+			return true
+		if action.type != GameEnums.ActionType.ABILITY:
+			continue
+		var authored_ability: AbilityData = (
+			action.authored_ability
+			if action.authored_ability != null
+			else action.ability
+		)
+		if authored_ability == null:
+			continue
+		if (
+			ability_has_movement_effect(authored_ability, unit)
+			or has_pass_through_effects(authored_ability, unit)
+		):
+			return true
+	return false
 
 
 static func apply_standing_aim_passives_for_unit(
@@ -2043,11 +2071,8 @@ static func ability_has_modifier(
 static func ability_has_swap_effect(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.modules_have_effect(modules, GameEnums.EffectType.SWAP)
-	for eff: EffectData in legacy_effects_for(actor, ability):
-		if eff.type == GameEnums.EffectType.SWAP:
+	for eff: EffectData in active_effects_for(actor, ability):
+		if eff != null and eff.type == GameEnums.EffectType.SWAP:
 			return true
 	return false
 
@@ -2090,14 +2115,7 @@ static func _presentation_override(
 static func has_pass_through_effects(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		var module_mods := AbilityModuleBridge.pass_through_modifiers_from_modules(modules)
-		return (
-			int(module_mods.get("trample_atk", 0)) > 0
-			or int(module_mods.get("bulldoze", 0)) > 0
-		)
-	return has_pass_through_effects_from(legacy_effects_for(actor, ability))
+	return has_pass_through_effects_from(active_effects_for(actor, ability))
 
 
 static func has_displacement_effects(ability: AbilityData, actor: UnitState = null) -> bool:
@@ -2299,10 +2317,7 @@ static func manhattan_threat_tiles(
 
 
 static func pass_through_modifiers(ability: AbilityData, actor: UnitState = null) -> Dictionary:
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.pass_through_modifiers_from_modules(modules)
-	return pass_through_modifiers_from(legacy_effects_for(actor, ability))
+	return pass_through_modifiers_from(active_effects_for(actor, ability))
 
 
 static func pass_through_modifiers_from(effects: Array) -> Dictionary:
@@ -2641,19 +2656,7 @@ static func ability_uses_attack_animation(ability: AbilityData, actor: UnitState
 		and not ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
 	):
 		return false
-	var offensive_effects: Array[GameEnums.EffectType] = [
-		GameEnums.EffectType.DAMAGE,
-		GameEnums.EffectType.PUSH,
-		GameEnums.EffectType.PULL,
-		GameEnums.EffectType.EXPLODE,
-		GameEnums.EffectType.RANGED_EXPLODE,
-	]
-	if not active_modules_for(actor, ability).is_empty():
-		return active_profile_is_offensive(actor, ability)
-	for eff: EffectData in legacy_effects_for(actor, ability):
-		if eff.type in offensive_effects:
-			return true
-	return false
+	return active_profile_is_offensive(actor, ability)
 
 
 static func ability_uses_spellcast_animation(
@@ -2806,7 +2809,10 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			and not ability_has_dash(ability, actor)
 		)
 
-	if not ability_has_movement_effect(ability, actor):
+	var authored_ability: AbilityData = (
+		action.authored_ability if action.authored_ability != null else ability
+	)
+	if not ability_has_movement_effect(authored_ability, actor):
 		apply_standing_aim_passives_for_unit(board, actor, events)
 
 	if target_coord != actor.position and not will_skill_walk:

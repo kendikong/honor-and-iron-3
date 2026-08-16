@@ -954,7 +954,12 @@ func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 	if unit == null:
 		return false
 	if _planning_input != null and _planning_input.awaiting_targeting_active():
-		return false
+		var awaiting_ability: AbilityData = _selected_ability_data(unit, selected_ability)
+		if (
+			awaiting_ability == null
+			or not _planning_input._is_awaiting_movement_endpoint(unit, awaiting_ability)
+		):
+			return false
 	if _director != null:
 		var move_timing: int = _director.get_planning_move_timing(unit.id)
 		if (

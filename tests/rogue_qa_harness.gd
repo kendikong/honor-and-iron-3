@@ -232,7 +232,7 @@ static func run_passive_upgrade_for(passive_id: StringName, failures: Array[Stri
 			_assert(
 				failures,
 				"passive/shadow_meld/upgraded_magic",
-				int(rogue.passive_flags.get("mage_spell_magic_bonus", 0)) >= 3,
+				int(rogue.passive_flags.get(GameEnums.RUNTIME_SPELL_MAGIC_BONUS, 0)) >= 3,
 			)
 		&"killing_intent":
 			var mid_hp := _place_dummy(board, 6, Vector2i(3, 2))
@@ -920,7 +920,7 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			_assert(
 				failures,
 				"passive/shadow_meld/magic_bonus",
-				int(rogue.passive_flags.get("mage_spell_magic_bonus", 0)) >= 2,
+				int(rogue.passive_flags.get(GameEnums.RUNTIME_SPELL_MAGIC_BONUS, 0)) >= 2,
 			)
 		&"miasma_spreader":
 			var spread_source := _place_dummy(board, 8, Vector2i(4, 2))

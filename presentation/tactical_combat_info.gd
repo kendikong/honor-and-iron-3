@@ -25,8 +25,12 @@ static func unit_info(board: BoardState, unit: UnitState, move_uses_run: bool = 
 	return CombatUiFormatters.unit_info(board, unit, move_uses_run)
 
 
-static func summarize_intents(board: BoardState, phase: int, intent_units: Dictionary) -> String:
-	return CombatUiFormatters.summarize_intents(board, phase, intent_units)
+static func summarize_intents(
+	board: BoardState,
+	show_all: bool,
+	intent_units: Dictionary,
+) -> String:
+	return CombatUiFormatters.summarize_intents(board, show_all, intent_units)
 
 
 static func describe_action(board: BoardState, action: TimelineAction) -> String:

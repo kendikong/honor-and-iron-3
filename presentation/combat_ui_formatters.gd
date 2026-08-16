@@ -224,14 +224,13 @@ static func unit_info(
 
 static func summarize_intents(
 	board: BoardState,
-	phase: int,
+	show_all: bool,
 	intent_units: Dictionary,
 	intent_list: Array = [],
 ) -> String:
 	if board == null:
 		return "  (none)"
 	var lines: Array[String] = []
-	var show_all: bool = phase == CombatDirector.Phase.ENEMY_TURN
 	var intents: Array = intent_list if not intent_list.is_empty() else board.intents
 	for intent: Variant in intents:
 		if not intent is Intent:
@@ -1338,6 +1337,42 @@ static func _append_status_effect_part(
 		parts.append("%s%s%s" % [prefix, label, dur])
 
 
+static func _movement_destination_label(effect: EffectData) -> String:
+	if effect == null:
+		return "MOVE"
+	var verb: String = "MOVE"
+	match effect.type:
+		GameEnums.EffectType.JUMP, \
+		GameEnums.EffectType.JUMP_ADJACENT_TO, \
+		GameEnums.EffectType.JUMP_TO_BEHIND, \
+		GameEnums.EffectType.JUMP_TOWARD:
+			verb = "JUMP"
+		GameEnums.EffectType.TELEPORT_CASTER, \
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO, \
+		GameEnums.EffectType.TELEPORT_TO_BEHIND, \
+		GameEnums.EffectType.TELEPORT_TOWARD:
+			verb = "TELEPORT"
+		_:
+			verb = "MOVE"
+	var destination: String = ""
+	match effect.type:
+		GameEnums.EffectType.MOVE_ADJACENT_TO, \
+		GameEnums.EffectType.JUMP_ADJACENT_TO, \
+		GameEnums.EffectType.TELEPORT_ADJACENT_TO:
+			destination = " ADJACENT"
+		GameEnums.EffectType.MOVE_TO_BEHIND, \
+		GameEnums.EffectType.JUMP_TO_BEHIND, \
+		GameEnums.EffectType.TELEPORT_TO_BEHIND:
+			destination = " BEHIND"
+		GameEnums.EffectType.MOVE_TOWARD, \
+		GameEnums.EffectType.JUMP_TOWARD, \
+		GameEnums.EffectType.TELEPORT_TOWARD:
+			destination = " TOWARD"
+		_:
+			pass
+	return "%s%s %s" % [verb, destination, _effect_amount_string(effect)]
+
+
 static func ability_effect_string(ability: AbilityData, unit: UnitState = null) -> String:
 	if ability == null:
 		return ""
@@ -1376,6 +1411,17 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 				_append_status_effect_part(parts, effect, true, false)
 			GameEnums.EffectType.MOVE:
 				parts.append("MOVE %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.JUMP, \
+			GameEnums.EffectType.MOVE_ADJACENT_TO, \
+			GameEnums.EffectType.JUMP_ADJACENT_TO, \
+			GameEnums.EffectType.TELEPORT_ADJACENT_TO, \
+			GameEnums.EffectType.MOVE_TO_BEHIND, \
+			GameEnums.EffectType.JUMP_TO_BEHIND, \
+			GameEnums.EffectType.TELEPORT_TO_BEHIND, \
+			GameEnums.EffectType.MOVE_TOWARD, \
+			GameEnums.EffectType.JUMP_TOWARD, \
+			GameEnums.EffectType.TELEPORT_TOWARD:
+				parts.append(_movement_destination_label(effect))
 			GameEnums.EffectType.DASH:
 				parts.append("DASH %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.TRAMPLE:
@@ -1434,6 +1480,20 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("SWAP", _glossary_def("SWAP")))
 			GameEnums.EffectType.MOVE:
 				parts.append(_kw_hint("MOVE %s" % _effect_amount_string(effect), "Move up to the listed distance."))
+			GameEnums.EffectType.JUMP, \
+			GameEnums.EffectType.MOVE_ADJACENT_TO, \
+			GameEnums.EffectType.JUMP_ADJACENT_TO, \
+			GameEnums.EffectType.TELEPORT_ADJACENT_TO, \
+			GameEnums.EffectType.MOVE_TO_BEHIND, \
+			GameEnums.EffectType.JUMP_TO_BEHIND, \
+			GameEnums.EffectType.TELEPORT_TO_BEHIND, \
+			GameEnums.EffectType.MOVE_TOWARD, \
+			GameEnums.EffectType.JUMP_TOWARD, \
+			GameEnums.EffectType.TELEPORT_TOWARD:
+				parts.append(_kw_hint(
+					_movement_destination_label(effect),
+					"Resolve the destination using the selected movement mode.",
+				))
 			GameEnums.EffectType.DASH:
 				parts.append(_kw_hint(
 					"DASH %s" % _effect_amount_string(effect),

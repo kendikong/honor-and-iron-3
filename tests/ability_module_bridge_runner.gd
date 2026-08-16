@@ -57,6 +57,8 @@ static func run_all() -> Dictionary:
 		"compatibility_reader_boundary",
 		check_failures,
 	)
+	check_failures = failures.size()
+	_run_formatter_audit(failures, check_failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
 	else:
@@ -81,6 +83,19 @@ static func _run_script_check(
 		return
 	script.call(method, failures)
 	_report_check(label, failures, before)
+
+
+static func _run_formatter_audit(failures: Array[String], before: int) -> void:
+	print("ABILITY_MODULE_CHECK: ability_formatter_audit START")
+	var script: Script = load("res://tests/run_ability_formatter_audit.gd") as Script
+	if script == null:
+		failures.append("ability_formatter_audit script missing")
+		_report_check("ability_formatter_audit", failures, before)
+		return
+	var issues: PackedStringArray = script.call("run_all") as PackedStringArray
+	for issue: String in issues:
+		failures.append(issue)
+	_report_check("ability_formatter_audit", failures, before)
 
 
 static func _report_check(label: String, failures: Array[String], before: int) -> void:

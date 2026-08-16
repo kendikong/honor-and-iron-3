@@ -26,6 +26,10 @@ static func run_all(failures: Array[String]) -> void:
 	_test_shared_module_parity(failures)
 	_report_scenario("shared_module_parity", failures, scenario_failures)
 	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START")
+	_test_planned_postmove_standing_aim(failures)
+	_report_scenario("planned_postmove_standing_aim", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START")
 	_test_legacy_flat_targeting_compatibility(failures)
 	_report_scenario("legacy_flat_targeting_compatibility", failures, scenario_failures)
@@ -236,6 +240,58 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 	):
 		failures.append(
 			"identical authored modules diverged across ability ids in profile, animation, or timeline",
+		)
+
+
+static func _test_planned_postmove_standing_aim(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(8, 4))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	actor.definition.move_points = 8
+	actor.movement.max_points = 8
+	actor.movement.points_left = 8
+	actor.turn_start_movement_points = 8
+	var steady_aim := PassiveData.new()
+	steady_aim.id = &"runtime_steady_aim"
+	steady_aim.modifiers = {"steady_aim": true, "steady_aim_range": 1}
+	actor.active_passives = [steady_aim]
+	var target: UnitState = _unit(2, GameEnums.Team.ENEMY, Vector2i(3, 1), 20)
+	board.units = [actor, target]
+	_place(board, actor)
+	_place(board, target)
+	var ability: AbilityData = _ability(
+		&"runtime_postmove_standing_aim",
+		GameEnums.TargetingFlags.ENEMY,
+	)
+	var strike := AbilityModule.new()
+	strike.primary_type = GameEnums.EffectType.DAMAGE
+	strike.amount = 3
+	strike.min_range = 1
+	strike.max_range = 3
+	strike.targeting_flags = GameEnums.TargetingFlags.ENEMY
+	var post_move := AbilityModule.new()
+	post_move.primary_type = GameEnums.EffectType.MOVE
+	post_move.execution_phase = GameEnums.ModulePhase.ON_POST
+	post_move.min_range = 1
+	post_move.max_range = 3
+	post_move.targeting_flags = GameEnums.TargetingFlags.TILE
+	ability.modules = [strike, post_move]
+	var action := TimelineAction.make_ability_awaiting(
+		actor.id, ability, actor.position,
+	)
+	action.awaiting_module_index = 1
+	action.module_target_coords = [target.position]
+	action.module_target_unit_ids = [target.id]
+	var timeline := Timeline.new()
+	timeline.add(action)
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(board, timeline, events)
+	if actor.passive_flags.get("steady_aim_triggered", false):
+		failures.append(
+			"planned post-move module incorrectly triggered standing aim during its prefix",
+		)
+	if actor.movement.points_left != 8:
+		failures.append(
+			"planned post-move prefix changed movement points before its movement module resolved",
 		)
 
 
