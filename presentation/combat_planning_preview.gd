@@ -37,7 +37,10 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		return
 	preview_board = temp_board
 	var base_board: BoardState = director.base_board if director.base_board != null else director.board
-	forecast = CombatPlanningForecast.from_boards(base_board, temp_board)
+	forecast = CombatPlanningForecast.from_boards(
+		forecast_baseline_board(director, base_board),
+		temp_board,
+	)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
@@ -563,12 +566,21 @@ static func apply_movement_result(
 			preview.preview_paths[actor_id] = (route as Array).duplicate()
 			preview.preview_splits[actor_id] = (route as Array).size()
 	preview.forecast = CombatPlanningForecast.from_boards(
-		base_board,
+		forecast_baseline_board(director, base_board),
 		result.final_state,
 		director.plan_revision if director != null else -1,
 	)
 	if director != null and painted_actors.is_empty():
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
+
+
+static func forecast_baseline_board(
+	director: CombatDirector,
+	fallback: BoardState,
+) -> BoardState:
+	if director != null and director.board != null:
+		return director.board
+	return fallback
 
 
 static func from_sim_result(

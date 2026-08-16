@@ -36,7 +36,8 @@ var _hover_unit_id: int = -1
 var _glow_applied: Dictionary = {}
 var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
-var _planning_forecast: CombatPlanningForecast = null
+var _committed_forecast: CombatPlanningForecast = null
+var _live_forecast: CombatPlanningForecast = null
 var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
 var _move_tween_destinations: Dictionary = {}
@@ -158,7 +159,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		if not CombatDirector.is_planning_phase(phase):
-			clear_planning_forecast()
+			clear_planning_forecasts()
 			for unit_id: Variant in _move_tweens.keys():
 				_kill_move_tween(int(unit_id))
 		for downed: CharacterActor in _downed_actors:
@@ -218,7 +219,7 @@ func actor_grid_cell(unit_id: int) -> Vector2i:
 	return _actor_grid_cell(unit_id)
 
 
-func set_planning_forecast(forecast: CombatPlanningForecast) -> void:
+func set_committed_forecast(forecast: CombatPlanningForecast) -> void:
 	if (
 		forecast != null
 		and _director != null
@@ -226,17 +227,36 @@ func set_planning_forecast(forecast: CombatPlanningForecast) -> void:
 		and forecast.revision != _director.plan_revision
 	):
 		return
-	if forecast == _planning_forecast:
+	if forecast == _committed_forecast:
 		return
-	_planning_forecast = forecast
+	_committed_forecast = forecast
 	queue_redraw()
 
 
-func clear_planning_forecast() -> void:
-	if _planning_forecast == null:
+func set_live_forecast(forecast: CombatPlanningForecast) -> void:
+	if forecast == _live_forecast:
 		return
-	_planning_forecast = null
+	_live_forecast = forecast
 	queue_redraw()
+
+
+func clear_live_forecast() -> void:
+	if _live_forecast == null:
+		return
+	_live_forecast = null
+	queue_redraw()
+
+
+func clear_planning_forecasts() -> void:
+	if _committed_forecast == null and _live_forecast == null:
+		return
+	_committed_forecast = null
+	_live_forecast = null
+	queue_redraw()
+
+
+func _active_forecast() -> CombatPlanningForecast:
+	return _live_forecast if _live_forecast != null else _committed_forecast
 
 
 func is_sprites_active() -> bool:
@@ -334,7 +354,7 @@ func _display_scale() -> float:
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	if _is_planning_phase():
-		clear_planning_forecast()
+		clear_planning_forecasts()
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
 	if _director != null and _director.plan_refresh_snap_units:
@@ -2436,11 +2456,12 @@ func _draw_hp_bar(unit: UnitState) -> void:
 		return
 	var armor: int = maxi(0, unit.armor)
 	var predicted_armor: int = armor
-	if _planning_forecast != null and _planning_forecast.has_unit(unit.id):
-		current_hp = _planning_forecast.baseline_hp(unit.id, current_hp)
-		predicted = _planning_forecast.predicted_hp(unit.id, current_hp)
-		armor = _planning_forecast.baseline_armor(unit.id, armor)
-		predicted_armor = _planning_forecast.predicted_armor(unit.id, armor)
+	var forecast: CombatPlanningForecast = _active_forecast()
+	if forecast != null and forecast.has_unit(unit.id):
+		current_hp = forecast.baseline_hp(unit.id, current_hp)
+		predicted = forecast.predicted_hp(unit.id, current_hp)
+		armor = forecast.baseline_armor(unit.id, armor)
+		predicted_armor = forecast.predicted_armor(unit.id, armor)
 	var fortitude: int = 0
 	var visual_cell: Vector2i = _unit_visual_cell(unit.id, unit.position)
 	if _board != null and _board.is_in_bounds(visual_cell):
@@ -2576,7 +2597,8 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 
 
 func _any_predicted_change() -> bool:
-	return _planning_forecast != null and _planning_forecast.has_stat_change()
+	var forecast: CombatPlanningForecast = _active_forecast()
+	return forecast != null and forecast.has_stat_change()
 
 
 func _process(delta: float) -> void:
