@@ -82,7 +82,11 @@ func _apply_ui_settings() -> void:
 		_planning_overlay.apply_settings(_settings)
 
 
-func start_combat(encounter: EncounterData, initial_board: BoardState = null) -> void:
+func start_combat(
+	encounter: EncounterData,
+	initial_board: BoardState = null,
+	player_assignments: Dictionary = {},
+) -> void:
 	_unit_layer.setup(_map_view, _director, _char_profile)
 	_unit_layer.bind_sfx(_sfx)
 	_unit_overlay.setup(_map_view, _director, _unit_layer)
@@ -104,7 +108,7 @@ func start_combat(encounter: EncounterData, initial_board: BoardState = null) ->
 	if initial_board != null:
 		_director.start_from_custom(initial_board)
 	else:
-		_director.start_from_encounter(encounter)
+		_director.start_from_encounter(encounter, player_assignments)
 	_combat_hud.setup(
 		_director,
 		_map_view,

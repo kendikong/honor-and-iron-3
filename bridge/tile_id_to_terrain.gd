@@ -19,3 +19,19 @@ static func terrain_for_tile_id(tile_id: int) -> TerrainData:
 			return DataLibrary.get_terrain(&"plain")
 		_:
 			return DataLibrary.get_terrain(&"plain")
+
+
+static func tile_id_for_terrain(terrain: TerrainData) -> int:
+	if terrain == null:
+		return TileId.Type.GRASS
+	match terrain.id:
+		&"water", &"frozen":
+			return TileId.Type.WATER
+		&"dirt":
+			return TileId.Type.DIRT
+		&"forest", &"tall_grass":
+			return TileId.Type.TREE
+		&"wall", &"rock", &"ruin", &"castle":
+			return TileId.Type.ROCK
+		_:
+			return TileId.Type.GRASS

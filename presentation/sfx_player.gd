@@ -203,5 +203,5 @@ func _event_uses_spellcast_animation(event: SimEvent) -> bool:
 		return false
 	for ability: AbilityData in actor.active_abilities:
 		if ability.id == ability_id:
-			return AbilitySystem.ability_uses_spellcast_animation(ability)
+			return AbilitySystem.ability_uses_spellcast_animation(ability, actor)
 	return false

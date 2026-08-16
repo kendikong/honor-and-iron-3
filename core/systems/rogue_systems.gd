@@ -36,9 +36,7 @@ static func passive_value(
 static func _ability_modifiers(actor: UnitState, ability: AbilityData) -> Dictionary:
 	if actor == null or ability == null:
 		return {}
-	var modules: Array[AbilityModule] = ability.get_active_modules(
-		actor.is_ability_upgraded(ability.id),
-	)
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	if modules.is_empty():
 		return {}
 	return modules[0].legacy_modifiers if modules[0] != null else {}

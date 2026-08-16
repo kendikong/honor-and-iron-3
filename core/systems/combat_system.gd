@@ -1016,8 +1016,8 @@ static func deal_damage(
 			shaman_action.ability = shaman_ability
 			var shaman_effect := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 0)
 			if shaman_ability != null:
-				for module: AbilityModule in shaman_ability.get_active_modules(
-					attacker.is_ability_upgraded(shaman_ability.id)
+				for module: AbilityModule in AbilitySystem.active_modules_for(
+					attacker, shaman_ability
 				):
 					if module != null:
 						shaman_effect.modifiers.merge(module.legacy_modifiers)
@@ -1048,10 +1048,7 @@ static func deal_damage(
 		if target.has_status(GameEnums.StatusType.THORNS) and attacker != null:
 			if GridSystem.manhattan(target.position, attacker.position) == 1:
 				var reflect_pct = 0
-				for status in target.active_statuses:
-					if status.type == GameEnums.StatusType.THORNS:
-						reflect_pct = status.amount
-						break
+				reflect_pct = target.status_value(GameEnums.StatusType.THORNS)
 				var reflect = maxi(1, floori((hp_dmg + armor_dmg) * (reflect_pct / 100.0)))
 				append_flat_damage_telemetry(board, attacker, reflect, events)
 				deal_damage_raw(board, target, attacker, reflect, GameEnums.StatType.PHYSICAL, events, "Thorns")
@@ -1065,7 +1062,7 @@ static func deal_damage(
 			if has_infinite_range or GridSystem.manhattan(target.position, attacker.position) == 1:
 				var retal_dmg := calculate_scaled_damage(target, 2, GameEnums.StatType.PHYSICAL, board)
 				deal_damage_raw(board, target, attacker, retal_dmg, GameEnums.StatType.PHYSICAL, events, "Retaliation Protocol", 2)
-				if target.is_ability_upgraded(&"knight_retaliation_protocol"):
+				if target.status_value(GameEnums.StatusType.RETALIATION_PROTOCOL) > 0:
 					var push_dir = PhysicsSystem.cardinal_from_to(target.position, attacker.position)
 					PhysicsSystem.push(board, attacker, push_dir, 1, events, target)
 

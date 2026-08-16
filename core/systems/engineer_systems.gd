@@ -42,9 +42,7 @@ static func has_ability_modifier(
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	for module: AbilityModule in ability.get_active_modules(
-		actor.is_ability_upgraded(ability.id)
-	):
+	for module: AbilityModule in AbilitySystem.active_modules_for(actor, ability):
 		if module != null and module.legacy_modifiers.has(key):
 			return true
 	return false
@@ -67,9 +65,7 @@ static func barbed_wire_adjacent_defense(board: BoardState, unit: UnitState) -> 
 static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> bool:
 	if actor == null or ability == null:
 		return false
-	for module: AbilityModule in ability.get_active_modules(
-		actor.is_ability_upgraded(ability.id)
-	):
+	for module: AbilityModule in AbilitySystem.active_modules_for(actor, ability):
 		if module != null and module.primary_type in [
 			GameEnums.EffectType.EXPLODE,
 			GameEnums.EffectType.RANGED_EXPLODE,
@@ -521,8 +517,8 @@ static func after_ability_execute(
 ) -> void:
 	if actor == null or action == null or action.ability == null:
 		return
-	var modules: Array[AbilityModule] = action.ability.get_active_modules(
-		actor.is_ability_upgraded(action.ability.id)
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(
+		actor, action.ability
 	)
 	for module_index: int in modules.size():
 		var module: AbilityModule = modules[module_index]

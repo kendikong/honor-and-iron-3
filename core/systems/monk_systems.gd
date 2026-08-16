@@ -526,9 +526,7 @@ static func _ability_modifiers(actor: UnitState, ability: AbilityData) -> Dictio
 	var result: Dictionary = {}
 	if ability == null:
 		return result
-	var modules := ability.get_active_modules(
-		actor != null and actor.is_ability_upgraded(ability.id),
-	)
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	for module: AbilityModule in modules:
 		if module != null:
 			result.merge(module.legacy_modifiers)

@@ -151,7 +151,7 @@ static func ritual_sacrifice_cost(actor: UnitState) -> int:
 static func conduit_range_bonus(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null or not _has_passive_modifier(actor, &"voodoo_conduit"):
 		return 0
-	var modules := ability.get_active_modules(actor.is_ability_upgraded(ability.id))
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	for module: AbilityModule in modules:
 		if module == null:
 			continue
@@ -464,7 +464,7 @@ static func after_ability_execute(
 		return
 	var modifiers := _ability_modifiers(actor, action.ability)
 	if modifiers.get("bloodlust", false):
-		var target := board.get_unit_by_id(action.target_unit_id)
+		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if target != null and target.team == actor.team:
 			target.passive_flags["shaman_bloodlust_active"] = true
 			target.passive_flags["shaman_bloodlust_hp"] = int(modifiers.get("bloodlust_hp", 2))
@@ -858,7 +858,7 @@ static func _ability_modifiers(actor: UnitState, ability: AbilityData) -> Dictio
 	var result := {}
 	if ability == null:
 		return result
-	for module: AbilityModule in ability.get_active_modules(actor.is_ability_upgraded(ability.id)):
+	for module: AbilityModule in AbilitySystem.active_modules_for(actor, ability):
 		if module != null:
 			result.merge(module.legacy_modifiers)
 			for layer: AbilityLayer in module.layers:

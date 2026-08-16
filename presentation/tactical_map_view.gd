@@ -53,6 +53,8 @@ var _sparkle_sprites: Node2D
 var _ecology_layer: EcologyLayer
 var _skirmish: SkirmishGenerator.SkirmishResult
 var _encounter: EncounterData
+var _initial_board: BoardState
+var _player_assignments: Dictionary = {}
 var _biome_variant: int = 1
 var _last_tree_variant_b: bool = false
 var _char_profile: CharacterGenProfile = CharacterGenProfile.new()
@@ -310,7 +312,7 @@ func screen_to_grid(screen_pos: Vector2) -> Vector2i:
 
 
 func _start_combat() -> void:
-	_combat_shell.start_combat(_encounter)
+	_combat_shell.start_combat(_encounter, _initial_board, _player_assignments)
 	_combat_shell.bind_settings(_settings)
 	_sim_presenter.set_game_settings(_settings)
 
@@ -318,6 +320,31 @@ func _start_combat() -> void:
 func _load_skirmish() -> void:
 	var config: SkirmishGenerator.SkirmishConfig = SkirmishLaunch.take_pending()
 	_biome_variant = config.biome_variant
+	_initial_board = SkirmishLaunch.take_pending_board()
+	var pending_encounter: EncounterData = SkirmishLaunch.take_pending_encounter()
+	_player_assignments = SkirmishLaunch.take_pending_assignments()
+	if _initial_board != null:
+		_encounter = EncounterBuilder.build_from_board(_initial_board)
+		_player_grid = EncounterBuilder.player_grid_for_encounter(_encounter)
+		_skirmish = SkirmishGenerator.SkirmishResult.new()
+		_skirmish.grid = _player_grid
+		_skirmish.map_seed = config.map_seed
+		_skirmish.biome_variant = config.biome_variant
+		_skirmish.player_spawns = _encounter.player_spawns
+		_skirmish.enemy_spawns = _encounter.enemy_spawns
+		_decorator.map_seed = _skirmish.map_seed
+		return
+	if pending_encounter != null:
+		_encounter = pending_encounter
+		_player_grid = EncounterBuilder.player_grid_for_encounter(_encounter)
+		_skirmish = SkirmishGenerator.SkirmishResult.new()
+		_skirmish.grid = _player_grid
+		_skirmish.map_seed = config.map_seed
+		_skirmish.biome_variant = config.biome_variant
+		_skirmish.player_spawns = _encounter.player_spawns
+		_skirmish.enemy_spawns = _encounter.enemy_spawns
+		_decorator.map_seed = _skirmish.map_seed
+		return
 	_skirmish = SkirmishGenerator.generate(config)
 	_player_grid = _skirmish.grid
 	_encounter = EncounterBuilder.build_from_player_grid(

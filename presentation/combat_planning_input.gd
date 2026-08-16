@@ -1893,7 +1893,7 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 			var ability := _selected_ability_data(p_unit)
 			if ability == null or _awaiting_flow_selected(p_unit, ability):
 				return -1
-			if AbilitySystem.ability_uses_attack_animation(ability):
+			if AbilitySystem.ability_uses_attack_animation(ability, p_unit):
 				return hover_unit.id
 			if _can_target_unit_with_selected_ability(p_unit, hover_unit):
 				return hover_unit.id
@@ -2266,10 +2266,21 @@ func _commit_at_cell(
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
+		push_warning(
+			"K3 commit rejected: awaiting=%s slots=%s"
+			% [
+				_director.find_awaiting_action(unit_id) != null,
+				[slots.get("pre", []), slots.get("action", []), slots.get("post", [])],
+			]
+		)
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
 		return false
+	print(
+		"K3 commit accepted: steps=%s awaiting=%s"
+		% [_director.get_unit_plan_steps(unit_id), _director.find_awaiting_action(unit_id) != null]
+	)
 	_play_commit_sfx(slots)
 	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
@@ -2521,6 +2532,12 @@ func _play_commit_sfx(slots: Dictionary) -> void:
 func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 	if _director == null:
 		return
+	var commit_debug := FileAccess.open("res://reports/k3_debug.txt", FileAccess.WRITE)
+	commit_debug.store_string("input_callback_before=%s\n" % [_director.get_unit_plan_steps(unit_id)])
+	print(
+		"K3 post-commit: steps=%s awaiting=%s"
+		% [_director.get_unit_plan_steps(unit_id), _director.find_awaiting_action(unit_id) != null]
+	)
 	for raw: Variant in slots.get("action", []):
 		if raw is TimelineAction:
 			var action: TimelineAction = raw as TimelineAction
@@ -2550,11 +2567,13 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 				_preserve_ability_selection_for_action(unit_id, action)
 				if not saved_paths.is_empty():
 					preview_state.preview_paths = saved_paths
+				commit_debug.store_string("input_callback_clear_branch=%s\n" % [_director.get_unit_plan_steps(unit_id)])
 			elif (
 				not AbilitySystem.is_run_ability(action.ability)
 				and not AbilitySystem.is_wait_ability(action.ability)
 			):
 				_director.select_ability(-1)
+				commit_debug.store_string("input_callback_deselect=%s\n" % [_director.get_unit_plan_steps(unit_id)])
 			return
 
 
@@ -4463,7 +4482,15 @@ func _build_commit_slots_at_cell(
 				_proj(), actor, cell, effective_waypoints, ability,
 			)
 
-		if _is_awaiting_movement_endpoint(actor, ability):
+		if (
+			has_awaiting_action
+			or (
+				awaiting_targeting_active()
+				and _awaiting_flow_selected(actor, ability)
+				and AbilitySystem.planning_awaiting_phase(ability, actor)
+					== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+			)
+		):
 			if awaiting_targeting_active() or has_awaiting_action:
 				var awaiting_origin := _awaiting_endpoint_origin(actor)
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
@@ -4634,6 +4661,13 @@ func _build_commit_slots_at_cell(
 								),
 							)
 							return slots
+						slots[_ability_plan_column(ability)].append(
+							TimelineAction.make_ability(
+								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
+								effective_waypoints,
+							),
+						)
+						return slots
 					else:
 						if target_pick_skill and not has_awaiting_action:
 							slots["action"].append(
@@ -5655,6 +5689,33 @@ func _drag_move_preview_mode(unit: UnitState, dest: Vector2i) -> int:
 	return TacticalUnitLayer.DragPreviewAnim.WALK
 
 
+func _drag_ability_preview_mode(
+	ability: AbilityData,
+	actor: UnitState,
+	moving: bool,
+) -> int:
+	if AbilitySystem.ability_uses_attack_animation(ability, actor):
+		return TacticalUnitLayer.DragPreviewAnim.ATTACK
+	if AbilitySystem.ability_uses_spellcast_animation(ability, actor):
+		return TacticalUnitLayer.DragPreviewAnim.SPELL
+	var presentation_anim: int = AbilitySystem.resolve_presentation_anim(ability, actor)
+	match presentation_anim:
+		GameEnums.PresentationAnim.ATTACK:
+			return TacticalUnitLayer.DragPreviewAnim.ATTACK
+		GameEnums.PresentationAnim.SPELL:
+			return TacticalUnitLayer.DragPreviewAnim.SPELL
+		GameEnums.PresentationAnim.SUPER_RUN:
+			return TacticalUnitLayer.DragPreviewAnim.RUN
+		GameEnums.PresentationAnim.RUN:
+			return TacticalUnitLayer.DragPreviewAnim.RUN
+		GameEnums.PresentationAnim.WALK:
+			return TacticalUnitLayer.DragPreviewAnim.WALK if moving else TacticalUnitLayer.DragPreviewAnim.SPELL
+		GameEnums.PresentationAnim.NONE:
+			return TacticalUnitLayer.DragPreviewAnim.IDLE
+		_:
+			return TacticalUnitLayer.DragPreviewAnim.SPELL
+
+
 func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) -> void:
 	if _planning == null or not dragging:
 		return
@@ -5700,10 +5761,12 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 		if _prefer_approach_over_trample_move(actor, occ) or not _can_move_to(actor, occ.position):
 			drag_target_id = occ.id
 			var ability := _selected_ability_data(actor)
-			if ability != null and AbilitySystem.ability_has_movement_effect(ability) and not AbilitySystem.ability_is_offensive_dash(ability):
-				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, atk_face, preview_cell, drag_preview_failed)
-			else:
-				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.ATTACK, atk_face, preview_cell, drag_preview_failed)
+			emit_drag_sprite.call(
+				_drag_ability_preview_mode(ability, actor, false),
+				atk_face,
+				preview_cell,
+				drag_preview_failed,
+			)
 			_set_drag_attack_target(drag_target_id, preview)
 			return
 		if _can_move_to(actor, occ.position):
@@ -5718,7 +5781,12 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				var self_face: int = _facing_from_drop(local, cell)
 				if self_face < 0:
 					self_face = actor.facing
-				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, self_face, preview_cell, drag_preview_failed)
+				emit_drag_sprite.call(
+					_drag_ability_preview_mode(self_ability, actor, false),
+					self_face,
+					preview_cell,
+					drag_preview_failed,
+				)
 				_planning.set_drag_attack_target(-1)
 				return
 	if not force_basic_movement and _director.selected_ability_index >= 0:
@@ -5732,11 +5800,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			)
 		):
 			var dash_face: int = _facing_toward(_awaiting_endpoint_origin(actor), cell)
-			var mode: int = (
-				TacticalUnitLayer.DragPreviewAnim.ATTACK
-				if AbilitySystem.ability_is_offensive_dash(endpoint_ability)
-				else TacticalUnitLayer.DragPreviewAnim.SPELL
-			)
+			var mode: int = _drag_ability_preview_mode(endpoint_ability, actor, false)
 			var dash_target := _director.board.get_unit_at(cell)
 			if dash_target != null and dash_target.is_enemy():
 				drag_target_id = dash_target.id
@@ -5751,7 +5815,12 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 				and not AbilitySystem.is_run_ability(move_self_ability)
 			):
 				var self_move_face: int = _facing_toward(unit.position, _drag_last_free)
-				emit_drag_sprite.call(TacticalUnitLayer.DragPreviewAnim.SPELL, self_move_face, preview_cell, drag_preview_failed)
+				emit_drag_sprite.call(
+					_drag_ability_preview_mode(move_self_ability, actor, true),
+					self_move_face,
+					preview_cell,
+					drag_preview_failed,
+				)
 				_set_drag_attack_target(-1, preview)
 				return
 		var move_face: int = _facing_toward(unit.position, _drag_last_free)

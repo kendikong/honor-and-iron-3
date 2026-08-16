@@ -6,10 +6,6 @@ extends RefCounted
 ## allowed to add a new call site without updating this contract.
 
 const ALLOWED_COMPATIBILITY_READERS: Dictionary = {
-	"res://presentation/board_view.gd": {
-		"_ability_effect_bbcode": 1,
-		"_ability_effect_string": 1,
-	},
 	"res://presentation/combat_ui_formatters.gd": {
 		"_ability_keyword_tooltip_lines": 1,
 		"ability_effect_string": 1,

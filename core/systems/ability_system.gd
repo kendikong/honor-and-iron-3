@@ -36,8 +36,8 @@ static func active_modules_for(actor: UnitState, ability: AbilityData) -> Array[
 	return ability.get_active_modules(upgraded)
 
 
-## Transitional compatibility API for unmigrated EffectData readers.
-## This compiler is never a modular runtime decision owner.
+## Transitional compatibility API for presentation and unmigrated EffectData readers.
+## Modules remain the only authored runtime profile; this is their shared compiler.
 static func compatibility_effects_for(
 	actor: UnitState,
 	ability: AbilityData,
@@ -61,12 +61,10 @@ static func _legacy_flat_effects_for(
 	return ability.effects
 
 
-## Internal legacy fallback. Modular callers must use active_modules_for().
+## Backward-compatible name for callers that still consume flat effects.
+## It must compile the active module profile instead of creating a second behavior path.
 static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
-	if not active_modules_for(actor, ability).is_empty():
-		push_error("legacy_effects_for() cannot serve an authored modular profile")
-		return []
-	return _legacy_flat_effects_for(actor, ability)
+	return compatibility_effects_for(actor, ability)
 
 
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
@@ -2128,7 +2126,7 @@ static func ability_has_swap_effect(ability: AbilityData, actor: UnitState = nul
 static func resolve_presentation_anim(ability: AbilityData, actor: UnitState = null) -> int:
 	if ability == null:
 		return GameEnums.PresentationAnim.WALK
-	var pres_anim: int = ability.presentation_anim
+	var pres_anim: int = _presentation_override(ability, actor)
 	if pres_anim != GameEnums.PresentationAnim.AUTO:
 		return pres_anim
 	if ability_has_dash(ability, actor):
@@ -2138,6 +2136,20 @@ static func resolve_presentation_anim(ability: AbilityData, actor: UnitState = n
 	if ability_has_movement_effect(ability, actor):
 		return GameEnums.PresentationAnim.WALK
 	return GameEnums.PresentationAnim.WALK
+
+
+static func _presentation_override(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> GameEnums.PresentationAnim:
+	if ability == null:
+		return GameEnums.PresentationAnim.AUTO
+	if ability.presentation_anim != GameEnums.PresentationAnim.AUTO:
+		return ability.presentation_anim
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if module != null and module.presentation_anim != GameEnums.PresentationAnim.AUTO:
+			return module.presentation_anim
+	return GameEnums.PresentationAnim.AUTO
 
 
 static func has_pass_through_effects(ability: AbilityData, actor: UnitState = null) -> bool:
@@ -2673,9 +2685,10 @@ static func planning_allows_paired_premove(ability: AbilityData) -> bool:
 static func ability_uses_attack_animation(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
+	var presentation_anim: GameEnums.PresentationAnim = _presentation_override(ability, actor)
+	if presentation_anim == GameEnums.PresentationAnim.ATTACK:
 		return true
-	if ability.presentation_anim in [
+	if presentation_anim in [
 		GameEnums.PresentationAnim.SPELL,
 		GameEnums.PresentationAnim.WALK,
 		GameEnums.PresentationAnim.RUN,
@@ -2708,17 +2721,21 @@ static func ability_uses_attack_animation(ability: AbilityData, actor: UnitState
 	return false
 
 
-static func ability_uses_spellcast_animation(ability: AbilityData) -> bool:
+static func ability_uses_spellcast_animation(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
 	if ability == null:
 		return false
+	var presentation_anim: GameEnums.PresentationAnim = _presentation_override(ability, actor)
 	if ability_has_movement_effect(ability):
 		return false
 	## Movement skills (Swap, Trampling Advance, etc.) use walk/thrust presentation — not spellcast.
 	if ability.is_movement_kind():
 		return false
-	if ability.presentation_anim == GameEnums.PresentationAnim.SPELL:
+	if presentation_anim == GameEnums.PresentationAnim.SPELL:
 		return true
-	if ability.presentation_anim == GameEnums.PresentationAnim.ATTACK:
+	if presentation_anim == GameEnums.PresentationAnim.ATTACK:
 		return false
 	if ability.is_pre_move_kind():
 		return true
@@ -5813,7 +5830,10 @@ static func _apply_running_boost(actor: UnitState, events: Array[SimEvent]) -> v
 	}))
 
 
-static func _resolve_target(board: BoardState, action: TimelineAction) -> UnitState:
+## Canonical unit-target lookup for an action.
+## Cell-targeted modules may still resolve an occupant; paired charge keeps its
+## authored enemy-cell semantics while all other actions prefer the committed id.
+static func resolve_action_target(board: BoardState, action: TimelineAction) -> UnitState:
 	if action == null:
 		return null
 	var actor := board.get_unit_by_id(action.actor_id)

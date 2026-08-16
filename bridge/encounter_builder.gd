@@ -27,3 +27,42 @@ static func build_from_player_grid(
 					encounter.tile_terrains[cell] = DataLibrary.get_terrain(&"wall")
 
 	return encounter
+
+
+static func build_from_board(board: BoardState) -> EncounterData:
+	var encounter := EncounterData.new()
+	if board == null:
+		return encounter
+	encounter.grid_size = board.grid_size
+	encounter.default_terrain = DataLibrary.get_terrain(&"plain")
+	for coord: Vector2i in board.tiles:
+		var tile: TileState = board.tiles[coord]
+		var terrain: TerrainData = tile.definition if tile != null else encounter.default_terrain
+		encounter.tile_terrains[coord] = terrain
+	for unit: UnitState in board.units:
+		if unit == null or unit.definition == null:
+			continue
+		var placement := UnitPlacement.new()
+		placement.unit = unit.definition
+		placement.coord = unit.position
+		if unit.team == GameEnums.Team.PLAYER:
+			encounter.player_spawns.append(placement)
+		else:
+			encounter.enemy_spawns.append(placement)
+	return encounter
+
+
+static func player_grid_for_encounter(encounter: EncounterData) -> PlayerGrid:
+	if encounter == null:
+		return PlayerGrid.new(1, 1)
+	var grid := PlayerGrid.new(
+		encounter.grid_size.x,
+		encounter.grid_size.y,
+		TileId.Type.GRASS,
+	)
+	for coord: Vector2i in encounter.tile_terrains:
+		grid.set_cell(
+			coord,
+			TileIdToTerrain.tile_id_for_terrain(encounter.tile_terrains[coord]),
+		)
+	return grid

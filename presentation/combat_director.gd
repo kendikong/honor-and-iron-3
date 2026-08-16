@@ -11,7 +11,7 @@ const BeastRiderSystems := preload("res://core/systems/beast_rider_systems.gd")
 ##   gameplay to Simulator and never computes outcomes itself.
 ## Dependencies: Simulator, BoardState, Timeline, TimelineAction, EnemyPlanner,
 ##   EventBus. Builds demo content from data definitions for bootstrap.
-## Lifecycle: lives in Combat.tscn; start() is called once by the view after it has
+## Lifecycle: lives in TacticalCombat.tscn; start() is called once by the map view after it has
 ##   subscribed to EventBus, so no initial signal is missed.
 
 enum Phase {
@@ -427,6 +427,13 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	var awaiting: TimelineAction = find_awaiting_action(unit_id)
 	if awaiting == null:
 		return false
+	var debug_file: FileAccess = null
+	if awaiting.ability != null and awaiting.ability.id == &"knight_trampling_advance":
+		debug_file = FileAccess.open("res://reports/k3_debug.txt", FileAccess.WRITE)
+		debug_file.store_string(
+			"awaiting_before=%s\nslots=%s\n"
+			% [awaiting.waypoints, [slots.get("pre", []), slots.get("action", []), slots.get("post", [])]]
+		)
 	for col: String in ["pre", "action", "post"]:
 		for raw: Variant in slots.get(col, []):
 			if not raw is TimelineAction:
@@ -457,6 +464,10 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			if not action.awaiting_target:
 				awaiting.awaiting_target = false
 				awaiting.awaiting_module_index = -1
+			if awaiting.ability.id == &"knight_trampling_advance":
+				debug_file.store_string(
+					"matched_col=%s action=%s awaiting_after=%s\n" % [col, action.waypoints, awaiting.waypoints]
+				)
 			return true
 	return false
 
@@ -876,6 +887,12 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 						_try_add(raw as TimelineAction, plan_pre_move)
 			plan_affected_unit_ids = [unit_id]
 			_refresh_plan()
+			if unit_id >= 0 and find_awaiting_action(unit_id) == null:
+				var debug_after_refresh := FileAccess.open("res://reports/k3_debug.txt", FileAccess.WRITE)
+				debug_after_refresh.store_string(
+					"commit_branch=awaiting_after_refresh steps=%s projected=%s\n"
+					% [get_unit_plan_steps(unit_id), projected_state.get_unit_by_id(unit_id).position]
+				)
 			return true
 	if slots.get("_preview_validated", false) != true:
 		var reason := preview_commit_valid(unit_id, actions)
@@ -2398,7 +2415,7 @@ func _event_uses_spellcast_animation(event: SimEvent) -> bool:
 		return false
 	for ability: AbilityData in actor.active_abilities:
 		if ability.id == ability_id:
-			return AbilitySystem.ability_uses_spellcast_animation(ability)
+			return AbilitySystem.ability_uses_spellcast_animation(ability, actor)
 	return false
 
 

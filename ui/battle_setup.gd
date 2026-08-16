@@ -460,9 +460,5 @@ func rpc_start_battle(map_index: int, assignments_json: String) -> void:
 		_do_launch(maps[map_index], parsed)
 
 func _do_launch(map: MapData, assignments: Dictionary) -> void:
-	var scene = load("res://scenes/Combat.tscn").instantiate()
-	scene.name = "Combat"
-	get_tree().root.add_child(scene)
-	scene.get_node("CombatDirector").start_from_encounter(map.encounter, assignments)
-	get_tree().current_scene.queue_free()
-	get_tree().current_scene = scene
+	SkirmishLaunch.set_pending_encounter(map.encounter, assignments)
+	get_tree().change_scene_to_file("res://scenes/TacticalCombat.tscn")

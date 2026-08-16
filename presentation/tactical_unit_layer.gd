@@ -1890,21 +1890,14 @@ func _play_attack_anim(event: SimEvent) -> void:
 			and AbilitySystem.ability_has_swap_effect(ability_data)
 		)
 	):
-		var pres_anim: int = ability_data.presentation_anim
-		if pres_anim == GameEnums.PresentationAnim.AUTO:
-			if AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.DASH) > 0:
-				pres_anim = GameEnums.PresentationAnim.SUPER_RUN
-			elif AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.BULLDOZE) > 0:
-				pres_anim = GameEnums.PresentationAnim.RUN
-			elif AbilitySystem.effect_amount(ability_data, GameEnums.EffectType.MOVE) > 0:
-				pres_anim = GameEnums.PresentationAnim.WALK
+		var pres_anim: int = AbilitySystem.resolve_presentation_anim(ability_data, unit)
 				
 		if pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
 			actor.play_dash_windup(thrust_dir, anim)
 			return
 		if pres_anim in [GameEnums.PresentationAnim.WALK, GameEnums.PresentationAnim.RUN, GameEnums.PresentationAnim.NONE]:
 			return
-	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data):
+	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data, unit):
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
 		_spellcast_released = false
 		_pending_spellcast_damage.clear()

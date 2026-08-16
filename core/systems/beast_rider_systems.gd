@@ -38,7 +38,7 @@ static func passive_value(
 static func active_module_modifiers(actor: UnitState, ability: AbilityData) -> Dictionary:
 	if actor == null or ability == null:
 		return {}
-	var modules := ability.get_active_modules(actor.is_ability_upgraded(ability.id))
+	var modules: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	for module: AbilityModule in modules:
 		if module != null and not module.legacy_modifiers.is_empty():
 			return module.legacy_modifiers
@@ -109,19 +109,11 @@ static func can_use_extra(
 		return false
 	var modules := active_module_modifiers(actor, ability)
 	if modules.get("target_constitution_at_most_strength", false):
-		var target := (
-			board.get_unit_by_id(action.target_unit_id)
-			if action.target_unit_id >= 0
-			else board.get_unit_at(action.target_coord)
-		)
+		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if target == null or int(target.health.max_hp / 5) > actor.current_strength:
 			return false
 	if modules.get("requires_bleed_or_poison", false):
-		var target := (
-			board.get_unit_by_id(action.target_unit_id)
-			if action.target_unit_id >= 0
-			else board.get_unit_at(action.target_coord)
-		)
+		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if target == null or (
 			not target.has_status(GameEnums.StatusType.BLEED)
 			and not target.has_status(GameEnums.StatusType.POISON)
@@ -501,9 +493,11 @@ static func before_ability_execute(
 	if mods.get("run_down_pass_adjacent_push", 0) > 0:
 		actor.passive_flags["beast_dash_start"] = actor.position
 	if int(mods.get("pull_before_attack", 0)) > 0:
-		var claws_target := _board.get_unit_by_id(action.target_unit_id) if _board != null else null
-		if claws_target == null and _board != null:
-			claws_target = _board.get_unit_at(action.target_coord)
+		var claws_target: UnitState = (
+			AbilitySystem.resolve_action_target(_board, action)
+			if _board != null
+			else null
+		)
 		if claws_target != null and claws_target.team != actor.team:
 			var pull_dir := PhysicsSystem.cardinal_from_to(claws_target.position, actor.position)
 			if pull_dir != Vector2i.ZERO:
@@ -524,7 +518,9 @@ static func after_ability_execute(
 		return
 	var mods := active_module_modifiers(actor, action.ability)
 	if mods.get("reposition_opposite_side", false):
-		apply_reposition(board, actor, board.get_unit_at(action.target_coord), events)
+		apply_reposition(
+			board, actor, AbilitySystem.resolve_action_target(board, action), events,
+		)
 	if mods.get("landing_vulnerable", false):
 		_apply_landing_vulnerable(board, actor, events)
 		on_landing(board, actor, events)

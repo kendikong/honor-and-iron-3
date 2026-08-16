@@ -374,6 +374,14 @@ func has_status(type: int) -> bool:
 			return true
 	return false
 
+
+func status_value(type: int, default_value: int = 0) -> int:
+	for status: StatusData in active_statuses:
+		if status != null and status.type == type:
+			return status.value
+	return default_value
+
+
 func is_alive() -> bool:
 	return health.is_alive()
 
