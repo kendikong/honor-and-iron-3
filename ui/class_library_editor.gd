@@ -75,6 +75,17 @@ var _preview_refresh_btn: Button
 var _preview_restart_btn: Button
 var _preview_toggle_btn: Button
 var _preview_visible: bool = true
+var _column_visible: Dictionary = {
+	"list": true,
+	"data": true,
+	"impl": true,
+}
+var _column_panels: Dictionary = {
+	"list": [],
+	"data": [],
+	"impl": [],
+}
+var _column_toggle_btns: Dictionary = {}
 
 
 func _ready() -> void:
@@ -89,7 +100,6 @@ func _ready() -> void:
 		MenuNavigation.register(self, _on_back_pressed, _preview_allows_back)
 	_load_overrides()
 	_build_layout()
-	ClassLibrarySchema.apply_saved_unit_overrides()
 	DataLibrary.get_all_player_units()
 	_factory_abilities = ClassLibrarySchema.snapshot_factory_abilities()
 	_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
@@ -131,11 +141,6 @@ func _build_layout() -> void:
 	var top_bar := HBoxContainer.new()
 	top_bar.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 	toolbar_panel.add_child(top_bar)
-	var save_btn := Button.new()
-	save_btn.text = "Save"
-	_style_toolbar_button(save_btn)
-	save_btn.pressed.connect(_save_overrides)
-	top_bar.add_child(save_btn)
 	var reload_btn := Button.new()
 	reload_btn.text = "Reset Factories"
 	_style_toolbar_button(reload_btn)
@@ -147,7 +152,7 @@ func _build_layout() -> void:
 	_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
 	top_bar.add_child(_save_status)
 	var hint := Label.new()
-	hint.text = "Live edits · Save persists skills & glossary · Reset Factories = code defaults"
+	hint.text = "Factory skills only · Save is off · Reset Factories = code defaults"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
@@ -155,6 +160,9 @@ func _build_layout() -> void:
 	top_bar.add_child(hint)
 	var sep := VSeparator.new()
 	top_bar.add_child(sep)
+	_add_column_toggle(top_bar, "list", "Skill List")
+	_add_column_toggle(top_bar, "data", "Ability Data")
+	_add_column_toggle(top_bar, "impl", "How It Works")
 	_preview_toggle_btn = Button.new()
 	_preview_toggle_btn.text = "Hide Preview"
 	_style_toolbar_button(_preview_toggle_btn)
@@ -291,21 +299,21 @@ func _build_layout() -> void:
 	_skills_workspace.add_child(_unit_split)
 
 	var list_shell := _build_editor_column_shell(
-		"In-Game Preview", ClassLibraryTheme.Column.INGAME, ClassLibraryTheme.dim(200.0), 0.30,
+		"In-Game Preview", ClassLibraryTheme.Column.INGAME, ClassLibraryTheme.dim(200.0), 0.30, "list",
 	)
 	_unit_split.add_child(list_shell.panel)
 	_list_scroll = list_shell.scroll
 	_list_vbox = list_shell.content
 
 	var data_shell := _build_editor_column_shell(
-		"Ability Data", ClassLibraryTheme.Column.DATA, ClassLibraryTheme.dim(220.0), 0.38,
+		"Ability Data", ClassLibraryTheme.Column.DATA, ClassLibraryTheme.dim(220.0), 0.38, "data",
 	)
 	_unit_split.add_child(data_shell.panel)
 	_data_scroll = data_shell.scroll
 	_data_vbox = data_shell.content
 
 	var impl_shell := _build_editor_column_shell(
-		"How It Works", ClassLibraryTheme.Column.IMPL, ClassLibraryTheme.dim(200.0), 0.32,
+		"How It Works", ClassLibraryTheme.Column.IMPL, ClassLibraryTheme.dim(200.0), 0.32, "impl",
 	)
 	_unit_split.add_child(impl_shell.panel)
 	_impl_scroll = impl_shell.scroll
@@ -346,19 +354,19 @@ func _build_layout() -> void:
 	class_split.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_class_workspace.add_child(class_split)
 	var class_list_shell := _build_editor_column_shell(
-		"In-Game Preview", ClassLibraryTheme.Column.PASSIVE, ClassLibraryTheme.dim(200.0), 0.30,
+		"In-Game Preview", ClassLibraryTheme.Column.PASSIVE, ClassLibraryTheme.dim(200.0), 0.30, "list",
 	)
 	class_split.add_child(class_list_shell.panel)
 	_class_list_scroll = class_list_shell.scroll
 	_class_list_vbox = class_list_shell.content
 	var class_data_shell := _build_editor_column_shell(
-		"Passive Data", ClassLibraryTheme.Column.PASSIVE, ClassLibraryTheme.dim(220.0), 0.35,
+		"Passive Data", ClassLibraryTheme.Column.PASSIVE, ClassLibraryTheme.dim(220.0), 0.35, "data",
 	)
 	class_split.add_child(class_data_shell.panel)
 	_class_passive_data_scroll = class_data_shell.scroll
 	_class_passive_data_vbox = class_data_shell.content
 	var class_impl_shell := _build_editor_column_shell(
-		"How It Works", ClassLibraryTheme.Column.IMPL, ClassLibraryTheme.dim(200.0), 0.35,
+		"How It Works", ClassLibraryTheme.Column.IMPL, ClassLibraryTheme.dim(200.0), 0.35, "impl",
 	)
 	class_split.add_child(class_impl_shell.panel)
 	_class_passive_impl_scroll = class_impl_shell.scroll
@@ -389,6 +397,9 @@ func _save_layout_config() -> void:
 	cfg.set_value("layout", "editor", _editor_split.split_offset)
 	cfg.set_value("layout", "unit", _unit_split.split_offset)
 	cfg.set_value("layout", "class", _class_split.split_offset)
+	cfg.set_value("columns", "list", bool(_column_visible.get("list", true)))
+	cfg.set_value("columns", "data", bool(_column_visible.get("data", true)))
+	cfg.set_value("columns", "impl", bool(_column_visible.get("impl", true)))
 	cfg.save("user://class_editor_layout.cfg")
 
 
@@ -399,6 +410,10 @@ func _load_layout_config() -> void:
 		_editor_split.split_offset = int(cfg.get_value("layout", "editor", 0))
 		_unit_split.split_offset = int(cfg.get_value("layout", "unit", 0))
 		_class_split.split_offset = int(cfg.get_value("layout", "class", 0))
+		_column_visible["list"] = bool(cfg.get_value("columns", "list", true))
+		_column_visible["data"] = bool(cfg.get_value("columns", "data", true))
+		_column_visible["impl"] = bool(cfg.get_value("columns", "impl", true))
+	_apply_column_visibility()
 
 
 func _build_preview_panel(parent: HSplitContainer) -> void:
@@ -530,6 +545,7 @@ func _persist_ui_scale() -> void:
 	if data.is_empty():
 		data = {"glossary": _glossary_overrides, "units": {}, "ui_scale": ClassLibraryTheme.user_scale()}
 	data["ui_scale"] = ClassLibraryTheme.user_scale()
+	data["units"] = {}
 	ClassLibrarySchema.write_editor_save(data)
 
 
@@ -569,8 +585,6 @@ func _add_color_key(parent: VBoxContainer) -> void:
 	key_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
 	parent.add_child(key_hdr)
 	for spec: Array in [
-		[ClassLibraryTheme.ACCENT_OVERRIDE_SAVED, "Gold — saved library override"],
-		[ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED, "Orange — unsaved edit"],
 		[ClassLibraryTheme.ACCENT_INGAME, "Yellow — in-game preview"],
 		[ClassLibraryTheme.ACCENT_DATA, "Blue — data column"],
 		[ClassLibraryTheme.ACCENT_IMPL, "Teal — implementation"],
@@ -667,6 +681,7 @@ func _build_editor_column_shell(
 	col: ClassLibraryTheme.Column,
 	min_width: float,
 	stretch_ratio: float = 1.0,
+	column_id: String = "",
 ) -> Dictionary:
 	var panel := PanelContainer.new()
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -680,11 +695,24 @@ func _build_editor_column_shell(
 	outer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	outer.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
 	panel.add_child(outer)
+	var hdr_row := HBoxContainer.new()
+	hdr_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	outer.add_child(hdr_row)
 	var hdr := Label.new()
 	hdr.text = title.to_upper()
+	hdr.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hdr.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SUBSECTION))
 	hdr.add_theme_color_override("font_color", ClassLibraryTheme.accent_for_column(col))
-	outer.add_child(hdr)
+	hdr_row.add_child(hdr)
+	if column_id != "":
+		var hide_btn := Button.new()
+		hide_btn.text = "Hide"
+		_style_toolbar_button(hide_btn)
+		hide_btn.pressed.connect(func() -> void: _set_column_visible(column_id, false))
+		hdr_row.add_child(hide_btn)
+		var bucket: Array = _column_panels.get(column_id, []) as Array
+		bucket.append(panel)
+		_column_panels[column_id] = bucket
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -695,6 +723,50 @@ func _build_editor_column_shell(
 	content.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
 	scroll.add_child(content)
 	return {"panel": panel, "scroll": scroll, "content": content}
+
+
+func _add_column_toggle(parent: HBoxContainer, column_id: String, label: String) -> void:
+	var btn := Button.new()
+	btn.text = "Hide %s" % label
+	_style_toolbar_button(btn)
+	btn.pressed.connect(func() -> void:
+		_set_column_visible(column_id, not bool(_column_visible.get(column_id, true)))
+	)
+	parent.add_child(btn)
+	_column_toggle_btns[column_id] = btn
+
+
+func _set_column_visible(column_id: String, visible: bool) -> void:
+	_column_visible[column_id] = visible
+	_apply_column_visibility()
+	_save_layout_config()
+
+
+func _apply_column_visibility() -> void:
+	for column_id: String in _column_panels.keys():
+		var visible: bool = bool(_column_visible.get(column_id, true))
+		for panel_var: Variant in _column_panels[column_id] as Array:
+			if panel_var is Control:
+				(panel_var as Control).visible = visible
+		var btn: Button = _column_toggle_btns.get(column_id) as Button
+		if btn != null:
+			btn.text = (
+				"Hide %s" % _column_toggle_label(column_id)
+				if visible
+				else "Show %s" % _column_toggle_label(column_id)
+			)
+
+
+func _column_toggle_label(column_id: String) -> String:
+	match column_id:
+		"list":
+			return "Skill List"
+		"data":
+			return "Ability Data"
+		"impl":
+			return "How It Works"
+		_:
+			return column_id.capitalize()
 
 
 func _show_unit_workspace(show_unit: bool) -> void:
@@ -2262,28 +2334,10 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 	if range_row != null:
 		var range_chip_row: Dictionary = CombatUiFormatters.ability_range_chip(ability, _preview_unit())
 		range_row.tooltip_text = String(range_chip_row.get("tooltip", ""))
-	var is_unsaved: bool = false
-	var is_saved_override: bool = false
-	if _saved_abilities.has(ability.id):
-		var saved_ab: AbilityData = _saved_abilities[ability.id] as AbilityData
-		is_unsaved = ClassLibrarySchema.ability_data_dump(ability) != ClassLibrarySchema.ability_data_dump(saved_ab)
-	if _factory_abilities.has(ability.id) and _saved_abilities.has(ability.id):
-		var factory_ab: AbilityData = _factory_abilities[ability.id] as AbilityData
-		var saved_ab2: AbilityData = _saved_abilities[ability.id] as AbilityData
-		is_saved_override = (
-			ClassLibrarySchema.ability_data_dump(saved_ab2)
-			!= ClassLibrarySchema.ability_data_dump(factory_ab)
-		)
-
 	var title: Label = refs.get("title")
 	if title != null:
 		title.text = ability.display_name
-		if is_unsaved:
-			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
-		elif is_saved_override:
-			title.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
-		else:
-			title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
+		title.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_PRIMARY)
 	_apply_bible_tooltip(
 		refs.get("card") as Control,
 		title,
@@ -2294,19 +2348,11 @@ func _refresh_ability_ui(ability: AbilityData) -> void:
 			
 	var reset_btn: Button = refs.get("reset_btn")
 	if reset_btn != null:
-		if is_unsaved or is_saved_override:
-			reset_btn.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
-		else:
-			reset_btn.remove_theme_color_override("font_color")
+		reset_btn.remove_theme_color_override("font_color")
 			
 	var name_edit: LineEdit = refs.get("name_edit")
 	if name_edit != null:
-		if is_unsaved:
-			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_UNSAVED)
-		elif is_saved_override:
-			name_edit.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_OVERRIDE_SAVED)
-		else:
-			name_edit.remove_theme_color_override("font_color")
+		name_edit.remove_theme_color_override("font_color")
 
 	_refresh_ability_field_colors(ability)
 
@@ -2341,16 +2387,7 @@ func _track_ability_field(ability: AbilityData, field: String, controls: Variant
 	rows.append({"field": field, "controls": packed})
 
 
-func _ability_field_state(ability: AbilityData, field: String) -> FieldTrackState:
-	var factory_ab: AbilityData = _factory_abilities.get(ability.id) as AbilityData
-	var saved_ab: AbilityData = _saved_abilities.get(ability.id) as AbilityData
-	var cur_sig: String = ClassLibrarySchema.ability_field_signature(ability, field)
-	var saved_sig: String = ClassLibrarySchema.ability_field_signature(saved_ab, field) if saved_ab != null else ClassLibrarySchema.ability_field_signature(factory_ab, field)
-	var factory_sig: String = ClassLibrarySchema.ability_field_signature(factory_ab, field) if factory_ab != null else cur_sig
-	if cur_sig != saved_sig:
-		return FieldTrackState.UNSAVED_EDIT
-	if saved_sig != factory_sig:
-		return FieldTrackState.SAVED_OVERRIDE
+func _ability_field_state(_ability: AbilityData, _field: String) -> FieldTrackState:
 	return FieldTrackState.MATCHES_FACTORY
 
 
@@ -2739,28 +2776,9 @@ func _grey_row(row: Array[Control], greyed: bool) -> void:
 
 
 func _save_overrides() -> void:
-	for unit: UnitData in DataLibrary.get_all_player_units():
-		DataLibrary.finalize_unit_abilities(unit)
-	var data: Dictionary = ClassLibrarySchema.read_editor_save()
-	if data.is_empty():
-		data = {}
-	data["glossary"] = _glossary_overrides
-	data["units"] = ClassLibrarySchema.collect_player_unit_overrides()
-	data["ui_scale"] = ClassLibraryTheme.user_scale()
-	if _selected_unit != null:
-		data["last_unit"] = String(_selected_unit.id)
-	if ClassLibrarySchema.write_editor_save(data):
-		_saved_abilities = ClassLibrarySchema.snapshot_ability_map_from_units(DataLibrary.get_all_player_units())
-		if _selected_ability != null:
-			_refresh_ability_field_colors(_selected_ability)
-		if _save_status != null:
-			_save_status.text = "Saved"
-			_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
-		_refresh_preview()
-	else:
-		if _save_status != null:
-			_save_status.text = "Save failed"
-			_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DANGER)
+	if _save_status != null:
+		_save_status.text = "Save is off — factory skills only"
+		_save_status.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 
 
 func _load_overrides() -> void:

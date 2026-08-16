@@ -53,6 +53,9 @@ static func library_ability_range_tiles(ability_id: StringName) -> int:
 		var first: Variant = (modules as Array)[0]
 		if first is Dictionary:
 			return int((first as Dictionary).get("max_range", -1))
+	var factory_ab: AbilityData = factory_ability(ability_id)
+	if factory_ab != null:
+		return factory_ab.range_tiles
 	return -1
 
 

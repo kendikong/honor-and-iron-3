@@ -1215,10 +1215,12 @@ static func read_editor_save_from_path(path: String) -> Dictionary:
 
 
 static func write_editor_save(data: Dictionary) -> bool:
+	var payload: Dictionary = data.duplicate(true)
+	payload["units"] = {}
 	var file := FileAccess.open(EDITOR_OVERRIDES_PATH, FileAccess.WRITE)
 	if file == null:
 		return false
-	file.store_string(JSON.stringify(data, "\t"))
+	file.store_string(JSON.stringify(payload, "\t"))
 	file.close()
 	return true
 
@@ -1271,7 +1273,8 @@ static func apply_unit_overrides(units_data: Dictionary) -> void:
 
 
 static func apply_saved_unit_overrides() -> void:
-	apply_unit_overrides(read_editor_save().get("units", {}))
+	## Skill save is disabled. Combat and the editor always use factory abilities.
+	return
 
 
 static func effect_to_dict(src: EffectData) -> Dictionary:
