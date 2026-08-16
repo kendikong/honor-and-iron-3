@@ -462,9 +462,7 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 
 
 func _plan_for_ability(ability: AbilityData) -> Timeline:
-	if ability != null and (
-		ability.is_pre_move_planner() or ability.is_universal_run()
-	):
+	if TimelineAction.timeline_column_for_ability(ability) == GameEnums.TimelineColumn.PRE_MOVE:
 		return plan_pre_move
 	return plan_action
 
@@ -472,11 +470,13 @@ func _plan_for_ability(ability: AbilityData) -> Timeline:
 func _plan_containing_action(action: TimelineAction) -> Timeline:
 	if action == null:
 		return plan_pre_move
-	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		return _plan_for_ability(action.ability)
-	if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
-		return plan_post_move
-	return plan_pre_move
+	match action.timeline_column():
+		GameEnums.TimelineColumn.POST_MOVE:
+			return plan_post_move
+		GameEnums.TimelineColumn.ACTION:
+			return plan_action
+		_:
+			return plan_pre_move
 
 
 func _all_plans() -> Array:
@@ -934,14 +934,15 @@ func _actions_are_wait_only(actions: Array[TimelineAction]) -> bool:
 
 
 func _slot_plan_for_action(action: TimelineAction) -> Timeline:
-	if action.type == GameEnums.ActionType.MOVE:
-		if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
-			return plan_post_move
+	if action == null:
 		return plan_pre_move
-	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		if AbilitySystem.planning_slot_for_ability(action.ability) == &"pre":
+	match action.timeline_column():
+		GameEnums.TimelineColumn.POST_MOVE:
+			return plan_post_move
+		GameEnums.TimelineColumn.ACTION:
+			return plan_action
+		_:
 			return plan_pre_move
-	return plan_action
 
 
 func _slots_contain_move_for_unit(slots: Dictionary, unit_id: int, timing: int) -> bool:
@@ -2207,7 +2208,9 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 		return
 	
 	var path: Array = move_event.data.get("path", [])
-	move_event.data["presentation_anim"] = GameEnums.PresentationAnim.SUPER_RUN
+	move_event.data["presentation_anim"] = int(
+		ability_event.data.get("presentation_anim", GameEnums.PresentationAnim.SUPER_RUN)
+	) if ability_event != null else GameEnums.PresentationAnim.SUPER_RUN
 	move_event.data["dash_step_time"] = DASH_STEP_TIME
 	EventBus.sim_event.emit(move_event)
 	
@@ -2376,30 +2379,14 @@ func _playback_delay_for_event(event: SimEvent) -> float:
 		return 0.15
 	if _event_uses_spellcast_animation(event):
 		return LpcConstants.spellcast_playback_delay_sec()
-	var actor_id: int = int(event.data.get("actor", -1))
-	var ability_id: StringName = event.data.get("ability", &"")
-	if board == null or actor_id < 0 or ability_id == &"":
-		return ATTACK_ANIM_TIME
-	var actor := board.get_unit_by_id(actor_id)
-	if actor == null:
-		return ATTACK_ANIM_TIME
 	return ATTACK_ANIM_TIME
 
 
 func _event_uses_spellcast_animation(event: SimEvent) -> bool:
 	if event.type != GameEnums.SimEventType.ABILITY_USED:
 		return false
-	var actor_id: int = int(event.data.get("actor", -1))
-	var ability_id: StringName = event.data.get("ability", &"")
-	if board == null or actor_id < 0 or ability_id == &"":
-		return false
-	var actor := board.get_unit_by_id(actor_id)
-	if actor == null:
-		return false
-	for ability: AbilityData in actor.active_abilities:
-		if ability.id == ability_id:
-			return AbilitySystem.ability_uses_spellcast_animation(ability, actor)
-	return false
+	return int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO)) \
+		== GameEnums.PresentationAnim.SPELL
 
 
 func _is_spellcast_impact_event(event: SimEvent) -> bool:
@@ -2619,10 +2606,8 @@ func _refresh_plan_core() -> void:
 		if (
 			action.type == GameEnums.ActionType.ABILITY
 			and action.ability != null
-			and (
-				action.ability.is_pre_move_planner()
-				or action.ability.is_universal_run()
-			)
+			and TimelineAction.timeline_column_for_ability(action.ability)
+				== GameEnums.TimelineColumn.PRE_MOVE
 		):
 			var pre_board: BoardState = _board_before_planning_action(
 				action as TimelineAction, plan_to_run,
@@ -3054,15 +3039,13 @@ func _plan_swap_entry(swap_action: TimelineAction, plan: Timeline) -> TimelineAc
 
 
 func _make_planning_swap_ability_event(action: TimelineAction, plan: Timeline) -> SimEvent:
-	var pres_anim: int = action.ability.presentation_anim
-	if pres_anim == GameEnums.PresentationAnim.AUTO:
-		pres_anim = GameEnums.PresentationAnim.WALK
 	var before: BoardState = _board_before_planning_action(action, plan)
 	var after: BoardState = before.clone()
 	var swap_events: Array[SimEvent] = []
 	ResolutionPipeline.apply_action(after, action, swap_events)
 	ResolutionPipeline.resolve_pending_pushes(after, swap_events)
 	var actor_before: UnitState = before.get_unit_by_id(action.actor_id)
+	var pres_anim: int = AbilitySystem.resolve_presentation_anim(action.ability, actor_before)
 	var target_before: UnitState = before.get_unit_by_id(action.target_unit_id)
 	var actor_after: UnitState = after.get_unit_by_id(action.actor_id)
 	var target_after: UnitState = after.get_unit_by_id(action.target_unit_id)
@@ -3281,8 +3264,8 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 		if AbilitySystem.ability_has_swap_effect(action.ability):
 			return false
 		return (
-			action.ability.is_pre_move_planner()
-			or action.ability.is_universal_run()
+			TimelineAction.timeline_column_for_ability(action.ability)
+			== GameEnums.TimelineColumn.PRE_MOVE
 		)
 	return false
 

@@ -3778,17 +3778,19 @@ func _committed_plan_slots(unit_id: int) -> Dictionary:
 	for action: TimelineAction in plan.entries:
 		if action.actor_id != unit_id:
 			continue
-		match action.type:
-			GameEnums.ActionType.ABILITY:
-				if action.ability != null and action.ability.is_movement_kind():
-					pre_moves.append(action)
-				elif action.ability == null or action.ability.kind != GameEnums.AbilityKind.UNIVERSAL_WAIT:
-					abilities.append(action)
-			GameEnums.ActionType.MOVE, GameEnums.ActionType.FACE:
-				if action.move_timing == GameEnums.MoveTiming.POST_ACTION:
-					post_moves.append(action)
-				else:
-					pre_moves.append(action)
+		if (
+			action.type == GameEnums.ActionType.ABILITY
+			and action.ability != null
+			and action.ability.is_universal_wait()
+		):
+			continue
+		match action.timeline_column():
+			GameEnums.TimelineColumn.PRE_MOVE:
+				pre_moves.append(action)
+			GameEnums.TimelineColumn.POST_MOVE:
+				post_moves.append(action)
+			_:
+				abilities.append(action)
 	return {"pre": pre_moves, "action": abilities, "post": post_moves}
 
 
@@ -4125,7 +4127,11 @@ func _empty_commit_slots() -> Dictionary:
 
 
 func _ability_plan_column(ability: AbilityData) -> String:
-	return String(AbilitySystem.planning_slot_for_ability(ability))
+	return (
+		"pre"
+		if TimelineAction.timeline_column_for_ability(ability) == GameEnums.TimelineColumn.PRE_MOVE
+		else "action"
+	)
 
 
 func _can_pair_run_move_with_ability(
@@ -5669,12 +5675,8 @@ func _drag_move_preview_mode(unit: UnitState, dest: Vector2i) -> int:
 func _drag_ability_preview_mode(
 	ability: AbilityData,
 	actor: UnitState,
-	moving: bool,
+	_moving: bool,
 ) -> int:
-	if AbilitySystem.ability_uses_attack_animation(ability, actor):
-		return TacticalUnitLayer.DragPreviewAnim.ATTACK
-	if AbilitySystem.ability_uses_spellcast_animation(ability, actor):
-		return TacticalUnitLayer.DragPreviewAnim.SPELL
 	var presentation_anim: int = AbilitySystem.resolve_presentation_anim(ability, actor)
 	match presentation_anim:
 		GameEnums.PresentationAnim.ATTACK:
@@ -5686,7 +5688,7 @@ func _drag_ability_preview_mode(
 		GameEnums.PresentationAnim.RUN:
 			return TacticalUnitLayer.DragPreviewAnim.RUN
 		GameEnums.PresentationAnim.WALK:
-			return TacticalUnitLayer.DragPreviewAnim.WALK if moving else TacticalUnitLayer.DragPreviewAnim.SPELL
+			return TacticalUnitLayer.DragPreviewAnim.WALK
 		GameEnums.PresentationAnim.NONE:
 			return TacticalUnitLayer.DragPreviewAnim.IDLE
 		_:

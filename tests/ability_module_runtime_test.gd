@@ -22,6 +22,10 @@ static func run_all(failures: Array[String]) -> void:
 	_test_upgraded_module_profile(failures)
 	_report_scenario("upgraded_module_profile", failures, scenario_failures)
 	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: shared_module_parity START")
+	_test_shared_module_parity(failures)
+	_report_scenario("shared_module_parity", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START")
 	_test_legacy_flat_targeting_compatibility(failures)
 	_report_scenario("legacy_flat_targeting_compatibility", failures, scenario_failures)
@@ -204,6 +208,35 @@ static func _test_upgraded_module_profile(failures: Array[String]) -> void:
 	var effects: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
 	if effects.size() != 1 or effects[0].amount != 7:
 		failures.append("upgraded module profile did not compile its authored amount")
+
+
+static func _test_shared_module_parity(failures: Array[String]) -> void:
+	var left: AbilityData = _ability(&"shared_module_left", GameEnums.TargetingFlags.ENEMY)
+	var right: AbilityData = _ability(&"shared_module_right", GameEnums.TargetingFlags.ENEMY)
+	for ability: AbilityData in [left, right]:
+		var module := AbilityModule.new()
+		module.primary_type = GameEnums.EffectType.DAMAGE
+		module.amount = 5
+		module.min_range = 1
+		module.max_range = 4
+		module.targeting_flags = GameEnums.TargetingFlags.ENEMY
+		module.presentation_anim = GameEnums.PresentationAnim.SPELL
+		module.legacy_modifiers = {"parity_probe": 7}
+		ability.modules = [module]
+	var left_actor: UnitState = _unit(41, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	var right_actor: UnitState = _unit(42, GameEnums.Team.ENEMY, Vector2i(5, 1), 20)
+	var left_profile: Dictionary = AbilitySystem.active_modifier_profile(left_actor, left)
+	var right_profile: Dictionary = AbilitySystem.active_modifier_profile(right_actor, right)
+	if (
+		left_profile != right_profile
+		or AbilitySystem.resolve_presentation_anim(left, left_actor)
+			!= AbilitySystem.resolve_presentation_anim(right, right_actor)
+		or TimelineAction.timeline_column_for_ability(left)
+			!= TimelineAction.timeline_column_for_ability(right)
+	):
+		failures.append(
+			"identical authored modules diverged across ability ids in profile, animation, or timeline",
+		)
 
 
 static func _test_legacy_flat_targeting_compatibility(failures: Array[String]) -> void:

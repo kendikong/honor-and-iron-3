@@ -696,6 +696,44 @@ static func is_motion_type(t: GameEnums.EffectType) -> bool:
 	)
 
 
+static func first_motion_module(
+	modules: Array[AbilityModule],
+	exclude_post_phase: bool = false,
+	require_always_gate: bool = false,
+) -> AbilityModule:
+	for module: AbilityModule in modules:
+		if module == null or not is_motion_type(module.primary_type):
+			continue
+		if require_always_gate and module.gate != GameEnums.ModuleGate.ALWAYS:
+			continue
+		if exclude_post_phase and module.execution_phase == GameEnums.ModulePhase.ON_POST:
+			continue
+		return module
+	return null
+
+
+static func module_is_caster_movement(module: AbilityModule) -> bool:
+	if module == null:
+		return false
+	if module.primary_type in [
+		GameEnums.EffectType.DASH,
+		GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+	]:
+		return true
+	if GameEnums.is_teleport_motion(module.primary_type):
+		return (
+			module.motion_mode != GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
+			and not module_has_modifier(module, &"airlift_keep_caster")
+		)
+	if GameEnums.is_path_motion(module.primary_type):
+		return (
+			not module_has_modifier(module, &"post_attack_move")
+			and not module_has_modifier(module, &"relocate_target")
+			and not module_has_modifier(module, &"relocate_subject_only")
+		)
+	return false
+
+
 static func _is_pass_through_type(t: GameEnums.EffectType) -> bool:
 	return t == GameEnums.EffectType.TRAMPLE or t == GameEnums.EffectType.BULLDOZE
 

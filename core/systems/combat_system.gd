@@ -833,7 +833,9 @@ static func deal_damage(
 		if attacker != null:
 			target_magic = floori(
 				target_magic
-				* (1.0 - float(attacker.passive_flags.get("mage_target_magic_ignore_pct", 0.0)))
+				* (1.0 - float(
+					attacker.passive_flags.get(GameEnums.RUNTIME_TARGET_MAGIC_IGNORE_PCT, 0.0)
+				))
 			)
 		mitigation = floori(
 			(get_dynamic_defense(board, target) + target_magic) / 2.0
@@ -1143,16 +1145,16 @@ static func deal_damage(
 			ShamanSystems.on_kill(board, attacker, target, events)
 			RogueSystems.on_kill(board, attacker, target, events)
 			BeastRiderSystems.on_kill(board, attacker, target, events)
-			if attacker.passive_flags.get("mage_spell_in_progress", false):
+			if attacker.passive_flags.get(GameEnums.RUNTIME_SPELL_IN_PROGRESS, false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("mana_siphon"):
 						continue
-					if not attacker.passive_flags.get("mage_ap_refunded", false):
+					if not attacker.passive_flags.get(GameEnums.RUNTIME_SPELL_AP_REFUNDED, false):
 						attacker.ability.points_left = mini(
 							attacker.ability.max_points,
 							attacker.ability.points_left + 1,
 						)
-						attacker.passive_flags["mage_ap_refunded"] = true
+						attacker.passive_flags[GameEnums.RUNTIME_SPELL_AP_REFUNDED] = true
 					else:
 						heal(board, attacker, attacker.current_magic, events)
 						var max_stacks := int(passive.modifiers.get("arcane_overchannel_max", 3))
@@ -1172,13 +1174,13 @@ static func deal_damage(
 				target.passive_flags["corpse_destroyed"] = true
 			if (
 				attacker.passive_flags.has("kill_grant_ap")
-				and not attacker.passive_flags.get("mage_ap_refunded", false)
+				and not attacker.passive_flags.get(GameEnums.RUNTIME_SPELL_AP_REFUNDED, false)
 			):
 				attacker.ability.points_left = mini(
 					attacker.ability.max_points,
 					attacker.ability.points_left + int(attacker.passive_flags["kill_grant_ap"]),
 				)
-				attacker.passive_flags["mage_ap_refunded"] = true
+				attacker.passive_flags[GameEnums.RUNTIME_SPELL_AP_REFUNDED] = true
 			if target.passive_flags.get("exact_lethal_damage", false):
 				for passive: PassiveData in attacker.active_passives:
 					if passive == null or not passive.modifiers.has("exact_lethal_followup_damage"):

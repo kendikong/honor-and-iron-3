@@ -7,6 +7,19 @@ extends RefCounted
 ## Dependencies: none.
 ## Lifecycle: never instantiated; used purely as a namespace.
 
+## Transient simulation flags use shared semantic keys, never class-prefixed keys.
+const RUNTIME_SPELL_RANGE_BONUS: StringName = &"spell_range_bonus"
+const RUNTIME_SPELL_SHAPE_BONUS: StringName = &"spell_shape_bonus"
+const RUNTIME_SPELL_MAGIC_BONUS: StringName = &"spell_magic_bonus"
+const RUNTIME_SPELL_IN_PROGRESS: StringName = &"spell_in_progress"
+const RUNTIME_SPELL_PIERCE: StringName = &"spell_pierce"
+const RUNTIME_TARGET_MAGIC_IGNORE_PCT: StringName = &"target_magic_ignore_pct"
+const RUNTIME_SPELL_CAST_THIS_TURN: StringName = &"spell_cast_this_turn"
+const RUNTIME_SPELL_AP_REFUNDED: StringName = &"spell_ap_refunded"
+const RUNTIME_WILD_MAGIC_REPEAT: StringName = &"wild_magic_repeat"
+const RUNTIME_WILD_MAGIC_PENDING: StringName = &"wild_magic_pending"
+const RUNTIME_ECHO_REPEAT: StringName = &"echo_repeat"
+
 enum Team {
 	PLAYER,
 	ENEMY,
@@ -265,6 +278,14 @@ enum AbilityKind {
 enum PlannerGroup {
 	ACTION,    ## Action column; AP; consumes action slot; may contain ON_PRE/ON_POST modules.
 	PRE_MOVE,  ## Pre-Move column; MP; basic positioning; no action slot.
+}
+
+## Resolved timeline bucket for a concrete action entry.
+## PlannerGroup classifies authored abilities; MoveTiming classifies MOVE/FACE.
+enum TimelineColumn {
+	PRE_MOVE,
+	ACTION,
+	POST_MOVE,
 }
 
 ## Header cost primary/secondary resource (ability-data.md §1 cost block).

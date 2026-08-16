@@ -210,15 +210,9 @@ func get_active_card_range(upgraded: bool = false) -> int:
 
 ## Returns the active motion module, including its authored min/max distance.
 func get_active_motion_module(upgraded: bool = false) -> AbilityModule:
-	for module: AbilityModule in get_active_modules(upgraded):
-		if (
-			module != null
-			and AbilityModuleBridge.is_motion_type(module.primary_type)
-			and module.gate == GameEnums.ModuleGate.ALWAYS
-			and module.execution_phase != GameEnums.ModulePhase.ON_POST
-		):
-			return module
-	return null
+	return AbilityModuleBridge.first_motion_module(
+		get_active_modules(upgraded), true, true,
+	)
 
 
 func has_modules() -> bool:

@@ -1883,21 +1883,19 @@ func _play_attack_anim(event: SimEvent) -> void:
 				thrust_dir = Vector2(delta2).normalized()
 	var ability_id: StringName = event.data.get("ability", &"")
 	var ability_data: AbilityData = _ability_for_event(unit_id, ability_id)
-	if ability_data != null and (
-		AbilitySystem.ability_has_movement_effect(ability_data)
-		or (
-			ability_data.is_movement_kind()
-			and AbilitySystem.ability_has_swap_effect(ability_data)
-		)
-	):
-		var pres_anim: int = AbilitySystem.resolve_presentation_anim(ability_data, unit)
-				
-		if pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
-			actor.play_dash_windup(thrust_dir, anim)
-			return
-		if pres_anim in [GameEnums.PresentationAnim.WALK, GameEnums.PresentationAnim.RUN, GameEnums.PresentationAnim.NONE]:
-			return
-	if ability_data != null and AbilitySystem.ability_uses_spellcast_animation(ability_data, unit):
+	var pres_anim: int = int(
+		event.data.get("presentation_anim", GameEnums.PresentationAnim.ATTACK)
+	)
+	if pres_anim == GameEnums.PresentationAnim.SUPER_RUN:
+		actor.play_dash_windup(thrust_dir, anim)
+		return
+	if pres_anim in [
+		GameEnums.PresentationAnim.WALK,
+		GameEnums.PresentationAnim.RUN,
+		GameEnums.PresentationAnim.NONE,
+	]:
+		return
+	if pres_anim == GameEnums.PresentationAnim.SPELL and ability_data != null:
 		var target_ids: Array[int] = _ability_affected_unit_ids_from_event(event, ability_data)
 		_spellcast_released = false
 		_pending_spellcast_damage.clear()

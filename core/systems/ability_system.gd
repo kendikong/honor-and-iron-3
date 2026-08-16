@@ -41,21 +41,22 @@ static func active_modules_for(actor: UnitState, ability: AbilityData) -> Array[
 ## invent different module/layer merge rules.
 static func active_modifier_profile(actor: UnitState, ability: AbilityData) -> Dictionary:
 	var profile: Dictionary = {}
-	for module: AbilityModule in active_modules_for(actor, ability):
-		for effect: EffectData in AbilityModuleBridge.compile_module_to_effects(module):
-			if effect == null:
-				continue
-			for key: Variant in effect.modifiers.keys():
-				profile[StringName(key)] = effect.modifiers[key]
+	for effect: EffectData in active_effects_for(actor, ability):
+		for key: Variant in effect.modifiers.keys():
+			profile[StringName(key)] = effect.modifiers[key]
 	return profile
 
 
-static func planning_slot_for_ability(ability: AbilityData) -> StringName:
-	if ability != null and (
-		ability.is_pre_move_planner() or ability.is_universal_run()
-	):
-		return &"pre"
-	return &"action"
+## Canonical metadata effect view. Unlike compatibility_effects_for(), this
+## includes authored gated modules because callers only inspect the profile.
+static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
+	var out: Array[EffectData] = []
+	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
+	if modules.is_empty():
+		return _legacy_flat_effects_for(actor, ability)
+	for module: AbilityModule in modules:
+		out.append_array(AbilityModuleBridge.compile_module_to_effects(module))
+	return out
 
 
 ## Transitional compatibility API for presentation and unmigrated EffectData readers.
@@ -92,10 +93,7 @@ static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
 	if ability == null:
 		return null
-	for module: AbilityModule in active_modules_for(actor, ability):
-		if module != null and AbilityModuleBridge.is_motion_type(module.primary_type):
-			return module
-	return null
+	return AbilityModuleBridge.first_motion_module(active_modules_for(actor, ability))
 
 
 static func active_motion_min_range(actor: UnitState, ability: AbilityData) -> int:
@@ -739,7 +737,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	var actor := board.get_unit_by_id(action.actor_id)
 	if actor == null or not actor.is_alive():
 		return false
-	if actor.passive_flags.get("__shaman_echo_repeat", false):
+	if actor.passive_flags.get(GameEnums.RUNTIME_ECHO_REPEAT, false):
 		return true
 	var ability := action.ability
 	if ability == null:
@@ -814,7 +812,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	):
 		max_range += 1
 	if _is_spell(ability):
-		max_range += int(actor.passive_flags.get("mage_spell_range_bonus", 0))
+		max_range += int(actor.passive_flags.get(GameEnums.RUNTIME_SPELL_RANGE_BONUS, 0))
 	if motion_module == null and not has_authored_modules:
 		var legacy_move_range: int = (
 			0
@@ -952,7 +950,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if (
 		ability.consumes_action_slot()
 		and not actor.can_use_action_slot()
-		and not actor.passive_flags.get("__mage_wild_magic_repeat", false)
+		and not actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false)
 		and not (
 			actor.passive_flags.get("dual_wield_bonus_basic", false)
 			and _is_basic_attack(ability)
@@ -1472,7 +1470,7 @@ static func _link_enemy_pair(
 static func _has_resource_for_ability(actor: UnitState, ability: AbilityData, board: BoardState = null) -> bool:
 	if ability == null or actor == null:
 		return false
-	if actor.passive_flags.get("__mage_wild_magic_repeat", false):
+	if actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false):
 		return true
 		
 	var ap_cost = get_action_point_cost(actor, ability, board)
@@ -1594,13 +1592,7 @@ static func target_passes_mode(actor: UnitState, ability: AbilityData, target: U
 static func ability_has_dash(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var motion_module: AbilityModule = active_motion_module(actor, ability)
-	if motion_module != null:
-		return motion_module.primary_type == GameEnums.EffectType.DASH
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.modules_have_effect(modules, GameEnums.EffectType.DASH)
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == GameEnums.EffectType.DASH:
 			return true
 	return false
@@ -1612,36 +1604,20 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
 	if not modules.is_empty():
 		for module: AbilityModule in modules:
-			if module == null:
-				continue
-			if module.primary_type in [
-				GameEnums.EffectType.DASH,
-				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-			]:
-				return true
-			if GameEnums.is_teleport_motion(module.primary_type):
-				if (
-					module.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
-					or bool(module.legacy_modifiers.get("airlift_keep_caster", false))
-					or AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
-				):
-					continue
-				return true
-			if (
-				GameEnums.is_path_motion(module.primary_type)
-				and not AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
-				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_target")
-				and not AbilityModuleBridge.module_has_modifier(module, &"relocate_subject_only")
-			):
+			if AbilityModuleBridge.module_is_caster_movement(module):
 				return true
 		return false
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type in [
 			GameEnums.EffectType.DASH,
 			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 		]:
 			return true
 		if GameEnums.is_teleport_motion(eff.type):
+			if eff.modifiers.get("airlift_keep_caster", false):
+				continue
+			if eff.modifiers.get("reposition_opposite_side", false):
+				continue
 			return true
 		if (
 			GameEnums.is_path_motion(eff.type)
@@ -1656,17 +1632,7 @@ static func ability_has_movement_effect(ability: AbilityData, actor: UnitState =
 static func ability_has_post_attack_move(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		for module: AbilityModule in modules:
-			if (
-				module != null
-				and module.primary_type == GameEnums.EffectType.MOVE
-				and AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
-			):
-				return true
-		return false
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if (
 			eff != null
 			and eff.type == GameEnums.EffectType.MOVE
@@ -1679,13 +1645,7 @@ static func ability_has_post_attack_move(ability: AbilityData, actor: UnitState 
 static func ability_has_teleport(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		for module: AbilityModule in modules:
-			if module != null and GameEnums.is_teleport_motion(module.primary_type):
-				return true
-		return false
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff != null and GameEnums.is_teleport_motion(eff.type):
 			return true
 	return false
@@ -1735,30 +1695,17 @@ static func ability_uses_direct_relocation(
 static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		for module: AbilityModule in modules:
-			if module != null and (
-				module.primary_type == GameEnums.EffectType.DASH
-				or module.primary_type == GameEnums.EffectType.MOVE_INTO_AND_PUSH
-				or GameEnums.is_path_motion(module.primary_type)
-			):
-				return true
-			if (
-				module != null
-				and GameEnums.is_teleport_motion(module.primary_type)
-				and not AbilityModuleBridge.module_has_modifier(module, &"airlift_keep_caster")
-			):
-				return true
-		return false
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if (
 			eff.type in [
 				GameEnums.EffectType.DASH,
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
 			]
 			or GameEnums.is_path_motion(eff.type)
-			or GameEnums.is_teleport_motion(eff.type)
+			or (
+				GameEnums.is_teleport_motion(eff.type)
+				and not eff.modifiers.get("airlift_keep_caster", false)
+			)
 		):
 			return true
 	return false
@@ -1924,13 +1871,7 @@ static func effect_amount(
 ) -> int:
 	if ability == null:
 		return 0
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		for module: AbilityModule in modules:
-			if AbilityModuleBridge.module_has_effect(module, effect_type):
-				return AbilityModuleBridge.module_effect_amount(module, effect_type)
-		return 0
-	for eff: EffectData in legacy_effects_for(actor, ability):
+	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == effect_type:
 			return eff.amount
 	return 0
@@ -1945,10 +1886,7 @@ static func ability_has_effect(
 	## effects, including gated modules; it never executes or bypasses module gates.
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.modules_have_effect(modules, effect_type)
-	for effect: EffectData in legacy_effects_for(actor, ability):
+	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and effect.type == effect_type:
 			return true
 	return false
@@ -1961,16 +1899,10 @@ static func _ability_has_modifier(
 ) -> bool:
 	if ability == null:
 		return false
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		if AbilityModuleBridge.modules_have_modifier(modules, key):
-			return true
-		for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(modules):
-			if effect != null and (effect.modifiers.has(key) or effect.modifiers.has(String(key))):
-				return true
-		return false
-	for effect: EffectData in legacy_effects_for(actor, ability):
-		if effect != null and effect.modifiers.has(key):
+	for effect: EffectData in active_effects_for(actor, ability):
+		if effect != null and (
+			effect.modifiers.has(key) or effect.modifiers.has(String(key))
+		):
 			return true
 	return false
 
@@ -1984,13 +1916,9 @@ static func _caltrop_expert_waives(actor: UnitState, ability: AbilityData) -> bo
 static func _ability_terrain_id(actor: UnitState, ability: AbilityData) -> StringName:
 	if ability == null:
 		return &""
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	for module: AbilityModule in modules:
-		if module != null and module.legacy_modifiers.has("terrain_id"):
-			return module.legacy_modifiers["terrain_id"] as StringName
-	for effect: EffectData in legacy_effects_for(actor, ability):
+	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and effect.modifiers.has("terrain_id"):
-			return effect.modifiers["terrain_id"] as StringName
+			return StringName(effect.modifiers["terrain_id"])
 	return &""
 
 
@@ -2098,18 +2026,9 @@ static func _ability_modifier_int(
 ) -> int:
 	if ability == null:
 		return default_value
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		for module: AbilityModule in modules:
-			if module != null and module.legacy_modifiers.has(key):
-				return int(module.legacy_modifiers[key])
-		for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(modules):
-			if effect != null and effect.modifiers.has(key):
-				return int(effect.modifiers[key])
-		return default_value
-	for effect: EffectData in legacy_effects_for(actor, ability):
-		if effect != null and effect.modifiers.has(key):
-			return int(effect.modifiers[key])
+	var profile: Dictionary = active_modifier_profile(actor, ability)
+	if profile.has(key):
+		return int(profile[key])
 	return default_value
 
 
@@ -2145,6 +2064,12 @@ static func resolve_presentation_anim(ability: AbilityData, actor: UnitState = n
 		return GameEnums.PresentationAnim.RUN
 	if ability_has_movement_effect(ability, actor):
 		return GameEnums.PresentationAnim.WALK
+	if ability.is_universal_wait():
+		return GameEnums.PresentationAnim.NONE
+	if ability_uses_attack_animation(ability, actor):
+		return GameEnums.PresentationAnim.ATTACK
+	if ability_uses_spellcast_animation(ability, actor):
+		return GameEnums.PresentationAnim.SPELL
 	return GameEnums.PresentationAnim.WALK
 
 
@@ -2817,8 +2742,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 
 	var actor := board.get_unit_by_id(action.actor_id)
 	var ability := action.ability
-	var wild_magic_repeat := bool(actor.passive_flags.get("__mage_wild_magic_repeat", false))
-	var shaman_echo_repeat := bool(actor.passive_flags.get("__shaman_echo_repeat", false))
+	var wild_magic_repeat := bool(actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false))
+	var shaman_echo_repeat := bool(actor.passive_flags.get(GameEnums.RUNTIME_ECHO_REPEAT, false))
 	
 	if actor != null:
 		actor.passive_flags.erase("passed_through_terrain")
@@ -2897,7 +2822,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var shape: GameEnums.TargetShape = active_target_shape(actor, action.ability)
 	var shape_size: int = active_target_shape_size(actor, action.ability)
 	if _is_spell(action.ability) and shape != GameEnums.TargetShape.SINGLE:
-		shape_size += int(actor.passive_flags.get("mage_spell_shape_bonus", 0))
+		shape_size += int(actor.passive_flags.get(GameEnums.RUNTIME_SPELL_SHAPE_BONUS, 0))
 			
 	var affected_tiles := _ability_affected_tiles(
 		board, actor, action.ability, actor.position, target_coord, shape, shape_size,
@@ -3397,17 +3322,17 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			_finish_spellcast(board, actor, action, events)
 			if (
 				not wild_magic_repeat
-				and actor.passive_flags.get("__mage_wild_magic_pending", false)
+				and actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_PENDING, false)
 			):
-				actor.passive_flags.erase("__mage_wild_magic_pending")
-				actor.passive_flags["__mage_wild_magic_repeat"] = true
+				actor.passive_flags.erase(GameEnums.RUNTIME_WILD_MAGIC_PENDING)
+				actor.passive_flags[GameEnums.RUNTIME_WILD_MAGIC_REPEAT] = true
 				execute(board, action, events)
-				actor.passive_flags.erase("__mage_wild_magic_repeat")
-				actor.passive_flags.erase("mage_spell_magic_bonus")
+				actor.passive_flags.erase(GameEnums.RUNTIME_WILD_MAGIC_REPEAT)
+				actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_MAGIC_BONUS)
 			elif wild_magic_repeat:
-				actor.passive_flags.erase("mage_spell_magic_bonus")
-			if not actor.passive_flags.get("__mage_wild_magic_repeat", false):
-				actor.passive_flags.erase("mage_spell_in_progress")
+				actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_MAGIC_BONUS)
+			if not actor.passive_flags.get(GameEnums.RUNTIME_WILD_MAGIC_REPEAT, false):
+				actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_IN_PROGRESS)
 
 	if actor != null and actor.is_alive() and actor.has_passive(&"kinetic_redirection"):
 		var is_attack = false
@@ -3441,9 +3366,9 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags.erase("paired_ally_id")
 		actor.passive_flags.erase("destroy_corpse_on_kill")
 		actor.passive_flags.erase("kill_grant_ap")
-		actor.passive_flags.erase("mage_spell_pierce")
-		actor.passive_flags.erase("mage_spell_range_bonus")
-		actor.passive_flags.erase("mage_spell_shape_bonus")
+		actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_PIERCE)
+		actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_RANGE_BONUS)
+		actor.passive_flags.erase(GameEnums.RUNTIME_SPELL_SHAPE_BONUS)
 
 
 static func execute_delayed_effect(
@@ -3785,7 +3710,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			):
 				base_amt = int(effect.modifiers.get("reaction_damage", 2))
 			var kinetic_energy_bonus := int(actor.passive_flags.get("kinetic_energy", 0))
-			if actor.passive_flags.get("mage_spell_pierce", false):
+			if actor.passive_flags.get(GameEnums.RUNTIME_SPELL_PIERCE, false):
 				pierce = true
 			if target != null and target.has_status(GameEnums.StatusType.ROOT):
 				for passive: PassiveData in actor.active_passives:
@@ -3970,7 +3895,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				stat_val = CombatSystem.get_dynamic_strength(board, actor)
 			elif action.ability.scaling_stat == GameEnums.StatType.MAGICAL:
 				stat_val = actor.current_magic + int(
-					actor.passive_flags.get("mage_spell_magic_bonus", 0)
+					actor.passive_flags.get(GameEnums.RUNTIME_SPELL_MAGIC_BONUS, 0)
 				)
 				stat_name = "MAG"
 			temporary_strength_bonus += MercenarySystems.attack_strength_bonus(
@@ -4284,7 +4209,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var target_hp_before := target.health.current_hp if target != null else 0
 			var target_armor_before := target.armor if target != null else 0
 			if effect.modifiers.has("ignore_target_magic_pct"):
-				actor.passive_flags["mage_target_magic_ignore_pct"] = float(
+				actor.passive_flags[GameEnums.RUNTIME_TARGET_MAGIC_IGNORE_PCT] = float(
 					effect.modifiers["ignore_target_magic_pct"]
 				)
 			if effect.modifiers.has("target_magic_defense"):
@@ -4381,7 +4306,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							board, actor, int(passive.modifiers.get("weave_shield", 1)), events,
 						)
 					break
-			actor.passive_flags.erase("mage_target_magic_ignore_pct")
+			actor.passive_flags.erase(GameEnums.RUNTIME_TARGET_MAGIC_IGNORE_PCT)
 			actor.passive_flags.erase("target_magic_defense_override")
 			_apply_damage_effect_modifiers(
 				board,
@@ -5967,8 +5892,8 @@ static func _begin_spellcast(
 ) -> void:
 	if actor == null or action == null:
 		return
-	actor.passive_flags["mage_spell_cast_this_turn"] = true
-	actor.passive_flags["mage_spell_in_progress"] = true
+	actor.passive_flags[GameEnums.RUNTIME_SPELL_CAST_THIS_TURN] = true
+	actor.passive_flags[GameEnums.RUNTIME_SPELL_IN_PROGRESS] = true
 	var target: UnitState = resolve_action_target(board, action)
 	for passive: PassiveData in actor.active_passives:
 		if passive == null:
@@ -6020,24 +5945,24 @@ static func _begin_spellcast(
 				cost,
 			)
 	if actor.passive_flags.get("elemental_surge_ready", false):
-		actor.passive_flags["mage_spell_range_bonus"] = 2
-		actor.passive_flags["mage_spell_shape_bonus"] = 2
+		actor.passive_flags[GameEnums.RUNTIME_SPELL_RANGE_BONUS] = 2
+		actor.passive_flags[GameEnums.RUNTIME_SPELL_SHAPE_BONUS] = 2
 		actor.passive_flags.erase("elemental_surge_ready")
 	for passive: PassiveData in actor.active_passives:
 		if passive == null:
 			continue
 		if passive.modifiers.has("arcane_mastery_radius"):
-			actor.passive_flags["mage_spell_shape_bonus"] = int(
-				actor.passive_flags.get("mage_spell_shape_bonus", 0)
+			actor.passive_flags[GameEnums.RUNTIME_SPELL_SHAPE_BONUS] = int(
+				actor.passive_flags.get(GameEnums.RUNTIME_SPELL_SHAPE_BONUS, 0)
 			) + int(passive.modifiers["arcane_mastery_radius"])
 			if actor.is_passive_upgraded(passive.id):
-				actor.passive_flags["mage_spell_pierce"] = true
+				actor.passive_flags[GameEnums.RUNTIME_SPELL_PIERCE] = true
 		if passive.modifiers.has("wild_magic") and target != null:
 			var tile := board.get_tile(target.position)
 			if tile != null and tile.definition != null and tile.definition.hazard_damage > 0:
-				actor.passive_flags["__mage_wild_magic_pending"] = true
+				actor.passive_flags[GameEnums.RUNTIME_WILD_MAGIC_PENDING] = true
 				if actor.is_passive_upgraded(passive.id):
-					actor.passive_flags["mage_spell_magic_bonus"] = int(
+					actor.passive_flags[GameEnums.RUNTIME_SPELL_MAGIC_BONUS] = int(
 						passive.modifiers.get("upgraded_wild_magic_magic", 0)
 					)
 
@@ -6184,7 +6109,7 @@ static func _resolve_repeat_hits(
 			board,
 		)
 		if effect.modifiers.has("ignore_target_magic_pct"):
-			actor.passive_flags["mage_target_magic_ignore_pct"] = float(
+			actor.passive_flags[GameEnums.RUNTIME_TARGET_MAGIC_IGNORE_PCT] = float(
 				effect.modifiers["ignore_target_magic_pct"]
 			)
 		CombatSystem.deal_damage_raw(
@@ -6197,7 +6122,7 @@ static func _resolve_repeat_hits(
 			label,
 			effect.amount,
 		)
-		actor.passive_flags.erase("mage_target_magic_ignore_pct")
+		actor.passive_flags.erase(GameEnums.RUNTIME_TARGET_MAGIC_IGNORE_PCT)
 
 
 static func _get_passive_value(actor: UnitState, key: StringName) -> float:
@@ -6253,7 +6178,6 @@ static func _is_basic_attack(ability: AbilityData) -> bool:
 	return (
 		ability != null
 		and ability.tags.has(AbilityModuleBridge.TAG_ATTACK)
-		and (ability.id == &"basic_attack" or String(ability.id).ends_with("_basic"))
 	)
 
 

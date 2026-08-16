@@ -169,7 +169,7 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			RogueSystems.apply_next_turn_ap_bonus(unit)
 			BeastRiderSystems.turn_start(board, unit, events)
 			EngineerSystems.turn_start(board, unit, events)
-			unit.passive_flags.erase("mage_ap_refunded")
+			unit.passive_flags.erase(GameEnums.RUNTIME_SPELL_AP_REFUNDED)
 			if unit.health.current_hp < unit.health.max_hp:
 				unit.passive_flags.erase("full_health_debuff_immunity")
 			if unit.passive_flags.get("next_turn_move_zero", false):
@@ -358,9 +358,9 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 static func _tick_end_of_turn(board: BoardState, events: Array[SimEvent]) -> void:
 	for unit in board.units:
 		if unit.is_alive():
-			if unit.passive_flags.get("mage_spell_cast_this_turn", false) == false:
+			if unit.passive_flags.get(GameEnums.RUNTIME_SPELL_CAST_THIS_TURN, false) == false:
 				unit.passive_flags.erase("arcane_overchannel_stacks")
-			unit.passive_flags.erase("mage_spell_cast_this_turn")
+			unit.passive_flags.erase(GameEnums.RUNTIME_SPELL_CAST_THIS_TURN)
 			var surface_payload: Dictionary = board.terrain_payloads.get(unit.position, {})
 			var surface_owner := board.get_unit_by_id(int(surface_payload.get("terrain_owner_id", -1)))
 			if surface_owner != null and surface_owner.id == unit.id:

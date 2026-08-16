@@ -192,16 +192,7 @@ func _noise(seed: int) -> float:
 
 
 func _event_uses_spellcast_animation(event: SimEvent) -> bool:
-	if _director == null or _director.board == null:
+	if event == null:
 		return false
-	var actor_id: int = int(event.data.get("actor", -1))
-	var ability_id: StringName = event.data.get("ability", &"")
-	if actor_id < 0 or ability_id == &"":
-		return false
-	var actor := _director.board.get_unit_by_id(actor_id)
-	if actor == null:
-		return false
-	for ability: AbilityData in actor.active_abilities:
-		if ability.id == ability_id:
-			return AbilitySystem.ability_uses_spellcast_animation(ability, actor)
-	return false
+	return int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO)) \
+		== GameEnums.PresentationAnim.SPELL

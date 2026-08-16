@@ -482,10 +482,10 @@ static func after_ability_execute(
 	if (
 		actor.passive_flags.get("shaman_echo_next_cast", false)
 		and not modifiers.has("ally_corpse")
-		and not actor.passive_flags.get("__shaman_echo_repeat", false)
+		and not actor.passive_flags.get(GameEnums.RUNTIME_ECHO_REPEAT, false)
 	):
 		actor.passive_flags.erase("shaman_echo_next_cast")
-		actor.passive_flags["__shaman_echo_repeat"] = true
+		actor.passive_flags[GameEnums.RUNTIME_ECHO_REPEAT] = true
 		var force_upgraded := bool(actor.passive_flags.get("shaman_echo_upgraded", false))
 		var already_upgraded := actor.is_ability_upgraded(action.ability.id)
 		if force_upgraded and not already_upgraded:
@@ -493,7 +493,7 @@ static func after_ability_execute(
 		AbilitySystem.execute(board, action, events)
 		if force_upgraded and not already_upgraded:
 			actor.upgraded_abilities.erase(action.ability.id)
-		actor.passive_flags.erase("__shaman_echo_repeat")
+		actor.passive_flags.erase(GameEnums.RUNTIME_ECHO_REPEAT)
 
 
 static func on_dealt_damage(

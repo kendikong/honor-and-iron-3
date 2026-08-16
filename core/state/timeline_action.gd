@@ -62,6 +62,24 @@ func is_run_boosted_pre_move() -> bool:
 		and move_timing == GameEnums.MoveTiming.PRE_ACTION
 	)
 
+
+static func timeline_column_for_ability(ability: AbilityData) -> int:
+	if ability != null and (
+		ability.is_pre_move_planner() or ability.is_universal_run()
+	):
+		return GameEnums.TimelineColumn.PRE_MOVE
+	return GameEnums.TimelineColumn.ACTION
+
+
+func timeline_column() -> int:
+	if type == GameEnums.ActionType.MOVE or type == GameEnums.ActionType.FACE:
+		return (
+			GameEnums.TimelineColumn.POST_MOVE
+			if move_timing == GameEnums.MoveTiming.POST_ACTION
+			else GameEnums.TimelineColumn.PRE_MOVE
+		)
+	return timeline_column_for_ability(ability)
+
 static func make_move(
 	p_actor_id: int,
 	p_target_coord: Vector2i,

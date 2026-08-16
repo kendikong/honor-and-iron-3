@@ -509,7 +509,7 @@ static func apply_smoke_spell_bonus(board: BoardState, actor: UnitState, ability
 	var magic_bonus: int = int(passive_value(
 		actor, &"smoke_spell_magic", &"upgraded_smoke_spell_magic", 2,
 	))
-	actor.passive_flags["mage_spell_magic_bonus"] = magic_bonus
+	actor.passive_flags[GameEnums.RUNTIME_SPELL_MAGIC_BONUS] = magic_bonus
 	if (
 		has_passive_modifier(actor, &"smoke_spell_free_ap")
 		and not actor.passive_flags.get("rogue_smoke_free_ap_used", false)

@@ -1138,7 +1138,11 @@ static func premove_displacement_realized(
 ) -> bool:
 	if director == null or action == null or action.ability == null:
 		return false
-	if action.type != GameEnums.ActionType.ABILITY or not action.ability.is_pre_move_planner():
+	if (
+		action.type != GameEnums.ActionType.ABILITY
+		or TimelineAction.timeline_column_for_ability(action.ability)
+			!= GameEnums.TimelineColumn.PRE_MOVE
+	):
 		return false
 	if not _plan_pre_move_contains_action(director, action):
 		return false
