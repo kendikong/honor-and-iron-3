@@ -12,7 +12,9 @@ Extra Rules was a leftover-bag rename. That pass is **rejected**. Chat tables ar
 
 ## What to do
 
-Convert every Extra Rule into the skill-module bible: header, module primary, motion mode, keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules in the same change.
+Convert every Extra Rule into the skill-module bible: header, module primary (including MOVE / JUMP / TELEPORT landing verbs), keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules in the same change.
+
+**Do not use Motion Mode.** Landing is the dest effect (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, …). Motion Mode was a leftover dropdown.
 
 Combat reads those fields. Extra Rules is not a destination.
 
@@ -35,8 +37,7 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Home | Use when |
 |------|----------|
 | Header | Cost, once-per-turn, skip-Action, delay |
-| Module primary | The verb (DAMAGE, MOVE, PAIRED_MOVE, GRANT_AP, …) |
-| Motion mode | How the move lands |
+| Module primary | The verb, including landing (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `PAIRED_MOVE`, `GRANT_AP`, …) |
 | Keyword | TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO |
 | Layer + condition | Extra punch on the same targets |
 | Gate | Whether a module runs |
@@ -44,7 +45,7 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Typed field on an existing punch | Hazard / spawn knobs, bounce, … |
 | New EffectType / StatusType / LayerCondition | Only if nothing above fits. Grow the dropdown. |
 
-**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules.”  
+**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**.  
 **Out of scope:** passives (until owner asks).  
 **Owner open:** Tactical Retreat backwards; Adrenaline Surge skip-Action.
 

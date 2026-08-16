@@ -11,7 +11,7 @@ This is the work order that was built in chat and then ignored. Extra Rules was 
 
 ## Goal
 
-Every class **skill** Extra Rule is gone. The skill is authored as header + modules + keywords + layers + gates + targeting / Condition / motion / typed CREATE_HAZARD–SPAWN knobs. Combat reads those fields, not Extra Rules.
+Every class **skill** Extra Rule is gone. The skill is authored as header + modules + keywords + layers + gates + targeting / Condition + typed CREATE_HAZARD–SPAWN knobs. Combat reads those fields, not Extra Rules. Landing is a dest **EffectType** (`MOVE` / `JUMP` / `TELEPORT` family), not Motion Mode.
 
 **Done for one skill:** that skill’s `AbilityModule.extras` is empty (base and upgrade), behavior matches Bible, class gate + live QA **PASS**.
 
@@ -26,14 +26,13 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 | Home | Use when |
 |------|----------|
 | **Header** | Cost, once-per-turn, skip-Action, delay, uses |
-| **Module primary** | The verb (DAMAGE, MOVE, DASH, SWAP, HEAL, PUSH, CREATE_HAZARD, SPAWN, GRANT_AP, PAIRED_MOVE, …) |
-| **Motion mode** | How the move lands (VAULT_OVER, L_SHAPE, TO_TARGET_UNIT, BACKWARDS, …) |
+| **Module primary** | The verb, including landing (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, `PAIRED_MOVE`, …) |
 | **Keyword** | TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO |
 | **Layer + condition** | Extra punch on the **same targets** (ON_KILL, ON_LAND, ON_COLLISION, WHEN_DAMAGE_DEALT, …) |
 | **Gate** | Whether a **module** runs (IF_COLLIDED, IF_KILL, …) |
 | **Targeting checkbox / Condition** | Who you may click (EXCLUDE_CASTER, ally, HP/status/occupant filter) |
 | **Typed field on an existing punch** | Hazard terrain/duration/status, bounce count, HP% spawn, … |
-| **New EffectType / StatusType / LayerCondition / MotionMode** | Only if no row above fits. Grow the dropdown. Do **not** add Extra Rules. |
+| **New EffectType / StatusType / LayerCondition** | Only if no row above fits. Grow the dest-effect / status / condition dropdown. Do **not** add Extra Rules or Motion Mode. |
 
 **Forbidden**
 
@@ -41,6 +40,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - Harvesting leftover keys into an enum
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
+- Converting leftovers into **Motion Mode** (stale landing dropdown; dest EffectType owns landing)
 - Passives in this plan (separate bag; owner must ask)
 
 **Already done (do not redo as Extra Rules):** click **Condition** dropdown (Executioner's Blade HP, Hex, Terrify, Savage Bite, Fetch, Maul occupant, constructs, corpses, Amnesia Dust, Feral Drag CON, Intimidate HP). Those skills still appear below if they have *other* extras.
@@ -88,7 +88,7 @@ Prove the method on the smallest leftover, then reuse punches.
 |-------|-------|----------------|
 | 1 | Knight | One leftover (exclude-self). Method check. |
 | 2 | Bruiser | Layers + GRANT_AP + IF_COLLIDED already named |
-| 3 | Lancer | PAIRED_MOVE, L_SHAPE, VAULT, TRAMPLE |
+| 3 | Lancer | PAIRED_MOVE, JUMP_TO_BEHIND, TRAMPLE, L-path on MOVE |
 | 4 | Archer | CREATE_HAZARD knobs + GHOST + layers |
 | 5 | Mercenary | PAIRED_MOVE, GRANT_AP, GHOST |
 | 6 | Monk | ON_LAND / hazard knobs |
@@ -166,12 +166,12 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Push [+] | Once per turn; +STR after push | Existing header + existing layer | `once_per_turn`; STR on PUSH. |
 | Polearm RANGE 1 | 30% less damage at RANGE 1 | New field | Range-band damage cut (basics too). |
 | Rally / similar | Status next turn | New field | Delay on ADD_STATUS. |
-| Wraparound (Flanking Maneuver) | L-shaped move | Existing motion | **L_SHAPE**. |
+| Wraparound (Flanking Maneuver) | L-shaped move | New field on MOVE | L-path on **MOVE**. Not Motion Mode. |
 | Wraparound | ×2 only from the side | New field | Side-only DAMAGE multiplier. |
 | Wraparound [+] | GHOST | Existing keyword | **GHOST**. |
 | Glorious Charge | You + ally charge; ally ATK 2 | Existing effect | **PAIRED_MOVE** + ally DAMAGE layer. |
 | Glorious Charge [+] | Both gain AP on kill | Existing effect | **GRANT_AP** on **ON_KILL** for both. |
-| Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND** / **VAULT_OVER**. |
+| Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND**. Not VAULT_OVER Motion Mode. |
 | Pole Vault [+] | PUSH + STAGGER beside landing | Existing layer | PUSH/STAGGER on **ON_LAND**. |
 | Line Breaker | Path ATK | Existing keyword | **TRAMPLE**. |
 | Line Breaker [+] | +1 per enemy passed | New field | Bonus per path hit. |
@@ -316,7 +316,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 | Skill | Leftover | Type | Solution |
 |---|---|---|---|
-| Reposition | Slide ally to opposite side | Existing motion | **SLIDE_TARGET_OPPOSITE**. |
+| Reposition | Slide ally to opposite side | New effect | Dest **EffectType** for slide-ally-opposite. Not Motion Mode. |
 | Pounce | Land adjacent | Existing effect | **MOVE_TOWARD** ends adjacent. |
 | Pounce [+] | PUSH 1 on land | Existing layer | **PUSH** on **ON_LAND**. |
 | Feral Drag | Drag for leftover MOV | New effect | Drag-while-you-walk. |
@@ -375,7 +375,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 | Skill | Leftover | Type | Solution |
 |---|---|---|---|
-| Usher | Ally steps; you don’t | Existing motion | **ALLY_STEP**. |
+| Usher | Ally steps; you don’t | New effect | Dest **EffectType** for ally-step (you stay). Not Motion Mode. |
 | Usher [+] | Can move a totem | New field | Allow-totem on that relocate. |
 | Curse of Weakness | STR −2 / DEF −2 | Existing effect | Two status layers. |
 | Curse [+] | No push mitigation | New field | On the curse. |
