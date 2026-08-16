@@ -3,11 +3,9 @@ extends RefCounted
 
 const INVALID_VISUAL_CELL := Vector2i(-999999, -999999)
 
-## Shared live-preview state for tactical planning (paths, predicted HP/armor).
+## Shared live-preview state for tactical planning (paths and forecast board).
 
-var predicted_hp: Dictionary = {}
-var predicted_armor: Dictionary = {}
-var predicted_ap: Dictionary = {}
+var forecast: CombatPlanningForecast = null
 var preview_paths: Dictionary = {}
 var preview_splits: Dictionary = {}
 var preview_post_splits: Dictionary = {}
@@ -18,9 +16,7 @@ var live_intents: Array = []
 
 
 func clear_interaction() -> void:
-	predicted_hp.clear()
-	predicted_armor.clear()
-	predicted_ap.clear()
+	forecast = null
 	live_intents.clear()
 
 
@@ -41,20 +37,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		return
 	preview_board = temp_board
 	var base_board: BoardState = director.base_board if director.base_board != null else director.board
-	predicted_hp.clear()
-	predicted_armor.clear()
-	predicted_ap.clear()
-	if base_board != null:
-		for unit: UnitState in base_board.units:
-			var pv := temp_board.get_unit_by_id(unit.id)
-			if pv != null and pv.is_alive():
-				predicted_hp[unit.id] = pv.health.current_hp
-				predicted_armor[unit.id] = pv.armor
-				predicted_ap[unit.id] = pv.ability.points_left
-			else:
-				predicted_hp[unit.id] = 0
-				predicted_armor[unit.id] = 0
-				predicted_ap[unit.id] = 0
+	forecast = CombatPlanningForecast.from_boards(base_board, temp_board)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
 	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
@@ -579,17 +562,11 @@ static func apply_movement_result(
 		if route is Array and (route as Array).size() >= 2:
 			preview.preview_paths[actor_id] = (route as Array).duplicate()
 			preview.preview_splits[actor_id] = (route as Array).size()
-	if base_board != null:
-		for unit: UnitState in base_board.units:
-			var pv := result.final_state.get_unit_by_id(unit.id)
-			if pv != null and pv.is_alive():
-				preview.predicted_hp[unit.id] = pv.health.current_hp
-				preview.predicted_armor[unit.id] = pv.armor
-				preview.predicted_ap[unit.id] = pv.ability.points_left
-			else:
-				preview.predicted_hp[unit.id] = 0
-				preview.predicted_armor[unit.id] = 0
-				preview.predicted_ap[unit.id] = 0
+	preview.forecast = CombatPlanningForecast.from_boards(
+		base_board,
+		result.final_state,
+		director.plan_revision if director != null else -1,
+	)
 	if director != null and painted_actors.is_empty():
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 
@@ -613,16 +590,11 @@ static func from_sim_result(
 		preview.action_splits,
 	)
 	if base_board != null:
-		for unit: UnitState in base_board.units:
-			var pv := result.final_state.get_unit_by_id(unit.id)
-			if pv != null and pv.is_alive():
-				preview.predicted_hp[unit.id] = pv.health.current_hp
-				preview.predicted_armor[unit.id] = pv.armor
-				preview.predicted_ap[unit.id] = pv.ability.points_left
-			else:
-				preview.predicted_hp[unit.id] = 0
-				preview.predicted_armor[unit.id] = 0
-				preview.predicted_ap[unit.id] = 0
+		preview.forecast = CombatPlanningForecast.from_boards(
+			base_board,
+			result.final_state,
+			director.plan_revision if director != null else -1,
+		)
 	if director != null:
 		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
 	return preview
@@ -717,22 +689,8 @@ static func build_preview_paths(
 					current_positions[pid] = to_pos
 
 
-func get_predicted_hp(unit_id: int, current: int) -> int:
-	return int(predicted_hp.get(unit_id, current))
-
-
-func get_predicted_armor(unit_id: int, current: int) -> int:
-	return int(predicted_armor.get(unit_id, current))
-
-
-func get_predicted_ap(unit_id: int, current: int) -> int:
-	return int(predicted_ap.get(unit_id, current))
-
-
 func copy_from(other: CombatPlanningPreview) -> void:
-	predicted_hp = other.predicted_hp.duplicate()
-	predicted_armor = other.predicted_armor.duplicate()
-	predicted_ap = other.predicted_ap.duplicate()
+	forecast = other.forecast
 	live_intents = other.live_intents.duplicate()
 	preview_board = other.preview_board
 	preview_paths = other.preview_paths.duplicate(true)

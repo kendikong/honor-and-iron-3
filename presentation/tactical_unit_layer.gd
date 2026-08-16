@@ -36,8 +36,7 @@ var _hover_unit_id: int = -1
 var _glow_applied: Dictionary = {}
 var _timeline_hover_id: int = -1
 var _intent_units: Dictionary = {}
-var _predicted_hp: Dictionary = {}
-var _predicted_armor: Dictionary = {}
+var _planning_forecast: CombatPlanningForecast = null
 var _phase: int = CombatDirector.Phase.PLANNING
 var _move_tweens: Dictionary = {}
 var _move_tween_destinations: Dictionary = {}
@@ -159,6 +158,7 @@ func setup(map_view: TacticalMapView, director: CombatDirector, profile: Charact
 	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
 		_phase = phase
 		if not CombatDirector.is_planning_phase(phase):
+			clear_planning_forecast()
 			for unit_id: Variant in _move_tweens.keys():
 				_kill_move_tween(int(unit_id))
 		for downed: CharacterActor in _downed_actors:
@@ -218,26 +218,24 @@ func actor_grid_cell(unit_id: int) -> Vector2i:
 	return _actor_grid_cell(unit_id)
 
 
-func set_predicted_stats(hp: Dictionary, armor: Dictionary) -> void:
-	if _predicted_stat_maps_equal(hp, _predicted_hp) and _predicted_stat_maps_equal(armor, _predicted_armor):
+func set_planning_forecast(forecast: CombatPlanningForecast) -> void:
+	if (
+		forecast != null
+		and _director != null
+		and forecast.revision >= 0
+		and forecast.revision != _director.plan_revision
+	):
 		return
-	_predicted_hp = hp.duplicate()
-	_predicted_armor = armor.duplicate()
+	if forecast == _planning_forecast:
+		return
+	_planning_forecast = forecast
 	queue_redraw()
 
 
-func _predicted_stat_maps_equal(a: Dictionary, b: Dictionary) -> bool:
-	if a.size() != b.size():
-		return false
-	for key: Variant in a:
-		if int(a.get(key, -1)) != int(b.get(key, -1)):
-			return false
-	return true
-
-
-func clear_predicted_stats() -> void:
-	_predicted_hp.clear()
-	_predicted_armor.clear()
+func clear_planning_forecast() -> void:
+	if _planning_forecast == null:
+		return
+	_planning_forecast = null
 	queue_redraw()
 
 
@@ -335,6 +333,8 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
+	if _is_planning_phase():
+		clear_planning_forecast()
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
 	if _director != null and _director.plan_refresh_snap_units:
@@ -2430,12 +2430,17 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	var foot: Vector2 = _unit_foot_map_local(unit.id, unit.position)
 	var origin := foot + Vector2(-BAR_W * 0.5, _hp_bar_vertical_offset(unit))
 	var current_hp: int = unit.health.current_hp
-	var predicted: int = int(_predicted_hp.get(unit.id, current_hp))
+	var predicted: int = current_hp
 	var max_hp: int = unit.health.max_hp
 	if max_hp <= 0:
 		return
 	var armor: int = maxi(0, unit.armor)
-	var predicted_armor: int = int(_predicted_armor.get(unit.id, armor))
+	var predicted_armor: int = armor
+	if _planning_forecast != null and _planning_forecast.has_unit(unit.id):
+		current_hp = _planning_forecast.baseline_hp(unit.id, current_hp)
+		predicted = _planning_forecast.predicted_hp(unit.id, current_hp)
+		armor = _planning_forecast.baseline_armor(unit.id, armor)
+		predicted_armor = _planning_forecast.predicted_armor(unit.id, armor)
 	var fortitude: int = 0
 	var visual_cell: Vector2i = _unit_visual_cell(unit.id, unit.position)
 	if _board != null and _board.is_in_bounds(visual_cell):
@@ -2472,10 +2477,18 @@ func _draw_hp_bar(unit: UnitState) -> void:
 	var blink: float = 0.35 + 0.45 * (0.5 + 0.5 * sin(Time.get_ticks_msec() / 110.0))
 	if loss_w > 0.0:
 		var col := Color(_COLOR_HP_LOSS.r, _COLOR_HP_LOSS.g, _COLOR_HP_LOSS.b, blink)
-		draw_rect(Rect2(origin + Vector2(survive_w, 0.0), Vector2(loss_w, BAR_H)), col, true)
+		draw_rect(
+			Rect2(origin + Vector2(survive_w, 0.0), Vector2(maxf(loss_w, 1.0), BAR_H)),
+			col,
+			true,
+		)
 	if heal_w > 0.0:
 		var col := Color(_COLOR_HP_FILL.r, _COLOR_HP_FILL.g, _COLOR_HP_FILL.b, blink)
-		draw_rect(Rect2(origin + Vector2(survive_w, 0.0), Vector2(heal_w, BAR_H)), col, true)
+		draw_rect(
+			Rect2(origin + Vector2(survive_w, 0.0), Vector2(maxf(heal_w, 1.0), BAR_H)),
+			col,
+			true,
+		)
 	var hp_end_w: float = survive_w + maxf(loss_w, heal_w)
 	if survive_armor_w > 0.0:
 		draw_rect(Rect2(origin + Vector2(hp_end_w, 0.0), Vector2(survive_armor_w, BAR_H)), _COLOR_ARMOR, true)
@@ -2563,18 +2576,7 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 
 
 func _any_predicted_change() -> bool:
-	if _board == null:
-		return false
-	for unit: UnitState in _board.units:
-		if not unit.is_alive():
-			continue
-		var cur_hp: int = unit.health.current_hp
-		var pred_hp: int = int(_predicted_hp.get(unit.id, cur_hp))
-		var cur_ar: int = maxi(0, unit.armor)
-		var pred_ar: int = int(_predicted_armor.get(unit.id, cur_ar))
-		if pred_hp != cur_hp or pred_ar != cur_ar:
-			return true
-	return false
+	return _planning_forecast != null and _planning_forecast.has_stat_change()
 
 
 func _process(delta: float) -> void:

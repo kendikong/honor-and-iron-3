@@ -19,6 +19,7 @@ func _run_gate() -> void:
 	var failures: Array[String] = []
 	PlanningDragE2EHarness.set_host(self)
 	var suites: Array[Dictionary] = [
+		{"name": "planning_forecast", "path": "res://tests/planning_forecast_test.gd"},
 		{"name": "skill_scenarios", "path": "res://tests/planning_skill_scenarios_test.gd"},
 		{"name": "drag_e2e", "path": "res://tests/planning_drag_e2e_test.gd"},
 		{"name": "planning_input", "path": "res://tests/planning_input_test.gd"},

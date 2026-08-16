@@ -599,18 +599,18 @@ func restore_committed_display() -> void:
 	_live_preview.preview_pushes.clear()
 	_attack_target_id = -1
 	_preview_board = _committed_preview.preview_board
-	_push_predicted_stats_to_unit_layer(_committed_preview)
+	_push_committed_forecast_to_unit_layer()
 	live_preview_changed.emit()
 	_queue_overlay_redraw()
 
 
-## HP/armor preview on unit bars — always during planning; independent of ghost toggles.
-func _push_predicted_stats_to_unit_layer(preview: CombatPlanningPreview) -> void:
-	if _unit_layer == null or preview == null:
+## Global HP/armor forecast — committed simulator result, never live hover state.
+func _push_committed_forecast_to_unit_layer() -> void:
+	if _unit_layer == null:
 		return
 	if not CombatDirector.is_planning_phase(_phase):
 		return
-	_unit_layer.set_predicted_stats(preview.predicted_hp, preview.predicted_armor)
+	_unit_layer.set_planning_forecast(_committed_preview.forecast)
 
 
 ## Executed plan displacement hints must not survive into execute / next planning turn.
@@ -642,7 +642,6 @@ func apply_preview_state(
 ) -> void:
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
-	_push_predicted_stats_to_unit_layer(state)
 	live_preview_changed.emit()
 	_queue_overlay_redraw()
 
@@ -1319,8 +1318,8 @@ func _apply_committed_preview_update(result: SimResult, light_refresh: bool = fa
 	else:
 		_invalidate_hover_cache()
 		_schedule_hover_recompute()
+	_push_committed_forecast_to_unit_layer()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
-		_push_predicted_stats_to_unit_layer(_committed_preview)
 		live_preview_changed.emit()
 	_queue_overlay_redraw()
 
