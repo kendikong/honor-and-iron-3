@@ -174,7 +174,7 @@ static func _unit_matches_motion_anchor(
 ) -> bool:
 	if actor == null or ability == null or unit == null or not unit.is_alive() or unit.id == actor.id:
 		return false
-	if _ability_has_modifier(actor, ability, &"recall_adjacent_construct"):
+	if ability_occupant_is(actor, ability, GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT):
 		return unit.definition != null and unit.definition.is_construct and unit.team == actor.team
 	var flags: int = ability.targeting_flags
 	var module: AbilityModule = active_motion_module(actor, ability)
@@ -837,7 +837,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if dist == 0 and active_range_tiles(actor, ability) > 0 and not can_target_self(actor, ability):
 		return false
 	var target_unit: UnitState = resolve_action_target(board, action)
-	if _ability_has_modifier(actor, ability, &"ally_corpse"):
+	if ability_occupant_is(actor, ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE):
 		if (
 			target_unit == null
 			or target_unit.is_alive()
@@ -867,11 +867,11 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			):
 				target_unit = adj_unit
 				break
-	if EngineerSystems.has_ability_modifier(actor, ability, &"recall_adjacent_construct"):
+	if ability_occupant_is(actor, ability, GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT):
 		if not EngineerSystems.can_use_recall(board, actor, action.target_coord):
 			return false
 	if (
-		EngineerSystems.has_ability_modifier(actor, ability, &"construct_target_only")
+		ability_occupant_is(actor, ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
 		and (
 			target_unit == null
 			or target_unit.team != actor.team
@@ -884,12 +884,6 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		target_unit != null
 		and _ability_has_modifier(actor, ability, &"revive_percent_max_hp")
 		and target_unit.is_alive()
-	):
-		return false
-	if (
-		target_unit != null
-		and _ability_has_modifier(actor, ability, &"requires_debuff")
-		and not _target_has_debuff(target_unit)
 	):
 		return false
 	if (
@@ -939,13 +933,6 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				and not _passive_has_modifier(actor, &"ignore_stealth")
 			):
 				return false
-
-	if _ability_has_modifier(actor, ability, &"target_unacted_only"):
-		var dust_target := target_unit
-		if dust_target == null:
-			dust_target = board.get_unit_at(action.target_coord)
-		if dust_target == null or dust_target.turn_action_used:
-			return false
 
 	if actor.has_status(GameEnums.StatusType.STAGGER) or actor.has_status(GameEnums.StatusType.SILENCE):
 		return false
@@ -1062,6 +1049,8 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	if motion_requires_occupied_target(actor, ability):
 		if not _occupied_push_target_valid(board, actor, ability, action.target_coord):
 			return false
+	if not _target_filters_allow(board, actor, ability, action, target_unit):
+		return false
 	if not MercenarySystems.can_use_extra(board, actor, ability, action):
 		return false
 	if not BeastRiderSystems.can_use_extra(board, actor, ability, action):
@@ -1585,6 +1574,147 @@ static func ally_corpse_at(board: BoardState, actor: UnitState, coord: Vector2i)
 		):
 			return unit
 	return null
+
+
+static func ability_occupant_is(
+	actor: UnitState,
+	ability: AbilityData,
+	occupant: GameEnums.ModuleTargetFilterOccupant,
+) -> bool:
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if (
+			module != null
+			and module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT
+			and module.target_filter_occupant == occupant
+		):
+			return true
+	return false
+
+
+static func unit_passes_ability_filters(
+	actor: UnitState,
+	ability: AbilityData,
+	target: UnitState,
+) -> bool:
+	if actor == null or ability == null:
+		return true
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
+			continue
+		if module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT:
+			continue
+		if not _unit_passes_module_filter(actor, module, target):
+			return false
+	return true
+
+
+static func _target_filters_allow(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	action: TimelineAction,
+	target_unit: UnitState,
+) -> bool:
+	if actor == null or ability == null or action == null:
+		return true
+	var resolved: UnitState = target_unit
+	if resolved == null and board != null:
+		resolved = board.get_unit_at(action.target_coord)
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
+			continue
+		if module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT:
+			if not _occupant_filter_allows(board, actor, ability, action, module, resolved):
+				return false
+			continue
+		if module.target_shape != GameEnums.TargetShape.SINGLE:
+			continue
+		if resolved == null:
+			return false
+		if not _unit_passes_module_filter(actor, module, resolved):
+			return false
+	return true
+
+
+static func _occupant_filter_allows(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	action: TimelineAction,
+	module: AbilityModule,
+	target_unit: UnitState,
+) -> bool:
+	match module.target_filter_occupant:
+		GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT:
+			return (
+				target_unit != null
+				and target_unit.is_alive()
+				and target_unit.team == actor.team
+				and target_unit.definition != null
+				and target_unit.definition.is_construct
+			)
+		GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT:
+			return EngineerSystems.can_use_recall(board, actor, action.target_coord)
+		GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE:
+			return BeastRiderSystems.has_legal_fetch_target(board, actor, action, ability)
+		GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
+			return (
+				target_unit != null
+				and not target_unit.is_alive()
+				and target_unit.team == actor.team
+			)
+		GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY:
+			var dragged: UnitState = board.get_unit_by_id(
+				int(actor.passive_flags.get("beast_drag_target_id", -1))
+			)
+			if dragged == null or not dragged.is_alive():
+				return false
+			if action.target_unit_id >= 0 and action.target_unit_id != dragged.id:
+				return false
+			return target_unit == null or target_unit.id == dragged.id
+		_:
+			return true
+
+
+static func _unit_passes_module_filter(
+	actor: UnitState,
+	module: AbilityModule,
+	target: UnitState,
+) -> bool:
+	if target == null:
+		return false
+	match module.target_filter:
+		GameEnums.ModuleTargetFilter.HP:
+			if module.target_filter_hp == GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP:
+				return target.health.current_hp < actor.health.current_hp
+			if target.health == null or target.health.max_hp <= 0:
+				return false
+			return (
+				float(target.health.current_hp) / float(target.health.max_hp)
+				< float(module.target_filter_hp_pct) / 100.0
+			)
+		GameEnums.ModuleTargetFilter.STATUS:
+			match module.target_filter_status_mode:
+				GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF:
+					return _target_has_debuff(target)
+				GameEnums.ModuleTargetFilterStatus.NOT_ACTED:
+					return not target.turn_action_used
+				GameEnums.ModuleTargetFilterStatus.SPECIFIC:
+					if (
+						module.target_filter_status != GameEnums.StatusType.NONE
+						and target.has_status(module.target_filter_status)
+					):
+						return true
+					return (
+						module.target_filter_status_or != GameEnums.StatusType.NONE
+						and target.has_status(module.target_filter_status_or)
+					)
+				_:
+					return false
+		GameEnums.ModuleTargetFilter.STAT:
+			return int(target.health.max_hp / 5) <= actor.current_strength
+		_:
+			return true
 
 
 static func target_passes_mode(actor: UnitState, ability: AbilityData, target: UnitState) -> bool:
@@ -4835,7 +4965,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					}))
 					return
 				coord = furthest
-			if effect.modifiers.get("ally_corpse", false):
+			if ability_occupant_is(actor, action.ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE):
 				var corpse: UnitState = target
 				if corpse == null and action.target_unit_id >= 0:
 					corpse = board.get_unit_by_id(action.target_unit_id)
@@ -5025,10 +5155,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					return
 				if effect.modifiers.get("from_behind_only", false) and not _is_backstab(actor, target):
 					return
-				if (
-					effect.modifiers.get("lower_hp_only", false)
-					and target.health.current_hp >= actor.health.current_hp
-				):
+				if not unit_passes_ability_filters(actor, action.ability, target):
 					return
 				if effect.modifiers.get("purge_buffs", false):
 					purge_unit(target, events)

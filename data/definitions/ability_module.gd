@@ -37,6 +37,17 @@ extends Resource
 @export var keywords: Array[AbilityKeyword] = []
 @export var layers: Array[AbilityLayer] = []
 @export var gate: GameEnums.ModuleGate = GameEnums.ModuleGate.ALWAYS
+## Legal-click category (ability-data.md §2.5). Gate is “does this module run.”
+@export var target_filter: GameEnums.ModuleTargetFilter = GameEnums.ModuleTargetFilter.NONE
+@export var target_filter_hp: GameEnums.ModuleTargetFilterHp = GameEnums.ModuleTargetFilterHp.BELOW_PCT
+## Used when target_filter == HP and target_filter_hp == BELOW_PCT. 50 means current HP < 50% of max.
+@export var target_filter_hp_pct: int = 0
+@export var target_filter_status_mode: GameEnums.ModuleTargetFilterStatus = GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF
+@export var target_filter_status: GameEnums.StatusType = GameEnums.StatusType.NONE
+## Optional second status; target may have either (BLEED or POISON).
+@export var target_filter_status_or: GameEnums.StatusType = GameEnums.StatusType.NONE
+@export var target_filter_stat: GameEnums.ModuleTargetFilterStat = GameEnums.ModuleTargetFilterStat.CON_LEQ_CASTER_STR
+@export var target_filter_occupant: GameEnums.ModuleTargetFilterOccupant = GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT
 
 ## Optional per-module anim override; AUTO inherits skill header.
 @export var presentation_anim: GameEnums.PresentationAnim = GameEnums.PresentationAnim.AUTO
@@ -91,3 +102,45 @@ func resolved_hit_count() -> int:
 	if primary_type != GameEnums.EffectType.DAMAGE:
 		return 1
 	return maxi(1, hit_count)
+
+
+func set_condition_hp_below_pct(pct: int) -> void:
+	target_filter = GameEnums.ModuleTargetFilter.HP
+	target_filter_hp = GameEnums.ModuleTargetFilterHp.BELOW_PCT
+	target_filter_hp_pct = pct
+
+
+func set_condition_hp_below_caster() -> void:
+	target_filter = GameEnums.ModuleTargetFilter.HP
+	target_filter_hp = GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP
+	target_filter_hp_pct = 0
+
+
+func set_condition_any_debuff() -> void:
+	target_filter = GameEnums.ModuleTargetFilter.STATUS
+	target_filter_status_mode = GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF
+
+
+func set_condition_status(
+	status: GameEnums.StatusType,
+	status_or: GameEnums.StatusType = GameEnums.StatusType.NONE,
+) -> void:
+	target_filter = GameEnums.ModuleTargetFilter.STATUS
+	target_filter_status_mode = GameEnums.ModuleTargetFilterStatus.SPECIFIC
+	target_filter_status = status
+	target_filter_status_or = status_or
+
+
+func set_condition_not_acted() -> void:
+	target_filter = GameEnums.ModuleTargetFilter.STATUS
+	target_filter_status_mode = GameEnums.ModuleTargetFilterStatus.NOT_ACTED
+
+
+func set_condition_con_leq_caster_str() -> void:
+	target_filter = GameEnums.ModuleTargetFilter.STAT
+	target_filter_stat = GameEnums.ModuleTargetFilterStat.CON_LEQ_CASTER_STR
+
+
+func set_condition_occupant(occupant: GameEnums.ModuleTargetFilterOccupant) -> void:
+	target_filter = GameEnums.ModuleTargetFilter.OCCUPANT
+	target_filter_occupant = occupant

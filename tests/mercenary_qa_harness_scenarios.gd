@@ -203,7 +203,16 @@ static func run_executioners_blade(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_mercenary(board, 1, Vector2i(2, 3), H.mercenary_with_ability(&"mercenary_executioners_blade"))
 	H.place_dummy(board, 2, Vector2i(3, 3))
+	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_executioners_blade")
+	H.assert_true(
+		failures, "executioners_blade/healthy_illegal",
+		not AbilitySystem.can_use(board, H.plan_ability(1, skill, Vector2i(3, 3), 2)),
+	)
 	H.unit_on_board(board, 2).health.current_hp = 2
+	H.assert_true(
+		failures, "executioners_blade/wounded_legal",
+		AbilitySystem.can_use(board, H.plan_ability(1, skill, Vector2i(3, 3), 2)),
+	)
 	var action: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_executioners_blade")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, action, Vector2i(3, 3), 2))

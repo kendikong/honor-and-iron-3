@@ -556,7 +556,7 @@ static func _data_contract(
 		&"engineer_recall":
 			_assert(failures, "%s/data/mp_cost" % ability_id, ability.movement_point_cost == 3)
 			_assert(failures, "%s/data/teleport" % ability_id, module.primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO)
-			_assert(failures, "%s/data/recall_modifier" % ability_id, module.legacy_modifiers.has(&"recall_adjacent_construct"))
+			_assert(failures, "%s/data/recall_modifier" % ability_id, module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT and module.target_filter_occupant == GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT)
 		&"engineer_dismantle":
 			_assert(failures, "%s/data/amount" % ability_id, module.amount == 3)
 			_assert(failures, "%s/data/range" % ability_id, module.min_range == 1 and module.max_range == 1)

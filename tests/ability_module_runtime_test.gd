@@ -472,6 +472,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	keyword.keyword_id = GameEnums.AbilityKeywordId.PIERCE
 	keyword.amount = 1
 	module.keywords = [keyword]
+	module.set_condition_hp_below_pct(50)
 	var layer: AbilityLayer = AbilityLayer.new()
 	layer.effect = EffectData.new()
 	layer.effect.type = GameEnums.EffectType.DAMAGE
@@ -510,6 +511,9 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored_module.targeting_flags != module.targeting_flags
 		or restored_module.keywords.size() != 1
 		or restored_module.layers.size() != 1
+		or restored_module.target_filter != GameEnums.ModuleTargetFilter.HP
+		or restored_module.target_filter_hp != GameEnums.ModuleTargetFilterHp.BELOW_PCT
+		or restored_module.target_filter_hp_pct != 50
 		or restored.upgraded_modules.size() != 1
 		or restored.upgraded_modules[0].amount != upgraded_module.amount
 		or restored.upgraded_primary_value != authored.upgraded_primary_value

@@ -554,15 +554,18 @@ static func _tactical_retreat() -> AbilityData:
 
 
 static func _executioners_blade() -> AbilityData:
-	return _attack(
+	var ability := _attack(
 		&"mercenary_executioners_blade",
 		"Executioner's Blade",
 		5,
 		1,
 		"Threshold becomes below 75% HP; on kill, gain 1 AP.",
-		{"target_hp_below_pct": 0.50},
-		{"target_hp_below_pct": 0.75, "kill_grant_ap": 1},
+		{},
+		{"kill_grant_ap": 1},
 	)
+	ability.modules[0].set_condition_hp_below_pct(50)
+	ability.upgraded_modules[0].set_condition_hp_below_pct(75)
+	return ability
 
 
 static func _precision_strike() -> AbilityData:

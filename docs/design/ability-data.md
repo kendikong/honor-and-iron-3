@@ -277,16 +277,16 @@ Authors never pick “same as module N”. If two effects share one aim, the sec
 - Player aims a **unit** only; empty tile = invalid.
 - Checkboxes: **ally valid?** / **enemy valid?** / **self valid?** as applicable.
 
-**Target filters** (validity checklist on the same module — add rows as needed):
+**Target filters** (validity checklist on the same module — **Condition** category + sub-option, not a long niche list):
 
-| Filter examples | Bible use |
-|-----------------|-----------|
-| HP below % | Executioner’s Blade |
-| Has at least one debuff | Bestial Roar, Terrify |
-| Target current HP &lt; caster Max HP | Hex |
-| Already damaged | Swift Strike [+] |
-| Has status X | vs BLEED, etc. |
-| Not acted yet this round | Precision Strike style |
+| Condition | Sub-option | Bible use |
+|-----------|------------|-----------|
+| HP | Below % of max · Below caster HP | Executioner’s Blade, Hex (below 100%), Intimidate |
+| Status | Any debuff · Specific status (and optional OR) · Not acted | Terrify, Savage Bite, Amnesia Dust |
+| Stat | Target CON ≤ caster STR | Feral Drag |
+| Occupant | Ally construct · Adjacent construct · Item or corpse · Ally corpse · Dragged enemy | Detonate / Overdrive, Recall, Fetch, Ancestral Spirit, Maul |
+
+Add **sub-options** when a new Bible click-lock appears. Do **not** add a new top-level Condition for one skill.
 
 ### 2.6 Effect values + duration + scaling
 

@@ -296,9 +296,9 @@ static func _feral_drag() -> AbilityData:
 	)
 	drag.legacy_modifiers = {
 		"feral_drag": true,
-		"target_constitution_at_most_strength": true,
 		"drag_remaining_movement": true,
 	}
+	drag.set_condition_con_leq_caster_str()
 	var upgraded := _clone([drag])
 	upgraded[0].legacy_modifiers["redirect_incoming_damage"] = true
 	return _ability(
@@ -315,9 +315,10 @@ static func _maul() -> AbilityData:
 		GameEnums.StatType.PHYSICAL,
 	)
 	hit.legacy_modifiers = {
-		"maul_dragged_enemy": true, "drop_adjacent": true,
+		"drop_adjacent": true,
 		"does_not_consume_action_slot": true, "limit_once_per_turn": true,
 	}
+	hit.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY)
 	var upgraded := _clone([hit])
 	upgraded[0].legacy_modifiers["drop_trap_damage_multiplier"] = 2.0
 	var ability := _ability(
@@ -399,7 +400,7 @@ static func _intimidate() -> AbilityData:
 	)
 	stagger.status_type = GameEnums.StatusType.STAGGER
 	stagger.status_duration = 1
-	stagger.legacy_modifiers["lower_hp_only"] = true
+	stagger.set_condition_hp_below_caster()
 	var upgraded := _clone([stagger])
 	upgraded[0].legacy_modifiers["purge_buffs"] = true
 	return _ability(
@@ -417,7 +418,8 @@ static func _fetch() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ALLY
 			| GameEnums.TargetingFlags.ENEMY,
 	)
-	fetch.legacy_modifiers = {"fetch_item_or_corpse": true}
+	fetch.legacy_modifiers = {}
+	fetch.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE)
 	var upgraded := _clone([fetch])
 	upgraded[0].legacy_modifiers["pull_light_ally"] = 2
 	return _ability(
@@ -435,7 +437,8 @@ static func _savage_bite() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	bite.legacy_modifiers = {"requires_bleed_or_poison": true}
+	bite.legacy_modifiers = {}
+	bite.set_condition_status(GameEnums.StatusType.BLEED, GameEnums.StatusType.POISON)
 	var upgraded := _clone([bite])
 	upgraded[0].legacy_modifiers["on_kill_shield"] = 2
 	return _ability(

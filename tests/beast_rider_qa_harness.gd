@@ -39,14 +39,14 @@ const PASSIVE_ROWS: Array[Dictionary] = [
 const ABILITY_CONTRACTS: Dictionary = {
 	&"beast_reposition": {"types": [GameEnums.EffectType.TELEPORT_CASTER], "amount": 2, "max_range": 1, "keys": [&"reposition_opposite_side", &"reposition_movement_cost"]},
 	&"beast_pounce": {"types": [GameEnums.EffectType.MOVE_TOWARD], "amount": 3, "max_range": 3, "keys": [&"pounce_land_adjacent", &"landing_push"]},
-	&"beast_feral_drag": {"types": [GameEnums.EffectType.PULL], "amount": 0, "max_range": 1, "keys": [&"feral_drag", &"target_constitution_at_most_strength", &"drag_remaining_movement"]},
-	&"beast_maul": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"maul_dragged_enemy", &"drop_adjacent", &"drop_trap_damage_multiplier"]},
+	&"beast_feral_drag": {"types": [GameEnums.EffectType.PULL], "amount": 0, "max_range": 1, "keys": [&"feral_drag", &"drag_remaining_movement"], "filter": GameEnums.ModuleTargetFilter.STAT, "filter_stat": GameEnums.ModuleTargetFilterStat.CON_LEQ_CASTER_STR},
+	&"beast_maul": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "keys": [&"drop_adjacent", &"drop_trap_damage_multiplier"], "filter": GameEnums.ModuleTargetFilter.OCCUPANT, "filter_occupant": GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY},
 	&"beast_bestial_roar": {"types": [GameEnums.EffectType.PUSH], "amount": 2, "max_range": 3, "shape": GameEnums.TargetShape.CONE, "shape_size": 3, "keys": [&"status_requires_debuff", &"cone_all_targets"]},
 	&"beast_raking_claws": {"types": [GameEnums.EffectType.DAMAGE], "amount": 2, "max_range": 1, "shape": GameEnums.TargetShape.ARC, "keys": [&"bleed_weapon", &"pull_before_attack"]},
 	&"beast_rest_recover": {"types": [GameEnums.EffectType.HEAL], "amount": 1, "keys": [&"cost_all_movement"]},
-	&"beast_intimidate": {"types": [GameEnums.EffectType.ADD_STATUS], "amount": 1, "shape": GameEnums.TargetShape.AOE_CROSS, "shape_size": 2, "keys": [&"lower_hp_only", &"purge_buffs"]},
-	&"beast_fetch": {"types": [GameEnums.EffectType.PULL], "amount": 1, "max_range": 4, "keys": [&"fetch_item_or_corpse", &"pull_light_ally"]},
-	&"beast_savage_bite": {"types": [GameEnums.EffectType.DAMAGE], "amount": 4, "max_range": 1, "keys": [&"requires_bleed_or_poison", &"on_kill_shield"]},
+	&"beast_intimidate": {"types": [GameEnums.EffectType.ADD_STATUS], "amount": 1, "shape": GameEnums.TargetShape.AOE_CROSS, "shape_size": 2, "keys": [&"purge_buffs"], "filter": GameEnums.ModuleTargetFilter.HP, "filter_hp": GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP},
+	&"beast_fetch": {"types": [GameEnums.EffectType.PULL], "amount": 1, "max_range": 4, "keys": [&"pull_light_ally"], "filter": GameEnums.ModuleTargetFilter.OCCUPANT, "filter_occupant": GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE},
+	&"beast_savage_bite": {"types": [GameEnums.EffectType.DAMAGE], "amount": 4, "max_range": 1, "keys": [&"on_kill_shield"], "filter": GameEnums.ModuleTargetFilter.STATUS, "filter_status_mode": GameEnums.ModuleTargetFilterStatus.SPECIFIC},
 	&"beast_run_down": {"types": [GameEnums.EffectType.DASH], "amount": 3, "max_range": 3, "keys": [&"run_down_pass_adjacent_push", &"run_down_push_bleed_weapon", &"trample_atk"]},
 	&"beast_thrash": {"types": [GameEnums.EffectType.DAMAGE], "amount": 1, "max_range": 1, "hit_count": 3, "keys": [&"bleed_weapon"]},
 	&"beast_defensive_posture": {"types": [GameEnums.EffectType.ADD_STATUS_SELF], "amount": 1, "keys": [&"intercept_push_attacker"]},
@@ -116,6 +116,36 @@ static func _run_ability_contract(ability: AbilityData, failures: Array[String])
 			failures,
 			"factory/contract/%s/%s" % [ability.id, key],
 			_module_has_key(ability.modules, key) or _module_has_key(ability.upgraded_modules, key),
+		)
+	if contract.has("filter"):
+		_assert(
+			failures,
+			"factory/contract/%s/filter" % ability.id,
+			primary.target_filter == int(contract["filter"]),
+		)
+	if contract.has("filter_hp"):
+		_assert(
+			failures,
+			"factory/contract/%s/filter_hp" % ability.id,
+			primary.target_filter_hp == int(contract["filter_hp"]),
+		)
+	if contract.has("filter_stat"):
+		_assert(
+			failures,
+			"factory/contract/%s/filter_stat" % ability.id,
+			primary.target_filter_stat == int(contract["filter_stat"]),
+		)
+	if contract.has("filter_occupant"):
+		_assert(
+			failures,
+			"factory/contract/%s/filter_occupant" % ability.id,
+			primary.target_filter_occupant == int(contract["filter_occupant"]),
+		)
+	if contract.has("filter_status_mode"):
+		_assert(
+			failures,
+			"factory/contract/%s/filter_status_mode" % ability.id,
+			primary.target_filter_status_mode == int(contract["filter_status_mode"]),
 		)
 
 

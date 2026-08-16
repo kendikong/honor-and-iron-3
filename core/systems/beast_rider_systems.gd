@@ -102,29 +102,9 @@ static func can_use_extra(
 	if board == null or actor == null or ability == null or action == null:
 		return false
 	var modules := active_module_modifiers(actor, ability)
-	if modules.get("target_constitution_at_most_strength", false):
-		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
-		if target == null or int(target.health.max_hp / 5) > actor.current_strength:
-			return false
-	if modules.get("requires_bleed_or_poison", false):
-		var target: UnitState = AbilitySystem.resolve_action_target(board, action)
-		if target == null or (
-			not target.has_status(GameEnums.StatusType.BLEED)
-			and not target.has_status(GameEnums.StatusType.POISON)
-		):
-			return false
 	if modules.get("feral_drag", false):
 		var drag_range := int(passive_value(actor, &"grapple_range", &"upgraded_grapple_range", 1))
 		if GridSystem.manhattan(actor.position, action.target_coord) > drag_range:
-			return false
-	if modules.get("maul_dragged_enemy", false):
-		var dragged := board.get_unit_by_id(int(actor.passive_flags.get("beast_drag_target_id", -1)))
-		if dragged == null or not dragged.is_alive():
-			return false
-		if action.target_unit_id >= 0 and action.target_unit_id != dragged.id:
-			return false
-	if modules.get("fetch_item_or_corpse", false):
-		if not _fetch_has_legal_target(board, actor, action, modules):
 			return false
 	return true
 
@@ -786,18 +766,21 @@ static func _nearest_bleed_distance(board: BoardState, actor: UnitState, from: V
 	return best
 
 
-static func _fetch_has_legal_target(
+static func has_legal_fetch_target(
 	board: BoardState,
 	actor: UnitState,
 	action: TimelineAction,
-	mods: Dictionary,
+	ability: AbilityData,
 ) -> bool:
+	if board == null or actor == null or action == null:
+		return false
 	var coord := action.target_coord
 	if board.items.find(coord) >= 0:
 		return true
 	var occupant := board.get_unit_at(coord)
 	if occupant != null and not occupant.is_alive():
 		return true
+	var mods: Dictionary = active_module_modifiers(actor, ability)
 	if int(mods.get("pull_light_ally", 0)) > 0:
 		var ally: UnitState = AbilitySystem.resolve_action_target(board, action)
 		if (

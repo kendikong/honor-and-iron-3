@@ -1695,6 +1695,28 @@ func _apply_module_field_greying(
 	_grey_row(rows.get("def_debuff", []), module.primary_type != GameEnums.EffectType.DAMAGE)
 	_grey_row(rows.get("shape", []), not ModuleAuthoringRules.module_uses_shape(module))
 	_grey_row(rows.get("shape_size", []), not ModuleAuthoringRules.module_uses_shape_size(module))
+	_grey_row(rows.get("condition_hp", []), not ModuleAuthoringRules.module_uses_target_filter_hp(module))
+	_grey_row(
+		rows.get("condition_hp_pct", []),
+		not ModuleAuthoringRules.module_uses_target_filter_hp_pct(module),
+	)
+	_grey_row(
+		rows.get("condition_status", []),
+		not ModuleAuthoringRules.module_uses_target_filter_status(module),
+	)
+	_grey_row(
+		rows.get("condition_status_type", []),
+		not ModuleAuthoringRules.module_uses_target_filter_status_type(module),
+	)
+	_grey_row(
+		rows.get("condition_status_or", []),
+		not ModuleAuthoringRules.module_uses_target_filter_status_type(module),
+	)
+	_grey_row(rows.get("condition_stat", []), not ModuleAuthoringRules.module_uses_target_filter_stat(module))
+	_grey_row(
+		rows.get("condition_occupant", []),
+		not ModuleAuthoringRules.module_uses_target_filter_occupant(module),
+	)
 
 
 func _refresh_module_field_greying(ability: AbilityData) -> void:
@@ -1880,6 +1902,65 @@ func _build_module_fields(
 			module.gate = v
 			changed.call(),
 		ModuleAuthoringRules.excluded_module_gates(module),
+	)
+	grey_rows["condition"] = _bind_enum(
+		grid, "Condition", GameEnums.ModuleTargetFilter, module.target_filter, func(v: int) -> void:
+			module.target_filter = v
+			changed.call()
+			_refresh_module_field_greying(ability)
+	)
+	grey_rows["condition_hp"] = _bind_enum(
+		grid, "HP Rule", GameEnums.ModuleTargetFilterHp, module.target_filter_hp, func(v: int) -> void:
+			module.target_filter_hp = v
+			changed.call()
+			_refresh_module_field_greying(ability)
+	)
+	grey_rows["condition_hp_pct"] = _bind_int(
+		grid, "HP %", module.target_filter_hp_pct, func(v: int) -> void:
+			module.target_filter_hp_pct = v
+			changed.call()
+	, 1)
+	grey_rows["condition_status"] = _bind_enum(
+		grid,
+		"Status Rule",
+		GameEnums.ModuleTargetFilterStatus,
+		module.target_filter_status_mode,
+		func(v: int) -> void:
+			module.target_filter_status_mode = v
+			changed.call()
+			_refresh_module_field_greying(ability)
+	)
+	grey_rows["condition_status_type"] = _bind_enum(
+		grid,
+		"Status",
+		GameEnums.StatusType,
+		module.target_filter_status,
+		func(v: int) -> void:
+			module.target_filter_status = v
+			changed.call(),
+	)
+	grey_rows["condition_status_or"] = _bind_enum(
+		grid,
+		"Status OR",
+		GameEnums.StatusType,
+		module.target_filter_status_or,
+		func(v: int) -> void:
+			module.target_filter_status_or = v
+			changed.call(),
+	)
+	grey_rows["condition_stat"] = _bind_enum(
+		grid, "Stat Rule", GameEnums.ModuleTargetFilterStat, module.target_filter_stat, func(v: int) -> void:
+			module.target_filter_stat = v
+			changed.call()
+	)
+	grey_rows["condition_occupant"] = _bind_enum(
+		grid,
+		"Occupant",
+		GameEnums.ModuleTargetFilterOccupant,
+		module.target_filter_occupant,
+		func(v: int) -> void:
+			module.target_filter_occupant = v
+			changed.call()
 	)
 	_bind_enum(grid, "Presentation", GameEnums.PresentationAnim, module.presentation_anim, func(v: int) -> void:
 		module.presentation_anim = v

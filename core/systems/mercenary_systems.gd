@@ -130,10 +130,6 @@ static func can_use_extra(
 	if actor == null or ability == null or board == null:
 		return true
 	var mods: Dictionary = _ability_legacy_mods(actor, ability)
-	if mods.has("target_hp_below_pct"):
-		var target: UnitState = _resolve_target_unit(board, action)
-		if target == null or not _hp_below_threshold(target, float(mods["target_hp_below_pct"])):
-			return false
 	if mods.get("pullback", false):
 		var pulled: UnitState = _pullback_front_unit(board, actor.position, action.target_coord)
 		if pulled == null or not pulled.is_alive() or pulled.team != actor.team or pulled.id == actor.id:

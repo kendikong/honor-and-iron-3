@@ -419,7 +419,6 @@ static func _throat_slit() -> AbilityData:
 
 static func _amnesia_dust() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 0, 1, 2, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	base.legacy_modifiers["target_unacted_only"] = true
 	var confusion := DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)
 	confusion.modifiers["next_turn"] = true
 	base.layers = [
@@ -427,6 +426,7 @@ static func _amnesia_dust() -> AbilityData:
 		_layer(confusion),
 	]
 	base.legacy_modifiers["confusion_next_turn"] = true
+	base.set_condition_not_acted()
 	var upgraded := _clone([base])
 	upgraded[0].layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.POISON, 1)))
 	return _ability(

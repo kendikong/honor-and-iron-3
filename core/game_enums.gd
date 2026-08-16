@@ -349,6 +349,39 @@ enum ModuleGate {
 	IF_NO_MOVE_THIS_TURN,
 }
 
+## Click / aim validity category (ability-data.md §2.5). Not a Gate.
+## Sub-options live on AbilityModule (HP rule, status rule, stat rule, occupant).
+enum ModuleTargetFilter {
+	NONE,
+	HP,
+	STATUS,
+	STAT,
+	OCCUPANT,
+}
+
+enum ModuleTargetFilterHp {
+	BELOW_PCT,
+	BELOW_CASTER_HP,
+}
+
+enum ModuleTargetFilterStatus {
+	ANY_DEBUFF,
+	SPECIFIC,
+	NOT_ACTED,
+}
+
+enum ModuleTargetFilterStat {
+	CON_LEQ_CASTER_STR,
+}
+
+enum ModuleTargetFilterOccupant {
+	ALLY_CONSTRUCT,
+	ADJACENT_CONSTRUCT,
+	ITEM_OR_CORPSE,
+	ALLY_CORPSE,
+	DRAGGED_ENEMY,
+}
+
 ## Layer activation condition (ability-data.md §5).
 enum LayerCondition {
 	AT_RESOLUTION,

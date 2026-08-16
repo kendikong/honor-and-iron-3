@@ -277,6 +277,56 @@ static func status_player_tooltip(st: GameEnums.StatusType) -> String:
 			return GameEnums.StatusType.keys()[st].capitalize().replace("_", " ")
 
 
+## Derived click-condition line from the first authored module filter.
+static func ability_target_filter_line(ability: AbilityData, unit: UnitState = null) -> String:
+	if ability == null:
+		return ""
+	var upgraded: bool = unit != null and unit.is_ability_upgraded(ability.id)
+	var modules: Array[AbilityModule] = ability.get_active_modules(upgraded)
+	for module: AbilityModule in modules:
+		if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
+			continue
+		match module.target_filter:
+			GameEnums.ModuleTargetFilter.HP:
+				if module.target_filter_hp == GameEnums.ModuleTargetFilterHp.BELOW_CASTER_HP:
+					return "TARGET HP MUST BE BELOW CASTER HP"
+				return "TARGET HP MUST BE <%d%%" % module.target_filter_hp_pct
+			GameEnums.ModuleTargetFilter.STATUS:
+				match module.target_filter_status_mode:
+					GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF:
+						return "TARGET MUST HAVE A DEBUFF"
+					GameEnums.ModuleTargetFilterStatus.NOT_ACTED:
+						return "TARGET MUST NOT HAVE ACTED"
+					_:
+						var names: PackedStringArray = PackedStringArray()
+						if module.target_filter_status != GameEnums.StatusType.NONE:
+							names.append(GameEnums.StatusType.keys()[module.target_filter_status])
+						if module.target_filter_status_or != GameEnums.StatusType.NONE:
+							names.append(GameEnums.StatusType.keys()[module.target_filter_status_or])
+						if names.is_empty():
+							return "TARGET MUST HAVE A STATUS"
+						return "TARGET MUST HAVE %s" % " OR ".join(names)
+			GameEnums.ModuleTargetFilter.STAT:
+				return "TARGET CON MUST BE ≤ CASTER STR"
+			GameEnums.ModuleTargetFilter.OCCUPANT:
+				match module.target_filter_occupant:
+					GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT:
+						return "TARGET MUST BE AN ALLY CONSTRUCT"
+					GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT:
+						return "TARGET TILE MUST BE ADJACENT TO AN ALLY CONSTRUCT"
+					GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE:
+						return "TARGET MUST BE AN ITEM OR CORPSE"
+					GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
+						return "TARGET MUST BE AN ALLY CORPSE"
+					GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY:
+						return "TARGET MUST BE THE DRAGGED ENEMY"
+					_:
+						return ""
+			_:
+				return ""
+	return ""
+
+
 ## Master Bible skill lines (class_abilities.txt) — overrides generated effect text when present.
 static func bible_ability_effect_line(ability: AbilityData) -> String:
 	if ability == null:
@@ -691,6 +741,22 @@ static func module_to_dict(
 		out["spawn_unit_id"] = String(src.spawn_unit_id)
 	if src.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N:
 		out["aim_module_index"] = src.aim_module_index
+	if src.target_filter != GameEnums.ModuleTargetFilter.NONE:
+		out["target_filter"] = src.target_filter
+		if _ModuleAuthoringRules.module_uses_target_filter_hp(src):
+			out["target_filter_hp"] = src.target_filter_hp
+			if _ModuleAuthoringRules.module_uses_target_filter_hp_pct(src):
+				out["target_filter_hp_pct"] = src.target_filter_hp_pct
+		if _ModuleAuthoringRules.module_uses_target_filter_status(src):
+			out["target_filter_status_mode"] = src.target_filter_status_mode
+			if _ModuleAuthoringRules.module_uses_target_filter_status_type(src):
+				out["target_filter_status"] = src.target_filter_status
+				if src.target_filter_status_or != GameEnums.StatusType.NONE:
+					out["target_filter_status_or"] = src.target_filter_status_or
+		if _ModuleAuthoringRules.module_uses_target_filter_stat(src):
+			out["target_filter_stat"] = src.target_filter_stat
+		if _ModuleAuthoringRules.module_uses_target_filter_occupant(src):
+			out["target_filter_occupant"] = src.target_filter_occupant
 	return out
 
 
@@ -725,6 +791,18 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.aim_module_index = int(data.get("aim_module_index", dst.aim_module_index))
 	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
 	dst.gate = int(data.get("gate", dst.gate))
+	dst.target_filter = int(data.get("target_filter", dst.target_filter))
+	dst.target_filter_hp = int(data.get("target_filter_hp", dst.target_filter_hp))
+	dst.target_filter_hp_pct = int(data.get("target_filter_hp_pct", dst.target_filter_hp_pct))
+	dst.target_filter_status_mode = int(
+		data.get("target_filter_status_mode", dst.target_filter_status_mode)
+	)
+	dst.target_filter_status = int(data.get("target_filter_status", dst.target_filter_status))
+	dst.target_filter_status_or = int(
+		data.get("target_filter_status_or", dst.target_filter_status_or)
+	)
+	dst.target_filter_stat = int(data.get("target_filter_stat", dst.target_filter_stat))
+	dst.target_filter_occupant = int(data.get("target_filter_occupant", dst.target_filter_occupant))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	dst.bonus_if_adjacent_at_cast = int(
 		data.get("bonus_if_adjacent_at_cast", dst.bonus_if_adjacent_at_cast)

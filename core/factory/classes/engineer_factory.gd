@@ -245,7 +245,7 @@ static func _recall() -> AbilityData:
 		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 99,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE,
 	)
-	base.legacy_modifiers["recall_adjacent_construct"] = true
+	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT)
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["arrival_overclock"] = true
 	return _movement(
@@ -427,7 +427,8 @@ static func _manual_detonation() -> AbilityData:
 		GameEnums.EffectType.RANGED_EXPLODE, 2, 1, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers = {"manual_detonation": true, "construct_target_only": true}
+	base.legacy_modifiers = {"manual_detonation": true}
+	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["refund_scrap"] = 1
 	var ability := _ability(&"engineer_manual_detonation", "Manual Detonation",
@@ -445,8 +446,9 @@ static func _overdrive_injection() -> AbilityData:
 	)
 	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 1
-	base.legacy_modifiers = {"overdrive_injection": true, "construct_target_only": true,
+	base.legacy_modifiers = {"overdrive_injection": true,
 		"construct_unmitigated_damage": 2}
+	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
 	var upgraded := _clone([base])
 	upgraded[0].legacy_modifiers["refund_scrap_on_construct_death"] = 1
 	return _ability(&"engineer_overdrive_injection", "Overdrive Injection",

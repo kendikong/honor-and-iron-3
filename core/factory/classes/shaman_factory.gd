@@ -256,7 +256,8 @@ static func _hex() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.WEAKEN
 	base.status_duration = 1
-	base.legacy_modifiers = {"hex": true, "wither": true, "requires_missing_hp": true, "boss_damage_reduction": 0.25}
+	base.legacy_modifiers = {"hex": true, "wither": true, "boss_damage_reduction": 0.25}
+	base.set_condition_hp_below_pct(100)
 	var up := DataLibrary._duplicate_modules([base])
 	up[0].legacy_modifiers["hex_vulnerable"] = true
 	return _ability(&"shaman_hex", "Hex", [base], up, GameEnums.TargetingFlags.ENEMY,
@@ -279,7 +280,8 @@ static func _terrify() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 2, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.FEAR
 	base.status_duration = 1
-	base.legacy_modifiers = {"terrify": true, "requires_debuff": true}
+	base.legacy_modifiers = {"terrify": true}
+	base.set_condition_any_debuff()
 	var up := DataLibrary._duplicate_modules([base])
 	up[0].legacy_modifiers["boss_fallback_purge_shield"] = true
 	up[0].legacy_modifiers["boss_fallback_vulnerable"] = true
@@ -312,14 +314,16 @@ static func _bone_spear() -> AbilityData:
 
 static func _ancestral_spirit() -> AbilityData:
 	var base := _spawn(&"ghost_ally", 1, {
-		"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true, "ghost_hp_pct": 0.25,
+		"ghost_duration": 1, "echo_next_cast": true, "ghost_hp_pct": 0.25,
 	})
 	base.targeting_flags = GameEnums.TargetingFlags.ALLY
+	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE)
 	var up := _spawn(&"ghost_ally", 1, {
-		"ally_corpse": true, "ghost_duration": 1, "echo_next_cast": true,
+		"ghost_duration": 1, "echo_next_cast": true,
 		"echo_upgraded": true, "ghost_hp_pct": 0.25,
 	})
 	up.targeting_flags = GameEnums.TargetingFlags.ALLY
+	up.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE)
 	return _ability(&"shaman_ancestral_spirit", "Ancestral Spirit", [base], [up],
 		GameEnums.TargetingFlags.ALLY, "Target an ally corpse in RANGE 1; summon a Ghost Ally at 25% caster HP for 1 turn.")
 

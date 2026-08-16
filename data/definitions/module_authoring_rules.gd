@@ -93,6 +93,36 @@ static func module_uses_hit_count(module: AbilityModule) -> bool:
 	return module != null and module.primary_type == GameEnums.EffectType.DAMAGE
 
 
+static func module_uses_target_filter_hp(module: AbilityModule) -> bool:
+	return module != null and module.target_filter == GameEnums.ModuleTargetFilter.HP
+
+
+static func module_uses_target_filter_hp_pct(module: AbilityModule) -> bool:
+	return (
+		module_uses_target_filter_hp(module)
+		and module.target_filter_hp == GameEnums.ModuleTargetFilterHp.BELOW_PCT
+	)
+
+
+static func module_uses_target_filter_status(module: AbilityModule) -> bool:
+	return module != null and module.target_filter == GameEnums.ModuleTargetFilter.STATUS
+
+
+static func module_uses_target_filter_status_type(module: AbilityModule) -> bool:
+	return (
+		module_uses_target_filter_status(module)
+		and module.target_filter_status_mode == GameEnums.ModuleTargetFilterStatus.SPECIFIC
+	)
+
+
+static func module_uses_target_filter_stat(module: AbilityModule) -> bool:
+	return module != null and module.target_filter == GameEnums.ModuleTargetFilter.STAT
+
+
+static func module_uses_target_filter_occupant(module: AbilityModule) -> bool:
+	return module != null and module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT
+
+
 static func excluded_module_gates(module: AbilityModule) -> PackedStringArray:
 	var excluded := PackedStringArray()
 	if module == null:
@@ -171,6 +201,22 @@ static func normalize_module_context_fields(
 		if module.gate == GameEnums.ModuleGate[key]:
 			module.gate = GameEnums.ModuleGate.ALWAYS
 			break
+	if not module_uses_target_filter_hp(module):
+		module.target_filter_hp = GameEnums.ModuleTargetFilterHp.BELOW_PCT
+		module.target_filter_hp_pct = 0
+	elif not module_uses_target_filter_hp_pct(module):
+		module.target_filter_hp_pct = 0
+	if not module_uses_target_filter_status(module):
+		module.target_filter_status_mode = GameEnums.ModuleTargetFilterStatus.ANY_DEBUFF
+		module.target_filter_status = GameEnums.StatusType.NONE
+		module.target_filter_status_or = GameEnums.StatusType.NONE
+	elif not module_uses_target_filter_status_type(module):
+		module.target_filter_status = GameEnums.StatusType.NONE
+		module.target_filter_status_or = GameEnums.StatusType.NONE
+	if not module_uses_target_filter_stat(module):
+		module.target_filter_stat = GameEnums.ModuleTargetFilterStat.CON_LEQ_CASTER_STR
+	if not module_uses_target_filter_occupant(module):
+		module.target_filter_occupant = GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT
 	if not module_uses_range(module):
 		module.min_range = 0
 		module.max_range = 0

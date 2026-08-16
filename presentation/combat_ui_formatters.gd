@@ -1456,6 +1456,9 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 					parts.append(mod_label)
 			_:
 				parts.append(GameEnums.EffectType.keys()[effect.type].capitalize())
+	var filter_line: String = ClassLibrarySchema.ability_target_filter_line(ability, unit)
+	if filter_line != "":
+		parts.append(filter_line)
 	return " | ".join(parts) if not parts.is_empty() else "No effect"
 
 
@@ -1561,6 +1564,9 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 					parts.append(_kw_hint(mod_label, mod_label + "."))
 			_:
 				parts.append(_effect_amount_string(effect))
+	var filter_line: String = ClassLibrarySchema.ability_target_filter_line(ability, unit)
+	if filter_line != "":
+		parts.append(_kw_hint(filter_line, "Legal click condition for this skill."))
 	var body: String = " | ".join(parts) if not parts.is_empty() else "No effect"
 	var target_shape: GameEnums.TargetShape = AbilitySystem.active_target_shape(unit, ability)
 	if target_shape != GameEnums.TargetShape.SINGLE:

@@ -481,7 +481,9 @@ static func after_ability_execute(
 		actor.passive_flags["shaman_ritual_used_this_turn"] = true
 	if (
 		actor.passive_flags.get("shaman_echo_next_cast", false)
-		and not modifiers.has("ally_corpse")
+		and not AbilitySystem.ability_occupant_is(
+			actor, action.ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE
+		)
 		and not actor.passive_flags.get(GameEnums.RUNTIME_ECHO_REPEAT, false)
 	):
 		actor.passive_flags.erase("shaman_echo_next_cast")
@@ -661,7 +663,13 @@ static func on_spawned(
 ) -> void:
 	if actor == null or construct == null or effect == null:
 		return
-	if effect.modifiers.get("ally_corpse", false):
+	if (
+		action != null
+		and action.ability != null
+		and AbilitySystem.ability_occupant_is(
+			actor, action.ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE
+		)
+	):
 		construct.passive_flags["shaman_ghost_owner_id"] = actor.id
 		construct.passive_flags["shaman_ghost_turns"] = int(
 			effect.modifiers.get("ghost_duration", 1),

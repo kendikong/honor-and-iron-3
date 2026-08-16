@@ -67,6 +67,7 @@ static func normalize_module_authoring_fields(
 		module.bonus_if_adjacent_at_cast = 0
 		module.def_debuff_before_damage = 0
 	_promote_hit_count_from_legacy(module)
+	_promote_target_filter_from_legacy(module)
 	if module.aim_binding != GameEnums.AimBinding.SAME_AS_MODULE_N:
 		module.aim_module_index = 0
 	if not GameEnums.effect_type_uses_spawn_unit(module.primary_type):
@@ -455,6 +456,7 @@ static func _copy_effect_to_module(effect: EffectData, module: AbilityModule) ->
 	module.def_debuff_before_damage = effect.def_debuff_before_damage
 	module.legacy_modifiers = effect.modifiers.duplicate(true)
 	_promote_hit_count_from_legacy(module)
+	_promote_target_filter_from_legacy(module)
 
 
 static func _copy_effect_to_effect(source: EffectData, target: EffectData) -> void:
@@ -751,6 +753,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.def_debuff_before_damage = eff.def_debuff_before_damage
 	mod.legacy_modifiers = eff.modifiers.duplicate(true)
 	_promote_hit_count_from_legacy(mod)
+	_promote_target_filter_from_legacy(mod)
 	var is_motion: bool = is_motion_type(eff.type)
 	mod.min_range = 1 if is_motion else 0
 	mod.max_range = (
@@ -908,10 +911,57 @@ static func _promote_hit_count_from_legacy(module: AbilityModule) -> void:
 		module.hit_count = 1
 
 
+static func _promote_target_filter_from_legacy(module: AbilityModule) -> void:
+	if module == null:
+		return
+	var bag: Dictionary = module.legacy_modifiers
+	if module.target_filter == GameEnums.ModuleTargetFilter.NONE:
+		if bag.has("target_hp_below_pct"):
+			module.set_condition_hp_below_pct(
+				clampi(roundi(float(bag["target_hp_below_pct"]) * 100.0), 1, 100)
+			)
+		elif bag.get("requires_missing_hp", false):
+			module.set_condition_hp_below_pct(100)
+		elif bag.get("lower_hp_only", false):
+			module.set_condition_hp_below_caster()
+		elif bag.get("requires_debuff", false):
+			module.set_condition_any_debuff()
+		elif bag.get("requires_bleed_or_poison", false):
+			module.set_condition_status(GameEnums.StatusType.BLEED, GameEnums.StatusType.POISON)
+		elif bag.get("target_unacted_only", false):
+			module.set_condition_not_acted()
+		elif bag.get("target_constitution_at_most_strength", false):
+			module.set_condition_con_leq_caster_str()
+		elif bag.get("construct_target_only", false):
+			module.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
+		elif bag.get("recall_adjacent_construct", false):
+			module.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT)
+		elif bag.get("fetch_item_or_corpse", false):
+			module.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ITEM_OR_CORPSE)
+		elif bag.get("ally_corpse", false):
+			module.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE)
+		elif bag.get("maul_dragged_enemy", false):
+			module.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY)
+	for key: String in [
+		"target_hp_below_pct",
+		"requires_missing_hp",
+		"lower_hp_only",
+		"requires_debuff",
+		"requires_bleed_or_poison",
+		"target_unacted_only",
+		"target_constitution_at_most_strength",
+		"construct_target_only",
+		"recall_adjacent_construct",
+		"fetch_item_or_corpse",
+		"ally_corpse",
+		"maul_dragged_enemy",
+	]:
+		bag.erase(key)
+
+
 static func _strip_promoted_modifier_keys(mod: AbilityModule) -> void:
-	## Keep keys that AbilitySystem still reads from modifiers until typed runtime lands.
-	## Do not strip bulldoze/push/ghost_move/violent_collision_recast yet.
 	_promote_hit_count_from_legacy(mod)
+	_promote_target_filter_from_legacy(mod)
 
 
 static func _apply_keywords_to_effect(eff: EffectData, mod: AbilityModule) -> void:
