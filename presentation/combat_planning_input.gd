@@ -2266,21 +2266,10 @@ func _commit_at_cell(
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
-		push_warning(
-			"K3 commit rejected: awaiting=%s slots=%s"
-			% [
-				_director.find_awaiting_action(unit_id) != null,
-				[slots.get("pre", []), slots.get("action", []), slots.get("post", [])],
-			]
-		)
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
 		return false
-	print(
-		"K3 commit accepted: steps=%s awaiting=%s"
-		% [_director.get_unit_plan_steps(unit_id), _director.find_awaiting_action(unit_id) != null]
-	)
 	_play_commit_sfx(slots)
 	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
@@ -2532,12 +2521,6 @@ func _play_commit_sfx(slots: Dictionary) -> void:
 func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 	if _director == null:
 		return
-	var commit_debug := FileAccess.open("res://reports/k3_debug.txt", FileAccess.WRITE)
-	commit_debug.store_string("input_callback_before=%s\n" % [_director.get_unit_plan_steps(unit_id)])
-	print(
-		"K3 post-commit: steps=%s awaiting=%s"
-		% [_director.get_unit_plan_steps(unit_id), _director.find_awaiting_action(unit_id) != null]
-	)
 	for raw: Variant in slots.get("action", []):
 		if raw is TimelineAction:
 			var action: TimelineAction = raw as TimelineAction
@@ -2567,13 +2550,11 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 				_preserve_ability_selection_for_action(unit_id, action)
 				if not saved_paths.is_empty():
 					preview_state.preview_paths = saved_paths
-				commit_debug.store_string("input_callback_clear_branch=%s\n" % [_director.get_unit_plan_steps(unit_id)])
 			elif (
 				not AbilitySystem.is_run_ability(action.ability)
 				and not AbilitySystem.is_wait_ability(action.ability)
 			):
 				_director.select_ability(-1)
-				commit_debug.store_string("input_callback_deselect=%s\n" % [_director.get_unit_plan_steps(unit_id)])
 			return
 
 
