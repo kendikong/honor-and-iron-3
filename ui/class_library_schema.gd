@@ -877,10 +877,6 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		for raw: Variant in extra_data as Array:
 			if raw is Dictionary:
 				dst.extras.append(extra_from_dict(raw as Dictionary))
-	## Import the old JSON key once; it is immediately converted into typed fields/extras.
-	var compatibility_data: Variant = data.get("legacy_modifiers", {})
-	if compatibility_data is Dictionary and not (compatibility_data as Dictionary).is_empty():
-		DataLibrary._add_extras_from_dict(dst, compatibility_data as Dictionary)
 	dst.keywords.clear()
 	var keyword_data: Variant = data.get("keywords", [])
 	if keyword_data is Array:

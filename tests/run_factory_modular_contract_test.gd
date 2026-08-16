@@ -175,7 +175,6 @@ func _check_factory_sources(failures: Array[String]) -> void:
 			"upgraded_target_shape =",
 			"upgraded_target_shape_size =",
 			"upgraded_movement_point_cost =",
-			"legacy_modifiers",
 		]:
 			if source.find(forbidden) >= 0:
 				failures.append("%s still authors %s" % [path, forbidden.trim_suffix(" =")])

@@ -211,11 +211,11 @@ func _ensure_runtime_modifiers_cache() -> void:
 	_runtime_modifiers_cache_valid = true
 
 
-func ingest_compatibility_modifiers(bag: Dictionary) -> void:
-	if bag.is_empty():
+func import_effect_modifiers(modifiers: Dictionary) -> void:
+	if modifiers.is_empty():
 		return
-	for key: Variant in bag:
-		ingest_runtime_key(String(key), bag[key])
+	for key: Variant in modifiers:
+		ingest_runtime_key(String(key), modifiers[key])
 
 
 func ingest_runtime_key(key: String, value: Variant) -> void:

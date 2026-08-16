@@ -755,7 +755,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.spawn_unit_id = eff.spawn_unit_id
 	mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
 	mod.def_debuff_before_damage = eff.def_debuff_before_damage
-	mod.ingest_compatibility_modifiers(eff.modifiers)
+	mod.import_effect_modifiers(eff.modifiers)
 	var is_motion: bool = is_motion_type(eff.type)
 	mod.min_range = 1 if is_motion else 0
 	mod.max_range = (
@@ -782,7 +782,7 @@ static func _merge_pass_through_into_motion(motion: AbilityModule, eff: EffectDa
 	kw.amount = eff.amount
 	kw.emit_as_effect = true
 	motion.keywords.append(kw)
-	motion.ingest_compatibility_modifiers(eff.modifiers)
+	motion.import_effect_modifiers(eff.modifiers)
 
 
 ## Bible §6: extras on a motion module (Trampling PUSH, Bowling [+] chain) are layers — not a second module.
