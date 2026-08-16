@@ -269,11 +269,10 @@ static func _damage(
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		scaling_stat,
 	)
-	module.legacy_modifiers = modifiers.duplicate(true)
+	DataLibrary._add_extras_from_dict(module, modifiers)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers = modifiers.duplicate(true)
-	for key: Variant in upgraded_modifiers:
-		upgraded[0].legacy_modifiers[key] = upgraded_modifiers[key]
+	DataLibrary._add_extras_from_dict(upgraded[0], modifiers)
+	DataLibrary._add_extras_from_dict(upgraded[0], upgraded_modifiers)
 	return _ability(
 		id, name, [module], upgraded, GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK], description,
@@ -288,7 +287,7 @@ static func _leap() -> AbilityData:
 	)
 	var upgraded := _clone_modules([module])
 	upgraded[0].max_range = 3
-	upgraded[0].legacy_modifiers["leap_absorb_surface"] = true
+	DataLibrary._add_extra(upgraded[0], "leap_absorb_surface", true)
 	return _movement(
 		&"monk_leap", "Leap", 2, module, upgraded,
 		"Jump directly over a 1-tile obstacle, gap, trap, or unit to an empty tile behind it. [+] Range 3; landing on an elemental surface empowers the next attack.",
@@ -318,9 +317,9 @@ static func _thunder_palm() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	module.legacy_modifiers["surface_chain"] = true
+	DataLibrary._add_extra(module, "surface_chain", true)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers = module.legacy_modifiers.duplicate(true)
+	DataLibrary._copy_extras(module, upgraded[0])
 	var stagger := DataLibrary._status_effect(GameEnums.StatusType.STAGGER, 1)
 	upgraded[0].layers.append(_layer(stagger))
 	return _ability(
@@ -335,7 +334,7 @@ static func _yin_yang_flurry() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	physical.legacy_modifiers["track_first_hit_zero"] = true
+	DataLibrary._add_extra(physical, "track_first_hit_zero", true)
 	var magical := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
 	magical.scaling_stat = GameEnums.StatType.MAGICAL
 	physical.layers.append(_layer(magical))
@@ -352,12 +351,12 @@ static func _chakra_shift() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.ADD_STATUS_SELF, 2, 0, 0, GameEnums.TargetingFlags.SELF,
 	)
-	module.legacy_modifiers["chakra_shift"] = true
+	DataLibrary._add_extra(module, "chakra_shift", true)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["chakra_shift"] = true
-	upgraded[0].legacy_modifiers["chakra_burst_damage"] = 1
-	upgraded[0].legacy_modifiers["chakra_burst_shape"] = GameEnums.TargetShape.AOE_CROSS
-	upgraded[0].legacy_modifiers["chakra_burst_size"] = 2
+	DataLibrary._add_extra(upgraded[0], "chakra_shift", true)
+	DataLibrary._add_extra(upgraded[0], "chakra_burst_damage", 1)
+	DataLibrary._add_extra(upgraded[0], "chakra_burst_shape", GameEnums.TargetShape.AOE_CROSS)
+	DataLibrary._add_extra(upgraded[0], "chakra_burst_size", 2)
 	return _ability(
 		&"monk_chakra_shift", "Chakra Shift", [module], upgraded,
 		GameEnums.TargetingFlags.SELF, [AbilityModuleBridge.TAG_POSITIONING],
@@ -388,15 +387,15 @@ static func _flying_crane_kick() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	module.legacy_modifiers["stop_adjacent_first_enemy"] = true
+	DataLibrary._add_extra(module, "stop_adjacent_first_enemy", true)
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	strike.scaling_stat = GameEnums.StatType.PHYSICAL
 	strike.modifiers["damage_adjacent_on_landing"] = true
 	strike.modifiers["require_dash_line_enemy"] = true
 	module.layers.append(_layer(strike))
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["stop_adjacent_first_enemy"] = true
-	upgraded[0].legacy_modifiers["dash_absorb_element"] = true
+	DataLibrary._add_extra(upgraded[0], "stop_adjacent_first_enemy", true)
+	DataLibrary._add_extra(upgraded[0], "dash_absorb_element", true)
 	if not upgraded[0].layers.is_empty() and upgraded[0].layers[0].effect != null:
 		upgraded[0].layers[0].effect.modifiers["dash_absorb_element"] = true
 	return _ability(
@@ -450,7 +449,7 @@ static func _mantra_of_peace() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.WEAKEN
 	module.status_duration = 1
-	module.legacy_modifiers["mantra_peace_weaken"] = true
+	DataLibrary._add_extra(module, "mantra_peace_weaken", true)
 	var upgraded := _clone_modules([module])
 	var heal := DataLibrary._effect(GameEnums.EffectType.HEAL, 1)
 	heal.scaling_stat = GameEnums.StatType.MAX_HP
@@ -466,10 +465,10 @@ static func _inner_fire() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF,
 	)
-	module.legacy_modifiers["inner_fire"] = true
+	DataLibrary._add_extra(module, "inner_fire", true)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["inner_fire"] = true
-	upgraded[0].legacy_modifiers["inner_fire_surface"] = true
+	DataLibrary._add_extra(upgraded[0], "inner_fire", true)
+	DataLibrary._add_extra(upgraded[0], "inner_fire_surface", true)
 	return _ability(
 		&"monk_inner_fire", "Inner Fire", [module], upgraded,
 		GameEnums.TargetingFlags.SELF, [AbilityModuleBridge.TAG_POSITIONING],
@@ -484,7 +483,7 @@ static func _void_step() -> AbilityData:
 		GameEnums.StatType.NONE, GameEnums.MotionMode.NONE,
 	)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["landed_magic_bonus"] = 2
+	DataLibrary._add_extra(upgraded[0], "landed_magic_bonus", 2)
 	return _ability(
 		&"monk_void_step", "Void Step", [module], upgraded,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_MOVEMENT],
@@ -499,7 +498,7 @@ static func _cyclone_sweep() -> AbilityData:
 		GameEnums.TargetShape.ARC, 1,
 	)
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["enemy_pushed_mov"] = 1
+	DataLibrary._add_extra(upgraded[0], "enemy_pushed_mov", 1)
 	return _ability(
 		&"monk_cyclone_sweep", "Cyclone Sweep", [module], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -519,7 +518,7 @@ static func _updraft() -> AbilityData:
 	)
 	module.layers.append(_layer(mov))
 	var upgraded := _clone_modules([module])
-	upgraded[0].legacy_modifiers["blind_on_pass_over"] = true
+	DataLibrary._add_extra(upgraded[0], "blind_on_pass_over", true)
 	return _ability(
 		&"monk_updraft", "Updraft", [module], upgraded,
 		GameEnums.TargetingFlags.SELF, [AbilityModuleBridge.TAG_POSITIONING],

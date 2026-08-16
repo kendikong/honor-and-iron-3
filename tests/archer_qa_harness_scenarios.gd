@@ -11,7 +11,7 @@ static func run_sidestep(failures: Array[String]) -> void:
 	H.assert_true(failures, "sidestep/premove", ab.is_pre_move_planner())
 	H.assert_true(
 		failures, "sidestep/ignore_zoc",
-		ab.modules[0].legacy_modifiers.get("ignore_zoc", false),
+		ab.modules[0].runtime_value("ignore_zoc", false),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_sidestep"))

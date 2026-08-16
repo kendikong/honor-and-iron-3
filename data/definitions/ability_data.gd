@@ -155,6 +155,8 @@ func _targeting_flags_to_mode() -> int:
 
 ## Maximum times this ability can be used per combat (-1 for unlimited).
 @export var uses_per_combat: int = -1
+## True when the skill may be used only once each turn (replaces leftover limit_once_per_turn).
+@export var once_per_turn: bool = false
 
 ## Opaque key the presentation layer maps to an animation/VFX/SFX.
 ## The simulation never loads or plays anything; it only forwards this string.

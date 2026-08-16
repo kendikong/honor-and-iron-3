@@ -509,6 +509,57 @@ static func _keyword(
 	return keyword
 
 
+static func _add_extra(module: AbilityModule, key: String, value: Variant = true) -> void:
+	assert(module != null, "extra requires a module")
+	module.ingest_runtime_key(key, value)
+
+
+static func _add_extras_from_dict(module: AbilityModule, bag: Dictionary) -> void:
+	if module == null or bag.is_empty():
+		return
+	for key: Variant in bag:
+		_add_extra(module, String(key), bag[key])
+
+
+static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -> void:
+	if from_module == null or to_module == null:
+		return
+	to_module.exclude_caster = from_module.exclude_caster
+	if from_module.exclude_caster:
+		to_module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
+	to_module.terrain_id = from_module.terrain_id
+	to_module.hazard_duration = from_module.hazard_duration
+	to_module.hazard_status = from_module.hazard_status
+	to_module.bonus_dmg_from_occupied = from_module.bonus_dmg_from_occupied
+	to_module.bonus_dmg_per_10_hp = from_module.bonus_dmg_per_10_hp
+	to_module.bonus_dmg_pct_max_hp = from_module.bonus_dmg_pct_max_hp
+	to_module.heal_if_targets_gte = from_module.heal_if_targets_gte
+	to_module.bounce_count = from_module.bounce_count
+	to_module.bounce_range = from_module.bounce_range
+	to_module.buff_on_push = from_module.buff_on_push
+	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
+		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
+	if to_module.extras.is_empty():
+		for extra: AbilityExtraRule in from_module.extras:
+			if extra != null:
+				to_module.extras.append(extra.duplicate(true) as AbilityExtraRule)
+	for keyword: AbilityKeyword in from_module.keywords:
+		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
+			_ensure_module_keyword(to_module, GameEnums.AbilityKeywordId.GHOST)
+
+
+static func _ensure_module_keyword(
+	module: AbilityModule,
+	keyword_id: GameEnums.AbilityKeywordId,
+) -> void:
+	if module == null:
+		return
+	for keyword: AbilityKeyword in module.keywords:
+		if keyword != null and keyword.keyword_id == keyword_id:
+			return
+	module.keywords.append(_keyword(keyword_id, 1, 0, false))
+
+
 static func _duplicate_modules(source: Array[AbilityModule]) -> Array[AbilityModule]:
 	var result: Array[AbilityModule] = []
 	for module: AbilityModule in source:
@@ -873,7 +924,8 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		1,
 		stat,
 	)
-	module.legacy_modifiers = effects[0].modifiers.duplicate(true)
+	if class_id == &"lancer":
+		_add_extra(module, "range_one_damage_multiplier", 0.7)
 	var ab: AbilityData = _make_modular_ability(
 		id,
 		display_name,

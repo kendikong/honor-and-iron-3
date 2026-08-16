@@ -559,6 +559,8 @@ static func ability_data_dump(ability: AbilityData) -> String:
 	lines.append("primary_value: %d" % ability.primary_value)
 	lines.append("targeting_flags: %s" % targeting_flags_dump(ability))
 	lines.append("uses_per_combat: %d" % ability.uses_per_combat)
+	if ability.once_per_turn:
+		lines.append("once_per_turn: true")
 	lines.append("presentation_key: %s" % String(ability.presentation_key))
 	lines.append("presentation_anim: %s" % GameEnums.PresentationAnim.keys()[ability.presentation_anim])
 	if not ability.upgrade_description.is_empty():
@@ -627,6 +629,8 @@ static func targeting_flags_dump(ability: AbilityData) -> String:
 		labels.append("Tile")
 	if authored_flags & GameEnums.TargetingFlags.DASH_LINE:
 		labels.append("Dash line")
+	if authored_flags & GameEnums.TargetingFlags.EXCLUDE_CASTER:
+		labels.append("Exclude caster")
 	if labels.is_empty():
 		return "none"
 	return ", ".join(labels)
@@ -692,6 +696,29 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	return layer
 
 
+static func extras_to_array(src: AbilityModule) -> Array:
+	var extras: Array = []
+	if src == null:
+		return extras
+	for extra: AbilityExtraRule in src.extras:
+		if extra == null:
+			continue
+		extras.append({
+			"id": extra.id,
+			"value": extra.value,
+			"override_key": extra.override_key,
+		})
+	return extras
+
+
+static func extra_from_dict(data: Dictionary) -> AbilityExtraRule:
+	var extra := AbilityExtraRule.new()
+	extra.id = int(data.get("id", extra.id)) as AbilityExtraRule.Id
+	extra.value = data.get("value", extra.value)
+	extra.override_key = str(data.get("override_key", extra.override_key))
+	return extra
+
+
 static func module_to_dict(
 	src: AbilityModule,
 	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
@@ -714,7 +741,18 @@ static func module_to_dict(
 		"layers": layers,
 		"gate": src.gate,
 		"presentation_anim": src.presentation_anim,
-		"legacy_modifiers": src.legacy_modifiers.duplicate(true),
+		"exclude_caster": src.exclude_caster,
+		"terrain_id": String(src.terrain_id),
+		"hazard_duration": src.hazard_duration,
+		"hazard_status": src.hazard_status,
+		"bonus_dmg_from_occupied": src.bonus_dmg_from_occupied,
+		"bonus_dmg_per_10_hp": src.bonus_dmg_per_10_hp,
+		"bonus_dmg_pct_max_hp": src.bonus_dmg_pct_max_hp,
+		"heal_if_targets_gte": src.heal_if_targets_gte,
+		"bounce_count": src.bounce_count,
+		"bounce_range": src.bounce_range,
+		"buff_on_push": src.buff_on_push,
+		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
 		out["execution_phase"] = src.execution_phase
@@ -820,9 +858,27 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		data.get("def_debuff_before_damage", dst.def_debuff_before_damage)
 	)
 	dst.hit_count = int(data.get("hit_count", dst.hit_count))
-	var modifiers: Variant = data.get("legacy_modifiers", dst.legacy_modifiers)
-	if modifiers is Dictionary:
-		dst.legacy_modifiers = (modifiers as Dictionary).duplicate(true)
+	dst.exclude_caster = bool(data.get("exclude_caster", dst.exclude_caster))
+	dst.terrain_id = StringName(str(data.get("terrain_id", String(dst.terrain_id))))
+	dst.hazard_duration = int(data.get("hazard_duration", dst.hazard_duration))
+	dst.hazard_status = int(data.get("hazard_status", dst.hazard_status))
+	dst.bonus_dmg_from_occupied = int(data.get("bonus_dmg_from_occupied", dst.bonus_dmg_from_occupied))
+	dst.bonus_dmg_per_10_hp = int(data.get("bonus_dmg_per_10_hp", dst.bonus_dmg_per_10_hp))
+	dst.bonus_dmg_pct_max_hp = float(data.get("bonus_dmg_pct_max_hp", dst.bonus_dmg_pct_max_hp))
+	dst.heal_if_targets_gte = int(data.get("heal_if_targets_gte", dst.heal_if_targets_gte))
+	dst.bounce_count = int(data.get("bounce_count", dst.bounce_count))
+	dst.bounce_range = int(data.get("bounce_range", dst.bounce_range))
+	dst.buff_on_push = int(data.get("buff_on_push", dst.buff_on_push))
+	dst.extras.clear()
+	var extra_data: Variant = data.get("extras", [])
+	if extra_data is Array:
+		for raw: Variant in extra_data as Array:
+			if raw is Dictionary:
+				dst.extras.append(extra_from_dict(raw as Dictionary))
+	var leftover: Variant = data.get("legacy_modifiers", {})
+	if leftover is Dictionary and not (leftover as Dictionary).is_empty():
+		DataLibrary._add_extras_from_dict(dst, leftover as Dictionary)
+	dst.legacy_modifiers.clear()
 	dst.keywords.clear()
 	var keyword_data: Variant = data.get("keywords", [])
 	if keyword_data is Array:
@@ -919,6 +975,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.upgraded_secondary_value = src.upgraded_secondary_value
 	dst.upgrade_description = src.upgrade_description
 	dst.uses_per_combat = src.uses_per_combat
+	dst.once_per_turn = src.once_per_turn
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
 	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules, src.planner_group))
@@ -1374,6 +1431,7 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"upgraded_secondary_value": src.upgraded_secondary_value,
 		"upgrade_description": src.upgrade_description,
 		"uses_per_combat": src.uses_per_combat,
+		"once_per_turn": src.once_per_turn,
 		"presentation_key": String(src.presentation_key),
 		"presentation_anim": src.presentation_anim,
 		"modules": modules_to_dict_array(src.modules, src.planner_group),
@@ -1435,6 +1493,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	dst.upgraded_secondary_value = int(data.get("upgraded_secondary_value", dst.upgraded_secondary_value))
 	dst.upgrade_description = String(data.get("upgrade_description", dst.upgrade_description))
 	dst.uses_per_combat = int(data.get("uses_per_combat", dst.uses_per_combat))
+	dst.once_per_turn = bool(data.get("once_per_turn", dst.once_per_turn))
 	dst.presentation_key = StringName(String(data.get("presentation_key", String(dst.presentation_key))))
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	var authored_range_tiles: int = int(data.get("range_tiles", -1))

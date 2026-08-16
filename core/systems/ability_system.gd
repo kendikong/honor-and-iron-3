@@ -241,7 +241,7 @@ static func motion_landing_legal(
 				return true
 		return false
 	if GameEnums.is_behind_destination(primary):
-		var allow_enemy: bool = not bool(module.legacy_modifiers.get("vault_obstacle_or_gap_only", false))
+		var allow_enemy: bool = not bool(module.runtime_value("vault_obstacle_or_gap_only", false))
 		for dir: Vector2i in GridSystem.DIRECTIONS:
 			var blocker: Vector2i = actor.position + dir
 			var far: Vector2i = actor.position + dir * 2
@@ -675,16 +675,16 @@ static func planning_module_target_valid(
 			return false
 		distance = PhysicsSystem.straight_line_distance(origin, target_coord)
 	if distance < module.min_range or distance > module.max_range:
-		if not module.legacy_modifiers.get("relocate_target", false):
+		if not module.runtime_value("relocate_target", false):
 			return false
-	if module.legacy_modifiers.get("relocate_target", false):
+	if module.runtime_value("relocate_target", false):
 		var subject: UnitState = target_board.get_unit_by_id(
 			module_target_unit_id(action, 0)
 		)
 		if subject == null or not subject.is_alive():
 			return false
 		var is_totem := subject.passive_flags.has("shaman_totem_owner_id")
-		var max_steps := 2 if is_totem and module.legacy_modifiers.get("move_active_totem", false) else 1
+		var max_steps := 2 if is_totem and module.runtime_value("move_active_totem", false) else 1
 		var step_distance := GridSystem.manhattan(subject.position, target_coord)
 		if (
 			step_distance < 1
@@ -2036,6 +2036,10 @@ static func _ability_has_modifier(
 ) -> bool:
 	if ability == null:
 		return false
+	if key == &"limit_once_per_turn" and ability.once_per_turn:
+		return true
+	if key == &"cost_all_movement" and ability.cost_modifier == GameEnums.CostModifier.SPEND_ALL_MOVEMENT:
+		return true
 	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and (
 			effect.modifiers.has(key) or effect.modifiers.has(String(key))

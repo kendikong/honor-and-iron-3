@@ -140,6 +140,10 @@ static func targeting_flag_applies(module: AbilityModule, flag: int) -> bool:
 		return false
 	if flag == GameEnums.TargetingFlags.DASH_LINE:
 		return module.primary_type == GameEnums.EffectType.DASH
+	if flag == GameEnums.TargetingFlags.EXCLUDE_CASTER:
+		return (module.targeting_flags & (
+			GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY
+		)) != 0
 	if module.primary_type == GameEnums.EffectType.ADD_STATUS_SELF:
 		return flag == GameEnums.TargetingFlags.SELF \
 			or flag == GameEnums.TargetingFlags.ALLY
@@ -247,6 +251,7 @@ static func normalize_module_targeting_flags(module: AbilityModule) -> void:
 		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetingFlags.EXCLUDE_CASTER,
 	]:
 		if not targeting_flag_applies(module, flag):
 			module.targeting_flags &= ~flag

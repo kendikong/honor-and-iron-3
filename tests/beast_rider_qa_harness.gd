@@ -153,7 +153,7 @@ static func _module_has_key(modules: Array[AbilityModule], key: StringName) -> b
 	for module: AbilityModule in modules:
 		if module == null:
 			continue
-		if module.legacy_modifiers.has(key):
+		if module.runtime_has(String(key)):
 			return true
 		for layer: AbilityLayer in module.layers:
 			if layer != null and layer.effect != null and layer.effect.modifiers.has(key):

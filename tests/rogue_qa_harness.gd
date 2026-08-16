@@ -601,20 +601,20 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_slip_past/ally_def_buff",
-				int(upgraded[0].legacy_modifiers.get("ally_def_buff", 0)) >= 1,
+				int(upgraded[0].runtime_value("ally_def_buff", 0)) >= 1,
 			)
 		&"rogue_shadow_step":
 			_assert(
 				failures,
 				"upgrade/rogue_shadow_step/behind_motion",
 				upgraded[0].primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
-					and int(upgraded[0].legacy_modifiers.get("behind_target_strength", 0)) >= 1,
+					and int(upgraded[0].runtime_value("behind_target_strength", 0)) >= 1,
 			)
 		&"rogue_smoke_bomb":
 			_assert(
 				failures,
 				"upgrade/rogue_smoke_bomb/ally_heal",
-				int(upgraded[0].legacy_modifiers.get("smoke_ally_heal_per_turn", 0)) >= 1,
+				int(upgraded[0].runtime_value("smoke_ally_heal_per_turn", 0)) >= 1,
 			)
 		&"rogue_evasive_strike":
 			_assert(
@@ -626,19 +626,19 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_grappling_hook/trap_multiplier",
-				int(upgraded[0].legacy_modifiers.get("trap_collision_damage_multiplier", 0)) >= 2,
+				int(upgraded[0].runtime_value("trap_collision_damage_multiplier", 0)) >= 2,
 			)
 		&"rogue_switcheroo":
 			_assert(
 				failures,
 				"upgrade/rogue_switcheroo/inherit_attacks",
-				bool(upgraded[0].legacy_modifiers.get("inherit_incoming_attacks", false)),
+				bool(upgraded[0].runtime_value("inherit_incoming_attacks", false)),
 			)
 		&"rogue_blindside":
 			_assert(
 				failures,
 				"upgrade/rogue_blindside/stagger_bonus",
-				int(upgraded[0].legacy_modifiers.get("if_target_staggered_bonus", 0)) >= 2,
+				int(upgraded[0].runtime_value("if_target_staggered_bonus", 0)) >= 2,
 			)
 		&"rogue_amnesia_dust":
 			_assert(
@@ -650,7 +650,7 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_death_mark/refresh_mark",
-				bool(upgraded[0].legacy_modifiers.get("on_kill_refresh_mark_zero_ap", false)),
+				bool(upgraded[0].runtime_value("on_kill_refresh_mark_zero_ap", false)),
 			)
 		&"rogue_shadow_swap":
 			_assert(
@@ -662,19 +662,19 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_kidnap/stagger_both",
-				bool(upgraded[0].legacy_modifiers.get("swap_collision_stagger_both", false)),
+				bool(upgraded[0].runtime_value("swap_collision_stagger_both", false)),
 			)
 		&"rogue_shuriken_volley":
 			_assert(
 				failures,
 				"upgrade/rogue_shuriken_volley/pierce_blind",
-				bool(upgraded[0].legacy_modifiers.get("pierce_vs_blind", false)),
+				bool(upgraded[0].runtime_value("pierce_vs_blind", false)),
 			)
 		&"rogue_poison_flask":
 			_assert(
 				failures,
 				"upgrade/rogue_poison_flask/hazard_blind",
-				bool(upgraded[0].legacy_modifiers.get("hazard_blind_on_entry", false)),
+				bool(upgraded[0].runtime_value("hazard_blind_on_entry", false)),
 			)
 		&"rogue_kidney_strike", &"rogue_throat_slit", &"rogue_lethal_flourish":
 			pass

@@ -201,8 +201,8 @@ static func run_ability_upgrade_row(ability_id: StringName, failures: Array[Stri
 	if ability == null:
 		return
 	_assert(failures, "%s/upgrade_modules" % ability_id, not ability.upgraded_modules.is_empty())
-	var base_keys := ability.modules[0].legacy_modifiers.keys()
-	var upgrade_keys := ability.upgraded_modules[0].legacy_modifiers.keys()
+	var base_keys := ability.modules[0].compile_runtime_modifiers().keys()
+	var upgrade_keys := ability.upgraded_modules[0].compile_runtime_modifiers().keys()
 	_assert(
 		failures,
 		"%s/upgrade_delta" % ability_id,
@@ -560,7 +560,7 @@ static func _data_contract(
 		&"engineer_dismantle":
 			_assert(failures, "%s/data/amount" % ability_id, module.amount == 3)
 			_assert(failures, "%s/data/range" % ability_id, module.min_range == 1 and module.max_range == 1)
-			_assert(failures, "%s/data/def_loss" % ability_id, module.legacy_modifiers.get("target_def_pct_loss", 0.0) == 0.25)
+			_assert(failures, "%s/data/def_loss" % ability_id, module.runtime_value("target_def_pct_loss", 0.0) == 0.25)
 		&"engineer_sludge_bomb":
 			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
@@ -568,12 +568,12 @@ static func _data_contract(
 		&"engineer_frag_bomb":
 			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 			_assert(failures, "%s/data/range" % ability_id, module.max_range == 3)
-			_assert(failures, "%s/data/ignite_oil" % ability_id, module.legacy_modifiers.get("ignite_oil", false))
+			_assert(failures, "%s/data/ignite_oil" % ability_id, module.runtime_value("ignite_oil", false))
 		&"engineer_construct_turret":
 			_assert(failures, "%s/data/spawn" % ability_id, module.spawn_unit_id == &"construct_turret")
 		&"engineer_magnetic_mine":
 			_assert(failures, "%s/data/spawn" % ability_id, module.spawn_unit_id == &"magnetic_mine")
-			_assert(failures, "%s/data/pull" % ability_id, module.legacy_modifiers.get("mine_pull", 0) == 2)
+			_assert(failures, "%s/data/pull" % ability_id, module.runtime_value("mine_pull", 0) == 2)
 		&"engineer_tesla_barricade":
 			_assert(failures, "%s/data/spawn" % ability_id, module.spawn_unit_id == &"tesla_barricade")
 		&"engineer_flak_cannon":
@@ -581,7 +581,7 @@ static func _data_contract(
 			_assert(failures, "%s/data/push_layer" % ability_id, not module.layers.is_empty())
 		&"engineer_wrench_smack":
 			_assert(failures, "%s/data/dual_target" % ability_id, module.targeting_flags == (GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY))
-			_assert(failures, "%s/data/wrench_modifier" % ability_id, module.legacy_modifiers.has(&"wrench_smack"))
+			_assert(failures, "%s/data/wrench_modifier" % ability_id, module.runtime_has(&"wrench_smack"))
 		&"engineer_emp_grenade":
 			_assert(failures, "%s/data/purge" % ability_id, module.primary_type == GameEnums.EffectType.PURGE)
 			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_CROSS and module.target_shape_size == 2)
@@ -590,16 +590,16 @@ static func _data_contract(
 			_assert(failures, "%s/data/aoe" % ability_id, module.target_shape == GameEnums.TargetShape.AOE_SQUARE and module.target_shape_size == 1)
 		&"engineer_scrap_shield":
 			_assert(failures, "%s/data/armor" % ability_id, module.primary_type == GameEnums.EffectType.ARMOR_UP)
-			_assert(failures, "%s/data/scrap_modifier" % ability_id, module.legacy_modifiers.get("scrap_multiplier", 0) == 2)
+			_assert(failures, "%s/data/scrap_modifier" % ability_id, module.runtime_value("scrap_multiplier", 0) == 2)
 		&"engineer_manual_detonation":
 			_assert(failures, "%s/data/free_ap" % ability_id, ability.action_point_cost == 0)
 			_assert(failures, "%s/data/explosion" % ability_id, module.primary_type == GameEnums.EffectType.RANGED_EXPLODE)
 		&"engineer_overdrive_injection":
 			_assert(failures, "%s/data/strength" % ability_id, module.primary_type == GameEnums.EffectType.ADD_STATUS and module.amount == 2)
-			_assert(failures, "%s/data/construct_damage" % ability_id, module.legacy_modifiers.get("construct_unmitigated_damage", 0) == 2)
+			_assert(failures, "%s/data/construct_damage" % ability_id, module.runtime_value("construct_unmitigated_damage", 0) == 2)
 		&"engineer_barbed_wire":
 			_assert(failures, "%s/data/arc" % ability_id, module.target_shape == GameEnums.TargetShape.ARC and module.target_shape_size == 3)
-			_assert(failures, "%s/data/terrain" % ability_id, module.legacy_modifiers.get("terrain_id", &"") == &"barbed_wire")
+			_assert(failures, "%s/data/terrain" % ability_id, module.runtime_value("terrain_id", &"") == &"barbed_wire")
 
 
 static func _ability(definition: UnitData, ability_id: StringName) -> AbilityData:

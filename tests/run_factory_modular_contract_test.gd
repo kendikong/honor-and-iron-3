@@ -10,6 +10,11 @@ const CLASS_IDS: Array[StringName] = [
 	&"mage",
 	&"cleric",
 	&"mercenary",
+	&"monk",
+	&"rogue",
+	&"beast_rider",
+	&"engineer",
+	&"shaman",
 ]
 
 const FACTORY_PATHS: Array[String] = [
@@ -20,6 +25,11 @@ const FACTORY_PATHS: Array[String] = [
 	"res://core/factory/classes/mage_factory.gd",
 	"res://core/factory/classes/cleric_factory.gd",
 	"res://core/factory/classes/mercenary_factory.gd",
+	"res://core/factory/classes/monk_factory.gd",
+	"res://core/factory/classes/rogue_factory.gd",
+	"res://core/factory/classes/beast_rider_factory.gd",
+	"res://core/factory/classes/engineer_factory.gd",
+	"res://core/factory/classes/shaman_factory.gd",
 ]
 
 func _ready() -> void:
@@ -56,8 +66,23 @@ func _check_unit(class_id: StringName, failures: Array[String]) -> void:
 		if not ability.upgrade_description.is_empty() and ability.upgraded_modules.is_empty():
 			failures.append("%s describes an upgrade without upgraded_modules" % label)
 		_check_header(ability, label, failures)
+		_check_no_leftover(ability, label, failures)
 		_check_module_ranges(ability.modules, label, failures)
 		_check_module_ranges(ability.upgraded_modules, "%s/upgrade" % label, failures)
+
+
+func _check_no_leftover(ability: AbilityData, label: String, failures: Array[String]) -> void:
+	for module: AbilityModule in ability.modules:
+		_fail_if_leftover(module, label, failures)
+	for module: AbilityModule in ability.upgraded_modules:
+		_fail_if_leftover(module, "%s/upgrade" % label, failures)
+
+
+func _fail_if_leftover(module: AbilityModule, label: String, failures: Array[String]) -> void:
+	if module == null:
+		return
+	if not module.legacy_modifiers.is_empty():
+		failures.append("%s still authors leftover_modifiers %s" % [label, str(module.legacy_modifiers.keys())])
 
 
 func _check_header(ability: AbilityData, label: String, failures: Array[String]) -> void:
@@ -124,6 +149,16 @@ func _build_factory(class_id: StringName) -> UnitData:
 			return ClericFactory.build(weapon)
 		&"mercenary":
 			return MercenaryFactory.build(weapon)
+		&"monk":
+			return MonkFactory.build(weapon)
+		&"rogue":
+			return RogueFactory.build(weapon)
+		&"beast_rider":
+			return BeastRiderFactory.build(weapon)
+		&"engineer":
+			return EngineerFactory.build(weapon)
+		&"shaman":
+			return ShamanFactory.build(weapon)
 	return null
 
 
@@ -140,6 +175,7 @@ func _check_factory_sources(failures: Array[String]) -> void:
 			"upgraded_target_shape =",
 			"upgraded_target_shape_size =",
 			"upgraded_movement_point_cost =",
+			"legacy_modifiers",
 		]:
 			if source.find(forbidden) >= 0:
 				failures.append("%s still authors %s" % [path, forbidden.trim_suffix(" =")])

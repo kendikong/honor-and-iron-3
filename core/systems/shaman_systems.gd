@@ -156,8 +156,8 @@ static func conduit_range_bonus(actor: UnitState, ability: AbilityData) -> int:
 		if module == null:
 			continue
 		if (
-			module.legacy_modifiers.has("totem_kind")
-			or module.legacy_modifiers.has("voodoo_link")
+			module.runtime_has("totem_kind")
+			or module.runtime_has("voodoo_link")
 			or (
 				module.primary_type == GameEnums.EffectType.ADD_STATUS
 				and GameEnums.is_debuff(module.status_type)

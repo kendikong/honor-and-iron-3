@@ -25,7 +25,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.MotionMode.NONE,
 	)
 	var push_upgraded := DataLibrary._duplicate_modules([push_module])
-	push_upgraded[0].legacy_modifiers["buff_on_push"] = 1
+	DataLibrary._add_extra(push_upgraded[0], "buff_on_push", 1)
 	var push_through := DataLibrary._make_modular_ability(
 		&"bruiser_push_through", "Push Through", [push_module], push_upgraded,
 		2, GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
@@ -79,7 +79,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
 	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
-	charge_upgraded[1].legacy_modifiers["bonus_dmg_from_occupied"] = 2
+	DataLibrary._add_extra(charge_upgraded[1], "bonus_dmg_from_occupied", 2)
 	charge_upgraded[1].layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_strike := DataLibrary._make_modular_ability(
 		&"bruiser_charge_strike", "Charge Strike", [charge_move, charge_attack],
@@ -135,7 +135,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	suplex_damage.scaling_stat = GameEnums.StatType.PHYSICAL
 	suplex_module.layers = [DataLibrary._layer(suplex_damage)]
 	var suplex_upgraded := DataLibrary._duplicate_modules([suplex_module])
-	suplex_upgraded[0].legacy_modifiers["bonus_dmg_per_10_hp"] = 1
+	DataLibrary._add_extra(suplex_upgraded[0], "bonus_dmg_per_10_hp", 1)
 	var suplex := DataLibrary._make_modular_ability(
 		&"bruiser_suplex", "Suplex", [suplex_module], suplex_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
@@ -205,7 +205,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	frenzy_hit.hit_count = 3
 	var frenzy_upgraded := DataLibrary._duplicate_modules([frenzy_hit])
-	frenzy_upgraded[0].legacy_modifiers["frenzy_on_kill_ap"] = 1
+	DataLibrary._add_extra(frenzy_upgraded[0], "frenzy_on_kill_ap", 1)
 	var frenzy := DataLibrary._make_modular_ability(
 		&"bruiser_frenzy", "Frenzy", [frenzy_hit], frenzy_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
@@ -221,10 +221,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)),
 	]
 	var roar_upgraded := DataLibrary._duplicate_modules([roar_module])
-	roar_upgraded[0].legacy_modifiers["push_board_items"] = 1
-	roar_upgraded[0].legacy_modifiers["item_collision_damage"] = 1
-	roar_upgraded[0].legacy_modifiers["item_collision_str_div"] = 2
-	roar_upgraded[0].legacy_modifiers["item_collision_vulnerable"] = 1
+	DataLibrary._add_extra(roar_upgraded[0], "push_board_items", 1)
+	DataLibrary._add_extra(roar_upgraded[0], "item_collision_damage", 1)
+	DataLibrary._add_extra(roar_upgraded[0], "item_collision_str_div", 2)
+	DataLibrary._add_extra(roar_upgraded[0], "item_collision_vulnerable", 1)
 	var guttural_roar := DataLibrary._make_modular_ability(
 		&"bruiser_guttural_roar", "Guttural Roar", [roar_module], roar_upgraded,
 		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
@@ -243,7 +243,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAGGER, 1)),
 	]
 	var headbutt_upgraded := DataLibrary._duplicate_modules([headbutt_module])
-	headbutt_upgraded[0].legacy_modifiers["bonus_dmg_pct_max_hp"] = 0.1
+	DataLibrary._add_extra(headbutt_upgraded[0], "bonus_dmg_pct_max_hp", 0.1)
 	var headbutt := DataLibrary._make_modular_ability(
 		&"bruiser_headbutt", "Headbutt", [headbutt_module], headbutt_upgraded,
 		1, GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
@@ -273,7 +273,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	collision_dash.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
 	]
-	collision_dash.legacy_modifiers["violent_collision_recast"] = 1
+	DataLibrary._add_extra(collision_dash, "violent_collision_recast", 1)
 	var collision_recast := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
@@ -305,7 +305,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	whirlwind_upgraded[0].layers.append(
 		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.HEAL, 1))
 	)
-	whirlwind_upgraded[0].legacy_modifiers["heal_if_targets_gte"] = 3
+	DataLibrary._add_extra(whirlwind_upgraded[0], "heal_if_targets_gte", 3)
 	var crimson_whirlwind := DataLibrary._make_modular_ability(
 		&"bruiser_crimson_whirlwind", "Crimson Whirlwind", [whirlwind_module],
 		whirlwind_upgraded, 1, GameEnums.PlannerGroup.ACTION,
@@ -340,7 +340,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	breach_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0))]
 	var breach_upgraded := DataLibrary._duplicate_modules([breach_module])
 	breach_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.PIERCE)]
-	breach_upgraded[0].legacy_modifiers["next_attack_pierce"] = 1
+	DataLibrary._add_extra(breach_upgraded[0], "next_attack_pierce", 1)
 	var breaching_dash := DataLibrary._make_modular_ability(
 		&"bruiser_breaching_dash", "Breaching Dash", [breach_module],
 		breach_upgraded, 1, GameEnums.PlannerGroup.ACTION,

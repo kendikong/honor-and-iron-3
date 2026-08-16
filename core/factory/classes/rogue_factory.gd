@@ -1,7 +1,7 @@
 class_name RogueFactory
 extends RefCounted
 
-## Complete Rogue authoring from class_abilities.txt §4.
+## Complete Rogue authoring from class_abilities.txt Â§4.
 ## The factory owns only authored data. AbilitySystem, MovementSystem,
 ## CombatSystem, and Simulator remain the runtime owners.
 
@@ -139,7 +139,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 		&"panic_cascade",
 		"Panic Cascade",
 		"Applying any debuff causes extra damage equal to WPN per active unique debuff this turn.",
-		"If the target has CONFUSION, extra damage is 2×WPN per unique debuff.",
+		"If the target has CONFUSION, extra damage is 2Ã—WPN per unique debuff.",
 		{"promotion": &"saboteur", "panic_on_debuff": true,
 		"upgraded_confused_wpn_mult": 2},
 	))
@@ -270,11 +270,11 @@ static func _slip_past() -> AbilityData:
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	base.legacy_modifiers["slip_past"] = true
-	base.legacy_modifiers["land_opposite_target"] = true
-	base.legacy_modifiers["move_through_adjacent_unit"] = true
+	DataLibrary._add_extra(base, "slip_past", true)
+	DataLibrary._add_extra(base, "land_opposite_target", true)
+	DataLibrary._add_extra(base, "move_through_adjacent_unit", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["ally_def_buff"] = 1
+	DataLibrary._add_extra(upgraded[0], "ally_def_buff", 1)
 	return _movement(
 		&"rogue_slip_past", "Slip Past", 1, base, upgraded,
 		"Move through an adjacent ally to the empty tile directly behind them; upgraded: that ally gains +1 DEF for 1 turn.",
@@ -288,9 +288,9 @@ static func _shadow_step() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.NONE,
 	)
-	base.legacy_modifiers["shadow_step"] = true
+	DataLibrary._add_extra(base, "shadow_step", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["behind_target_strength"] = 1
+	DataLibrary._add_extra(upgraded[0], "behind_target_strength", 1)
 	return _ability(
 		&"rogue_shadow_step", "Shadow Step", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -321,14 +321,14 @@ static func _smoke_bomb() -> AbilityData:
 		GameEnums.TargetingFlags.SELF, GameEnums.TargetShape.AOE_SQUARE, 1,
 		GameEnums.StatType.NONE,
 	)
-	base.legacy_modifiers = {
+	DataLibrary._add_extras_from_dict(base, {
 		"terrain_id": &"smoke",
 		"hazard_duration": 2,
 		"smoke_field": true,
 		"smoke_stealth_outside_attackers": true,
-	}
+	})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["smoke_ally_heal_per_turn"] = 1
+	DataLibrary._add_extra(upgraded[0], "smoke_ally_heal_per_turn", 1)
 	return _ability(
 		&"rogue_smoke_bomb", "Smoke Bomb", [base], upgraded,
 		GameEnums.TargetingFlags.SELF,
@@ -365,10 +365,10 @@ static func _evasive_strike() -> AbilityData:
 
 static func _grappling_hook() -> AbilityData:
 	var base := _module(GameEnums.EffectType.PULL, 4, 1, 4, GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE)
-	base.legacy_modifiers["grapple_bidirectional"] = true
-	base.legacy_modifiers["pull_self_or_target"] = true
+	DataLibrary._add_extra(base, "grapple_bidirectional", true)
+	DataLibrary._add_extra(base, "pull_self_or_target", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["trap_collision_damage_multiplier"] = 2
+	DataLibrary._add_extra(upgraded[0], "trap_collision_damage_multiplier", 2)
 	return _ability(
 		&"rogue_grappling_hook", "Grappling Hook", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -383,9 +383,9 @@ static func _switcheroo() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
-	base.legacy_modifiers["switcheroo"] = true
+	DataLibrary._add_extra(base, "switcheroo", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["inherit_incoming_attacks"] = true
+	DataLibrary._add_extra(upgraded[0], "inherit_incoming_attacks", true)
 	return _ability(
 		&"rogue_switcheroo", "Switcheroo", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -395,9 +395,9 @@ static func _switcheroo() -> AbilityData:
 
 static func _blindside() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	base.legacy_modifiers["if_target_unacted_stagger"] = true
+	DataLibrary._add_extra(base, "if_target_unacted_stagger", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["if_target_staggered_bonus"] = 2
+	DataLibrary._add_extra(upgraded[0], "if_target_staggered_bonus", 2)
 	return _ability(
 		&"rogue_blindside", "Blindside", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -409,7 +409,7 @@ static func _throat_slit() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.SILENCE, 1)))
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["on_kill_spread_silence_adjacent"] = true
+	DataLibrary._add_extra(upgraded[0], "on_kill_spread_silence_adjacent", true)
 	return _ability(
 		&"rogue_throat_slit", "Throat Slit", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -425,7 +425,7 @@ static func _amnesia_dust() -> AbilityData:
 		_layer(DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)),
 		_layer(confusion),
 	]
-	base.legacy_modifiers["confusion_next_turn"] = true
+	DataLibrary._add_extra(base, "confusion_next_turn", true)
 	base.set_condition_not_acted()
 	var upgraded := _clone([base])
 	upgraded[0].layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.POISON, 1)))
@@ -441,7 +441,7 @@ static func _death_mark() -> AbilityData:
 	base.status_type = GameEnums.StatusType.MARK
 	base.status_duration = 2
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["on_kill_refresh_mark_zero_ap"] = true
+	DataLibrary._add_extra(upgraded[0], "on_kill_refresh_mark_zero_ap", true)
 	return _ability(
 		&"rogue_death_mark", "Death Mark", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -451,9 +451,9 @@ static func _death_mark() -> AbilityData:
 
 static func _lethal_flourish() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	base.legacy_modifiers["bonus_if_target_debuffed"] = 2
+	DataLibrary._add_extra(base, "bonus_if_target_debuffed", 2)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["kill_grant_ap"] = 1
+	DataLibrary._add_extra(upgraded[0], "kill_grant_ap", 1)
 	return _ability(
 		&"rogue_lethal_flourish", "Lethal Flourish", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -485,10 +485,10 @@ static func _kidnap() -> AbilityData:
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	base.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
-	base.legacy_modifiers["kidnap"] = true
+	DataLibrary._add_extra(base, "kidnap", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["swap_collision_stagger_both"] = true
-	upgraded[0].legacy_modifiers["enemy_collision_stagger_both"] = true
+	DataLibrary._add_extra(upgraded[0], "swap_collision_stagger_both", true)
+	DataLibrary._add_extra(upgraded[0], "enemy_collision_stagger_both", true)
 	return _ability(
 		&"rogue_kidnap", "Kidnap", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -505,7 +505,7 @@ static func _shuriken_volley() -> AbilityData:
 	bleed.modifiers["bleed_weapon"] = true
 	base.layers = [_layer(bleed)]
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["pierce_vs_blind"] = true
+	DataLibrary._add_extra(upgraded[0], "pierce_vs_blind", true)
 	return _ability(
 		&"rogue_shuriken_volley", "Shuriken Volley", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -527,7 +527,7 @@ static func _poison_flask() -> AbilityData:
 	}
 	base.layers = [_layer(hazard)]
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["hazard_blind_on_entry"] = true
+	DataLibrary._add_extra(upgraded[0], "hazard_blind_on_entry", true)
 	for layer: AbilityLayer in upgraded[0].layers:
 		if layer != null and layer.effect != null \
 				and layer.effect.type == GameEnums.EffectType.CREATE_HAZARD:

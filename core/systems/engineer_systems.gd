@@ -66,10 +66,10 @@ static func ability_has_explosion(actor: UnitState, ability: AbilityData) -> boo
 			GameEnums.EffectType.RANGED_EXPLODE,
 		]:
 			return true
-		if module.legacy_modifiers.has("rocket_launcher") \
-				or module.legacy_modifiers.has("mine_explode") \
-				or module.legacy_modifiers.has("manual_detonation") \
-				or module.legacy_modifiers.has("ignite_oil"):
+		if module.runtime_has("rocket_launcher") \
+				or module.runtime_has("mine_explode") \
+				or module.runtime_has("manual_detonation") \
+				or module.runtime_has("ignite_oil"):
 			return true
 	return false
 
@@ -519,7 +519,7 @@ static func after_ability_execute(
 		var module: AbilityModule = modules[module_index]
 		if module == null:
 			continue
-		var modifiers := module.legacy_modifiers
+		var modifiers := module.compile_runtime_modifiers()
 		if modifiers.get("sacrifice_construct_instant", false):
 			var sacrifice_target := board.get_unit_by_id(
 				AbilitySystem.module_target_unit_id(action, module_index)
@@ -775,7 +775,7 @@ static func _apply_wrench(
 	CombatSystem.heal(board, target, 2, events)
 	AbilitySystem.cleanse_unit(target, events)
 	grant_overclock(target)
-	var bonus := int(module.legacy_modifiers.get("wrench_strength_bonus", 0))
+	var bonus := int(module.runtime_value("wrench_strength_bonus", 0))
 	if actor.is_ability_upgraded(action.ability.id) and bonus > 0:
 		actor.passive_flags["next_attack_strength_bonus"] = bonus
 	_grant_repair_attack_bonus(actor)
@@ -798,7 +798,7 @@ static func _apply_overdrive_cost(
 	)
 	if actor.is_ability_upgraded(action.ability.id):
 		target.passive_flags["overdrive_scrap_on_death"] = int(
-			module.legacy_modifiers.get("refund_scrap_on_construct_death", 1)
+			module.runtime_value("refund_scrap_on_construct_death", 1)
 		)
 
 
@@ -821,8 +821,8 @@ static func _detonate_construct(
 	if owner == null:
 		owner = actor
 	_detonate_device(board, owner, target, "Manual Detonation", events)
-	if module.legacy_modifiers.get("refund_scrap", 0) > 0:
-		actor.scrap += int(module.legacy_modifiers["refund_scrap"])
+	if int(module.runtime_value("refund_scrap", 0)) > 0:
+		actor.scrap += int(module.runtime_value("refund_scrap", 0))
 
 
 static func _apply_emp_construct_rules(
@@ -843,19 +843,19 @@ static func _apply_emp_construct_rules(
 		if target.team == actor.team:
 			if (
 				target.definition.is_construct
-				and module.legacy_modifiers.has("emp_friendly_construct_heal")
+				and module.runtime_has("emp_friendly_construct_heal")
 			):
 				CombatSystem.heal(
 					board,
 					target,
-					int(module.legacy_modifiers["emp_friendly_construct_heal"]),
+					int(module.runtime_value("emp_friendly_construct_heal", 0)),
 					events,
 				)
-				if module.legacy_modifiers.get("emp_friendly_construct_overclock", false):
+				if module.runtime_value("emp_friendly_construct_overclock", false):
 					grant_overclock(target)
 			continue
 		if target.definition.is_construct:
-			var boss_damage := int(module.legacy_modifiers.get("mechanical_boss_damage_wpn", 0))
+			var boss_damage := int(module.runtime_value("mechanical_boss_damage_wpn", 0))
 			CombatSystem.deal_damage(
 				board, target, boss_damage if target.definition.is_boss else target.health.current_hp,
 				events, &"true", true, false, actor, "EMP Grenade", boss_damage,

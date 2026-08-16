@@ -178,7 +178,8 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 	if module == null:
 		return false
 	var key_text: String = String(key)
-	if module.legacy_modifiers.has(key) or module.legacy_modifiers.has(key_text):
+	var runtime: Dictionary = module.compile_runtime_modifiers()
+	if runtime.has(key) or runtime.has(key_text):
 		return true
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
@@ -208,8 +209,9 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 	if module == null:
 		return default_value
 	var key_text: String = String(key)
-	if module.legacy_modifiers.has(key_text):
-		return int(module.legacy_modifiers[key_text])
+	var runtime: Dictionary = module.compile_runtime_modifiers()
+	if runtime.has(key_text):
+		return int(runtime[key_text])
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
 			return int(layer.effect.modifiers[key_text])
@@ -358,6 +360,10 @@ static func sync_legacy_from_header(ability: AbilityData) -> void:
 			pass
 	if ability.cost_modifier == GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N:
 		_ensure_zero_ap_modifier_on_effects(ability)
+	if ability.cost_modifier == GameEnums.CostModifier.SPEND_ALL_MOVEMENT:
+		_ensure_spend_all_movement_on_effects(ability)
+	if ability.once_per_turn and not ability.effects.is_empty() and ability.effects[0] != null:
+		ability.effects[0].modifiers["limit_once_per_turn"] = true
 
 
 ## Expand one module without applying its resolution gate.
@@ -388,6 +394,7 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 		if layer == null or layer.effect == null:
 			continue
 		var layer_eff: EffectData = _duplicate_effect(layer.effect)
+		_merge_runtime_modifiers(layer_eff, module.compile_runtime_modifiers())
 		_apply_layer_condition_to_effect(layer_eff, layer.condition)
 		out.append(layer_eff)
 	return out
@@ -454,7 +461,6 @@ static func _copy_effect_to_module(effect: EffectData, module: AbilityModule) ->
 	module.spawn_unit_id = effect.spawn_unit_id
 	module.bonus_if_adjacent_at_cast = effect.bonus_if_adjacent_at_cast
 	module.def_debuff_before_damage = effect.def_debuff_before_damage
-	module.legacy_modifiers = effect.modifiers.duplicate(true)
 	_promote_hit_count_from_legacy(module)
 	_promote_target_filter_from_legacy(module)
 
@@ -539,7 +545,7 @@ static func infer_modules_from_effects(
 	## Recast stamp (modifiers) → gated follow-up MOVE module (bible §2.7 / §10 Violent Collision).
 	if (
 		not modules.is_empty()
-		and modules[0].legacy_modifiers.has("violent_collision_recast")
+		and modules[0].runtime_has("violent_collision_recast")
 		and modules.size() == 1
 	):
 		var motion_mod: AbilityModule = modules[0]
@@ -585,14 +591,12 @@ static func finalize_ability(ability: AbilityData) -> void:
 		var module: AbilityModule = ability.modules[index]
 		if module != null:
 			normalize_module_authoring_fields(module, ability.planner_group, index)
-			_stamp_keyword_modifiers_on_module(module)
 	for index: int in ability.upgraded_modules.size():
 		var upgraded_module: AbilityModule = ability.upgraded_modules[index]
 		if upgraded_module != null:
 			normalize_module_authoring_fields(
 				upgraded_module, ability.planner_group, index
 			)
-			_stamp_keyword_modifiers_on_module(upgraded_module)
 	if not ability.modules.is_empty():
 		## Authoritative modules: compile to flat effects for legacy readers.
 		## Exception: keep violent_collision_recast on primary until native gate runtime.
@@ -606,6 +610,7 @@ static func finalize_ability(ability: AbilityData) -> void:
 		if not up_compiled.is_empty():
 			ability.upgraded_effects = up_compiled
 	sync_legacy_from_header(ability)
+	_promote_header_extras(ability)
 	_prefer_authored_targeting_mode(ability)
 	ability.sync_legacy_targeting()
 
@@ -751,7 +756,7 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.spawn_unit_id = eff.spawn_unit_id
 	mod.bonus_if_adjacent_at_cast = eff.bonus_if_adjacent_at_cast
 	mod.def_debuff_before_damage = eff.def_debuff_before_damage
-	mod.legacy_modifiers = eff.modifiers.duplicate(true)
+	mod.ingest_runtime_bag(eff.modifiers)
 	_promote_hit_count_from_legacy(mod)
 	_promote_target_filter_from_legacy(mod)
 	var is_motion: bool = is_motion_type(eff.type)
@@ -781,8 +786,7 @@ static func _merge_pass_through_into_motion(motion: AbilityModule, eff: EffectDa
 	kw.amount = eff.amount
 	kw.emit_as_effect = true
 	motion.keywords.append(kw)
-	for key: Variant in eff.modifiers.keys():
-		motion.legacy_modifiers[key] = eff.modifiers[key]
+	motion.ingest_runtime_bag(eff.modifiers)
 
 
 ## Bible §6: extras on a motion module (Trampling PUSH, Bowling [+] chain) are layers — not a second module.
@@ -870,41 +874,53 @@ static func _ensure_bulldoze_keyword(mod: AbilityModule) -> Array[AbilityKeyword
 	if not has_bd:
 		var kw := AbilityKeyword.new()
 		kw.keyword_id = GameEnums.AbilityKeywordId.BULLDOZE
-		kw.amount = int(mod.legacy_modifiers.get("bulldoze", 1))
-		kw.push_amount = int(mod.legacy_modifiers.get("push", 1))
+		kw.amount = int(mod.runtime_value("bulldoze", 1))
+		kw.push_amount = int(mod.runtime_value("push", 1))
 		kws.append(kw)
 	return kws
 
 
-static func _stamp_keyword_modifiers_on_module(mod: AbilityModule) -> void:
-	if mod == null:
+static func _merge_runtime_modifiers(effect: EffectData, runtime: Dictionary) -> void:
+	if effect == null:
 		return
-	for kw: AbilityKeyword in mod.keywords:
-		if kw == null:
+	for key: Variant in runtime:
+		var key_text: String = String(key)
+		if key_text.is_empty() or effect.modifiers.has(key_text):
 			continue
-		match kw.keyword_id:
-			GameEnums.AbilityKeywordId.GHOST:
-				mod.legacy_modifiers["ghost_move"] = 1
-			GameEnums.AbilityKeywordId.PIERCE:
-				mod.legacy_modifiers["next_attack_pierce"] = 1
-			GameEnums.AbilityKeywordId.BULLDOZE:
-				if not mod.legacy_modifiers.has("bulldoze"):
-					mod.legacy_modifiers["bulldoze"] = kw.amount
-			_:
-				pass
+		effect.modifiers[key_text] = runtime[key]
+
+
+static func _promote_header_extras(ability: AbilityData) -> void:
+	if ability == null:
+		return
+	if ability.cost_modifier == GameEnums.CostModifier.NONE and modules_have_modifier(
+		ability.modules, &"cost_all_movement"
+	):
+		ability.cost_modifier = GameEnums.CostModifier.SPEND_ALL_MOVEMENT
+	if not ability.once_per_turn and modules_have_modifier(ability.modules, &"limit_once_per_turn"):
+		ability.once_per_turn = true
+	if ability.cost_modifier == GameEnums.CostModifier.SPEND_ALL_MOVEMENT:
+		_ensure_spend_all_movement_on_effects(ability)
+
+
+static func _ensure_spend_all_movement_on_effects(ability: AbilityData) -> void:
+	if ability == null:
+		return
+	for effects: Array[EffectData] in [ability.effects, ability.upgraded_effects]:
+		if effects.is_empty() or effects[0] == null:
+			continue
+		effects[0].modifiers["cost_all_movement"] = true
 
 
 static func _promote_hit_count_from_legacy(module: AbilityModule) -> void:
 	if module == null:
 		return
-	var bag_hits := int(module.legacy_modifiers.get(
+	var bag_hits := int(module.runtime_value(
 		"repeat_hits",
-		module.legacy_modifiers.get("hit_count", 0),
+		module.runtime_value("hit_count", 0),
 	))
 	if bag_hits > module.hit_count:
 		module.hit_count = bag_hits
-	module.legacy_modifiers.erase("hit_count")
-	module.legacy_modifiers.erase("repeat_hits")
 	if module.primary_type != GameEnums.EffectType.DAMAGE:
 		module.hit_count = 1
 	elif module.hit_count < 1:

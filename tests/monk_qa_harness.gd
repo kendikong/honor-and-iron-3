@@ -164,7 +164,7 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 		_assert(
 			failures, "upgrade/%s/module" % ability_id,
 			module != null and (
-				not module.legacy_modifiers.is_empty()
+				not module.compile_runtime_modifiers().is_empty()
 				or not module.layers.is_empty()
 				or module.amount != 0
 			),

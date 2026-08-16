@@ -247,7 +247,7 @@ static func _recall() -> AbilityData:
 	)
 	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["arrival_overclock"] = true
+	DataLibrary._add_extra(upgraded[0], "arrival_overclock", true)
 	return _movement(
 		&"engineer_recall", "Recall", base, upgraded,
 		"Teleport to an empty tile adjacent to an active Construct.",
@@ -259,9 +259,9 @@ static func _dismantle() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers["target_def_pct_loss"] = 0.25
+	DataLibrary._add_extra(base, "target_def_pct_loss", 0.25)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["on_hit_scrap"] = 1
+	DataLibrary._add_extra(upgraded[0], "on_hit_scrap", 1)
 	return _ability(&"engineer_dismantle", "Dismantle", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
 		"On Hit: Generate 1 Scrap.")
@@ -277,7 +277,7 @@ static func _sludge_bomb() -> AbilityData:
 	oil.modifiers = {"terrain_id": &"oil", "hazard_duration": 3, "oil_field": true}
 	base.layers = [_layer(oil)]
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["ignite_oil_area"] = true
+	DataLibrary._add_extra(upgraded[0], "ignite_oil_area", true)
 	return _ability(&"engineer_sludge_bomb", "Sludge Bomb", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
@@ -289,9 +289,9 @@ static func _construct_turret() -> AbilityData:
 		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
 	base.spawn_unit_id = &"construct_turret"
-	base.legacy_modifiers = {"construct_spawn": true, "turret_attack": 1}
+	DataLibrary._add_extras_from_dict(base, {"construct_spawn": true, "turret_attack": 1})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["on_death_adjacent_damage"] = 2
+	DataLibrary._add_extra(upgraded[0], "on_death_adjacent_damage", 2)
 	return _ability(&"engineer_construct_turret", "Construct Turret", [base], upgraded,
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
 		"On death: deal ATK 2 to adjacent enemies.")
@@ -303,9 +303,9 @@ static func _frag_bomb() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers["ignite_oil"] = true
+	DataLibrary._add_extra(base, "ignite_oil", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["construct_destruction_refund_ap"] = 1
+	DataLibrary._add_extra(upgraded[0], "construct_destruction_refund_ap", 1)
 	return _ability(&"engineer_frag_bomb", "Frag Bomb", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
@@ -317,12 +317,12 @@ static func _magnetic_mine() -> AbilityData:
 		GameEnums.EffectType.SPAWN, 0, 1, 3, GameEnums.TargetingFlags.TILE,
 	)
 	base.spawn_unit_id = &"magnetic_mine"
-	base.legacy_modifiers = {
+	DataLibrary._add_extras_from_dict(base, {
 		"construct_spawn": true, "mine_pull": 2, "mine_damage": 2,
 		"mine_explode": true,
-	}
+	})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["absorbs_items_scrap"] = true
+	DataLibrary._add_extra(upgraded[0], "absorbs_items_scrap", true)
 	return _ability(&"engineer_magnetic_mine", "Magnetic Mine", [base], upgraded,
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
 		"Absorbs items and Scrap.")
@@ -333,9 +333,9 @@ static func _tesla_barricade() -> AbilityData:
 		GameEnums.EffectType.SPAWN, 0, 1, 1, GameEnums.TargetingFlags.TILE,
 	)
 	base.spawn_unit_id = &"tesla_barricade"
-	base.legacy_modifiers = {"construct_spawn": true, "tesla_wall": true}
+	DataLibrary._add_extras_from_dict(base, {"construct_spawn": true, "tesla_wall": true})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["manual_detonation_stagger"] = true
+	DataLibrary._add_extra(upgraded[0], "manual_detonation_stagger", true)
 	return _ability(&"engineer_tesla_barricade", "Tesla Barricade", [base], upgraded,
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
 		"Manual Detonation applies STAGGER.")
@@ -348,8 +348,8 @@ static func _flak_cannon() -> AbilityData:
 	)
 	base.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["scrap_attack_bonus"] = 2
-	upgraded[0].legacy_modifiers["scrap_bleed_weapon"] = true
+	DataLibrary._add_extra(upgraded[0], "scrap_attack_bonus", 2)
+	DataLibrary._add_extra(upgraded[0], "scrap_bleed_weapon", true)
 	return _ability(&"engineer_flak_cannon", "Flak Cannon", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
 		"Consume 1 Scrap: ATK +2 and BLEED X.")
@@ -361,9 +361,9 @@ static func _wrench_smack() -> AbilityData:
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers["wrench_smack"] = true
+	DataLibrary._add_extra(base, "wrench_smack", true)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["wrench_strength_bonus"] = 1
+	DataLibrary._add_extra(upgraded[0], "wrench_strength_bonus", 1)
 	return _ability(&"engineer_wrench_smack", "Wrench Smack", [base], upgraded,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_HEAL],
@@ -377,10 +377,10 @@ static func _emp_grenade() -> AbilityData:
 		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	base.layers = [_layer(DataLibrary._status_effect(GameEnums.StatusType.SILENCE, 1))]
-	base.legacy_modifiers = {"emp_grenade": true, "mechanical_boss_damage_wpn": 3}
+	DataLibrary._add_extras_from_dict(base, {"emp_grenade": true, "mechanical_boss_damage_wpn": 3})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["emp_friendly_construct_heal"] = 2
-	upgraded[0].legacy_modifiers["emp_friendly_construct_overclock"] = true
+	DataLibrary._add_extra(upgraded[0], "emp_friendly_construct_heal", 2)
+	DataLibrary._add_extra(upgraded[0], "emp_friendly_construct_overclock", true)
 	return _ability(&"engineer_emp_grenade", "EMP Grenade", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
@@ -393,16 +393,18 @@ static func _rocket_launcher() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers = {"rocket_launcher": true, "destroy_terrain": true,
-		"exhaust_next_turn": true, "delayed_next_turn": true}
+	DataLibrary._add_extras_from_dict(base, {
+		"rocket_launcher": true, "destroy_terrain": true,
+		"exhaust_next_turn": true, "delayed_next_turn": true,
+	})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["sacrifice_construct_instant"] = true
+	DataLibrary._add_extra(upgraded[0], "sacrifice_construct_instant", true)
 	var sacrifice := _module(
 		GameEnums.EffectType.DAMAGE, 0, 0, 99, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	sacrifice.aim_binding = GameEnums.AimBinding.NEW_AIM
-	sacrifice.legacy_modifiers["sacrifice_construct_instant"] = true
+	DataLibrary._add_extra(sacrifice, "sacrifice_construct_instant", true)
 	upgraded.append(sacrifice)
 	return _ability(&"engineer_rocket_launcher", "Rocket Launcher", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -414,9 +416,9 @@ static func _scrap_shield() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.ARMOR_UP, 0, 1, 2, GameEnums.TargetingFlags.ALLY,
 	)
-	base.legacy_modifiers = {"scrap_shield": true, "scrap_multiplier": 2}
+	DataLibrary._add_extras_from_dict(base, {"scrap_shield": true, "scrap_multiplier": 2})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["shield_depletion_explode"] = true
+	DataLibrary._add_extra(upgraded[0], "shield_depletion_explode", true)
 	return _ability(&"engineer_scrap_shield", "Scrap Shield", [base], upgraded,
 		GameEnums.TargetingFlags.ALLY, [AbilityModuleBridge.TAG_POSITIONING],
 		"Shield depletion explodes for WPN damage and PUSH 1.")
@@ -427,10 +429,10 @@ static func _manual_detonation() -> AbilityData:
 		GameEnums.EffectType.RANGED_EXPLODE, 2, 1, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	base.legacy_modifiers = {"manual_detonation": true}
+	DataLibrary._add_extras_from_dict(base, {"manual_detonation": true})
 	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["refund_scrap"] = 1
+	DataLibrary._add_extra(upgraded[0], "refund_scrap", 1)
 	var ability := _ability(&"engineer_manual_detonation", "Manual Detonation",
 		[base], upgraded, GameEnums.TargetingFlags.ALLY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
@@ -446,11 +448,13 @@ static func _overdrive_injection() -> AbilityData:
 	)
 	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 1
-	base.legacy_modifiers = {"overdrive_injection": true,
-		"construct_unmitigated_damage": 2}
+	DataLibrary._add_extras_from_dict(base, {
+		"overdrive_injection": true,
+		"construct_unmitigated_damage": 2,
+	})
 	base.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.ALLY_CONSTRUCT)
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["refund_scrap_on_construct_death"] = 1
+	DataLibrary._add_extra(upgraded[0], "refund_scrap_on_construct_death", 1)
 	return _ability(&"engineer_overdrive_injection", "Overdrive Injection",
 		[base], upgraded, GameEnums.TargetingFlags.ALLY,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_POSITIONING],
@@ -462,12 +466,12 @@ static func _barbed_wire() -> AbilityData:
 		GameEnums.EffectType.CREATE_HAZARD, 0, 1, 3, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.ARC, 3,
 	)
-	base.legacy_modifiers = {
+	DataLibrary._add_extras_from_dict(base, {
 		"terrain_id": &"barbed_wire", "hazard_duration": 2,
 		"barbed_wire": true, "bleed_weapon": true, "entry_root": true,
-	}
+	})
 	var upgraded := _clone([base])
-	upgraded[0].legacy_modifiers["adjacent_defense_bonus"] = 1
+	DataLibrary._add_extra(upgraded[0], "adjacent_defense_bonus", 1)
 	return _ability(&"engineer_barbed_wire", "Barbed Wire", [base], upgraded,
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
 		"Wall grants +1 DEF adjacent.")

@@ -808,7 +808,7 @@ static func _apply_rooted_push_bleed(pusher: UnitState, target: UnitState) -> vo
 		if ability == null or not pusher.is_ability_upgraded(ability.id):
 			continue
 		for module: AbilityModule in AbilitySystem.active_modules_for(pusher, ability):
-			if module != null and module.legacy_modifiers.get("rooted_push_bleed_weapon", false):
+			if module != null and bool(module.runtime_value("rooted_push_bleed_weapon", false)):
 				apply = true
 				break
 		if apply:

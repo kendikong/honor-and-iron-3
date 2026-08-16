@@ -751,11 +751,11 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/mod",
-		ab.upgraded_modules[0].legacy_modifiers.has("heal_if_targets_gte"),
+		ab.upgraded_modules[0].runtime_has("heal_if_targets_gte"),
 	)
 	H.assert_eq_int(
 		failures, "crimson_whirlwind/upgrade/mod_val",
-		int(ab.upgraded_modules[0].legacy_modifiers["heal_if_targets_gte"]),
+		int(ab.upgraded_modules[0].runtime_value("heal_if_targets_gte", 0)),
 		3,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(

@@ -170,7 +170,7 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 		_assert(
 			failures, "upgrade/%s/module" % ability_id,
 			module != null and (
-				not module.legacy_modifiers.is_empty()
+				not module.compile_runtime_modifiers().is_empty()
 				or not module.layers.is_empty()
 				or module.amount != 0
 			),
@@ -317,7 +317,7 @@ static func _assert_upgrade_outcome(
 			_assert(
 				failures, "upgrade/shaman_voodoo_link/shared_push",
 				not upgraded_modules.is_empty()
-				and upgraded_modules[0].legacy_modifiers.get("shared_push", false),
+				and upgraded_modules[0].runtime_value("shared_push", false),
 			)
 		&"shaman_bone_spear":
 			var rod: UnitState = null
@@ -358,7 +358,7 @@ static func _assert_upgrade_outcome(
 			_assert(
 				failures, "upgrade/shaman_soul_siphon/heal_per_debuff",
 				not upgraded_modules.is_empty()
-				and upgraded_modules[0].legacy_modifiers.has("heal_per_debuff"),
+				and upgraded_modules[0].runtime_has("heal_per_debuff"),
 			)
 			_assert(
 				failures, "upgrade/shaman_soul_siphon/heal_on_debuff",
@@ -369,7 +369,7 @@ static func _assert_upgrade_outcome(
 			_assert(
 				failures, "upgrade/shaman_pain_spike/blind_module",
 				not upgraded.is_empty()
-				and upgraded[0].legacy_modifiers.get("linked_enemy_blind", false),
+				and upgraded[0].runtime_value("linked_enemy_blind", false),
 			)
 		_:
 			pass

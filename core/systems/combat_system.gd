@@ -1022,7 +1022,7 @@ static func deal_damage(
 					attacker, shaman_ability
 				):
 					if module != null:
-						shaman_effect.modifiers.merge(module.legacy_modifiers)
+						shaman_effect.modifiers.merge(module.compile_runtime_modifiers())
 			ShamanSystems.on_dealt_damage(
 				board, attacker, target, shaman_action, shaman_effect, events, source_type,
 			)

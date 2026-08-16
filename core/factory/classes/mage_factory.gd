@@ -38,10 +38,10 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	blink_module.legacy_modifiers["blink"] = true
+	DataLibrary._add_extra(blink_module, "blink", true)
 	var blink_upgraded := DataLibrary._duplicate_modules([blink_module])
 	blink_upgraded[0].max_range = 3
-	blink_upgraded[0].legacy_modifiers["leave_elemental_surface"] = true
+	DataLibrary._add_extra(blink_upgraded[0], "leave_elemental_surface", true)
 	var blink := DataLibrary._make_modular_ability(
 		&"mage_blink", "Blink", [blink_module], blink_upgraded, 3,
 		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
@@ -237,8 +237,8 @@ static func _ice_shard() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["reaction_terrain"] = &"fire"
-	base.legacy_modifiers["reaction_damage"] = 2
+	DataLibrary._add_extra(base, "reaction_terrain", &"fire")
+	DataLibrary._add_extra(base, "reaction_damage", 2)
 	var slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 1)
 	slow.modifiers["set_max_move"] = 1
 	base.layers.append(_layer(slow))
@@ -247,7 +247,7 @@ static func _ice_shard() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
+	DataLibrary._copy_extras(base, upgraded)
 	var upgraded_slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 1)
 	upgraded_slow.modifiers["set_max_move"] = 1
 	upgraded.layers.append(_layer(upgraded_slow))
@@ -270,16 +270,16 @@ static func _chain_lightning() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		 GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["bounce_count"] = 2
-	base.legacy_modifiers["bounce_range"] = 2
-	base.legacy_modifiers["surface_chain"] = true
-	base.legacy_modifiers["lightning"] = true
+	DataLibrary._add_extra(base, "bounce_count", 2)
+	DataLibrary._add_extra(base, "bounce_range", 2)
+	DataLibrary._add_extra(base, "surface_chain", true)
+	DataLibrary._add_extra(base, "lightning", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["strike_all_surface"] = true
+	DataLibrary._copy_extras(base, upgraded)
+	DataLibrary._add_extra(upgraded, "strike_all_surface", true)
 	return _spell(
 		&"mage_chain_lightning", "Chain Lightning", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,
@@ -314,13 +314,13 @@ static func _teleport() -> AbilityData:
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.NONE, GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	base.legacy_modifiers["teleport_visible"] = true
+	DataLibrary._add_extra(base, "teleport_visible", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 4,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.NONE, GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	upgraded.legacy_modifiers["teleport_visible"] = true
+	DataLibrary._add_extra(upgraded, "teleport_visible", true)
 	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 1), GameEnums.LayerCondition.ON_LAND))
 	return _spell(
 		&"mage_teleport", "Teleport", [base], [upgraded],
@@ -334,13 +334,13 @@ static func _meteor() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 5, 1, 5, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["delayed_next_turn"] = true
+	DataLibrary._add_extra(base, "delayed_next_turn", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 5, 1, 5, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["create_crater"] = true
+	DataLibrary._copy_extras(base, upgraded)
+	DataLibrary._add_extra(upgraded, "create_crater", true)
 	return _spell(
 		&"mage_meteor", "Meteor", [base], [upgraded],
 		GameEnums.TargetingFlags.TILE,
@@ -353,13 +353,13 @@ static func _black_hole() -> AbilityData:
 		GameEnums.EffectType.PULL, 2, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.NONE,
 	)
-	base.legacy_modifiers["pull_to_center"] = true
+	DataLibrary._add_extra(base, "pull_to_center", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.PULL, 2, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.AOE_CROSS, 2, GameEnums.StatType.NONE,
 	)
-	upgraded.legacy_modifiers["pull_to_center"] = true
-	upgraded.legacy_modifiers["pull_surfaces"] = true
+	DataLibrary._add_extra(upgraded, "pull_to_center", true)
+	DataLibrary._add_extra(upgraded, "pull_surfaces", true)
 	return _spell(
 		&"mage_black_hole", "Black Hole", [base], [upgraded],
 		GameEnums.TargetingFlags.TILE,
@@ -391,13 +391,13 @@ static func _mana_shield() -> AbilityData:
 		GameEnums.EffectType.ARMOR_UP, 0, 0, 0, GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["mana_shield"] = true
+	DataLibrary._add_extra(base, "mana_shield", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ARMOR_UP, 0, 0, 0, GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers["mana_shield"] = true
-	upgraded.legacy_modifiers["mana_shield_casting"] = true
+	DataLibrary._add_extra(upgraded, "mana_shield", true)
+	DataLibrary._add_extra(upgraded, "mana_shield_casting", true)
 	return _spell(
 		&"mage_mana_shield", "Mana Shield", [base], [upgraded],
 		GameEnums.TargetingFlags.SELF,
@@ -410,13 +410,13 @@ static func _disintegrate() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 6, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	base.legacy_modifiers["destroy_corpse_on_kill"] = true
+	DataLibrary._add_extra(base, "destroy_corpse_on_kill", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 6, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["kill_grant_ap"] = 1
+	DataLibrary._copy_extras(base, upgraded)
+	DataLibrary._add_extra(upgraded, "kill_grant_ap", 1)
 	return _spell(
 		&"mage_disintegrate", "Disintegrate", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,
@@ -451,13 +451,13 @@ static func _elemental_surge() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF,
 	)
-	base.legacy_modifiers["utility_only"] = true
-	base.legacy_modifiers["elemental_surge"] = true
+	DataLibrary._add_extra(base, "utility_only", true)
+	DataLibrary._add_extra(base, "elemental_surge", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS_SELF, 1, 0, 0, GameEnums.TargetingFlags.SELF,
 	)
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["elemental_surge_ap"] = 1
+	DataLibrary._copy_extras(base, upgraded)
+	DataLibrary._add_extra(upgraded, "elemental_surge_ap", 1)
 	return _spell(
 		&"mage_elemental_surge", "Elemental Surge", [base], [upgraded],
 		GameEnums.TargetingFlags.SELF,
@@ -470,13 +470,13 @@ static func _earth_spike() -> AbilityData:
 		GameEnums.EffectType.SPAWN, 0, 1, 4, GameEnums.TargetingFlags.TILE,
 	)
 	base.spawn_unit_id = &"obsidian_wall"
-	base.legacy_modifiers["construct_hp_pct"] = 0.50
+	DataLibrary._add_extra(base, "construct_hp_pct", 0.50)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.SPAWN, 0, 1, 4, GameEnums.TargetingFlags.TILE,
 	)
 	upgraded.spawn_unit_id = &"obsidian_wall"
-	upgraded.legacy_modifiers["construct_hp_pct"] = 0.50
-	upgraded.legacy_modifiers["creation_adjacent_damage"] = 1
+	DataLibrary._add_extra(upgraded, "construct_hp_pct", 0.50)
+	DataLibrary._add_extra(upgraded, "creation_adjacent_damage", 1)
 	var creation_damage := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 1)
 	creation_damage.scaling_stat = GameEnums.StatType.MAGICAL
 	creation_damage.modifiers["creation_adjacent_damage"] = 1
@@ -494,15 +494,15 @@ static func _density_shift() -> AbilityData:
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 	)
 	base.status_duration = 2
-	base.legacy_modifiers["density_shift"] = true
-	base.legacy_modifiers["utility_only"] = true
+	DataLibrary._add_extra(base, "density_shift", true)
+	DataLibrary._add_extra(base, "utility_only", true)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 0, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 	)
 	upgraded.status_duration = 2
-	upgraded.legacy_modifiers = base.legacy_modifiers.duplicate(true)
-	upgraded.legacy_modifiers["apply_weaken_enemy"] = true
+	DataLibrary._copy_extras(base, upgraded)
+	DataLibrary._add_extra(upgraded, "apply_weaken_enemy", true)
 	return _spell(
 		&"mage_density_shift", "Density Shift", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
@@ -521,7 +521,7 @@ static func _arcane_barrage() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	upgraded.hit_count = 3
-	upgraded.legacy_modifiers["ignore_target_magic_pct"] = 0.25
+	DataLibrary._add_extra(upgraded, "ignore_target_magic_pct", 0.25)
 	return _spell(
 		&"mage_arcane_barrage", "Arcane Barrage", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,

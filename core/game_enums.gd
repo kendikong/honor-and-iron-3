@@ -305,6 +305,7 @@ enum CostResource {
 enum CostModifier {
 	NONE,
 	ZERO_IF_ADJACENT_ENEMIES_GTE_N,
+	SPEND_ALL_MOVEMENT,
 }
 
 ## When a module runs inside an ACTION skill (ability-data.md §2.1).
@@ -326,6 +327,7 @@ enum MotionMode {
 	BACKWARDS,
 	SLIDE_TARGET_OPPOSITE,
 	ALLY_STEP,
+	L_SHAPE,
 }
 
 ## How a module obtains its aim (ability-data.md §2.5).
@@ -430,6 +432,7 @@ enum TargetingFlags {
 	ENEMY = 4,
 	TILE = 8,
 	DASH_LINE = 16,
+	EXCLUDE_CASTER = 32,
 }
 
 ## How planning UI commits an ability (cursor, timeline, commit slots share this).

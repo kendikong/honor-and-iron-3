@@ -20,7 +20,7 @@ static func run_sidestep_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"archer_sidestep")
 	H.assert_true(
 		failures, "sidestep/upgrade/mod",
-		ab.upgraded_modules[0].legacy_modifiers.has("next_ranged_attack_strength"),
+		ab.upgraded_modules[0].runtime_has("next_ranged_attack_strength"),
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.archer_with_ability(&"archer_sidestep"),
@@ -40,7 +40,7 @@ static func run_sidestep_upgrade(failures: Array[String]) -> void:
 	var resolved: AbilityData = H.ability_on_unit(archer, &"archer_sidestep")
 	H.assert_true(
 		failures, "sidestep/upgrade/mod",
-		resolved != null and resolved.upgraded_modules[0].legacy_modifiers.has("next_ranged_attack_strength"),
+		resolved != null and resolved.upgraded_modules[0].runtime_has("next_ranged_attack_strength"),
 	)
 
 

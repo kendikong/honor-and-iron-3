@@ -1,7 +1,7 @@
 class_name ShamanFactory
 extends RefCounted
 
-## Complete Shaman authoring from class_abilities.txt §10.
+## Complete Shaman authoring from class_abilities.txt Â§10.
 ## All rows are data-first; shared systems consume the authored modules and
 ## passive modifier contracts.
 
@@ -40,20 +40,20 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.ALLY_STEP,
 	)
-	usher_pick.legacy_modifiers["relocate_subject_only"] = true
+	DataLibrary._add_extra(usher_pick, "relocate_subject_only", true)
 	var usher_step := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.ALLY_STEP,
 	)
 	usher_step.aim_binding = GameEnums.AimBinding.NEW_AIM
-	usher_step.legacy_modifiers["relocate_target"] = true
-	usher_step.legacy_modifiers["move_active_totem"] = false
+	DataLibrary._add_extra(usher_step, "relocate_target", true)
+	DataLibrary._add_extra(usher_step, "move_active_totem", false)
 	var usher_upgraded := DataLibrary._duplicate_modules([usher_pick, usher_step])
 	usher_upgraded[0].max_range = 4
 	usher_upgraded[1].max_range = 2
-	usher_upgraded[1].legacy_modifiers["relocate_target"] = true
-	usher_upgraded[1].legacy_modifiers["move_active_totem"] = true
+	DataLibrary._add_extra(usher_upgraded[1], "relocate_target", true)
+	DataLibrary._add_extra(usher_upgraded[1], "move_active_totem", true)
 	definition.abilities.append(DataLibrary._make_modular_ability(
 		&"shaman_usher", "Usher", [usher_pick, usher_step], usher_upgraded, 2,
 		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
@@ -217,10 +217,10 @@ static func _curse_of_weakness() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, -2, 1, 4, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 3
-	base.legacy_modifiers = {"curse_of_weakness": true, "stat_str": -2, "stat_def": -2}
+	DataLibrary._add_extras_from_dict(base, {"curse_of_weakness": true, "stat_str": -2, "stat_def": -2})
 	base.layers.append(_layer(_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 3, 2)))
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["push_mitigation_zero"] = true
+	DataLibrary._add_extra(up[0], "push_mitigation_zero", true)
 	return _ability(&"shaman_curse_of_weakness", "Curse of Weakness", [base], up,
 		GameEnums.TargetingFlags.ENEMY, "Target STR -2 and DEF -2 for 3 turns; [+] Push Mitigation = 0.")
 
@@ -243,11 +243,11 @@ static func _bloodlust() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 2, 1, 3, GameEnums.TargetingFlags.ALLY)
 	base.status_type = GameEnums.StatusType.STAT_BUFF_STR
 	base.status_duration = 1
-	base.legacy_modifiers = {"bloodlust": true, "bloodlust_def": -2, "bloodlust_mov": 1, "bloodlust_hp": 2}
+	DataLibrary._add_extras_from_dict(base, {"bloodlust": true, "bloodlust_def": -2, "bloodlust_mov": 1, "bloodlust_hp": 2})
 	base.layers.append(_layer(_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 2)))
 	base.layers.append(_layer(_status(GameEnums.StatusType.STAT_BUFF_MOV, 1, 1)))
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["bloodlust_bleed_on_attack"] = true
+	DataLibrary._add_extra(up[0], "bloodlust_bleed_on_attack", true)
 	return _ability(&"shaman_bloodlust", "Bloodlust", [base], up, GameEnums.TargetingFlags.ALLY,
 		"Ally gains STR +2, DEF -2, MOV +1 and spends 2 HP each turn; [+] attacks apply BLEED.")
 
@@ -256,22 +256,22 @@ static func _hex() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.WEAKEN
 	base.status_duration = 1
-	base.legacy_modifiers = {"hex": true, "wither": true, "boss_damage_reduction": 0.25}
+	DataLibrary._add_extras_from_dict(base, {"hex": true, "wither": true, "boss_damage_reduction": 0.25})
 	base.set_condition_hp_below_pct(100)
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["hex_vulnerable"] = true
+	DataLibrary._add_extra(up[0], "hex_vulnerable", true)
 	return _ability(&"shaman_hex", "Hex", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"Apply WITHER for 1 turn to a target below Max HP; Boss damage reduction is 25%; [+] VULNERABLE.")
 
 
 static func _voodoo_link() -> AbilityData:
 	var first := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY)
-	first.legacy_modifiers = {"voodoo_link": true, "link_two_enemies": true, "shared_damage_wpn": 1}
+	DataLibrary._add_extras_from_dict(first, {"voodoo_link": true, "link_two_enemies": true, "shared_damage_wpn": 1})
 	var second := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY)
 	second.aim_binding = GameEnums.AimBinding.NEW_AIM
-	second.legacy_modifiers = {"link_partner_pick": true}
+	DataLibrary._add_extras_from_dict(second, {"link_partner_pick": true})
 	var up := DataLibrary._duplicate_modules([first, second])
-	up[0].legacy_modifiers["shared_push"] = true
+	DataLibrary._add_extra(up[0], "shared_push", true)
 	return _ability(&"shaman_voodoo_link", "Voodoo Link", [first, second], up, GameEnums.TargetingFlags.ENEMY,
 		"Link 2 enemies; shared damage equals WPN; [+] shared PUSH effects.")
 
@@ -280,11 +280,11 @@ static func _terrify() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 2, GameEnums.TargetingFlags.ENEMY)
 	base.status_type = GameEnums.StatusType.FEAR
 	base.status_duration = 1
-	base.legacy_modifiers = {"terrify": true}
+	DataLibrary._add_extras_from_dict(base, {"terrify": true})
 	base.set_condition_any_debuff()
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["boss_fallback_purge_shield"] = true
-	up[0].legacy_modifiers["boss_fallback_vulnerable"] = true
+	DataLibrary._add_extra(up[0], "boss_fallback_purge_shield", true)
+	DataLibrary._add_extra(up[0], "boss_fallback_vulnerable", true)
 	return _ability(&"shaman_terrify", "Terrify", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"Apply FEAR to a debuffed target; Boss fallback strips SHIELD and applies VULNERABLE.")
 
@@ -294,7 +294,7 @@ static func _miasma() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL)
 	base.layers.append(_layer(_status(GameEnums.StatusType.POISON, 1)))
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["poison_spread_on_push_collision"] = true
+	DataLibrary._add_extra(up[0], "poison_spread_on_push_collision", true)
 	return _ability(&"shaman_miasma", "Miasma", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"MAG ATK 1 and POISON; [+] POISON spreads on PUSH collision.")
 
@@ -302,7 +302,7 @@ static func _miasma() -> AbilityData:
 static func _bone_spear() -> AbilityData:
 	var hit := DataLibrary._module(GameEnums.EffectType.DAMAGE, 2, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.MAGICAL)
-	hit.legacy_modifiers["bone_spear"] = true
+	DataLibrary._add_extra(hit, "bone_spear", true)
 	var spawn := DataLibrary._spawn_effect(&"bone_barricade")
 	spawn.modifiers = {"construct_hp_pct": 0.50, "spawn_furthest_empty_on_line": true}
 	hit.layers.append(_layer(spawn))
@@ -337,12 +337,12 @@ static func _totem_guard() -> AbilityData:
 
 static func _sympathetic_bond() -> AbilityData:
 	var ally := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY)
-	ally.legacy_modifiers = {"sympathetic_bond": true, "link_ally_enemy": true, "ally_heal_enemy_wpn": true}
+	DataLibrary._add_extras_from_dict(ally, {"sympathetic_bond": true, "link_ally_enemy": true, "ally_heal_enemy_wpn": true})
 	var enemy := DataLibrary._module(GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY)
 	enemy.aim_binding = GameEnums.AimBinding.NEW_AIM
-	enemy.legacy_modifiers = {"link_partner_pick": true}
+	DataLibrary._add_extras_from_dict(enemy, {"link_partner_pick": true})
 	var up := DataLibrary._duplicate_modules([ally, enemy])
-	up[0].legacy_modifiers["enemy_damage_ally_heal"] = 1
+	DataLibrary._add_extra(up[0], "enemy_damage_ally_heal", 1)
 	return _ability(&"shaman_sympathetic_bond", "Sympathetic Bond", [ally, enemy], up,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		"Link an ally and enemy; ally HEAL causes enemy WPN damage; [+] enemy damage HEALs ally 1.")
@@ -358,9 +358,9 @@ static func _earthbind_totem() -> AbilityData:
 static func _soul_siphon() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.DAMAGE, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL)
-	base.legacy_modifiers = {"bonus_damage_per_debuff": 1}
+	DataLibrary._add_extras_from_dict(base, {"bonus_damage_per_debuff": 1})
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["heal_per_debuff"] = 1
+	DataLibrary._add_extra(up[0], "heal_per_debuff", 1)
 	return _ability(&"shaman_soul_siphon", "Soul Siphon", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"MAG ATK 1 plus +1 damage per target debuff; [+] HEAL 1 per debuff.")
 
@@ -368,9 +368,9 @@ static func _soul_siphon() -> AbilityData:
 static func _pain_spike() -> AbilityData:
 	var base := DataLibrary._module(GameEnums.EffectType.DAMAGE, 2, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	base.legacy_modifiers = {"pain_spike": true, "linked_enemy_damage": 1}
+	DataLibrary._add_extras_from_dict(base, {"pain_spike": true, "linked_enemy_damage": 1})
 	var up := DataLibrary._duplicate_modules([base])
-	up[0].legacy_modifiers["linked_enemy_blind"] = true
+	DataLibrary._add_extra(up[0], "linked_enemy_blind", true)
 	return _ability(&"shaman_pain_spike", "Pain Spike", [base], up, GameEnums.TargetingFlags.ENEMY,
 		"ATK 2; if the target is Linked, deal ATK 1 to linked enemies; [+] linked enemies suffer BLIND.")
 
@@ -380,5 +380,5 @@ static func _spawn(spawn_id: StringName, range_tiles: int, modifiers: Dictionary
 		GameEnums.EffectType.SPAWN, 0, 1, range_tiles, GameEnums.TargetingFlags.TILE,
 	)
 	module.spawn_unit_id = spawn_id
-	module.legacy_modifiers = modifiers
+	DataLibrary._add_extras_from_dict(module, modifiers)
 	return module

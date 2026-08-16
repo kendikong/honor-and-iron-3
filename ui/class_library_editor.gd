@@ -1622,6 +1622,12 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "uses_per_combat", uses_row)
+	var once_row := _bind_bool(grid, "Once Per Turn", ability.once_per_turn, func(v: bool) -> void:
+		ability.once_per_turn = v
+		ability.finalize_modular()
+		_refresh_ability_ui(ability)
+	)
+	_track_ability_field(ability, "once_per_turn", once_row)
 	var present_key_row := _bind_string(
 		grid, "Present Key", String(ability.presentation_key), func(v: String) -> void:
 			ability.presentation_key = StringName(v)
@@ -2053,8 +2059,10 @@ func _build_module_fields(
 	_ability_ui[ability]["module_grey_cbs"].append(module_grey_cb)
 	module_grey_cb.call()
 	_add_module_targeting_flags(parent, ability, module)
+	_add_module_typed_extras_editor(parent, ability, module)
 	_add_module_keywords_editor(parent, ability, module)
 	_add_module_layers_editor(parent, ability, module)
+	_add_module_extras_editor(parent, ability, module)
 
 
 func _add_module_targeting_flags(
@@ -2072,6 +2080,7 @@ func _add_module_targeting_flags(
 		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
 		[GameEnums.TargetingFlags.TILE, "Tile"],
 		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
+		[GameEnums.TargetingFlags.EXCLUDE_CASTER, "Exclude caster"],
 	]:
 		var flag: int = int(spec[0])
 		var check := CheckBox.new()
@@ -2088,6 +2097,125 @@ func _add_module_targeting_flags(
 			_on_module_field_edited(ability)
 		)
 		row.add_child(check)
+
+
+func _add_module_typed_extras_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Typed Skill Fields", ClassLibraryTheme.ACCENT_DATA)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	parent.add_child(grid)
+	_bind_bool(grid, "Exclude Caster", module.exclude_caster, func(v: bool) -> void:
+		module.exclude_caster = v
+		if v:
+			module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
+		else:
+			module.targeting_flags &= ~GameEnums.TargetingFlags.EXCLUDE_CASTER
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Terrain Id", String(module.terrain_id), func(v: String) -> void:
+		module.terrain_id = StringName(v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Hazard Duration", module.hazard_duration, func(v: int) -> void:
+		module.hazard_duration = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_enum(grid, "Hazard Status", GameEnums.StatusType, module.hazard_status, func(v: int) -> void:
+		module.hazard_status = v as GameEnums.StatusType
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bonus Dmg Occupied", module.bonus_dmg_from_occupied, func(v: int) -> void:
+		module.bonus_dmg_from_occupied = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bonus Dmg /10 HP", module.bonus_dmg_per_10_hp, func(v: int) -> void:
+		module.bonus_dmg_per_10_hp = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Heal If Targets >=", module.heal_if_targets_gte, func(v: int) -> void:
+		module.heal_if_targets_gte = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bounce Count", module.bounce_count, func(v: int) -> void:
+		module.bounce_count = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bounce Range", module.bounce_range, func(v: int) -> void:
+		module.bounce_range = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Buff On Push", module.buff_on_push, func(v: int) -> void:
+		module.buff_on_push = v
+		_on_module_field_edited(ability)
+	)
+
+
+func _add_module_extras_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Extra Rules", ClassLibraryTheme.ACCENT_DATA)
+	var box := VBoxContainer.new()
+	parent.add_child(box)
+	for index: int in module.extras.size():
+		var extra: AbilityExtraRule = module.extras[index]
+		if extra == null:
+			extra = AbilityExtraRule.new()
+			module.extras[index] = extra
+		var grid := GridContainer.new()
+		grid.columns = 2
+		box.add_child(grid)
+		_bind_enum(grid, "Extra %d" % index, AbilityExtraRule.Id, extra.id, func(v: int) -> void:
+			extra.id = v as AbilityExtraRule.Id
+			_on_module_field_edited(ability)
+		)
+		var value_edit := LineEdit.new()
+		value_edit.text = str(extra.value)
+		value_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		value_edit.text_submitted.connect(func(text: String) -> void:
+			extra.value = _parse_extra_value(text)
+			_on_module_field_edited(ability)
+		)
+		value_edit.focus_exited.connect(func() -> void:
+			extra.value = _parse_extra_value(value_edit.text)
+			_on_module_field_edited(ability)
+		)
+		grid.add_child(_field_label("Value"))
+		grid.add_child(value_edit)
+		var remove := Button.new()
+		remove.text = "Remove Extra"
+		remove.pressed.connect(func() -> void:
+			module.extras.remove_at(index)
+			_rebuild_ability_detail_panes(ability)
+		)
+		box.add_child(remove)
+	var add := Button.new()
+	add.text = "+ Extra Rule"
+	add.pressed.connect(func() -> void:
+		module.extras.append(AbilityExtraRule.new())
+		_rebuild_ability_detail_panes(ability)
+	)
+	box.add_child(add)
+
+
+func _parse_extra_value(text: String) -> Variant:
+	var trimmed: String = text.strip_edges()
+	if trimmed.is_empty():
+		return true
+	if trimmed == "true":
+		return true
+	if trimmed == "false":
+		return false
+	if trimmed.is_valid_int():
+		return int(trimmed)
+	if trimmed.is_valid_float():
+		return float(trimmed)
+	return StringName(trimmed)
 
 
 func _add_module_keywords_editor(

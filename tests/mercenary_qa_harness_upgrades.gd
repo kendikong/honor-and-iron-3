@@ -88,7 +88,7 @@ static func _run_defense_strike_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"mercenary_defense_strike")
 	H.assert_true(
 		failures, "defense_strike/upgrade_mods",
-		ab.upgraded_modules[0].legacy_modifiers.has("remove_push_mitigation"),
+		ab.upgraded_modules[0].runtime_has("remove_push_mitigation"),
 	)
 
 
@@ -112,7 +112,7 @@ static func _run_executioners_blade_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"mercenary_executioners_blade")
 	H.assert_true(
 		failures, "executioners_blade/upgrade/kill_ap",
-		ab.upgraded_modules[0].legacy_modifiers.has("kill_grant_ap"),
+		ab.upgraded_modules[0].runtime_has("kill_grant_ap"),
 	)
 
 
@@ -120,7 +120,7 @@ static func _run_precision_strike_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"mercenary_precision_strike")
 	H.assert_true(
 		failures, "precision_strike/upgrade/ignore",
-		float(ab.upgraded_modules[0].legacy_modifiers.get("unacted_target_ignore_def_pct", 0.0)) >= 1.0,
+		float(ab.upgraded_modules[0].runtime_value("unacted_target_ignore_def_pct", 0.0)) >= 1.0,
 	)
 
 

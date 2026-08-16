@@ -19,7 +19,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		&"cataphract": {"constitution": 2, "defense": 2, "movement": 2},
 	}
 	
-	# Movement Skill (Swap) — Master Bible; always granted, not part of roll pool.
+	# Movement Skill (Swap) â€” Master Bible; always granted, not part of roll pool.
 	var swap_module := DataLibrary._module(
 		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
@@ -281,7 +281,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.AOE_DIAMOND, 3,
 	)
 	defensive_module.status_type = GameEnums.StatusType.STAT_BUFF_DEF
-	defensive_module.legacy_modifiers["exclude_caster"] = true
+	DataLibrary._add_extra(defensive_module, "exclude_caster", true)
 	defensive_module.layers = [
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)),
 	]
