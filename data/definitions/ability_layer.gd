@@ -37,6 +37,8 @@ extends Resource
 @export var creation_adjacent_damage: int = 0
 @export var terrain_id: StringName = &""
 @export var hazard_duration: int = 0
+@export var counterattack_melee: bool = false
+@export var counterattack_on_intercept: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -95,6 +97,10 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["terrain_id"] = terrain_id
 	if hazard_duration != 0:
 		modifiers["hazard_duration"] = hazard_duration
+	if counterattack_melee:
+		modifiers["counterattack_melee"] = true
+	if counterattack_on_intercept:
+		modifiers["counterattack_on_intercept"] = true
 	return modifiers
 
 
@@ -154,3 +160,7 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			terrain_id = StringName(value)
 		"hazard_duration":
 			hazard_duration = int(value)
+		"counterattack_melee":
+			counterattack_melee = bool(value)
+		"counterattack_on_intercept":
+			counterattack_on_intercept = bool(value)

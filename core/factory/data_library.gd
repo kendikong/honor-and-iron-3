@@ -570,6 +570,32 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.ignore_target_magic_pct = from_module.ignore_target_magic_pct
 	to_module.creation_adjacent_damage = from_module.creation_adjacent_damage
 	to_module.apply_weaken_enemy = from_module.apply_weaken_enemy
+	to_module.cost_all_movement = from_module.cost_all_movement
+	to_module.cleanse_target = from_module.cleanse_target
+	to_module.mag_heal = from_module.mag_heal
+	to_module.enemy_mag_atk = from_module.enemy_mag_atk
+	to_module.shield_closest_ally_pct_damage = from_module.shield_closest_ally_pct_damage
+	to_module.ally_str_per_debuff = from_module.ally_str_per_debuff
+	to_module.sanctuary = from_module.sanctuary
+	to_module.sanctuary_enemy_push = from_module.sanctuary_enemy_push
+	to_module.creation_adjacent_push = from_module.creation_adjacent_push
+	to_module.holy_aura = from_module.holy_aura
+	to_module.life_link = from_module.life_link
+	to_module.life_link_reduction = from_module.life_link_reduction
+	to_module.revive_percent_max_hp = from_module.revive_percent_max_hp
+	to_module.spend_self_hp = from_module.spend_self_hp
+	to_module.revive_shield = from_module.revive_shield
+	to_module.holy_ground = from_module.holy_ground
+	to_module.holy_ground_zone = from_module.holy_ground_zone
+	to_module.holy_ground_def_down = from_module.holy_ground_def_down
+	to_module.stagger_if_debuffed = from_module.stagger_if_debuffed
+	to_module.push = from_module.push
+	to_module.grant_ap = from_module.grant_ap
+	to_module.self_move_zero_next_turn = from_module.self_move_zero_next_turn
+	to_module.link_two_enemies = from_module.link_two_enemies
+	to_module.magic_link_damage = from_module.magic_link_damage
+	to_module.link_partner_pick = from_module.link_partner_pick
+	to_module.link_blind = from_module.link_blind
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

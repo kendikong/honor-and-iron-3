@@ -24,6 +24,32 @@ static func run_all(failures: Array[String]) -> void:
 	source.kill_grant_ap = 1
 	source.construct_hp_pct = 0.5
 	source.ignore_target_magic_pct = 0.25
+	source.mag_heal = true
+	source.enemy_mag_atk = 4
+	source.life_link = true
+	source.life_link_reduction = 3
+	source.revive_percent_max_hp = 0.1
+	source.holy_ground = true
+	source.link_blind = true
+	source.cost_all_movement = true
+	source.cleanse_target = true
+	source.shield_closest_ally_pct_damage = 0.5
+	source.ally_str_per_debuff = 1
+	source.sanctuary = true
+	source.sanctuary_enemy_push = 1
+	source.creation_adjacent_push = 1
+	source.holy_aura = true
+	source.spend_self_hp = 10
+	source.revive_shield = 2
+	source.holy_ground_zone = true
+	source.holy_ground_def_down = 1
+	source.stagger_if_debuffed = true
+	source.push = 2
+	source.grant_ap = 1
+	source.self_move_zero_next_turn = true
+	source.link_two_enemies = true
+	source.magic_link_damage = 1
+	source.link_partner_pick = true
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -38,6 +64,8 @@ static func run_all(failures: Array[String]) -> void:
 	layer.creation_adjacent_damage = 1
 	layer.terrain_id = &"fire"
 	layer.hazard_duration = 2
+	layer.counterattack_melee = true
+	layer.counterattack_on_intercept = true
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -61,6 +89,32 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "kill_grant_ap", restored.kill_grant_ap == 1)
 	_assert(failures, "construct_hp_pct", is_equal_approx(restored.construct_hp_pct, 0.5))
 	_assert(failures, "ignore_target_magic_pct", is_equal_approx(restored.ignore_target_magic_pct, 0.25))
+	_assert(failures, "mag_heal", restored.mag_heal)
+	_assert(failures, "enemy_mag_atk", restored.enemy_mag_atk == 4)
+	_assert(failures, "life_link", restored.life_link)
+	_assert(failures, "life_link_reduction", restored.life_link_reduction == 3)
+	_assert(failures, "revive_percent_max_hp", is_equal_approx(restored.revive_percent_max_hp, 0.1))
+	_assert(failures, "holy_ground", restored.holy_ground)
+	_assert(failures, "link_blind", restored.link_blind)
+	_assert(failures, "cost_all_movement", restored.cost_all_movement)
+	_assert(failures, "cleanse_target", restored.cleanse_target)
+	_assert(failures, "shield_closest_ally_pct_damage", is_equal_approx(restored.shield_closest_ally_pct_damage, 0.5))
+	_assert(failures, "ally_str_per_debuff", restored.ally_str_per_debuff == 1)
+	_assert(failures, "sanctuary", restored.sanctuary)
+	_assert(failures, "sanctuary_enemy_push", restored.sanctuary_enemy_push == 1)
+	_assert(failures, "creation_adjacent_push", restored.creation_adjacent_push == 1)
+	_assert(failures, "holy_aura", restored.holy_aura)
+	_assert(failures, "spend_self_hp", restored.spend_self_hp == 10)
+	_assert(failures, "revive_shield", restored.revive_shield == 2)
+	_assert(failures, "holy_ground_zone", restored.holy_ground_zone)
+	_assert(failures, "holy_ground_def_down", restored.holy_ground_def_down == 1)
+	_assert(failures, "stagger_if_debuffed", restored.stagger_if_debuffed)
+	_assert(failures, "push", restored.push == 2)
+	_assert(failures, "grant_ap", restored.grant_ap == 1)
+	_assert(failures, "self_move_zero_next_turn", restored.self_move_zero_next_turn)
+	_assert(failures, "link_two_enemies", restored.link_two_enemies)
+	_assert(failures, "magic_link_damage", restored.magic_link_damage == 1)
+	_assert(failures, "link_partner_pick", restored.link_partner_pick)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -73,6 +127,14 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_creation_adjacent_damage", restored.layers[0].creation_adjacent_damage == 1)
 	_assert(failures, "layer_terrain_id", restored.layers[0].terrain_id == &"fire")
 	_assert(failures, "layer_hazard_duration", restored.layers[0].hazard_duration == 2)
+	_assert(failures, "layer_counterattack_melee", restored.layers[0].counterattack_melee)
+	_assert(failures, "layer_counterattack_on_intercept", restored.layers[0].counterattack_on_intercept)
+	var copied := AbilityModule.new()
+	DataLibrary._copy_extras(source, copied)
+	_assert(failures, "copy_cleric_life_link", copied.life_link)
+	_assert(failures, "copy_cleric_sanctuary", copied.sanctuary)
+	_assert(failures, "copy_cleric_revive", is_equal_approx(copied.revive_percent_max_hp, 0.1))
+	_assert(failures, "copy_cleric_link", copied.link_two_enemies and copied.magic_link_damage == 1)
 	_assert(
 		failures,
 		"layer_range_one_damage_multiplier",

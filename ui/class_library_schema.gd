@@ -709,6 +709,8 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"creation_adjacent_damage": src.creation_adjacent_damage,
 		"terrain_id": src.terrain_id,
 		"hazard_duration": src.hazard_duration,
+		"counterattack_melee": src.counterattack_melee,
+		"counterattack_on_intercept": src.counterattack_on_intercept,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -765,6 +767,10 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	)
 	layer.terrain_id = StringName(str(data.get("terrain_id", String(layer.terrain_id))))
 	layer.hazard_duration = int(data.get("hazard_duration", layer.hazard_duration))
+	layer.counterattack_melee = bool(data.get("counterattack_melee", layer.counterattack_melee))
+	layer.counterattack_on_intercept = bool(
+		data.get("counterattack_on_intercept", layer.counterattack_on_intercept)
+	)
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -908,6 +914,32 @@ static func module_to_dict(
 		"ignore_target_magic_pct": src.ignore_target_magic_pct,
 		"creation_adjacent_damage": src.creation_adjacent_damage,
 		"apply_weaken_enemy": src.apply_weaken_enemy,
+		"cost_all_movement": src.cost_all_movement,
+		"cleanse_target": src.cleanse_target,
+		"mag_heal": src.mag_heal,
+		"enemy_mag_atk": src.enemy_mag_atk,
+		"shield_closest_ally_pct_damage": src.shield_closest_ally_pct_damage,
+		"ally_str_per_debuff": src.ally_str_per_debuff,
+		"sanctuary": src.sanctuary,
+		"sanctuary_enemy_push": src.sanctuary_enemy_push,
+		"creation_adjacent_push": src.creation_adjacent_push,
+		"holy_aura": src.holy_aura,
+		"life_link": src.life_link,
+		"life_link_reduction": src.life_link_reduction,
+		"revive_percent_max_hp": src.revive_percent_max_hp,
+		"spend_self_hp": src.spend_self_hp,
+		"revive_shield": src.revive_shield,
+		"holy_ground": src.holy_ground,
+		"holy_ground_zone": src.holy_ground_zone,
+		"holy_ground_def_down": src.holy_ground_def_down,
+		"stagger_if_debuffed": src.stagger_if_debuffed,
+		"push": src.push,
+		"grant_ap": src.grant_ap,
+		"self_move_zero_next_turn": src.self_move_zero_next_turn,
+		"link_two_enemies": src.link_two_enemies,
+		"magic_link_damage": src.magic_link_damage,
+		"link_partner_pick": src.link_partner_pick,
+		"link_blind": src.link_blind,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1152,6 +1184,38 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		data.get("creation_adjacent_damage", dst.creation_adjacent_damage)
 	)
 	dst.apply_weaken_enemy = bool(data.get("apply_weaken_enemy", dst.apply_weaken_enemy))
+	dst.cost_all_movement = bool(data.get("cost_all_movement", dst.cost_all_movement))
+	dst.cleanse_target = bool(data.get("cleanse_target", dst.cleanse_target))
+	dst.mag_heal = bool(data.get("mag_heal", dst.mag_heal))
+	dst.enemy_mag_atk = int(data.get("enemy_mag_atk", dst.enemy_mag_atk))
+	dst.shield_closest_ally_pct_damage = float(
+		data.get("shield_closest_ally_pct_damage", dst.shield_closest_ally_pct_damage)
+	)
+	dst.ally_str_per_debuff = int(data.get("ally_str_per_debuff", dst.ally_str_per_debuff))
+	dst.sanctuary = bool(data.get("sanctuary", dst.sanctuary))
+	dst.sanctuary_enemy_push = int(data.get("sanctuary_enemy_push", dst.sanctuary_enemy_push))
+	dst.creation_adjacent_push = int(data.get("creation_adjacent_push", dst.creation_adjacent_push))
+	dst.holy_aura = bool(data.get("holy_aura", dst.holy_aura))
+	dst.life_link = bool(data.get("life_link", dst.life_link))
+	dst.life_link_reduction = int(data.get("life_link_reduction", dst.life_link_reduction))
+	dst.revive_percent_max_hp = float(
+		data.get("revive_percent_max_hp", dst.revive_percent_max_hp)
+	)
+	dst.spend_self_hp = int(data.get("spend_self_hp", dst.spend_self_hp))
+	dst.revive_shield = int(data.get("revive_shield", dst.revive_shield))
+	dst.holy_ground = bool(data.get("holy_ground", dst.holy_ground))
+	dst.holy_ground_zone = bool(data.get("holy_ground_zone", dst.holy_ground_zone))
+	dst.holy_ground_def_down = int(data.get("holy_ground_def_down", dst.holy_ground_def_down))
+	dst.stagger_if_debuffed = bool(data.get("stagger_if_debuffed", dst.stagger_if_debuffed))
+	dst.push = int(data.get("push", dst.push))
+	dst.grant_ap = int(data.get("grant_ap", dst.grant_ap))
+	dst.self_move_zero_next_turn = bool(
+		data.get("self_move_zero_next_turn", dst.self_move_zero_next_turn)
+	)
+	dst.link_two_enemies = bool(data.get("link_two_enemies", dst.link_two_enemies))
+	dst.magic_link_damage = int(data.get("magic_link_damage", dst.magic_link_damage))
+	dst.link_partner_pick = bool(data.get("link_partner_pick", dst.link_partner_pick))
+	dst.link_blind = bool(data.get("link_blind", dst.link_blind))
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

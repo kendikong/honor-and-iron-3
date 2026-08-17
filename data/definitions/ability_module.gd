@@ -159,6 +159,34 @@ extends Resource
 @export var creation_adjacent_damage: int = 0
 @export var apply_weaken_enemy: bool = false
 
+## Cleric typed healing, sanctuary, protection, and link fields.
+@export var cost_all_movement: bool = false
+@export var cleanse_target: bool = false
+@export var mag_heal: bool = false
+@export var enemy_mag_atk: int = 0
+@export var shield_closest_ally_pct_damage: float = 0.0
+@export var ally_str_per_debuff: int = 0
+@export var sanctuary: bool = false
+@export var sanctuary_enemy_push: int = 0
+@export var creation_adjacent_push: int = 0
+@export var holy_aura: bool = false
+@export var life_link: bool = false
+@export var life_link_reduction: int = 0
+@export var revive_percent_max_hp: float = 0.0
+@export var spend_self_hp: int = 0
+@export var revive_shield: int = 0
+@export var holy_ground: bool = false
+@export var holy_ground_zone: bool = false
+@export var holy_ground_def_down: int = 0
+@export var stagger_if_debuffed: bool = false
+@export var push: int = 0
+@export var grant_ap: int = 0
+@export var self_move_zero_next_turn: bool = false
+@export var link_two_enemies: bool = false
+@export var magic_link_damage: int = 0
+@export var link_partner_pick: bool = false
+@export var link_blind: bool = false
+
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
@@ -406,6 +434,58 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["creation_adjacent_damage"] = creation_adjacent_damage
 	if apply_weaken_enemy:
 		bag["apply_weaken_enemy"] = true
+	if cost_all_movement:
+		bag["cost_all_movement"] = true
+	if cleanse_target:
+		bag["cleanse_target"] = true
+	if mag_heal:
+		bag["mag_heal"] = true
+	if enemy_mag_atk != 0:
+		bag["enemy_mag_atk"] = enemy_mag_atk
+	if not is_zero_approx(shield_closest_ally_pct_damage):
+		bag["shield_closest_ally_pct_damage"] = shield_closest_ally_pct_damage
+	if ally_str_per_debuff != 0:
+		bag["ally_str_per_debuff"] = ally_str_per_debuff
+	if sanctuary:
+		bag["sanctuary"] = true
+	if sanctuary_enemy_push != 0:
+		bag["sanctuary_enemy_push"] = sanctuary_enemy_push
+	if creation_adjacent_push != 0:
+		bag["creation_adjacent_push"] = creation_adjacent_push
+	if holy_aura:
+		bag["holy_aura"] = true
+	if life_link:
+		bag["life_link"] = true
+	if life_link_reduction != 0:
+		bag["life_link_reduction"] = life_link_reduction
+	if not is_zero_approx(revive_percent_max_hp):
+		bag["revive_percent_max_hp"] = revive_percent_max_hp
+	if spend_self_hp != 0:
+		bag["spend_self_hp"] = spend_self_hp
+	if revive_shield != 0:
+		bag["revive_shield"] = revive_shield
+	if holy_ground:
+		bag["holy_ground"] = true
+	if holy_ground_zone:
+		bag["holy_ground_zone"] = true
+	if holy_ground_def_down != 0:
+		bag["holy_ground_def_down"] = holy_ground_def_down
+	if stagger_if_debuffed:
+		bag["stagger_if_debuffed"] = true
+	if push != 0:
+		bag["push"] = push
+	if grant_ap != 0:
+		bag["grant_ap"] = grant_ap
+	if self_move_zero_next_turn:
+		bag["self_move_zero_next_turn"] = true
+	if link_two_enemies:
+		bag["link_two_enemies"] = true
+	if magic_link_damage != 0:
+		bag["magic_link_damage"] = magic_link_damage
+	if link_partner_pick:
+		bag["link_partner_pick"] = true
+	if link_blind:
+		bag["link_blind"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -730,6 +810,84 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"apply_weaken_enemy":
 			apply_weaken_enemy = bool(value)
+			return
+		"cost_all_movement":
+			cost_all_movement = bool(value)
+			return
+		"cleanse_target":
+			cleanse_target = bool(value)
+			return
+		"mag_heal":
+			mag_heal = bool(value)
+			return
+		"enemy_mag_atk":
+			enemy_mag_atk = int(value)
+			return
+		"shield_closest_ally_pct_damage":
+			shield_closest_ally_pct_damage = float(value)
+			return
+		"ally_str_per_debuff":
+			ally_str_per_debuff = int(value)
+			return
+		"sanctuary":
+			sanctuary = bool(value)
+			return
+		"sanctuary_enemy_push":
+			sanctuary_enemy_push = int(value)
+			return
+		"creation_adjacent_push":
+			creation_adjacent_push = int(value)
+			return
+		"holy_aura":
+			holy_aura = bool(value)
+			return
+		"life_link":
+			life_link = bool(value)
+			return
+		"life_link_reduction":
+			life_link_reduction = int(value)
+			return
+		"revive_percent_max_hp":
+			revive_percent_max_hp = float(value)
+			return
+		"spend_self_hp":
+			spend_self_hp = int(value)
+			return
+		"revive_shield":
+			revive_shield = int(value)
+			return
+		"holy_ground":
+			holy_ground = bool(value)
+			return
+		"holy_ground_zone":
+			holy_ground_zone = bool(value)
+			return
+		"holy_ground_def_down":
+			holy_ground_def_down = int(value)
+			return
+		"stagger_if_debuffed":
+			stagger_if_debuffed = bool(value)
+			return
+		"push":
+			push = int(value)
+			return
+		"grant_ap":
+			grant_ap = int(value)
+			return
+		"self_move_zero_next_turn":
+			self_move_zero_next_turn = bool(value)
+			return
+		"link_two_enemies":
+			link_two_enemies = bool(value)
+			return
+		"magic_link_damage":
+			magic_link_damage = int(value)
+			return
+		"link_partner_pick":
+			link_partner_pick = bool(value)
+			return
+		"link_blind":
+			link_blind = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

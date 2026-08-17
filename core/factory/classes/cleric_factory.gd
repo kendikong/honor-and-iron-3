@@ -38,10 +38,10 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.NONE,
 	)
-	DataLibrary._add_extra(guardian_module, "cost_all_movement", true)
+	guardian_module.cost_all_movement = true
 	var guardian_upgraded := DataLibrary._duplicate_modules([guardian_module])
 	guardian_upgraded[0].max_range = 999
-	DataLibrary._add_extra(guardian_upgraded[0], "cleanse_target", true)
+	guardian_upgraded[0].cleanse_target = true
 	var guardian_step := DataLibrary._make_modular_ability(
 		&"cleric_guardian_step", "Guardian Step", [guardian_module],
 		guardian_upgraded, 0, GameEnums.PlannerGroup.PRE_MOVE,
@@ -156,6 +156,11 @@ static func _layer(
 	var layer := AbilityLayer.new()
 	layer.effect = effect
 	layer.condition = condition
+	for key: Variant in effect.modifiers.keys():
+		var key_text := String(key)
+		layer.ingest_runtime_key(key_text, effect.modifiers[key])
+		if layer.compile_runtime_modifiers().has(key_text):
+			effect.modifiers.erase(key)
 	return layer
 
 
@@ -180,15 +185,15 @@ static func _holy_light() -> AbilityData:
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(base, "mag_heal", true)
-	DataLibrary._add_extra(base, "enemy_mag_atk", 2)
+	base.mag_heal = true
+	base.enemy_mag_atk = 2
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.HEAL, 3, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(upgraded, "mag_heal", true)
-	DataLibrary._add_extra(upgraded, "enemy_mag_atk", 4)
+	upgraded.mag_heal = true
+	upgraded.enemy_mag_atk = 4
 	return _ability(
 		&"cleric_holy_light", "Holy Light", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
@@ -205,7 +210,7 @@ static func _smite() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(upgraded, "shield_closest_ally_pct_damage", 0.5)
+	upgraded.shield_closest_ally_pct_damage = 0.5
 	return _ability(
 		&"cleric_smite", "Smite", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,
@@ -223,7 +228,7 @@ static func _cleansing_aura() -> AbilityData:
 		GameEnums.EffectType.CLEANSE, 0, 0, 0, GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
-	DataLibrary._add_extra(upgraded, "ally_str_per_debuff", 1)
+	upgraded.ally_str_per_debuff = 1
 	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PURGE, 0)))
 	return _ability(
 		&"cleric_cleansing_aura", "Cleansing Aura", [base], [upgraded],
@@ -236,14 +241,14 @@ static func _sanctuary() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
-	DataLibrary._add_extra(base, "terrain_id", &"sanctuary")
-	DataLibrary._add_extra(base, "hazard_duration", 2)
-	DataLibrary._add_extra(base, "sanctuary", true)
+	base.terrain_id = &"sanctuary"
+	base.hazard_duration = 2
+	base.sanctuary = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
 	DataLibrary._copy_extras(base, upgraded)
-	DataLibrary._add_extra(upgraded, "sanctuary_enemy_push", 1)
+	upgraded.sanctuary_enemy_push = 1
 	return _ability(
 		&"cleric_sanctuary", "Sanctuary", [base], [upgraded],
 		GameEnums.TargetingFlags.TILE,
@@ -275,17 +280,17 @@ static func _divine_hammer() -> AbilityData:
 		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
 	base.spawn_unit_id = &"cleric_holy_hammer"
-	DataLibrary._add_extra(base, "construct_hp_pct", 0.25)
-	DataLibrary._add_extra(base, "creation_adjacent_damage", 2)
-	DataLibrary._add_extra(base, "creation_adjacent_push", 1)
+	base.construct_hp_pct = 0.25
+	base.creation_adjacent_damage = 2
+	base.creation_adjacent_push = 1
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.SPAWN, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 	)
 	upgraded.spawn_unit_id = &"cleric_holy_hammer"
-	DataLibrary._add_extra(upgraded, "construct_hp_pct", 0.25)
-	DataLibrary._add_extra(upgraded, "creation_adjacent_damage", 2)
-	DataLibrary._add_extra(upgraded, "creation_adjacent_push", 1)
-	DataLibrary._add_extra(upgraded, "holy_aura", true)
+	upgraded.construct_hp_pct = 0.25
+	upgraded.creation_adjacent_damage = 2
+	upgraded.creation_adjacent_push = 1
+	upgraded.holy_aura = true
 	return _ability(
 		&"cleric_divine_hammer", "Divine Hammer", [base], [upgraded],
 		GameEnums.TargetingFlags.TILE,
@@ -297,14 +302,14 @@ static func _life_link() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	DataLibrary._add_extra(base, "life_link", true)
-	DataLibrary._add_extra(base, "life_link_reduction", 3)
+	base.life_link = true
+	base.life_link_reduction = 3
 	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE_SELF, 2)))
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	DataLibrary._add_extra(upgraded, "life_link", true)
-	DataLibrary._add_extra(upgraded, "life_link_reduction", 3)
+	upgraded.life_link = true
+	upgraded.life_link_reduction = 3
 	return _ability(
 		&"cleric_life_link", "Life Link", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -325,8 +330,9 @@ static func _prayer_of_fortitude() -> AbilityData:
 	upgraded.status_type = GameEnums.StatusType.STAT_BUFF_DEF
 	upgraded.status_duration = 1
 	var sturdy := DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)
-	sturdy.modifiers["counterattack_melee"] = true
-	upgraded.layers.append(_layer(sturdy))
+	var sturdy_layer := _layer(sturdy)
+	sturdy_layer.counterattack_melee = true
+	upgraded.layers.append(sturdy_layer)
 	return _ability(
 		&"cleric_prayer_of_fortitude", "Prayer of Fortitude", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -339,14 +345,14 @@ static func _resurrection() -> AbilityData:
 		GameEnums.EffectType.HEAL, 10, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(base, "revive_percent_max_hp", 0.10)
-	DataLibrary._add_extra(base, "spend_self_hp", 10)
+	base.revive_percent_max_hp = 0.10
+	base.spend_self_hp = 10
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.HEAL, 10, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	DataLibrary._copy_extras(base, upgraded)
-	DataLibrary._add_extra(upgraded, "revive_shield", 2)
+	upgraded.revive_shield = 2
 	return _ability(
 		&"cleric_resurrection", "Resurrection", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -359,16 +365,16 @@ static func _consecrate_ground() -> AbilityData:
 		GameEnums.EffectType.CREATE_HAZARD, 1, 0, 0, GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
-	DataLibrary._add_extra(base, "terrain_id", &"holy_ground")
-	DataLibrary._add_extra(base, "hazard_duration", 2)
-	DataLibrary._add_extra(base, "holy_ground", true)
-	DataLibrary._add_extra(base, "holy_ground_zone", true)
+	base.terrain_id = &"holy_ground"
+	base.hazard_duration = 2
+	base.holy_ground = true
+	base.holy_ground_zone = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.CREATE_HAZARD, 1, 0, 0, GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetShape.AOE_CROSS, 2,
 	)
 	DataLibrary._copy_extras(base, upgraded)
-	DataLibrary._add_extra(upgraded, "holy_ground_def_down", 1)
+	upgraded.holy_ground_def_down = 1
 	return _ability(
 		&"cleric_consecrate_ground", "Consecrate Ground", [base], [upgraded],
 		GameEnums.TargetingFlags.SELF,
@@ -381,13 +387,13 @@ static func _holy_wrath() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(base, "stagger_if_debuffed", true)
+	base.stagger_if_debuffed = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
-	DataLibrary._add_extra(upgraded, "stagger_if_debuffed", true)
-	DataLibrary._add_extra(upgraded, "push", 2)
+	upgraded.stagger_if_debuffed = true
+	upgraded.push = 2
 	return _ability(
 		&"cleric_holy_wrath", "Holy Wrath", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,
@@ -399,12 +405,12 @@ static func _divine_guidance() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	DataLibrary._add_extra(base, "grant_ap", 1)
-	DataLibrary._add_extra(base, "self_move_zero_next_turn", true)
+	base.grant_ap = 1
+	base.self_move_zero_next_turn = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ALLY,
 	)
-	DataLibrary._add_extra(upgraded, "grant_ap", 1)
+	upgraded.grant_ap = 1
 	return _ability(
 		&"cleric_divine_guidance", "Divine Guidance", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -423,8 +429,9 @@ static func _shield_of_faith() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAX_HP,
 	)
 	var intercept := DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)
-	intercept.modifiers["counterattack_on_intercept"] = true
-	upgraded.layers.append(_layer(intercept))
+	var intercept_layer := _layer(intercept)
+	intercept_layer.counterattack_on_intercept = true
+	upgraded.layers.append(intercept_layer)
 	return _ability(
 		&"cleric_shield_of_faith", "Shield of Faith", [base], [upgraded],
 		GameEnums.TargetingFlags.ALLY,
@@ -436,15 +443,15 @@ static func _martyrs_chains() -> AbilityData:
 	var first := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 1, 1, 3, GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extra(first, "link_two_enemies", true)
-	DataLibrary._add_extra(first, "magic_link_damage", 1)
+	first.link_two_enemies = true
+	first.magic_link_damage = 1
 	var second := DataLibrary._module(
 		GameEnums.EffectType.ADD_STATUS, 0, 1, 3, GameEnums.TargetingFlags.ENEMY,
 	)
 	second.aim_binding = GameEnums.AimBinding.NEW_AIM
-	DataLibrary._add_extra(second, "link_partner_pick", true)
+	second.link_partner_pick = true
 	var upgraded := DataLibrary._duplicate_modules([first, second])
-	DataLibrary._add_extra(upgraded[0], "link_blind", true)
+	upgraded[0].link_blind = true
 	return _ability(
 		&"cleric_martyrs_chains", "Martyr's Chains", [first, second], upgraded,
 		GameEnums.TargetingFlags.ENEMY,

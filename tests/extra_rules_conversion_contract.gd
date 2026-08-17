@@ -65,6 +65,21 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"mage_earth_spike",
 	&"mage_density_shift",
 	&"mage_arcane_barrage",
+	&"cleric_guardian_step",
+	&"cleric_holy_light",
+	&"cleric_smite",
+	&"cleric_cleansing_aura",
+	&"cleric_sanctuary",
+	&"cleric_divine_hammer",
+	&"cleric_life_link",
+	&"cleric_blinding_ray",
+	&"cleric_prayer_of_fortitude",
+	&"cleric_resurrection",
+	&"cleric_consecrate_ground",
+	&"cleric_holy_wrath",
+	&"cleric_divine_guidance",
+	&"cleric_shield_of_faith",
+	&"cleric_martyrs_chains",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -406,6 +421,62 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.terrain_id != StringName() or layer.terrain_id != StringName()
 		"hazard_duration":
 			return module.hazard_duration != 0 or layer.hazard_duration != 0
+		"cost_all_movement":
+			return module.cost_all_movement
+		"cleanse_target":
+			return module.cleanse_target
+		"mag_heal":
+			return module.mag_heal
+		"enemy_mag_atk":
+			return module.enemy_mag_atk != 0
+		"shield_closest_ally_pct_damage":
+			return not is_zero_approx(module.shield_closest_ally_pct_damage)
+		"ally_str_per_debuff":
+			return module.ally_str_per_debuff != 0
+		"sanctuary":
+			return module.sanctuary
+		"sanctuary_enemy_push":
+			return module.sanctuary_enemy_push != 0
+		"creation_adjacent_push":
+			return module.creation_adjacent_push != 0
+		"holy_aura":
+			return module.holy_aura
+		"life_link":
+			return module.life_link
+		"life_link_reduction":
+			return module.life_link_reduction != 0
+		"revive_percent_max_hp":
+			return not is_zero_approx(module.revive_percent_max_hp)
+		"spend_self_hp":
+			return module.spend_self_hp != 0
+		"revive_shield":
+			return module.revive_shield != 0
+		"holy_ground":
+			return module.holy_ground
+		"holy_ground_zone":
+			return module.holy_ground_zone
+		"holy_ground_def_down":
+			return module.holy_ground_def_down != 0
+		"stagger_if_debuffed":
+			return module.stagger_if_debuffed
+		"push":
+			return module.push != 0
+		"grant_ap":
+			return module.grant_ap != 0
+		"self_move_zero_next_turn":
+			return module.self_move_zero_next_turn
+		"link_two_enemies":
+			return module.link_two_enemies
+		"magic_link_damage":
+			return module.magic_link_damage != 0
+		"link_partner_pick":
+			return module.link_partner_pick
+		"link_blind":
+			return module.link_blind
+		"counterattack_melee":
+			return layer.counterattack_melee
+		"counterattack_on_intercept":
+			return layer.counterattack_on_intercept
 		"hazard_status":
 			return module.hazard_status != GameEnums.StatusType.NONE
 		"bonus_dmg_from_occupied":
@@ -591,12 +662,6 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.set_max_move != 0
 		"arcane_trail":
 			return layer.arcane_trail
-		"creation_adjacent_damage":
-			return layer.creation_adjacent_damage != 0
-		"terrain_id":
-			return module.terrain_id != StringName() or layer.terrain_id != StringName()
-		"hazard_duration":
-			return module.hazard_duration != 0 or layer.hazard_duration != 0
 		"strip_stealth":
 			return module.strip_stealth
 		"object_collision_stagger":

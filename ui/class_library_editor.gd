@@ -2504,6 +2504,112 @@ func _add_module_typed_extras_editor(
 		module.apply_weaken_enemy = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Cost All Movement", module.cost_all_movement, func(v: bool) -> void:
+		module.cost_all_movement = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Cleanse Target", module.cleanse_target, func(v: bool) -> void:
+		module.cleanse_target = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "MAG HEAL", module.mag_heal, func(v: bool) -> void:
+		module.mag_heal = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Enemy MAG ATK", module.enemy_mag_atk, func(v: int) -> void:
+		module.enemy_mag_atk = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Shield Closest Ally %", str(module.shield_closest_ally_pct_damage), func(v: String) -> void:
+		if v.is_valid_float():
+			module.shield_closest_ally_pct_damage = float(v)
+			_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Ally STR Per Debuff", module.ally_str_per_debuff, func(v: int) -> void:
+		module.ally_str_per_debuff = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Sanctuary", module.sanctuary, func(v: bool) -> void:
+		module.sanctuary = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Sanctuary Enemy PUSH", module.sanctuary_enemy_push, func(v: int) -> void:
+		module.sanctuary_enemy_push = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Creation Adjacent PUSH", module.creation_adjacent_push, func(v: int) -> void:
+		module.creation_adjacent_push = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Holy Aura", module.holy_aura, func(v: bool) -> void:
+		module.holy_aura = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Life Link", module.life_link, func(v: bool) -> void:
+		module.life_link = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Life Link Reduction", module.life_link_reduction, func(v: int) -> void:
+		module.life_link_reduction = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Revive Max HP %", str(module.revive_percent_max_hp), func(v: String) -> void:
+		if v.is_valid_float():
+			module.revive_percent_max_hp = float(v)
+			_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Spend Self HP", module.spend_self_hp, func(v: int) -> void:
+		module.spend_self_hp = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Revive Shield", module.revive_shield, func(v: int) -> void:
+		module.revive_shield = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Holy Ground", module.holy_ground, func(v: bool) -> void:
+		module.holy_ground = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Holy Ground Zone", module.holy_ground_zone, func(v: bool) -> void:
+		module.holy_ground_zone = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Holy Ground DEF Down", module.holy_ground_def_down, func(v: int) -> void:
+		module.holy_ground_def_down = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Stagger If Debuffed", module.stagger_if_debuffed, func(v: bool) -> void:
+		module.stagger_if_debuffed = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "PUSH", module.push, func(v: int) -> void:
+		module.push = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Grant AP", module.grant_ap, func(v: int) -> void:
+		module.grant_ap = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Self Move Zero Next Turn", module.self_move_zero_next_turn, func(v: bool) -> void:
+		module.self_move_zero_next_turn = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Link Two Enemies", module.link_two_enemies, func(v: bool) -> void:
+		module.link_two_enemies = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Magic Link Damage", module.magic_link_damage, func(v: int) -> void:
+		module.magic_link_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Link Partner Pick", module.link_partner_pick, func(v: bool) -> void:
+		module.link_partner_pick = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Link Blind", module.link_blind, func(v: bool) -> void:
+		module.link_blind = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -2799,6 +2905,14 @@ func _add_module_layers_editor(
 		)
 		_bind_int(grid, "Hazard Duration", layer.hazard_duration, func(v: int) -> void:
 			layer.hazard_duration = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Counterattack Melee", layer.counterattack_melee, func(v: bool) -> void:
+			layer.counterattack_melee = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Counterattack On Intercept", layer.counterattack_on_intercept, func(v: bool) -> void:
+			layer.counterattack_on_intercept = v
 			_on_module_field_edited(ability)
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
