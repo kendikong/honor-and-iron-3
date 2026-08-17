@@ -49,6 +49,250 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ---
 
+## Rollout checklist — update this section, not memory
+
+**Status rule:** `[x]` means the implementation, conversion contract, and required QA evidence are complete. `[ ]` means the row is still open. A factory that merely loads is not a converted row. Rework rows remain intentionally open until their Action ally-relocate design changes.
+
+### ER-1 — shared typed homes
+
+- [ ] `GRANT_AP` is authored as Resource/layer data and no class skill uses an Extra Rule for it.
+- [ ] `GRANT_SCRAP` is authored as Resource/layer data and no class skill uses an Extra Rule for it.
+- [ ] `PAIRED_MOVE` is wired for legal Pre-Move ally movement only; it is not used for Glorious Charge on Action.
+- [ ] Pull-yourself, carry/place-unit, and drag-target verbs have shared EffectType/module paths.
+- [ ] `CREATE_HAZARD` has typed terrain, duration, status, entry, spread, and reaction fields.
+- [ ] `SPAWN` has typed HP%, placement, turret, construct, and detonation fields.
+- [ ] Header fields cover once-per-turn, skip-Action, spend-all-MP, HP cost, and delayed resolution.
+- [ ] Required StatusType and LayerCondition additions are implemented and consumed by shared systems.
+- [ ] `run_ability_module_bridge_test.gd` proves the shared homes without Extra Rule fallback.
+
+### ER-2 — class-by-class conversion
+
+#### 1. Knight
+
+- [x] `knight_defensive_formation` — `exclude_caster` typed targeting field; conversion contract, Knight gate, and Knight live QA pass.
+- [x] Knight class gate: `run_knight_qa_gate.ps1`.
+- [x] Knight live gate: `run_knight_live_qa.ps1`.
+
+#### 2. Bruiser
+
+- [ ] `bruiser_push_through`
+- [ ] `bruiser_charge_strike`
+- [ ] `bruiser_concussion_blow`
+- [ ] `bruiser_cleave`
+- [ ] `bruiser_suplex`
+- [ ] `bruiser_adrenaline_surge`
+- [ ] `bruiser_earthshatter`
+- [ ] `bruiser_frenzy`
+- [ ] `bruiser_guttural_roar`
+- [ ] `bruiser_headbutt`
+- [ ] `bruiser_violent_collision`
+- [ ] `bruiser_crimson_whirlwind`
+- [ ] `bruiser_breaching_dash`
+- [ ] Bruiser class gate: `run_bruiser_qa_gate.ps1`.
+- [ ] Bruiser live gate: `run_bruiser_live_qa.ps1`.
+- [ ] `bruiser_meat_shield` remains open as Action ally-relocate rework.
+
+#### 3. Lancer
+
+- [ ] `lancer_push`
+- [ ] `lancer_piercing_charge` / Polearm range-band rule
+- [ ] `lancer_rallying_cry` status timing row
+- [ ] `lancer_flanking_maneuver` / Wraparound
+- [ ] `lancer_pole_vault`
+- [ ] `lancer_line_breaker`
+- [ ] `lancer_spear_wall`
+- [ ] Lancer class gate: `run_lancer_qa_gate.ps1`.
+- [ ] Lancer live gate: `run_lancer_live_qa.ps1`.
+- [ ] `lancer_glorious_charge` remains open as Action ally-relocate rework.
+
+#### 4. Archer
+
+- [ ] `archer_sidestep`
+- [ ] `archer_volley`
+- [ ] `archer_power_shot`
+- [ ] `archer_piercing_shot`
+- [ ] `archer_grapple_arrow`
+- [ ] `archer_explosive_arrow`
+- [ ] `archer_hunters_mark`
+- [ ] `archer_repelling_shot`
+- [ ] `archer_bear_trap`
+- [ ] `archer_caltrop_trap`
+- [ ] `archer_suppressing_fire`
+- [ ] `archer_parting_shot`
+- [ ] `archer_scouts_eye`
+- [ ] Archer class gate: `run_archer_qa_gate.ps1`.
+- [ ] Archer live gate: `run_archer_live_qa.ps1`.
+
+#### 5. Mercenary
+
+- [ ] `mercenary_pullback`
+- [ ] `mercenary_swift_strike`
+- [ ] `mercenary_defense_strike`
+- [ ] `mercenary_blade_storm`
+- [ ] `mercenary_caltrop_toss`
+- [ ] `mercenary_feint`
+- [ ] `mercenary_riposte_strike`
+- [ ] `mercenary_sever`
+- [ ] `mercenary_second_wind`
+- [ ] `mercenary_tactical_retreat`
+- [ ] `mercenary_executioners_blade`
+- [ ] `mercenary_precision_strike`
+- [ ] `mercenary_flank_and_run`
+- [ ] `mercenary_hamstring`
+- [ ] `mercenary_acrobatic_vault`
+- [ ] `mercenary_duelists_challenge`
+- [ ] Mercenary class gate: `run_mercenary_qa_gate.ps1`.
+- [ ] Mercenary live gate: `run_mercenary_live_qa.ps1`.
+
+#### 6. Monk
+
+- [ ] `monk_leap`
+- [ ] `monk_scorching_kick`
+- [ ] `monk_thunder_palm`
+- [ ] `monk_yin_yang_flurry`
+- [ ] `monk_chakra_shift`
+- [ ] `monk_phase_throw`
+- [ ] `monk_flying_crane_kick`
+- [ ] `monk_spirit_palm`
+- [ ] `monk_mantra_of_peace`
+- [ ] `monk_inner_fire`
+- [ ] `monk_void_step`
+- [ ] `monk_cyclone_sweep`
+- [ ] `monk_updraft`
+- [ ] `monk_geyser_strike`
+- [ ] Monk class gate: `run_monk_qa_gate.ps1`.
+- [ ] Monk live gate: `run_monk_live_qa.ps1`.
+
+#### 7. Rogue
+
+- [ ] `rogue_slip_past`
+- [ ] `rogue_shadow_step`
+- [ ] `rogue_kidney_strike`
+- [ ] `rogue_smoke_bomb`
+- [ ] `rogue_grappling_hook`
+- [ ] `rogue_switcheroo`
+- [ ] `rogue_blindside`
+- [ ] `rogue_throat_slit`
+- [ ] `rogue_amnesia_dust`
+- [ ] `rogue_death_mark`
+- [ ] `rogue_lethal_flourish`
+- [ ] `rogue_kidnap`
+- [ ] `rogue_shuriken_volley`
+- [ ] `rogue_poison_flask`
+- [ ] Rogue class gate: `run_rogue_qa_gate.ps1`.
+- [ ] Rogue live gate: `run_rogue_live_qa.ps1`.
+- [ ] `rogue_shadow_swap` remains open as Action ally-relocate rework.
+
+#### 8. Beast Rider
+
+- [ ] `beast_reposition`
+- [ ] `beast_pounce`
+- [ ] `beast_feral_drag`
+- [ ] `beast_maul`
+- [ ] `beast_bestial_roar`
+- [ ] `beast_raking_claws`
+- [ ] `beast_rest_recover`
+- [ ] `beast_intimidate`
+- [ ] `beast_fetch`
+- [ ] `beast_savage_bite`
+- [ ] `beast_run_down`
+- [ ] `beast_defensive_posture`
+- [ ] `beast_airlift`
+- [ ] `beast_tail_swipe`
+- [ ] `beast_gore`
+- [ ] Beast Rider class gate: `run_beast_rider_qa_gate.ps1`.
+- [ ] Beast Rider live gate: `run_beast_rider_live_qa.ps1`.
+
+#### 9. Cleric
+
+- [ ] `cleric_guardian_step`
+- [ ] `cleric_holy_light`
+- [ ] `cleric_smite`
+- [ ] `cleric_cleansing_aura`
+- [ ] `cleric_sanctuary`
+- [ ] `cleric_divine_hammer`
+- [ ] `cleric_life_link`
+- [ ] `cleric_prayer_of_fortitude`
+- [ ] `cleric_resurrection`
+- [ ] `cleric_consecrate_ground`
+- [ ] `cleric_holy_wrath`
+- [ ] `cleric_divine_guidance`
+- [ ] `cleric_shield_of_faith`
+- [ ] `cleric_martyrs_chains`
+- [ ] Cleric class gate: `run_cleric_qa_gate.ps1`.
+- [ ] Cleric live gate: `run_cleric_live_qa.ps1`.
+
+#### 10. Mage
+
+- [ ] `mage_blink`
+- [ ] `mage_ice_shard`
+- [ ] `mage_chain_lightning`
+- [ ] `mage_arcane_push`
+- [ ] `mage_teleport`
+- [ ] `mage_meteor`
+- [ ] `mage_black_hole`
+- [ ] `mage_time_warp`
+- [ ] `mage_mana_shield`
+- [ ] `mage_disintegrate`
+- [ ] `mage_elemental_surge`
+- [ ] `mage_earth_spike`
+- [ ] `mage_density_shift`
+- [ ] `mage_arcane_barrage`
+- [ ] Mage class gate: `run_mage_qa_gate.ps1`.
+- [ ] Mage live gate: `run_mage_live_qa.ps1`.
+
+#### 11. Engineer
+
+- [ ] `engineer_recall`
+- [ ] `engineer_dismantle`
+- [ ] `engineer_sludge_bomb`
+- [ ] `engineer_construct_turret`
+- [ ] `engineer_frag_bomb`
+- [ ] `engineer_magnetic_mine`
+- [ ] `engineer_tesla_barricade`
+- [ ] `engineer_flak_cannon`
+- [ ] `engineer_wrench_smack`
+- [ ] `engineer_emp_grenade`
+- [ ] `engineer_rocket_launcher`
+- [ ] `engineer_scrap_shield`
+- [ ] `engineer_manual_detonation`
+- [ ] `engineer_overdrive_injection`
+- [ ] `engineer_barbed_wire`
+- [ ] Engineer class gate: `run_engineer_qa_gate.ps1`.
+- [ ] Engineer live gate: `run_engineer_live_qa.ps1`.
+
+#### 12. Shaman
+
+- [ ] `shaman_usher`
+- [ ] `shaman_curse_of_weakness`
+- [ ] `shaman_healing_totem`
+- [ ] `shaman_flame_totem`
+- [ ] `shaman_earthbind_totem`
+- [ ] `shaman_bloodlust`
+- [ ] `shaman_hex`
+- [ ] `shaman_voodoo_link`
+- [ ] `shaman_terrify`
+- [ ] `shaman_miasma`
+- [ ] `shaman_bone_spear`
+- [ ] `shaman_sympathetic_bond`
+- [ ] `shaman_soul_siphon`
+- [ ] `shaman_pain_spike`
+- [ ] Shaman class gate: `run_shaman_qa_gate.ps1`.
+- [ ] Shaman live gate: `run_shaman_live_qa.ps1`.
+
+### ER-3 — legacy deletion
+
+- [ ] Zero class-factory `_add_extra` / `_add_extras_from_dict` calls.
+- [ ] Zero class-skill leftover Extra Rule keys in `EffectData.modifiers`.
+- [ ] `CONVERTED_SKILL_IDS` contains every converted skill and the bridge contract passes.
+- [ ] Delete `AbilityExtraRule` and the Class Editor Extra Rules UI.
+- [ ] Delete `GameEnums.MotionMode` and module/editor/factory Motion Mode fields.
+- [ ] Remove combat reads of `module.motion_mode` and all compatibility inference.
+- [ ] Run full grep exit check: `_add_extra`, `AbilityExtraRule`, `MotionMode`, `motion_mode` = zero on class skills.
+- [ ] Run final planning QA and full deterministic regression.
+
+---
+
 ## Conversion law
 
 | Home | Use when |
