@@ -292,7 +292,7 @@ static func keyword_uses_push_amount(keyword_id: GameEnums.AbilityKeywordId) -> 
 static func effect_primary_families() -> Array[Dictionary]:
 	return [
 		{
-			"label": "Hit",
+			"label": "Attack",
 			"types": [
 				GameEnums.EffectType.DAMAGE,
 				GameEnums.EffectType.DAMAGE_SELF,
@@ -301,9 +301,14 @@ static func effect_primary_families() -> Array[Dictionary]:
 			],
 		},
 		{
-			"label": "Heal / Shield",
+			"label": "Heal",
 			"types": [
 				GameEnums.EffectType.HEAL,
+			],
+		},
+		{
+			"label": "Shield",
+			"types": [
 				GameEnums.EffectType.ARMOR_UP,
 			],
 		},
@@ -318,65 +323,55 @@ static func effect_primary_families() -> Array[Dictionary]:
 			],
 		},
 		{
-			"label": "Walk",
+			"label": "Movement (Self)",
 			"types": [
 				GameEnums.EffectType.MOVE,
 				GameEnums.EffectType.MOVE_ADJACENT_TO,
 				GameEnums.EffectType.MOVE_TO_BEHIND,
 				GameEnums.EffectType.MOVE_TOWARD,
 				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
-			],
-		},
-		{
-			"label": "Jump",
-			"types": [
 				GameEnums.EffectType.JUMP,
 				GameEnums.EffectType.JUMP_ADJACENT_TO,
 				GameEnums.EffectType.JUMP_TO_BEHIND,
 				GameEnums.EffectType.JUMP_TOWARD,
-			],
-		},
-		{
-			"label": "Teleport",
-			"types": [
 				GameEnums.EffectType.TELEPORT_CASTER,
 				GameEnums.EffectType.TELEPORT_ADJACENT_TO,
 				GameEnums.EffectType.TELEPORT_TO_BEHIND,
 				GameEnums.EffectType.TELEPORT_TOWARD,
-			],
-		},
-		{
-			"label": "Dash / Swap",
-			"types": [
 				GameEnums.EffectType.DASH,
-				GameEnums.EffectType.SWAP,
 			],
 		},
 		{
-			"label": "Pair / carry",
-			"types": [
-				GameEnums.EffectType.PAIRED_MOVE,
-			],
-		},
-		{
-			"label": "Control",
+			"label": "Forced Movement",
 			"types": [
 				GameEnums.EffectType.PUSH,
 				GameEnums.EffectType.PULL,
+			],
+		},
+		{
+			"label": "Move someone",
+			"types": [
+				GameEnums.EffectType.SWAP,
+				GameEnums.EffectType.PAIRED_MOVE,
 				GameEnums.EffectType.THROW_BEHIND,
 			],
 		},
 		{
-			"label": "Board",
+			"label": "Hazard",
 			"types": [
 				GameEnums.EffectType.CHANGE_TERRAIN,
 				GameEnums.EffectType.CREATE_HAZARD,
 				GameEnums.EffectType.DESTROY_OBSTACLE,
+			],
+		},
+		{
+			"label": "Summon",
+			"types": [
 				GameEnums.EffectType.SPAWN,
 			],
 		},
 		{
-			"label": "Grant",
+			"label": "Resource",
 			"types": [
 				GameEnums.EffectType.GRANT_AP,
 				GameEnums.EffectType.GRANT_SCRAP,

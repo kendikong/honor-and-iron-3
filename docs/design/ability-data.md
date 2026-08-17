@@ -1,9 +1,9 @@
 # AbilityData — Modular Skill Design Bible
 
-**Status:** `READY_FOR_REFACTOR` — owner-locked design authority for the AbilityData refactor (start at §0)  
-**Audience:** Project owner (readable) + implementers (refactor checklist)  
-**Authority chain:** `class_abilities.txt` (Master Bible keywords & economy) → **this doc** (AbilityData shape) → `AbilitySystem` / planning / sim (interpretation)  
-**Non-authority:** Current flat `AbilityData` fields are **legacy** until refactor; when they conflict with this doc, **this doc wins** for the target design.
+**Status:** `ACTIVE` — module bible. Extra Rules conversion is in progress (`docs/design/EXTRA_RULES_TO_MODULES_PLAN.md`). Modules already exist in code. Extra Rules and Motion Mode are leftover to delete. Start at §0.  
+**Audience:** Project owner (readable) + implementers (authoring + conversion)  
+**Authority chain:** `class_abilities.txt` (skill lines, keywords, economy) → **this doc** (header / modules / keywords / layers / gates) → Extra Rules conversion plan (homes for leftover keys) → `AbilitySystem` / planning / sim  
+**Non-authority:** Extra Rules. Leftover `modifiers` keys. Chat summaries. Motion Mode. When those conflict with this doc or the skill bible, **the skill bible + this doc win**.
 
 ### How to read this doc
 
@@ -25,7 +25,7 @@
 | Undo | **Not** part of AbilityData — planning/timeline only |
 | Trampling packaging | MOVE + **TRAMPLE** keyword + separate **PUSH** layer |
 | Upgrades | **Separate** `modules` and `upgraded_modules` (full profiles; upgraded may diverge a lot) |
-| Refactor scope | All **current** movesets in the project (factories/class library/readers) — not uncoded Bible classes |
+| Refactor scope | All **current** movesets in the project (factories/class library/readers) — not uncoded future classes |
 | Planner column | Rename economy `kind` → **`planner_group`**: `PRE_MOVE` or `ACTION` (post-move steps = `ON_POST` modules inside an ACTION skill) |
 | Classification / anim | **Tags** (e.g. attack, movement) — not overloaded “movement skill” naming |
 | Basic positioning | Today’s MP Swap / Push Through style skills → **basic positioning** (`planner_group = PRE_MOVE`), distinct from “has a MOVE effect” |
@@ -49,7 +49,7 @@ One skill card =
 
 **AUTO anim (target):** DASH→`SUPER_RUN` · BULLDOZE→`RUN` · MOVE+TRAMPLE→`RUN` · other MOVE→`WALK` · else attack/spell/positioning rules in §7.2.
 
-**Must migrate now (current code):** Knight + Bruiser abilities, Swap / Push Through positioning, universals they use, class-library + sim/planning readers. Includes **Violent Collision** (gated second move).
+**Must migrate now (current code):** every shipped Bible class (Knight through Shaman), Swap / Push Through positioning, universals, class-library + sim/planning readers. Includes **Violent Collision** (gated second move). Extra Rules on those skills convert per `EXTRA_RULES_TO_MODULES_PLAN.md` — do not harvest leftover keys and do not fold landing into Motion Mode.
 
 **Explicitly out of AbilityData:** undo/cancel UX, passives, enemy-turn reactions.
 
@@ -176,7 +176,7 @@ Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → AP 1 + HP 5 (or H
 ### Structure vs vocabulary
 
 The **structure** (header → modules → keywords → layers → gates) is fixed.  
-**Dropdown / option lists** (effects, motion modes, conditions, filters, cost modifiers) grow as the Bible needs them — same fields, more choices. Filling gaps means adding options, not inventing a new architecture.
+**Dropdown / option lists** (effects, conditions, filters, cost modifiers) grow as the Bible needs them — same fields, more choices. Filling gaps means adding options, not inventing a new architecture. **Do not grow Motion Mode.** Landing is a dest EffectType.
 
 ---
 
@@ -261,7 +261,7 @@ Authors never pick “same as module N”. If two effects share one aim, the sec
 
 **Tile mode**
 
-- Player aims a **tile** (empty or occupied per motion mode / checkboxes).
+- Player aims a **tile** (empty or occupied per dest EffectType / checkboxes).
 - Invokes **two-phase awaiting** when destination confirm is required.
 - Checkboxes: **affect allies on tiles?** / **affect enemies on tiles?**
 - Optional: **allow occupied destination** (Push Through).
@@ -636,8 +636,8 @@ Fail loud; do not silently “fix up” intent. **Grey out** illegal combos in t
 2. Tags: at least one recommended; unknown tag ids rejected.  
 3. At least one module in `modules`; if upgrade exists, `upgraded_modules` non-empty and valid.  
 4. Each module: effect + legal range + legal shape + legal tile/unit mode for that effect.  
-5. MOVE/DASH: min range ≥ 1; destination rules match motion mode.  
-6. Keywords only on modules that support them (motion); known keyword ids only.  
+5. MOVE/DASH: min range ≥ 1; destination rules match the dest **EffectType** (MOVE / JUMP / TELEPORT / DASH / MOVE_INTO_AND_PUSH / …).  
+6. Keywords only on modules that support them (path packages on Movement (Self)); known keyword ids only.  
 7. Unit mode: ≥1 of self/ally/enemy when required.  
 8. Gate / layer condition ids known.  
 9. `presentation_anim` is a known enum value.
@@ -646,9 +646,11 @@ Fail loud; do not silently “fix up” intent. **Grey out** illegal combos in t
 
 ## 12. Migration from current code (reuse / restructure / add)
 
-Source of truth for “what exists today”: `data/definitions/ability_data.gd`, `effect_data.gd`, `core/game_enums.gd` (`EffectType`, `TargetShape`, `AbilityKind`, `TargetingFlags`, …), plus factory/`modifiers` usage in `AbilitySystem` / Bruiser–Knight factories.
+**Historical inventory** (2026-08-02). Modules, planner_group, keywords, and the Condition dropdown already shipped. Where this section conflicts with **§2.2** (locked families, DELETE Motion Mode) or the Extra Rules conversion plan, **§2.2 wins**. Do not convert leftovers into Motion Mode.
 
-For every category: **Reuse** = keep as-is or thin rename · **Restructure** = same idea, new home in header/module/layer · **Add** = missing option the modular design needs.
+Source of truth for “what exists today”: `data/definitions/ability_data.gd`, `ability_module.gd`, `effect_data.gd`, `core/game_enums.gd` (`EffectType`, `TargetShape`, `TargetingFlags`, …), plus factories / `AbilitySystem`. Extra Rule ids: `data/definitions/ability_extra_rule.gd` — complete conversion homes live in `tests/extra_rules_conversion_contract.gd`.
+
+For every category: **Reuse** = keep as-is or thin rename · **Restructure** = same idea, new home in header/module/layer · **Add** = missing option the modular design needs · **DELETE** = Motion Mode and Extra Rules (ER-3).
 
 ### 12.1 Skill header / identity
 
@@ -672,7 +674,7 @@ For every category: **Reuse** = keep as-is or thin rename · **Restructure** = s
 | Basic attack | CLASS_SKILL + AP 0 | **Reuse** — `planner_group = ACTION`, AP 0; tag `attack` |
 | Tags (`attack`, `movement`, …) | Implicit via effects/kind heuristics | **Add** explicit tag set on header |
 | Module `execution_phase` | Not on abilities | **Add** when multi-step ACTION skills need it |
-| `PlanningCommitFlow` / awaiting | Derived from TILE/move heuristics | **Reuse** machinery; feed module tile/motion |
+| `PlanningCommitFlow` / awaiting | Derived from TILE/move heuristics | **Reuse** machinery; feed module tile / dest EffectType |
 
 ### 12.3 Cost block
 
@@ -693,7 +695,7 @@ For every category: **Reuse** = keep as-is or thin rename · **Restructure** = s
 | `upgraded_range_tiles` | Scalar override | **Restructure** → upgraded module profile |
 | GLOBAL / ignore LOS | Heuristic / planning checks | **Add** `requires_los` + `max_range` unlimited (GLOBAL) on module |
 | Range origin | Always actor at cast (mostly) | **Add** origin enum (actor / last tile / last unit tile) |
-| DASH length | `EffectType.DASH` `amount` **and/or** `range_tiles` | **Restructure** → motion module min/max (or amount = max) only |
+| DASH length | `EffectType.DASH` `amount` **and/or** `range_tiles` | **Restructure** → Movement (Self) module min/max (or amount = max) only |
 
 ### 12.5 Targeting (who / tile vs unit)
 
@@ -702,9 +704,9 @@ For every category: **Reuse** = keep as-is or thin rename · **Restructure** = s
 | `TargetingFlags` SELF/ALLY/ENEMY/TILE/DASH_LINE | Bitmask + editor checkboxes | **Reuse** as unit/tile checkboxes + dash-line shape/mode |
 | `TargetingMode` legacy enum | Synced mirror | **Restructure** → derive from flags + tile/unit mode; keep sync helpers during migration |
 | `can_target_self` | Legacy mirror | **Reuse** via SELF flag |
-| Tile awaiting two-phase | `PlanningCommitFlow.AWAITING_TARGET` | **Reuse** behavior; driven by module tile/motion |
+| Tile awaiting two-phase | `PlanningCommitFlow.AWAITING_TARGET` | **Reuse** behavior; driven by module tile / dest EffectType |
 | Aim binding NEW / SAME / RULE_PICK | Missing (always one aim) | **Add** NEW_AIM default; SAME/RULE_PICK only if a current skill needs them |
-| Target filters (HP%, debuff, …) | Mostly missing or hard-coded | **Defer** unless a current moveset skill needs them |
+| Target filters (HP%, debuff, …) | Condition dropdown on the module (HP / Status / Stat / Occupant) | **Reuse** — live. Not deferred. Extra Rule click-locks convert here, then delete. |
 | Affect allies/enemies on tiles | Partial via flags + shape gather | **Restructure** → explicit tile-occupant checkboxes on module |
 
 ### 12.6 Shape
@@ -725,25 +727,25 @@ Map each current `EffectType` into the modular model:
 | `DAMAGE_SELF` | Layer `self_also` / self target **or** header HP cost | **Restructure** (split cost vs combat self-hit) |
 | `HEAL` | Module / layer | **Reuse** |
 | `ARMOR_UP` (shield-ish) | Module / layer SHIELD | **Reuse** (name toward SHIELD in UI) |
-| `PUSH`, `PULL` | Layer or primary control | **Reuse** |
-| `SWAP` | Motion/primary | **Reuse** |
-| `DASH` | Motion primary + mode | **Reuse** type; length → range |
-| `MOVE` | Motion primary | **Reuse**; walk steps → module range (not ability `range_tiles`) |
-| `TELEPORT_CASTER` | Motion JUMP/TELEPORT | **Reuse** / rename to motion mode |
-| `TRAMPLE`, `BULLDOZE` | Keyword layers on motion module | **Reuse** as keywords (already engine-backed) |
-| `MOVE_INTO_AND_PUSH` | Motion mode `INTO_OCCUPIED_PUSH` / `TO_TARGET_UNIT` | **Restructure** from effect-type into **motion mode** |
-| `THROW_BEHIND` | Control primary/layer | **Reuse** |
-| `ADD_STATUS`, `ADD_STATUS_SELF`, `REMOVE_STATUS` | Layer / primary status | **Reuse** |
-| `CLEANSE`, `PURGE` | Utility / status family | **Reuse** |
-| `DESTROY_OBSTACLE` | Utility layer (path or tile) | **Reuse** |
-| `CHANGE_TERRAIN` | Utility | **Reuse** |
-| `SPAWN` | Utility (+ `spawn_unit_id`) | **Reuse** |
+| `PUSH`, `PULL` | **Forced Movement** primary or layer | **Reuse** |
+| `SWAP` | **Move someone** primary | **Reuse** |
+| `DASH` | **Movement (Self)** dest + range | **Reuse** type; length → module range. Not Motion Mode. |
+| `MOVE` | **Movement (Self)** dest | **Reuse**; walk steps → module range (not ability `range_tiles`) |
+| `TELEPORT_CASTER` | **Movement (Self)** TELEPORT dest | **Reuse**. Do **not** rename to Motion Mode. |
+| `TRAMPLE`, `BULLDOZE` | Keyword on Movement (Self) | **Reuse** as keywords (already engine-backed) |
+| `MOVE_INTO_AND_PUSH` | **Movement (Self)** dest type | **Reuse**. Keep the EffectType. Do **not** fold into Motion Mode. |
+| `THROW_BEHIND` | **Move someone** primary | **Reuse** |
+| `ADD_STATUS`, `ADD_STATUS_SELF`, `REMOVE_STATUS` | **Status** primary / layer (Stance often uses ADD_STATUS_SELF) | **Reuse** |
+| `CLEANSE`, `PURGE` | **Status** | **Reuse** |
+| `DESTROY_OBSTACLE` | **Hazard** | **Reuse** |
+| `CHANGE_TERRAIN` | **Hazard** | **Reuse** |
+| `SPAWN` | **Summon** | **Reuse** |
 | `EXPLODE`, `RANGED_EXPLODE` | Damage + shape / on-land | **Restructure** toward DAMAGE + shape or ON_LAND layer |
 | `REFUND_AP_ON_CC` | Layer condition + GRANT_AP | **Restructure** out of EffectType into layer gate |
 | `PUSH_STAGGER_ON_COLLISION`, `PULL_VULNERABLE_ON_ADJACENT`, `PUSH_CHAIN_COLLISION` | Layer conditions on PUSH/PULL | **Restructure** — these are **conditions**, not primaries |
 
-**Add** as first-class primaries/utilities (today missing or only modifiers):  
-`GRANT_AP`, `GRANT_NEXT_ATTACK_MOD`, `ARM_REACTION`, `CREATE_HAZARD`, `PULL_SELF_TO_TARGET` / choice bundle, `MOVE_OTHER`, `PAIRED_MOVE`, hit_count on DAMAGE.
+**Add** as first-class primaries when missing (use existing types; do not re-bag):  
+`GRANT_AP`, `GRANT_SCRAP`, `PAIRED_MOVE`, `PULL_SELF_TO_TARGET` (Movement (Self) dest), carry/place-unit and drag-walk (**Move someone**), `CREATE_HAZARD` knobs, hit_count on DAMAGE. `resolution_choice` for Grappling Hook (pull-yourself **or** pull-them).
 
 ### 12.8 `EffectData` fields → layer / module values
 
@@ -763,7 +765,7 @@ These already work in sim/factories; modular design should **absorb** them as na
 
 | Modifier key (today) | Becomes |
 |----------------------|---------|
-| `ghost_move` | Motion flag / GHOST keyword on MOVE module |
+| `ghost_move` | **GHOST** keyword on Movement (Self) |
 | `bulldoze`, `push` (on DASH/MOVE) | BULLDOZE keyword amounts |
 | `violent_collision_recast` | Module gate `IF_COLLIDED` + second MOVE module |
 | `object_collision_stagger`, `enemy_collision_stagger_both`, `stagger_on_collision` | Layer condition on PUSH/collision |
@@ -772,25 +774,29 @@ These already work in sim/factories; modular design should **absorb** them as na
 | `weapon_scaled` | Scaling = WPN (or bleed X) |
 | `heal_per_target_hit` | Layer condition `PER_TARGET_HIT` + HEAL |
 | `frenzy_on_kill_ap` | Layer `ON_KILL` + GRANT_AP |
-| `next_attack_pierce` | Utility `GRANT_NEXT_ATTACK_MOD` |
+| `next_attack_pierce` | **PIERCE** keyword / next-attack grant |
 | `buff_per_destroyed_object` | Layer after DESTROY_OBSTACLE |
 | `intercept_grant_str` | Status/INTERCEPT layer params |
 | `push_board_items`, `item_collision_damage` | Layer flags on PUSH AoE |
 | `damage_adjacent_on_landing` | Layer `ON_LAND` (Monk landing strike) |
-| `exclude_caster` | Targeting checkbox |
+| `exclude_caster` | Skip-caster-in-blast targeting checkbox (not Self) |
 | `buff_on_push` | Layer on PUSH (Push Through [+]) |
+| `l_shape_move` | Dest field / dest type on **Movement (Self)**. Not Motion Mode. |
 
 **Add** any Bible need not in this table as a **new named condition/flag**, not a new anonymous dict key.
 
-### 12.10 Motion modes (mostly Add; some Restructure)
+### 12.10 Motion Mode — DELETE (ER-3)
 
-| Mode | Today | Verdict |
+Do **not** author landing as Motion Mode. Do **not** convert Extra Rules into Motion Mode. Dest **EffectType** owns landing.
+
+| Item | Today | Verdict |
 |------|-------|---------|
-| Walk / dash / teleport to empty | `MOVE`, `DASH`, `TELEPORT_CASTER` + TILE | **Reuse** → mode `TO_EMPTY_TILE` |
-| Into occupied + push (Push Through) | `MOVE_INTO_AND_PUSH` | **Restructure** → mode `INTO_OCCUPIED_PUSH` (current moveset) |
-| Pass-through package | `TRAMPLE` / `BULLDOZE` effects | **Reuse** as keywords |
-| Other exotic modes (vault, behind, ally-step, …) | Missing or one-off | **Defer** until those skills exist in the project |
-| `MovementType` WALK/FLY/TELEPORT (unit locomotion) | Unit data, not ability | **Reuse** for unit; don’t confuse with skill motion mode |
+| Walk / dash / teleport / jump dests | `MOVE`, `DASH`, `JUMP`, `TELEPORT_*`, `MOVE_TO_BEHIND`, `JUMP_TO_BEHIND`, … | **Reuse** dest types in **Movement (Self)** |
+| Into occupied + push (Push Through) | `MOVE_INTO_AND_PUSH` | **Reuse** dest type in **Movement (Self)** |
+| Pass-through package | `TRAMPLE` / `BULLDOZE` | **Reuse** as keywords |
+| Vault / behind / ally-step / L-path | Dest types + Extra Rules (`VAULT_OBSTACLE_OR_GAP_ONLY`, `L_SHAPE_MOVE`, Usher relocate) | Fields or dest types / **Move someone**. Not Motion Mode. |
+| `GameEnums.MotionMode` + editor dropdown + `module.motion_mode` | Still in code | **DELETE** in ER-3 |
+| Unit `MovementType` WALK/FLY/TELEPORT | Unit locomotion | **Reuse** for units; not skill landing |
 
 ### 12.11 Gates, layer conditions, OR choice
 
@@ -798,8 +804,8 @@ These already work in sim/factories; modular design should **absorb** them as na
 |------|-------|---------|
 | Ordered `effects[]` always all run | Flat list | **Restructure** → modules with gates; layers with conditions |
 | On-kill / on-land / collision behavior | Scattered `modifiers` + special EffectTypes | **Restructure** into shared condition table |
-| `resolution_choice` (OR) | Missing | **Defer** (no current moveset requires player OR) |
-| Condition vocabulary | Implicit in code | **Add** ids needed by current skills (Always, IF_KILL, IF_COLLIDED, ON_LAND, when damage dealt, …) |
+| `resolution_choice` (OR) | Named on the module; Grappling Hook is in the current moveset | **Add** — pull-yourself (**Movement (Self)**) **or** pull-them (**Forced Movement**). Planner shows the choice; commit stores the branch. |
+| Condition vocabulary | Condition dropdown (HP / Status / Stat / Occupant) | **Reuse** — live. Extra Rule click-locks convert here. |
 
 ### 12.12 Status / presentation / upgrades
 
@@ -821,9 +827,9 @@ These already work in sim/factories; modular design should **absorb** them as na
 
 ```
 AbilityData                    ← header (id, planner_group, tags, cost, uses, presentation, modules[], upgraded_modules[])
-AbilityModule                  ← NEW: phase, primary effect, motion/keywords, range, shape, targeting flags, layers, gate
+AbilityModule                  ← phase, primary effect, keywords, range, shape, targeting flags, layers, gate. Motion Mode is **not** part of the target.
 EffectData + condition         ← REUSE as layer/primary payload; slim modifiers over time
-GameEnums.EffectType           ← REUSE primaries; demote “modifier-only” types to conditions over time
+GameEnums.EffectType           ← REUSE primaries (families in §2.2); demote “modifier-only” types to conditions over time
 ```
 
 ### 12.15 Pain this removes (unchanged intent)
@@ -847,7 +853,7 @@ These are **not** AbilityData module problems — they live elsewhere:
 | Enemy-turn reactions / ZoC interrupts | Reaction / status triggers (a skill may **ARM_REACTION**, but the interrupt isn’t a planned module) |
 | Mimic / cast another unit’s skill | Ability-as-value (rare; approve if ever needed) |
 
-Everything else called out in Bible skill lines (OR choice, vault modes, HP cost, filters, rule-pick targets, delay/ends turn, next-attack grants, ally-origin range, etc.) is expressed by **adding options to the fields above**, not by a second architecture.
+Everything else called out in Bible skill lines (OR choice, vault dests, HP cost, filters, rule-pick targets, delay/ends turn, next-attack grants, ally-origin range, etc.) is expressed by **adding options to the fields above**, not by Motion Mode and not by Extra Rules.
 
 ---
 
@@ -856,7 +862,7 @@ Everything else called out in Bible skill lines (OR choice, vault modes, HP cost
 Use this doc as the acceptance bar:
 
 1. [ ] Data schema per §12.14: header (`planner_group`, tags, …) + `AbilityModule`; layers = EffectData + condition
-2. [ ] Shared tables: gates, layer conditions, keywords; add filters/motion modes/OR only if a **current** skill needs them
+2. [ ] Shared tables: gates, layer conditions, keywords. **Do not add Motion Mode.** Filters are live. OR choice is required for Grappling Hook.
 3. [ ] Port §12.9 modifier keys → typed fields as skills are touched; stop new anonymous modifiers
 4. [ ] Keyword expansion (TRAMPLE, BULLDOZE, GHOST, …) — reuse engine paths
 5. [ ] Range: per-module range; MOVE min ≥ 1; delete MOVE→`range_tiles` fallback
@@ -911,9 +917,9 @@ Honest pass over this bible: what to leave alone, what to simplify, what must st
 | Module phase on every module | Default **`ON_ACTION`**. Set `ON_PRE` / `ON_POST` only on multi-step skills. |
 | Aim binding on every module | Default **NEW_AIM** for multi-module; **same-target extras = layers** (don’t make authors pick SAME_AS_MODULE_N for push-after-damage). Add RULE_PICK / SAME only when needed. |
 | `AbilityLayer` as a new Resource type | Prefer **`EffectData` + `condition` id** (and optional keyword id) so migration isn’t a full type explosion. |
-| Motion mode laundry list | Ship with what factories already imply: empty-tile walk/dash/teleport, into-occupied push, pass-through keywords. Add vault/behind/ally-step when those classes are implemented. |
+| Motion Mode | **DELETE** (ER-3). Dest EffectType owns landing. Vault / behind / L-path / pull-yourself are dest types or fields on **Movement (Self)** / **Move someone**. Do not convert leftovers into modes. |
 | Range origin “last unit tile” | Defer until a spotter-style skill is built. Default actor-after-prior-modules is enough. |
-| `turn_flags` DELAY / ENDS_TURN | Defer unless a **current** moveset skill needs them. |
+| `turn_flags` DELAY / ENDS_TURN | Defer unless a **current** moveset skill needs them. Meteor DELAY is in the conversion matrix when Mage is converted. |
 | Per-module presentation override | Defer; sequence from module primary effect if needed later. |
 | Demote every modifier-`EffectType` in one go | Migrate when touching that skill. Don’t big-bang rename PUSH_STAGGER_* on day one. |
 
@@ -947,11 +953,11 @@ Author-facing keywords; engine may expand. Splitting into five checkboxes is wor
 | **Tooltip keyword order** | Suggest: planner cost → RANGE/MOVE/DASH → keywords → layers → gates. Finalize when building tooltip codegen. |
 | **Multi-module anim sequencing** | §7.3: v1 may keep one header anim; improve later. |
 
-**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer; Violent Collision gated-aim rule (§2.7 + Example F); OR/exotic vault deferred.
+**Resolved (do not re-open):** MOVE min ≥ 1; undo out of doc; separate upgrade modules; `planner_group` + tags; trampling = TRAMPLE + PUSH layer; Violent Collision gated-aim rule (§2.7 + Example F); Motion Mode will be **deleted** (not a dump); Grappling Hook OR is in-scope; vault/behind dest types already exist.
 
 ### 16.5 Recommended v1 slice (refactor scope)
 
-**Scope:** every ability in **current** project movesets (Knight, Bruiser, universals used by them, class library readers/sim/planning). Not uncoded Bible classes.
+**Scope:** every ability in **current** project movesets (all shipped Bible classes, universals, class library readers/sim/planning). Extra Rules convert class-by-class per the conversion plan. Not uncoded future classes.
 
 1. Header: `planner_group`, `tags`, AP/MP (+ HP if needed), uses, presentation, `modules` + `upgraded_modules`.  
 2. Each module: effect payload, range max (min ≥ 1 for MOVE), shape, targeting flags, keywords (TRAMPLE/BULLDOZE/GHOST), layers + conditions.  
@@ -959,7 +965,7 @@ Author-facing keywords; engine may expand. Splitting into five checkboxes is wor
 4. AUTO anim per §7.2.  
 5. Migrate all current factories/definitions; absorb worst `modifiers` as you touch each skill.  
 
-Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin range — unless a **current** moveset skill already needs them.
+Defer: RULE_PICK, DELAY/ENDS_TURN, ally-origin range — unless a **current** moveset skill already needs them. **Do not defer** Grappling Hook OR choice. **Do not ship Motion Mode.**
 
 ### 16.6 Audit verdict
 
@@ -985,6 +991,7 @@ Defer: OR choice, RULE_PICK, DELAY/ENDS_TURN, exotic motion modes, ally-origin r
 | 2026-08-02 | §18 Audit pass 2: 7.1 vs 7.2, trampling AUTO scope, Violent Collision in-scope, migration/defer alignment, Example E Swap |
 | 2026-08-02 | §19 Audit pass 3: §0 normative summary, precedence, cost↔planner coupling, gated-aim rule, Example F, validation grey-out, trampling AP-only migration note |
 | 2026-08-02 | Status → READY_FOR_REFACTOR; push to origin |
+| 2026-08-16 | Status → ACTIVE. Locked families in §2.2. DELETE Motion Mode. Grappling Hook OR is in-scope. Condition filters are live. Must-migrate = all shipped classes. §12.7–§12.11 / §14 / §16 no longer tell agents to fold dest types into Motion Mode. |
 
 ---
 

@@ -58,6 +58,14 @@ static func run_all() -> Dictionary:
 		check_failures,
 	)
 	check_failures = failures.size()
+	_run_script_check(
+		"res://tests/extra_rules_conversion_contract.gd",
+		"run_all",
+		failures,
+		"extra_rules_conversion_contract",
+		check_failures,
+	)
+	check_failures = failures.size()
 	_run_formatter_audit(failures, check_failures)
 	if failures.is_empty():
 		print("ABILITY_MODULE_BRIDGE_TEST: PASS")
@@ -79,6 +87,10 @@ static func _run_script_check(
 	var script: Script = load(script_path) as Script
 	if script == null:
 		failures.append("%s script missing: %s" % [label, script_path])
+		_report_check(label, failures, before)
+		return
+	if not script.has_method(method):
+		failures.append("%s missing %s (parse error?): %s" % [label, String(method), script_path])
 		_report_check(label, failures, before)
 		return
 	script.call(method, failures)

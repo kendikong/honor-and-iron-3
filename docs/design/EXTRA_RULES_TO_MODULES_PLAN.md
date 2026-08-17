@@ -94,7 +94,9 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 | Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
 | Movement (Self) field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE`, `SHADOW_STEP`, `BLINK` | Field or dest type on **Movement (Self)** |
 | Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone** |
-| Forced Movement | `PULL_SELF_OR_TARGET` (or Movement (Self) if pull-yourself), `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH` | **Forced Movement** type or field |
+| Forced Movement | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH`, `PUSH`, `MINE_PULL` | **Forced Movement** type or field. Pull-yourself is **not** here. |
+| Movement (Self) pull-yourself | `GRAPPLE_WALL_PULL_SELF` | Dest type in **Movement (Self)** |
+| Player OR | `PULL_SELF_OR_TARGET`, `GRAPPLE_BIDIRECTIONAL` | `resolution_choice` (Movement (Self) pull-yourself **or** Forced Movement pull-them) |
 | Attack field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on **Attack** |
 | Heal / Shield field | `HEAL_PER_DEBUFF`, `REVIVE_*`, `SCRAP_SHIELD` | Field on **Heal** / **Shield** |
 | StatusType | `BLOODLUST_*`, `MANA_SHIELD_*`, `WITHER`, `LINK_*`, `LIFE_LINK_*` | **Status** |
@@ -111,14 +113,17 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 
 ## How an agent must work
 
-0. **Reread the bibles.** Skill line + upgrade in `class_abilities.txt`. Module home in `docs/design/ability-data.md`. If this chat was summarized or compacted, do this **again** before any conversion. Summaries are not the skill bible.
+0. **Reread the bibles.** Quote the skill line + upgrade from `class_abilities.txt` in the changelog **before** calling the skill converted. Module home in `docs/design/ability-data.md` §2.2. If this chat was summarized or compacted, do this **again**. Summaries are not the skill bible.
 1. Open **this file**. Find the skill row. Pick the **family** from the locked table.
-2. Implement the **Solution** cell using the conversion law.
-3. Delete that skill’s Extra Rules and layer leftover stamps **in the same change**.
-4. Run that class’s gate + live QA. Report PASS/FAIL.
-5. Do not start the next skill until this one has no extras.
+2. Implement the **Solution** cell using the conversion law. If the Solution cell is shorthand vs the skill bible, stop and ask — do not invent a leftover key.
+3. Delete that skill’s Extra Rules **and** leftover Extra Rule keys on `effect.modifiers` **in the same change**. Factory has no `_add_extra` on that skill.
+4. Add the ability id to `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`. Empty extras while combat still reads the bag = cheat = not converted.
+5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
+6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
-If the Solution cell is wrong vs the **skill bible**, **stop and ask**. Do not invent Extra Rules. Do not author from a chat summary.
+If the Solution cell is wrong vs the **skill bible**, **stop and ask**. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode.
+
+Complete Extra Rule id → home map: `tests/extra_rules_conversion_contract.gd` `extra_rule_home()`. The category table above is a summary. The test fails if any `AbilityExtraRule.Id` (except NONE) has no home.
 
 ---
 
@@ -481,10 +486,11 @@ When every class skill row is converted:
 | After | Run |
 |-------|-----|
 | Any class factory / skill conversion | `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1` |
+| Converted-skill extras / Extra Rule homes | Headless `res://tests/run_ability_module_bridge_test.gd` (includes `extra_rules_conversion_contract`) |
 | Planning / commit / overlay | `.\scripts\run_planning_qa_gate.ps1` (no `-LiveTier3` unless asked) |
 | GRANT_AP / Simulator / AbilitySystem | `.\scripts\run_regression_tests.ps1` |
 
-Fail → fix that skill. Do not mark the class converted.
+Fail → fix that skill. Do not mark the class converted. Contract FAIL on a converted id = extras or leftover Extra Rule keys still present.
 
 ---
 
