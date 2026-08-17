@@ -317,24 +317,26 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 5. Mercenary
 
-- [ ] `mercenary_pullback`
-- [ ] `mercenary_swift_strike`
-- [ ] `mercenary_defense_strike`
-- [ ] `mercenary_blade_storm`
-- [ ] `mercenary_caltrop_toss`
-- [ ] `mercenary_feint`
-- [ ] `mercenary_riposte_strike`
-- [ ] `mercenary_sever`
-- [ ] `mercenary_second_wind`
-- [ ] `mercenary_tactical_retreat`
-- [ ] `mercenary_executioners_blade`
-- [ ] `mercenary_precision_strike`
-- [ ] `mercenary_flank_and_run`
-- [ ] `mercenary_hamstring`
-- [ ] `mercenary_acrobatic_vault`
-- [ ] `mercenary_duelists_challenge`
-- [ ] Mercenary class gate: `run_mercenary_qa_gate.ps1`.
-- [ ] Mercenary live gate: `run_mercenary_live_qa.ps1`.
+- [x] `mercenary_pullback`
+- [x] `mercenary_swift_strike`
+- [x] `mercenary_defense_strike`
+- [x] `mercenary_blade_storm`
+- [x] `mercenary_caltrop_toss`
+- [x] `mercenary_feint`
+- [x] `mercenary_riposte_strike`
+- [x] `mercenary_sever`
+- [x] `mercenary_second_wind`
+- [x] `mercenary_tactical_retreat`
+- [x] `mercenary_executioners_blade`
+- [x] `mercenary_precision_strike`
+- [x] `mercenary_flank_and_run`
+- [x] `mercenary_hamstring`
+- [x] `mercenary_acrobatic_vault`
+- [x] `mercenary_duelists_challenge`
+- [x] Mercenary class gate: `run_mercenary_qa_gate.ps1` — PASS.
+- [x] Mercenary live gate: `run_mercenary_live_qa.ps1` — PASS.
+- [x] Mercenary active upgrade proof and typed contracts — PASS.
+- [x] Harsh gauntlet critic — PASS, 86/100.
 
 #### 6. Monk
 

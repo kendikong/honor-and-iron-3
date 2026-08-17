@@ -24,8 +24,24 @@ static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:
 			_run_executioners_blade_upgrade(failures)
 		"precision_strike":
 			_run_precision_strike_upgrade(failures)
+		"swift_strike":
+			_run_swift_strike_upgrade(failures)
+		"caltrop_toss":
+			_run_caltrop_toss_upgrade(failures)
+		"feint":
+			_run_feint_upgrade(failures)
+		"riposte_strike":
+			_run_riposte_strike_upgrade(failures)
+		"sever":
+			_run_sever_upgrade(failures)
+		"hamstring":
+			_run_hamstring_upgrade(failures)
+		"acrobatic_vault":
+			_run_acrobatic_vault_upgrade(failures)
+		"duelists_challenge":
+			_run_duelists_challenge_upgrade(failures)
 		_:
-			pass
+			failures.append("missing Mercenary active upgrade proof: %s" % row_name)
 
 
 static func run_passive_upgrade_for(passive_id: StringName, failures: Array[String]) -> void:
@@ -182,11 +198,7 @@ static func _run_flank_and_run_upgrade(failures: Array[String]) -> void:
 
 
 static func _run_executioners_blade_upgrade(failures: Array[String]) -> void:
-	var ab: AbilityData = H.factory_ability(&"mercenary_executioners_blade")
-	H.assert_true(
-		failures, "executioners_blade/upgrade/kill_ap",
-		ab.upgraded_modules[0].runtime_has("kill_grant_ap"),
-	)
+	S.run_executioners_blade(failures)
 
 
 static func _run_precision_strike_upgrade(failures: Array[String]) -> void:
@@ -194,6 +206,215 @@ static func _run_precision_strike_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "precision_strike/upgrade/ignore",
 		float(ab.upgraded_modules[0].runtime_value("unacted_target_ignore_def_pct", 0.0)) >= 1.0,
+	)
+	var board_base: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_mercenary(board_base, 1, Vector2i(2, 3), H.mercenary_with_ability(&"mercenary_precision_strike"))
+	H.place_dummy(board_base, 2, Vector2i(3, 3))
+	H.buff_merc_strength(board_base, 1, 6)
+	H.buff_dummy_defense(board_base, 2, 20)
+	var base_skill := H.ability_on_unit(
+		H.unit_on_board(board_base, 1), &"mercenary_precision_strike",
+	)
+	var base_plan := Timeline.new()
+	base_plan.add(H.plan_ability(1, base_skill, Vector2i(3, 3), 2))
+	var base_loss := H.hp_loss_from_plan(board_base, base_plan, 2)
+	var board_up: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_mercenary(
+		board_up, 1, Vector2i(2, 3),
+		H.with_upgraded_ability(
+			H.mercenary_with_ability(&"mercenary_precision_strike"),
+			&"mercenary_precision_strike",
+		),
+	)
+	H.place_dummy(board_up, 2, Vector2i(3, 3))
+	H.buff_merc_strength(board_up, 1, 6)
+	H.buff_dummy_defense(board_up, 2, 20)
+	var upgraded_skill := H.ability_on_unit(
+		H.unit_on_board(board_up, 1), &"mercenary_precision_strike",
+	)
+	var upgraded_plan := Timeline.new()
+	upgraded_plan.add(H.plan_ability(1, upgraded_skill, Vector2i(3, 3), 2))
+	var upgraded_loss := H.hp_loss_from_plan(board_up, upgraded_plan, 2)
+	H.assert_true(
+		failures, "precision_strike/upgrade/sim_ignore",
+		upgraded_loss > 0 and upgraded_loss >= base_loss,
+		"[+] must still damage an unacted high-DEF target",
+	)
+
+
+static func _run_swift_strike_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_mercenary(
+		board, 1, Vector2i(2, 3),
+		H.with_upgraded_ability(
+			H.mercenary_with_ability(&"mercenary_swift_strike"),
+			&"mercenary_swift_strike",
+		),
+	)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var target := H.unit_on_board(board, 2)
+	target.health.current_hp -= 1
+	var actor := H.unit_on_board(board, 1)
+	var ap_before := actor.ability.points_left
+	var skill := H.ability_on_unit(actor, &"mercenary_swift_strike")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
+	H.assert_eq_int(
+		failures, "swift_strike/upgrade/damaged_target_ap",
+		result.final_state.get_unit_by_id(1).ability.points_left,
+		ap_before,
+	)
+
+
+static func _run_caltrop_toss_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_mercenary(
+		board, 1, Vector2i(2, 3),
+		H.with_upgraded_ability(
+			H.mercenary_with_ability(&"mercenary_caltrop_toss"),
+			&"mercenary_caltrop_toss",
+		),
+	)
+	var skill := H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_caltrop_toss",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
+	var result := H.simulate_plan(board, plan)
+	var trap := result.final_state.get_tile(Vector2i(4, 3))
+	H.assert_true(
+		failures, "caltrop_toss/upgrade/trap_damage",
+		trap != null and trap.definition.id == &"caltrop_trap"
+			and skill.upgraded_modules[0].layers[0].trap_damage_bonus == 2,
+	)
+
+
+static func _run_feint_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_feint"), &"mercenary_feint",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	var feint := H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_feint")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, feint, Vector2i(2, 3)))
+	var result := H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "feint/upgrade/defense_debuff",
+		is_equal_approx(
+			float(result.final_state.get_unit_by_id(1).passive_flags.get(
+				"feint_def_debuff_pct", 0.0,
+			)),
+			0.25,
+		),
+	)
+
+
+static func _run_riposte_strike_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_riposte_strike"),
+		&"mercenary_riposte_strike",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.unit_on_board(board, 2).passive_flags["attacked_by_last_turn_id"] = 1
+	var skill := H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_riposte_strike",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "riposte_strike/upgrade/defense_debuff",
+		H.has_status(
+			result.final_state.get_unit_by_id(2),
+			GameEnums.StatusType.STAT_DEBUFF_DEF,
+		),
+	)
+
+
+static func _run_sever_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_sever"), &"mercenary_sever",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_ally(board, 3, Vector2i(1, 3))
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.unit_on_board(board, 2).health.current_hp = 1
+	var skill := H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_sever")
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "sever/upgrade/ally_shield",
+		H.unit_on_board(result.final_state, 3).armor > 0,
+	)
+
+
+static func _run_hamstring_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_hamstring"), &"mercenary_hamstring",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var target := H.unit_on_board(board, 2)
+	target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLEED, 1))
+	var skill := H.ability_on_unit(H.unit_on_board(board, 1), &"mercenary_hamstring")
+	var hp_before := target.health.current_hp
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "hamstring/upgrade/bleed_bonus",
+		hp_before - H.unit_on_board(result.final_state, 2).health.current_hp > 2,
+	)
+
+
+static func _run_acrobatic_vault_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_acrobatic_vault"),
+		&"mercenary_acrobatic_vault",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var skill := H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_acrobatic_vault",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
+	var result := H.simulate_plan(board, plan)
+	H.assert_true(
+		failures, "acrobatic_vault/upgrade/pierce_damage",
+		H.unit_on_board(result.final_state, 1).position == Vector2i(4, 3)
+			and skill.upgraded_modules[1].pierce,
+	)
+
+
+static func _run_duelists_challenge_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_duelists_challenge"),
+		&"mercenary_duelists_challenge",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
+	var skill := H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_duelists_challenge",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3), 2))
+	var result := H.simulate_plan(board, plan)
+	H.assert_eq_int(
+		failures, "duelists_challenge/upgrade/marked_defense",
+		int(result.final_state.get_unit_by_id(1).passive_flags.get(
+			"duelist_mark_defense_bonus", 0,
+		)),
+		2,
 	)
 
 
@@ -325,17 +546,42 @@ static func _run_predatory_momentum_upgrade(failures: Array[String]) -> void:
 
 
 static func _run_ruthless_upgrade(failures: Array[String]) -> void:
-	var passive: PassiveData = H.factory_passive(&"ruthless")
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_passive(
+		H.mercenary_with_passive(&"ruthless"), &"ruthless",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.unit_on_board(board, 2).health.current_hp = 1
+	var basic := H.basic_attack_for_unit(H.unit_on_board(board, 1))
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, basic, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
 	H.assert_true(
 		failures, "ruthless/upgrade/bonus",
-		int(passive.modifiers.get("upgraded_kill_next_attack_bonus", 0))
-			> int(passive.modifiers.get("kill_next_attack_bonus", 0)),
+		int(result.final_state.get_unit_by_id(1).passive_flags.get(
+			"ruthless_next_attack_bonus", 0,
+		)) == 3,
 	)
 
 
 static func _run_coup_de_grace_upgrade(failures: Array[String]) -> void:
-	var passive: PassiveData = H.factory_passive(&"coup_de_grace")
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg := H.with_upgraded_passive(
+		H.mercenary_with_passive(&"coup_de_grace"), &"coup_de_grace",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	H.place_dummy(board, 3, Vector2i(4, 3))
+	H.unit_on_board(board, 2).health.current_hp = 1
+	var basic := H.basic_attack_for_unit(H.unit_on_board(board, 1))
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, basic, Vector2i(3, 3), 2))
+	var result := H.simulate_plan(board, plan)
 	H.assert_true(
 		failures, "coup_de_grace/upgrade/fear_range",
-		int(passive.modifiers.get("upgraded_basic_kill_fear_range", 0)) >= 2,
+		H.has_status(
+			result.final_state.get_unit_by_id(3),
+			GameEnums.StatusType.FEAR,
+		),
 	)
