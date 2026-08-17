@@ -3,8 +3,10 @@
 **ACTIVE (2026-08-16):** Convert Extra Rules into real modules / layers.
 
 **Binding matrix:** [`docs/design/EXTRA_RULES_TO_MODULES_PLAN.md`](docs/design/EXTRA_RULES_TO_MODULES_PLAN.md)  
-**Module bible:** [`docs/design/ability-data.md`](docs/design/ability-data.md)  
-**Skill text:** `class_abilities.txt`
+**Module bible:** [`docs/design/ability-data.md`](docs/design/ability-data.md) — header, modules, keywords, layers, gates, targeting  
+**Skill bible:** `class_abilities.txt` — every Active / Reposition line is law
+
+**Bibles stay in context.** Chat summaries, compaction, and handoff notes are **not** skill text. After any summarization, **reread** `class_abilities.txt` (that skill’s line + upgrade) and `docs/design/ability-data.md` (the module home) before converting. Do not author from memory of this chat.
 
 Extra Rules was a leftover-bag rename. That pass is **rejected**. Chat tables are not a substitute. Agents must execute the on-disk matrix.
 
@@ -37,7 +39,7 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Home | Use when |
 |------|----------|
 | Header | Cost, once-per-turn, skip-Action, delay |
-| Module primary | The verb. Pick a **family** (`ability-data.md` §2.2): Hit, Heal/Shield, Status, Walk, Jump, Teleport, Dash/Swap, Pair/carry, Control, Board, Grant. Do not grow a flat dump. |
+| Module primary | The verb. Pick a **family** in the conversion plan (Attack, Movement (Self), Forced Movement, Move someone, Hazard, Summon, Status, Heal, Shield, Stance, Resource). Types grow inside a family. Riders are fields/layers, not new families. |
 | Keyword | TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO |
 | Layer + condition | Extra punch on the same targets |
 | Gate | Whether a module runs |
@@ -47,6 +49,26 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 
 **Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**.  
 **Out of scope:** passives (until owner asks).
+
+### Module primary families (reference)
+
+Locked names. Full add-rules and Extra Rule mapping: conversion plan. Module shape: `ability-data.md`. Skill lines: `class_abilities.txt`.
+
+| Family | Opening verb |
+|--------|----------------|
+| **Attack** | Hurt (ATK / MAG ATK) |
+| **Movement (Self)** | You change tiles (MOVE / DASH / JUMP / TELEPORT) |
+| **Forced Movement** | They slide (PUSH / PULL) |
+| **Move someone** | You put a body on a tile (swap, carry, usher, throw-behind, drag) |
+| **Hazard** | The tile keeps doing something |
+| **Summon** | You make a unit or object |
+| **Status** | Apply or strip a named condition (no hit) |
+| **Heal** | Restore HP |
+| **Shield** | Grant over-HP |
+| **Stance** | You set yourself up this turn |
+| **Resource** | Grant/refund AP, Scrap, later currencies |
+
+Watch for later split: Link, Scrap, Destroy — only if they become their own verb pile.
 
 ---
 

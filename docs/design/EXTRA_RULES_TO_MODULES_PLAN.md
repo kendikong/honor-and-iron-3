@@ -2,8 +2,10 @@
 
 **Status:** `ACTIVE` — owner-locked 2026-08-16  
 **Audience:** Every agent converting skills  
-**Authority chain:** `class_abilities.txt` → `docs/design/ability-data.md` (§0–§11, §12.9) → **this doc** → `AbilitySystem` / planning / sim  
-**Non-authority:** Extra Rules. Chat tables. “Combat still reads the key.”
+**Authority chain:** **Skill bible** `class_abilities.txt` → **Module bible** `docs/design/ability-data.md` (§0–§11, §12.9) → **this doc** → `AbilitySystem` / planning / sim  
+**Non-authority:** Extra Rules. Chat tables. Chat summaries. “Combat still reads the key.”
+
+**Bibles stay in context (absolute).** After any chat summarization, compaction, or handoff, **reread** the skill line in `class_abilities.txt` and the matching module home in `docs/design/ability-data.md` before converting. Do not trust a summary for ATK/MOVE/PUSH text, targeting, or upgrades.
 
 This is the work order that was built in chat and then ignored. Extra Rules was a leftover-bag rename. This plan converts those riders into the module bible.
 
@@ -49,46 +51,49 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 
 ---
 
-## Module Primary families
+## Module primary families (owner-locked)
 
-One dropdown, grouped. New EffectTypes go in a family. Do not dump them flat. Canonical copy also lives in `ability-data.md` §2.2 and `ModuleAuthoringRules.effect_primary_families()`.
+Reference only. **Skill bible** (`class_abilities.txt`) is the verb. **Module bible** (`ability-data.md`) is the home (header / module / keyword / layer / gate / targeting / field). This table is the Primary dropdown grouping so the list can grow.
 
-| Family | Now | Incoming conversion | Not a new primary |
-|--------|-----|---------------------|-------------------|
-| **Hit** | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | | Bounce, unmitigated, %HP, ignore-resist, range-band cut = **fields on DAMAGE** |
-| **Heal / Shield** | HEAL, ARMOR_UP | | Revive % = field on HEAL |
-| **Status** | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType** |
-| **Walk** | MOVE, MOVE_ADJACENT_TO, MOVE_TO_BEHIND, MOVE_TOWARD, MOVE_INTO_AND_PUSH | | L-path, facing, ZOC = **fields on MOVE** |
-| **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | | Vault restriction = field on JUMP_TO_BEHIND |
-| **Teleport** | TELEPORT_CASTER, TELEPORT_* landing | | Visible/LOS = field on TELEPORT |
-| **Dash / Swap** | DASH, SWAP | | |
-| **Pair / carry** | PAIRED_MOVE | Carry/place, drag-walk, ally-step, slide-opposite | THROW_BEHIND / PULL_SELF_TO_TARGET = **Control** |
-| **Control** | PUSH, PULL, THROW_BEHIND | PULL_SELF_TO_TARGET | Pull-to-center / surfaces = **fields on PULL**. Collision STAGGER = **layer** |
-| **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | | Hazard / spawn knobs = **typed fields** |
-| **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
-| **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Keywords / layers. Do not add here |
+**Add rule:** new *kind of verb* → new **type** in a family. Rider (bounce, GHOST, on-kill AP, hazard duration) → field / layer / keyword. New family only if nothing here is the verb. Split a family only when it is clearly two verbs (watch: Link, Scrap, Destroy).
+
+| Family | Opening verb (skill bible) | Types now (module bible) | Incoming / not a new primary |
+|--------|----------------------------|--------------------------|------------------------------|
+| **Attack** | Hurt (`ATK` / `MAG ATK`) | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce, unmitigated, %HP, ignore-resist = **fields** |
+| **Movement (Self)** | You change tiles (`MOVE` / `DASH` / `JUMP` / `TELEPORT`) | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = **fields** or dest types here |
+| **Forced Movement** | They slide (`PUSH` / `PULL`) | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = **fields / layers** |
+| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap/Maul, Feral Drag, Pullback = **types here** |
+| **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, spear wall, sanctuary, mines = **knobs** |
+| **Summon** | You make a unit or object | SPAWN | Construct HP%, turret ATK, overclock = **knobs** |
+| **Status** | Apply or strip a named condition, no hit | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType**. Link may split later. |
+| **Heal** | Restore HP | HEAL | MAG HEAL, revive % = **fields**. On-kill HEAL = **layer** |
+| **Shield** | Grant over-HP | ARMOR_UP | Scrap shield, missing-HP shield = **fields / layers** |
+| **Stance** | You set yourself up this turn | (often ADD_STATUS_SELF / arm-next) | Phalanx, Feint, Mana Shield, Brace, Retaliation |
+| **Resource** | Grant/refund AP, Scrap, later currencies | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | On-kill AP = **layer**. Scrap verbs may split later. |
+| **Convert off** | Not a real family | TRAMPLE, BULLDOZE, PUSH_STAGGER_*, PULL_VULNERABLE_*, PUSH_CHAIN_* | Keywords / layers. Do not add here |
+
+Do not split **Movement (Self)** into Walk vs Jump vs Teleport families. Dest types stay in that family.
 
 ## Extra Rule categories (not a second primary list)
 
-Every Extra Rule id belongs to **one** conversion home. Most are **not** new primaries.
+Every Extra Rule id belongs to **one** conversion home. Most are **not** new primaries. Confirm against the **skill bible** line before picking a family.
 
 | Category | Extra Rule examples | Home |
 |----------|---------------------|------|
-| Targeting / Condition | `EXCLUDE_CASTER`, `ALLOW_FRIENDLY_TARGET`, Hex / Terrify leftovers | Targeting checkbox or Condition dropdown |
+| Targeting / Condition | `EXCLUDE_CASTER`, `ALLOW_FRIENDLY_TARGET` | Targeting checkbox or Condition dropdown |
 | Header | `DOES_NOT_CONSUME_ACTION_SLOT`, `LIMIT_ONCE_PER_TURN`, `COST_ALL_MOVEMENT`, `SPEND_SELF_HP`, `DELAYED_NEXT_TURN` | Header |
 | Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
-| Walk / Jump / Teleport field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE` | Field on Walk / Jump / Teleport primary |
-| Pair / carry (new primary) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Pair / carry** (two bodies moving as one package) |
-| Control (new or field) | `PULL_SELF_OR_TARGET` | **PULL_SELF_TO_TARGET** or resolution_choice on PULL |
-| Control field | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH` | Field on PUSH / PULL |
-| Hit field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on DAMAGE |
-| Heal / Shield field | `HEAL_PER_DEBUFF`, `REVIVE_*`, `SCRAP_SHIELD` | Field on HEAL / ARMOR_UP |
-| StatusType | `BLOODLUST_*`, `MANA_SHIELD_*`, `WITHER`, `LINK_*`, `LIFE_LINK_*` | New or existing **StatusType** |
-| Board knobs | `HAZARD_*`, `SMOKE_*`, `TRAP_*`, `MINE_*`, `TERRAIN_ID`, `SANCTUARY_*`, `HOLY_GROUND_*` | Typed fields on CREATE_HAZARD / CHANGE_TERRAIN |
-| Spawn knobs | `CONSTRUCT_*`, `TURRET_ATTACK` | Typed fields on SPAWN |
-| Layer ON_KILL | `ON_KILL_*`, `FRENZY_ON_KILL_AP`, `KILL_GRANT_AP` | Layer + GRANT_AP / HEAL / SHIELD |
-| Layer collision / land | `*_COLLISION_*`, `VIOLENT_COLLISION_RECAST`, `POUNCE_LAND_ADJACENT` | Layer ON_COLLISION / ON_LAND or gate IF_COLLIDED |
-| Grant | `GRANT_AP`, `ON_HIT_SCRAP`, `REFUND_SCRAP_*`, `NEXT_SKILL_ZERO_AP`, `NEXT_ATTACK_STRENGTH` | GRANT_* primary or GRANT_NEXT_ATTACK_MOD |
+| Movement (Self) field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE`, `SHADOW_STEP`, `BLINK` | Field or dest type on **Movement (Self)** |
+| Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone** |
+| Forced Movement | `PULL_SELF_OR_TARGET` (or Movement (Self) if pull-yourself), `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH` | **Forced Movement** type or field |
+| Attack field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on **Attack** |
+| Heal / Shield field | `HEAL_PER_DEBUFF`, `REVIVE_*`, `SCRAP_SHIELD` | Field on **Heal** / **Shield** |
+| StatusType | `BLOODLUST_*`, `MANA_SHIELD_*`, `WITHER`, `LINK_*`, `LIFE_LINK_*` | **Status** |
+| Hazard knobs | `HAZARD_*`, `SMOKE_*`, `TRAP_*`, `MINE_*`, `TERRAIN_ID`, `SANCTUARY_*`, `HOLY_GROUND_*` | Typed fields on **Hazard** |
+| Summon knobs | `CONSTRUCT_*`, `TURRET_ATTACK` | Typed fields on **Summon** |
+| Layer ON_KILL | `ON_KILL_*`, `FRENZY_ON_KILL_AP`, `KILL_GRANT_AP` | Layer + **Heal** / **Shield** / **Resource** |
+| Layer collision / land | `*_COLLISION_*`, `VIOLENT_COLLISION_RECAST`, `POUNCE_LAND_ADJACENT` | Layer or gate on **Movement (Self)** / **Forced Movement** |
+| Resource | `GRANT_AP`, `ON_HIT_SCRAP`, `REFUND_SCRAP_*`, `NEXT_SKILL_ZERO_AP` | **Resource** or header |
 | DELETE | Extra Rules themselves; Motion Mode | ER-3 |
 
 **Self vs skip caster:** Self = may click yourself. Skip caster in blast = aura/AOE does not apply to you. Not the same checkbox. `EXCLUDE_CASTER` Extra Rule → skip-caster blast checkbox, then delete.
@@ -97,13 +102,14 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 
 ## How an agent must work
 
-1. Open **this file**. Find the skill row.
+0. **Reread the bibles.** Skill line + upgrade in `class_abilities.txt`. Module home in `docs/design/ability-data.md`. If this chat was summarized or compacted, do this **again** before any conversion. Summaries are not the skill bible.
+1. Open **this file**. Find the skill row. Pick the **family** from the locked table.
 2. Implement the **Solution** cell using the conversion law.
 3. Delete that skill’s Extra Rules and layer leftover stamps **in the same change**.
 4. Run that class’s gate + live QA. Report PASS/FAIL.
 5. Do not start the next skill until this one has no extras.
 
-If the Solution cell is wrong vs Bible, **stop and ask**. Do not invent Extra Rules.
+If the Solution cell is wrong vs the **skill bible**, **stop and ask**. Do not invent Extra Rules. Do not author from a chat summary.
 
 ---
 
@@ -117,8 +123,8 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
 | PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | Module primary (Glorious Charge, Pullback) |
 | PULL_SELF_TO_TARGET | Missing (bible §12.7) | New effect or resolution_choice on PULL |
-| Carry / place-unit (Airlift, Kidnap, Maul drop) | Missing | New effect family |
-| Drag-while-walking (Feral Drag) | Missing | New effect |
+| Carry / place-unit (Airlift, Kidnap, Maul drop) | Missing | New type in **Move someone** |
+| Drag-while-walking (Feral Drag) | Missing | New type in **Move someone** |
 | CREATE_HAZARD knobs | Partially typed on module; still extras/layer bags | Typed fields on CREATE_HAZARD |
 | SPAWN knobs (HP%, turret ATK, furthest-on-line) | Partial | Typed fields on SPAWN |
 | Header once-per-turn / skip-Action / spend-all-MP | Partial (`once_per_turn`, `SPEND_ALL_MOVEMENT`) | Header |
