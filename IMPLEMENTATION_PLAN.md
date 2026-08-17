@@ -67,6 +67,168 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-2 — class-by-class conversion
 
+### ER-2 — authoritative skill quality matrix
+
+| Class | Skill | Real modules/layers | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
+|---|---|:---:|:---:|:---:|:---:|---|
+| Knight | Defensive Formation | ☑ | ☑ | ☑ | ☐ | Typed `exclude_caster`; redundant audit still open |
+| Bruiser | Push Through | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Concussion Blow | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Cleave | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Suplex | ☐ | ☐ | ☐ | ☐ | Enemy throw on Action is legal |
+| Bruiser | Adrenaline Surge | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Earthshatter | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Meat Shield | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Bruiser | Frenzy | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Guttural Roar | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Headbutt | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Violent Collision | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Crimson Whirlwind | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Breaching Dash | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Sidestep | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Volley | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Power Shot | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Piercing Shot | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Grapple Arrow | ☐ | ☐ | ☐ | ☐ | Pull-yourself destination |
+| Archer | Explosive Arrow | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Hunter’s Mark | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Repelling Shot | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Bear Trap | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Caltrops | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Suppressing Fire | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Parting Shot | ☐ | ☐ | ☐ | ☐ |  |
+| Archer | Scout’s Eye | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Push | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Polearm range-band rule | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Rallying Cry status timing | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Wraparound / Flanking Maneuver | ☐ | ☐ | ☐ | ☐ | L-path destination |
+| Lancer | Glorious Charge | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Lancer | Pole Vault | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Line Breaker | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Spear Wall | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Blink | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Ice Shard | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Chain Lightning | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Arcane Push | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Teleport | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Meteor | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Black Hole | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Time Warp | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Mana Shield | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Disintegrate | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Elemental Surge | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Earth Spike | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Density Shift | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Arcane Barrage | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Guardian Step | ☐ | ☐ | ☐ | ☐ | Spend remaining MP |
+| Cleric | Holy Light | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Smite | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Cleansing Aura | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Sanctuary | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Divine Hammer | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Life Link | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Prayer of Fortitude | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Resurrection | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Consecrate Ground | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Holy Wrath | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Divine Guidance | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Shield of Faith | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Martyr’s Chains | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Pullback | ☐ | ☐ | ☐ | ☐ | Pre-Move paired movement |
+| Mercenary | Swift Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Defense Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Blade Storm | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Caltrop Toss | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Feint | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Riposte | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Sever | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Second Wind | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Tactical Retreat | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Executioner’s Blade | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Precision Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Flank & Run | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Hamstring | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Acrobatic Vault | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Duelist’s Challenge | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Leap | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Scorching Kick | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Thunder Palm | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Yin-Yang Flurry | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Chakra Shift | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Phase Throw | ☐ | ☐ | ☐ | ☐ | Enemy swap on Action is legal |
+| Monk | Flying Crane Kick | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Spirit Palm | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Mantra of Peace | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Inner Fire | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Void Step | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Cyclone Sweep | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Updraft | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Geyser Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Slip Past | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Shadow Step | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Kidney Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Smoke Bomb | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Grappling Hook | ☐ | ☐ | ☐ | ☐ | OR choice |
+| Rogue | Switcheroo | ☐ | ☐ | ☐ | ☐ | Enemy swap on Action is legal |
+| Rogue | Shadow Swap | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Rogue | Blindside | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Throat Slit | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Amnesia Dust | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Death Mark | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Lethal Flourish | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Kidnap | ☐ | ☐ | ☐ | ☐ | Enemy swap + push on Action |
+| Rogue | Shuriken Volley | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Poison Flask | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Reposition | ☐ | ☐ | ☐ | ☐ | Ally-step destination |
+| Beast Rider | Pounce | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Feral Drag | ☐ | ☐ | ☐ | ☐ | Enemy drag on Action is legal |
+| Beast Rider | Maul | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Bestial Roar | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Raking Claws | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Rest and Recover | ☐ | ☐ | ☐ | ☐ | Spend remaining MP |
+| Beast Rider | Intimidate | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Fetch / Snatch | ☐ | ☐ | ☐ | ☐ | Condition: CON ≤ STR |
+| Beast Rider | Savage Bite | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Run Down | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Defensive Posture | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Airlift | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Tail Swipe | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Gore | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Recall | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Dismantle | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Sludge Bomb | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Construct Turret | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Frag Bomb | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Magnetic Mine | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Tesla Barricade | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Flak Cannon | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Wrench Smack | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | EMP Grenade | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Rocket Launcher | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Scrap Shield | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Manual Detonation | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Overdrive Injection | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Barbed Wire | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Usher | ☐ | ☐ | ☐ | ☐ | Ally-step destination |
+| Shaman | Curse of Weakness | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Healing Totem | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Flame Totem | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Earthbind Totem | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Bloodlust | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Hex | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Voodoo Link | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Terrify | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Miasma | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Bone Spear | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Sympathetic Bond | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Soul Siphon | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Pain Spike | ☐ | ☐ | ☐ | ☐ |  |
+
+**Matrix completion rule:** check a skill’s four columns only after the skill-level conversion contract, class gate/live proof, Bible audit, and independent quality re-audit are all recorded. The three Action ally-relocate rows remain unchecked until rewritten.
+
+### ER-2 — class QA command index (secondary)
+
 #### 1. Knight
 
 - [x] `knight_defensive_formation` — `exclude_caster` typed targeting field; conversion contract, Knight gate, and Knight live QA pass.
