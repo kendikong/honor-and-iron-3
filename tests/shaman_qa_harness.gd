@@ -94,6 +94,12 @@ static func run_factory_matrix(failures: Array[String]) -> void:
 		_assert(failures, "factory/modules/%s" % ability_id, not ability.modules.is_empty())
 		_assert(failures, "factory/upgraded_modules/%s" % ability_id, not ability.upgraded_modules.is_empty())
 		_assert(failures, "factory/upgrade/%s" % ability_id, not ability.upgrade_description.is_empty())
+		if ability_id == &"shaman_pain_spike":
+			_assert(
+				failures,
+				"bible/shaman_pain_spike/magical_scaling",
+				ability.modules[0].scaling_stat == GameEnums.StatType.MAGICAL,
+			)
 	for row: Dictionary in PASSIVE_ROWS:
 		var passive := _passive(shaman, row.id)
 		_assert(failures, "factory/passive/%s" % row.id, passive != null)
@@ -371,6 +377,11 @@ static func _assert_upgrade_outcome(
 				not upgraded.is_empty()
 				and upgraded[0].runtime_value("linked_enemy_blind", false),
 			)
+			var linked_enemy := board_after.get_unit_by_id(4)
+			_assert(
+				failures, "upgrade/shaman_pain_spike/linked_enemy_blind",
+				linked_enemy != null and linked_enemy.has_status(GameEnums.StatusType.BLIND),
+			)
 		_:
 			pass
 
@@ -443,10 +454,14 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 		&"echoing_spirits":
 			shaman.active_passives.append(passive)
 			var totem_def := DataLibrary.get_unit(&"voodoo_totem")
-			var spawn_effect := DataLibrary._effect(GameEnums.EffectType.SPAWN, 0)
-			spawn_effect.modifiers = {
-				"totem_kind": &"healing", "pulse_aoe": 2, "pulse_heal": 1,
-			}
+			var spawn_module := DataLibrary._module(
+				GameEnums.EffectType.SPAWN, 0, 1, 1, GameEnums.TargetingFlags.TILE,
+			)
+			spawn_module.totem_kind = &"healing"
+			spawn_module.pulse_aoe = 2
+			spawn_module.pulse_heal = 1
+			var spawn_effects := AbilityModuleBridge.compile_modules_for_runtime([spawn_module])
+			var spawn_effect: EffectData = spawn_effects[0]
 			var scaled_hp := maxi(1, floori(shaman.health.max_hp * 0.5))
 			var base_totem := UnitState.create(6, totem_def, GameEnums.Team.PLAYER, Vector2i(1, 1))
 			base_totem.health.max_hp = scaled_hp
@@ -459,6 +474,7 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			var base_hp := base_totem.health.max_hp
 			shaman.upgraded_passives.append(&"echoing_spirits")
 			var upgraded_totem := UnitState.create(7, totem_def, GameEnums.Team.PLAYER, Vector2i(2, 1))
+			var expected_bonus_hp := floori(float(shaman.health.max_hp) * 0.10)
 			upgraded_totem.health.max_hp = scaled_hp
 			upgraded_totem.health.current_hp = scaled_hp
 			_SHAMAN_SYSTEMS.on_spawned(
@@ -468,12 +484,11 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			)
 			_assert(
 				failures, "passive/echoing_spirits/upgraded_totem_hp",
-				upgraded_totem.health.max_hp == base_hp + 2,
+				upgraded_totem.health.max_hp == base_hp + expected_bonus_hp,
 			)
-			var totem := upgraded_totem
-			totem.position = Vector2i(3, 3)
-			board.add_unit(totem)
-			GridSystem.set_occupant(board, totem.position, totem.id)
+			upgraded_totem.position = Vector2i(3, 3)
+			board.add_unit(upgraded_totem)
+			GridSystem.set_occupant(board, upgraded_totem.position, upgraded_totem.id)
 			var ally := _place_ally(board, 2, Vector2i(4, 3))
 			ally.health.current_hp = maxi(1, ally.health.max_hp - 2)
 			var hp_before := ally.health.current_hp
@@ -759,6 +774,22 @@ static func _assert_shaman_outcome(
 				failures, "sim/shaman_soul_siphon/damage_dealt",
 				target != null and _events_have_damage(events, target_id),
 			)
+		&"shaman_pain_spike":
+			var partner := board_after.get_unit_by_id(4)
+			var partner_before := board_before.get_unit_by_id(4)
+			var attacker := board_after.get_unit_by_id(1)
+			var expected := CombatSystem.calculate_scaled_damage(
+				attacker, 1, GameEnums.StatType.MAGICAL, board_after,
+			) if attacker != null else 0
+			_assert(
+				failures, "sim/shaman_pain_spike/linked_target_damaged",
+				partner != null and partner_before != null
+				and partner.health.current_hp < partner_before.health.current_hp,
+			)
+			_assert(
+				failures, "sim/shaman_pain_spike/linked_target_mag_scaled",
+				_events_have_damage_amount(events, partner.id, expected),
+			)
 		_:
 			pass
 
@@ -788,7 +819,12 @@ static func _configure_sim_target(
 		_place_dummy(board, 4, Vector2i(3, 2))
 		target_id = 3
 	elif ability_id == &"shaman_pain_spike":
-		_place_dummy(board, 3, target)
+		var linked_target := _place_dummy(board, 3, target)
+		linked_target.passive_flags["shaman_link_partner_id"] = 4
+		linked_target.passive_flags["shaman_link_weapon"] = 1
+		var linked_partner := _place_dummy(board, 4, Vector2i(3, 2))
+		linked_partner.health.max_hp = 100
+		linked_partner.health.current_hp = 100
 		target_id = 3
 	elif ability_id == &"shaman_hex":
 		var hex_target := _place_dummy(board, 3, target)
@@ -912,6 +948,21 @@ static func _events_have_ability(events: Array[SimEvent], ability_id: StringName
 static func _events_have_damage(events: Array[SimEvent], unit_id: int) -> bool:
 	for event: SimEvent in events:
 		if event.type == GameEnums.SimEventType.UNIT_DAMAGED and int(event.data.get("unit", -1)) == unit_id:
+			return true
+	return false
+
+
+static func _events_have_damage_amount(
+	events: Array[SimEvent],
+	unit_id: int,
+	amount: int,
+) -> bool:
+	for event: SimEvent in events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("unit", -1)) == unit_id
+			and int(event.data.get("amount", -1)) == amount
+		):
 			return true
 	return false
 

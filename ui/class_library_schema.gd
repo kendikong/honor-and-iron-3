@@ -727,6 +727,9 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"collision_splash_damage": src.collision_splash_damage,
 		"collision_splash_weaken": src.collision_splash_weaken,
 		"push_if_target_on_water": src.push_if_target_on_water,
+		"lightning_rod": src.lightning_rod,
+		"construct_hp_pct": src.construct_hp_pct,
+		"spawn_furthest_empty_on_line": src.spawn_furthest_empty_on_line,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -820,6 +823,11 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	)
 	layer.push_if_target_on_water = int(
 		data.get("push_if_target_on_water", layer.push_if_target_on_water)
+	)
+	layer.lightning_rod = bool(data.get("lightning_rod", layer.lightning_rod))
+	layer.construct_hp_pct = float(data.get("construct_hp_pct", layer.construct_hp_pct))
+	layer.spawn_furthest_empty_on_line = bool(
+		data.get("spawn_furthest_empty_on_line", layer.spawn_furthest_empty_on_line)
 	)
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
@@ -1032,6 +1040,53 @@ static func module_to_dict(
 		"landed_magic_bonus": src.landed_magic_bonus,
 		"enemy_pushed_mov": src.enemy_pushed_mov,
 		"blind_on_pass_over": src.blind_on_pass_over,
+		"relocate_subject_only": src.relocate_subject_only,
+		"relocate_target": src.relocate_target,
+		"move_active_totem": src.move_active_totem,
+		"curse_of_weakness": src.curse_of_weakness,
+		"stat_str": src.stat_str,
+		"stat_def": src.stat_def,
+		"push_mitigation_zero": src.push_mitigation_zero,
+		"totem_kind": src.totem_kind,
+		"pulse_aoe": src.pulse_aoe,
+		"pulse_heal": src.pulse_heal,
+		"pulse_cleanse": src.pulse_cleanse,
+		"pulse_mag_atk": src.pulse_mag_atk,
+		"pulse_fire": src.pulse_fire,
+		"bloodlust": src.bloodlust,
+		"bloodlust_def": src.bloodlust_def,
+		"bloodlust_mov": src.bloodlust_mov,
+		"bloodlust_hp": src.bloodlust_hp,
+		"bloodlust_bleed_on_attack": src.bloodlust_bleed_on_attack,
+		"hex": src.hex,
+		"wither": src.wither,
+		"boss_damage_reduction": src.boss_damage_reduction,
+		"hex_vulnerable": src.hex_vulnerable,
+		"voodoo_link": src.voodoo_link,
+		"shared_damage_wpn": src.shared_damage_wpn,
+		"shared_push": src.shared_push,
+		"terrify": src.terrify,
+		"boss_fallback_purge_shield": src.boss_fallback_purge_shield,
+		"boss_fallback_vulnerable": src.boss_fallback_vulnerable,
+		"poison_spread_on_push_collision": src.poison_spread_on_push_collision,
+		"bone_spear": src.bone_spear,
+		"ghost_duration": src.ghost_duration,
+		"echo_next_cast": src.echo_next_cast,
+		"ghost_hp_pct": src.ghost_hp_pct,
+		"echo_upgraded": src.echo_upgraded,
+		"ranged_reduction": src.ranged_reduction,
+		"melee_def": src.melee_def,
+		"sympathetic_bond": src.sympathetic_bond,
+		"link_ally_enemy": src.link_ally_enemy,
+		"ally_heal_enemy_wpn": src.ally_heal_enemy_wpn,
+		"enemy_damage_ally_heal": src.enemy_damage_ally_heal,
+		"bonus_damage_per_debuff": src.bonus_damage_per_debuff,
+		"heal_per_debuff": src.heal_per_debuff,
+		"pain_spike": src.pain_spike,
+		"linked_enemy_damage": src.linked_enemy_damage,
+		"linked_enemy_blind": src.linked_enemy_blind,
+		"pulse_status": src.pulse_status,
+		"pulse_weaken": src.pulse_weaken,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1386,6 +1441,73 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.landed_magic_bonus = int(data.get("landed_magic_bonus", dst.landed_magic_bonus))
 	dst.enemy_pushed_mov = int(data.get("enemy_pushed_mov", dst.enemy_pushed_mov))
 	dst.blind_on_pass_over = bool(data.get("blind_on_pass_over", dst.blind_on_pass_over))
+	dst.relocate_subject_only = bool(
+		data.get("relocate_subject_only", dst.relocate_subject_only)
+	)
+	dst.relocate_target = bool(data.get("relocate_target", dst.relocate_target))
+	dst.move_active_totem = bool(data.get("move_active_totem", dst.move_active_totem))
+	dst.curse_of_weakness = bool(data.get("curse_of_weakness", dst.curse_of_weakness))
+	dst.stat_str = int(data.get("stat_str", dst.stat_str))
+	dst.stat_def = int(data.get("stat_def", dst.stat_def))
+	dst.push_mitigation_zero = bool(
+		data.get("push_mitigation_zero", dst.push_mitigation_zero)
+	)
+	dst.totem_kind = StringName(str(data.get("totem_kind", String(dst.totem_kind))))
+	dst.pulse_aoe = int(data.get("pulse_aoe", dst.pulse_aoe))
+	dst.pulse_heal = int(data.get("pulse_heal", dst.pulse_heal))
+	dst.pulse_cleanse = bool(data.get("pulse_cleanse", dst.pulse_cleanse))
+	dst.pulse_mag_atk = int(data.get("pulse_mag_atk", dst.pulse_mag_atk))
+	dst.pulse_fire = bool(data.get("pulse_fire", dst.pulse_fire))
+	dst.bloodlust = bool(data.get("bloodlust", dst.bloodlust))
+	dst.bloodlust_def = int(data.get("bloodlust_def", dst.bloodlust_def))
+	dst.bloodlust_mov = int(data.get("bloodlust_mov", dst.bloodlust_mov))
+	dst.bloodlust_hp = int(data.get("bloodlust_hp", dst.bloodlust_hp))
+	dst.bloodlust_bleed_on_attack = bool(
+		data.get("bloodlust_bleed_on_attack", dst.bloodlust_bleed_on_attack)
+	)
+	dst.hex = bool(data.get("hex", dst.hex))
+	dst.wither = bool(data.get("wither", dst.wither))
+	dst.boss_damage_reduction = float(
+		data.get("boss_damage_reduction", dst.boss_damage_reduction)
+	)
+	dst.hex_vulnerable = bool(data.get("hex_vulnerable", dst.hex_vulnerable))
+	dst.voodoo_link = bool(data.get("voodoo_link", dst.voodoo_link))
+	dst.shared_damage_wpn = int(data.get("shared_damage_wpn", dst.shared_damage_wpn))
+	dst.shared_push = bool(data.get("shared_push", dst.shared_push))
+	dst.terrify = bool(data.get("terrify", dst.terrify))
+	dst.boss_fallback_purge_shield = bool(
+		data.get("boss_fallback_purge_shield", dst.boss_fallback_purge_shield)
+	)
+	dst.boss_fallback_vulnerable = bool(
+		data.get("boss_fallback_vulnerable", dst.boss_fallback_vulnerable)
+	)
+	dst.poison_spread_on_push_collision = bool(
+		data.get("poison_spread_on_push_collision", dst.poison_spread_on_push_collision)
+	)
+	dst.bone_spear = bool(data.get("bone_spear", dst.bone_spear))
+	dst.ghost_duration = int(data.get("ghost_duration", dst.ghost_duration))
+	dst.echo_next_cast = bool(data.get("echo_next_cast", dst.echo_next_cast))
+	dst.ghost_hp_pct = float(data.get("ghost_hp_pct", dst.ghost_hp_pct))
+	dst.echo_upgraded = bool(data.get("echo_upgraded", dst.echo_upgraded))
+	dst.ranged_reduction = int(data.get("ranged_reduction", dst.ranged_reduction))
+	dst.melee_def = int(data.get("melee_def", dst.melee_def))
+	dst.sympathetic_bond = bool(data.get("sympathetic_bond", dst.sympathetic_bond))
+	dst.link_ally_enemy = bool(data.get("link_ally_enemy", dst.link_ally_enemy))
+	dst.ally_heal_enemy_wpn = bool(
+		data.get("ally_heal_enemy_wpn", dst.ally_heal_enemy_wpn)
+	)
+	dst.enemy_damage_ally_heal = int(
+		data.get("enemy_damage_ally_heal", dst.enemy_damage_ally_heal)
+	)
+	dst.bonus_damage_per_debuff = int(
+		data.get("bonus_damage_per_debuff", dst.bonus_damage_per_debuff)
+	)
+	dst.heal_per_debuff = int(data.get("heal_per_debuff", dst.heal_per_debuff))
+	dst.pain_spike = bool(data.get("pain_spike", dst.pain_spike))
+	dst.linked_enemy_damage = int(data.get("linked_enemy_damage", dst.linked_enemy_damage))
+	dst.linked_enemy_blind = bool(data.get("linked_enemy_blind", dst.linked_enemy_blind))
+	dst.pulse_status = int(data.get("pulse_status", dst.pulse_status))
+	dst.pulse_weaken = bool(data.get("pulse_weaken", dst.pulse_weaken))
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

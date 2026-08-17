@@ -112,6 +112,22 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"monk_cyclone_sweep",
 	&"monk_updraft",
 	&"monk_geyser_strike",
+	&"shaman_usher",
+	&"shaman_curse_of_weakness",
+	&"shaman_healing_totem",
+	&"shaman_flame_totem",
+	&"shaman_bloodlust",
+	&"shaman_hex",
+	&"shaman_voodoo_link",
+	&"shaman_terrify",
+	&"shaman_miasma",
+	&"shaman_bone_spear",
+	&"shaman_ancestral_spirit",
+	&"shaman_totem_guard",
+	&"shaman_sympathetic_bond",
+	&"shaman_earthbind_totem",
+	&"shaman_soul_siphon",
+	&"shaman_pain_spike",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -729,7 +745,10 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"elemental_surge_ap":
 			return module.elemental_surge_ap != 0
 		"construct_hp_pct":
-			return not is_zero_approx(module.construct_hp_pct)
+			return (
+				not is_zero_approx(module.construct_hp_pct)
+				or not is_zero_approx(layer.construct_hp_pct)
+			)
 		"density_shift":
 			return module.density_shift
 		"ignore_target_magic_pct":
@@ -824,6 +843,104 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.collision_splash_weaken
 		"push_if_target_on_water":
 			return layer.push_if_target_on_water != 0
+		"relocate_subject_only":
+			return module.relocate_subject_only
+		"relocate_target":
+			return module.relocate_target
+		"move_active_totem":
+			return module.move_active_totem
+		"curse_of_weakness":
+			return module.curse_of_weakness
+		"stat_str":
+			return module.stat_str != 0
+		"stat_def":
+			return module.stat_def != 0
+		"push_mitigation_zero":
+			return module.push_mitigation_zero
+		"totem_kind":
+			return module.totem_kind != &""
+		"pulse_aoe":
+			return module.pulse_aoe != 0
+		"pulse_heal":
+			return module.pulse_heal != 0
+		"pulse_cleanse":
+			return module.pulse_cleanse
+		"pulse_mag_atk":
+			return module.pulse_mag_atk != 0
+		"pulse_fire":
+			return module.pulse_fire
+		"bloodlust":
+			return module.bloodlust
+		"bloodlust_def":
+			return module.bloodlust_def != 0
+		"bloodlust_mov":
+			return module.bloodlust_mov != 0
+		"bloodlust_hp":
+			return module.bloodlust_hp != 0
+		"bloodlust_bleed_on_attack":
+			return module.bloodlust_bleed_on_attack
+		"hex":
+			return module.hex
+		"wither":
+			return module.wither
+		"boss_damage_reduction":
+			return not is_zero_approx(module.boss_damage_reduction)
+		"hex_vulnerable":
+			return module.hex_vulnerable
+		"voodoo_link":
+			return module.voodoo_link
+		"shared_damage_wpn":
+			return module.shared_damage_wpn != 0
+		"shared_push":
+			return module.shared_push
+		"terrify":
+			return module.terrify
+		"boss_fallback_purge_shield":
+			return module.boss_fallback_purge_shield
+		"boss_fallback_vulnerable":
+			return module.boss_fallback_vulnerable
+		"poison_spread_on_push_collision":
+			return module.poison_spread_on_push_collision
+		"bone_spear":
+			return module.bone_spear
+		"spawn_furthest_empty_on_line":
+			return layer.spawn_furthest_empty_on_line
+		"ghost_duration":
+			return module.ghost_duration != 0
+		"echo_next_cast":
+			return module.echo_next_cast
+		"ghost_hp_pct":
+			return not is_zero_approx(module.ghost_hp_pct)
+		"echo_upgraded":
+			return module.echo_upgraded
+		"ranged_reduction":
+			return module.ranged_reduction != 0
+		"melee_def":
+			return module.melee_def != 0
+		"sympathetic_bond":
+			return module.sympathetic_bond
+		"link_ally_enemy":
+			return module.link_ally_enemy
+		"ally_heal_enemy_wpn":
+			return module.ally_heal_enemy_wpn
+		"enemy_damage_ally_heal":
+			return module.enemy_damage_ally_heal != 0
+		"bonus_damage_per_debuff":
+			return module.bonus_damage_per_debuff != 0
+		"heal_per_debuff":
+			return module.heal_per_debuff != 0
+		"pain_spike":
+			return module.pain_spike
+		"linked_enemy_damage":
+			return module.linked_enemy_damage != 0
+		"linked_enemy_blind":
+			return module.linked_enemy_blind
+		"pulse_status":
+			return module.pulse_status != GameEnums.StatusType.NONE
+		"pulse_weaken":
+			return module.pulse_weaken
+		"lightning_rod":
+			return layer.lightning_rod
 		_:
 			return false
 

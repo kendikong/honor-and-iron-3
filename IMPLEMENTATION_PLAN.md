@@ -226,20 +226,20 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Engineer | Manual Detonation | ☐ | ☐ | ☐ | ☐ |  |
 | Engineer | Overdrive Injection | ☐ | ☐ | ☐ | ☐ |  |
 | Engineer | Barbed Wire | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Usher | ☐ | ☐ | ☐ | ☐ | Ally-step destination |
-| Shaman | Curse of Weakness | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Healing Totem | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Flame Totem | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Earthbind Totem | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Bloodlust | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Hex | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Voodoo Link | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Terrify | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Miasma | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Bone Spear | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Sympathetic Bond | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Soul Siphon | ☐ | ☐ | ☐ | ☐ |  |
-| Shaman | Pain Spike | ☐ | ☐ | ☐ | ☐ |  |
+| Shaman | Usher | ☑ | ☑ | ☑ | ☑ | Ally-step destination |
+| Shaman | Curse of Weakness | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Healing Totem | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Flame Totem | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Earthbind Totem | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Bloodlust | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Hex | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Voodoo Link | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Terrify | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Miasma | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Bone Spear | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Sympathetic Bond | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Soul Siphon | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Pain Spike | ☑ | ☑ | ☑ | ☑ |  |
 
 **Matrix completion rule:** check a skill’s four columns only after the skill-level conversion contract, class gate/live proof, Bible audit, and independent quality re-audit are all recorded. The three Action ally-relocate rows remain unchecked until rewritten.
 
@@ -458,22 +458,23 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 12. Shaman
 
-- [ ] `shaman_usher`
-- [ ] `shaman_curse_of_weakness`
-- [ ] `shaman_healing_totem`
-- [ ] `shaman_flame_totem`
-- [ ] `shaman_earthbind_totem`
-- [ ] `shaman_bloodlust`
-- [ ] `shaman_hex`
-- [ ] `shaman_voodoo_link`
-- [ ] `shaman_terrify`
-- [ ] `shaman_miasma`
-- [ ] `shaman_bone_spear`
-- [ ] `shaman_sympathetic_bond`
-- [ ] `shaman_soul_siphon`
-- [ ] `shaman_pain_spike`
-- [ ] Shaman class gate: `run_shaman_qa_gate.ps1`.
-- [ ] Shaman live gate: `run_shaman_live_qa.ps1`.
+- [x] `shaman_usher`
+- [x] `shaman_curse_of_weakness`
+- [x] `shaman_healing_totem`
+- [x] `shaman_flame_totem`
+- [x] `shaman_earthbind_totem`
+- [x] `shaman_bloodlust`
+- [x] `shaman_hex`
+- [x] `shaman_voodoo_link`
+- [x] `shaman_terrify`
+- [x] `shaman_miasma`
+- [x] `shaman_bone_spear`
+- [x] `shaman_sympathetic_bond`
+- [x] `shaman_soul_siphon`
+- [x] `shaman_pain_spike`
+- [x] Shaman class gate: `run_shaman_qa_gate.ps1` — PASS.
+- [x] Shaman live gate: `run_shaman_live_qa.ps1` — PASS.
+- [x] Shaman conversion contracts and schema roundtrip — PASS; final gauntlet critic 87/100 — PASS.
 
 ### ER-3 — legacy deletion
 

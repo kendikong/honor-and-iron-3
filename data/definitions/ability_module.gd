@@ -233,6 +233,55 @@ extends Resource
 @export var enemy_pushed_mov: int = 0
 @export var blind_on_pass_over: bool = false
 
+## Shaman typed relocation, curse, totem, link, and soul fields.
+@export var relocate_subject_only: bool = false
+@export var relocate_target: bool = false
+@export var move_active_totem: bool = false
+@export var curse_of_weakness: bool = false
+@export var stat_str: int = 0
+@export var stat_def: int = 0
+@export var push_mitigation_zero: bool = false
+@export var totem_kind: StringName = &""
+@export var pulse_aoe: int = 0
+@export var pulse_heal: int = 0
+@export var pulse_cleanse: bool = false
+@export var pulse_mag_atk: int = 0
+@export var pulse_fire: bool = false
+@export var bloodlust: bool = false
+@export var bloodlust_def: int = 0
+@export var bloodlust_mov: int = 0
+@export var bloodlust_hp: int = 0
+@export var bloodlust_bleed_on_attack: bool = false
+@export var hex: bool = false
+@export var wither: bool = false
+@export var boss_damage_reduction: float = 0.0
+@export var hex_vulnerable: bool = false
+@export var voodoo_link: bool = false
+@export var shared_damage_wpn: int = 0
+@export var shared_push: bool = false
+@export var terrify: bool = false
+@export var boss_fallback_purge_shield: bool = false
+@export var boss_fallback_vulnerable: bool = false
+@export var poison_spread_on_push_collision: bool = false
+@export var bone_spear: bool = false
+@export var ghost_duration: int = 0
+@export var echo_next_cast: bool = false
+@export var ghost_hp_pct: float = 0.0
+@export var echo_upgraded: bool = false
+@export var ranged_reduction: int = 0
+@export var melee_def: int = 0
+@export var sympathetic_bond: bool = false
+@export var link_ally_enemy: bool = false
+@export var ally_heal_enemy_wpn: bool = false
+@export var enemy_damage_ally_heal: int = 0
+@export var bonus_damage_per_debuff: int = 0
+@export var heal_per_debuff: int = 0
+@export var pain_spike: bool = false
+@export var linked_enemy_damage: int = 0
+@export var linked_enemy_blind: bool = false
+@export var pulse_status: GameEnums.StatusType = GameEnums.StatusType.NONE
+@export var pulse_weaken: bool = false
+
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
@@ -616,6 +665,100 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["enemy_pushed_mov"] = enemy_pushed_mov
 	if blind_on_pass_over:
 		bag["blind_on_pass_over"] = true
+	if relocate_subject_only:
+		bag["relocate_subject_only"] = true
+	if relocate_target:
+		bag["relocate_target"] = true
+	if move_active_totem:
+		bag["move_active_totem"] = true
+	if curse_of_weakness:
+		bag["curse_of_weakness"] = true
+	if stat_str != 0:
+		bag["stat_str"] = stat_str
+	if stat_def != 0:
+		bag["stat_def"] = stat_def
+	if push_mitigation_zero:
+		bag["push_mitigation_zero"] = true
+	if totem_kind != &"":
+		bag["totem_kind"] = totem_kind
+	if pulse_aoe != 0:
+		bag["pulse_aoe"] = pulse_aoe
+	if pulse_heal != 0:
+		bag["pulse_heal"] = pulse_heal
+	if pulse_cleanse:
+		bag["pulse_cleanse"] = true
+	if pulse_mag_atk != 0:
+		bag["pulse_mag_atk"] = pulse_mag_atk
+	if pulse_fire:
+		bag["pulse_fire"] = true
+	if bloodlust:
+		bag["bloodlust"] = true
+	if bloodlust_def != 0:
+		bag["bloodlust_def"] = bloodlust_def
+	if bloodlust_mov != 0:
+		bag["bloodlust_mov"] = bloodlust_mov
+	if bloodlust_hp != 0:
+		bag["bloodlust_hp"] = bloodlust_hp
+	if bloodlust_bleed_on_attack:
+		bag["bloodlust_bleed_on_attack"] = true
+	if hex:
+		bag["hex"] = true
+	if wither:
+		bag["wither"] = true
+	if not is_zero_approx(boss_damage_reduction):
+		bag["boss_damage_reduction"] = boss_damage_reduction
+	if hex_vulnerable:
+		bag["hex_vulnerable"] = true
+	if voodoo_link:
+		bag["voodoo_link"] = true
+	if shared_damage_wpn != 0:
+		bag["shared_damage_wpn"] = shared_damage_wpn
+	if shared_push:
+		bag["shared_push"] = true
+	if terrify:
+		bag["terrify"] = true
+	if boss_fallback_purge_shield:
+		bag["boss_fallback_purge_shield"] = true
+	if boss_fallback_vulnerable:
+		bag["boss_fallback_vulnerable"] = true
+	if poison_spread_on_push_collision:
+		bag["poison_spread_on_push_collision"] = true
+	if bone_spear:
+		bag["bone_spear"] = true
+	if ghost_duration != 0:
+		bag["ghost_duration"] = ghost_duration
+	if echo_next_cast:
+		bag["echo_next_cast"] = true
+	if not is_zero_approx(ghost_hp_pct):
+		bag["ghost_hp_pct"] = ghost_hp_pct
+	if echo_upgraded:
+		bag["echo_upgraded"] = true
+	if ranged_reduction != 0:
+		bag["ranged_reduction"] = ranged_reduction
+	if melee_def != 0:
+		bag["melee_def"] = melee_def
+	if sympathetic_bond:
+		bag["sympathetic_bond"] = true
+	if link_ally_enemy:
+		bag["link_ally_enemy"] = true
+	if ally_heal_enemy_wpn:
+		bag["ally_heal_enemy_wpn"] = true
+	if enemy_damage_ally_heal != 0:
+		bag["enemy_damage_ally_heal"] = enemy_damage_ally_heal
+	if bonus_damage_per_debuff != 0:
+		bag["bonus_damage_per_debuff"] = bonus_damage_per_debuff
+	if heal_per_debuff != 0:
+		bag["heal_per_debuff"] = heal_per_debuff
+	if pain_spike:
+		bag["pain_spike"] = true
+	if linked_enemy_damage != 0:
+		bag["linked_enemy_damage"] = linked_enemy_damage
+	if linked_enemy_blind:
+		bag["linked_enemy_blind"] = true
+	if pulse_status != GameEnums.StatusType.NONE:
+		bag["pulse_status"] = pulse_status
+	if pulse_weaken:
+		bag["pulse_weaken"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -1144,6 +1287,147 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"blind_on_pass_over":
 			blind_on_pass_over = bool(value)
+			return
+		"relocate_subject_only":
+			relocate_subject_only = bool(value)
+			return
+		"relocate_target":
+			relocate_target = bool(value)
+			return
+		"move_active_totem":
+			move_active_totem = bool(value)
+			return
+		"curse_of_weakness":
+			curse_of_weakness = bool(value)
+			return
+		"stat_str":
+			stat_str = int(value)
+			return
+		"stat_def":
+			stat_def = int(value)
+			return
+		"push_mitigation_zero":
+			push_mitigation_zero = bool(value)
+			return
+		"totem_kind":
+			totem_kind = StringName(value)
+			return
+		"pulse_aoe":
+			pulse_aoe = int(value)
+			return
+		"pulse_heal":
+			pulse_heal = int(value)
+			return
+		"pulse_cleanse":
+			pulse_cleanse = bool(value)
+			return
+		"pulse_mag_atk":
+			pulse_mag_atk = int(value)
+			return
+		"pulse_fire":
+			pulse_fire = bool(value)
+			return
+		"bloodlust":
+			bloodlust = bool(value)
+			return
+		"bloodlust_def":
+			bloodlust_def = int(value)
+			return
+		"bloodlust_mov":
+			bloodlust_mov = int(value)
+			return
+		"bloodlust_hp":
+			bloodlust_hp = int(value)
+			return
+		"bloodlust_bleed_on_attack":
+			bloodlust_bleed_on_attack = bool(value)
+			return
+		"hex":
+			hex = bool(value)
+			return
+		"wither":
+			wither = bool(value)
+			return
+		"boss_damage_reduction":
+			boss_damage_reduction = float(value)
+			return
+		"hex_vulnerable":
+			hex_vulnerable = bool(value)
+			return
+		"voodoo_link":
+			voodoo_link = bool(value)
+			return
+		"shared_damage_wpn":
+			shared_damage_wpn = int(value)
+			return
+		"shared_push":
+			shared_push = bool(value)
+			return
+		"terrify":
+			terrify = bool(value)
+			return
+		"boss_fallback_purge_shield":
+			boss_fallback_purge_shield = bool(value)
+			return
+		"boss_fallback_vulnerable":
+			boss_fallback_vulnerable = bool(value)
+			return
+		"poison_spread_on_push_collision":
+			poison_spread_on_push_collision = bool(value)
+			return
+		"bone_spear":
+			bone_spear = bool(value)
+			return
+		"ghost_duration":
+			ghost_duration = int(value)
+			return
+		"echo_next_cast":
+			echo_next_cast = bool(value)
+			return
+		"ghost_hp_pct":
+			ghost_hp_pct = float(value)
+			return
+		"echo_upgraded":
+			echo_upgraded = bool(value)
+			return
+		"ranged_reduction":
+			ranged_reduction = int(value)
+			return
+		"melee_def":
+			melee_def = int(value)
+			return
+		"sympathetic_bond":
+			sympathetic_bond = bool(value)
+			return
+		"link_ally_enemy":
+			link_ally_enemy = bool(value)
+			return
+		"ally_heal_enemy_wpn":
+			ally_heal_enemy_wpn = bool(value)
+			return
+		"enemy_damage_ally_heal":
+			enemy_damage_ally_heal = int(value)
+			return
+		"bonus_damage_per_debuff":
+			bonus_damage_per_debuff = int(value)
+			return
+		"heal_per_debuff":
+			heal_per_debuff = int(value)
+			return
+		"pain_spike":
+			pain_spike = bool(value)
+			return
+		"linked_enemy_damage":
+			linked_enemy_damage = int(value)
+			return
+		"linked_enemy_blind":
+			linked_enemy_blind = bool(value)
+			return
+		"pulse_status":
+			pulse_status = int(value)
+			return
+		"pulse_weaken":
+			pulse_weaken = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

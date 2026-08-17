@@ -2770,6 +2770,78 @@ func _add_module_typed_extras_editor(
 		module.blind_on_pass_over = v
 		_on_module_field_edited(ability)
 	)
+	_bind_string(
+		grid,
+		"totem_kind",
+		String(module.totem_kind),
+		func(value: String) -> void:
+			module.totem_kind = StringName(value)
+			_on_module_field_edited(ability)
+	)
+	_add_typed_module_bindings(grid, ability, module)
+
+
+func _add_typed_module_bindings(
+	grid: GridContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	for field_name: String in [
+		"relocate_subject_only", "relocate_target", "move_active_totem",
+		"curse_of_weakness", "push_mitigation_zero", "pulse_cleanse", "pulse_fire",
+		"bloodlust", "bloodlust_bleed_on_attack", "hex", "wither", "hex_vulnerable",
+		"voodoo_link", "shared_push", "terrify", "boss_fallback_purge_shield",
+		"boss_fallback_vulnerable", "poison_spread_on_push_collision", "bone_spear",
+		"echo_next_cast", "echo_upgraded", "sympathetic_bond", "link_ally_enemy",
+		"ally_heal_enemy_wpn", "pain_spike", "linked_enemy_blind", "pulse_weaken",
+	]:
+		_bind_bool(grid, field_name, bool(module.get(field_name)), func(value: bool) -> void:
+			module.set(field_name, value)
+			_on_module_field_edited(ability)
+		)
+	for field_name: String in [
+		"stat_str", "stat_def", "pulse_aoe", "pulse_heal", "pulse_mag_atk",
+		"bloodlust_def", "bloodlust_mov", "bloodlust_hp", "shared_damage_wpn",
+		"ranged_reduction", "melee_def", "enemy_damage_ally_heal",
+		"bonus_damage_per_debuff", "heal_per_debuff", "linked_enemy_damage", "ghost_duration",
+		"pulse_status",
+	]:
+		_bind_int(grid, field_name, int(module.get(field_name)), func(value: int) -> void:
+			module.set(field_name, value)
+			_on_module_field_edited(ability)
+		)
+	for field_name: String in ["boss_damage_reduction", "ghost_hp_pct"]:
+		_bind_float(grid, field_name, float(module.get(field_name)), func(value: float) -> void:
+			module.set(field_name, value)
+			_on_module_field_edited(ability)
+		)
+
+
+func _add_typed_layer_bindings(
+	grid: GridContainer,
+	ability: AbilityData,
+	layer: AbilityLayer,
+) -> void:
+	_bind_bool(grid, "lightning_rod", layer.lightning_rod, func(value: bool) -> void:
+		layer.lightning_rod = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(
+		grid,
+		"spawn_furthest_empty_on_line",
+		layer.spawn_furthest_empty_on_line,
+		func(value: bool) -> void:
+			layer.spawn_furthest_empty_on_line = value
+			_on_module_field_edited(ability)
+	)
+	_bind_float(
+		grid,
+		"construct_hp_pct",
+		layer.construct_hp_pct,
+		func(value: float) -> void:
+			layer.construct_hp_pct = value
+			_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -3135,6 +3207,7 @@ func _add_module_layers_editor(
 			layer.push_if_target_on_water = v
 			_on_module_field_edited(ability)
 		)
+		_add_typed_layer_bindings(grid, ability, layer)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v
 			AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)

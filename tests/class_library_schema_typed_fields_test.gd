@@ -91,6 +91,17 @@ static func run_all(failures: Array[String]) -> void:
 	source.landed_magic_bonus = 2
 	source.enemy_pushed_mov = 1
 	source.blind_on_pass_over = true
+	source.relocate_target = true
+	source.move_active_totem = true
+	source.totem_kind = &"guard"
+	source.pulse_aoe = 2
+	source.pulse_heal = 1
+	source.pulse_cleanse = true
+	source.ghost_duration = 1
+	source.ghost_hp_pct = 0.25
+	source.pain_spike = true
+	source.linked_enemy_damage = 1
+	source.linked_enemy_blind = true
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -123,6 +134,9 @@ static func run_all(failures: Array[String]) -> void:
 	layer.collision_splash_damage = 2
 	layer.collision_splash_weaken = true
 	layer.push_if_target_on_water = 2
+	layer.lightning_rod = true
+	layer.construct_hp_pct = 0.5
+	layer.spawn_furthest_empty_on_line = true
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -213,6 +227,17 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "landed_magic_bonus", restored.landed_magic_bonus == 2)
 	_assert(failures, "enemy_pushed_mov", restored.enemy_pushed_mov == 1)
 	_assert(failures, "blind_on_pass_over", restored.blind_on_pass_over)
+	_assert(failures, "relocate_target", restored.relocate_target)
+	_assert(failures, "move_active_totem", restored.move_active_totem)
+	_assert(failures, "totem_kind", restored.totem_kind == &"guard")
+	_assert(failures, "pulse_aoe", restored.pulse_aoe == 2)
+	_assert(failures, "pulse_heal", restored.pulse_heal == 1)
+	_assert(failures, "pulse_cleanse", restored.pulse_cleanse)
+	_assert(failures, "ghost_duration", restored.ghost_duration == 1)
+	_assert(failures, "ghost_hp_pct", is_equal_approx(restored.ghost_hp_pct, 0.25))
+	_assert(failures, "pain_spike", restored.pain_spike)
+	_assert(failures, "linked_enemy_damage", restored.linked_enemy_damage == 1)
+	_assert(failures, "linked_enemy_blind", restored.linked_enemy_blind)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -243,6 +268,9 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_collision_splash_damage", restored.layers[0].collision_splash_damage == 2)
 	_assert(failures, "layer_collision_splash_weaken", restored.layers[0].collision_splash_weaken)
 	_assert(failures, "layer_push_if_target_on_water", restored.layers[0].push_if_target_on_water == 2)
+	_assert(failures, "layer_lightning_rod", restored.layers[0].lightning_rod)
+	_assert(failures, "layer_construct_hp_pct", is_equal_approx(restored.layers[0].construct_hp_pct, 0.5))
+	_assert(failures, "layer_spawn_furthest_empty_on_line", restored.layers[0].spawn_furthest_empty_on_line)
 	var copied := AbilityModule.new()
 	DataLibrary._copy_extras(source, copied)
 	_assert(failures, "copy_cleric_life_link", copied.life_link)
@@ -260,6 +288,14 @@ static func run_all(failures: Array[String]) -> void:
 		copied.leap_absorb_surface
 		and copied.chakra_burst_shape == GameEnums.TargetShape.AOE_CROSS
 		and copied.landed_magic_bonus == 2,
+	)
+	_assert(
+		failures,
+		"copy_shaman_typed_fields",
+		copied.totem_kind == &"guard"
+		and copied.ghost_duration == 1
+		and copied.pain_spike
+		and copied.linked_enemy_damage == 1,
 	)
 
 

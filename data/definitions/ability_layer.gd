@@ -55,6 +55,9 @@ extends Resource
 @export var collision_splash_damage: int = 0
 @export var collision_splash_weaken: bool = false
 @export var push_if_target_on_water: int = 0
+@export var lightning_rod: bool = false
+@export var construct_hp_pct: float = 0.0
+@export var spawn_furthest_empty_on_line: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -149,6 +152,12 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["collision_splash_weaken"] = true
 	if push_if_target_on_water != 0:
 		modifiers["push_if_target_on_water"] = push_if_target_on_water
+	if lightning_rod:
+		modifiers["lightning_rod"] = true
+	if not is_zero_approx(construct_hp_pct):
+		modifiers["construct_hp_pct"] = construct_hp_pct
+	if spawn_furthest_empty_on_line:
+		modifiers["spawn_furthest_empty_on_line"] = true
 	return modifiers
 
 
@@ -244,3 +253,9 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			collision_splash_weaken = bool(value)
 		"push_if_target_on_water":
 			push_if_target_on_water = int(value)
+		"lightning_rod":
+			lightning_rod = bool(value)
+		"construct_hp_pct":
+			construct_hp_pct = float(value)
+		"spawn_furthest_empty_on_line":
+			spawn_furthest_empty_on_line = bool(value)

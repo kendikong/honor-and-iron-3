@@ -22,6 +22,11 @@ This gate validates the Shaman class against `class_abilities.txt` and
 | 2 | `scripts/run_shaman_live_qa.ps1` | PASS |
 | 3 | Owner visual/manual review | Pending owner |
 
+The Tier 1 gate also runs the typed conversion bar before gameplay scenarios:
+`run_extra_rules_conversion_contract.gd`,
+`run_class_library_schema_typed_fields_test.gd`, and
+`run_ability_module_bridge_test.gd` must all exit successfully.
+
 ## Coverage matrix
 
 | Factory row | Bible proof | Scenario | Status |
@@ -44,7 +49,7 @@ This gate validates the Shaman class against `class_abilities.txt` and
 | `soul_weaver` | Soulwalker: debuff transfer on heal | `tests/passives/soul_weaver_scenario.gd` | PASS |
 | `shaman_usher` | MP 2 ally reposition, upgrade Totem movement | `tests/skills/shaman_usher_scenario.gd` | PASS |
 | `shaman_curse_of_weakness` | WEAKEN, STR/DEF reduction, Push Mitigation | `tests/skills/shaman_curse_of_weakness_scenario.gd` | PASS |
-| `shaman_healing_totem` | Totem AOE 2 MAG HEAL pulse, CLEANSE upgrade | `tests/skills/shaman_healing_totem_scenario.gd` | PASS |
+| `shaman_healing_totem` | Totem AOE 2 HEAL 1 pulse, CLEANSE upgrade | `tests/skills/shaman_healing_totem_scenario.gd` | PASS |
 | `shaman_flame_totem` | Totem AOE 2 MAG ATK pulse and FIRE | `tests/skills/shaman_flame_totem_scenario.gd` | PASS |
 | `shaman_bloodlust` | ally STR/DEF/MOV/HP economy and BLEED upgrade | `tests/skills/shaman_bloodlust_scenario.gd` | PASS |
 | `shaman_hex` | WITHER missing-HP rule and Boss fallback | `tests/skills/shaman_hex_scenario.gd` | PASS |
@@ -57,7 +62,7 @@ This gate validates the Shaman class against `class_abilities.txt` and
 | `shaman_sympathetic_bond` | ally/enemy bond and reciprocal effects | `tests/skills/shaman_sympathetic_bond_scenario.gd` | PASS |
 | `shaman_earthbind_totem` | AOE 2 ROOT pulse and WEAKEN upgrade | `tests/skills/shaman_earthbind_totem_scenario.gd` | PASS |
 | `shaman_soul_siphon` | debuff-scaled MAG ATK and HEAL upgrade | `tests/skills/shaman_soul_siphon_scenario.gd` | PASS |
-| `shaman_pain_spike` | linked-target ATK and BLIND upgrade | `tests/skills/shaman_pain_spike_scenario.gd` | PASS |
+| `shaman_pain_spike` | linked-target MAG ATK and BLIND upgrade | `tests/skills/shaman_pain_spike_scenario.gd` | PASS |
 
 ## Meta-critic contract
 

@@ -527,13 +527,8 @@ static func on_dealt_damage(
 			board, partner, shared, events, &"true", true, true, attacker,
 			"Spirit Link", shared,
 		)
-		if (
-			target.passive_flags.get("shaman_link_blind", false)
-			or (
-				effect != null
-				and effect.modifiers.get("linked_enemy_blind", false)
-			)
-		) and partner.is_alive():
+		if effect != null and effect.modifiers.get("linked_enemy_blind", false) \
+				and partner.is_alive():
 			partner.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
 		target.passive_flags.erase("shaman_link_processing")
 	if target.passive_flags.has("shaman_bond_ally_id"):
@@ -551,8 +546,11 @@ static func on_dealt_damage(
 		and partner.is_alive()
 	):
 		var spike := int(effect.modifiers.get("linked_enemy_damage", 1))
+		var scaled_spike := CombatSystem.calculate_scaled_damage(
+			attacker, spike, GameEnums.StatType.MAGICAL, board,
+		)
 		CombatSystem.deal_damage(
-			board, partner, spike, events, &"physical", true, true, attacker,
+			board, partner, scaled_spike, events, &"magical", true, true, attacker,
 			"Pain Spike", spike,
 		)
 	if (
@@ -727,7 +725,7 @@ static func on_spawned(
 		))
 	construct._recalculate_stats(board)
 	if _has_passive_modifier(actor, &"echoing_spirits") and actor.is_passive_upgraded(&"echoing_spirits"):
-		var bonus_hp := int(_passive_value(actor, &"upgraded_totem_hp", &"upgraded_totem_hp", 2))
+		var bonus_hp := floori(float(actor.health.max_hp) * 0.10)
 		construct.health.max_hp += bonus_hp
 		construct.health.current_hp += bonus_hp
 

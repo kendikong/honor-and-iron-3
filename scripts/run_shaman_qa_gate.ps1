@@ -162,6 +162,30 @@ if (-not (Test-Path $GodotPath)) {
 	Exit-Gate 0
 }
 
+Write-GateLine "=== Typed conversion contracts ==="
+$conversionEntrypoints = @(
+	"res://tests/run_extra_rules_conversion_contract.gd",
+	"res://tests/run_class_library_schema_typed_fields_test.gd",
+	"res://tests/run_ability_module_bridge_test.gd"
+)
+foreach ($entrypoint in $conversionEntrypoints) {
+	Write-GateLine "[QA] $entrypoint"
+	$conversionStdout = Join-Path $env:TEMP "honor-and-iron-shaman-conversion.stdout.log"
+	$conversionStderr = Join-Path $env:TEMP "honor-and-iron-shaman-conversion.stderr.log"
+	$conversionProcess = Start-Process -FilePath $GodotPath `
+		-ArgumentList @("--headless", "--path", $projectRoot, "--script", $entrypoint) `
+		-WorkingDirectory $projectRoot -RedirectStandardOutput $conversionStdout `
+		-RedirectStandardError $conversionStderr -PassThru -Wait -NoNewWindow
+	Get-Content $conversionStdout | ForEach-Object { Write-GateLine $_ }
+	Get-Content $conversionStderr | ForEach-Object { Write-GateLine $_ }
+	if ([int]$conversionProcess.ExitCode -ne 0) {
+		Write-GateLine "[FAIL] Typed conversion contract exit $($conversionProcess.ExitCode) ($entrypoint)"
+		Exit-Gate 4
+	}
+}
+Write-GateLine "--- Typed conversion contracts: PASS ---"
+Write-GateLine ""
+
 Write-GateLine "=== AOE footprint contract (all classes) ==="
 $aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
 & $aoeGate -GodotPath $GodotPath
