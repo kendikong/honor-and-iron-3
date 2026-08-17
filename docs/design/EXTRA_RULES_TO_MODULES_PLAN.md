@@ -11,11 +11,13 @@ This is the work order that was built in chat and then ignored. Extra Rules was 
 
 ## Goal
 
-Every class **skill** Extra Rule is gone. The skill is authored as header + modules + keywords + layers + gates + targeting / Condition + typed CREATE_HAZARD–SPAWN knobs. Combat reads those fields, not Extra Rules. Landing is a dest **EffectType** (`MOVE` / `JUMP` / `TELEPORT` family), not Motion Mode.
+Every class **skill** Extra Rule is gone. The skill is authored as header + modules + keywords + layers + gates + targeting / Condition + typed CREATE_HAZARD–SPAWN knobs. Combat reads those fields, not Extra Rules. Landing is a dest **EffectType** (`MOVE` / `JUMP` / `TELEPORT` family).
+
+**DELETE Motion Mode.** Marked for deletion: `GameEnums.MotionMode`, Class Editor Motion Mode dropdown, factory `motion_mode` stamps, combat `module.motion_mode` reads. Dest EffectType owns landing. Do not convert leftovers into Motion Mode.
 
 **Done for one skill:** that skill’s `AbilityModule.extras` is empty (base and upgrade), behavior matches Bible, class gate + live QA **PASS**.
 
-**Done for the project:** no class skill uses Extra Rules; `AbilityExtraRule` deleted; factories have no `_add_extra` / leftover modifier stamps.
+**Done for the project:** no class skill uses Extra Rules; `AbilityExtraRule` deleted; **Motion Mode deleted**; factories have no `_add_extra` / leftover modifier / `motion_mode` stamps.
 
 ---
 
@@ -40,7 +42,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - Harvesting leftover keys into an enum
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
-- Converting leftovers into **Motion Mode** (stale landing dropdown; dest EffectType owns landing)
+- Converting leftovers into **Motion Mode**. **Motion Mode is marked for deletion** (ER-3). Do not add modes. Do not keep the dropdown.
 - Passives in this plan (separate bag; owner must ask)
 
 **Already done (do not redo as Extra Rules):** click **Condition** dropdown (Executioner's Blade HP, Hex, Terrify, Savage Bite, Fetch, Maul occupant, constructs, corpses, Amnesia Dust, Feral Drag CON, Intimidate HP). Those skills still appear below if they have *other* extras.
@@ -124,6 +126,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Concussion Blow [+] | STAGGER both if they hit a unit | Existing layer | Same collision layer, both units. |
 | Cleave [+] | BLEED = WPN | Existing field | BLEED with weapon scaling. |
 | Suplex [+] | Extra damage per 10 HP | New field | Damage scales with HP. |
+| Adrenaline Surge | 0 AP if 2+ adjacent enemies | Existing header | Cost header: 0 AP when 2+ adjacent. Not Extra Rules. |
+| Adrenaline Surge [+] | Pre-Move / does not consume Action | Existing header | Planner group **PRE_MOVE**. Not Extra Rules. |
 | Adrenaline Surge [+] | On kill, HEAL + SHIELD | Existing effect | HEAL and SHIELD on **ON_KILL**. |
 | Earthshatter [+] | Buff per object destroyed | Existing layer | Buff after **DESTROY_OBSTACLE**. |
 | Meat Shield [+] | +STR while intercepting | New field | Amount on **INTERCEPT**. |
@@ -251,7 +255,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Sever [+] | All allies SHIELD 1 | Existing effect | **SHIELD** on **ON_KILL**. |
 | Second Wind | +1 AP | Existing effect | **GRANT_AP**. |
 | Second Wind [+] | Next skill 0 AP | New field | Next-skill cost 0. |
-| Tactical Retreat | Smoke on start tile | Existing effect | **CREATE_HAZARD** on start tile. |
+| Tactical Retreat | MOVE 3 + smoke on start tile | Existing effect | **MOVE** 3 (any tile). **CREATE_HAZARD** smoke on start tile. Not BACKWARDS. Bible has no backwards. |
 | Tactical Retreat [+] | GHOST | Existing keyword | **GHOST**. |
 | Executioner's Blade [+] | On kill +1 AP | Existing effect | **GRANT_AP** on **ON_KILL**. |
 | Precision Strike | Ignore 50%/100% DEF if unacted | New field | DEF-ignore % if not acted. Not PIERCE. |
@@ -399,22 +403,15 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 ---
 
-## Owner decisions still open (do not invent)
-
-| Skill | Issue |
-|-------|--------|
-| Tactical Retreat | Bible: MOVE 3 **Backwards**. Factory: any-direction MOVE 3. Backwards motion exists. |
-| Adrenaline Surge | Bible: 0 AP **and** skip Action / 1-per-turn when 2+ adjacent enemies. Skip-Action is unimplemented. |
-
----
-
-## Phase ER-3 — Delete Extra Rules
+## Phase ER-3 — DELETE Extra Rules and Motion Mode
 
 When every class skill row is converted:
 
 1. Grep `_add_extra`, `AbilityExtraRule`, `extras.append` in factories → **zero**.
 2. Delete `data/definitions/ability_extra_rule.gd` and Class Editor Extra Rules UI.
 3. Combat must not read Extra Rule keys as authoring.
+4. **DELETE Motion Mode:** remove `GameEnums.MotionMode`, Class Editor Motion Mode dropdown, every factory `motion_mode =` stamp, every combat / planning read of `module.motion_mode`. Grep `MotionMode` / `motion_mode` → **zero** (except this plan saying it is gone).
+5. Wraparound L-path, Pole Vault, Reposition slide, Usher ally-step must already live on dest EffectType / MOVE-JUMP fields before this delete. Do not leave a Motion Mode peek.
 
 ---
 
