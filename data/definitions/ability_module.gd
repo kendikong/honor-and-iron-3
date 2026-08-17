@@ -61,7 +61,7 @@ extends Resource
 ## Targeting: skip the caster when this module paints an allied/self area.
 @export var exclude_caster: bool = false
 
-## CREATE_HAZARD typed fields (ability-data.md §12.9).
+## CREATE_HAZARD typed fields (ability-data.md §2.2 / §5).
 @export var terrain_id: StringName = &""
 @export var hazard_duration: int = 0
 @export var hazard_status: GameEnums.StatusType = GameEnums.StatusType.NONE

@@ -45,7 +45,7 @@ No bible quote in the changelog → the conversion did not happen.
 | **ER-2** | Convert class by class (Knight → … → Shaman). Skip the three **Rework skill** rows (Action **ally** relocates: Glorious Charge, Meat Shield, Shadow Swap). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; the three ally-relocate rows remain Rework |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
-Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
+ER-2 is authorized from Knight in the current owner directive; continue in the listed class order.
 
 ---
 

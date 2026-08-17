@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Purpose: Compile modular AbilityModule lists ↔ legacy flat EffectData lists.
 ## Responsibilities: One-way authoring/compatibility bridge while factories and the
-## editor author modules (ability-data.md §12.15). Native runtime decisions stay
+## editor author modules (ability-data.md §0–§13). Native runtime decisions stay
 ## on typed module queries and ordered module execution.
 ## Dependencies: AbilityData, AbilityModule, AbilityLayer, AbilityKeyword, EffectData, GameEnums.
 ## Lifecycle: static helpers; no instance state.
