@@ -4,7 +4,9 @@ extends RefCounted
 ## Fail-loud Extra Rules conversion bar.
 ## Add an ability id to CONVERTED_SKILL_IDS only after extras and leftover Extra Rule keys are gone.
 
-const CONVERTED_SKILL_IDS: Array[StringName] = []
+const CONVERTED_SKILL_IDS: Array[StringName] = [
+	&"knight_defensive_formation",
+]
 
 const CLASS_IDS: Array[StringName] = [
 	&"knight",

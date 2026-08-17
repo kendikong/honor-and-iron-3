@@ -281,14 +281,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.AOE_DIAMOND, 3,
 	)
 	defensive_module.status_type = GameEnums.StatusType.STAT_BUFF_DEF
-	DataLibrary._add_extra(defensive_module, "exclude_caster", true)
+	defensive_module.exclude_caster = true
 	defensive_module.layers = [
 		DataLibrary._layer(DataLibrary._status_effect(GameEnums.StatusType.STURDY, 1)),
 	]
-	defensive_module.layers[0].effect.modifiers["exclude_caster"] = true
 	var defensive_upgraded := DataLibrary._duplicate_modules([defensive_module])
 	defensive_upgraded[0].layers.append(DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 2)))
-	defensive_upgraded[0].layers[1].effect.modifiers["exclude_caster"] = true
 	var defensive_formation := DataLibrary._make_modular_ability(
 		&"knight_defensive_formation", "Defensive Formation", [defensive_module],
 		defensive_upgraded, 1, GameEnums.PlannerGroup.ACTION,
