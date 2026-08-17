@@ -22,7 +22,7 @@ Monk data uses `AbilityModule`, `EffectData`, `MotionMode`, `LayerCondition`, `S
 
 | Bible intent | Authored primitive |
 |---|---|
-| Leap over an occupied one-tile obstacle | `TELEPORT_CASTER` + `MotionMode.VAULT_OVER` |
+| Leap over an occupied one-tile obstacle | `EffectType.JUMP_TO_BEHIND` |
 | Phase Throw exchanges positions | `EffectType.SWAP` |
 | Push/collision skills | `EffectType.PUSH` |
 | Terrain creation | `EffectType.CREATE_HAZARD` with elemental surface metadata |

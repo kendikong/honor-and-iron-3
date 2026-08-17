@@ -165,20 +165,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Mercenary | Hamstring | ☐ | ☐ | ☐ | ☐ |  |
 | Mercenary | Acrobatic Vault | ☐ | ☐ | ☐ | ☐ |  |
 | Mercenary | Duelist’s Challenge | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Leap | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Scorching Kick | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Thunder Palm | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Yin-Yang Flurry | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Chakra Shift | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Phase Throw | ☐ | ☐ | ☐ | ☐ | Enemy swap on Action is legal |
-| Monk | Flying Crane Kick | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Spirit Palm | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Mantra of Peace | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Inner Fire | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Void Step | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Cyclone Sweep | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Updraft | ☐ | ☐ | ☐ | ☐ |  |
-| Monk | Geyser Strike | ☐ | ☐ | ☐ | ☐ |  |
+| Monk | Leap | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Scorching Kick | ☑ | ☑ | ☑ | ☑ | Typed conversion, AOE/live proof + critic pass |
+| Monk | Thunder Palm | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Yin-Yang Flurry | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Chakra Shift | ☑ | ☑ | ☑ | ☑ | Typed conversion, burst sim proof + critic pass |
+| Monk | Phase Throw | ☑ | ☑ | ☑ | ☑ | Enemy swap on Action is legal; movement/live proof + critic pass |
+| Monk | Flying Crane Kick | ☑ | ☑ | ☑ | ☑ | Typed conversion, movement/live proof + critic pass |
+| Monk | Spirit Palm | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Soul Punch | ☑ | ☑ | ☑ | ☑ | Typed conversion, MAG targeting + timed steal proof + critic pass |
+| Monk | Hundred Fists | ☑ | ☑ | ☑ | ☑ | Typed conversion, next-turn penalty proof + critic pass |
+| Monk | Mantra of Peace | ☑ | ☑ | ☑ | ☑ | Typed conversion, AOE/live proof + critic pass |
+| Monk | Inner Fire | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Void Step | ☑ | ☑ | ☑ | ☑ | Typed conversion, movement/live proof + critic pass |
+| Monk | Cyclone Sweep | ☑ | ☑ | ☑ | ☑ | Typed conversion, ARC footprint/live proof + critic pass |
+| Monk | Updraft | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Geyser Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Rogue | Slip Past | ☐ | ☐ | ☐ | ☐ |  |
 | Rogue | Shadow Step | ☐ | ☐ | ☐ | ☐ |  |
 | Rogue | Kidney Strike | ☐ | ☐ | ☐ | ☐ |  |
@@ -334,22 +336,24 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 6. Monk
 
-- [ ] `monk_leap`
-- [ ] `monk_scorching_kick`
-- [ ] `monk_thunder_palm`
-- [ ] `monk_yin_yang_flurry`
-- [ ] `monk_chakra_shift`
-- [ ] `monk_phase_throw`
-- [ ] `monk_flying_crane_kick`
-- [ ] `monk_spirit_palm`
-- [ ] `monk_mantra_of_peace`
-- [ ] `monk_inner_fire`
-- [ ] `monk_void_step`
-- [ ] `monk_cyclone_sweep`
-- [ ] `monk_updraft`
-- [ ] `monk_geyser_strike`
-- [ ] Monk class gate: `run_monk_qa_gate.ps1`.
-- [ ] Monk live gate: `run_monk_live_qa.ps1`.
+- [x] `monk_leap`
+- [x] `monk_scorching_kick`
+- [x] `monk_thunder_palm`
+- [x] `monk_yin_yang_flurry`
+- [x] `monk_chakra_shift`
+- [x] `monk_phase_throw`
+- [x] `monk_flying_crane_kick`
+- [x] `monk_spirit_palm`
+- [x] `monk_soul_punch`
+- [x] `monk_hundred_fists`
+- [x] `monk_mantra_of_peace`
+- [x] `monk_inner_fire`
+- [x] `monk_void_step`
+- [x] `monk_cyclone_sweep`
+- [x] `monk_updraft`
+- [x] `monk_geyser_strike`
+- [x] Monk class gate: `run_monk_qa_gate.ps1` — PASS, including typed conversion/schema contracts.
+- [x] Monk live gate: `run_monk_live_qa.ps1` — PASS; harsh critic PASS (86/100).
 
 #### 7. Rogue
 

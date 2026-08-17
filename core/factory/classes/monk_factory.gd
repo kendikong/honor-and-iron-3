@@ -38,7 +38,7 @@ static func build(basic_fist: WeaponData) -> UnitData:
 	# Avatar passives.
 	definition.passives.append(_passive(
 		&"elemental_attunement", "Elemental Attunement",
-		"Attacking an enemy on an elemental surface grants PIERCE.",
+		"While standing on an elemental surface, attacks gain PIERCE.",
 		"Apply BURN X or BLEED X, where X is MAG.",
 		{"promotion": &"avatar", "elemental_attunement": true,
 		"attunement_pierce": true, "attunement_burn_mag": true},
@@ -203,12 +203,6 @@ static func _layer(
 	var layer := AbilityLayer.new()
 	layer.effect = effect
 	layer.condition = condition
-	if effect != null:
-		for key: Variant in effect.modifiers.keys():
-			var key_text := String(key)
-			layer.ingest_runtime_key(key_text, effect.modifiers[key])
-			if layer.compile_runtime_modifiers().has(key_text):
-				effect.modifiers.erase(key)
 	return layer
 
 
@@ -267,19 +261,13 @@ static func _damage(
 	max_range: int,
 	scaling_stat: GameEnums.StatType,
 	description: String,
-	modifiers: Dictionary = {},
-	upgraded_modifiers: Dictionary = {},
 ) -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DAMAGE, damage, min_range, max_range,
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		scaling_stat,
 	)
-	for key: Variant in modifiers.keys():
-		module.ingest_runtime_key(String(key), modifiers[key])
 	var upgraded := _clone_modules([module])
-	for key: Variant in upgraded_modifiers.keys():
-		upgraded[0].ingest_runtime_key(String(key), upgraded_modifiers[key])
 	return _ability(
 		id, name, [module], upgraded, GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK], description,
@@ -306,9 +294,11 @@ static func _scorching_kick() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	var fire := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
-	fire.modifiers = {"terrain_id": &"fire", "hazard_duration": 1, "elemental_surface": true}
-	module.layers.append(_layer(fire))
+	var fire_layer := _layer(DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0))
+	fire_layer.terrain_id = &"fire"
+	fire_layer.hazard_duration = 1
+	fire_layer.elemental_surface = true
+	module.layers.append(fire_layer)
 	var upgraded := _clone_modules([module])
 	upgraded[0].layers[0].burning_splash_magic = 2
 	upgraded[0].layers[0].burning_splash_shape = GameEnums.TargetShape.AOE_CROSS
@@ -431,21 +421,25 @@ static func _spirit_palm() -> AbilityData:
 
 
 static func _soul_punch() -> AbilityData:
-	return _damage(
+	var ability := _damage(
 		&"monk_soul_punch", "Soul Punch", 3, 1, 1, GameEnums.StatType.PHYSICAL,
-		"ATK 3 targets MAG instead of DEF. [+] Permanently steal 1 MAG from target.",
-		{"target_magic_defense": true},
-		{"target_magic_defense": true, "steal_target_magic": 1},
+		"ATK 3 targets MAG instead of DEF. [+] Steal 1 MAG from target for 2 turns.",
 	)
+	ability.modules[0].target_magic_defense = true
+	ability.upgraded_modules[0].target_magic_defense = true
+	ability.upgraded_modules[0].steal_target_magic = 1
+	return ability
 
 
 static func _hundred_fists() -> AbilityData:
-	return _damage(
+	var ability := _damage(
 		&"monk_hundred_fists", "Hundred Fists", 4, 1, 1, GameEnums.StatType.PHYSICAL,
 		"ATK 4; caster loses 2 MOV on the following turn. [+] ATK +1 per target status effect.",
-		{"next_turn_move_penalty": 2},
-		{"next_turn_move_penalty": 2, "bonus_per_target_status": 1},
 	)
+	ability.modules[0].next_turn_move_penalty = 2
+	ability.upgraded_modules[0].next_turn_move_penalty = 2
+	ability.upgraded_modules[0].bonus_per_target_status = 1
+	return ability
 
 
 static func _mantra_of_peace() -> AbilityData:
@@ -539,9 +533,11 @@ static func _geyser_strike() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
-	var water := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0)
-	water.modifiers = {"terrain_id": &"water", "hazard_duration": 1, "elemental_surface": true}
-	module.layers.append(_layer(water))
+	var water_layer := _layer(DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 0))
+	water_layer.terrain_id = &"water"
+	water_layer.hazard_duration = 1
+	water_layer.elemental_surface = true
+	module.layers.append(water_layer)
 	var upgraded := _clone_modules([module])
 	upgraded[0].layers[0].push_if_target_on_water = 2
 	return _ability(

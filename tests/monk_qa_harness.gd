@@ -169,6 +169,7 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 				or module.amount != 0
 			),
 		)
+	_assert_upgrade_fields(ability_id, ability, failures)
 	var board := _plain_board(Vector2i(10, 8))
 	var monk := _place_monk(board, 1, Vector2i(2, 3), ability_id)
 	monk.upgraded_abilities.append(ability_id)
@@ -191,6 +192,95 @@ static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String])
 			"upgrade/%s/ability_used" % ability_id,
 			_events_have_ability(events, ability_id),
 		)
+		var actor := board.get_unit_by_id(1)
+		var target := board.get_unit_by_id(target_id)
+		match ability_id:
+			&"monk_soul_punch":
+				_assert(
+					failures,
+					"upgrade/monk_soul_punch/two_turn_steal",
+					target != null and target.passive_flags.get("monk_stolen_magic_turns", 0) == 2,
+				)
+				if target != null:
+					var stolen_magic := target.current_magic
+					_MONK_SYSTEMS.turn_end(board, target, [])
+					_MONK_SYSTEMS.turn_end(board, target, [])
+					_assert(
+						failures,
+						"upgrade/monk_soul_punch/steal_expires",
+						not target.passive_flags.has("monk_stolen_magic")
+						and target.current_magic >= stolen_magic,
+					)
+			&"monk_hundred_fists":
+				_assert(
+					failures,
+					"upgrade/monk_hundred_fists/next_turn_penalty",
+					actor.passive_flags.get("monk_next_turn_move_penalty", 0) == 2,
+				)
+			&"monk_chakra_shift":
+				_assert(
+					failures,
+					"upgrade/monk_chakra_shift/burst_damage",
+					_events_have_damage(events, 3),
+				)
+			&"monk_scorching_kick":
+				_assert(
+					failures,
+					"upgrade/monk_scorching_kick/fire_surface",
+					board.get_tile(target_coord).definition.id == &"fire",
+				)
+
+
+static func _assert_upgrade_fields(
+	ability_id: StringName,
+	ability: AbilityData,
+	failures: Array[String],
+) -> void:
+	var module := ability.upgraded_modules[0]
+	match ability_id:
+		&"monk_leap":
+			_assert(failures, "upgrade/monk_leap/absorb_surface", module.leap_absorb_surface)
+		&"monk_scorching_kick":
+			_assert(
+				failures,
+				"upgrade/monk_scorching_kick/burning_splash",
+				module.layers[0].burning_splash_magic == 2
+				and module.layers[0].burning_splash_shape == GameEnums.TargetShape.AOE_CROSS,
+			)
+		&"monk_thunder_palm":
+			_assert(failures, "upgrade/monk_thunder_palm/stagger", module.layers.size() == 1)
+		&"monk_yin_yang_flurry":
+			_assert(failures, "upgrade/monk_yin_yang_flurry/pierce", module.layers[0].pierce_if_first_zero)
+		&"monk_chakra_shift":
+			_assert(
+				failures,
+				"upgrade/monk_chakra_shift/burst",
+				module.chakra_burst_damage == 1
+				and module.chakra_burst_shape == GameEnums.TargetShape.AOE_CROSS
+				and module.chakra_burst_size == 2,
+			)
+		&"monk_flying_crane_kick":
+			_assert(failures, "upgrade/monk_flying_crane_kick/absorb", module.dash_absorb_element)
+		&"monk_spirit_palm":
+			_assert(failures, "upgrade/monk_spirit_palm/weaken", module.layers[0].collision_splash_weaken)
+		&"monk_soul_punch":
+			_assert(failures, "upgrade/monk_soul_punch/steal", module.steal_target_magic == 1)
+		&"monk_hundred_fists":
+			_assert(failures, "upgrade/monk_hundred_fists/status_bonus", module.bonus_per_target_status == 1)
+		&"monk_mantra_of_peace":
+			_assert(
+				failures,
+				"upgrade/monk_mantra_of_peace/heal_layer",
+				module.layers.size() == 1 and module.layers[0].effect.type == GameEnums.EffectType.HEAL,
+			)
+		&"monk_inner_fire":
+			_assert(failures, "upgrade/monk_inner_fire/surface", module.inner_fire_surface)
+		&"monk_cyclone_sweep":
+			_assert(failures, "upgrade/monk_cyclone_sweep/pushed_mov", module.enemy_pushed_mov == 1)
+		&"monk_updraft":
+			_assert(failures, "upgrade/monk_updraft/blind_pass", module.blind_on_pass_over)
+		&"monk_geyser_strike":
+			_assert(failures, "upgrade/monk_geyser_strike/water_push", module.layers[0].push_if_target_on_water == 2)
 
 
 static func run_passive_factory(passive_id: StringName, failures: Array[String]) -> void:
@@ -230,6 +320,8 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 	var board := _plain_board(Vector2i(8, 6))
 	var monk := _place_monk(board, 1, Vector2i(2, 2), &"monk_soul_punch")
 	monk.active_passives.append(passive)
+	if passive_id == &"elemental_attunement":
+		monk.upgraded_passives.append(passive_id)
 	monk._recalculate_stats(board)
 	var target := Vector2i(3, 2)
 	var dummy := _place_dummy(board, 3, target)
@@ -239,12 +331,19 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			_assert(failures, "passive/way_of_the_weaver/magic_empowerment",
 				int(monk.passive_flags.get("weave_magic_bonus", 0)) == 2)
 		&"elemental_attunement":
-			board.set_tile_terrain(target, DataLibrary.get_terrain(&"fire"))
+			board.set_tile_terrain(monk.position, DataLibrary.get_terrain(&"fire"))
 			_assert(failures, "passive/elemental_attunement/pierce",
 				_MONK_SYSTEMS.should_pierce(board, monk, dummy))
 			var result := _simulate_passive_attack(board, monk, &"monk_soul_punch", target)
+			var upgraded_status_proof := false
+			for status: StatusData in dummy.active_statuses:
+				if (
+					status.type == GameEnums.StatusType.BURN
+					or status.type == GameEnums.StatusType.BLEED
+				) and status.value == monk.current_magic:
+					upgraded_status_proof = true
 			_assert(failures, "passive/elemental_attunement/upgraded_status",
-				not result.events.is_empty())
+				upgraded_status_proof and not result.events.is_empty())
 		&"chakra_burn":
 			board.set_tile_terrain(target, DataLibrary.get_terrain(&"bear_trap"))
 			_simulate_passive_attack(board, monk, &"monk_soul_punch", target)
@@ -446,6 +545,10 @@ static func _configure_sim_target(
 	var target_coord := _target_for(ability_id)
 	var target_id := -1
 	match ability_id:
+		&"monk_chakra_shift":
+			_place_dummy(board, 3, monk_pos + Vector2i.RIGHT)
+			target_coord = monk_pos
+			target_id = 3
 		&"monk_void_step":
 			_place_ally(board, 2, monk_pos + Vector2i(2, 0))
 			target_coord = monk_pos + Vector2i(1, 0)

@@ -73,6 +73,24 @@ static func run_all(failures: Array[String]) -> void:
 	source.duelist_mark_target = true
 	source.marked_target_defense = 2
 	source.unacted_target_ignore_def_pct = 0.5
+	source.leap_absorb_surface = true
+	source.track_first_hit_zero = true
+	source.chakra_shift = true
+	source.chakra_burst_damage = 1
+	source.chakra_burst_shape = GameEnums.TargetShape.AOE_CROSS
+	source.chakra_burst_size = 2
+	source.stop_adjacent_first_enemy = true
+	source.dash_absorb_element = true
+	source.target_magic_defense = true
+	source.steal_target_magic = 1
+	source.next_turn_move_penalty = 2
+	source.bonus_per_target_status = 1
+	source.mantra_peace_weaken = true
+	source.inner_fire = true
+	source.inner_fire_surface = true
+	source.landed_magic_bonus = 2
+	source.enemy_pushed_mov = 1
+	source.blind_on_pass_over = true
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -96,6 +114,15 @@ static func run_all(failures: Array[String]) -> void:
 	layer.trap_damage_bonus = 2
 	layer.grant_ap = 1
 	layer.next_turn = true
+	layer.burning_splash_magic = 2
+	layer.burning_splash_shape = GameEnums.TargetShape.AOE_CROSS
+	layer.pierce_if_first_zero = true
+	layer.damage_adjacent_on_landing = true
+	layer.require_dash_line_enemy = true
+	layer.dash_absorb_element = true
+	layer.collision_splash_damage = 2
+	layer.collision_splash_weaken = true
+	layer.push_if_target_on_water = 2
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -168,6 +195,24 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "duelist_mark_target", restored.duelist_mark_target)
 	_assert(failures, "marked_target_defense", restored.marked_target_defense == 2)
 	_assert(failures, "unacted_target_ignore_def_pct", is_equal_approx(restored.unacted_target_ignore_def_pct, 0.5))
+	_assert(failures, "leap_absorb_surface", restored.leap_absorb_surface)
+	_assert(failures, "track_first_hit_zero", restored.track_first_hit_zero)
+	_assert(failures, "chakra_shift", restored.chakra_shift)
+	_assert(failures, "chakra_burst_damage", restored.chakra_burst_damage == 1)
+	_assert(failures, "chakra_burst_shape", restored.chakra_burst_shape == GameEnums.TargetShape.AOE_CROSS)
+	_assert(failures, "chakra_burst_size", restored.chakra_burst_size == 2)
+	_assert(failures, "stop_adjacent_first_enemy", restored.stop_adjacent_first_enemy)
+	_assert(failures, "dash_absorb_element", restored.dash_absorb_element)
+	_assert(failures, "target_magic_defense", restored.target_magic_defense)
+	_assert(failures, "steal_target_magic", restored.steal_target_magic == 1)
+	_assert(failures, "next_turn_move_penalty", restored.next_turn_move_penalty == 2)
+	_assert(failures, "bonus_per_target_status", restored.bonus_per_target_status == 1)
+	_assert(failures, "mantra_peace_weaken", restored.mantra_peace_weaken)
+	_assert(failures, "inner_fire", restored.inner_fire)
+	_assert(failures, "inner_fire_surface", restored.inner_fire_surface)
+	_assert(failures, "landed_magic_bonus", restored.landed_magic_bonus == 2)
+	_assert(failures, "enemy_pushed_mov", restored.enemy_pushed_mov == 1)
+	_assert(failures, "blind_on_pass_over", restored.blind_on_pass_over)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -189,6 +234,15 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_trap_damage_bonus", restored.layers[0].trap_damage_bonus == 2)
 	_assert(failures, "layer_grant_ap", restored.layers[0].grant_ap == 1)
 	_assert(failures, "layer_next_turn", restored.layers[0].next_turn)
+	_assert(failures, "layer_burning_splash_magic", restored.layers[0].burning_splash_magic == 2)
+	_assert(failures, "layer_burning_splash_shape", restored.layers[0].burning_splash_shape == GameEnums.TargetShape.AOE_CROSS)
+	_assert(failures, "layer_pierce_if_first_zero", restored.layers[0].pierce_if_first_zero)
+	_assert(failures, "layer_damage_adjacent_on_landing", restored.layers[0].damage_adjacent_on_landing)
+	_assert(failures, "layer_require_dash_line_enemy", restored.layers[0].require_dash_line_enemy)
+	_assert(failures, "layer_dash_absorb_element", restored.layers[0].dash_absorb_element)
+	_assert(failures, "layer_collision_splash_damage", restored.layers[0].collision_splash_damage == 2)
+	_assert(failures, "layer_collision_splash_weaken", restored.layers[0].collision_splash_weaken)
+	_assert(failures, "layer_push_if_target_on_water", restored.layers[0].push_if_target_on_water == 2)
 	var copied := AbilityModule.new()
 	DataLibrary._copy_extras(source, copied)
 	_assert(failures, "copy_cleric_life_link", copied.life_link)
@@ -199,6 +253,13 @@ static func run_all(failures: Array[String]) -> void:
 		failures,
 		"layer_range_one_damage_multiplier",
 		is_equal_approx(restored.layers[0].range_one_damage_multiplier, 0.7),
+	)
+	_assert(
+		failures,
+		"copy_monk_surface_combo",
+		copied.leap_absorb_surface
+		and copied.chakra_burst_shape == GameEnums.TargetShape.AOE_CROSS
+		and copied.landed_magic_bonus == 2,
 	)
 
 

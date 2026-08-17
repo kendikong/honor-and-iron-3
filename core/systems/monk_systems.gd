@@ -21,9 +21,11 @@ static func passive_value(
 			and unit.is_passive_upgraded(passive.id)
 			and passive.modifiers.has(upgraded_key)
 		):
-			return int(passive.modifiers[upgraded_key])
+			var upgraded_value: Variant = passive.modifiers[upgraded_key]
+			return default_value if upgraded_value is bool else int(upgraded_value)
 		if passive.modifiers.has(key):
-			return int(passive.modifiers[key])
+			var value: Variant = passive.modifiers[key]
+			return default_value if value is bool else int(value)
 	return default_value
 
 
@@ -113,6 +115,15 @@ static func turn_end(board: BoardState, unit: UnitState, events: Array[SimEvent]
 			unit.passive_flags.erase("monk_inner_fire_surface")
 		else:
 			unit.passive_flags["monk_inner_fire_turns"] = inner_turns
+	var stolen_turns := int(unit.passive_flags.get("monk_stolen_magic_turns", 0))
+	if stolen_turns > 0:
+		stolen_turns -= 1
+		if stolen_turns <= 0:
+			unit.passive_flags.erase("monk_stolen_magic_turns")
+			unit.passive_flags.erase("monk_stolen_magic")
+		else:
+			unit.passive_flags["monk_stolen_magic_turns"] = stolen_turns
+		unit._recalculate_stats(board)
 
 
 static func before_skill_move(
@@ -198,7 +209,7 @@ static func should_pierce(
 		return false
 	if not has_passive_modifier(unit, &"attunement_pierce"):
 		return false
-	var tile := board.get_tile(target.position) if board != null else null
+	var tile := board.get_tile(unit.position) if board != null else null
 	return _is_elemental_tile(tile)
 
 
@@ -286,12 +297,13 @@ static func on_attack_hit(
 				"Scorching Kick",
 				splash_amount,
 			)
-	if _is_elemental_tile(target_tile):
+	var attacker_tile := board.get_tile(attacker.position) if board != null else null
+	if _is_elemental_tile(attacker_tile):
 		var attunement := _find_passive(attacker, &"elemental_attunement")
 		if attunement != null and attacker.is_passive_upgraded(attunement.id):
 			var attunement_status := (
 				GameEnums.StatusType.BURN
-				if target_tile.definition.id == &"fire"
+				if attacker_tile.definition.id == &"fire"
 				else GameEnums.StatusType.BLEED
 			)
 			target.active_statuses.append(DataLibrary.make_status(
@@ -316,6 +328,7 @@ static func on_attack_hit(
 		target.passive_flags["monk_stolen_magic"] = int(
 			target.passive_flags.get("monk_stolen_magic", 0),
 		) + stolen
+		target.passive_flags["monk_stolen_magic_turns"] = 2
 		target._recalculate_stats(board)
 	if action != null and action.ability != null \
 			and attacker.passive_flags.get("monk_inner_fire_turns", 0) > 0 \

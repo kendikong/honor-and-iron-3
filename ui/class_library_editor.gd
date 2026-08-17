@@ -2702,6 +2702,74 @@ func _add_module_typed_extras_editor(
 		module.unacted_target_ignore_def_pct = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Leap Absorb Surface", module.leap_absorb_surface, func(v: bool) -> void:
+		module.leap_absorb_surface = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Track First Hit Zero", module.track_first_hit_zero, func(v: bool) -> void:
+		module.track_first_hit_zero = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Chakra Shift", module.chakra_shift, func(v: bool) -> void:
+		module.chakra_shift = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Chakra Burst Damage", module.chakra_burst_damage, func(v: int) -> void:
+		module.chakra_burst_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Chakra Burst Size", module.chakra_burst_size, func(v: int) -> void:
+		module.chakra_burst_size = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Stop Adjacent First Enemy", module.stop_adjacent_first_enemy, func(v: bool) -> void:
+		module.stop_adjacent_first_enemy = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Dash Absorb Element", module.dash_absorb_element, func(v: bool) -> void:
+		module.dash_absorb_element = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Target Magic Defense", module.target_magic_defense, func(v: bool) -> void:
+		module.target_magic_defense = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Steal Target MAG", module.steal_target_magic, func(v: int) -> void:
+		module.steal_target_magic = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Next Turn MOV Penalty", module.next_turn_move_penalty, func(v: int) -> void:
+		module.next_turn_move_penalty = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bonus Per Target Status", module.bonus_per_target_status, func(v: int) -> void:
+		module.bonus_per_target_status = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Mantra Peace Weaken", module.mantra_peace_weaken, func(v: bool) -> void:
+		module.mantra_peace_weaken = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Inner Fire", module.inner_fire, func(v: bool) -> void:
+		module.inner_fire = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Inner Fire Surface", module.inner_fire_surface, func(v: bool) -> void:
+		module.inner_fire_surface = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Landed MAG Bonus", module.landed_magic_bonus, func(v: int) -> void:
+		module.landed_magic_bonus = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Enemy Pushed MOV", module.enemy_pushed_mov, func(v: int) -> void:
+		module.enemy_pushed_mov = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Blind On Pass Over", module.blind_on_pass_over, func(v: bool) -> void:
+		module.blind_on_pass_over = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -3033,6 +3101,38 @@ func _add_module_layers_editor(
 		)
 		_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:
 			layer.next_turn = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Burning Splash MAG", layer.burning_splash_magic, func(v: int) -> void:
+			layer.burning_splash_magic = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Pierce If First Hit Zero", layer.pierce_if_first_zero, func(v: bool) -> void:
+			layer.pierce_if_first_zero = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Damage Adjacent On Landing", layer.damage_adjacent_on_landing, func(v: bool) -> void:
+			layer.damage_adjacent_on_landing = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Require Dash Line Enemy", layer.require_dash_line_enemy, func(v: bool) -> void:
+			layer.require_dash_line_enemy = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Layer Dash Absorb Element", layer.dash_absorb_element, func(v: bool) -> void:
+			layer.dash_absorb_element = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Collision Splash Damage", layer.collision_splash_damage, func(v: int) -> void:
+			layer.collision_splash_damage = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Collision Splash Weaken", layer.collision_splash_weaken, func(v: bool) -> void:
+			layer.collision_splash_weaken = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Push If Target On Water", layer.push_if_target_on_water, func(v: int) -> void:
+			layer.push_if_target_on_water = v
 			_on_module_field_edited(ability)
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:

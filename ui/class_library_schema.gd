@@ -718,6 +718,15 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"trap_damage_bonus": src.trap_damage_bonus,
 		"grant_ap": src.grant_ap,
 		"next_turn": src.next_turn,
+		"burning_splash_magic": src.burning_splash_magic,
+		"burning_splash_shape": src.burning_splash_shape,
+		"pierce_if_first_zero": src.pierce_if_first_zero,
+		"damage_adjacent_on_landing": src.damage_adjacent_on_landing,
+		"require_dash_line_enemy": src.require_dash_line_enemy,
+		"dash_absorb_element": src.dash_absorb_element,
+		"collision_splash_damage": src.collision_splash_damage,
+		"collision_splash_weaken": src.collision_splash_weaken,
+		"push_if_target_on_water": src.push_if_target_on_water,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -789,6 +798,29 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.trap_damage_bonus = int(data.get("trap_damage_bonus", layer.trap_damage_bonus))
 	layer.grant_ap = int(data.get("grant_ap", layer.grant_ap))
 	layer.next_turn = bool(data.get("next_turn", layer.next_turn))
+	layer.burning_splash_magic = int(data.get("burning_splash_magic", layer.burning_splash_magic))
+	layer.burning_splash_shape = int(data.get("burning_splash_shape", layer.burning_splash_shape))
+	layer.pierce_if_first_zero = bool(
+		data.get("pierce_if_first_zero", layer.pierce_if_first_zero)
+	)
+	layer.damage_adjacent_on_landing = bool(
+		data.get("damage_adjacent_on_landing", layer.damage_adjacent_on_landing)
+	)
+	layer.require_dash_line_enemy = bool(
+		data.get("require_dash_line_enemy", layer.require_dash_line_enemy)
+	)
+	layer.dash_absorb_element = bool(
+		data.get("dash_absorb_element", layer.dash_absorb_element)
+	)
+	layer.collision_splash_damage = int(
+		data.get("collision_splash_damage", layer.collision_splash_damage)
+	)
+	layer.collision_splash_weaken = bool(
+		data.get("collision_splash_weaken", layer.collision_splash_weaken)
+	)
+	layer.push_if_target_on_water = int(
+		data.get("push_if_target_on_water", layer.push_if_target_on_water)
+	)
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -982,6 +1014,24 @@ static func module_to_dict(
 		"duelist_mark_target": src.duelist_mark_target,
 		"marked_target_defense": src.marked_target_defense,
 		"unacted_target_ignore_def_pct": src.unacted_target_ignore_def_pct,
+		"leap_absorb_surface": src.leap_absorb_surface,
+		"track_first_hit_zero": src.track_first_hit_zero,
+		"chakra_shift": src.chakra_shift,
+		"chakra_burst_damage": src.chakra_burst_damage,
+		"chakra_burst_shape": src.chakra_burst_shape,
+		"chakra_burst_size": src.chakra_burst_size,
+		"stop_adjacent_first_enemy": src.stop_adjacent_first_enemy,
+		"dash_absorb_element": src.dash_absorb_element,
+		"target_magic_defense": src.target_magic_defense,
+		"steal_target_magic": src.steal_target_magic,
+		"next_turn_move_penalty": src.next_turn_move_penalty,
+		"bonus_per_target_status": src.bonus_per_target_status,
+		"mantra_peace_weaken": src.mantra_peace_weaken,
+		"inner_fire": src.inner_fire,
+		"inner_fire_surface": src.inner_fire_surface,
+		"landed_magic_bonus": src.landed_magic_bonus,
+		"enemy_pushed_mov": src.enemy_pushed_mov,
+		"blind_on_pass_over": src.blind_on_pass_over,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1308,6 +1358,34 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.unacted_target_ignore_def_pct = float(
 		data.get("unacted_target_ignore_def_pct", dst.unacted_target_ignore_def_pct)
 	)
+	dst.leap_absorb_surface = bool(data.get("leap_absorb_surface", dst.leap_absorb_surface))
+	dst.track_first_hit_zero = bool(data.get("track_first_hit_zero", dst.track_first_hit_zero))
+	dst.chakra_shift = bool(data.get("chakra_shift", dst.chakra_shift))
+	dst.chakra_burst_damage = int(data.get("chakra_burst_damage", dst.chakra_burst_damage))
+	dst.chakra_burst_shape = int(data.get("chakra_burst_shape", dst.chakra_burst_shape))
+	dst.chakra_burst_size = int(data.get("chakra_burst_size", dst.chakra_burst_size))
+	dst.stop_adjacent_first_enemy = bool(
+		data.get("stop_adjacent_first_enemy", dst.stop_adjacent_first_enemy)
+	)
+	dst.dash_absorb_element = bool(
+		data.get("dash_absorb_element", dst.dash_absorb_element)
+	)
+	dst.target_magic_defense = bool(data.get("target_magic_defense", dst.target_magic_defense))
+	dst.steal_target_magic = int(data.get("steal_target_magic", dst.steal_target_magic))
+	dst.next_turn_move_penalty = int(
+		data.get("next_turn_move_penalty", dst.next_turn_move_penalty)
+	)
+	dst.bonus_per_target_status = int(
+		data.get("bonus_per_target_status", dst.bonus_per_target_status)
+	)
+	dst.mantra_peace_weaken = bool(data.get("mantra_peace_weaken", dst.mantra_peace_weaken))
+	dst.inner_fire = bool(data.get("inner_fire", dst.inner_fire))
+	dst.inner_fire_surface = bool(
+		data.get("inner_fire_surface", dst.inner_fire_surface)
+	)
+	dst.landed_magic_bonus = int(data.get("landed_magic_bonus", dst.landed_magic_bonus))
+	dst.enemy_pushed_mov = int(data.get("enemy_pushed_mov", dst.enemy_pushed_mov))
+	dst.blind_on_pass_over = bool(data.get("blind_on_pass_over", dst.blind_on_pass_over))
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

@@ -1,7 +1,7 @@
 extends RefCounted
 
-## Bible: Soul Punch — RANGE 1, ATK 3 targets MAG instead of DEF; [+] permanently steal 1 MAG.
-## Globals: physical DAMAGE with target-magic-defense and persistent-steal modifiers.
+## Bible: Soul Punch — RANGE 1, ATK 3 targets MAG instead of DEF; [+] steal 1 MAG for 2 turns.
+## Globals: physical DAMAGE with target-magic-defense and timed-steal modifiers.
 ## Modules: M0 physical DAMAGE range 1; [+] target magic defense and steal delta.
 ## Planning tier: B
 ## Data/Sim delegate: tests/monk_qa_harness.gd::run_single_ability
