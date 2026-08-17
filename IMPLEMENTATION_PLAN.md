@@ -37,7 +37,7 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Home | Use when |
 |------|----------|
 | Header | Cost, once-per-turn, skip-Action, delay |
-| Module primary | The verb, including landing (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `PAIRED_MOVE`, `GRANT_AP`, …) |
+| Module primary | The verb. Pick a **family** (`ability-data.md` §2.2): Hit, Heal/Shield, Status, Walk, Jump, Teleport, Dash/Swap, Together, Control, Board, Grant. Do not grow a flat dump. |
 | Keyword | TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO |
 | Layer + condition | Extra punch on the same targets |
 | Gate | Whether a module runs |

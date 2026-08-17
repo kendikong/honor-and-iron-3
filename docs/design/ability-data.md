@@ -197,36 +197,28 @@ When this step runs relative to the turn columns:
 Default: if omitted → `ON_ACTION` (or infer: gated post-move → `ON_POST`). Prefer **explicit** phase only on multi-step ACTION skills.  
 Naming note: header **`planner_group`** = which timeline column the **card** uses; module **phase** = when that step runs inside the skill.
 
-### 2.2 Primary effect (+ motion mode when motion)
+### 2.2 Primary effect (families)
 
-What this module *is*. Families (grow the list; keep the field):
+What this module *is*. One `EffectType` field. The Class Editor dropdown is **grouped by family**. When you add a type, pick a family — do not grow a flat dump.
 
-| Effect family | Examples |
-|---------------|----------|
-| Damage | ATK-based, MAG-based, fixed; optional hit_count for multi-hit |
-| Heal / Shield | Mag heal, fixed/HP% heal, SHIELD; convert-missing-HP→SHIELD |
-| Motion | MOVE, DASH, JUMP, TELEPORT, SWAP, MOVE_OTHER, PAIRED_MOVE (you + another) |
-| Control | PUSH, PULL, THROW_BEHIND, PULL_SELF_TO_TARGET, PULL_TARGET_TO_SELF |
-| Status | Apply / remove / PURGE / CLEANSE |
-| Utility | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN, GRANT_AP, GRANT_NEXT_ATTACK_MOD, ARM_REACTION |
+| Family | Types now | Incoming (conversion) | Not this family |
+|--------|-----------|------------------------|-----------------|
+| **Hit** | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce / unmitigated / %HP / ignore-resist = **fields on DAMAGE** | |
+| **Heal / Shield** | HEAL, ARMOR_UP (SHIELD in UI) | Revive % = field on HEAL | HP spend = header cost, not DAMAGE_SELF |
+| **Status** | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType** | |
+| **Walk** | MOVE, MOVE_ADJACENT_TO, MOVE_TO_BEHIND, MOVE_TOWARD, MOVE_INTO_AND_PUSH | L-path, facing, ZOC = **fields on MOVE** | TRAMPLE / BULLDOZE = keywords |
+| **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | Vault restriction = field on JUMP_TO_BEHIND | |
+| **Teleport** | TELEPORT_CASTER, TELEPORT_ADJACENT_TO, TELEPORT_TO_BEHIND, TELEPORT_TOWARD | Visible/LOS = field on TELEPORT | |
+| **Dash / Swap** | DASH, SWAP | | |
+| **Together** | PAIRED_MOVE, THROW_BEHIND | PULL_SELF_TO_TARGET, ally-step, slide-opposite, carry/place, drag-walk | |
+| **Control** | PUSH, PULL | Pull-to-center / pull-surfaces = **fields on PULL** | Collision STAGGER = layer |
+| **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | Hazard / spawn knobs = **typed fields** | |
+| **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
+| **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Do not add new types here |
 
-Keywords (TRAMPLE, BULLDOZE, GHOST, …) are a **separate module field** (§6), not a primary-effect family.
+Keywords (TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO) are a **separate module field** (§6), not a primary family.
 
-**Motion mode** (when primary effect is motion):
-
-| Mode | Meaning |
-|------|---------|
-| `TO_EMPTY_TILE` | Normal walk/dash/jump/teleport destination |
-| `TO_TARGET_UNIT` | Move into engagement with aimed unit (Swift Strike) |
-| `ADJACENT_TO_TARGET` | Land adjacent to aimed unit (Shadow Step) |
-| `BEHIND_TARGET` | Land behind aimed unit |
-| `VAULT_OVER` | Jump over unit/obstacle to opposite empty tile |
-| `INTO_OCCUPIED_PUSH` | Enter occupied tile and push occupant (Push Through) |
-| `BACKWARDS` | Facing-constrained step (skills that name Backwards). Tactical Retreat is any-direction MOVE 3. |
-| `SLIDE_TARGET_OPPOSITE` | Reposition: slide targeted unit to opposite side of you |
-| `ALLY_STEP` | Usher: ally steps into empty adjacent (you may stay put) |
-
-Editor greys out illegal shape/mode combos.
+**DELETE Motion Mode.** Landing is the dest EffectType (Walk / Jump / Teleport / Together). Do not add modes. See `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` ER-3.
 
 **Player choice (OR)** — still inside the module, not a new system:  
 `resolution_choice`: `NONE` \| `PICK_ONE_OF_EFFECTS` (e.g. Grappling Hook: pull self **or** pull target). Planner shows the choice; commit stores which branch was picked.
@@ -276,6 +268,15 @@ Authors never pick “same as module N”. If two effects share one aim, the sec
 
 - Player aims a **unit** only; empty tile = invalid.
 - Checkboxes: **ally valid?** / **enemy valid?** / **self valid?** as applicable.
+
+**Self vs skip caster (not the same checkbox)**
+
+| Checkbox | Job |
+|----------|-----|
+| **Self** | May you **click yourself** as the aim? Blood Boil, Second Wind, self-buffs. |
+| **Skip caster in blast** (`EXCLUDE_CASTER`) | When the **shape resolves** (aura, diamond, ally AOE), do **not apply** the punch to you even if your tile is inside it. Defensive Formation. You often click a tile or an ally, not yourself — unchecking Self does not skip you in the blast. |
+
+Do not put Skip caster on the same “who can I click” row as Self/Ally/Enemy. Extra Rule `EXCLUDE_CASTER` converts to this blast checkbox, then is deleted.
 
 **Target filters** (validity checklist on the same module — **Condition** category + sub-option, not a long niche list):
 

@@ -285,3 +285,137 @@ static func parent_module_has_pass_through_keyword(module: AbilityModule) -> boo
 
 static func keyword_uses_push_amount(keyword_id: GameEnums.AbilityKeywordId) -> bool:
 	return keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
+
+
+## Class Editor Primary / Layer Type dropdown families.
+## When adding an EffectType, put it in one family here. Fail-loud if any type is missing.
+static func effect_primary_families() -> Array[Dictionary]:
+	return [
+		{
+			"label": "Hit",
+			"types": [
+				GameEnums.EffectType.DAMAGE,
+				GameEnums.EffectType.DAMAGE_SELF,
+				GameEnums.EffectType.EXPLODE,
+				GameEnums.EffectType.RANGED_EXPLODE,
+			],
+		},
+		{
+			"label": "Heal / Shield",
+			"types": [
+				GameEnums.EffectType.HEAL,
+				GameEnums.EffectType.ARMOR_UP,
+			],
+		},
+		{
+			"label": "Status",
+			"types": [
+				GameEnums.EffectType.ADD_STATUS,
+				GameEnums.EffectType.ADD_STATUS_SELF,
+				GameEnums.EffectType.REMOVE_STATUS,
+				GameEnums.EffectType.CLEANSE,
+				GameEnums.EffectType.PURGE,
+			],
+		},
+		{
+			"label": "Walk",
+			"types": [
+				GameEnums.EffectType.MOVE,
+				GameEnums.EffectType.MOVE_ADJACENT_TO,
+				GameEnums.EffectType.MOVE_TO_BEHIND,
+				GameEnums.EffectType.MOVE_TOWARD,
+				GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+			],
+		},
+		{
+			"label": "Jump",
+			"types": [
+				GameEnums.EffectType.JUMP,
+				GameEnums.EffectType.JUMP_ADJACENT_TO,
+				GameEnums.EffectType.JUMP_TO_BEHIND,
+				GameEnums.EffectType.JUMP_TOWARD,
+			],
+		},
+		{
+			"label": "Teleport",
+			"types": [
+				GameEnums.EffectType.TELEPORT_CASTER,
+				GameEnums.EffectType.TELEPORT_ADJACENT_TO,
+				GameEnums.EffectType.TELEPORT_TO_BEHIND,
+				GameEnums.EffectType.TELEPORT_TOWARD,
+			],
+		},
+		{
+			"label": "Dash / Swap",
+			"types": [
+				GameEnums.EffectType.DASH,
+				GameEnums.EffectType.SWAP,
+			],
+		},
+		{
+			"label": "Together",
+			"types": [
+				GameEnums.EffectType.PAIRED_MOVE,
+				GameEnums.EffectType.THROW_BEHIND,
+			],
+		},
+		{
+			"label": "Control",
+			"types": [
+				GameEnums.EffectType.PUSH,
+				GameEnums.EffectType.PULL,
+			],
+		},
+		{
+			"label": "Board",
+			"types": [
+				GameEnums.EffectType.CHANGE_TERRAIN,
+				GameEnums.EffectType.CREATE_HAZARD,
+				GameEnums.EffectType.DESTROY_OBSTACLE,
+				GameEnums.EffectType.SPAWN,
+			],
+		},
+		{
+			"label": "Grant",
+			"types": [
+				GameEnums.EffectType.GRANT_AP,
+				GameEnums.EffectType.GRANT_SCRAP,
+				GameEnums.EffectType.REFUND_AP_ON_CC,
+			],
+		},
+		{
+			"label": "Legacy — convert off",
+			"types": [
+				GameEnums.EffectType.TRAMPLE,
+				GameEnums.EffectType.BULLDOZE,
+				GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION,
+				GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT,
+				GameEnums.EffectType.PUSH_CHAIN_COLLISION,
+			],
+		},
+	]
+
+
+static func uncategorized_effect_types() -> Array[GameEnums.EffectType]:
+	var seen: Dictionary = {}
+	for family: Dictionary in effect_primary_families():
+		for effect_type: GameEnums.EffectType in family["types"]:
+			seen[effect_type] = true
+	var missing: Array[GameEnums.EffectType] = []
+	for key: String in GameEnums.EffectType.keys():
+		var effect_type: GameEnums.EffectType = GameEnums.EffectType[key]
+		if not seen.has(effect_type):
+			missing.append(effect_type)
+	return missing
+
+
+static var _uncategorized_logged: bool = false
+
+
+static func log_uncategorized_effect_types_once() -> Array[GameEnums.EffectType]:
+	var missing: Array[GameEnums.EffectType] = uncategorized_effect_types()
+	if missing.is_empty() or _uncategorized_logged:
+		return missing
+	_uncategorized_logged = true
+	push_error("ModuleAuthoringRules: uncategorized EffectType(s) must join a primary family: %s" % str(missing))
+	return missing

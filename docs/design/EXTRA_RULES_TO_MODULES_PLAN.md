@@ -49,6 +49,51 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 
 ---
 
+## Module Primary families
+
+One dropdown, grouped. New EffectTypes go in a family. Do not dump them flat. Canonical copy also lives in `ability-data.md` §2.2 and `ModuleAuthoringRules.effect_primary_families()`.
+
+| Family | Now | Incoming conversion | Not a new primary |
+|--------|-----|---------------------|-------------------|
+| **Hit** | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | | Bounce, unmitigated, %HP, ignore-resist, range-band cut = **fields on DAMAGE** |
+| **Heal / Shield** | HEAL, ARMOR_UP | | Revive % = field on HEAL |
+| **Status** | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType** |
+| **Walk** | MOVE, MOVE_ADJACENT_TO, MOVE_TO_BEHIND, MOVE_TOWARD, MOVE_INTO_AND_PUSH | | L-path, facing, ZOC = **fields on MOVE** |
+| **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | | Vault restriction = field on JUMP_TO_BEHIND |
+| **Teleport** | TELEPORT_CASTER, TELEPORT_* landing | | Visible/LOS = field on TELEPORT |
+| **Dash / Swap** | DASH, SWAP | | |
+| **Together** | PAIRED_MOVE, THROW_BEHIND | PULL_SELF_TO_TARGET, ally-step, slide-opposite, carry/place, drag-walk | |
+| **Control** | PUSH, PULL | | Pull-to-center / surfaces = **fields on PULL**. Collision STAGGER = **layer** |
+| **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | | Hazard / spawn knobs = **typed fields** |
+| **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
+| **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Keywords / layers. Do not add here |
+
+## Extra Rule categories (not a second primary list)
+
+Every Extra Rule id belongs to **one** conversion home. Most are **not** new primaries.
+
+| Category | Extra Rule examples | Home |
+|----------|---------------------|------|
+| Targeting / Condition | `EXCLUDE_CASTER`, `ALLOW_FRIENDLY_TARGET`, Hex / Terrify leftovers | Targeting checkbox or Condition dropdown |
+| Header | `DOES_NOT_CONSUME_ACTION_SLOT`, `LIMIT_ONCE_PER_TURN`, `COST_ALL_MOVEMENT`, `SPEND_SELF_HP`, `DELAYED_NEXT_TURN` | Header |
+| Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
+| Walk / Jump / Teleport field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE` | Field on Walk / Jump / Teleport primary |
+| Together (new primary) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `PULL_SELF_OR_TARGET`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Together** |
+| Control field | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH` | Field on PUSH / PULL |
+| Hit field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on DAMAGE |
+| Heal / Shield field | `HEAL_PER_DEBUFF`, `REVIVE_*`, `SCRAP_SHIELD` | Field on HEAL / ARMOR_UP |
+| StatusType | `BLOODLUST_*`, `MANA_SHIELD_*`, `WITHER`, `LINK_*`, `LIFE_LINK_*` | New or existing **StatusType** |
+| Board knobs | `HAZARD_*`, `SMOKE_*`, `TRAP_*`, `MINE_*`, `TERRAIN_ID`, `SANCTUARY_*`, `HOLY_GROUND_*` | Typed fields on CREATE_HAZARD / CHANGE_TERRAIN |
+| Spawn knobs | `CONSTRUCT_*`, `TURRET_ATTACK` | Typed fields on SPAWN |
+| Layer ON_KILL | `ON_KILL_*`, `FRENZY_ON_KILL_AP`, `KILL_GRANT_AP` | Layer + GRANT_AP / HEAL / SHIELD |
+| Layer collision / land | `*_COLLISION_*`, `VIOLENT_COLLISION_RECAST`, `POUNCE_LAND_ADJACENT` | Layer ON_COLLISION / ON_LAND or gate IF_COLLIDED |
+| Grant | `GRANT_AP`, `ON_HIT_SCRAP`, `REFUND_SCRAP_*`, `NEXT_SKILL_ZERO_AP`, `NEXT_ATTACK_STRENGTH` | GRANT_* primary or GRANT_NEXT_ATTACK_MOD |
+| DELETE | Extra Rules themselves; Motion Mode | ER-3 |
+
+**Self vs skip caster:** Self = may click yourself. Skip caster in blast = aura/AOE does not apply to you. Not the same checkbox. `EXCLUDE_CASTER` Extra Rule → skip-caster blast checkbox, then delete.
+
+---
+
 ## How an agent must work
 
 1. Open **this file**. Find the skill row.

@@ -1898,7 +1898,7 @@ func _build_module_fields(
 			changed.call(),
 		ModuleAuthoringRules.excluded_module_phases(ability.planner_group),
 	)
-	_bind_enum(grid, "Primary", GameEnums.EffectType, module.primary_type, func(v: int) -> void:
+	_bind_effect_type(grid, "Primary", module.primary_type, func(v: int) -> void:
 		module.primary_type = v
 		rebuild_detail.call()
 	)
@@ -2070,7 +2070,7 @@ func _add_module_targeting_flags(
 	ability: AbilityData,
 	module: AbilityModule,
 ) -> void:
-	_add_subsection_label(parent, "Module Targeting", ClassLibraryTheme.ACCENT_DATA)
+	_add_subsection_label(parent, "Module Targeting — who you click", ClassLibraryTheme.ACCENT_DATA)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 	parent.add_child(row)
@@ -2080,7 +2080,6 @@ func _add_module_targeting_flags(
 		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
 		[GameEnums.TargetingFlags.TILE, "Tile"],
 		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
-		[GameEnums.TargetingFlags.EXCLUDE_CASTER, "Exclude caster"],
 	]:
 		var flag: int = int(spec[0])
 		var check := CheckBox.new()
@@ -2097,6 +2096,27 @@ func _add_module_targeting_flags(
 			_on_module_field_edited(ability)
 		)
 		row.add_child(check)
+	_add_subsection_label(parent, "Module Targeting — blast", ClassLibraryTheme.ACCENT_DATA)
+	var blast_row := HBoxContainer.new()
+	blast_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+	parent.add_child(blast_row)
+	var skip := CheckBox.new()
+	skip.text = "Skip caster in blast"
+	skip.button_pressed = module.exclude_caster or module.has_targeting(GameEnums.TargetingFlags.EXCLUDE_CASTER)
+	var skip_greyed: bool = not ModuleAuthoringRules.targeting_flag_applies(
+		module, GameEnums.TargetingFlags.EXCLUDE_CASTER
+	)
+	skip.disabled = skip_greyed
+	skip.modulate.a = 0.35 if skip_greyed else 1.0
+	skip.toggled.connect(func(enabled: bool) -> void:
+		module.exclude_caster = enabled
+		if enabled:
+			module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
+		else:
+			module.targeting_flags &= ~GameEnums.TargetingFlags.EXCLUDE_CASTER
+		_on_module_field_edited(ability)
+	)
+	blast_row.add_child(skip)
 
 
 func _add_module_typed_extras_editor(
@@ -2108,14 +2128,6 @@ func _add_module_typed_extras_editor(
 	var grid := GridContainer.new()
 	grid.columns = 2
 	parent.add_child(grid)
-	_bind_bool(grid, "Exclude Caster", module.exclude_caster, func(v: bool) -> void:
-		module.exclude_caster = v
-		if v:
-			module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
-		else:
-			module.targeting_flags &= ~GameEnums.TargetingFlags.EXCLUDE_CASTER
-		_on_module_field_edited(ability)
-	)
 	_bind_string(grid, "Terrain Id", String(module.terrain_id), func(v: String) -> void:
 		module.terrain_id = StringName(v)
 		_on_module_field_edited(ability)
@@ -2329,7 +2341,7 @@ func _add_module_layers_editor(
 				_on_module_field_edited(ability),
 			ModuleAuthoringRules.excluded_layer_conditions(module),
 		)
-		_bind_enum(grid, "Layer Type", GameEnums.EffectType, layer.effect.type, func(v: int) -> void:
+		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v
 			AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
 			_rebuild_ability_detail_panes(ability)
@@ -2865,6 +2877,38 @@ func _bind_string_stacked(parent: VBoxContainer, label: String, value: String, s
 
 func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current: int, setter: Callable) -> Array[Control]:
 	return _bind_enum_excluding(parent, label, enum_obj, current, setter, PackedStringArray())
+
+
+func _bind_effect_type(parent: GridContainer, label: String, current: int, setter: Callable) -> Array[Control]:
+	var lbl := _field_label(label)
+	parent.add_child(lbl)
+	var opt := OptionButton.new()
+	var missing: Array[GameEnums.EffectType] = ModuleAuthoringRules.log_uncategorized_effect_types_once()
+	var item_types: Array[int] = []
+	for family: Dictionary in ModuleAuthoringRules.effect_primary_families():
+		opt.add_separator(String(family["label"]))
+		for effect_type: GameEnums.EffectType in family["types"]:
+			var type_id: int = int(effect_type)
+			opt.add_item(GameEnums.EffectType.keys()[type_id], type_id)
+			item_types.append(type_id)
+	for leftover: GameEnums.EffectType in missing:
+		var leftover_id: int = int(leftover)
+		opt.add_item(GameEnums.EffectType.keys()[leftover_id], leftover_id)
+		item_types.append(leftover_id)
+	if item_types.is_empty():
+		parent.add_child(opt)
+		return [lbl, opt]
+	if current not in item_types:
+		setter.call(item_types[0])
+		current = item_types[0]
+	var id_index: int = opt.get_item_index(current)
+	opt.selected = id_index if id_index >= 0 else 0
+	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opt.item_selected.connect(func(idx: int) -> void:
+		setter.call(opt.get_item_id(idx))
+	)
+	parent.add_child(opt)
+	return [lbl, opt]
 
 
 func _bind_enum_excluding(

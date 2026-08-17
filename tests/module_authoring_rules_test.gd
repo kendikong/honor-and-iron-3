@@ -21,6 +21,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_invalid_gate_reset(failures)
 	_test_layer_condition_filter(failures)
 	_test_primary_as_effect_strips_junk(failures)
+	_test_every_effect_type_has_a_primary_family(failures)
 
 
 static func _test_move_clears_scaling_and_los(failures: Array[String]) -> void:
@@ -86,3 +87,9 @@ static func _test_primary_as_effect_strips_junk(failures: Array[String]) -> void
 		failures.append("MOVE primary_as_effect should not copy spawn_unit_id")
 	if eff.bonus_if_adjacent_at_cast != 0:
 		failures.append("MOVE primary_as_effect should not copy adjacent bonus")
+
+
+static func _test_every_effect_type_has_a_primary_family(failures: Array[String]) -> void:
+	var missing: Array[GameEnums.EffectType] = ModuleAuthoringRules.uncategorized_effect_types()
+	if not missing.is_empty():
+		failures.append("EffectType missing from primary families: %s" % str(missing))
