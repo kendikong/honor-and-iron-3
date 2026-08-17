@@ -133,6 +133,32 @@ extends Resource
 @export var bonus_per_enemy_passed: int = 0
 @export var create_trampled_terrain: bool = false
 
+## Mage typed terrain, reaction, teleport, resource, and utility fields.
+@export var blink: bool = false
+@export var leave_elemental_surface: bool = false
+@export var reaction_terrain: StringName = &""
+@export var reaction_damage: int = 0
+@export var bounce_surface_chain: bool = false
+@export var lightning_surface: bool = false
+@export var strike_all_surface: bool = false
+@export var teleport_visible: bool = false
+@export var delayed_next_turn: bool = false
+@export var create_crater: bool = false
+@export var pull_to_center: bool = false
+@export var pull_surfaces: bool = false
+@export var mana_shield: bool = false
+@export var mana_shield_casting: bool = false
+@export var destroy_corpse_on_kill: bool = false
+@export var kill_grant_ap: int = 0
+@export var utility_only: bool = false
+@export var elemental_surge: bool = false
+@export var elemental_surge_ap: int = 0
+@export var construct_hp_pct: float = 0.0
+@export var density_shift: bool = false
+@export var ignore_target_magic_pct: float = 0.0
+@export var creation_adjacent_damage: int = 0
+@export var apply_weaken_enemy: bool = false
+
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
@@ -332,6 +358,54 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["bonus_per_enemy_passed"] = bonus_per_enemy_passed
 	if create_trampled_terrain:
 		bag["create_trampled_terrain"] = true
+	if blink:
+		bag["blink"] = true
+	if leave_elemental_surface:
+		bag["leave_elemental_surface"] = true
+	if reaction_terrain != StringName():
+		bag["reaction_terrain"] = reaction_terrain
+	if reaction_damage != 0:
+		bag["reaction_damage"] = reaction_damage
+	if bounce_surface_chain:
+		bag["surface_chain"] = true
+	if lightning_surface:
+		bag["lightning"] = true
+	if strike_all_surface:
+		bag["strike_all_surface"] = true
+	if teleport_visible:
+		bag["teleport_visible"] = true
+	if delayed_next_turn:
+		bag["delayed_next_turn"] = true
+	if create_crater:
+		bag["create_crater"] = true
+	if pull_to_center:
+		bag["pull_to_center"] = true
+	if pull_surfaces:
+		bag["pull_surfaces"] = true
+	if mana_shield:
+		bag["mana_shield"] = true
+	if mana_shield_casting:
+		bag["mana_shield_casting"] = true
+	if destroy_corpse_on_kill:
+		bag["destroy_corpse_on_kill"] = true
+	if kill_grant_ap != 0:
+		bag["kill_grant_ap"] = kill_grant_ap
+	if utility_only:
+		bag["utility_only"] = true
+	if elemental_surge:
+		bag["elemental_surge"] = true
+	if elemental_surge_ap != 0:
+		bag["elemental_surge_ap"] = elemental_surge_ap
+	if not is_zero_approx(construct_hp_pct):
+		bag["construct_hp_pct"] = construct_hp_pct
+	if density_shift:
+		bag["density_shift"] = true
+	if not is_zero_approx(ignore_target_magic_pct):
+		bag["ignore_target_magic_pct"] = ignore_target_magic_pct
+	if creation_adjacent_damage != 0:
+		bag["creation_adjacent_damage"] = creation_adjacent_damage
+	if apply_weaken_enemy:
+		bag["apply_weaken_enemy"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -584,6 +658,78 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"create_trampled_terrain":
 			create_trampled_terrain = bool(value)
+			return
+		"blink":
+			blink = bool(value)
+			return
+		"leave_elemental_surface":
+			leave_elemental_surface = bool(value)
+			return
+		"reaction_terrain":
+			reaction_terrain = StringName(value)
+			return
+		"reaction_damage":
+			reaction_damage = int(value)
+			return
+		"surface_chain":
+			bounce_surface_chain = bool(value)
+			return
+		"lightning":
+			lightning_surface = bool(value)
+			return
+		"strike_all_surface":
+			strike_all_surface = bool(value)
+			return
+		"teleport_visible":
+			teleport_visible = bool(value)
+			return
+		"delayed_next_turn":
+			delayed_next_turn = bool(value)
+			return
+		"create_crater":
+			create_crater = bool(value)
+			return
+		"pull_to_center":
+			pull_to_center = bool(value)
+			return
+		"pull_surfaces":
+			pull_surfaces = bool(value)
+			return
+		"mana_shield":
+			mana_shield = bool(value)
+			return
+		"mana_shield_casting":
+			mana_shield_casting = bool(value)
+			return
+		"destroy_corpse_on_kill":
+			destroy_corpse_on_kill = bool(value)
+			return
+		"kill_grant_ap":
+			kill_grant_ap = int(value)
+			return
+		"utility_only":
+			utility_only = bool(value)
+			return
+		"elemental_surge":
+			elemental_surge = bool(value)
+			return
+		"elemental_surge_ap":
+			elemental_surge_ap = int(value)
+			return
+		"construct_hp_pct":
+			construct_hp_pct = float(value)
+			return
+		"density_shift":
+			density_shift = bool(value)
+			return
+		"ignore_target_magic_pct":
+			ignore_target_magic_pct = float(value)
+			return
+		"creation_adjacent_damage":
+			creation_adjacent_damage = int(value)
+			return
+		"apply_weaken_enemy":
+			apply_weaken_enemy = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

@@ -118,20 +118,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Lancer | Line Breaker | ☑ | ☑ | ☑ | ☑ | Typed line-break and passed-enemy fields; conversion contract pass |
 | Lancer | Spear Wall | ☑ | ☑ | ☑ | ☑ | Typed terrain/status/duration fields; conversion contract pass |
 | Lancer | Meteor Drop | ☑ | ☑ | ☑ | ☑ | Modular landing layer; conversion contract pass |
-| Mage | Blink | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Ice Shard | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Chain Lightning | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Arcane Push | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Teleport | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Meteor | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Black Hole | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Time Warp | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Mana Shield | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Disintegrate | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Elemental Surge | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Earth Spike | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Density Shift | ☐ | ☐ | ☐ | ☐ |  |
-| Mage | Arcane Barrage | ☐ | ☐ | ☐ | ☐ |  |
+| Mage | Blink | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
+| Mage | Fireball | ☑ | ☑ | ☑ | ☑ | Typed terrain/reaction layer fields; conversion contract pass |
+| Mage | Ice Shard | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
+| Mage | Chain Lightning | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Arcane Push | ☑ | ☑ | ☑ | ☑ | Typed layer fields; conversion contract pass |
+| Mage | Teleport | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Meteor | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Black Hole | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Time Warp | ☑ | ☑ | ☑ | ☑ | Modular layer conversion; conversion contract pass |
+| Mage | Mana Shield | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Disintegrate | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Gravity Well | ☑ | ☑ | ☑ | ☑ | Modular status layer conversion; conversion contract pass |
+| Mage | Elemental Surge | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Earth Spike | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
+| Mage | Density Shift | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Arcane Barrage | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
 | Cleric | Guardian Step | ☐ | ☐ | ☐ | ☐ | Spend remaining MP |
 | Cleric | Holy Light | ☐ | ☐ | ☐ | ☐ |  |
 | Cleric | Smite | ☐ | ☐ | ☐ | ☐ |  |
@@ -409,22 +411,24 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 10. Mage
 
-- [ ] `mage_blink`
-- [ ] `mage_ice_shard`
-- [ ] `mage_chain_lightning`
-- [ ] `mage_arcane_push`
-- [ ] `mage_teleport`
-- [ ] `mage_meteor`
-- [ ] `mage_black_hole`
-- [ ] `mage_time_warp`
-- [ ] `mage_mana_shield`
-- [ ] `mage_disintegrate`
-- [ ] `mage_elemental_surge`
-- [ ] `mage_earth_spike`
-- [ ] `mage_density_shift`
-- [ ] `mage_arcane_barrage`
-- [ ] Mage class gate: `run_mage_qa_gate.ps1`.
-- [ ] Mage live gate: `run_mage_live_qa.ps1`.
+- [x] `mage_blink`
+- [x] `mage_fireball`
+- [x] `mage_ice_shard`
+- [x] `mage_chain_lightning`
+- [x] `mage_arcane_push`
+- [x] `mage_teleport`
+- [x] `mage_meteor`
+- [x] `mage_black_hole`
+- [x] `mage_time_warp`
+- [x] `mage_mana_shield`
+- [x] `mage_disintegrate`
+- [x] `mage_gravity_well`
+- [x] `mage_elemental_surge`
+- [x] `mage_earth_spike`
+- [x] `mage_density_shift`
+- [x] `mage_arcane_barrage`
+- [x] Mage class gate: `run_mage_qa_gate.ps1`.
+- [x] Mage live gate: `run_mage_live_qa.ps1`.
 
 #### 11. Engineer
 

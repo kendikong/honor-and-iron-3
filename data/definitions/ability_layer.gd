@@ -27,6 +27,16 @@ extends Resource
 @export var crossing_blind: bool = false
 @export var trap_def_debuff: int = 0
 @export var range_one_damage_multiplier: float = 0.0
+@export var elemental_surface: bool = false
+@export var reaction_terrain: StringName = &""
+@export var reaction_steam_splash: bool = false
+@export var reaction_steam_splash_size: int = 0
+@export var reaction_steam_splash_damage: int = 0
+@export var set_max_move: int = 0
+@export var arcane_trail: bool = false
+@export var creation_adjacent_damage: int = 0
+@export var terrain_id: StringName = &""
+@export var hazard_duration: int = 0
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -65,6 +75,26 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["trap_def_debuff"] = trap_def_debuff
 	if not is_zero_approx(range_one_damage_multiplier):
 		modifiers["range_one_damage_multiplier"] = range_one_damage_multiplier
+	if elemental_surface:
+		modifiers["elemental_surface"] = true
+	if reaction_terrain != StringName():
+		modifiers["reaction_terrain"] = reaction_terrain
+	if reaction_steam_splash:
+		modifiers["reaction_steam_splash"] = true
+	if reaction_steam_splash_size != 0:
+		modifiers["reaction_steam_splash_size"] = reaction_steam_splash_size
+	if reaction_steam_splash_damage != 0:
+		modifiers["reaction_steam_splash_damage"] = reaction_steam_splash_damage
+	if set_max_move != 0:
+		modifiers["set_max_move"] = set_max_move
+	if arcane_trail:
+		modifiers["arcane_trail"] = true
+	if creation_adjacent_damage != 0:
+		modifiers["creation_adjacent_damage"] = creation_adjacent_damage
+	if terrain_id != StringName():
+		modifiers["terrain_id"] = terrain_id
+	if hazard_duration != 0:
+		modifiers["hazard_duration"] = hazard_duration
 	return modifiers
 
 
@@ -104,3 +134,23 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			trap_def_debuff = int(value)
 		"range_one_damage_multiplier":
 			range_one_damage_multiplier = float(value)
+		"elemental_surface":
+			elemental_surface = bool(value)
+		"reaction_terrain":
+			reaction_terrain = StringName(value)
+		"reaction_steam_splash":
+			reaction_steam_splash = bool(value)
+		"reaction_steam_splash_size":
+			reaction_steam_splash_size = int(value)
+		"reaction_steam_splash_damage":
+			reaction_steam_splash_damage = int(value)
+		"set_max_move":
+			set_max_move = int(value)
+		"arcane_trail":
+			arcane_trail = bool(value)
+		"creation_adjacent_damage":
+			creation_adjacent_damage = int(value)
+		"terrain_id":
+			terrain_id = StringName(value)
+		"hazard_duration":
+			hazard_duration = int(value)

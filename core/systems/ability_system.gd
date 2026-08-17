@@ -3432,6 +3432,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 					"ability": action.ability,
 					"effect": effect.duplicate(true),
 					"coord": apply_coord,
+					"target_unit_id": target_unit.id if target_unit != null else pinned_id,
 				})
 				continue
 			
@@ -3569,7 +3570,8 @@ static func execute_delayed_effect(
 	if actor == null or ability == null or effect == null:
 		return
 	var coord: Vector2i = delayed.get("coord", actor.position)
-	var action := TimelineAction.make_ability(actor.id, ability, coord)
+	var delayed_target_id: int = int(delayed.get("target_unit_id", -1))
+	var action := TimelineAction.make_ability(actor.id, ability, coord, delayed_target_id)
 	_apply_effect_to_tile(
 		board,
 		actor,
@@ -3592,7 +3594,11 @@ static func execute_delayed_effect(
 			coord,
 			board.get_unit_at(coord),
 		)
-		var crater_target := board.get_unit_at(coord)
+		var crater_target := (
+			board.get_unit_by_id(delayed_target_id)
+			if delayed_target_id >= 0
+			else board.get_unit_at(coord)
+		)
 		if crater_target != null and crater_target.team != actor.team:
 			crater_target.active_statuses.append(DataLibrary.make_status(
 				GameEnums.StatusType.BURN,

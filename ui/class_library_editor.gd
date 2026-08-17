@@ -2406,6 +2406,104 @@ func _add_module_typed_extras_editor(
 		module.create_trampled_terrain = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Blink", module.blink, func(v: bool) -> void:
+		module.blink = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Leave Elemental Surface", module.leave_elemental_surface, func(v: bool) -> void:
+		module.leave_elemental_surface = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Reaction Terrain", str(module.reaction_terrain), func(v: String) -> void:
+		module.reaction_terrain = StringName(v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Reaction Damage", module.reaction_damage, func(v: int) -> void:
+		module.reaction_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Surface Chain", module.bounce_surface_chain, func(v: bool) -> void:
+		module.bounce_surface_chain = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Lightning Surface", module.lightning_surface, func(v: bool) -> void:
+		module.lightning_surface = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Strike All Surface", module.strike_all_surface, func(v: bool) -> void:
+		module.strike_all_surface = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Teleport Visible", module.teleport_visible, func(v: bool) -> void:
+		module.teleport_visible = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Delayed Next Turn", module.delayed_next_turn, func(v: bool) -> void:
+		module.delayed_next_turn = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Create Crater", module.create_crater, func(v: bool) -> void:
+		module.create_crater = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Pull To Center", module.pull_to_center, func(v: bool) -> void:
+		module.pull_to_center = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Pull Surfaces", module.pull_surfaces, func(v: bool) -> void:
+		module.pull_surfaces = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Mana Shield", module.mana_shield, func(v: bool) -> void:
+		module.mana_shield = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Mana Shield Casting", module.mana_shield_casting, func(v: bool) -> void:
+		module.mana_shield_casting = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Destroy Corpse On Kill", module.destroy_corpse_on_kill, func(v: bool) -> void:
+		module.destroy_corpse_on_kill = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Kill Grant AP", module.kill_grant_ap, func(v: int) -> void:
+		module.kill_grant_ap = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Utility Only", module.utility_only, func(v: bool) -> void:
+		module.utility_only = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Elemental Surge", module.elemental_surge, func(v: bool) -> void:
+		module.elemental_surge = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Elemental Surge AP", module.elemental_surge_ap, func(v: int) -> void:
+		module.elemental_surge_ap = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Construct HP %", str(module.construct_hp_pct), func(v: String) -> void:
+		if v.is_valid_float():
+			module.construct_hp_pct = float(v)
+			_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Density Shift", module.density_shift, func(v: bool) -> void:
+		module.density_shift = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(grid, "Ignore Target MAG %", str(module.ignore_target_magic_pct), func(v: String) -> void:
+		if v.is_valid_float():
+			module.ignore_target_magic_pct = float(v)
+			_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Creation Adjacent Damage", module.creation_adjacent_damage, func(v: int) -> void:
+		module.creation_adjacent_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Apply WEAKEN Enemy", module.apply_weaken_enemy, func(v: bool) -> void:
+		module.apply_weaken_enemy = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -2662,6 +2760,46 @@ func _add_module_layers_editor(
 				if v.strip_edges().is_valid_float():
 					layer.range_one_damage_multiplier = maxf(0.0, float(v))
 					_on_module_field_edited(ability),
+		)
+		_bind_bool(grid, "Elemental Surface", layer.elemental_surface, func(v: bool) -> void:
+			layer.elemental_surface = v
+			_on_module_field_edited(ability)
+		)
+		_bind_string(grid, "Reaction Terrain", str(layer.reaction_terrain), func(v: String) -> void:
+			layer.reaction_terrain = StringName(v)
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Steam Splash", layer.reaction_steam_splash, func(v: bool) -> void:
+			layer.reaction_steam_splash = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Steam Splash Size", layer.reaction_steam_splash_size, func(v: int) -> void:
+			layer.reaction_steam_splash_size = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Steam Splash Damage", layer.reaction_steam_splash_damage, func(v: int) -> void:
+			layer.reaction_steam_splash_damage = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Set Max MOV", layer.set_max_move, func(v: int) -> void:
+			layer.set_max_move = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Arcane Trail", layer.arcane_trail, func(v: bool) -> void:
+			layer.arcane_trail = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Creation Adjacent Damage", layer.creation_adjacent_damage, func(v: int) -> void:
+			layer.creation_adjacent_damage = v
+			_on_module_field_edited(ability)
+		)
+		_bind_string(grid, "Terrain ID", str(layer.terrain_id), func(v: String) -> void:
+			layer.terrain_id = StringName(v)
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Hazard Duration", layer.hazard_duration, func(v: int) -> void:
+			layer.hazard_duration = v
+			_on_module_field_edited(ability)
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v

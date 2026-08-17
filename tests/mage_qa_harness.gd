@@ -310,6 +310,7 @@ static func run_bible_parity_cluster(failures: Array[String]) -> void:
 	run_arcane_overchannel(failures)
 	_bible_elementalist_lightning(failures)
 	_bible_fireball_steam(failures)
+	_bible_ice_shard_steam(failures)
 	_bible_arcane_trail_mag(failures)
 	_bible_meteor_delay(failures)
 	_bible_black_hole_center(failures)
@@ -583,53 +584,73 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 	var effects := ability.upgraded_effects
 	match ability.id:
 		&"mage_blink":
-			_assert(failures, "upgrade/mage_blink/surface", effects[0].modifiers.get("leave_elemental_surface", false))
+			_assert(failures, "upgrade/mage_blink/surface", ability.upgraded_modules[0].leave_elemental_surface)
 		&"mage_fireball":
 			_assert(
 				failures,
 				"upgrade/mage_fireball/steam_splash",
-				_has_reaction_steam_splash(ability.upgraded_effects),
+				_has_reaction_steam_splash_layers(ability.upgraded_modules),
 			)
 			_assert(
 				failures,
 				"upgrade/mage_fireball/no_base_steam",
-				not _has_reaction_steam_splash(ability.effects),
+				not _has_reaction_steam_splash_layers(ability.modules),
 			)
 		&"mage_ice_shard":
-			_assert(failures, "upgrade/mage_ice_shard/steam", effects[0].modifiers.get("reaction_terrain", &"") == &"fire")
+			var ice_layers: Array[AbilityLayer] = ability.upgraded_modules[0].layers
+			var has_fire_reaction := false
+			for layer: AbilityLayer in ice_layers:
+				if layer != null and layer.reaction_terrain == &"fire":
+					has_fire_reaction = true
+					break
+			_assert(failures, "upgrade/mage_ice_shard/steam", has_fire_reaction)
+			var base_has_fire_reaction := false
+			for layer: AbilityLayer in ability.modules[0].layers:
+				if layer != null and layer.reaction_terrain == &"fire":
+					base_has_fire_reaction = true
+					break
+			_assert(failures, "upgrade/mage_ice_shard/no_base_fire_reaction", not base_has_fire_reaction)
 			_assert(failures, "upgrade/mage_ice_shard/aoe", ability.upgraded_modules[0].target_shape_size == 1)
 			_assert(
 				failures,
 				"upgrade/mage_ice_shard/steam_splash",
-				_has_reaction_steam_splash(ability.upgraded_effects),
+				_has_reaction_steam_splash_layers(ability.upgraded_modules),
 			)
 		&"mage_chain_lightning":
-			_assert(failures, "upgrade/mage_chain_lightning/surface", effects[0].modifiers.get("strike_all_surface", false))
+			_assert(failures, "upgrade/mage_chain_lightning/surface", ability.upgraded_modules[0].strike_all_surface)
 		&"mage_arcane_push":
-			_assert(failures, "upgrade/mage_arcane_push/trail", effects[2].modifiers.get("arcane_trail", false))
+			_assert(
+				failures,
+				"upgrade/mage_arcane_push/trail",
+				_has_arcane_trail_layer(ability.upgraded_modules),
+			)
 		&"mage_teleport":
 			_assert(failures, "upgrade/mage_teleport/shield", effects[1].type == GameEnums.EffectType.ARMOR_UP)
 		&"mage_meteor":
-			_assert(failures, "upgrade/mage_meteor/crater", effects[0].modifiers.get("create_crater", false))
+			_assert(failures, "upgrade/mage_meteor/crater", ability.upgraded_modules[0].create_crater)
 		&"mage_black_hole":
-			_assert(failures, "upgrade/mage_black_hole/surfaces", effects[0].modifiers.get("pull_surfaces", false))
+			_assert(failures, "upgrade/mage_black_hole/surfaces", ability.upgraded_modules[0].pull_surfaces)
 		&"mage_time_warp":
 			_assert(failures, "upgrade/mage_time_warp/grant_ap", effects.size() >= 2 and effects[1].type == GameEnums.EffectType.GRANT_AP)
 			_assert(failures, "upgrade/mage_time_warp/mov", effects.size() >= 3 and effects[2].status_type == GameEnums.StatusType.STAT_BUFF_MOV)
 		&"mage_mana_shield":
-			_assert(failures, "upgrade/mage_mana_shield/casting", effects[0].modifiers.get("mana_shield_casting", false))
+			_assert(failures, "upgrade/mage_mana_shield/casting", ability.upgraded_modules[0].mana_shield_casting)
 		&"mage_disintegrate":
-			_assert(failures, "upgrade/mage_disintegrate/ap", effects[0].modifiers.get("kill_grant_ap", 0) == 1)
+			_assert(failures, "upgrade/mage_disintegrate/ap", ability.upgraded_modules[0].kill_grant_ap == 1)
 		&"mage_gravity_well":
 			_assert(failures, "upgrade/mage_gravity_well/blind", effects.size() == 2 and effects[1].status_type == GameEnums.StatusType.BLIND)
 		&"mage_elemental_surge":
-			_assert(failures, "upgrade/mage_elemental_surge/ap", effects[0].modifiers.get("elemental_surge_ap", 0) == 1)
+			_assert(failures, "upgrade/mage_elemental_surge/ap", ability.upgraded_modules[0].elemental_surge_ap == 1)
 		&"mage_earth_spike":
-			_assert(failures, "upgrade/mage_earth_spike/adjacent_damage", effects[0].modifiers.get("creation_adjacent_damage", 0) == 1)
+			_assert(failures, "upgrade/mage_earth_spike/adjacent_damage", ability.upgraded_modules[0].creation_adjacent_damage == 1)
 		&"mage_density_shift":
-			_assert(failures, "upgrade/mage_density_shift/weaken", effects[0].modifiers.get("apply_weaken_enemy", false))
+			_assert(failures, "upgrade/mage_density_shift/weaken", ability.upgraded_modules[0].apply_weaken_enemy)
 		&"mage_arcane_barrage":
-			_assert(failures, "upgrade/mage_arcane_barrage/pierce", effects[0].modifiers.get("ignore_target_magic_pct", 0.0) == 0.25)
+			_assert(
+				failures,
+				"upgrade/mage_arcane_barrage/pierce",
+				is_equal_approx(ability.upgraded_modules[0].ignore_target_magic_pct, 0.25),
+			)
 
 static func _bible_elementalist_lightning(failures: Array[String]) -> void:
 	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
@@ -674,6 +695,32 @@ static func _bible_fireball_steam(failures: Array[String]) -> void:
 	_assert(
 		failures,
 		"bible/fireball/steam_splash",
+		splash.health.current_hp < splash_hp,
+	)
+
+
+static func _bible_ice_shard_steam(failures: Array[String]) -> void:
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var board := _plain_board(Vector2i(10, 8))
+	var mage := _place_mage(board, 1, Vector2i(2, 3), &"mage_ice_shard")
+	mage.upgraded_abilities.append(&"mage_ice_shard")
+	var fire := Vector2i(4, 3)
+	board.tiles[fire] = TileState.create(fire, DataLibrary.get_terrain(&"fire"))
+	_place_dummy(board, 3, fire)
+	var splash := _place_dummy(board, 4, Vector2i(5, 4))
+	var splash_hp := splash.health.current_hp
+	var ice_shard := _ability(mage_def, &"mage_ice_shard")
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, ice_shard, fire, 3))
+	_player_turn(board, plan)
+	_assert(
+		failures,
+		"bible/ice_shard/steam",
+		board.get_tile(fire).definition.id == &"steam",
+	)
+	_assert(
+		failures,
+		"bible/ice_shard/steam_splash",
 		splash.health.current_hp < splash_hp,
 	)
 
@@ -729,16 +776,32 @@ static func _bible_meteor_delay(failures: Array[String]) -> void:
 	var crater_board := _plain_board(Vector2i(10, 8))
 	var crater_mage := _place_mage(crater_board, 1, Vector2i(2, 3), &"mage_meteor")
 	crater_mage.upgraded_abilities.append(&"mage_meteor")
-	_place_dummy(crater_board, 3, Vector2i(4, 3))
+	var crater_target := _place_dummy(crater_board, 3, Vector2i(4, 3))
+	crater_target.health.max_hp = 100
+	crater_target.health.current_hp = 100
 	var crater_plan := Timeline.new()
 	crater_plan.add(TimelineAction.make_ability(1, meteor, Vector2i(4, 3), 3))
 	_player_turn(crater_board, crater_plan)
-	_player_turn(crater_board, Timeline.new())
+	var crater_result := _player_turn(crater_board, Timeline.new())
 	_assert(
 		failures,
 		"bible/meteor/crater",
 		crater_board.get_tile(Vector2i(4, 3)).definition.id == &"crater",
 	)
+	var crater_dummy := crater_board.get_unit_by_id(3)
+	var resolved_crater_mage := crater_board.get_unit_by_id(1)
+	var crater_burn := false
+	if crater_dummy != null and resolved_crater_mage != null:
+		for event: SimEvent in crater_result.events:
+			if (
+				event.type == GameEnums.SimEventType.STATUS_APPLIED
+				and int(event.data.get("unit", -1)) == 3
+				and int(event.data.get("status_type", -1)) == GameEnums.StatusType.BURN
+				and int(event.data.get("amount", 0)) == resolved_crater_mage.current_magic
+			):
+				crater_burn = true
+				break
+	_assert(failures, "bible/meteor/crater_burn_mag", crater_burn)
 
 
 static func _bible_black_hole_center(failures: Array[String]) -> void:
@@ -900,10 +963,23 @@ static func _events_have_ability(events: Array[SimEvent], ability_id: StringName
 			return true
 	return false
 
-static func _has_reaction_steam_splash(effects: Array) -> bool:
-	for effect in effects:
-		if effect is EffectData and effect.modifiers.get("reaction_steam_splash", false):
-			return true
+static func _has_reaction_steam_splash_layers(modules: Array[AbilityModule]) -> bool:
+	for module: AbilityModule in modules:
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.reaction_steam_splash:
+				return true
+	return false
+
+
+static func _has_arcane_trail_layer(modules: Array[AbilityModule]) -> bool:
+	for module: AbilityModule in modules:
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.arcane_trail:
+				return true
 	return false
 
 

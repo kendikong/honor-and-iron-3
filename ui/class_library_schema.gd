@@ -699,6 +699,16 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"crossing_blind": src.crossing_blind,
 		"trap_def_debuff": src.trap_def_debuff,
 		"range_one_damage_multiplier": src.range_one_damage_multiplier,
+		"elemental_surface": src.elemental_surface,
+		"reaction_terrain": src.reaction_terrain,
+		"reaction_steam_splash": src.reaction_steam_splash,
+		"reaction_steam_splash_size": src.reaction_steam_splash_size,
+		"reaction_steam_splash_damage": src.reaction_steam_splash_damage,
+		"set_max_move": src.set_max_move,
+		"arcane_trail": src.arcane_trail,
+		"creation_adjacent_damage": src.creation_adjacent_damage,
+		"terrain_id": src.terrain_id,
+		"hazard_duration": src.hazard_duration,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -739,6 +749,22 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.range_one_damage_multiplier = float(
 		data.get("range_one_damage_multiplier", layer.range_one_damage_multiplier)
 	)
+	layer.elemental_surface = bool(data.get("elemental_surface", layer.elemental_surface))
+	layer.reaction_terrain = StringName(str(data.get("reaction_terrain", String(layer.reaction_terrain))))
+	layer.reaction_steam_splash = bool(data.get("reaction_steam_splash", layer.reaction_steam_splash))
+	layer.reaction_steam_splash_size = int(
+		data.get("reaction_steam_splash_size", layer.reaction_steam_splash_size)
+	)
+	layer.reaction_steam_splash_damage = int(
+		data.get("reaction_steam_splash_damage", layer.reaction_steam_splash_damage)
+	)
+	layer.set_max_move = int(data.get("set_max_move", layer.set_max_move))
+	layer.arcane_trail = bool(data.get("arcane_trail", layer.arcane_trail))
+	layer.creation_adjacent_damage = int(
+		data.get("creation_adjacent_damage", layer.creation_adjacent_damage)
+	)
+	layer.terrain_id = StringName(str(data.get("terrain_id", String(layer.terrain_id))))
+	layer.hazard_duration = int(data.get("hazard_duration", layer.hazard_duration))
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -858,6 +884,30 @@ static func module_to_dict(
 		"line_breaker": src.line_breaker,
 		"bonus_per_enemy_passed": src.bonus_per_enemy_passed,
 		"create_trampled_terrain": src.create_trampled_terrain,
+		"blink": src.blink,
+		"leave_elemental_surface": src.leave_elemental_surface,
+		"reaction_terrain": src.reaction_terrain,
+		"reaction_damage": src.reaction_damage,
+		"bounce_surface_chain": src.bounce_surface_chain,
+		"lightning_surface": src.lightning_surface,
+		"strike_all_surface": src.strike_all_surface,
+		"teleport_visible": src.teleport_visible,
+		"delayed_next_turn": src.delayed_next_turn,
+		"create_crater": src.create_crater,
+		"pull_to_center": src.pull_to_center,
+		"pull_surfaces": src.pull_surfaces,
+		"mana_shield": src.mana_shield,
+		"mana_shield_casting": src.mana_shield_casting,
+		"destroy_corpse_on_kill": src.destroy_corpse_on_kill,
+		"kill_grant_ap": src.kill_grant_ap,
+		"utility_only": src.utility_only,
+		"elemental_surge": src.elemental_surge,
+		"elemental_surge_ap": src.elemental_surge_ap,
+		"construct_hp_pct": src.construct_hp_pct,
+		"density_shift": src.density_shift,
+		"ignore_target_magic_pct": src.ignore_target_magic_pct,
+		"creation_adjacent_damage": src.creation_adjacent_damage,
+		"apply_weaken_enemy": src.apply_weaken_enemy,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1074,6 +1124,34 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.create_trampled_terrain = bool(
 		data.get("create_trampled_terrain", dst.create_trampled_terrain)
 	)
+	dst.blink = bool(data.get("blink", dst.blink))
+	dst.leave_elemental_surface = bool(data.get("leave_elemental_surface", dst.leave_elemental_surface))
+	dst.reaction_terrain = StringName(str(data.get("reaction_terrain", String(dst.reaction_terrain))))
+	dst.reaction_damage = int(data.get("reaction_damage", dst.reaction_damage))
+	dst.bounce_surface_chain = bool(data.get("bounce_surface_chain", dst.bounce_surface_chain))
+	dst.lightning_surface = bool(data.get("lightning_surface", dst.lightning_surface))
+	dst.strike_all_surface = bool(data.get("strike_all_surface", dst.strike_all_surface))
+	dst.teleport_visible = bool(data.get("teleport_visible", dst.teleport_visible))
+	dst.delayed_next_turn = bool(data.get("delayed_next_turn", dst.delayed_next_turn))
+	dst.create_crater = bool(data.get("create_crater", dst.create_crater))
+	dst.pull_to_center = bool(data.get("pull_to_center", dst.pull_to_center))
+	dst.pull_surfaces = bool(data.get("pull_surfaces", dst.pull_surfaces))
+	dst.mana_shield = bool(data.get("mana_shield", dst.mana_shield))
+	dst.mana_shield_casting = bool(data.get("mana_shield_casting", dst.mana_shield_casting))
+	dst.destroy_corpse_on_kill = bool(data.get("destroy_corpse_on_kill", dst.destroy_corpse_on_kill))
+	dst.kill_grant_ap = int(data.get("kill_grant_ap", dst.kill_grant_ap))
+	dst.utility_only = bool(data.get("utility_only", dst.utility_only))
+	dst.elemental_surge = bool(data.get("elemental_surge", dst.elemental_surge))
+	dst.elemental_surge_ap = int(data.get("elemental_surge_ap", dst.elemental_surge_ap))
+	dst.construct_hp_pct = float(data.get("construct_hp_pct", dst.construct_hp_pct))
+	dst.density_shift = bool(data.get("density_shift", dst.density_shift))
+	dst.ignore_target_magic_pct = float(
+		data.get("ignore_target_magic_pct", dst.ignore_target_magic_pct)
+	)
+	dst.creation_adjacent_damage = int(
+		data.get("creation_adjacent_damage", dst.creation_adjacent_damage)
+	)
+	dst.apply_weaken_enemy = bool(data.get("apply_weaken_enemy", dst.apply_weaken_enemy))
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

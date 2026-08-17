@@ -546,6 +546,30 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.next_attack_strength = from_module.next_attack_strength
 	to_module.next_attack_bleed_weapon = from_module.next_attack_bleed_weapon
 	to_module.next_turn = from_module.next_turn
+	to_module.blink = from_module.blink
+	to_module.leave_elemental_surface = from_module.leave_elemental_surface
+	to_module.reaction_terrain = from_module.reaction_terrain
+	to_module.reaction_damage = from_module.reaction_damage
+	to_module.bounce_surface_chain = from_module.bounce_surface_chain
+	to_module.lightning_surface = from_module.lightning_surface
+	to_module.strike_all_surface = from_module.strike_all_surface
+	to_module.teleport_visible = from_module.teleport_visible
+	to_module.delayed_next_turn = from_module.delayed_next_turn
+	to_module.create_crater = from_module.create_crater
+	to_module.pull_to_center = from_module.pull_to_center
+	to_module.pull_surfaces = from_module.pull_surfaces
+	to_module.mana_shield = from_module.mana_shield
+	to_module.mana_shield_casting = from_module.mana_shield_casting
+	to_module.destroy_corpse_on_kill = from_module.destroy_corpse_on_kill
+	to_module.kill_grant_ap = from_module.kill_grant_ap
+	to_module.utility_only = from_module.utility_only
+	to_module.elemental_surge = from_module.elemental_surge
+	to_module.elemental_surge_ap = from_module.elemental_surge_ap
+	to_module.construct_hp_pct = from_module.construct_hp_pct
+	to_module.density_shift = from_module.density_shift
+	to_module.ignore_target_magic_pct = from_module.ignore_target_magic_pct
+	to_module.creation_adjacent_damage = from_module.creation_adjacent_damage
+	to_module.apply_weaken_enemy = from_module.apply_weaken_enemy
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

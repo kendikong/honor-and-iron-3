@@ -49,6 +49,22 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"lancer_line_breaker",
 	&"lancer_spear_wall",
 	&"lancer_meteor_drop",
+	&"mage_blink",
+	&"mage_fireball",
+	&"mage_ice_shard",
+	&"mage_chain_lightning",
+	&"mage_arcane_push",
+	&"mage_teleport",
+	&"mage_meteor",
+	&"mage_black_hole",
+	&"mage_time_warp",
+	&"mage_mana_shield",
+	&"mage_disintegrate",
+	&"mage_gravity_well",
+	&"mage_elemental_surge",
+	&"mage_earth_spike",
+	&"mage_density_shift",
+	&"mage_arcane_barrage",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -387,9 +403,9 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"exclude_caster":
 			return module.exclude_caster
 		"terrain_id":
-			return module.terrain_id != StringName()
+			return module.terrain_id != StringName() or layer.terrain_id != StringName()
 		"hazard_duration":
-			return module.hazard_duration != 0
+			return module.hazard_duration != 0 or layer.hazard_duration != 0
 		"hazard_status":
 			return module.hazard_status != GameEnums.StatusType.NONE
 		"bonus_dmg_from_occupied":
@@ -515,6 +531,72 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.landing_adjacent_push_stagger
 		"bonus_per_enemy_passed":
 			return module.bonus_per_enemy_passed != 0
+		"blink":
+			return module.blink
+		"leave_elemental_surface":
+			return module.leave_elemental_surface
+		"reaction_terrain":
+			return module.reaction_terrain != StringName() or layer.reaction_terrain != StringName()
+		"reaction_damage":
+			return module.reaction_damage != 0
+		"surface_chain":
+			return module.bounce_surface_chain
+		"lightning":
+			return module.lightning_surface
+		"strike_all_surface":
+			return module.strike_all_surface
+		"teleport_visible":
+			return module.teleport_visible
+		"delayed_next_turn":
+			return module.delayed_next_turn
+		"create_crater":
+			return module.create_crater
+		"pull_to_center":
+			return module.pull_to_center
+		"pull_surfaces":
+			return module.pull_surfaces
+		"mana_shield":
+			return module.mana_shield
+		"mana_shield_casting":
+			return module.mana_shield_casting
+		"destroy_corpse_on_kill":
+			return module.destroy_corpse_on_kill
+		"kill_grant_ap":
+			return module.kill_grant_ap != 0
+		"utility_only":
+			return module.utility_only
+		"elemental_surge":
+			return module.elemental_surge
+		"elemental_surge_ap":
+			return module.elemental_surge_ap != 0
+		"construct_hp_pct":
+			return not is_zero_approx(module.construct_hp_pct)
+		"density_shift":
+			return module.density_shift
+		"ignore_target_magic_pct":
+			return not is_zero_approx(module.ignore_target_magic_pct)
+		"creation_adjacent_damage":
+			return module.creation_adjacent_damage != 0 or layer.creation_adjacent_damage != 0
+		"apply_weaken_enemy":
+			return module.apply_weaken_enemy
+		"elemental_surface":
+			return layer.elemental_surface
+		"reaction_steam_splash":
+			return layer.reaction_steam_splash
+		"reaction_steam_splash_size":
+			return layer.reaction_steam_splash_size != 0
+		"reaction_steam_splash_damage":
+			return layer.reaction_steam_splash_damage != 0
+		"set_max_move":
+			return layer.set_max_move != 0
+		"arcane_trail":
+			return layer.arcane_trail
+		"creation_adjacent_damage":
+			return layer.creation_adjacent_damage != 0
+		"terrain_id":
+			return module.terrain_id != StringName() or layer.terrain_id != StringName()
+		"hazard_duration":
+			return module.hazard_duration != 0 or layer.hazard_duration != 0
 		"strip_stealth":
 			return module.strip_stealth
 		"object_collision_stagger":
