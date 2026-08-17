@@ -40,7 +40,7 @@ No bible quote in the changelog → the conversion did not happen.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → Bruiser → Lancer → Archer → Mercenary → Monk → Rogue → Beast Rider → Cleric → Mage → Engineer → Shaman). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every matrix row converted; contract test PASS |
+| **ER-2** | Convert class by class (Knight → … → Shaman). Skip **Rework skill** rows (Action relocates). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; blocked rows still marked Rework |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
@@ -54,13 +54,14 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Header | Cost, once-per-turn, skip-Action, delay |
 | Module primary | The verb. Pick a **family** in the conversion plan (Attack, Movement (Self), Forced Movement, Move someone, Hazard, Summon, Status, Heal, Shield, Stance, Resource). Types grow inside a family. Riders are fields/layers, not new families. |
 | Keyword | TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO |
-| Layer + condition | Extra punch on the same targets |
+| Layer + condition | Extra punch on the **same click**. New click = new module. |
 | Gate | Whether a module runs |
 | Targeting / Condition | Who you may click |
 | Typed field on an existing punch | Hazard / spawn knobs, bounce, … |
 | New EffectType / StatusType / LayerCondition | Only if nothing above fits. Grow the dropdown. |
 
 **Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**, relocating someone on **Action** (not PUSH/PULL).  
+**Blocked until rewritten (skip in ER-2):** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag.  
 **Out of scope:** passives (until owner asks).
 
 ### Module primary families (reference)
