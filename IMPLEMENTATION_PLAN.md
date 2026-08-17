@@ -440,25 +440,27 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] Mage class gate: `run_mage_qa_gate.ps1`.
 - [x] Mage live gate: `run_mage_live_qa.ps1`.
 
-#### 11. Engineer
+#### 11. Engineer — converted; gauntlet PASS (87/100)
 
-- [ ] `engineer_recall`
-- [ ] `engineer_dismantle`
-- [ ] `engineer_sludge_bomb`
-- [ ] `engineer_construct_turret`
-- [ ] `engineer_frag_bomb`
-- [ ] `engineer_magnetic_mine`
-- [ ] `engineer_tesla_barricade`
-- [ ] `engineer_flak_cannon`
-- [ ] `engineer_wrench_smack`
-- [ ] `engineer_emp_grenade`
-- [ ] `engineer_rocket_launcher`
-- [ ] `engineer_scrap_shield`
-- [ ] `engineer_manual_detonation`
-- [ ] `engineer_overdrive_injection`
-- [ ] `engineer_barbed_wire`
-- [ ] Engineer class gate: `run_engineer_qa_gate.ps1`.
-- [ ] Engineer live gate: `run_engineer_live_qa.ps1`.
+- [x] `engineer_recall`
+- [x] `engineer_dismantle`
+- [x] `engineer_sludge_bomb`
+- [x] `engineer_construct_turret`
+- [x] `engineer_frag_bomb`
+- [x] `engineer_magnetic_mine`
+- [x] `engineer_tesla_barricade`
+- [x] `engineer_flak_cannon`
+- [x] `engineer_wrench_smack`
+- [x] `engineer_emp_grenade`
+- [x] `engineer_rocket_launcher`
+- [x] `engineer_scrap_shield`
+- [x] `engineer_manual_detonation`
+- [x] `engineer_overdrive_injection`
+- [x] `engineer_barbed_wire`
+- [x] Engineer class gate: `run_engineer_qa_gate.ps1` — PASS.
+- [x] Engineer live gate: `run_engineer_live_qa.ps1` — PASS.
+- [x] Engineer typed schema contract and Extra Rules conversion contract — PASS.
+- [x] Harsh gauntlet critic — PASS, 87/100.
 
 #### 12. Shaman
 

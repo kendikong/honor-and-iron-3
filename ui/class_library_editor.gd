@@ -2804,6 +2804,12 @@ func _add_typed_module_bindings(
 		"pounce_land_adjacent", "feral_drag", "drag_remaining_movement",
 		"redirect_incoming_damage", "drop_adjacent", "does_not_consume_action_slot",
 		"purge_buffs", "run_down_push_bleed_weapon", "airlift_keep_caster",
+		"arrival_overclock", "ignite_oil_area", "construct_spawn", "ignite_oil",
+		"mine_explode", "absorbs_items_scrap", "tesla_wall", "manual_detonation_stagger",
+		"scrap_bleed_weapon", "wrench_smack", "emp_grenade",
+		"emp_friendly_construct_overclock", "rocket_launcher", "exhaust_next_turn",
+		"sacrifice_construct_instant", "scrap_shield", "shield_depletion_explode",
+		"manual_detonation", "overdrive_injection", "barbed_wire", "entry_root",
 	]:
 		_bind_bool(grid, field_name, bool(module.get(field_name)), func(value: bool) -> void:
 			module.set(field_name, value)
@@ -2821,12 +2827,18 @@ func _add_typed_module_bindings(
 		"on_kill_shield", "run_down_pass_adjacent_push", "trample_atk",
 		"intercept_push_attacker", "airlift_pickup_step", "airlift_drop_step",
 		"airlift_ally_attack_strength",
+		"on_hit_scrap", "turret_attack", "on_death_adjacent_damage",
+		"construct_destruction_refund_ap", "mine_pull", "mine_damage",
+		"scrap_attack_bonus", "wrench_strength_bonus", "mechanical_boss_damage_wpn",
+		"emp_friendly_construct_heal", "scrap_multiplier", "refund_scrap",
+		"construct_unmitigated_damage", "refund_scrap_on_construct_death",
+		"adjacent_defense_bonus",
 	]:
 		_bind_int(grid, field_name, int(module.get(field_name)), func(value: int) -> void:
 			module.set(field_name, value)
 			_on_module_field_edited(ability)
 		)
-	for field_name: String in ["drop_trap_damage_multiplier"]:
+	for field_name: String in ["drop_trap_damage_multiplier", "target_def_pct_loss"]:
 		_bind_float(grid, field_name, float(module.get(field_name)), func(value: float) -> void:
 			module.set(field_name, value)
 			_on_module_field_edited(ability)
@@ -2893,6 +2905,10 @@ func _add_typed_layer_bindings(
 	)
 	_bind_bool(grid, "wall_collision_stagger", layer.wall_collision_stagger, func(value: bool) -> void:
 		layer.wall_collision_stagger = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "oil_field", layer.oil_field, func(value: bool) -> void:
+		layer.oil_field = value
 		_on_module_field_edited(ability)
 	)
 

@@ -66,6 +66,7 @@ extends Resource
 @export var status_requires_debuff: bool = false
 @export var cone_all_targets: bool = false
 @export var wall_collision_stagger: bool = false
+@export var oil_field: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -182,6 +183,8 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["cone_all_targets"] = true
 	if wall_collision_stagger:
 		modifiers["wall_collision_stagger"] = true
+	if oil_field:
+		modifiers["oil_field"] = true
 	return modifiers
 
 
@@ -299,3 +302,5 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			cone_all_targets = bool(value)
 		"wall_collision_stagger":
 			wall_collision_stagger = bool(value)
+		"oil_field":
+			oil_field = bool(value)

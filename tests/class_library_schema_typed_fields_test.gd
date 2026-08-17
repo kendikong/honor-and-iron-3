@@ -118,6 +118,7 @@ static func run_all(failures: Array[String]) -> void:
 	source.redirect_incoming_damage = true
 	source.drop_adjacent = true
 	source.does_not_consume_action_slot = true
+	source.limit_once_per_turn = true
 	source.drop_trap_damage_multiplier = 2.0
 	source.pull_before_attack = 1
 	source.purge_buffs = true
@@ -130,6 +131,43 @@ static func run_all(failures: Array[String]) -> void:
 	source.airlift_drop_step = 3
 	source.airlift_keep_caster = true
 	source.airlift_ally_attack_strength = 1
+	source.arrival_overclock = true
+	source.target_def_pct_loss = 0.25
+	source.on_hit_scrap = 1
+	source.ignite_oil_area = true
+	source.construct_spawn = true
+	source.turret_attack = 1
+	source.on_death_adjacent_damage = 2
+	source.ignite_oil = true
+	source.construct_destruction_refund_ap = 1
+	source.mine_pull = 2
+	source.mine_damage = 2
+	source.mine_explode = true
+	source.absorbs_items_scrap = true
+	source.tesla_wall = true
+	source.manual_detonation_stagger = true
+	source.scrap_attack_bonus = 2
+	source.scrap_bleed_weapon = true
+	source.wrench_smack = true
+	source.wrench_strength_bonus = 1
+	source.emp_grenade = true
+	source.mechanical_boss_damage_wpn = 3
+	source.emp_friendly_construct_heal = 2
+	source.emp_friendly_construct_overclock = true
+	source.rocket_launcher = true
+	source.exhaust_next_turn = true
+	source.sacrifice_construct_instant = true
+	source.scrap_shield = true
+	source.scrap_multiplier = 2
+	source.shield_depletion_explode = true
+	source.manual_detonation = true
+	source.refund_scrap = 1
+	source.overdrive_injection = true
+	source.construct_unmitigated_damage = 2
+	source.refund_scrap_on_construct_death = 1
+	source.barbed_wire = true
+	source.entry_root = true
+	source.adjacent_defense_bonus = 1
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -173,7 +211,13 @@ static func run_all(failures: Array[String]) -> void:
 	layer.status_requires_debuff = true
 	layer.cone_all_targets = true
 	layer.wall_collision_stagger = true
+	layer.oil_field = true
 	source.layers.append(layer)
+	var engineer_layer := AbilityLayer.new()
+	engineer_layer.terrain_id = &"oil"
+	engineer_layer.hazard_duration = 3
+	engineer_layer.oil_field = true
+	source.layers.append(engineer_layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
 	schema.call("apply_module_dict", restored, encoded)
@@ -312,7 +356,59 @@ static func run_all(failures: Array[String]) -> void:
 		restored.layers[0].landing_push == 1
 		and restored.layers[0].status_requires_debuff
 		and restored.layers[0].cone_all_targets
-		and restored.layers[0].wall_collision_stagger,
+		and restored.layers[0].wall_collision_stagger
+		and restored.layers[0].oil_field,
+	)
+	_assert(
+		failures,
+		"engineer_layer_schema_fields",
+		restored.layers.size() > 1
+		and restored.layers[1].terrain_id == &"oil"
+		and restored.layers[1].hazard_duration == 3
+		and restored.layers[1].oil_field,
+	)
+	_assert(
+		failures,
+		"engineer_module_typed_fields",
+		restored.does_not_consume_action_slot
+		and restored.limit_once_per_turn
+		and restored.arrival_overclock
+		and is_equal_approx(restored.target_def_pct_loss, 0.25)
+		and restored.on_hit_scrap == 1
+		and restored.ignite_oil_area
+		and restored.construct_spawn
+		and restored.turret_attack == 1
+		and restored.on_death_adjacent_damage == 2
+		and restored.ignite_oil
+		and restored.construct_destruction_refund_ap == 1
+		and restored.mine_pull == 2
+		and restored.mine_damage == 2
+		and restored.mine_explode
+		and restored.absorbs_items_scrap
+		and restored.tesla_wall
+		and restored.manual_detonation_stagger
+		and restored.scrap_attack_bonus == 2
+		and restored.scrap_bleed_weapon
+		and restored.wrench_smack
+		and restored.wrench_strength_bonus == 1
+		and restored.emp_grenade
+		and restored.mechanical_boss_damage_wpn == 3
+		and restored.emp_friendly_construct_heal == 2
+		and restored.emp_friendly_construct_overclock
+		and restored.rocket_launcher
+		and restored.exhaust_next_turn
+		and restored.sacrifice_construct_instant
+		and restored.scrap_shield
+		and restored.scrap_multiplier == 2
+		and restored.shield_depletion_explode
+		and restored.manual_detonation
+		and restored.refund_scrap == 1
+		and restored.overdrive_injection
+		and restored.construct_unmitigated_damage == 2
+		and restored.refund_scrap_on_construct_death == 1
+		and restored.barbed_wire
+		and restored.entry_root
+		and restored.adjacent_defense_bonus == 1,
 	)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
@@ -400,11 +496,32 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(
 		failures,
 		"copy_beast_rider_layer_typed_fields",
-		copied_beast_module.layers.size() == 1
+		copied_beast_module.layers.size() >= 1
 		and copied_beast_module.layers[0].landing_push == 1
 		and copied_beast_module.layers[0].status_requires_debuff
 		and copied_beast_module.layers[0].cone_all_targets
 		and copied_beast_module.layers[0].wall_collision_stagger,
+	)
+	_assert(
+		failures,
+		"copy_engineer_typed_fields",
+		copied.arrival_overclock
+		and is_equal_approx(copied.target_def_pct_loss, 0.25)
+		and copied.construct_spawn
+		and copied.turret_attack == 1
+		and copied.mine_pull == 2
+		and copied.mine_damage == 2
+		and copied.mine_explode
+		and copied.scrap_attack_bonus == 2
+		and copied.scrap_bleed_weapon
+		and copied.emp_grenade
+		and copied.rocket_launcher
+		and copied.sacrifice_construct_instant
+		and copied.scrap_shield
+		and copied.manual_detonation
+		and copied.overdrive_injection
+		and copied.barbed_wire
+		and copied.adjacent_defense_bonus == 1,
 	)
 
 

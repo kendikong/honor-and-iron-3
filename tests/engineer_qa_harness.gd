@@ -555,6 +555,7 @@ static func _data_contract(
 	match ability_id:
 		&"engineer_recall":
 			_assert(failures, "%s/data/mp_cost" % ability_id, ability.movement_point_cost == 3)
+			_assert(failures, "%s/data/upgraded_mp_cost" % ability_id, ability.get_active_primary_value(true) == 2)
 			_assert(failures, "%s/data/teleport" % ability_id, module.primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO)
 			_assert(failures, "%s/data/recall_modifier" % ability_id, module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT and module.target_filter_occupant == GameEnums.ModuleTargetFilterOccupant.ADJACENT_CONSTRUCT)
 		&"engineer_dismantle":
@@ -593,6 +594,11 @@ static func _data_contract(
 			_assert(failures, "%s/data/scrap_modifier" % ability_id, module.runtime_value("scrap_multiplier", 0) == 2)
 		&"engineer_manual_detonation":
 			_assert(failures, "%s/data/free_ap" % ability_id, ability.action_point_cost == 0)
+			_assert(
+				failures,
+				"%s/data/action_slot_economy" % ability_id,
+				module.does_not_consume_action_slot and module.limit_once_per_turn,
+			)
 			_assert(failures, "%s/data/explosion" % ability_id, module.primary_type == GameEnums.EffectType.RANGED_EXPLODE)
 		&"engineer_overdrive_injection":
 			_assert(failures, "%s/data/strength" % ability_id, module.primary_type == GameEnums.EffectType.ADD_STATUS and module.amount == 2)

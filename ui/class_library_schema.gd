@@ -738,6 +738,7 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"status_requires_debuff": src.status_requires_debuff,
 		"cone_all_targets": src.cone_all_targets,
 		"wall_collision_stagger": src.wall_collision_stagger,
+		"oil_field": src.oil_field,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -851,6 +852,7 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.wall_collision_stagger = bool(
 		data.get("wall_collision_stagger", layer.wall_collision_stagger)
 	)
+	layer.oil_field = bool(data.get("oil_field", layer.oil_field))
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -1155,6 +1157,43 @@ static func module_to_dict(
 		"airlift_drop_step": src.airlift_drop_step,
 		"airlift_keep_caster": src.airlift_keep_caster,
 		"airlift_ally_attack_strength": src.airlift_ally_attack_strength,
+		"arrival_overclock": src.arrival_overclock,
+		"target_def_pct_loss": src.target_def_pct_loss,
+		"on_hit_scrap": src.on_hit_scrap,
+		"ignite_oil_area": src.ignite_oil_area,
+		"construct_spawn": src.construct_spawn,
+		"turret_attack": src.turret_attack,
+		"on_death_adjacent_damage": src.on_death_adjacent_damage,
+		"ignite_oil": src.ignite_oil,
+		"construct_destruction_refund_ap": src.construct_destruction_refund_ap,
+		"mine_pull": src.mine_pull,
+		"mine_damage": src.mine_damage,
+		"mine_explode": src.mine_explode,
+		"absorbs_items_scrap": src.absorbs_items_scrap,
+		"tesla_wall": src.tesla_wall,
+		"manual_detonation_stagger": src.manual_detonation_stagger,
+		"scrap_attack_bonus": src.scrap_attack_bonus,
+		"scrap_bleed_weapon": src.scrap_bleed_weapon,
+		"wrench_smack": src.wrench_smack,
+		"wrench_strength_bonus": src.wrench_strength_bonus,
+		"emp_grenade": src.emp_grenade,
+		"mechanical_boss_damage_wpn": src.mechanical_boss_damage_wpn,
+		"emp_friendly_construct_heal": src.emp_friendly_construct_heal,
+		"emp_friendly_construct_overclock": src.emp_friendly_construct_overclock,
+		"rocket_launcher": src.rocket_launcher,
+		"exhaust_next_turn": src.exhaust_next_turn,
+		"sacrifice_construct_instant": src.sacrifice_construct_instant,
+		"scrap_shield": src.scrap_shield,
+		"scrap_multiplier": src.scrap_multiplier,
+		"shield_depletion_explode": src.shield_depletion_explode,
+		"manual_detonation": src.manual_detonation,
+		"refund_scrap": src.refund_scrap,
+		"overdrive_injection": src.overdrive_injection,
+		"construct_unmitigated_damage": src.construct_unmitigated_damage,
+		"refund_scrap_on_construct_death": src.refund_scrap_on_construct_death,
+		"barbed_wire": src.barbed_wire,
+		"entry_root": src.entry_root,
+		"adjacent_defense_bonus": src.adjacent_defense_bonus,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1667,6 +1706,67 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.airlift_keep_caster = bool(data.get("airlift_keep_caster", dst.airlift_keep_caster))
 	dst.airlift_ally_attack_strength = int(
 		data.get("airlift_ally_attack_strength", dst.airlift_ally_attack_strength)
+	)
+	dst.arrival_overclock = bool(data.get("arrival_overclock", dst.arrival_overclock))
+	dst.target_def_pct_loss = float(data.get("target_def_pct_loss", dst.target_def_pct_loss))
+	dst.on_hit_scrap = int(data.get("on_hit_scrap", dst.on_hit_scrap))
+	dst.ignite_oil_area = bool(data.get("ignite_oil_area", dst.ignite_oil_area))
+	dst.construct_spawn = bool(data.get("construct_spawn", dst.construct_spawn))
+	dst.turret_attack = int(data.get("turret_attack", dst.turret_attack))
+	dst.on_death_adjacent_damage = int(
+		data.get("on_death_adjacent_damage", dst.on_death_adjacent_damage)
+	)
+	dst.ignite_oil = bool(data.get("ignite_oil", dst.ignite_oil))
+	dst.construct_destruction_refund_ap = int(
+		data.get("construct_destruction_refund_ap", dst.construct_destruction_refund_ap)
+	)
+	dst.mine_pull = int(data.get("mine_pull", dst.mine_pull))
+	dst.mine_damage = int(data.get("mine_damage", dst.mine_damage))
+	dst.mine_explode = bool(data.get("mine_explode", dst.mine_explode))
+	dst.absorbs_items_scrap = bool(data.get("absorbs_items_scrap", dst.absorbs_items_scrap))
+	dst.tesla_wall = bool(data.get("tesla_wall", dst.tesla_wall))
+	dst.manual_detonation_stagger = bool(
+		data.get("manual_detonation_stagger", dst.manual_detonation_stagger)
+	)
+	dst.scrap_attack_bonus = int(data.get("scrap_attack_bonus", dst.scrap_attack_bonus))
+	dst.scrap_bleed_weapon = bool(data.get("scrap_bleed_weapon", dst.scrap_bleed_weapon))
+	dst.wrench_smack = bool(data.get("wrench_smack", dst.wrench_smack))
+	dst.wrench_strength_bonus = int(
+		data.get("wrench_strength_bonus", dst.wrench_strength_bonus)
+	)
+	dst.emp_grenade = bool(data.get("emp_grenade", dst.emp_grenade))
+	dst.mechanical_boss_damage_wpn = int(
+		data.get("mechanical_boss_damage_wpn", dst.mechanical_boss_damage_wpn)
+	)
+	dst.emp_friendly_construct_heal = int(
+		data.get("emp_friendly_construct_heal", dst.emp_friendly_construct_heal)
+	)
+	dst.emp_friendly_construct_overclock = bool(
+		data.get("emp_friendly_construct_overclock", dst.emp_friendly_construct_overclock)
+	)
+	dst.rocket_launcher = bool(data.get("rocket_launcher", dst.rocket_launcher))
+	dst.exhaust_next_turn = bool(data.get("exhaust_next_turn", dst.exhaust_next_turn))
+	dst.sacrifice_construct_instant = bool(
+		data.get("sacrifice_construct_instant", dst.sacrifice_construct_instant)
+	)
+	dst.scrap_shield = bool(data.get("scrap_shield", dst.scrap_shield))
+	dst.scrap_multiplier = int(data.get("scrap_multiplier", dst.scrap_multiplier))
+	dst.shield_depletion_explode = bool(
+		data.get("shield_depletion_explode", dst.shield_depletion_explode)
+	)
+	dst.manual_detonation = bool(data.get("manual_detonation", dst.manual_detonation))
+	dst.refund_scrap = int(data.get("refund_scrap", dst.refund_scrap))
+	dst.overdrive_injection = bool(data.get("overdrive_injection", dst.overdrive_injection))
+	dst.construct_unmitigated_damage = int(
+		data.get("construct_unmitigated_damage", dst.construct_unmitigated_damage)
+	)
+	dst.refund_scrap_on_construct_death = int(
+		data.get("refund_scrap_on_construct_death", dst.refund_scrap_on_construct_death)
+	)
+	dst.barbed_wire = bool(data.get("barbed_wire", dst.barbed_wire))
+	dst.entry_root = bool(data.get("entry_root", dst.entry_root))
+	dst.adjacent_defense_bonus = int(
+		data.get("adjacent_defense_bonus", dst.adjacent_defense_bonus)
 	)
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
@@ -2217,6 +2317,9 @@ static func ability_to_dict(src: AbilityData) -> Dictionary:
 		"upgraded_planner_group": src.upgraded_planner_group,
 		"tags": tag_strs,
 		"primary_resource": src.primary_resource,
+		"action_point_cost": src.action_point_cost,
+		"movement_point_cost": src.movement_point_cost,
+		"upgraded_movement_point_cost": src.upgraded_movement_point_cost,
 		"primary_value": src.primary_value,
 		"upgraded_primary_value": src.upgraded_primary_value,
 		"cost_modifier": src.cost_modifier,

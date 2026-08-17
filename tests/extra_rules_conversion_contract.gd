@@ -143,6 +143,21 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"beast_airlift",
 	&"beast_tail_swipe",
 	&"beast_gore",
+	&"engineer_recall",
+	&"engineer_dismantle",
+	&"engineer_sludge_bomb",
+	&"engineer_construct_turret",
+	&"engineer_frag_bomb",
+	&"engineer_magnetic_mine",
+	&"engineer_tesla_barricade",
+	&"engineer_flak_cannon",
+	&"engineer_wrench_smack",
+	&"engineer_emp_grenade",
+	&"engineer_rocket_launcher",
+	&"engineer_scrap_shield",
+	&"engineer_manual_detonation",
+	&"engineer_overdrive_injection",
+	&"engineer_barbed_wire",
 	&"shaman_usher",
 	&"shaman_curse_of_weakness",
 	&"shaman_healing_totem",
@@ -886,6 +901,82 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.cone_all_targets
 		"wall_collision_stagger":
 			return layer.wall_collision_stagger
+		"oil_field":
+			return layer.oil_field
+		"arrival_overclock":
+			return module.arrival_overclock
+		"target_def_pct_loss":
+			return not is_zero_approx(module.target_def_pct_loss)
+		"on_hit_scrap":
+			return module.on_hit_scrap != 0
+		"ignite_oil_area":
+			return module.ignite_oil_area
+		"construct_spawn":
+			return module.construct_spawn
+		"turret_attack":
+			return module.turret_attack != 0
+		"on_death_adjacent_damage":
+			return module.on_death_adjacent_damage != 0
+		"ignite_oil":
+			return module.ignite_oil
+		"construct_destruction_refund_ap":
+			return module.construct_destruction_refund_ap != 0
+		"mine_pull":
+			return module.mine_pull != 0
+		"mine_damage":
+			return module.mine_damage != 0
+		"mine_explode":
+			return module.mine_explode
+		"absorbs_items_scrap":
+			return module.absorbs_items_scrap
+		"tesla_wall":
+			return module.tesla_wall
+		"manual_detonation_stagger":
+			return module.manual_detonation_stagger
+		"scrap_attack_bonus":
+			return module.scrap_attack_bonus != 0
+		"scrap_bleed_weapon":
+			return module.scrap_bleed_weapon
+		"wrench_smack":
+			return module.wrench_smack
+		"wrench_strength_bonus":
+			return module.wrench_strength_bonus != 0
+		"emp_grenade":
+			return module.emp_grenade
+		"mechanical_boss_damage_wpn":
+			return module.mechanical_boss_damage_wpn != 0
+		"emp_friendly_construct_heal":
+			return module.emp_friendly_construct_heal != 0
+		"emp_friendly_construct_overclock":
+			return module.emp_friendly_construct_overclock
+		"rocket_launcher":
+			return module.rocket_launcher
+		"exhaust_next_turn":
+			return module.exhaust_next_turn
+		"sacrifice_construct_instant":
+			return module.sacrifice_construct_instant
+		"scrap_shield":
+			return module.scrap_shield
+		"scrap_multiplier":
+			return module.scrap_multiplier != 0
+		"shield_depletion_explode":
+			return module.shield_depletion_explode
+		"manual_detonation":
+			return module.manual_detonation
+		"refund_scrap":
+			return module.refund_scrap != 0
+		"overdrive_injection":
+			return module.overdrive_injection
+		"construct_unmitigated_damage":
+			return module.construct_unmitigated_damage != 0
+		"refund_scrap_on_construct_death":
+			return module.refund_scrap_on_construct_death != 0
+		"barbed_wire":
+			return module.barbed_wire
+		"entry_root":
+			return module.entry_root
+		"adjacent_defense_bonus":
+			return module.adjacent_defense_bonus != 0
 		"density_shift":
 			return module.density_shift
 		"ignore_target_magic_pct":

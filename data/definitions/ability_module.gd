@@ -327,6 +327,43 @@ extends Resource
 @export var airlift_drop_step: int = 0
 @export var airlift_keep_caster: bool = false
 @export var airlift_ally_attack_strength: int = 0
+@export var arrival_overclock: bool = false
+@export var target_def_pct_loss: float = 0.0
+@export var on_hit_scrap: int = 0
+@export var ignite_oil_area: bool = false
+@export var construct_spawn: bool = false
+@export var turret_attack: int = 0
+@export var on_death_adjacent_damage: int = 0
+@export var ignite_oil: bool = false
+@export var construct_destruction_refund_ap: int = 0
+@export var mine_pull: int = 0
+@export var mine_damage: int = 0
+@export var mine_explode: bool = false
+@export var absorbs_items_scrap: bool = false
+@export var tesla_wall: bool = false
+@export var manual_detonation_stagger: bool = false
+@export var scrap_attack_bonus: int = 0
+@export var scrap_bleed_weapon: bool = false
+@export var wrench_smack: bool = false
+@export var wrench_strength_bonus: int = 0
+@export var emp_grenade: bool = false
+@export var mechanical_boss_damage_wpn: int = 0
+@export var emp_friendly_construct_heal: int = 0
+@export var emp_friendly_construct_overclock: bool = false
+@export var rocket_launcher: bool = false
+@export var exhaust_next_turn: bool = false
+@export var sacrifice_construct_instant: bool = false
+@export var scrap_shield: bool = false
+@export var scrap_multiplier: int = 0
+@export var shield_depletion_explode: bool = false
+@export var manual_detonation: bool = false
+@export var refund_scrap: int = 0
+@export var overdrive_injection: bool = false
+@export var construct_unmitigated_damage: int = 0
+@export var refund_scrap_on_construct_death: int = 0
+@export var barbed_wire: bool = false
+@export var entry_root: bool = false
+@export var adjacent_defense_bonus: int = 0
 
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
@@ -897,6 +934,80 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["airlift_keep_caster"] = true
 	if airlift_ally_attack_strength != 0:
 		bag["airlift_ally_attack_strength"] = airlift_ally_attack_strength
+	if arrival_overclock:
+		bag["arrival_overclock"] = true
+	if not is_zero_approx(target_def_pct_loss):
+		bag["target_def_pct_loss"] = target_def_pct_loss
+	if on_hit_scrap != 0:
+		bag["on_hit_scrap"] = on_hit_scrap
+	if ignite_oil_area:
+		bag["ignite_oil_area"] = true
+	if construct_spawn:
+		bag["construct_spawn"] = true
+	if turret_attack != 0:
+		bag["turret_attack"] = turret_attack
+	if on_death_adjacent_damage != 0:
+		bag["on_death_adjacent_damage"] = on_death_adjacent_damage
+	if ignite_oil:
+		bag["ignite_oil"] = true
+	if construct_destruction_refund_ap != 0:
+		bag["construct_destruction_refund_ap"] = construct_destruction_refund_ap
+	if mine_pull != 0:
+		bag["mine_pull"] = mine_pull
+	if mine_damage != 0:
+		bag["mine_damage"] = mine_damage
+	if mine_explode:
+		bag["mine_explode"] = true
+	if absorbs_items_scrap:
+		bag["absorbs_items_scrap"] = true
+	if tesla_wall:
+		bag["tesla_wall"] = true
+	if manual_detonation_stagger:
+		bag["manual_detonation_stagger"] = true
+	if scrap_attack_bonus != 0:
+		bag["scrap_attack_bonus"] = scrap_attack_bonus
+	if scrap_bleed_weapon:
+		bag["scrap_bleed_weapon"] = true
+	if wrench_smack:
+		bag["wrench_smack"] = true
+	if wrench_strength_bonus != 0:
+		bag["wrench_strength_bonus"] = wrench_strength_bonus
+	if emp_grenade:
+		bag["emp_grenade"] = true
+	if mechanical_boss_damage_wpn != 0:
+		bag["mechanical_boss_damage_wpn"] = mechanical_boss_damage_wpn
+	if emp_friendly_construct_heal != 0:
+		bag["emp_friendly_construct_heal"] = emp_friendly_construct_heal
+	if emp_friendly_construct_overclock:
+		bag["emp_friendly_construct_overclock"] = true
+	if rocket_launcher:
+		bag["rocket_launcher"] = true
+	if exhaust_next_turn:
+		bag["exhaust_next_turn"] = true
+	if sacrifice_construct_instant:
+		bag["sacrifice_construct_instant"] = true
+	if scrap_shield:
+		bag["scrap_shield"] = true
+	if scrap_multiplier != 0:
+		bag["scrap_multiplier"] = scrap_multiplier
+	if shield_depletion_explode:
+		bag["shield_depletion_explode"] = true
+	if manual_detonation:
+		bag["manual_detonation"] = true
+	if refund_scrap != 0:
+		bag["refund_scrap"] = refund_scrap
+	if overdrive_injection:
+		bag["overdrive_injection"] = true
+	if construct_unmitigated_damage != 0:
+		bag["construct_unmitigated_damage"] = construct_unmitigated_damage
+	if refund_scrap_on_construct_death != 0:
+		bag["refund_scrap_on_construct_death"] = refund_scrap_on_construct_death
+	if barbed_wire:
+		bag["barbed_wire"] = true
+	if entry_root:
+		bag["entry_root"] = true
+	if adjacent_defense_bonus != 0:
+		bag["adjacent_defense_bonus"] = adjacent_defense_bonus
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -1704,6 +1815,117 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"airlift_ally_attack_strength":
 			airlift_ally_attack_strength = int(value)
+			return
+		"arrival_overclock":
+			arrival_overclock = bool(value)
+			return
+		"target_def_pct_loss":
+			target_def_pct_loss = float(value)
+			return
+		"on_hit_scrap":
+			on_hit_scrap = int(value)
+			return
+		"ignite_oil_area":
+			ignite_oil_area = bool(value)
+			return
+		"construct_spawn":
+			construct_spawn = bool(value)
+			return
+		"turret_attack":
+			turret_attack = int(value)
+			return
+		"on_death_adjacent_damage":
+			on_death_adjacent_damage = int(value)
+			return
+		"ignite_oil":
+			ignite_oil = bool(value)
+			return
+		"construct_destruction_refund_ap":
+			construct_destruction_refund_ap = int(value)
+			return
+		"mine_pull":
+			mine_pull = int(value)
+			return
+		"mine_damage":
+			mine_damage = int(value)
+			return
+		"mine_explode":
+			mine_explode = bool(value)
+			return
+		"absorbs_items_scrap":
+			absorbs_items_scrap = bool(value)
+			return
+		"tesla_wall":
+			tesla_wall = bool(value)
+			return
+		"manual_detonation_stagger":
+			manual_detonation_stagger = bool(value)
+			return
+		"scrap_attack_bonus":
+			scrap_attack_bonus = int(value)
+			return
+		"scrap_bleed_weapon":
+			scrap_bleed_weapon = bool(value)
+			return
+		"wrench_smack":
+			wrench_smack = bool(value)
+			return
+		"wrench_strength_bonus":
+			wrench_strength_bonus = int(value)
+			return
+		"emp_grenade":
+			emp_grenade = bool(value)
+			return
+		"mechanical_boss_damage_wpn":
+			mechanical_boss_damage_wpn = int(value)
+			return
+		"emp_friendly_construct_heal":
+			emp_friendly_construct_heal = int(value)
+			return
+		"emp_friendly_construct_overclock":
+			emp_friendly_construct_overclock = bool(value)
+			return
+		"rocket_launcher":
+			rocket_launcher = bool(value)
+			return
+		"exhaust_next_turn":
+			exhaust_next_turn = bool(value)
+			return
+		"sacrifice_construct_instant":
+			sacrifice_construct_instant = bool(value)
+			return
+		"scrap_shield":
+			scrap_shield = bool(value)
+			return
+		"scrap_multiplier":
+			scrap_multiplier = int(value)
+			return
+		"shield_depletion_explode":
+			shield_depletion_explode = bool(value)
+			return
+		"manual_detonation":
+			manual_detonation = bool(value)
+			return
+		"refund_scrap":
+			refund_scrap = int(value)
+			return
+		"overdrive_injection":
+			overdrive_injection = bool(value)
+			return
+		"construct_unmitigated_damage":
+			construct_unmitigated_damage = int(value)
+			return
+		"refund_scrap_on_construct_death":
+			refund_scrap_on_construct_death = int(value)
+			return
+		"barbed_wire":
+			barbed_wire = bool(value)
+			return
+		"entry_root":
+			entry_root = bool(value)
+			return
+		"adjacent_defense_bonus":
+			adjacent_defense_bonus = int(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE
