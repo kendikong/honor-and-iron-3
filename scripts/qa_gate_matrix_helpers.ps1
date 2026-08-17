@@ -239,10 +239,10 @@ function Get-FactoryHasUpgrade {
 	$factoryPath = Join-Path $ProjectRoot ("core\factory\classes\${class}_factory.gd")
 	if (-not (Test-Path $factoryPath)) { return $false }
 	$text = Get-Content -Path $factoryPath -Raw
-	$funcPattern = "(?ms)func\s+_$row\s*\([^\)]*\)[^{]*\{[\s\S]{0,6000}?upgraded_effects"
+	$funcPattern = "(?ms)func\s+_$row\s*\([^\)]*\)[^{]*\{[\s\S]{0,6000}?(upgraded_effects|upgraded_modules|upgrade_description)"
 	if ($text -match $funcPattern) { return $true }
 	$escaped = [regex]::Escape($FactoryId)
-	return ($text -match "(?ms)&`"$escaped`"[\s\S]{0,4000}?upgraded_effects")
+	return ($text -match "(?ms)&`"$escaped`"[\s\S]{0,4000}?(upgraded_effects|upgraded_modules|upgrade_description)")
 }
 
 function Get-FactoryIsShaped {

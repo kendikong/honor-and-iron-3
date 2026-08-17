@@ -21,6 +21,34 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"bruiser_crimson_whirlwind",
 	&"bruiser_belly_flop",
 	&"bruiser_breaching_dash",
+	&"archer_sidestep",
+	&"archer_power_shot",
+	&"archer_volley",
+	&"archer_pinning_arrow",
+	&"archer_piercing_shot",
+	&"archer_toxic_spore_arrow",
+	&"archer_grapple_arrow",
+	&"archer_explosive_arrow",
+	&"archer_hunters_mark",
+	&"archer_repelling_shot",
+	&"archer_bear_trap",
+	&"archer_suppressing_fire",
+	&"archer_caltrop_trap",
+	&"archer_parting_shot",
+	&"archer_scouts_eye",
+	&"lancer_push",
+	&"lancer_piercing_charge",
+	&"lancer_sweeping_halberd",
+	&"lancer_vaulting_leap",
+	&"lancer_run_down",
+	&"lancer_rallying_cry",
+	&"lancer_flanking_maneuver",
+	&"lancer_brace",
+	&"lancer_harpoon_toss",
+	&"lancer_pole_vault",
+	&"lancer_line_breaker",
+	&"lancer_spear_wall",
+	&"lancer_meteor_drop",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -347,8 +375,170 @@ static func _assert_modules_converted(
 				continue
 			for key: Variant in layer.effect.modifiers:
 				var key_text := String(key)
-				if AbilityExtraRule.id_for_key(key_text) != AbilityExtraRule.Id.NONE:
+				if (
+					AbilityExtraRule.id_for_key(key_text) != AbilityExtraRule.Id.NONE
+					and not _has_typed_owner(module, layer, key_text)
+				):
 					failures.append("%s %s leftover Extra Rule key %s" % [label, profile, key_text])
+
+
+static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: String) -> bool:
+	match key:
+		"exclude_caster":
+			return module.exclude_caster
+		"terrain_id":
+			return module.terrain_id != StringName()
+		"hazard_duration":
+			return module.hazard_duration != 0
+		"hazard_status":
+			return module.hazard_status != GameEnums.StatusType.NONE
+		"bonus_dmg_from_occupied":
+			return module.bonus_dmg_from_occupied != 0
+		"bonus_dmg_per_10_hp":
+			return module.bonus_dmg_per_10_hp != 0
+		"bonus_dmg_pct_max_hp":
+			return not is_zero_approx(module.bonus_dmg_pct_max_hp)
+		"heal_if_targets_gte":
+			return module.heal_if_targets_gte != 0
+		"bounce_count":
+			return module.bounce_count != 0
+		"bounce_range":
+			return module.bounce_range != 0
+		"buff_on_push":
+			return module.buff_on_push != 0
+		"frenzy_on_kill_ap":
+			return module.frenzy_on_kill_ap != 0
+		"push_board_items":
+			return module.push_board_items != 0
+		"item_collision_damage":
+			return module.item_collision_damage != 0
+		"item_collision_str_div":
+			return module.item_collision_str_div != 0
+		"item_collision_vulnerable":
+			return module.item_collision_vulnerable != 0
+		"violent_collision_recast":
+			return module.violent_collision_recast != 0
+		"next_attack_strength":
+			return module.next_attack_strength != 0
+		"bleed_weapon":
+			return module.next_attack_bleed_weapon
+		"next_turn":
+			return module.next_turn
+		"preserve_facing":
+			return module.preserve_facing
+		"ignore_zoc":
+			return module.ignore_zoc
+		"next_ranged_attack_strength":
+			return module.next_ranged_attack_strength != 0
+		"root_break_on_damage":
+			return module.root_break_on_damage
+		"skewer":
+			return module.skewer != 0
+		"bounce_walls_45":
+			return module.bounce_walls_45
+		"spread_status_adjacent":
+			return module.spread_status_adjacent
+		"grapple_wall_pull_self":
+			return module.grapple_wall_pull_self
+		"grapple_pass_through_damage":
+			return module.grapple_pass_through_damage != 0 or layer.grapple_pass_through_damage != 0
+		"destroy_terrain":
+			return module.destroy_terrain
+		"ignite_flammable_terrain":
+			return module.ignite_flammable_terrain or layer.ignite_flammable_terrain
+		"allies_range_bonus":
+			return module.allies_range_bonus != 0
+		"allies_pierce":
+			return module.allies_pierce
+		"prevent_stealth_teleport":
+			return module.prevent_stealth_teleport
+		"allow_friendly_target":
+			return module.allow_friendly_target
+		"ally_damage_zero":
+			return module.ally_damage_zero or layer.ally_damage_zero
+		"trap_status":
+			return module.terrain_hazard_status != GameEnums.StatusType.NONE
+		"trap_damage":
+			return module.trap_damage != 0
+		"trap_bleed_weapon":
+			return module.trap_bleed_weapon
+		"trap_vulnerable":
+			return module.trap_vulnerable or layer.trap_vulnerable
+		"crossing_weapon_damage":
+			return module.crossing_weapon_damage
+		"crossing_mov_penalty":
+			return module.crossing_mov_penalty != 0
+		"crossing_blind":
+			return module.crossing_blind or layer.crossing_blind
+		"trap_def_debuff":
+			return module.trap_def_debuff != 0 or layer.trap_def_debuff != 0
+		"range_one_damage_multiplier":
+			return (
+				not is_zero_approx(module.range_one_damage_multiplier)
+				or not is_zero_approx(layer.range_one_damage_multiplier)
+			)
+		"create_trampled_terrain":
+			return module.create_trampled_terrain
+		"limit_once_per_turn":
+			return module.limit_once_per_turn
+		"halve_target_def_one_turn":
+			return module.halve_target_def_one_turn
+		"armor_explosion_atk":
+			return module.armor_explosion_atk != 0
+		"bonus_atk_vs_fear_or_lower_movement":
+			return module.bonus_atk_vs_fear_or_lower_movement != 0
+		"on_kill_max_move":
+			return module.on_kill_max_move != 0
+		"next_turn_max_move":
+			return module.next_turn_max_move != 0
+		"upgraded_trample":
+			return module.upgraded_trample
+		"brace_attacker_stagger":
+			return module.brace_attacker_stagger != 0
+		"pull_until_adjacent":
+			return module.pull_until_adjacent
+		"pull_self_if_rooted":
+			return module.pull_self_if_rooted
+		"paired_ally_charge":
+			return module.paired_ally_charge
+		"paired_ally_strike_atk":
+			return module.paired_ally_strike_atk != 0
+		"line_breaker":
+			return module.line_breaker
+		"on_kill_both_ap":
+			return module.on_kill_both_ap != 0
+		"vault_obstacle_or_gap_only":
+			return module.vault_obstacle_or_gap_only
+		"landing_adjacent_push":
+			return module.landing_adjacent_push != 0
+		"landing_adjacent_push_stagger":
+			return module.landing_adjacent_push_stagger
+		"bonus_per_enemy_passed":
+			return module.bonus_per_enemy_passed != 0
+		"strip_stealth":
+			return module.strip_stealth
+		"object_collision_stagger":
+			return layer.object_collision_stagger
+		"enemy_collision_stagger_both":
+			return layer.enemy_collision_stagger_both
+		"weapon_scaled":
+			return layer.weapon_scaled
+		"buff_per_destroyed_object":
+			return layer.buff_per_destroyed_object != 0
+		"stagger_on_collision":
+			return layer.stagger_on_collision
+		"intercept_grant_str":
+			return layer.intercept_grant_str != 0
+		"push_collision_pierce":
+			return layer.push_collision_pierce
+		"push_collision_damage":
+			return layer.push_collision_damage != 0
+		"difficult_terrain_created":
+			return layer.difficult_terrain_created
+		"rooted_push_bleed_weapon":
+			return layer.rooted_push_bleed_weapon
+		_:
+			return false
 
 static func _find_ability(skill_id: StringName) -> AbilityData:
 	for class_id: StringName in CLASS_IDS:

@@ -2221,6 +2221,191 @@ func _add_module_typed_extras_editor(
 		module.next_turn = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Preserve Facing", module.preserve_facing, func(v: bool) -> void:
+		module.preserve_facing = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Ignore ZOC", module.ignore_zoc, func(v: bool) -> void:
+		module.ignore_zoc = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Next Ranged Attack STR", module.next_ranged_attack_strength, func(v: int) -> void:
+		module.next_ranged_attack_strength = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Root Break On Damage", module.root_break_on_damage, func(v: bool) -> void:
+		module.root_break_on_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Skewer", module.skewer, func(v: int) -> void:
+		module.skewer = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Bounce Walls 45", module.bounce_walls_45, func(v: bool) -> void:
+		module.bounce_walls_45 = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Spread Status Adjacent", module.spread_status_adjacent, func(v: bool) -> void:
+		module.spread_status_adjacent = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Grapple Wall Pull Self", module.grapple_wall_pull_self, func(v: bool) -> void:
+		module.grapple_wall_pull_self = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Grapple Pass Damage", module.grapple_pass_through_damage, func(v: int) -> void:
+		module.grapple_pass_through_damage = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Destroy Terrain", module.destroy_terrain, func(v: bool) -> void:
+		module.destroy_terrain = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Ignite Flammable Terrain", module.ignite_flammable_terrain, func(v: bool) -> void:
+		module.ignite_flammable_terrain = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Allies Range Bonus", module.allies_range_bonus, func(v: int) -> void:
+		module.allies_range_bonus = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Allies Pierce", module.allies_pierce, func(v: bool) -> void:
+		module.allies_pierce = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Prevent Stealth Teleport", module.prevent_stealth_teleport, func(v: bool) -> void:
+		module.prevent_stealth_teleport = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Allow Friendly Target", module.allow_friendly_target, func(v: bool) -> void:
+		module.allow_friendly_target = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Ally Damage Zero", module.ally_damage_zero, func(v: bool) -> void:
+		module.ally_damage_zero = v
+		_on_module_field_edited(ability)
+	)
+	_bind_enum(grid, "Terrain Hazard Status", GameEnums.StatusType, module.terrain_hazard_status, func(v: int) -> void:
+		module.terrain_hazard_status = v as GameEnums.StatusType
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Trap Damage", module.trap_damage, func(v: int) -> void:
+		module.trap_damage = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Trap BLEED WPN", module.trap_bleed_weapon, func(v: bool) -> void:
+		module.trap_bleed_weapon = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Trap Vulnerable", module.trap_vulnerable, func(v: bool) -> void:
+		module.trap_vulnerable = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Crossing WPN Damage", module.crossing_weapon_damage, func(v: bool) -> void:
+		module.crossing_weapon_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Crossing MOV Penalty", module.crossing_mov_penalty, func(v: int) -> void:
+		module.crossing_mov_penalty = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Crossing BLIND", module.crossing_blind, func(v: bool) -> void:
+		module.crossing_blind = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Trap DEF Debuff", module.trap_def_debuff, func(v: int) -> void:
+		module.trap_def_debuff = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Strip Stealth", module.strip_stealth, func(v: bool) -> void:
+		module.strip_stealth = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Limit Once Per Turn", module.limit_once_per_turn, func(v: bool) -> void:
+		module.limit_once_per_turn = v
+		_on_module_field_edited(ability)
+	)
+	_bind_string(
+		grid,
+		"Range 1 Damage Multiplier",
+		str(module.range_one_damage_multiplier),
+		func(v: String) -> void:
+			if v.strip_edges().is_valid_float():
+				module.range_one_damage_multiplier = maxf(0.0, float(v))
+				_on_module_field_edited(ability),
+	)
+	_bind_bool(grid, "Halve Target DEF", module.halve_target_def_one_turn, func(v: bool) -> void:
+		module.halve_target_def_one_turn = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Armor Explosion ATK", module.armor_explosion_atk, func(v: int) -> void:
+		module.armor_explosion_atk = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bonus ATK Fear/Low MOV", module.bonus_atk_vs_fear_or_lower_movement, func(v: int) -> void:
+		module.bonus_atk_vs_fear_or_lower_movement = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "On Kill MAX MOV", module.on_kill_max_move, func(v: int) -> void:
+		module.on_kill_max_move = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Next Turn MAX MOV", module.next_turn_max_move, func(v: int) -> void:
+		module.next_turn_max_move = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Upgraded TRAMPLE", module.upgraded_trample, func(v: bool) -> void:
+		module.upgraded_trample = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Brace Attacker Stagger", module.brace_attacker_stagger, func(v: int) -> void:
+		module.brace_attacker_stagger = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Pull Until Adjacent", module.pull_until_adjacent, func(v: bool) -> void:
+		module.pull_until_adjacent = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Pull Self If Rooted", module.pull_self_if_rooted, func(v: bool) -> void:
+		module.pull_self_if_rooted = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Paired Ally Charge", module.paired_ally_charge, func(v: bool) -> void:
+		module.paired_ally_charge = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Paired Ally Strike ATK", module.paired_ally_strike_atk, func(v: int) -> void:
+		module.paired_ally_strike_atk = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "On Kill Both AP", module.on_kill_both_ap, func(v: int) -> void:
+		module.on_kill_both_ap = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Vault Obstacle/Gap Only", module.vault_obstacle_or_gap_only, func(v: bool) -> void:
+		module.vault_obstacle_or_gap_only = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Landing Adjacent PUSH", module.landing_adjacent_push, func(v: int) -> void:
+		module.landing_adjacent_push = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Landing Adjacent STAGGER", module.landing_adjacent_push_stagger, func(v: bool) -> void:
+		module.landing_adjacent_push_stagger = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Line Breaker", module.line_breaker, func(v: bool) -> void:
+		module.line_breaker = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bonus Per Enemy Passed", module.bonus_per_enemy_passed, func(v: int) -> void:
+		module.bonus_per_enemy_passed = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Create Trampled Terrain", module.create_trampled_terrain, func(v: bool) -> void:
+		module.create_trampled_terrain = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -2428,6 +2613,55 @@ func _add_module_layers_editor(
 			func(v: int) -> void:
 				layer.intercept_grant_str = maxi(0, v)
 				_on_module_field_edited(ability),
+		)
+		_bind_bool(grid, "Push Collision Pierce", layer.push_collision_pierce, func(v: bool) -> void:
+			layer.push_collision_pierce = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Push Collision Damage", layer.push_collision_damage, func(v: int) -> void:
+			layer.push_collision_damage = maxi(0, v)
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Difficult Terrain Created", layer.difficult_terrain_created, func(v: bool) -> void:
+			layer.difficult_terrain_created = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Rooted Push BLEED WPN", layer.rooted_push_bleed_weapon, func(v: bool) -> void:
+			layer.rooted_push_bleed_weapon = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Grapple Pass Damage", layer.grapple_pass_through_damage, func(v: int) -> void:
+			layer.grapple_pass_through_damage = maxi(0, v)
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Ignite Flammable Terrain", layer.ignite_flammable_terrain, func(v: bool) -> void:
+			layer.ignite_flammable_terrain = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Ally Damage Zero", layer.ally_damage_zero, func(v: bool) -> void:
+			layer.ally_damage_zero = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Trap Vulnerable", layer.trap_vulnerable, func(v: bool) -> void:
+			layer.trap_vulnerable = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Crossing BLIND", layer.crossing_blind, func(v: bool) -> void:
+			layer.crossing_blind = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Trap DEF Debuff", layer.trap_def_debuff, func(v: int) -> void:
+			layer.trap_def_debuff = maxi(0, v)
+			_on_module_field_edited(ability)
+		)
+		_bind_string(
+			grid,
+			"Range 1 Damage Multiplier",
+			str(layer.range_one_damage_multiplier),
+			func(v: String) -> void:
+				if v.strip_edges().is_valid_float():
+					layer.range_one_damage_multiplier = maxf(0.0, float(v))
+					_on_module_field_edited(ability),
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v

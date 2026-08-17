@@ -112,6 +112,30 @@ static func run_toxic_spore_arrow(failures: Array[String]) -> void:
 		failures, "toxic_spore_arrow/used",
 		_events_have_ability(result.events, &"archer_toxic_spore_arrow"),
 	)
+	var upgraded_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_archer(
+		upgraded_board, 1, Vector2i(2, 3),
+		H.with_upgraded_ability(
+			H.archer_with_ability(&"archer_toxic_spore_arrow"),
+			&"archer_toxic_spore_arrow",
+		),
+	)
+	H.place_dummy(upgraded_board, 2, Vector2i(5, 3))
+	H.place_dummy(upgraded_board, 3, Vector2i(5, 4))
+	var upgraded_skill: AbilityData = H.ability_on_unit(
+		upgraded_board.get_unit_by_id(1), &"archer_toxic_spore_arrow"
+	)
+	var upgraded_plan := Timeline.new()
+	upgraded_plan.add(H.plan_ability(1, upgraded_skill, Vector2i(5, 3), 2))
+	var upgraded_result: SimResult = H.simulate_plan(upgraded_board, upgraded_plan)
+	H.assert_true(
+		failures, "toxic_spore_arrow/upgrade_spread",
+		_has_status(
+			upgraded_result.final_state.get_unit_by_id(3),
+			GameEnums.StatusType.POISON,
+		),
+		"upgraded hit must spread POISON to an adjacent enemy",
+	)
 
 
 static func run_grapple_arrow(failures: Array[String]) -> void:
@@ -224,6 +248,13 @@ static func run_suppressing_fire(failures: Array[String]) -> void:
 
 
 static func run_caltrop_trap(failures: Array[String]) -> void:
+	var ability: AbilityData = H.factory_ability(&"archer_caltrop_trap")
+	H.assert_true(
+		failures, "caltrop_trap/authored_payload",
+		ability != null
+		and ability.modules[0].terrain_hazard_status == GameEnums.StatusType.ROOT
+		and ability.modules[0].trap_bleed_weapon,
+	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_caltrop_trap"))
 	var skill: AbilityData = H.ability_on_unit(board.get_unit_by_id(1), &"archer_caltrop_trap")
@@ -267,7 +298,9 @@ static func run_parting_shot(failures: Array[String]) -> void:
 static func run_scouts_eye(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_scouts_eye"))
-	H.place_dummy(board, 2, Vector2i(5, 3))
+	var target: UnitState = H.place_dummy(board, 2, Vector2i(5, 3))
+	target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1, 5))
+	target._recalculate_stats()
 	var skill: AbilityData = H.ability_on_unit(board.get_unit_by_id(1), &"archer_scouts_eye")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), 2))
@@ -275,6 +308,35 @@ static func run_scouts_eye(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "scouts_eye/used",
 		_events_have_ability(result.events, &"archer_scouts_eye"),
+	)
+	H.assert_true(
+		failures, "scouts_eye/strip_stealth",
+		not _has_status(result.final_state.get_unit_by_id(2), GameEnums.StatusType.STEALTH),
+	)
+	var upgraded_board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	H.place_archer(
+		upgraded_board, 1, Vector2i(2, 3),
+		H.with_upgraded_ability(
+			H.archer_with_ability(&"archer_scouts_eye"), &"archer_scouts_eye"
+		),
+	)
+	var upgraded_target: UnitState = H.place_dummy(upgraded_board, 2, Vector2i(5, 3))
+	upgraded_target.active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1, 5)
+	)
+	upgraded_target._recalculate_stats()
+	var upgraded_skill: AbilityData = H.ability_on_unit(
+		upgraded_board.get_unit_by_id(1), &"archer_scouts_eye"
+	)
+	var upgraded_plan := Timeline.new()
+	upgraded_plan.add(H.plan_ability(1, upgraded_skill, Vector2i(5, 3), 2))
+	var upgraded_result: SimResult = H.simulate_plan(upgraded_board, upgraded_plan)
+	H.assert_true(
+		failures, "scouts_eye/upgrade_vulnerable",
+		_has_status(
+			upgraded_result.final_state.get_unit_by_id(2),
+			GameEnums.StatusType.VULNERABLE,
+		),
 	)
 
 

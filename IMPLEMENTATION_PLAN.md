@@ -89,27 +89,35 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
 | Bruiser | Breaching Dash | ☑ | ☑ | ☑ | ☑ | PIERCE keyword; gates pass; independent audit pass |
 | Bruiser | Reactive Adrenaline | ☑ | ☑ | ☑ | ☑ | Dedicated passive scenario + upgrade proof; shared turn-start passive path; independent audit pass |
-| Archer | Sidestep | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Volley | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Power Shot | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Piercing Shot | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Grapple Arrow | ☐ | ☐ | ☐ | ☐ | Pull-yourself destination |
-| Archer | Explosive Arrow | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Hunter’s Mark | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Repelling Shot | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Bear Trap | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Caltrops | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Suppressing Fire | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Parting Shot | ☐ | ☐ | ☐ | ☐ |  |
-| Archer | Scout’s Eye | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Push | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Polearm range-band rule | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Rallying Cry status timing | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Wraparound / Flanking Maneuver | ☐ | ☐ | ☐ | ☐ | L-path destination |
+| Archer | Sidestep | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Volley | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Power Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Pinning Arrow | ☑ | ☑ | ☑ | ☑ | Typed module/layer conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Piercing Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Toxic Spore Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; upgraded adjacent POISON proof and direct conversion contract pass |
+| Archer | Grapple Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass; pull-self destination preserved |
+| Archer | Explosive Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Hunter’s Mark | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Repelling Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Bear Trap | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Caltrops | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Suppressing Fire | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Parting Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Scout’s Eye | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Lancer | Push | ☑ | ☑ | ☑ | ☑ | Typed ally-target and upgraded once-per-turn/buff fields; conversion contract pass |
+| Lancer | Piercing Charge | ☑ | ☑ | ☑ | ☑ | Typed trampled-terrain upgrade and polearm reach fields; conversion contract pass |
+| Lancer | Sweeping Halberd | ☑ | ☑ | ☑ | ☑ | Typed collision layer; conversion contract pass |
+| Lancer | Vaulting Leap | ☑ | ☑ | ☑ | ☑ | Typed DEF/armor upgrade fields; conversion contract pass |
+| Lancer | Impale / Run Down | ☑ | ☑ | ☑ | ☑ | Typed conditional damage and kill movement fields; conversion contract pass |
+| Lancer | Rallying Cry | ☑ | ☑ | ☑ | ☑ | Typed next-turn movement and TRAMPLE fields; conversion contract pass |
+| Lancer | Wraparound / Flanking Maneuver | ☑ | ☑ | ☑ | ☑ | L-path motion metadata + GHOST keyword; conversion contract pass |
+| Lancer | Brace | ☑ | ☑ | ☑ | ☑ | Typed attacker stagger field; conversion contract pass |
+| Lancer | Harpoon Toss | ☑ | ☑ | ☑ | ☑ | Typed pull-until-adjacent/rooted fields; conversion contract pass |
 | Lancer | Glorious Charge | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
-| Lancer | Pole Vault | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Line Breaker | ☐ | ☐ | ☐ | ☐ |  |
-| Lancer | Spear Wall | ☐ | ☐ | ☐ | ☐ |  |
+| Lancer | Pole Vault | ☑ | ☑ | ☑ | ☑ | Typed vault restriction and landing collision fields; conversion contract pass |
+| Lancer | Line Breaker | ☑ | ☑ | ☑ | ☑ | Typed line-break and passed-enemy fields; conversion contract pass |
+| Lancer | Spear Wall | ☑ | ☑ | ☑ | ☑ | Typed terrain/status/duration fields; conversion contract pass |
+| Lancer | Meteor Drop | ☑ | ☑ | ☑ | ☑ | Modular landing layer; conversion contract pass |
 | Mage | Blink | ☐ | ☐ | ☐ | ☐ |  |
 | Mage | Ice Shard | ☐ | ☐ | ☐ | ☐ |  |
 | Mage | Chain Lightning | ☐ | ☐ | ☐ | ☐ |  |
@@ -262,34 +270,43 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 3. Lancer
 
-- [ ] `lancer_push`
-- [ ] `lancer_piercing_charge` / Polearm range-band rule
-- [ ] `lancer_rallying_cry` status timing row
-- [ ] `lancer_flanking_maneuver` / Wraparound
-- [ ] `lancer_pole_vault`
-- [ ] `lancer_line_breaker`
-- [ ] `lancer_spear_wall`
-- [ ] Lancer class gate: `run_lancer_qa_gate.ps1`.
-- [ ] Lancer live gate: `run_lancer_live_qa.ps1`.
+- [x] `lancer_push`
+- [x] `lancer_piercing_charge` / Polearm range-band rule
+- [x] `lancer_sweeping_halberd`
+- [x] `lancer_vaulting_leap`
+- [x] `lancer_run_down`
+- [x] `lancer_rallying_cry` status timing row
+- [x] `lancer_flanking_maneuver` / Wraparound
+- [x] `lancer_brace`
+- [x] `lancer_harpoon_toss`
+- [x] `lancer_pole_vault`
+- [x] `lancer_line_breaker`
+- [x] `lancer_spear_wall`
+- [x] `lancer_meteor_drop`
+- [x] Lancer class gate: `run_lancer_qa_gate.ps1` — PASS.
+- [x] Lancer live gate: `run_lancer_live_qa.ps1` — PASS.
 - [ ] `lancer_glorious_charge` remains open as Action ally-relocate rework.
 
 #### 4. Archer
 
-- [ ] `archer_sidestep`
-- [ ] `archer_volley`
-- [ ] `archer_power_shot`
-- [ ] `archer_piercing_shot`
-- [ ] `archer_grapple_arrow`
-- [ ] `archer_explosive_arrow`
-- [ ] `archer_hunters_mark`
-- [ ] `archer_repelling_shot`
-- [ ] `archer_bear_trap`
-- [ ] `archer_caltrop_trap`
-- [ ] `archer_suppressing_fire`
-- [ ] `archer_parting_shot`
-- [ ] `archer_scouts_eye`
-- [ ] Archer class gate: `run_archer_qa_gate.ps1`.
-- [ ] Archer live gate: `run_archer_live_qa.ps1`.
+- [x] `archer_sidestep`
+- [x] `archer_volley`
+- [x] `archer_power_shot`
+- [x] `archer_pinning_arrow`
+- [x] `archer_piercing_shot`
+- [x] `archer_toxic_spore_arrow`
+- [x] `archer_grapple_arrow`
+- [x] `archer_explosive_arrow`
+- [x] `archer_hunters_mark`
+- [x] `archer_repelling_shot`
+- [x] `archer_bear_trap`
+- [x] `archer_caltrop_trap`
+- [x] `archer_suppressing_fire`
+- [x] `archer_parting_shot`
+- [x] `archer_scouts_eye`
+- [x] Archer class gate: `run_archer_qa_gate.ps1` — PASS.
+- [x] Archer live gate: `run_archer_live_qa.ps1` — PASS.
+- [x] Archer direct Extra Rules conversion contract — PASS.
 
 #### 5. Mercenary
 

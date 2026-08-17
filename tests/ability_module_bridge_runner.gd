@@ -35,6 +35,14 @@ static func run_all() -> Dictionary:
 	)
 	check_failures = failures.size()
 	_run_script_check(
+		"res://tests/extra_rules_conversion_contract.gd",
+		"run_all",
+		failures,
+		"extra_rules_conversion_contract",
+		check_failures,
+	)
+	check_failures = failures.size()
+	_run_script_check(
 		"res://tests/module_authoring_rules_test.gd",
 		"run_all",
 		failures,
@@ -55,14 +63,6 @@ static func run_all() -> Dictionary:
 		"run_all",
 		failures,
 		"compatibility_reader_boundary",
-		check_failures,
-	)
-	check_failures = failures.size()
-	_run_script_check(
-		"res://tests/extra_rules_conversion_contract.gd",
-		"run_all",
-		failures,
-		"extra_rules_conversion_contract",
 		check_failures,
 	)
 	check_failures = failures.size()

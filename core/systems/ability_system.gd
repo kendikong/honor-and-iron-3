@@ -241,7 +241,7 @@ static func motion_landing_legal(
 				return true
 		return false
 	if GameEnums.is_behind_destination(primary):
-		var allow_enemy: bool = not bool(module.runtime_value("vault_obstacle_or_gap_only", false))
+		var allow_enemy: bool = not module.vault_obstacle_or_gap_only
 		for dir: Vector2i in GridSystem.DIRECTIONS:
 			var blocker: Vector2i = actor.position + dir
 			var far: Vector2i = actor.position + dir * 2

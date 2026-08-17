@@ -12,6 +12,30 @@ static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:
 			run_power_shot_upgrade(failures)
 		"volley":
 			run_volley_upgrade(failures)
+		"pinning_arrow":
+			run_typed_upgrade_profile(row_name, failures)
+		"piercing_shot":
+			run_typed_upgrade_profile(row_name, failures)
+		"toxic_spore_arrow":
+			run_typed_upgrade_profile(row_name, failures)
+		"grapple_arrow":
+			run_typed_upgrade_profile(row_name, failures)
+		"explosive_arrow":
+			run_typed_upgrade_profile(row_name, failures)
+		"hunters_mark":
+			run_typed_upgrade_profile(row_name, failures)
+		"repelling_shot":
+			run_typed_upgrade_profile(row_name, failures)
+		"bear_trap":
+			run_typed_upgrade_profile(row_name, failures)
+		"suppressing_fire":
+			run_typed_upgrade_profile(row_name, failures)
+		"caltrop_trap":
+			run_typed_upgrade_profile(row_name, failures)
+		"parting_shot":
+			run_typed_upgrade_profile(row_name, failures)
+		"scouts_eye":
+			run_typed_upgrade_profile(row_name, failures)
 		_:
 			pass
 
@@ -83,3 +107,21 @@ static func run_volley_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var dmg_in: int = hp_in - (H.unit_hp(result.final_state, 2) + H.unit_hp(result.final_state, 3))
 	H.assert_true(failures, "volley/upgrade/aoe_hits", dmg_in > 0)
+
+
+static func run_typed_upgrade_profile(row_name: String, failures: Array[String]) -> void:
+	var skill_id: StringName = StringName("archer_" + row_name)
+	var ability: AbilityData = H.factory_ability(skill_id)
+	H.assert_true(
+		failures, "%s/upgrade/modules" % row_name,
+		ability != null and not ability.upgraded_modules.is_empty(),
+	)
+	if ability == null or ability.upgraded_modules.is_empty():
+		return
+	var authored: bool = false
+	for module: AbilityModule in ability.upgraded_modules:
+		authored = authored or not module.compile_runtime_modifiers().is_empty()
+		authored = authored or not module.keywords.is_empty()
+		for layer: AbilityLayer in module.layers:
+			authored = authored or not layer.compile_runtime_modifiers().is_empty()
+	H.assert_true(failures, "%s/upgrade/typed_fields" % row_name, authored)

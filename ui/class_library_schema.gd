@@ -688,6 +688,17 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"buff_per_destroyed_object": src.buff_per_destroyed_object,
 		"stagger_on_collision": src.stagger_on_collision,
 		"intercept_grant_str": src.intercept_grant_str,
+		"push_collision_pierce": src.push_collision_pierce,
+		"push_collision_damage": src.push_collision_damage,
+		"difficult_terrain_created": src.difficult_terrain_created,
+		"rooted_push_bleed_weapon": src.rooted_push_bleed_weapon,
+		"grapple_pass_through_damage": src.grapple_pass_through_damage,
+		"ignite_flammable_terrain": src.ignite_flammable_terrain,
+		"ally_damage_zero": src.ally_damage_zero,
+		"trap_vulnerable": src.trap_vulnerable,
+		"crossing_blind": src.crossing_blind,
+		"trap_def_debuff": src.trap_def_debuff,
+		"range_one_damage_multiplier": src.range_one_damage_multiplier,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -707,6 +718,27 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	)
 	layer.stagger_on_collision = bool(data.get("stagger_on_collision", layer.stagger_on_collision))
 	layer.intercept_grant_str = int(data.get("intercept_grant_str", layer.intercept_grant_str))
+	layer.push_collision_pierce = bool(data.get("push_collision_pierce", layer.push_collision_pierce))
+	layer.push_collision_damage = int(data.get("push_collision_damage", layer.push_collision_damage))
+	layer.difficult_terrain_created = bool(
+		data.get("difficult_terrain_created", layer.difficult_terrain_created)
+	)
+	layer.rooted_push_bleed_weapon = bool(
+		data.get("rooted_push_bleed_weapon", layer.rooted_push_bleed_weapon)
+	)
+	layer.grapple_pass_through_damage = int(
+		data.get("grapple_pass_through_damage", layer.grapple_pass_through_damage)
+	)
+	layer.ignite_flammable_terrain = bool(
+		data.get("ignite_flammable_terrain", layer.ignite_flammable_terrain)
+	)
+	layer.ally_damage_zero = bool(data.get("ally_damage_zero", layer.ally_damage_zero))
+	layer.trap_vulnerable = bool(data.get("trap_vulnerable", layer.trap_vulnerable))
+	layer.crossing_blind = bool(data.get("crossing_blind", layer.crossing_blind))
+	layer.trap_def_debuff = int(data.get("trap_def_debuff", layer.trap_def_debuff))
+	layer.range_one_damage_multiplier = float(
+		data.get("range_one_damage_multiplier", layer.range_one_damage_multiplier)
+	)
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -781,6 +813,51 @@ static func module_to_dict(
 		"next_attack_strength": src.next_attack_strength,
 		"next_attack_bleed_weapon": src.next_attack_bleed_weapon,
 		"next_turn": src.next_turn,
+		"preserve_facing": src.preserve_facing,
+		"ignore_zoc": src.ignore_zoc,
+		"next_ranged_attack_strength": src.next_ranged_attack_strength,
+		"root_break_on_damage": src.root_break_on_damage,
+		"skewer": src.skewer,
+		"bounce_walls_45": src.bounce_walls_45,
+		"spread_status_adjacent": src.spread_status_adjacent,
+		"grapple_wall_pull_self": src.grapple_wall_pull_self,
+		"grapple_pass_through_damage": src.grapple_pass_through_damage,
+		"destroy_terrain": src.destroy_terrain,
+		"ignite_flammable_terrain": src.ignite_flammable_terrain,
+		"allies_range_bonus": src.allies_range_bonus,
+		"allies_pierce": src.allies_pierce,
+		"prevent_stealth_teleport": src.prevent_stealth_teleport,
+		"allow_friendly_target": src.allow_friendly_target,
+		"ally_damage_zero": src.ally_damage_zero,
+		"terrain_hazard_status": src.terrain_hazard_status,
+		"trap_damage": src.trap_damage,
+		"trap_bleed_weapon": src.trap_bleed_weapon,
+		"trap_vulnerable": src.trap_vulnerable,
+		"crossing_weapon_damage": src.crossing_weapon_damage,
+		"crossing_mov_penalty": src.crossing_mov_penalty,
+		"crossing_blind": src.crossing_blind,
+		"trap_def_debuff": src.trap_def_debuff,
+		"strip_stealth": src.strip_stealth,
+		"limit_once_per_turn": src.limit_once_per_turn,
+		"range_one_damage_multiplier": src.range_one_damage_multiplier,
+		"halve_target_def_one_turn": src.halve_target_def_one_turn,
+		"armor_explosion_atk": src.armor_explosion_atk,
+		"bonus_atk_vs_fear_or_lower_movement": src.bonus_atk_vs_fear_or_lower_movement,
+		"on_kill_max_move": src.on_kill_max_move,
+		"next_turn_max_move": src.next_turn_max_move,
+		"upgraded_trample": src.upgraded_trample,
+		"brace_attacker_stagger": src.brace_attacker_stagger,
+		"pull_until_adjacent": src.pull_until_adjacent,
+		"pull_self_if_rooted": src.pull_self_if_rooted,
+		"paired_ally_charge": src.paired_ally_charge,
+		"paired_ally_strike_atk": src.paired_ally_strike_atk,
+		"on_kill_both_ap": src.on_kill_both_ap,
+		"vault_obstacle_or_gap_only": src.vault_obstacle_or_gap_only,
+		"landing_adjacent_push": src.landing_adjacent_push,
+		"landing_adjacent_push_stagger": src.landing_adjacent_push_stagger,
+		"line_breaker": src.line_breaker,
+		"bonus_per_enemy_passed": src.bonus_per_enemy_passed,
+		"create_trampled_terrain": src.create_trampled_terrain,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -913,6 +990,90 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		data.get("next_attack_bleed_weapon", dst.next_attack_bleed_weapon)
 	)
 	dst.next_turn = bool(data.get("next_turn", dst.next_turn))
+	dst.preserve_facing = bool(data.get("preserve_facing", dst.preserve_facing))
+	dst.ignore_zoc = bool(data.get("ignore_zoc", dst.ignore_zoc))
+	dst.next_ranged_attack_strength = int(
+		data.get("next_ranged_attack_strength", dst.next_ranged_attack_strength)
+	)
+	dst.root_break_on_damage = bool(data.get("root_break_on_damage", dst.root_break_on_damage))
+	dst.skewer = int(data.get("skewer", dst.skewer))
+	dst.bounce_walls_45 = bool(data.get("bounce_walls_45", dst.bounce_walls_45))
+	dst.spread_status_adjacent = bool(
+		data.get("spread_status_adjacent", dst.spread_status_adjacent)
+	)
+	dst.grapple_wall_pull_self = bool(
+		data.get("grapple_wall_pull_self", dst.grapple_wall_pull_self)
+	)
+	dst.grapple_pass_through_damage = int(
+		data.get("grapple_pass_through_damage", dst.grapple_pass_through_damage)
+	)
+	dst.destroy_terrain = bool(data.get("destroy_terrain", dst.destroy_terrain))
+	dst.ignite_flammable_terrain = bool(
+		data.get("ignite_flammable_terrain", dst.ignite_flammable_terrain)
+	)
+	dst.allies_range_bonus = int(data.get("allies_range_bonus", dst.allies_range_bonus))
+	dst.allies_pierce = bool(data.get("allies_pierce", dst.allies_pierce))
+	dst.prevent_stealth_teleport = bool(
+		data.get("prevent_stealth_teleport", dst.prevent_stealth_teleport)
+	)
+	dst.allow_friendly_target = bool(data.get("allow_friendly_target", dst.allow_friendly_target))
+	dst.ally_damage_zero = bool(data.get("ally_damage_zero", dst.ally_damage_zero))
+	dst.terrain_hazard_status = int(
+		data.get("terrain_hazard_status", dst.terrain_hazard_status)
+	)
+	dst.trap_damage = int(data.get("trap_damage", dst.trap_damage))
+	dst.trap_bleed_weapon = bool(data.get("trap_bleed_weapon", dst.trap_bleed_weapon))
+	dst.trap_vulnerable = bool(data.get("trap_vulnerable", dst.trap_vulnerable))
+	dst.crossing_weapon_damage = bool(
+		data.get("crossing_weapon_damage", dst.crossing_weapon_damage)
+	)
+	dst.crossing_mov_penalty = int(data.get("crossing_mov_penalty", dst.crossing_mov_penalty))
+	dst.crossing_blind = bool(data.get("crossing_blind", dst.crossing_blind))
+	dst.trap_def_debuff = int(data.get("trap_def_debuff", dst.trap_def_debuff))
+	dst.strip_stealth = bool(data.get("strip_stealth", dst.strip_stealth))
+	dst.limit_once_per_turn = bool(data.get("limit_once_per_turn", dst.limit_once_per_turn))
+	dst.range_one_damage_multiplier = float(
+		data.get("range_one_damage_multiplier", dst.range_one_damage_multiplier)
+	)
+	dst.halve_target_def_one_turn = bool(
+		data.get("halve_target_def_one_turn", dst.halve_target_def_one_turn)
+	)
+	dst.armor_explosion_atk = int(data.get("armor_explosion_atk", dst.armor_explosion_atk))
+	dst.bonus_atk_vs_fear_or_lower_movement = int(
+		data.get(
+			"bonus_atk_vs_fear_or_lower_movement",
+			dst.bonus_atk_vs_fear_or_lower_movement,
+		)
+	)
+	dst.on_kill_max_move = int(data.get("on_kill_max_move", dst.on_kill_max_move))
+	dst.next_turn_max_move = int(data.get("next_turn_max_move", dst.next_turn_max_move))
+	dst.upgraded_trample = bool(data.get("upgraded_trample", dst.upgraded_trample))
+	dst.brace_attacker_stagger = int(
+		data.get("brace_attacker_stagger", dst.brace_attacker_stagger)
+	)
+	dst.pull_until_adjacent = bool(data.get("pull_until_adjacent", dst.pull_until_adjacent))
+	dst.pull_self_if_rooted = bool(data.get("pull_self_if_rooted", dst.pull_self_if_rooted))
+	dst.paired_ally_charge = bool(data.get("paired_ally_charge", dst.paired_ally_charge))
+	dst.paired_ally_strike_atk = int(
+		data.get("paired_ally_strike_atk", dst.paired_ally_strike_atk)
+	)
+	dst.on_kill_both_ap = int(data.get("on_kill_both_ap", dst.on_kill_both_ap))
+	dst.vault_obstacle_or_gap_only = bool(
+		data.get("vault_obstacle_or_gap_only", dst.vault_obstacle_or_gap_only)
+	)
+	dst.landing_adjacent_push = int(
+		data.get("landing_adjacent_push", dst.landing_adjacent_push)
+	)
+	dst.landing_adjacent_push_stagger = bool(
+		data.get("landing_adjacent_push_stagger", dst.landing_adjacent_push_stagger)
+	)
+	dst.line_breaker = bool(data.get("line_breaker", dst.line_breaker))
+	dst.bonus_per_enemy_passed = int(
+		data.get("bonus_per_enemy_passed", dst.bonus_per_enemy_passed)
+	)
+	dst.create_trampled_terrain = bool(
+		data.get("create_trampled_terrain", dst.create_trampled_terrain)
+	)
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

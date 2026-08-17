@@ -28,10 +28,10 @@ static func build(basic_bow: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	DataLibrary._add_extra(sidestep_module, "preserve_facing", true)
-	DataLibrary._add_extra(sidestep_module, "ignore_zoc", true)
+	sidestep_module.preserve_facing = true
+	sidestep_module.ignore_zoc = true
 	var sidestep_upgraded := DataLibrary._duplicate_modules([sidestep_module])
-	DataLibrary._add_extra(sidestep_upgraded[0], "next_ranged_attack_strength", 1)
+	sidestep_upgraded[0].next_ranged_attack_strength = 1
 	var sidestep := DataLibrary._make_modular_ability(
 		&"archer_sidestep", "Sidestep", [sidestep_module],
 		sidestep_upgraded, 1, GameEnums.PlannerGroup.PRE_MOVE,
@@ -282,11 +282,13 @@ static func _attack(
 		GameEnums.EffectType.DAMAGE, damage, 1, max_range, targeting_flags,
 		shape, shape_size,
 	)
-	DataLibrary._add_extras_from_dict(module, modifiers)
+	for key: Variant in modifiers:
+		module.ingest_runtime_key(String(key), modifiers[key])
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extras_from_dict(upgraded[0], modifiers)
-	DataLibrary._add_extras_from_dict(upgraded[0], upgrade_modifiers)
-	DataLibrary._add_extra(upgraded[0], "upgraded_profile", true)
+	for key: Variant in modifiers:
+		upgraded[0].ingest_runtime_key(String(key), modifiers[key])
+	for key: Variant in upgrade_modifiers:
+		upgraded[0].ingest_runtime_key(String(key), upgrade_modifiers[key])
 	return _ability(
 		id, name, 1, [module], targeting_flags, [AbilityModuleBridge.TAG_ATTACK],
 		upgrade_description, upgraded,
@@ -308,17 +310,17 @@ static func _attack_with_status(
 		GameEnums.EffectType.DAMAGE, damage, 1, max_range,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extras_from_dict(module, modifiers)
+	for key: Variant in modifiers:
+		module.ingest_runtime_key(String(key), modifiers[key])
 	var status := DataLibrary._status_effect(status_type, status_duration)
-	status.modifiers = modifiers.duplicate(true)
 	module.layers.append(_layer(status))
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extras_from_dict(upgraded[0], modifiers)
-	DataLibrary._add_extras_from_dict(upgraded[0], upgrade_modifiers)
-	upgraded[0].layers[0].effect.modifiers = modifiers.duplicate(true)
 	for key: Variant in upgrade_modifiers:
-		upgraded[0].layers[0].effect.modifiers[key] = upgrade_modifiers[key]
-	upgraded[0].layers[0].effect.modifiers["upgraded_profile"] = true
+		var key_text := String(key)
+		if key_text == "rooted_push_bleed_weapon":
+			upgraded[0].layers[0].ingest_runtime_key(key_text, upgrade_modifiers[key])
+		else:
+			upgraded[0].ingest_runtime_key(key_text, upgrade_modifiers[key])
 	return _ability(
 		id, name, 1, [module], GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK], upgrade_description, upgraded,
@@ -331,8 +333,8 @@ static func _power_shot() -> AbilityData:
 	)
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)))
 	var upgraded := _clone_modules([module])
-	upgraded[0].layers[0].effect.modifiers["push_collision_pierce"] = true
-	upgraded[0].layers[0].effect.modifiers["push_collision_damage"] = 2
+	upgraded[0].layers[0].push_collision_pierce = true
+	upgraded[0].layers[0].push_collision_damage = 2
 	return _ability(
 		&"archer_power_shot", "Power Shot", 1, [module],
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -347,10 +349,11 @@ static func _volley() -> AbilityData:
 	)
 	var upgraded := _clone_modules([module])
 	var terrain := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)
-	terrain.modifiers["terrain_id"] = &"trampled"
-	terrain.modifiers["hazard_duration"] = 1
-	terrain.modifiers["difficult_terrain_created"] = true
-	upgraded[0].layers.append(_layer(terrain))
+	var terrain_layer := _layer(terrain)
+	terrain_layer.difficult_terrain_created = true
+	upgraded[0].terrain_id = &"trampled"
+	upgraded[0].hazard_duration = 1
+	upgraded[0].layers.append(terrain_layer)
 	return _ability(
 		&"archer_volley", "Volley", 1, [module], GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK], "Area becomes difficult terrain (MOVE cost x2).",
@@ -359,13 +362,14 @@ static func _volley() -> AbilityData:
 
 
 static func _pinning_arrow() -> AbilityData:
-	return _attack_with_status(
+	var ability := _attack_with_status(
 		&"archer_pinning_arrow", "Pinning Arrow", 1, 4,
 		GameEnums.StatusType.ROOT, 1,
 		"ROOT breaks on damage. If target is PUSHED while Rooted, apply BLEED WPN.",
-		{"root_break_on_damage": true},
-		{"rooted_push_bleed_weapon": true},
 	)
+	ability.modules[0].root_break_on_damage = true
+	ability.upgraded_modules[0].layers[0].rooted_push_bleed_weapon = true
+	return ability
 
 
 static func _piercing_shot() -> AbilityData:
@@ -374,10 +378,10 @@ static func _piercing_shot() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.LINE, 4,
 	)
-	DataLibrary._add_extra(module, "skewer", 4)
+	module.skewer = 4
 	module.layers.append(_layer(DataLibrary._status_effect_self(GameEnums.StatusType.PIERCE, 1)))
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "bounce_walls_45", true)
+	upgraded[0].bounce_walls_45 = true
 	return _ability(
 		&"archer_piercing_shot", "Piercing Shot", 1, [module],
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -387,12 +391,13 @@ static func _piercing_shot() -> AbilityData:
 
 
 static func _toxic_spore_arrow() -> AbilityData:
-	return _attack_with_status(
+	var ability := _attack_with_status(
 		&"archer_toxic_spore_arrow", "Toxic Spore Arrow", 1, 5,
 		GameEnums.StatusType.POISON, 2,
 		"Apply POISON. Upgraded: spread POISON to adjacent enemies on hit.",
-		{}, {"spread_status_adjacent": true},
 	)
+	ability.upgraded_modules[0].spread_status_adjacent = true
+	return ability
 
 
 static func _grapple_arrow() -> AbilityData:
@@ -400,9 +405,9 @@ static func _grapple_arrow() -> AbilityData:
 		GameEnums.EffectType.PULL, 1, 1, 4,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extra(module, "grapple_wall_pull_self", true)
+	module.grapple_wall_pull_self = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "grapple_pass_through_damage", 2)
+	upgraded[0].grapple_pass_through_damage = 2
 	return _ability(
 		&"archer_grapple_arrow", "Grapple Arrow", 1, [module],
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -418,9 +423,9 @@ static func _explosive_arrow() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.AOE_CROSS, 1,
 	)
-	DataLibrary._add_extra(module, "destroy_terrain", true)
+	module.destroy_terrain = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "ignite_flammable_terrain", true)
+	upgraded[0].ignite_flammable_terrain = true
 	return _ability(
 		&"archer_explosive_arrow", "Explosive Arrow", 1, [module],
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -436,10 +441,10 @@ static func _hunters_mark() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.MARK
 	module.status_duration = 2
-	DataLibrary._add_extra(module, "allies_range_bonus", 1)
-	DataLibrary._add_extra(module, "allies_pierce", true)
+	module.allies_range_bonus = 1
+	module.allies_pierce = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "prevent_stealth_teleport", true)
+	upgraded[0].prevent_stealth_teleport = true
 	return _ability(
 		&"archer_hunters_mark", "Hunter's Mark", 1, [module],
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -453,12 +458,12 @@ static func _repelling_shot() -> AbilityData:
 		GameEnums.EffectType.DAMAGE, 1, 1, 2,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extra(module, "allow_friendly_target", true)
+	module.allow_friendly_target = true
 	var push := DataLibrary._effect(GameEnums.EffectType.PUSH, 3)
-	push.modifiers["allow_friendly_target"] = true
-	module.layers.append(_layer(push))
+	var push_layer := _layer(push)
+	module.layers.append(push_layer)
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "ally_damage_zero", true)
+	upgraded[0].ally_damage_zero = true
 	return _ability(
 		&"archer_repelling_shot", "Repelling Shot", 1, [module],
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY,
@@ -472,12 +477,12 @@ static func _bear_trap() -> AbilityData:
 		GameEnums.EffectType.CREATE_HAZARD, 3, 1, 3,
 		GameEnums.TargetingFlags.TILE,
 	)
-	DataLibrary._add_extra(module, "terrain_id", &"bear_trap")
-	DataLibrary._add_extra(module, "hazard_duration", 3)
-	DataLibrary._add_extra(module, "trap_damage", 3)
-	DataLibrary._add_extra(module, "trap_status", GameEnums.StatusType.ROOT)
+	module.terrain_id = &"bear_trap"
+	module.hazard_duration = 3
+	module.trap_damage = 3
+	module.terrain_hazard_status = GameEnums.StatusType.ROOT
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "trap_vulnerable", true)
+	upgraded[0].trap_vulnerable = true
 	return _ability(
 		&"archer_bear_trap", "Bear Trap", 1, [module], GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_POSITIONING],
@@ -492,12 +497,12 @@ static func _suppressing_fire() -> AbilityData:
 		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.ARC, 1,
 	)
-	DataLibrary._add_extra(module, "terrain_id", &"suppressing_fire")
-	DataLibrary._add_extra(module, "hazard_duration", 1)
-	DataLibrary._add_extra(module, "crossing_weapon_damage", true)
-	DataLibrary._add_extra(module, "crossing_mov_penalty", 1)
+	module.terrain_id = &"suppressing_fire"
+	module.hazard_duration = 1
+	module.crossing_weapon_damage = true
+	module.crossing_mov_penalty = 1
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "crossing_blind", true)
+	upgraded[0].crossing_blind = true
 	return _ability(
 		&"archer_suppressing_fire", "Suppressing Fire", 1, [module],
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
@@ -511,12 +516,12 @@ static func _caltrop_trap() -> AbilityData:
 		GameEnums.EffectType.CREATE_HAZARD, 1, 1, 3,
 		GameEnums.TargetingFlags.TILE,
 	)
-	DataLibrary._add_extra(module, "terrain_id", &"caltrop_trap")
-	DataLibrary._add_extra(module, "hazard_duration", 3)
-	DataLibrary._add_extra(module, "trap_status", GameEnums.StatusType.ROOT)
-	DataLibrary._add_extra(module, "trap_bleed_weapon", true)
+	module.terrain_id = &"caltrop_trap"
+	module.hazard_duration = 3
+	module.terrain_hazard_status = GameEnums.StatusType.ROOT
+	module.trap_bleed_weapon = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "trap_def_debuff", 2)
+	upgraded[0].trap_def_debuff = 2
 	return _ability(
 		&"archer_caltrop_trap", "Caltrop Trap", 1, [module],
 		GameEnums.TargetingFlags.TILE, [AbilityModuleBridge.TAG_POSITIONING],
@@ -540,7 +545,7 @@ static func _parting_shot() -> AbilityData:
 	move.execution_phase = GameEnums.ModulePhase.ON_POST
 	var modules: Array[AbilityModule] = [strike, move]
 	var upgraded := _clone_modules(modules)
-	DataLibrary._add_extra(upgraded[1], "ghost_move", 1)
+	upgraded[1].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
 	return _ability(
 		&"archer_parting_shot", "Parting Shot", 1, modules,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -555,7 +560,7 @@ static func _scouts_eye() -> AbilityData:
 		GameEnums.EffectType.PURGE, 0, 1, 5,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extra(module, "strip_stealth", true)
+	module.strip_stealth = true
 	var upgraded := _clone_modules([module])
 	var vulnerable := DataLibrary._status_effect(GameEnums.StatusType.VULNERABLE, 1)
 	upgraded[0].layers.append(_layer(vulnerable))

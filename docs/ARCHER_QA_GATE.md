@@ -67,16 +67,16 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md) § Global systems f
 | `archer_volley` | `tests/skills/archer_volley_scenario.gd` | PASS | Sim AOE in/out tiles |
 | `archer_pinning_arrow` | `tests/skills/archer_pinning_arrow_scenario.gd` | PASS | Sim ROOT apply |
 | `archer_piercing_shot` | `tests/skills/archer_piercing_shot_scenario.gd` | PASS | Sim LINE multi-hit |
-| `archer_toxic_spore_arrow` | `tests/skills/archer_toxic_spore_arrow_scenario.gd` | PASS | Ability-used smoke; needs status tile proof |
+| `archer_toxic_spore_arrow` | `tests/skills/archer_toxic_spore_arrow_scenario.gd` | PASS | Sim POISON apply + upgraded adjacent POISON spread |
 | `archer_grapple_arrow` | `tests/skills/archer_grapple_arrow_scenario.gd` | PASS | Sim PULL displacement |
 | `archer_explosive_arrow` | `tests/skills/archer_explosive_arrow_scenario.gd` | PASS | Sim CROSS in/out |
 | `archer_hunters_mark` | `tests/skills/archer_hunters_mark_scenario.gd` | PASS | Sim status apply |
 | `archer_repelling_shot` | `tests/skills/archer_repelling_shot_scenario.gd` | PASS | Sim PUSH |
 | `archer_bear_trap` | `tests/skills/archer_bear_trap_scenario.gd` | PASS | Sim hazard tile |
 | `archer_suppressing_fire` | `tests/skills/archer_suppressing_fire_scenario.gd` | PASS | ARC `get_affected_tiles` + resolve |
-| `archer_caltrop_trap` | `tests/skills/archer_caltrop_trap_scenario.gd` | PASS | Hazard smoke; needs tile proof |
+| `archer_caltrop_trap` | `tests/skills/archer_caltrop_trap_scenario.gd` | PASS | Hazard placement + ROOT/BLEED WPN payload proof |
 | `archer_parting_shot` | `tests/skills/archer_parting_shot_scenario.gd` | PASS | Sim damage |
-| `archer_scouts_eye` | `tests/skills/archer_scouts_eye_scenario.gd` | PASS | Ability-used smoke |
+| `archer_scouts_eye` | `tests/skills/archer_scouts_eye_scenario.gd` | PASS | STEALTH removal + upgraded VULNERABLE proof |
 
 ### Passives
 

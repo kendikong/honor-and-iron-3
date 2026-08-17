@@ -84,6 +84,55 @@ extends Resource
 @export var next_attack_bleed_weapon: bool = false
 @export var next_turn: bool = false
 
+## Archer typed positioning, hazard, targeting, and follow-up fields.
+@export var preserve_facing: bool = false
+@export var ignore_zoc: bool = false
+@export var next_ranged_attack_strength: int = 0
+@export var root_break_on_damage: bool = false
+@export var skewer: int = 0
+@export var bounce_walls_45: bool = false
+@export var spread_status_adjacent: bool = false
+@export var grapple_wall_pull_self: bool = false
+@export var grapple_pass_through_damage: int = 0
+@export var destroy_terrain: bool = false
+@export var ignite_flammable_terrain: bool = false
+@export var allies_range_bonus: int = 0
+@export var allies_pierce: bool = false
+@export var prevent_stealth_teleport: bool = false
+@export var allow_friendly_target: bool = false
+@export var ally_damage_zero: bool = false
+@export var terrain_hazard_status: GameEnums.StatusType = GameEnums.StatusType.NONE
+@export var trap_damage: int = 0
+@export var trap_bleed_weapon: bool = false
+@export var trap_vulnerable: bool = false
+@export var crossing_weapon_damage: bool = false
+@export var crossing_mov_penalty: int = 0
+@export var crossing_blind: bool = false
+@export var trap_def_debuff: int = 0
+@export var strip_stealth: bool = false
+
+## Lancer typed movement, reach, collision, and timing fields.
+@export var limit_once_per_turn: bool = false
+@export var range_one_damage_multiplier: float = 0.0
+@export var halve_target_def_one_turn: bool = false
+@export var armor_explosion_atk: int = 0
+@export var bonus_atk_vs_fear_or_lower_movement: int = 0
+@export var on_kill_max_move: int = 0
+@export var next_turn_max_move: int = 0
+@export var upgraded_trample: bool = false
+@export var brace_attacker_stagger: int = 0
+@export var pull_until_adjacent: bool = false
+@export var pull_self_if_rooted: bool = false
+@export var paired_ally_charge: bool = false
+@export var paired_ally_strike_atk: int = 0
+@export var on_kill_both_ap: int = 0
+@export var vault_obstacle_or_gap_only: bool = false
+@export var landing_adjacent_push: int = 0
+@export var landing_adjacent_push_stagger: bool = false
+@export var line_breaker: bool = false
+@export var bonus_per_enemy_passed: int = 0
+@export var create_trampled_terrain: bool = false
+
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
@@ -193,6 +242,96 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["bleed_weapon"] = true
 	if next_turn:
 		bag["next_turn"] = true
+	if preserve_facing:
+		bag["preserve_facing"] = true
+	if ignore_zoc:
+		bag["ignore_zoc"] = true
+	if next_ranged_attack_strength != 0:
+		bag["next_ranged_attack_strength"] = next_ranged_attack_strength
+	if root_break_on_damage:
+		bag["root_break_on_damage"] = true
+	if skewer != 0:
+		bag["skewer"] = skewer
+	if bounce_walls_45:
+		bag["bounce_walls_45"] = true
+	if spread_status_adjacent:
+		bag["spread_status_adjacent"] = true
+	if grapple_wall_pull_self:
+		bag["grapple_wall_pull_self"] = true
+	if grapple_pass_through_damage != 0:
+		bag["grapple_pass_through_damage"] = grapple_pass_through_damage
+	if destroy_terrain:
+		bag["destroy_terrain"] = true
+	if ignite_flammable_terrain:
+		bag["ignite_flammable_terrain"] = true
+	if allies_range_bonus != 0:
+		bag["allies_range_bonus"] = allies_range_bonus
+	if allies_pierce:
+		bag["allies_pierce"] = true
+	if prevent_stealth_teleport:
+		bag["prevent_stealth_teleport"] = true
+	if allow_friendly_target:
+		bag["allow_friendly_target"] = true
+	if ally_damage_zero:
+		bag["ally_damage_zero"] = true
+	if terrain_hazard_status != GameEnums.StatusType.NONE:
+		bag["trap_status"] = terrain_hazard_status
+	if trap_damage != 0:
+		bag["trap_damage"] = trap_damage
+	if trap_bleed_weapon:
+		bag["trap_bleed_weapon"] = true
+	if trap_vulnerable:
+		bag["trap_vulnerable"] = true
+	if crossing_weapon_damage:
+		bag["crossing_weapon_damage"] = true
+	if crossing_mov_penalty != 0:
+		bag["crossing_mov_penalty"] = crossing_mov_penalty
+	if crossing_blind:
+		bag["crossing_blind"] = true
+	if trap_def_debuff != 0:
+		bag["trap_def_debuff"] = trap_def_debuff
+	if strip_stealth:
+		bag["strip_stealth"] = true
+	if limit_once_per_turn:
+		bag["limit_once_per_turn"] = true
+	if not is_zero_approx(range_one_damage_multiplier):
+		bag["range_one_damage_multiplier"] = range_one_damage_multiplier
+	if halve_target_def_one_turn:
+		bag["halve_target_def_one_turn"] = true
+	if armor_explosion_atk != 0:
+		bag["armor_explosion_atk"] = armor_explosion_atk
+	if bonus_atk_vs_fear_or_lower_movement != 0:
+		bag["bonus_atk_vs_fear_or_lower_movement"] = bonus_atk_vs_fear_or_lower_movement
+	if on_kill_max_move != 0:
+		bag["on_kill_max_move"] = on_kill_max_move
+	if next_turn_max_move != 0:
+		bag["next_turn_max_move"] = next_turn_max_move
+	if upgraded_trample:
+		bag["upgraded_trample"] = true
+	if brace_attacker_stagger != 0:
+		bag["brace_attacker_stagger"] = brace_attacker_stagger
+	if pull_until_adjacent:
+		bag["pull_until_adjacent"] = true
+	if pull_self_if_rooted:
+		bag["pull_self_if_rooted"] = true
+	if paired_ally_charge:
+		bag["paired_ally_charge"] = true
+	if paired_ally_strike_atk != 0:
+		bag["paired_ally_strike_atk"] = paired_ally_strike_atk
+	if on_kill_both_ap != 0:
+		bag["on_kill_both_ap"] = on_kill_both_ap
+	if vault_obstacle_or_gap_only:
+		bag["vault_obstacle_or_gap_only"] = true
+	if landing_adjacent_push != 0:
+		bag["landing_adjacent_push"] = landing_adjacent_push
+	if landing_adjacent_push_stagger:
+		bag["landing_adjacent_push_stagger"] = true
+	if line_breaker:
+		bag["line_breaker"] = true
+	if bonus_per_enemy_passed != 0:
+		bag["bonus_per_enemy_passed"] = bonus_per_enemy_passed
+	if create_trampled_terrain:
+		bag["create_trampled_terrain"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -310,6 +449,141 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"next_turn":
 			next_turn = bool(value)
+			return
+		"preserve_facing":
+			preserve_facing = bool(value)
+			return
+		"ignore_zoc":
+			ignore_zoc = bool(value)
+			return
+		"next_ranged_attack_strength":
+			next_ranged_attack_strength = int(value)
+			return
+		"root_break_on_damage":
+			root_break_on_damage = bool(value)
+			return
+		"skewer":
+			skewer = int(value)
+			return
+		"bounce_walls_45":
+			bounce_walls_45 = bool(value)
+			return
+		"spread_status_adjacent":
+			spread_status_adjacent = bool(value)
+			return
+		"grapple_wall_pull_self":
+			grapple_wall_pull_self = bool(value)
+			return
+		"grapple_pass_through_damage":
+			grapple_pass_through_damage = int(value)
+			return
+		"destroy_terrain":
+			destroy_terrain = bool(value)
+			return
+		"ignite_flammable_terrain":
+			ignite_flammable_terrain = bool(value)
+			return
+		"allies_range_bonus":
+			allies_range_bonus = int(value)
+			return
+		"allies_pierce":
+			allies_pierce = bool(value)
+			return
+		"prevent_stealth_teleport":
+			prevent_stealth_teleport = bool(value)
+			return
+		"allow_friendly_target":
+			allow_friendly_target = bool(value)
+			return
+		"ally_damage_zero":
+			ally_damage_zero = bool(value)
+			return
+		"trap_status":
+			terrain_hazard_status = value as GameEnums.StatusType
+			return
+		"trap_damage":
+			trap_damage = int(value)
+			return
+		"trap_bleed_weapon":
+			trap_bleed_weapon = bool(value)
+			return
+		"trap_vulnerable":
+			trap_vulnerable = bool(value)
+			return
+		"crossing_weapon_damage":
+			crossing_weapon_damage = bool(value)
+			return
+		"crossing_mov_penalty":
+			crossing_mov_penalty = int(value)
+			return
+		"crossing_blind":
+			crossing_blind = bool(value)
+			return
+		"trap_def_debuff":
+			trap_def_debuff = int(value)
+			return
+		"strip_stealth":
+			strip_stealth = bool(value)
+			return
+		"limit_once_per_turn":
+			limit_once_per_turn = bool(value)
+			return
+		"range_one_damage_multiplier":
+			range_one_damage_multiplier = float(value)
+			return
+		"halve_target_def_one_turn":
+			halve_target_def_one_turn = bool(value)
+			return
+		"armor_explosion_atk":
+			armor_explosion_atk = int(value)
+			return
+		"bonus_atk_vs_fear_or_lower_movement":
+			bonus_atk_vs_fear_or_lower_movement = int(value)
+			return
+		"on_kill_max_move":
+			on_kill_max_move = int(value)
+			return
+		"next_turn_max_move":
+			next_turn_max_move = int(value)
+			return
+		"upgraded_trample":
+			upgraded_trample = bool(value)
+			return
+		"brace_attacker_stagger":
+			brace_attacker_stagger = int(value)
+			return
+		"pull_until_adjacent":
+			pull_until_adjacent = bool(value)
+			return
+		"pull_self_if_rooted":
+			pull_self_if_rooted = bool(value)
+			return
+		"paired_ally_charge":
+			paired_ally_charge = bool(value)
+			return
+		"paired_ally_strike_atk":
+			paired_ally_strike_atk = int(value)
+			return
+		"on_kill_both_ap":
+			on_kill_both_ap = int(value)
+			return
+		"vault_obstacle_or_gap_only":
+			vault_obstacle_or_gap_only = bool(value)
+			return
+		"landing_adjacent_push":
+			landing_adjacent_push = int(value)
+			return
+		"landing_adjacent_push_stagger":
+			landing_adjacent_push_stagger = bool(value)
+			return
+		"line_breaker":
+			line_breaker = bool(value)
+			return
+		"bonus_per_enemy_passed":
+			bonus_per_enemy_passed = int(value)
+			return
+		"create_trampled_terrain":
+			create_trampled_terrain = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE
