@@ -88,10 +88,7 @@ static func _apply_tile_hazard(board: BoardState, unit: UnitState, coord: Vector
 	var payload: Dictionary = board.terrain_payloads.get(coord, {})
 	var terrain_owner := board.get_unit_by_id(int(payload.get("terrain_owner_id", -1)))
 	if payload.get("sanctuary", false) and terrain_owner != null:
-		if unit.team == terrain_owner.team:
-			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STEALTH, 1))
-			unit.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.INVULNERABLE, 1))
-		elif payload.get("sanctuary_enemy_push", 0) > 0:
+		if unit.team != terrain_owner.team and payload.get("sanctuary_enemy_push", 0) > 0:
 			PhysicsSystem.push(
 				board,
 				unit,

@@ -54,7 +54,7 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md).
 | `cleric_holy_light` | Active | `tests/skills/cleric_holy_light_scenario.gd` | PASS | MAG HEAL |
 | `cleric_smite` | Active | `tests/skills/cleric_smite_scenario.gd` | PASS | Holy DAMAGE |
 | `cleric_cleansing_aura` | Active | `tests/skills/cleric_cleansing_aura_scenario.gd` | PASS | AOE cleanse |
-| `cleric_sanctuary` | Active | `tests/skills/cleric_sanctuary_scenario.gd` | PASS | Sanctuary terrain |
+| `cleric_sanctuary` | Active | `tests/skills/cleric_sanctuary_scenario.gd` | PASS | Start-turn STEALTH+STURDY+SHIELD 1; `[+]` entry PUSH 1 |
 | `cleric_blinding_ray` | Active | `tests/skills/cleric_blinding_ray_scenario.gd` | PASS | BLIND status |
 | `cleric_divine_hammer` | Active | `tests/skills/cleric_divine_hammer_scenario.gd` | PASS | Spawn hammer |
 | `cleric_life_link` | Active | `tests/skills/cleric_life_link_scenario.gd` | PASS | Link HEAL |
@@ -63,7 +63,7 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md).
 | `cleric_consecrate_ground` | Active | `tests/skills/cleric_consecrate_ground_scenario.gd` | PASS | Holy ground terrain |
 | `cleric_holy_wrath` | Active | `tests/skills/cleric_holy_wrath_scenario.gd` | PASS | AOE holy |
 | `cleric_divine_guidance` | Active | `tests/skills/cleric_divine_guidance_scenario.gd` | PASS | Guidance buff |
-| `cleric_shield_of_faith` | Active | `tests/skills/cleric_shield_of_faith_scenario.gd` | PASS | SHIELD |
+| `cleric_shield_of_faith` | Active | `tests/skills/cleric_shield_of_faith_scenario.gd` | PASS | Flat SHIELD 3 + INTERCEPT |
 | `cleric_martyrs_chains` | Active | `tests/skills/cleric_martyrs_chains_scenario.gd` | PASS | ROOT chains |
 
 ### Innate + passives
@@ -74,7 +74,7 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md).
 | `blood_donation` | Blood Donation | `tests/passives/blood_donation_scenario.gd` | PASS | Paladin promotion |
 | `sacred_shield` | Sacred Shield | `tests/passives/sacred_shield_scenario.gd` | PASS | Paladin |
 | `divine_blessing` | Divine Blessing | `tests/passives/divine_blessing_scenario.gd` | PASS | Paladin |
-| `frontline_medic` | Frontline Medic | `tests/passives/frontline_medic_scenario.gd` | PASS | Paladin |
+| `frontline_medic` | Frontline Medic | `tests/passives/frontline_medic_scenario.gd` | PASS | Adjacent-enemy SHIELD 1 / `[+]` 2 |
 | `armor_of_faith` | Armor of Faith | `tests/passives/armor_of_faith_scenario.gd` | PASS | Paladin |
 | `divine_overflow` | Divine Overflow | `tests/passives/divine_overflow_scenario.gd` | PASS | Seraph |
 | `divine_intervention` | Divine Intervention | `tests/passives/divine_intervention_scenario.gd` | PASS | Seraph |

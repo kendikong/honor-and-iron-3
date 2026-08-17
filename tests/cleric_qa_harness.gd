@@ -294,6 +294,134 @@ static func run_selfless_siphon(failures: Array[String]) -> void:
 	_run_selfless_siphon(failures, definition)
 
 
+static func run_frontline_medic_proof(failures: Array[String]) -> void:
+	var definition := FactoryTestHelpers.build_unit(&"cleric")
+	_run_frontline_medic_proof(failures, definition, _ability(definition, &"cleric_holy_light"))
+
+
+static func run_sanctuary_proof(failures: Array[String]) -> void:
+	_run_sanctuary_proof(failures, FactoryTestHelpers.build_unit(&"cleric"))
+
+
+static func run_shield_of_faith_proof(failures: Array[String]) -> void:
+	_run_shield_of_faith_proof(failures, FactoryTestHelpers.build_unit(&"cleric"))
+
+
+static func _run_frontline_medic_proof(
+	failures: Array[String],
+	definition: UnitData,
+	holy_light: AbilityData,
+) -> void:
+	var passive := _passive(definition, &"frontline_medic")
+	for upgraded: bool in [false, true]:
+		var board := _H.make_plain_board(Vector2i(8, 6))
+		var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 2), {
+			"active_abilities": [holy_light],
+			"active_passives": [passive],
+		})
+		if upgraded:
+			cleric.upgraded_passives.append(&"frontline_medic")
+		var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 2), {})
+		ally.health.current_hp = maxi(1, ally.health.max_hp - 2)
+		var enemy := UnitState.create(
+			3, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(2, 3), {},
+		)
+		board.units.append_array([cleric, ally, enemy])
+		for unit: UnitState in board.units:
+			GridSystem.set_occupant(board, unit.position, unit.id)
+		var armor_before := ally.armor
+		var plan := Timeline.new()
+		plan.add(TimelineAction.make_ability(cleric.id, holy_light, ally.position, ally.id))
+		Simulator.simulate_player_turn(board, plan, [])
+		var expected := 2 if upgraded else 1
+		_assert(
+			failures,
+			"passive/frontline_medic/shield_%d" % expected,
+			ally.armor - armor_before == expected,
+		)
+
+
+static func _run_sanctuary_proof(failures: Array[String], definition: UnitData) -> void:
+	var ability := _ability(definition, &"cleric_sanctuary")
+	if ability == null:
+		return
+	var board := _H.make_plain_board(Vector2i(10, 8))
+	var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 3), {
+		"active_abilities": [ability],
+	})
+	var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 3), {})
+	var enemy := UnitState.create(
+		3, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(5, 3), {},
+	)
+	board.units.append_array([cleric, ally, enemy])
+	for unit: UnitState in board.units:
+		GridSystem.set_occupant(board, unit.position, unit.id)
+	var target := Vector2i(4, 3)
+	var action := TimelineAction.make_ability(cleric.id, ability, target, -1)
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(board, action, events)
+	GridSystem.set_occupant(board, ally.position, -1)
+	ally.position = target
+	GridSystem.set_occupant(board, target, ally.id)
+	var armor_before := ally.armor
+	Simulator._tick_start_of_turn(board, events, GameEnums.Team.PLAYER)
+	_assert(
+		failures,
+		"sanctuary/start_turn_buffs",
+		ally.has_status(GameEnums.StatusType.STEALTH)
+		and ally.has_status(GameEnums.StatusType.STURDY)
+		and ally.armor - armor_before == 1,
+	)
+
+	var upgraded_board := _H.make_plain_board(Vector2i(10, 8))
+	var upgraded_cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 3), {
+		"active_abilities": [ability],
+		"upgraded_abilities": [&"cleric_sanctuary"],
+	})
+	var upgraded_enemy := UnitState.create(
+		3, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(5, 3), {},
+	)
+	upgraded_board.units.append_array([upgraded_cleric, upgraded_enemy])
+	for unit: UnitState in upgraded_board.units:
+		GridSystem.set_occupant(upgraded_board, unit.position, unit.id)
+	var upgraded_action := TimelineAction.make_ability(upgraded_cleric.id, ability, target, -1)
+	AbilitySystem.execute(upgraded_board, upgraded_action, [])
+	GridSystem.set_occupant(upgraded_board, upgraded_enemy.position, -1)
+	upgraded_enemy.position = target
+	GridSystem.set_occupant(upgraded_board, target, upgraded_enemy.id)
+	var enemy_events: Array[SimEvent] = []
+	TerrainSystem.apply_landing(upgraded_board, upgraded_enemy, enemy_events)
+	_assert(
+		failures,
+		"sanctuary/upgrade_enemy_push",
+		upgraded_enemy.position != target,
+	)
+
+
+static func _run_shield_of_faith_proof(failures: Array[String], definition: UnitData) -> void:
+	var ability := _ability(definition, &"cleric_shield_of_faith")
+	if ability == null:
+		return
+	var board := _H.make_plain_board(Vector2i(8, 6))
+	var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 2), {
+		"active_abilities": [ability],
+	})
+	var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 2), {})
+	board.units.append_array([cleric, ally])
+	for unit: UnitState in board.units:
+		GridSystem.set_occupant(board, unit.position, unit.id)
+	var armor_before := ally.armor
+	var action := TimelineAction.make_ability(cleric.id, ability, ally.position, ally.id)
+	var events: Array[SimEvent] = []
+	AbilitySystem.execute(board, action, events)
+	_assert(
+		failures,
+		"shield_of_faith/flat_shield_3",
+		ally.armor - armor_before == 3
+		and ally.has_status(GameEnums.StatusType.INTERCEPT),
+	)
+
+
 static func _sim_target_for_ability(
 	cleric: UnitState,
 	ability: AbilityData,
@@ -372,30 +500,6 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName) ->
 		_assert_heal_passive_buff(
 			failures, definition, holy_light, &"armor_of_faith",
 			"passive/armor_of_faith/def", GameEnums.StatusType.STAT_BUFF_DEF,
-		)
-
-	if _passive_should_run(only_id, &"frontline_medic"):
-		var board := _H.make_plain_board(Vector2i(8, 6))
-		var passive := _passive(definition, &"frontline_medic")
-		var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 2), {
-			"active_abilities": [holy_light],
-			"active_passives": [passive],
-		})
-		var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 2), {})
-		ally.health.current_hp = maxi(1, ally.health.max_hp - 2)
-		var enemy := UnitState.create(
-			3, DataLibrary.get_training_dummy(), GameEnums.Team.ENEMY, Vector2i(2, 3), {},
-		)
-		board.units.append_array([cleric, ally, enemy])
-		for unit: UnitState in board.units:
-			GridSystem.set_occupant(board, unit.position, unit.id)
-		var hp_before := ally.health.current_hp
-		var plan := Timeline.new()
-		plan.add(TimelineAction.make_ability(cleric.id, holy_light, ally.position, ally.id))
-		Simulator.simulate_player_turn(board, plan, [])
-		_assert(
-			failures, "passive/frontline_medic/bonus_heal",
-			ally.health.current_hp > hp_before + 1,
 		)
 
 	if _passive_should_run(only_id, &"divine_overflow"):

@@ -147,7 +147,7 @@ Bowling Charge / Trampling Advance untouched. No class LOCK claim.
 
 Infrastructure ADEQUATE: `scripts/run_bible_alignment_gate.ps1` parses canvas FAIL rows, writes `docs/bible_alignment_audit.json`, exits 1 while FAIL>0.
 
-Cleric: MAG ATK / HEAL X / SHIELD X via CombatSystem helpers; Holy Light dual-faction; Blinding Ray keeps BLIND; Divine Hammer adjacent MAG+PUSH + HOLY AURA; Life Link no INTERCEPT; Resurrection corpse-only; Divine Guidance upgrade does not zero MOV; Shield of Faith SHIELD 3 formula. Martyr's Chains still auto-picks the second enemy (1 Cleric FAIL).
+Cleric: MAG ATK / HEAL X / SHIELD X via CombatSystem helpers; Holy Light dual-faction; Blinding Ray keeps BLIND; Divine Hammer adjacent MAG+PUSH + HOLY AURA; Life Link no INTERCEPT; Resurrection corpse-only; Divine Guidance upgrade does not zero MOV; Shield of Faith grants flat SHIELD 3. Martyr's Chains still auto-picks the second enemy (1 Cleric FAIL).
 
 Canvas: 101 → 86 FAIL. Next largest cluster: Rogue 13.
 

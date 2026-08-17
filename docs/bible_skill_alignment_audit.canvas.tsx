@@ -322,7 +322,7 @@ const R: Finding[] = [
   { cls: "Cleric", skill: "Holy Light", bible: "RANGE 3 Ally MAG HEAL 3. Enemy MAG ATK 2. [+] Enemy MAG ATK 4", verdict: "MATCH", delta: "Ally MAG HEAL 3. Enemy MAG ATK 2/4 via enemy_mag_atk." },
   { cls: "Cleric", skill: "Smite", bible: "RANGE 3 MAG ATK 2. [+] closest ally SHIELD 50% dmg", verdict: "MATCH", delta: "50% of damage dealt." },
   { cls: "Cleric", skill: "Cleansing Aura", bible: "RANGE 0 AOE 2 CLEANSE allies PURGE enemies. [+] STR+1/debuff", verdict: "MATCH", delta: "AOE 2 = cross." },
-  { cls: "Cleric", skill: "Sanctuary", bible: "RANGE 2 1-tile STEALTH+INVULNERABLE 2 turns. [+] enemies PUSH 1", verdict: "MATCH", delta: "simulator + terrain_system." },
+  { cls: "Cleric", skill: "Sanctuary", bible: "RANGE 2 1-tile zone. Allies gain STEALTH+STURDY+SHIELD 1 at turn start. [+] enemies PUSH 1", verdict: "MATCH", delta: "simulator start-turn buffs + terrain_system enemy entry push." },
   { cls: "Cleric", skill: "Blinding Ray", bible: "SKEWER 4 MAG ATK 1 BLIND. [+] also CONFUSION", verdict: "MATCH", delta: "Upgrade keeps BLIND and adds CONFUSION." },
   { cls: "Cleric", skill: "Divine Hammer", bible: "RANGE 2 obstacle 25% HP MAG ATK 2 PUSH 1. [+] HOLY AURA", verdict: "MATCH", delta: "Adjacent MAG ATK 2 + PUSH 1 from the obstacle. Upgrade sets holy_aura." },
   { cls: "Cleric", skill: "Life Link", bible: "Ally dmg −3; suffer 2 self-dmg. [+] no self-dmg", verdict: "MATCH", delta: "−3 incoming, no INTERCEPT. Base DAMAGE_SELF 2; upgrade omits it." },
@@ -331,7 +331,7 @@ const R: Finding[] = [
   { cls: "Cleric", skill: "Consecrate Ground", bible: "RANGE 0 AOE 2 HEAL 1 allies / MAG ATK 1 enemies. [+] −1 DEF", verdict: "MATCH", delta: "Ally start-of-turn HEAL 1 (10% Max HP). Enemy entry MAG ATK 1. DEF−1 MATCH." },
   { cls: "Cleric", skill: "Holy Wrath", bible: "RANGE 3 MAG ATK 3; debuffed STAGGER. [+] PUSH 2", verdict: "MATCH", delta: "stagger_if_debuffed." },
   { cls: "Cleric", skill: "Divine Guidance", bible: "RANGE 3 ally +1 AP; SELF MOV=0 next turn. [+] self not rooted", verdict: "MATCH", delta: "Upgrade grants AP only; does not zero MOV." },
-  { cls: "Cleric", skill: "Shield of Faith", bible: "RANGE 2 SHIELD 3 INTERCEPT 50%. [+] ATK 1 on intercept", verdict: "MATCH", delta: "SHIELD 3 uses MAX_HP scaling (30% Max HP). INTERCEPT MATCH." },
+  { cls: "Cleric", skill: "Shield of Faith", bible: "RANGE 2 SHIELD 3 INTERCEPT 50%. [+] ATK 1 on intercept", verdict: "MATCH", delta: "Flat SHIELD 3 via raw ARMOR_UP amount. INTERCEPT MATCH." },
   { cls: "Cleric", skill: "Martyr's Chains", bible: "RANGE 3 link two enemies; magic → MAG ATK 1. [+] BLIND", verdict: "MATCH", delta: "Second enemy is a NEW_AIM pick. Missing second pick fails loud. MAG ATK 1 share." },
 
   { cls: "Shaman", skill: "Stats / promotions", bible: "CON 3 MOV 4 STR 1 DEF 1 MAG 4 + three promo lines", verdict: "MATCH", delta: "promotion_stat_bonuses present." },

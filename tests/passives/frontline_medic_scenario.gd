@@ -8,4 +8,4 @@ static func run_all(failures: Array[String]) -> void:
 
 
 static func _sim_trigger(failures: Array[String]) -> void:
-		_H.run_passive_row(&"frontline_medic", failures)
+	_H.run_frontline_medic_proof(failures)

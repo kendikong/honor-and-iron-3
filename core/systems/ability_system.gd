@@ -1238,17 +1238,17 @@ static func _apply_healing_passive_modifiers(
 							"Divine Overflow",
 						)
 				healer.passive_flags.erase("divine_overflow_processing")
-		if passive.modifiers.has("adjacent_enemy_heal"):
+		if passive.modifiers.has("adjacent_enemy_shield"):
 			var adjacent_enemies := 0
 			for direction: Vector2i in GridSystem.DIRECTIONS:
 				var adjacent := board.get_unit_at(healer.position + direction)
 				if adjacent != null and adjacent.team != healer.team:
 					adjacent_enemies += 1
 			if adjacent_enemies > 0:
-				var bonus := int(passive.modifiers["adjacent_enemy_heal"])
+				var bonus := int(passive.modifiers["adjacent_enemy_shield"])
 				if healer.is_passive_upgraded(passive.id):
-					bonus = int(passive.modifiers.get("upgraded_adjacent_enemy_heal", bonus))
-				CombatSystem.heal(board, target, bonus, events)
+					bonus = int(passive.modifiers.get("upgraded_adjacent_enemy_shield", bonus))
+				CombatSystem.add_armor(board, target, bonus, events)
 		if passive.modifiers.has("heal_ally_str"):
 			var strength_bonus := int(passive.modifiers["heal_ally_str"])
 			var strength_duration := 1

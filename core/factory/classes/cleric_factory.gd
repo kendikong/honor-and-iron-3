@@ -66,9 +66,9 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		"upgraded_heal_ally_str": 2, "upgraded_heal_ally_duration": 2,
 		"promotion": &"paladin"}))
 	def.passives.append(_passive(&"frontline_medic", "Frontline Medic",
-		"Healing skills restore +1 HP if adjacent to an enemy.",
-		"Restore +2 HP instead.", {"adjacent_enemy_heal": 1,
-		"upgraded_adjacent_enemy_heal": 2, "promotion": &"paladin"}))
+		"Healing an ally while adjacent to an enemy grants that ally SHIELD 1.",
+		"Grant SHIELD 2 instead.", {"adjacent_enemy_shield": 1,
+		"upgraded_adjacent_enemy_shield": 2, "promotion": &"paladin"}))
 	def.passives.append(_passive(&"armor_of_faith", "Armor of Faith",
 		"Healing an ally grants both units +1 DEF for 1 turn.",
 		"Both gain +2 DEF.", {"heal_def": 1, "upgraded_heal_def": 2,
@@ -421,12 +421,12 @@ static func _divine_guidance() -> AbilityData:
 static func _shield_of_faith() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAX_HP,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)))
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.ARMOR_UP, 3, 1, 2, GameEnums.TargetingFlags.ALLY,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAX_HP,
+		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	var intercept := DataLibrary._status_effect(GameEnums.StatusType.INTERCEPT, 1)
 	var intercept_layer := _layer(intercept)

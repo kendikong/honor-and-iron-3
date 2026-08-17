@@ -206,7 +206,7 @@ function Test-TextHasPassiveOutcomeProof {
 		}
 	}
 	return (
-		$Text -match 'Simulator\.|simulate_player_turn|AbilitySystem\.(execute|can_use)|CombatSystem\.|MovementSystem\.|UNIT_DAMAGED|UNIT_HEALED|health\.current_hp|has_status|passive_flags|get_ability_range|terrain_payloads|final_state\.get_unit'
+		$Text -match 'Simulator\.|simulate_player_turn|AbilitySystem\.(execute|can_use)|CombatSystem\.|MovementSystem\.|UNIT_DAMAGED|UNIT_HEALED|health\.current_hp|has_status|passive_flags|get_ability_range|terrain_payloads|final_state\.get_unit|run_[a-z_]+_proof'
 	)
 }
 

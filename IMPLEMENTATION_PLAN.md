@@ -134,20 +134,21 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Mage | Earth Spike | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
 | Mage | Density Shift | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
 | Mage | Arcane Barrage | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Cleric | Guardian Step | ☐ | ☐ | ☐ | ☐ | Spend remaining MP |
-| Cleric | Holy Light | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Smite | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Cleansing Aura | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Sanctuary | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Divine Hammer | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Life Link | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Prayer of Fortitude | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Resurrection | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Consecrate Ground | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Holy Wrath | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Divine Guidance | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Shield of Faith | ☐ | ☐ | ☐ | ☐ |  |
-| Cleric | Martyr’s Chains | ☐ | ☐ | ☐ | ☐ |  |
+| Cleric | Guardian Step | ☑ | ☑ | ☑ | ☑ | Typed movement fields; Tier 1 + live gate + critic pass |
+| Cleric | Holy Light | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
+| Cleric | Smite | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
+| Cleric | Cleansing Aura | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
+| Cleric | Sanctuary | ☑ | ☑ | ☑ | ☑ | Start-turn STEALTH/STURDY/SHIELD 1; typed entry PUSH 1 proof |
+| Cleric | Blinding Ray | ☑ | ☑ | ☑ | ☑ | Typed LINE module; Tier 1 + live gate + critic pass |
+| Cleric | Divine Hammer | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
+| Cleric | Life Link | ☑ | ☑ | ☑ | ☑ | Typed link fields; Tier 1 + live gate + critic pass |
+| Cleric | Prayer of Fortitude | ☑ | ☑ | ☑ | ☑ | Typed layer fields; Tier 1 + live gate + critic pass |
+| Cleric | Resurrection | ☑ | ☑ | ☑ | ☑ | Typed revive fields; Tier 1 + live gate + critic pass |
+| Cleric | Consecrate Ground | ☑ | ☑ | ☑ | ☑ | Typed terrain fields; Tier 1 + live gate + critic pass |
+| Cleric | Holy Wrath | ☑ | ☑ | ☑ | ☑ | Typed debuff/push fields; Tier 1 + live gate + critic pass |
+| Cleric | Divine Guidance | ☑ | ☑ | ☑ | ☑ | Typed AP/movement fields; Tier 1 + live gate + critic pass |
+| Cleric | Shield of Faith | ☑ | ☑ | ☑ | ☑ | Flat SHIELD 3 + INTERCEPT proof; Tier 1 + live gate + critic pass |
+| Cleric | Martyr’s Chains | ☑ | ☑ | ☑ | ☑ | Typed link/blind fields; Tier 1 + live gate + critic pass |
 | Mercenary | Pullback | ☐ | ☐ | ☐ | ☐ | Pre-Move paired movement |
 | Mercenary | Swift Strike | ☐ | ☐ | ☐ | ☐ |  |
 | Mercenary | Defense Strike | ☐ | ☐ | ☐ | ☐ |  |
@@ -392,22 +393,23 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 9. Cleric
 
-- [ ] `cleric_guardian_step`
-- [ ] `cleric_holy_light`
-- [ ] `cleric_smite`
-- [ ] `cleric_cleansing_aura`
-- [ ] `cleric_sanctuary`
-- [ ] `cleric_divine_hammer`
-- [ ] `cleric_life_link`
-- [ ] `cleric_prayer_of_fortitude`
-- [ ] `cleric_resurrection`
-- [ ] `cleric_consecrate_ground`
-- [ ] `cleric_holy_wrath`
-- [ ] `cleric_divine_guidance`
-- [ ] `cleric_shield_of_faith`
-- [ ] `cleric_martyrs_chains`
-- [ ] Cleric class gate: `run_cleric_qa_gate.ps1`.
-- [ ] Cleric live gate: `run_cleric_live_qa.ps1`.
+- [x] `cleric_guardian_step`
+- [x] `cleric_holy_light`
+- [x] `cleric_smite`
+- [x] `cleric_cleansing_aura`
+- [x] `cleric_sanctuary`
+- [x] `cleric_blinding_ray`
+- [x] `cleric_divine_hammer`
+- [x] `cleric_life_link`
+- [x] `cleric_prayer_of_fortitude`
+- [x] `cleric_resurrection`
+- [x] `cleric_consecrate_ground`
+- [x] `cleric_holy_wrath`
+- [x] `cleric_divine_guidance`
+- [x] `cleric_shield_of_faith`
+- [x] `cleric_martyrs_chains`
+- [x] Cleric class gate: `run_cleric_qa_gate.ps1`.
+- [x] Cleric live gate: `run_cleric_live_qa.ps1`.
 
 #### 10. Mage
 

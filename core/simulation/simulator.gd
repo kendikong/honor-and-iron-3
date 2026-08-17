@@ -231,10 +231,11 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 						unit.active_statuses.append(DataLibrary.make_status(
 							GameEnums.StatusType.STEALTH, 1
 						))
-					if not unit.has_status(GameEnums.StatusType.INVULNERABLE):
+					if not unit.has_status(GameEnums.StatusType.STURDY):
 						unit.active_statuses.append(DataLibrary.make_status(
-							GameEnums.StatusType.INVULNERABLE, 1
+							GameEnums.StatusType.STURDY, 1
 						))
+					CombatSystem.add_armor(board, unit, 1, events)
 				if zone_payload.get("holy_ground_zone", false):
 					CombatSystem.heal_x(board, unit, 1, events)
 			for aura_source: UnitState in board.units:

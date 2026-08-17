@@ -14,6 +14,7 @@ static func run_all(failures: Array[String]) -> void:
 
 static func _sim_contract(failures: Array[String]) -> void:
 		_H.run_ability_row(&"cleric_sanctuary", failures)
+		_H.run_sanctuary_proof(failures)
 		_sim_upgrade(failures)
 
 static func _sim_upgrade(failures: Array[String]) -> void:

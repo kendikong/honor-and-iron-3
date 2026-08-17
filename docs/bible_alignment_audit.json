@@ -1,5 +1,5 @@
 ﻿{
-    "generated":  "2026-08-14T10:34:08",
+    "generated":  "2026-08-16T23:10:09",
     "source":  "C:\\Users\\Kendy\\Downloads\\honor-and-iron-3\\docs\\bible_skill_alignment_audit.canvas.tsx",
     "counts":  {
                    "MATCH":  397
@@ -1185,7 +1185,7 @@
                      "cls":  "Beast Rider",
                      "skill":  "Thrash",
                      "verdict":  "MATCH",
-                     "delta":  "repeat_hits 3. Upgrade BLEED WPN."
+                     "delta":  "3 physical ATK 1 hits via repeat_hits using the damage effect scaling_stat."
                  },
                  {
                      "cls":  "Beast Rider",
@@ -1743,7 +1743,7 @@
                      "cls":  "Cleric",
                      "skill":  "Sanctuary",
                      "verdict":  "MATCH",
-                     "delta":  "simulator + terrain_system."
+                     "delta":  "simulator start-turn buffs + terrain_system enemy entry push."
                  },
                  {
                      "cls":  "Cleric",
@@ -1797,7 +1797,7 @@
                      "cls":  "Cleric",
                      "skill":  "Shield of Faith",
                      "verdict":  "MATCH",
-                     "delta":  "SHIELD 3 uses MAX_HP scaling (30% Max HP). INTERCEPT MATCH."
+                     "delta":  "Flat SHIELD 3 via raw ARMOR_UP amount. INTERCEPT MATCH."
                  },
                  {
                      "cls":  "Cleric",
