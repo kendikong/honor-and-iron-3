@@ -71,7 +71,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 | Class | Skill | Real modules/layers | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
 |---|---|:---:|:---:|:---:|:---:|---|
-| Knight | Defensive Formation | ☑ | ☑ | ☑ | ☐ | Typed `exclude_caster`; redundant audit still open |
+| Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
 | Bruiser | Push Through | ☐ | ☐ | ☐ | ☐ |  |
 | Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ |  |
 | Bruiser | Concussion Blow | ☐ | ☐ | ☐ | ☐ |  |

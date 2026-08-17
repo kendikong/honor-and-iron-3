@@ -24,5 +24,5 @@ if ($process.ExitCode -ne 0) {
 	Write-Output "[FAIL] Knight live QA exit $($process.ExitCode)"
 	exit 1
 }
-Write-Output "[PASS] Knight live QA: all active rows loaded + Defensive Formation overlay parity"
+Write-Output "[PASS] Knight live QA: all active rows loaded; Defensive Formation [+] overlay/commit/sim parity; Seismic Stomp overlay parity"
 exit 0
