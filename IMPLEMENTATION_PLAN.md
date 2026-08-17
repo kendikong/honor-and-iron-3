@@ -39,7 +39,7 @@ No bible quote in the changelog → the conversion did not happen.
 
 | Phase | Work | Exit |
 |-------|------|------|
-| **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE`; finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
+| **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
 | **ER-2** | Convert class by class (Knight → Bruiser → Lancer → Archer → Mercenary → Monk → Rogue → Beast Rider → Cleric → Mage → Engineer → Shaman). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every matrix row converted; contract test PASS |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
@@ -60,7 +60,7 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Typed field on an existing punch | Hazard / spawn knobs, bounce, … |
 | New EffectType / StatusType / LayerCondition | Only if nothing above fits. Grow the dropdown. |
 
-**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**.  
+**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**, relocating someone on **Action** (not PUSH/PULL).  
 **Out of scope:** passives (until owner asks).
 
 ### Module primary families (reference)

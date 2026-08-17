@@ -10,6 +10,8 @@
 | If you need… | Read |
 |--------------|------|
 | Owner one-pager | **§0** + locked table below |
+| Module vs layer / new click | **§0** module-vs-layer table · §2.5 · §5 |
+| Relocate someone (not PUSH/PULL) | Locked table + **Global rules** (simultaneous execution) |
 | Authoring a skill | §0 → §1 → §2 → §6 → §10 examples |
 | Anim / tags | §7 |
 | Code migration | §12 → §14 |
@@ -29,6 +31,8 @@
 | Planner column | Rename economy `kind` → **`planner_group`**: `PRE_MOVE` or `ACTION` (post-move steps = `ON_POST` modules inside an ACTION skill) |
 | Classification / anim | **Tags** (e.g. attack, movement) — not overloaded “movement skill” naming |
 | Basic positioning | Today’s MP Swap / Push Through style skills → **basic positioning** (`planner_group = PRE_MOVE`), distinct from “has a MOVE effect” |
+| Module vs layer | **New module = new player click.** Layers = extra punches on that module’s already-chosen targets. Complicated one-click results = multiple layers, not a fake second module. |
+| Relocate someone | **Move someone** (swap, pair-charge, carry, usher, throw-behind, drag) on **Action** fights simultaneous queues — they already planned. **PUSH/PULL** (they slide) is fine on Action. Relocate only in **Pre-Move**, or don’t move them. **Glorious Charge** as written relocates an ally on Action → **design rework**, not `PAIRED_MOVE` on the Action card. |
 
 ---
 
@@ -38,7 +42,7 @@ One skill card =
 
 1. **Header:** `planner_group` + **tags** + **cost once** + presentation + `modules` / `upgraded_modules`  
 2. **Each module:** primary effect + range + shape + tile/unit flags + optional **keywords** + **layers** + **gate**  
-3. **Same target extras** → layers · **New player aim** → new module · **Path hits** → TRAMPLE/BULLDOZE keywords (not micro-checkboxes)
+3. **Same click extras** → layers (stack as many as the punch needs) · **New player click** → new module · **Path hits** → TRAMPLE/BULLDOZE keywords (not micro-checkboxes)
 
 | `planner_group` | Column | Cost | Action slot |
 |-----------------|--------|------|-------------|
@@ -85,17 +89,21 @@ SKILL
 | Piece | Means |
 |-------|--------|
 | **Header** | Planner column (`planner_group`), identity **tags**, cost once, presentation |
-| **Module** | One step: do an effect, with its own targeting, as if aiming a fresh skill |
+| **Module** | One step with **its own player click** (aim). No new click → not a new module. |
 | **Keyword** | Bible package on a module (passthrough+hit, etc.) — prefer over micro-layers |
-| **Layer** | Extra effect on the **same targets** as its parent module (multi-hit, push-if-damage, …) |
+| **Layer** | Extra effect on the **same targets** as its parent module (the click you already made) |
 | **Gate** | Condition that decides if this **module** activates at all |
 
-**Double hit vs two targets**
+**Module vs layer (absolute)**
 
-| Intent | Authoring |
-|--------|-----------|
-| Two hits on the **same** target(s) | One module + a damage (or effect) **layer** |
-| One hit each on **two different** targets | **Two modules**, each with its own aim |
+| Question | Answer |
+|----------|--------|
+| Does the player **click again** (new unit, new tile, second pick)? | **New module.** Dual-pick = two modules. |
+| Same click, more punches (PUSH after the hit, STAGGER if they collide, GRANT AP on kill, a second hit on the **same** body)? | **Layers** on that module. Stack as many as you need. |
+| One click’s result is complicated? | Still **layers**, not a second module that secretly reuses the first aim. |
+| Path hits while **you** walk? | **Keyword** (TRAMPLE / BULLDOZE) on the move module — not extra clicks. |
+
+Do **not** author a second module whose only job is “also affect the first module’s target.” That is a layer. Authors never pick “same as module N” for that. (`SAME_AS_MODULE_N` is internal, gated recast only — Violent Collision.)
 
 ---
 
@@ -105,6 +113,9 @@ From Master Bible / project rules (do not bypass silently):
 
 - **Timeline columns:** Pre-Move → Action → Post-Move (no hidden 4th column).
 - **One Action** per unit per turn for class skills (unless Bible says otherwise).
+- **Simultaneous execution:** Everyone queues a turn, then it all resolves. A unit you relocate already has Walk / Attack / Skill queued from their **old** cell.
+- **Relocate someone:** **Move someone** (you put a body on a tile — swap, pair-charge, carry, usher, throw-behind, drag) does **not** belong on **Action**. Do it in **Pre-Move**, or don’t move them. **PUSH / PULL** (they slide) is Forced Movement and **is** legal on Action. **You** moving yourself is Movement (Self) and is legal on Action.
+- **Glorious Charge** (current skill line: you **and** that ally MOVE adjacent, then ATK) relocates a teammate on Action. **Rework the skill.** Do not convert it as `PAIRED_MOVE` on the Action card.
 - **Preview == commit** — modules define what planning shows; commit ratifies that picture.
 - **Data over per-skill code** — new behavior = new shared effect/keyword/condition, not `if ability.id == …`.
 - **Sim never plays art** — presentation keys/anims are forwarded; Nodes stay out of simulation.
@@ -210,8 +221,8 @@ What this module *is*. One `EffectType` field. Families are **owner-locked** in 
 | **Shield** | Grant over-HP | ARMOR_UP | Scrap / missing-HP shield = fields / layers |
 | **Status** | Apply or strip a named condition | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = StatusType |
 | **Movement (Self)** | You change tiles | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = fields or dest types here |
-| **Forced Movement** | They slide | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = fields / layers |
-| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap, Feral Drag = types here |
+| **Forced Movement** | They slide | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = fields / layers. **Legal on Action.** |
+| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap/Maul, Feral Drag = types here. **Not on Action** — Pre-Move only (Pullback, Usher, Airlift pickup). Glorious Charge needs rework. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, mines = knobs |
 | **Summon** | You make a unit or object | SPAWN | HP%, turret ATK, overclock = knobs |
 | **Stance** | You set yourself up this turn | ADD_STATUS_SELF / arm-next | Phalanx, Feint, Mana Shield, Brace |
@@ -257,7 +268,7 @@ Editor shows only shapes valid for the primary effect (MOVE → typically SINGLE
 | `SAME_AS_MODULE_N` | Internal only — gated recast (Violent Collision). Same-target extras are **layers**, not a second module. |
 | `RULE_PICK` | Auto-pick by rule + params when a current skill needs it |
 
-Authors never pick “same as module N”. If two effects share one aim, the second is a **layer** on the first module. A new player click is a new module with `NEW_AIM`.
+Authors never pick “same as module N”. If two effects share one aim, the second is a **layer** on the first module. A new player click is a new module with `NEW_AIM`. **New module demands new targeting.** No new click → add a layer (or a keyword), not a module.
 
 **Tile mode**
 
@@ -364,7 +375,7 @@ Non-movement modules ignore this section.
 
 ## 5. Layers (same-target extras)
 
-Layers belong to **one module**. They use that module’s targets (including path targets when the layer condition says so).
+Layers belong to **one module**. They use that module’s targets (including path targets when the layer condition says so). They do **not** get their own player click.
 
 Each layer has:
 
@@ -373,6 +384,10 @@ Each layer has:
 | **Effect** | Damage, push, pull, status, heal, … |
 | **Values / duration** | As applicable |
 | **Activation condition** | When the layer fires |
+
+If a **single effect on a single target** is complicated, use **multiple layers** on that module (DAMAGE + PUSH + STAGGER-if-collision, or ATK + ON_KILL GRANT_AP). That is still one click.
+
+**Multi-hit:** Prefer a damage layer (or hit_count on the primary damage) on the **same** module — not a second module — when targets are the same.
 
 **Layer condition examples** (same idea as module gates — grow the list):
 
@@ -389,8 +404,6 @@ Each layer has:
 | Per target hit | Crimson Whirlwind [+] HEAL per hit |
 | If already adjacent at cast | Shield Slam bonus ATK |
 | If from behind / not acted yet / has status | Facing & state checks |
-
-**Multi-hit:** Prefer a damage layer (or hit_count on the primary damage) on the **same** module — not a second module — when targets are the same.
 
 ---
 
@@ -882,7 +895,8 @@ Start at **§0**. Author: `planner_group` + tags + cost → `modules` / `upgrade
 
 - Column ≠ tags; basic positioning ≠ “has MOVE”  
 - MOVE min ≥ 1; grey out useless options  
-- New aim = new module; same-target extras = layer  
+- **New click = new module.** Same click extras = layers (stack them). No fake second module.  
+- **Don’t relocate teammates/enemies on Action** (not PUSH/PULL). Pre-Move only, or don’t move them. Glorious Charge needs rework.  
 - After move, range from new tile  
 - Path hits = TRAMPLE/BULLDOZE keywords 
 
@@ -992,6 +1006,7 @@ Defer: RULE_PICK, DELAY/ENDS_TURN, ally-origin range — unless a **current** mo
 | 2026-08-02 | §19 Audit pass 3: §0 normative summary, precedence, cost↔planner coupling, gated-aim rule, Example F, validation grey-out, trampling AP-only migration note |
 | 2026-08-02 | Status → READY_FOR_REFACTOR; push to origin |
 | 2026-08-16 | Status → ACTIVE. Locked families in §2.2. DELETE Motion Mode. Grappling Hook OR is in-scope. Condition filters are live. Must-migrate = all shipped classes. §12.7–§12.11 / §14 / §16 no longer tell agents to fold dest types into Motion Mode. |
+| 2026-08-16 | Module vs layer: new module = new player click; layers stack extra punches on that click. Relocate someone (not PUSH/PULL) is Pre-Move only — Action pair-move fights simultaneous queues. Glorious Charge = design rework, not PAIRED_MOVE on Action. |
 
 ---
 

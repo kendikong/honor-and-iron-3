@@ -54,6 +54,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
 - Converting leftovers into **Motion Mode**. **Motion Mode is marked for deletion** (ER-3). Do not add modes. Do not keep the dropdown.
+- **Move someone** (swap, pair-charge, carry, usher, throw-behind, drag) on an **Action** skill. Relocate only in **Pre-Move**, or don’t move them. PUSH/PULL is fine on Action. **Glorious Charge** needs a skill rework — do not stamp `PAIRED_MOVE` on Action.
 - Passives in this plan (separate bag; owner must ask)
 
 **Already done (do not redo as Extra Rules):** click **Condition** dropdown (Executioner's Blade HP, Hex, Terrify, Savage Bite, Fetch, Maul occupant, constructs, corpses, Amnesia Dust, Feral Drag CON, Intimidate HP). Those skills still appear below if they have *other* extras.
@@ -70,8 +71,8 @@ Reference only. **Skill bible** (`class_abilities.txt`) is the verb. **Module bi
 |--------|----------------------------|--------------------------|------------------------------|
 | **Attack** | Hurt (`ATK` / `MAG ATK`) | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce, unmitigated, %HP, ignore-resist = **fields** |
 | **Movement (Self)** | You change tiles (`MOVE` / `DASH` / `JUMP` / `TELEPORT`) | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = **fields** or dest types here |
-| **Forced Movement** | They slide (`PUSH` / `PULL`) | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = **fields / layers** |
-| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap/Maul, Feral Drag, Pullback = **types here** |
+| **Forced Movement** | They slide (`PUSH` / `PULL`) | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = **fields / layers**. Legal on Action. |
+| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap/Maul, Feral Drag, Pullback = **types here**. **Pre-Move only** (or don’t relocate). Not Action. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, spear wall, sanctuary, mines = **knobs** |
 | **Summon** | You make a unit or object | SPAWN | Construct HP%, turret ATK, overclock = **knobs** |
 | **Status** | Apply or strip a named condition, no hit | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType**. Link may split later. |
@@ -121,7 +122,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
-If the Solution cell is wrong vs the **skill bible**, **stop and ask**. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode.
+If the Solution cell is wrong vs the **skill bible**, **stop and ask**. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode. **New module = new player click.** Extra punches on the same click = layers. Do not relocate someone on Action (not PUSH/PULL).
 
 Complete Extra Rule id → home map: `tests/extra_rules_conversion_contract.gd` `extra_rule_home()`. The category table above is a summary. The test fails if any `AbilityExtraRule.Id` (except NONE) has no home.
 
@@ -135,7 +136,7 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 |-------|--------|------|
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
-| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | Module primary (Glorious Charge, Pullback) |
+| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** (Pullback). Not Glorious Charge on Action (skill needs rework). |
 | PULL_SELF_TO_TARGET | Missing (bible §12.7) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
 | Carry / place-unit (Airlift, Kidnap, Maul drop) | Missing | New type in **Move someone** |
 | Drag-while-walking (Feral Drag) | Missing | New type in **Move someone** |
@@ -239,8 +240,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Wraparound (Flanking Maneuver) | L-shaped move | New field on MOVE | L-path on **MOVE**. Not Motion Mode. |
 | Wraparound | ×2 only from the side | New field | Side-only DAMAGE multiplier. |
 | Wraparound [+] | GHOST | Existing keyword | **GHOST**. |
-| Glorious Charge | You + ally charge; ally ATK 2 | Existing effect | **PAIRED_MOVE** + ally DAMAGE layer. |
-| Glorious Charge [+] | Both gain AP on kill | Existing effect | **GRANT_AP** on **ON_KILL** for both. |
+| Glorious Charge | You + ally MOVE adjacent; each ATK 2 | **Rework skill** | Dual-pick = two modules. Relocating the ally on **Action** fights simultaneous queues. Do **not** convert as `PAIRED_MOVE` on Action. Wait for owner rework (Pre-Move relocate, or don’t move the ally). |
+| Glorious Charge [+] | Both gain AP on kill | Existing effect | **GRANT_AP** on **ON_KILL** for both — after the rework, as layers on the ATK modules. |
 | Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND**. Not VAULT_OVER Motion Mode. |
 | Pole Vault [+] | PUSH + STAGGER beside landing | Existing layer | PUSH/STAGGER on **ON_LAND**. |
 | Line Breaker | Path ATK | Existing keyword | **TRAMPLE**. |
