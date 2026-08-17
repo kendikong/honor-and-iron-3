@@ -470,7 +470,6 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	var module := AbilityModule.new()
 	module.primary_type = primary_type
@@ -481,7 +480,6 @@ static func _module(
 	module.target_shape = shape
 	module.target_shape_size = shape_size
 	module.scaling_stat = scaling_stat
-	module.motion_mode = motion_mode
 	return module
 
 
@@ -507,18 +505,6 @@ static func _keyword(
 	keyword.push_amount = push_amount
 	keyword.emit_as_effect = emit_as_effect
 	return keyword
-
-
-static func _add_extra(module: AbilityModule, key: String, value: Variant = true) -> void:
-	assert(module != null, "extra requires a module")
-	module.ingest_runtime_key(key, value)
-
-
-static func _add_extras_from_dict(module: AbilityModule, bag: Dictionary) -> void:
-	if module == null or bag.is_empty():
-		return
-	for key: Variant in bag:
-		_add_extra(module, String(key), bag[key])
 
 
 static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -> void:
@@ -768,12 +754,7 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.barbed_wire = from_module.barbed_wire
 	to_module.entry_root = from_module.entry_root
 	to_module.adjacent_defense_bonus = from_module.adjacent_defense_bonus
-	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
-		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
-	if to_module.extras.is_empty():
-		for extra: AbilityExtraRule in from_module.extras:
-			if extra != null:
-				to_module.extras.append(extra.duplicate(true) as AbilityExtraRule)
+	to_module.l_shape_move = from_module.l_shape_move
 	for keyword: AbilityKeyword in from_module.keywords:
 		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
 			_ensure_module_keyword(to_module, GameEnums.AbilityKeywordId.GHOST)
@@ -1140,8 +1121,6 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 			id = &"beast_rider_basic"
 			display_name = "Lance Jab"
 			rng = 1
-	if class_id == &"lancer":
-		effects[0].modifiers["range_one_damage_multiplier"] = 0.7
 	var targeting_flags: int = (
 		GameEnums.TargetingFlags.ALLY
 		if effects[0].type == GameEnums.EffectType.HEAL
@@ -1157,8 +1136,6 @@ static func _make_class_basic_attack(class_id: StringName) -> AbilityData:
 		1,
 		stat,
 	)
-	if class_id == &"lancer":
-		_add_extra(module, "range_one_damage_multiplier", 0.7)
 	var ab: AbilityData = _make_modular_ability(
 		id,
 		display_name,

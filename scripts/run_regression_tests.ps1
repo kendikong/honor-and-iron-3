@@ -62,8 +62,19 @@ $bridgeFails = @($report | Where-Object { $_ -like "[[]BRIDGE[]]*" })
 $simFails = @($report | Where-Object { $_ -like "[[]SIM[]]*" })
 
 Write-Output ""
+Write-Output "=== ER-3 exit contracts ==="
+$er3Gate = Join-Path $PSScriptRoot "run_er3_exit_gate.ps1"
+& $er3Gate -GodotPath $GodotPath
+$er3Exit = $LASTEXITCODE
+
+Write-Output ""
 Write-Output "=== Regression summary ==="
-if ($report -contains "PASS") {
+if (
+	$report -contains "PASS" `
+	-and $bridgeFails.Count -eq 0 `
+	-and $simFails.Count -eq 0 `
+	-and $er3Exit -eq 0
+) {
 	Write-Output "Regression: PASS"
 	exit 0
 }

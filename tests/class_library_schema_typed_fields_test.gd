@@ -172,6 +172,9 @@ static func run_all(failures: Array[String]) -> void:
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
 	layer.range_one_damage_multiplier = 0.7
+	layer.damage_multiplier = 2.0
+	layer.side_attack_only = true
+	layer.target_after_move_adjacent = true
 	layer.elemental_surface = true
 	layer.reaction_terrain = &"frozen"
 	layer.reaction_steam_splash = true
@@ -457,6 +460,17 @@ static func run_all(failures: Array[String]) -> void:
 		failures,
 		"layer_range_one_damage_multiplier",
 		is_equal_approx(restored.layers[0].range_one_damage_multiplier, 0.7),
+	)
+	_assert(
+		failures,
+		"layer_damage_multiplier",
+		is_equal_approx(restored.layers[0].damage_multiplier, 2.0),
+	)
+	_assert(failures, "layer_side_attack_only", restored.layers[0].side_attack_only)
+	_assert(
+		failures,
+		"layer_target_after_move_adjacent",
+		restored.layers[0].target_after_move_adjacent,
 	)
 	_assert(
 		failures,

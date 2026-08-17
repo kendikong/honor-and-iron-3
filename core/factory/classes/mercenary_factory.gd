@@ -49,7 +49,6 @@ static func build(basic_sword: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.BACKWARDS,
 	)
 	pullback_module.pullback = true
 	var pullback_upgraded := _clone_modules([pullback_module])
@@ -217,7 +216,6 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.PHYSICAL,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	var module := AbilityModule.new()
 	module.primary_type = primary_type
@@ -228,7 +226,6 @@ static func _module(
 	module.target_shape = shape
 	module.target_shape_size = shape_size
 	module.scaling_stat = scaling_stat
-	module.motion_mode = motion_mode
 	return module
 
 
@@ -347,7 +344,6 @@ static func _swift_strike() -> AbilityData:
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.swift_strike = true
@@ -545,7 +541,6 @@ static func _tactical_retreat() -> AbilityData:
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	module.smoke_on_start = true
 	var upgraded := _clone_modules([module])
@@ -599,7 +594,6 @@ static func _flank_and_run() -> AbilityData:
 		GameEnums.TargetShape.SINGLE,
 		1,
 		GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.flank_run_adjacent_enemy_bonus = 2
 	module.next_turn = true

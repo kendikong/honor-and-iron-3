@@ -221,8 +221,6 @@ static func _check_trampling_advance_modules(failures: Array[String]) -> void:
 	var motion: AbilityModule = trample.modules[0]
 	if motion.primary_type != GameEnums.EffectType.MOVE:
 		failures.append("trampling_advance module[0] should be MOVE primary")
-	if motion.motion_mode != GameEnums.MotionMode.NONE:
-		failures.append("trampling_advance motion_mode should be NONE")
 	var has_trample_kw: bool = false
 	for keyword: AbilityKeyword in motion.keywords:
 		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:

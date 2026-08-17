@@ -178,32 +178,6 @@ static func on_moved_through_enemy(
 			enemy.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.BLIND, 1))
 
 
-static func resolve_teleport_destination(
-	board: BoardState,
-	actor: UnitState,
-	target: UnitState,
-	aim_coord: Vector2i,
-	motion_mode: int,
-) -> Vector2i:
-	if board == null or actor == null:
-		return Vector2i(-1, -1)
-	match motion_mode:
-		GameEnums.MotionMode.ADJACENT_TO_TARGET:
-			if target == null:
-				return Vector2i(-1, -1)
-			return _first_empty_adjacent(board, target.position)
-		GameEnums.MotionMode.BEHIND_TARGET:
-			if target == null:
-				return Vector2i(-1, -1)
-			return _empty_behind_target(board, target)
-		GameEnums.MotionMode.TO_TARGET_UNIT:
-			if target == null:
-				return Vector2i(-1, -1)
-			return target.position
-		_:
-			return aim_coord
-
-
 static func after_teleport(
 	board: BoardState,
 	actor: UnitState,

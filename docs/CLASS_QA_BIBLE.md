@@ -109,7 +109,7 @@ Assert factory/`AbilityData` matches what the class editor would show — **befo
 | `amount`, `scaling_stat` | When type uses them |
 | `status_type`, `status_duration` | When type applies status |
 | `spawn_unit_id` | SPAWN modules |
-| `motion_mode` | When primary is motion (MOVE/DASH/SWAP/…) |
+| Motion `primary_type` | MOVE/JUMP/TELEPORT/SWAP and destination variants own landing behavior |
 | `min_range`, `max_range` | Range band |
 | `requires_los` | LOS on/off per `ModuleAuthoringRules` |
 | `range_origin` | ACTOR / AIM / … |
@@ -120,7 +120,7 @@ Assert factory/`AbilityData` matches what the class editor would show — **befo
 | `keywords[]` | Each keyword id + amount |
 | `layers[]` | See Layer A2 |
 | `bonus_if_adjacent_at_cast`, `def_debuff_before_damage` | DAMAGE-only typed fields |
-| Typed `AbilityExtraRule` / compatibility key | Bible-critical keys only (name in scenario header) |
+| Typed module/layer field | Bible-critical riders only; assert the owning typed field and runtime outcome |
 
 **Layer A2 — Each `AbilityLayer` on a module:**
 

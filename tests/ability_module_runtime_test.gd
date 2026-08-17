@@ -233,7 +233,7 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 		module.max_range = 4
 		module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 		module.presentation_anim = GameEnums.PresentationAnim.SPELL
-		module.ingest_runtime_key("parity_probe", 7)
+		module.ingest_runtime_key("l_shape_move", true)
 		ability.modules = [module]
 	var left_actor: UnitState = _unit(41, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
 	var right_actor: UnitState = _unit(42, GameEnums.Team.ENEMY, Vector2i(5, 1), 20)
@@ -379,6 +379,30 @@ static func _test_motion_range_legality(failures: Array[String]) -> void:
 		failures.append("module MOVE min_range did not reject a too-short destination")
 	if AbilitySystem.can_use(board, too_long):
 		failures.append("module MOVE max_range did not reject a too-long destination")
+	for motion_type: GameEnums.EffectType in [
+		GameEnums.EffectType.JUMP,
+		GameEnums.EffectType.TELEPORT_CASTER,
+	]:
+		var shaped_ability: AbilityData = _ability(
+			&"runtime_%s_range" % GameEnums.EffectType.keys()[motion_type],
+			GameEnums.TargetingFlags.TILE,
+		)
+		var shaped_module := AbilityModule.new()
+		shaped_module.primary_type = motion_type
+		shaped_module.amount = 99
+		shaped_module.min_range = 2
+		shaped_module.max_range = 3
+		shaped_module.targeting_flags = GameEnums.TargetingFlags.TILE
+		shaped_ability.modules = [shaped_module]
+		shaped_ability.effects = []
+		if AbilitySystem.can_use(
+			board, TimelineAction.make_ability(actor.id, shaped_ability, Vector2i(2, 1)),
+		):
+			failures.append("%s min_range did not reject a too-short destination" % motion_type)
+		if AbilitySystem.can_use(
+			board, TimelineAction.make_ability(actor.id, shaped_ability, Vector2i(5, 1)),
+		):
+			failures.append("%s max_range did not reject a too-long destination" % motion_type)
 
 
 static func _test_if_collided_follow_up(failures: Array[String]) -> void:
@@ -483,10 +507,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	layer.effect.type = GameEnums.EffectType.DAMAGE
 	layer.effect.amount = 1
 	module.layers = [layer]
-	var custom_extra := AbilityExtraRule.new()
-	custom_extra.value = 7
-	custom_extra.override_key = "parity_probe"
-	module.extras = [custom_extra]
+	module.l_shape_move = true
 	authored.modules = [module]
 	var upgraded_module: AbilityModule = module.duplicate(true) as AbilityModule
 	upgraded_module.amount = 5
@@ -500,7 +521,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(authored)
 	for legacy_key: String in [
 		"effects", "upgraded_effects", "range_tiles", "targeting_mode",
-		"targeting_flags", "target_shape", "action_point_cost", "movement_point_cost",
+		"targeting_flags", "target_shape",
 	]:
 		if payload.has(legacy_key):
 			failures.append("module-first ability JSON emitted legacy key %s" % legacy_key)
@@ -524,9 +545,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored_module.target_filter_hp != GameEnums.ModuleTargetFilterHp.BELOW_PCT
 		or restored_module.target_filter_hp_pct != 50
 		or not is_equal_approx(restored_module.bonus_dmg_pct_max_hp, 0.1)
-		or restored_module.extras.size() != 1
-		or restored_module.extras[0].override_key != "parity_probe"
-		or int(restored_module.runtime_value("parity_probe", 0)) != 7
+		or not restored_module.l_shape_move
 		or restored.upgraded_modules.size() != 1
 		or restored.upgraded_modules[0].amount != upgraded_module.amount
 		or restored.upgraded_primary_value != authored.upgraded_primary_value

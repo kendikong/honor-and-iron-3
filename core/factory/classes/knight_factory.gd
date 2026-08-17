@@ -23,7 +23,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var swap_module := DataLibrary._module(
 		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	var swap_upgraded := DataLibrary._duplicate_modules([swap_module])
 	swap_upgraded[0].layers = [
@@ -177,7 +176,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var bowling_module := DataLibrary._module(
 		GameEnums.EffectType.DASH, 3, 1, 3, bowling_flags,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-		GameEnums.MotionMode.NONE,
 	)
 	bowling_module.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 0, true),
@@ -315,7 +313,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var trample_module := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	trample_module.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.TRAMPLE, 2, 0, true),

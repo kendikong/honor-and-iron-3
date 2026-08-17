@@ -209,11 +209,10 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	return DataLibrary._module(
 		primary_type, amount, min_range, max_range, targeting_flags,
-		shape, shape_size, scaling_stat, motion_mode,
+		shape, shape_size, scaling_stat,
 	)
 
 
@@ -249,7 +248,6 @@ static func _reposition() -> AbilityData:
 		GameEnums.EffectType.TELEPORT_CASTER, 2, 1, 1,
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE,
 	)
 	base.reposition_opposite_side = true
 	base.reposition_movement_cost = 2
@@ -268,7 +266,6 @@ static func _pounce() -> AbilityData:
 		GameEnums.EffectType.MOVE_TOWARD, 3, 1, 3,
 		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	move.pounce_land_adjacent = true
@@ -505,7 +502,6 @@ static func _airlift() -> AbilityData:
 		GameEnums.EffectType.TELEPORT_CASTER, 1, 1, 1,
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	lift.airlift_pickup_step = 1
 	lift.airlift_drop_step = 3

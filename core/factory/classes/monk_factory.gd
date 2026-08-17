@@ -187,11 +187,10 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	var module := DataLibrary._module(
 		primary_type, amount, min_range, max_range, targeting_flags,
-		shape, shape_size, scaling_stat, motion_mode,
+		shape, shape_size, scaling_stat,
 	)
 	return module
 
@@ -278,7 +277,6 @@ static func _leap() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.JUMP_TO_BEHIND, 2, 2, 2,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.NONE,
 	)
 	var upgraded := _clone_modules([module])
 	upgraded[0].max_range = 3
@@ -364,7 +362,6 @@ static func _phase_throw() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	var upgraded := _clone_modules([module])
 	var root := DataLibrary._status_effect(GameEnums.StatusType.ROOT, 1)
@@ -381,7 +378,6 @@ static func _flying_crane_kick() -> AbilityData:
 		GameEnums.EffectType.DASH, 3, 1, 3,
 		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.stop_adjacent_first_enemy = true
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
@@ -481,7 +477,7 @@ static func _void_step() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 3,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.NONE,
+		GameEnums.StatType.NONE,
 	)
 	var upgraded := _clone_modules([module])
 	upgraded[0].landed_magic_bonus = 2

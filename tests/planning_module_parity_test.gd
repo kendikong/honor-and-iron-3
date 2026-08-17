@@ -136,7 +136,6 @@ static func _test_committed_prefix_simulates_while_later_aim_awaits(failures: Ar
 	motion.min_range = 1
 	motion.max_range = 2
 	motion.targeting_flags = GameEnums.TargetingFlags.TILE
-	motion.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
 	var strike: AbilityModule = AbilityModule.new()
 	strike.primary_type = GameEnums.EffectType.DAMAGE
 	strike.amount = 3

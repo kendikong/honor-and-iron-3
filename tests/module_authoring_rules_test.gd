@@ -29,7 +29,6 @@ static func _test_move_clears_scaling_and_los(failures: Array[String]) -> void:
 	module.primary_type = GameEnums.EffectType.MOVE
 	module.scaling_stat = GameEnums.StatType.PHYSICAL
 	module.requires_los = true
-	module.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
 	AbilityModuleBridge.normalize_module_authoring_fields(module)
 	if module.scaling_stat != GameEnums.StatType.NONE:
 		failures.append("MOVE should clear scaling_stat")

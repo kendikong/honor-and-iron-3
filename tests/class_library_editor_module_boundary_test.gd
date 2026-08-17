@@ -49,12 +49,9 @@ static func _assert_non_status_modules_clear_status_type(failures: Array[String]
 	var move_module := AbilityModule.new()
 	move_module.primary_type = GameEnums.EffectType.MOVE
 	move_module.scaling_stat = GameEnums.StatType.PHYSICAL
-	move_module.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
 	AbilityModuleBridge.normalize_module_authoring_fields(move_module)
 	if move_module.scaling_stat != GameEnums.StatType.NONE:
 		failures.append("MOVE module scaling_stat should normalize to NONE")
-	if move_module.motion_mode != GameEnums.MotionMode.NONE:
-		failures.append("MOVE module motion_mode should normalize to NONE")
 	var spawn_layer := EffectData.new()
 	spawn_layer.type = GameEnums.EffectType.PUSH
 	spawn_layer.spawn_unit_id = &"dummy"

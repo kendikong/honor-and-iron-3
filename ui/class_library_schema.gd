@@ -699,6 +699,9 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"crossing_blind": src.crossing_blind,
 		"trap_def_debuff": src.trap_def_debuff,
 		"range_one_damage_multiplier": src.range_one_damage_multiplier,
+		"damage_multiplier": src.damage_multiplier,
+		"side_attack_only": src.side_attack_only,
+		"target_after_move_adjacent": src.target_after_move_adjacent,
 		"elemental_surface": src.elemental_surface,
 		"reaction_terrain": src.reaction_terrain,
 		"reaction_steam_splash": src.reaction_steam_splash,
@@ -778,6 +781,11 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.trap_def_debuff = int(data.get("trap_def_debuff", layer.trap_def_debuff))
 	layer.range_one_damage_multiplier = float(
 		data.get("range_one_damage_multiplier", layer.range_one_damage_multiplier)
+	)
+	layer.damage_multiplier = float(data.get("damage_multiplier", layer.damage_multiplier))
+	layer.side_attack_only = bool(data.get("side_attack_only", layer.side_attack_only))
+	layer.target_after_move_adjacent = bool(
+		data.get("target_after_move_adjacent", layer.target_after_move_adjacent)
 	)
 	layer.elemental_surface = bool(data.get("elemental_surface", layer.elemental_surface))
 	layer.reaction_terrain = StringName(str(data.get("reaction_terrain", String(layer.reaction_terrain))))
@@ -860,31 +868,6 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	return layer
 
 
-static func extras_to_array(src: AbilityModule) -> Array:
-	var extras: Array = []
-	if src == null:
-		return extras
-	for extra: AbilityExtraRule in src.extras:
-		if extra == null:
-			continue
-		extras.append({
-			"id": extra.id,
-			"value": extra.value,
-			"override_key": extra.override_key,
-		})
-	return extras
-
-
-static func extra_from_dict(data: Dictionary) -> AbilityExtraRule:
-	var extra := AbilityExtraRule.new()
-	extra.id = int(data.get("id", extra.id)) as AbilityExtraRule.Id
-	extra.value = data.get("value", extra.value)
-	extra.override_key = str(data.get("override_key", extra.override_key))
-	if extra.id != AbilityExtraRule.Id.NONE:
-		extra.override_key = ""
-	return extra
-
-
 static func module_to_dict(
 	src: AbilityModule,
 	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
@@ -954,7 +937,6 @@ static func module_to_dict(
 		"trap_def_debuff": src.trap_def_debuff,
 		"strip_stealth": src.strip_stealth,
 		"limit_once_per_turn": src.limit_once_per_turn,
-		"range_one_damage_multiplier": src.range_one_damage_multiplier,
 		"halve_target_def_one_turn": src.halve_target_def_one_turn,
 		"armor_explosion_atk": src.armor_explosion_atk,
 		"bonus_atk_vs_fear_or_lower_movement": src.bonus_atk_vs_fear_or_lower_movement,
@@ -1194,7 +1176,6 @@ static func module_to_dict(
 		"barbed_wire": src.barbed_wire,
 		"entry_root": src.entry_root,
 		"adjacent_defense_bonus": src.adjacent_defense_bonus,
-		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
 		out["execution_phase"] = src.execution_phase
@@ -1214,8 +1195,8 @@ static func module_to_dict(
 	if GameEnums.effect_type_applies_status(src.primary_type):
 		out["status_type"] = src.status_type
 		out["status_duration"] = src.status_duration
-	if AbilityModuleBridge.is_motion_type(src.primary_type):
-		out["motion_mode"] = src.motion_mode
+	if src.l_shape_move:
+		out["l_shape_move"] = true
 	if src.primary_type == GameEnums.EffectType.DAMAGE:
 		if src.bonus_if_adjacent_at_cast != 0:
 			out["bonus_if_adjacent_at_cast"] = src.bonus_if_adjacent_at_cast
@@ -1269,7 +1250,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.status_duration = int(data.get("status_duration", dst.status_duration))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
-	dst.motion_mode = int(data.get("motion_mode", dst.motion_mode))
+	dst.l_shape_move = bool(data.get("l_shape_move", dst.l_shape_move))
 	dst.min_range = int(data.get("min_range", dst.min_range))
 	dst.max_range = int(data.get("max_range", dst.max_range))
 	dst.requires_los = bool(data.get("requires_los", dst.requires_los))
@@ -1768,12 +1749,6 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.adjacent_defense_bonus = int(
 		data.get("adjacent_defense_bonus", dst.adjacent_defense_bonus)
 	)
-	dst.extras.clear()
-	var extra_data: Variant = data.get("extras", [])
-	if extra_data is Array:
-		for raw: Variant in extra_data as Array:
-			if raw is Dictionary:
-				dst.extras.append(extra_from_dict(raw as Dictionary))
 	dst.keywords.clear()
 	var keyword_data: Variant = data.get("keywords", [])
 	if keyword_data is Array:

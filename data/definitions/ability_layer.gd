@@ -27,6 +27,9 @@ extends Resource
 @export var crossing_blind: bool = false
 @export var trap_def_debuff: int = 0
 @export var range_one_damage_multiplier: float = 0.0
+@export var damage_multiplier: float = 0.0
+@export var side_attack_only: bool = false
+@export var target_after_move_adjacent: bool = false
 @export var elemental_surface: bool = false
 @export var reaction_terrain: StringName = &""
 @export var reaction_steam_splash: bool = false
@@ -105,6 +108,12 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["trap_def_debuff"] = trap_def_debuff
 	if not is_zero_approx(range_one_damage_multiplier):
 		modifiers["range_one_damage_multiplier"] = range_one_damage_multiplier
+	if not is_zero_approx(damage_multiplier):
+		modifiers["damage_multiplier"] = damage_multiplier
+	if side_attack_only:
+		modifiers["side_attack_only"] = true
+	if target_after_move_adjacent:
+		modifiers["target_after_move_adjacent"] = true
 	if elemental_surface:
 		modifiers["elemental_surface"] = true
 	if reaction_terrain != StringName():
@@ -224,6 +233,12 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			trap_def_debuff = int(value)
 		"range_one_damage_multiplier":
 			range_one_damage_multiplier = float(value)
+		"damage_multiplier":
+			damage_multiplier = float(value)
+		"side_attack_only":
+			side_attack_only = bool(value)
+		"target_after_move_adjacent":
+			target_after_move_adjacent = bool(value)
 		"elemental_surface":
 			elemental_surface = bool(value)
 		"reaction_terrain":

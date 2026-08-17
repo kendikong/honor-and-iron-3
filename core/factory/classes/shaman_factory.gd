@@ -38,13 +38,11 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	var usher_pick := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 2, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.ALLY_STEP,
 	)
 	usher_pick.relocate_subject_only = true
 	var usher_step := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.ALLY_STEP,
 	)
 	usher_step.aim_binding = GameEnums.AimBinding.NEW_AIM
 	usher_step.relocate_target = true
@@ -204,8 +202,7 @@ static func _layer(effect: EffectData, condition: GameEnums.LayerCondition = Gam
 		for key: Variant in effect.modifiers.keys():
 			var key_text := String(key)
 			layer.ingest_runtime_key(key_text, effect.modifiers[key])
-			if AbilityExtraRule.id_for_key(key_text) != AbilityExtraRule.Id.NONE:
-				effect.modifiers.erase(key)
+		effect.modifiers.clear()
 	return layer
 
 

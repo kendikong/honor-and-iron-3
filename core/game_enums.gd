@@ -315,21 +315,6 @@ enum ModulePhase {
 	ON_POST,
 }
 
-## Motion destination mode when primary effect is motion (ability-data.md §2.2).
-enum MotionMode {
-	NONE,
-	TO_EMPTY_TILE,
-	TO_TARGET_UNIT,
-	ADJACENT_TO_TARGET,
-	BEHIND_TARGET,
-	VAULT_OVER,
-	INTO_OCCUPIED_PUSH,
-	BACKWARDS,
-	SLIDE_TARGET_OPPOSITE,
-	ALLY_STEP,
-	L_SHAPE,
-}
-
 ## How a module obtains its aim (ability-data.md §2.5).
 enum AimBinding {
 	NEW_AIM,

@@ -16,8 +16,8 @@ extends Resource
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 @export var spawn_unit_id: StringName = &""
 
-## Legacy motion metadata retained until ER-3 removes Motion Mode.
-@export var motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE
+## L-shaped movement path for the Flanking Maneuver family.
+@export var l_shape_move: bool = false
 
 @export var min_range: int = 0
 @export var max_range: int = 1
@@ -364,9 +364,6 @@ extends Resource
 @export var barbed_wire: bool = false
 @export var entry_root: bool = false
 @export var adjacent_defense_bonus: int = 0
-
-## Typed extras the Class Editor can add.
-@export var extras: Array[AbilityExtraRule] = []
 
 var _runtime_modifiers_cache: Dictionary = {}
 var _runtime_modifiers_cache_valid: bool = false
@@ -1008,15 +1005,8 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["entry_root"] = true
 	if adjacent_defense_bonus != 0:
 		bag["adjacent_defense_bonus"] = adjacent_defense_bonus
-	if motion_mode == GameEnums.MotionMode.L_SHAPE:
+	if l_shape_move:
 		bag["l_shape_move"] = true
-	for extra: AbilityExtraRule in extras:
-		if extra == null:
-			continue
-		var extra_key: String = extra.runtime_key()
-		if extra_key.is_empty():
-			continue
-		bag[extra_key] = extra.value
 	for keyword: AbilityKeyword in keywords:
 		if keyword == null:
 			continue
@@ -1928,7 +1918,7 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			adjacent_defense_bonus = int(value)
 			return
 		"l_shape_move":
-			motion_mode = GameEnums.MotionMode.L_SHAPE
+			l_shape_move = bool(value)
 			return
 		"ghost_move":
 			_ensure_keyword(GameEnums.AbilityKeywordId.GHOST)
@@ -1989,16 +1979,7 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		_:
 			pass
-	for extra: AbilityExtraRule in extras:
-		if extra != null and extra.runtime_key() == key:
-			extra.value = value
-			return
-	var extra := AbilityExtraRule.new()
-	extra.id = AbilityExtraRule.id_for_key(key)
-	extra.value = value
-	if extra.id == AbilityExtraRule.Id.NONE:
-		extra.override_key = key
-	extras.append(extra)
+	push_error("Unknown typed module runtime key: %s" % key)
 
 
 func _ensure_keyword(keyword_id: GameEnums.AbilityKeywordId) -> void:

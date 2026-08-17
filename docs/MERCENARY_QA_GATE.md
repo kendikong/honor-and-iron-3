@@ -42,7 +42,7 @@ with only that passive enabled).
   `_build_commit_slots_at_cell` → `_finalize_commit_slots` →
   `preview_commit_valid` / `CombatDirector.commit_from_slots` → `Simulator`.
 - No Mercenary `ability.id` branch is added to simulation or presentation.
-  Class-scoped behavior lives in `MercenarySystems` + typed `AbilityExtraRule` data.
+  Class-scoped behavior lives in `MercenarySystems` plus typed module/layer data.
 
 ## Coverage matrix
 

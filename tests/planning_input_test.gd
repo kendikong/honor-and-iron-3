@@ -1824,7 +1824,6 @@ static func _move_then_new_aim_fixture() -> Dictionary:
 	motion.min_range = 1
 	motion.max_range = 2
 	motion.targeting_flags = GameEnums.TargetingFlags.TILE
-	motion.motion_mode = GameEnums.MotionMode.TO_EMPTY_TILE
 	var strike := AbilityModule.new()
 	strike.primary_type = GameEnums.EffectType.DAMAGE
 	strike.amount = 3

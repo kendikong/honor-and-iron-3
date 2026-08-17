@@ -22,7 +22,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var push_module := DataLibrary._module(
 		GameEnums.EffectType.MOVE_INTO_AND_PUSH, 1, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	var push_upgraded := DataLibrary._duplicate_modules([push_module])
 	push_upgraded[0].buff_on_push = 1
@@ -69,7 +68,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.MOVE, 2, 1, 2,
 		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	var charge_attack := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
@@ -189,7 +187,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var meat_module := DataLibrary._module(
 		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	meat_module.layers = [
 		DataLibrary._layer(DataLibrary._status_effect_self(GameEnums.StatusType.INTERCEPT, 1)),
@@ -278,7 +275,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var collision_dash := DataLibrary._module(
 		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	collision_dash.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
@@ -287,7 +283,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var collision_recast := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	collision_recast.gate = GameEnums.ModuleGate.IF_COLLIDED
 	## Recast is refund + reopen via violent_collision_recast, not a second planning aim.
@@ -346,7 +341,6 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	var breach_module := DataLibrary._module(
 		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	breach_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0))]
 	var breach_upgraded := DataLibrary._duplicate_modules([breach_module])

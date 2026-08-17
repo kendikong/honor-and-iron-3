@@ -16,7 +16,7 @@
 
 ### Rule A — Shared owners
 
-Monk data uses `AbilityModule`, `EffectData`, `MotionMode`, `LayerCondition`, `Simulator`, and the shared planning slot path. No Monk-specific `ability.id` branch was added to production systems. Factory modifiers are consumed by shared lifecycle hooks in `MonkSystems`, `AbilitySystem`, `MovementSystem`, `PhysicsSystem`, and `UnitState`.
+Monk data uses `AbilityModule`, `EffectData`, typed motion `EffectType`, `LayerCondition`, `Simulator`, and the shared planning slot path. No Monk-specific `ability.id` branch was added to production systems. Factory fields are consumed by shared lifecycle hooks in `MonkSystems`, `AbilitySystem`, `MovementSystem`, `PhysicsSystem`, and `UnitState`.
 
 ### Rule B — Bible-exact primitives
 

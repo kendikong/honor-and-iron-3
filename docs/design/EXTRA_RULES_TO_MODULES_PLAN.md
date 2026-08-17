@@ -21,14 +21,14 @@ Legacy cleanup is tracked in `IMPLEMENTATION_PLAN.md` ER-3. This matrix only map
 
 1. Changelog quotes the skill line + upgrade from `class_abilities.txt`.
 2. Names family + home.
-3. `AbilityModule.extras` empty (base and upgrade). Factory has no `_add_extra` on that skill.
-4. No Extra Rule leftover keys on that skill’s `effect.modifiers`.
+3. No legacy Extra Rule storage remains on the base or upgrade modules. Factory authors typed module/layer fields.
+4. No unowned leftover keys remain on that skill’s `effect.modifiers`.
 5. Ability id is in `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`.
 6. Behavior matches the skill bible. Class gate + live QA **PASS**.
 
 **Cheat (the last failure):** delete Extra Rules but leave `modifiers["key"]` / combat still reading the bag. Forbidden.
 
-**ER-3 exit target:** no class skill uses Extra Rules; `AbilityExtraRule` is deleted; factories have no `_add_extra` or leftover authoring keys. Contract test: every Extra Rule id has a home; every converted skill has empty extras. Motion Mode cleanup is the separate ER-3 task in `IMPLEMENTATION_PLAN.md`.
+**ER-3 exit target:** no class skill uses Extra Rules; the `AbilityExtraRule` resource and editor path are deleted; factories have no `_add_extra` or leftover authoring keys. Contract test: every converted skill has no unowned runtime keys. Motion cleanup is included in the same ER-3 task.
 
 ---
 
@@ -117,13 +117,13 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 1. Open **this file**. Find the skill row. Pick the **family** from the locked table.
 2. Implement the **Solution** cell using the conversion law. If the Solution cell is shorthand vs the skill bible, stop and ask — do not invent a leftover key.
 3. Delete that skill’s Extra Rules **and** leftover Extra Rule keys on `effect.modifiers` **in the same change**. Factory has no `_add_extra` on that skill.
-4. Add the ability id to `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`. Empty extras while combat still reads the bag = cheat = not converted.
+4. Add the ability id to `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`. Removing a legacy container while combat still reads an unowned key = cheat = not converted.
 5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
 If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
 
-Complete Extra Rule id → home map: `tests/extra_rules_conversion_contract.gd` `extra_rule_home()`. The category table above is a summary. The test fails if any `AbilityExtraRule.Id` (except NONE) has no home.
+The conversion contract now checks every layer runtime key on converted skills against a typed module/layer owner. This keeps the category table auditable without retaining a legacy `AbilityExtraRule` taxonomy.
 
 ---
 
@@ -479,10 +479,10 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 When every class skill row is converted:
 
-1. Grep `_add_extra`, `AbilityExtraRule`, `extras.append` in factories → **zero**.
+1. Grep `_add_extra`, `AbilityExtraRule`, `extras.append` in production code → **zero**.
 2. Delete `data/definitions/ability_extra_rule.gd` and Class Editor Extra Rules UI.
 3. Combat must not read Extra Rule keys as authoring.
-4. Motion Mode cleanup is owned by `IMPLEMENTATION_PLAN.md` ER-3; complete it after destination `EffectType` / MOVE-JUMP fields cover Wraparound, Pole Vault, Reposition slide, and Usher ally-step.
+4. Motion cleanup is complete: destination `EffectType` values and typed fields cover Wraparound, Pole Vault, Reposition slide, and Usher ally-step.
 
 ---
 

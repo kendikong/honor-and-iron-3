@@ -62,8 +62,6 @@ static func normalize_module_authoring_fields(
 	normalize_module_status_fields(module)
 	if not GameEnums.effect_type_uses_module_scaling(module.primary_type):
 		module.scaling_stat = GameEnums.StatType.NONE
-	if not _ModuleAuthoringRules.module_uses_motion_mode(module.primary_type):
-		module.motion_mode = GameEnums.MotionMode.NONE
 	if module.primary_type != GameEnums.EffectType.DAMAGE:
 		module.bonus_if_adjacent_at_cast = 0
 		module.def_debuff_before_damage = 0
@@ -384,8 +382,6 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	if module == null:
 		return out
 	var primary: EffectData = module.primary_as_effect()
-	if module.motion_mode != GameEnums.MotionMode.NONE:
-		primary.modifiers["motion_mode"] = module.motion_mode
 	_apply_keywords_to_effect(primary, module)
 	out.append(primary)
 	for kw: AbilityKeyword in module.keywords:
@@ -566,7 +562,6 @@ static func infer_modules_from_effects(
 		move_mod.primary_type = GameEnums.EffectType.MOVE
 		move_mod.min_range = 1
 		move_mod.max_range = 2
-		move_mod.motion_mode = GameEnums.MotionMode.NONE
 		move_mod.targeting_flags = GameEnums.TargetingFlags.TILE
 		move_mod.gate = GameEnums.ModuleGate.IF_COLLIDED
 		move_mod.aim_binding = GameEnums.AimBinding.NEW_AIM
@@ -740,7 +735,7 @@ static func module_is_caster_movement(module: AbilityModule) -> bool:
 		return true
 	if GameEnums.is_teleport_motion(module.primary_type):
 		return (
-			module.motion_mode != GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
+			not module_has_modifier(module, &"reposition_opposite_side")
 			and not module_has_modifier(module, &"airlift_keep_caster")
 		)
 	if GameEnums.is_path_motion(module.primary_type):
@@ -778,7 +773,6 @@ static func _module_from_primary_effect(eff: EffectData, ability: AbilityData) -
 	mod.target_shape = ability.target_shape
 	mod.target_shape_size = ability.target_shape_size
 	mod.targeting_flags = ability.targeting_flags
-	mod.motion_mode = _infer_motion_mode(eff)
 	mod.gate = GameEnums.ModuleGate.ALWAYS
 	mod.keywords = _keywords_from_effect(eff)
 	normalize_module_authoring_fields(mod)
@@ -830,10 +824,6 @@ static func _infer_layer_condition(eff: EffectData) -> GameEnums.LayerCondition:
 	if eff.bonus_if_adjacent_at_cast != 0:
 		return GameEnums.LayerCondition.IF_ALREADY_ADJACENT
 	return GameEnums.LayerCondition.AT_RESOLUTION
-
-
-static func _infer_motion_mode(_eff: EffectData) -> GameEnums.MotionMode:
-	return GameEnums.MotionMode.NONE
 
 
 static func _infer_phase(_eff: EffectData, _idx: int, _ability: AbilityData) -> GameEnums.ModulePhase:

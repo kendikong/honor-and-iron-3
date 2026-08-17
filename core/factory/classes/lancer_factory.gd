@@ -220,7 +220,6 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.PHYSICAL,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	var module := AbilityModule.new()
 	module.primary_type = primary_type
@@ -231,7 +230,6 @@ static func _module(
 	module.target_shape = shape
 	module.target_shape_size = shape_size
 	module.scaling_stat = scaling_stat
-	module.motion_mode = motion_mode
 	return module
 
 
@@ -431,7 +429,7 @@ static func _charge_skill(
 	var dash := _module(
 		GameEnums.EffectType.DASH, dash_range, 1, dash_range,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.PHYSICAL, GameEnums.MotionMode.TO_EMPTY_TILE,
+		GameEnums.StatType.PHYSICAL,
 	)
 	dash.execution_phase = GameEnums.ModulePhase.ON_PRE
 	var strike := _module(
@@ -504,17 +502,17 @@ static func _flanking_maneuver() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	module.motion_mode = GameEnums.MotionMode.L_SHAPE
+	module.l_shape_move = true
 	module.targeting_flags = GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
-	strike.modifiers["damage_multiplier"] = 2
-	strike.modifiers["side_attack_only"] = true
-	strike.modifiers["target_after_move_adjacent"] = true
-	module.layers.append(_layer(strike))
+	var strike_layer := _layer(strike)
+	strike_layer.damage_multiplier = 2.0
+	strike_layer.side_attack_only = true
+	strike_layer.target_after_move_adjacent = true
+	module.layers.append(strike_layer)
 	var upgraded := _clone_modules([module])
-	upgraded[0].motion_mode = GameEnums.MotionMode.L_SHAPE
+	upgraded[0].l_shape_move = true
 	upgraded[0].keywords.append(DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST))
 	return _ability(
 		&"lancer_flanking_maneuver", "Wraparound", 1, [module],
@@ -529,7 +527,6 @@ static func _glorious_charge() -> AbilityData:
 		GameEnums.EffectType.DASH, 4, 1, 4,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	module.paired_ally_charge = true
 	module.paired_ally_strike_atk = 2
@@ -557,7 +554,6 @@ static func _pole_vault() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.JUMP_TO_BEHIND, 3, 1, 3, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	module.vault_obstacle_or_gap_only = true
 	var upgraded := _clone_modules([module])
@@ -577,7 +573,6 @@ static func _line_breaker() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DASH, 4, 1, 4, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.LINE, 4, GameEnums.StatType.PHYSICAL,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	module.line_breaker = true
 	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))

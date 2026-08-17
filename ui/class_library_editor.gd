@@ -1759,10 +1759,6 @@ func _apply_module_field_greying(
 		rows.get("scaling", []),
 		not GameEnums.effect_type_uses_module_scaling(module.primary_type),
 	)
-	_grey_row(
-		rows.get("motion_mode", []),
-		not ModuleAuthoringRules.module_uses_motion_mode(module.primary_type),
-	)
 	_grey_row(rows.get("min_range", []), not ModuleAuthoringRules.module_uses_range(module))
 	_grey_row(rows.get("max_range", []), not ModuleAuthoringRules.module_uses_range(module))
 	_grey_row(rows.get("requires_los", []), not ModuleAuthoringRules.module_uses_los(module))
@@ -1934,8 +1930,8 @@ func _build_module_fields(
 		module.scaling_stat = v
 		changed.call()
 	)
-	grey_rows["motion_mode"] = _bind_enum(grid, "Motion Mode", GameEnums.MotionMode, module.motion_mode, func(v: int) -> void:
-		module.motion_mode = v
+	grey_rows["l_shape_move"] = _bind_bool(grid, "L-Shape Move", module.l_shape_move, func(v: bool) -> void:
+		module.l_shape_move = v
 		changed.call()
 	)
 	var min_range_setter := func(v: int) -> void:
@@ -2062,7 +2058,6 @@ func _build_module_fields(
 	_add_module_typed_extras_editor(parent, ability, module)
 	_add_module_keywords_editor(parent, ability, module)
 	_add_module_layers_editor(parent, ability, module)
-	_add_module_extras_editor(parent, ability, module)
 
 
 func _add_module_targeting_flags(
@@ -2913,86 +2908,6 @@ func _add_typed_layer_bindings(
 	)
 
 
-func _add_module_extras_editor(
-	parent: VBoxContainer,
-	ability: AbilityData,
-	module: AbilityModule,
-) -> void:
-	_add_subsection_label(parent, "Extra Rules", ClassLibraryTheme.ACCENT_DATA)
-	var box := VBoxContainer.new()
-	parent.add_child(box)
-	for index: int in module.extras.size():
-		var extra: AbilityExtraRule = module.extras[index]
-		if extra == null:
-			extra = AbilityExtraRule.new()
-			module.extras[index] = extra
-		var grid := GridContainer.new()
-		grid.columns = 2
-		box.add_child(grid)
-		var custom_key_edit: LineEdit
-		_bind_enum(grid, "Extra %d" % index, AbilityExtraRule.Id, extra.id, func(v: int) -> void:
-			extra.id = v as AbilityExtraRule.Id
-			extra.override_key = ""
-			if custom_key_edit != null:
-				custom_key_edit.text = ""
-			_on_module_field_edited(ability)
-		)
-		var value_edit := LineEdit.new()
-		value_edit.text = str(extra.value)
-		value_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		value_edit.text_submitted.connect(func(text: String) -> void:
-			extra.value = _parse_extra_value(text)
-			_on_module_field_edited(ability)
-		)
-		value_edit.focus_exited.connect(func() -> void:
-			extra.value = _parse_extra_value(value_edit.text)
-			_on_module_field_edited(ability)
-		)
-		grid.add_child(_field_label("Value"))
-		grid.add_child(value_edit)
-		custom_key_edit = LineEdit.new()
-		custom_key_edit.text = extra.override_key
-		custom_key_edit.placeholder_text = "Only for Extra = NONE"
-		custom_key_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		custom_key_edit.text_changed.connect(func(text: String) -> void:
-			extra.override_key = text.strip_edges()
-			if not extra.override_key.is_empty():
-				extra.id = AbilityExtraRule.Id.NONE
-			_on_module_field_edited(ability)
-		)
-		grid.add_child(_field_label("Custom Key"))
-		grid.add_child(custom_key_edit)
-		var remove := Button.new()
-		remove.text = "Remove Extra"
-		remove.pressed.connect(func() -> void:
-			module.extras.remove_at(index)
-			_rebuild_ability_detail_panes(ability)
-		)
-		box.add_child(remove)
-	var add := Button.new()
-	add.text = "+ Extra Rule"
-	add.pressed.connect(func() -> void:
-		module.extras.append(AbilityExtraRule.new())
-		_rebuild_ability_detail_panes(ability)
-	)
-	box.add_child(add)
-
-
-func _parse_extra_value(text: String) -> Variant:
-	var trimmed: String = text.strip_edges()
-	if trimmed.is_empty():
-		return true
-	if trimmed == "true":
-		return true
-	if trimmed == "false":
-		return false
-	if trimmed.is_valid_int():
-		return int(trimmed)
-	if trimmed.is_valid_float():
-		return float(trimmed)
-	return StringName(trimmed)
-
-
 func _add_module_keywords_editor(
 	parent: VBoxContainer,
 	ability: AbilityData,
@@ -3167,6 +3082,19 @@ func _add_module_layers_editor(
 				if v.strip_edges().is_valid_float():
 					layer.range_one_damage_multiplier = maxf(0.0, float(v))
 					_on_module_field_edited(ability),
+		)
+		_bind_string(grid, "Damage Multiplier", str(layer.damage_multiplier), func(v: String) -> void:
+			if v.strip_edges().is_valid_float():
+				layer.damage_multiplier = maxf(0.0, float(v))
+				_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Side Attack Only", layer.side_attack_only, func(v: bool) -> void:
+			layer.side_attack_only = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Target After Move Adjacent", layer.target_after_move_adjacent, func(v: bool) -> void:
+			layer.target_after_move_adjacent = v
+			_on_module_field_edited(ability)
 		)
 		_bind_bool(grid, "Elemental Surface", layer.elemental_surface, func(v: bool) -> void:
 			layer.elemental_surface = v

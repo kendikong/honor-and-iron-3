@@ -131,7 +131,7 @@ static func ability_has_into_occupied_push_effect(
 
 
 ## Walk may land on an occupant; execution pushes them off.
-## Covers MOVE_INTO_AND_PUSH and MotionMode.INTO_OCCUPIED_PUSH. Not a skill-id branch.
+## Covers the typed MOVE_INTO_AND_PUSH effect. Not a skill-id branch.
 static func ability_allows_occupied_landing(
 	ability: AbilityData,
 	actor: UnitState = null,
@@ -955,6 +955,10 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		
 	var is_dash := ability_has_dash(ability, actor)
 	var is_move := _is_skill_path_walk(ability, actor)
+	var is_teleport := (
+		motion_module != null
+		and GameEnums.is_teleport_motion(motion_module.primary_type)
+	)
 	if (
 		motion_module != null
 		and (
@@ -1001,7 +1005,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		):
 			return false
 
-	if is_move or (has_pass_through_effects(ability, actor) and not is_dash):
+	if is_move or is_teleport or (has_pass_through_effects(ability, actor) and not is_dash):
 		if action.target_coord != actor.position:
 			var walk_min: int = (
 				active_motion_min_range(actor, ability)
@@ -1797,8 +1801,6 @@ static func ability_slides_reposition_target(
 		return false
 	var motion: AbilityModule = active_motion_module(actor, ability)
 	if motion != null:
-		if motion.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE:
-			return true
 		if AbilityModuleBridge.module_has_modifier(motion, &"reposition_opposite_side"):
 			return true
 	return ability_has_modifier(ability, &"reposition_opposite_side", actor)
@@ -1920,7 +1922,6 @@ static func planning_awaiting_phase_for_module(
 			or AbilityModuleBridge.module_has_modifier(module, &"relocate_target")
 			or AbilityModuleBridge.module_has_modifier(module, &"relocate_subject_only")
 			or AbilityModuleBridge.module_has_modifier(module, &"reposition_opposite_side")
-			or module.motion_mode == GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE
 		):
 			pass
 		else:
@@ -2046,7 +2047,7 @@ static func _ability_has_modifier(
 		return true
 	if key == &"l_shape_move":
 		for module: AbilityModule in active_modules_for(actor, ability):
-			if module != null and module.motion_mode == GameEnums.MotionMode.L_SHAPE:
+			if module != null and module.l_shape_move:
 				return true
 	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and (
@@ -5607,24 +5608,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if destination == Vector2i(-1, -1):
 					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 						"actor": actor.id, "reason": "guardian_step_no_landing",
-					}))
-					return
-			elif effect.modifiers.has("motion_mode"):
-				if effect.modifiers.get("reposition_opposite_side", false):
-					destination = BeastRiderSystems.resolve_reposition_destination(
-						board, actor, target,
-					)
-				else:
-					destination = RogueSystems.resolve_teleport_destination(
-						board,
-						actor,
-						target,
-						tile_coord,
-						int(effect.modifiers["motion_mode"]),
-					)
-				if destination == Vector2i(-1, -1):
-					events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-						"actor": actor.id, "reason": "teleport_no_landing",
 					}))
 					return
 			if not GridSystem.is_occupied(board, destination) and not GridSystem.is_wall(board, destination):

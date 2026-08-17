@@ -36,7 +36,6 @@ static func build(basic_staff: WeaponData) -> UnitData:
 	var blink_module := DataLibrary._module(
 		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	blink_module.blink = true
 	var blink_upgraded := DataLibrary._duplicate_modules([blink_module])
@@ -316,13 +315,13 @@ static func _teleport() -> AbilityData:
 	var base := DataLibrary._module(
 		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 4,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.TO_EMPTY_TILE,
+		GameEnums.StatType.NONE,
 	)
 	base.teleport_visible = true
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.TELEPORT_CASTER, 0, 1, 4,
 		GameEnums.TargetingFlags.TILE, GameEnums.TargetShape.SINGLE, 1,
-		GameEnums.StatType.NONE, GameEnums.MotionMode.TO_EMPTY_TILE,
+		GameEnums.StatType.NONE,
 	)
 	upgraded.teleport_visible = true
 	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 1), GameEnums.LayerCondition.ON_LAND))

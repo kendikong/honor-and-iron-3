@@ -63,7 +63,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [ ] `SPAWN` has typed HP%, placement, turret, construct, and detonation fields.
 - [ ] Header fields cover once-per-turn, skip-Action, spend-all-MP, HP cost, and delayed resolution.
 - [ ] Required StatusType and LayerCondition additions are implemented and consumed by shared systems.
-- [ ] `run_ability_module_bridge_test.gd` proves the shared homes without Extra Rule fallback.
+- [x] `run_ability_module_bridge_test.gd` proves the shared homes without Extra Rule fallback (PASS after ER-3 cleanup).
 
 ### ER-2 — class-by-class conversion
 
@@ -486,14 +486,16 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-3 — legacy deletion
 
-- [ ] Zero class-factory `_add_extra` / `_add_extras_from_dict` calls.
-- [ ] Zero class-skill leftover Extra Rule keys in `EffectData.modifiers`.
-- [ ] `CONVERTED_SKILL_IDS` contains every converted skill and the bridge contract passes.
-- [ ] Delete `AbilityExtraRule` and the Class Editor Extra Rules UI.
-- [ ] Delete `GameEnums.MotionMode` and module/editor/factory Motion Mode fields.
-- [ ] Remove combat reads of `module.motion_mode` and all compatibility inference.
-- [ ] Run full grep exit check: `_add_extra`, `AbilityExtraRule`, `MotionMode`, `motion_mode` = zero on class skills.
-- [ ] Run final planning QA and full deterministic regression.
+ER-3 closes only legacy-path deletion. The unchecked ER-1 shared-home rows remain an independent follow-up gate and are not implied complete by the ER-3 checkmarks below.
+
+- [x] Zero class-factory `_add_extra` / `_add_extras_from_dict` calls.
+- [x] Zero class-skill leftover unowned runtime keys in `EffectData.modifiers`.
+- [x] `CONVERTED_SKILL_IDS` contains every converted skill and the bridge contract passes.
+- [x] Delete `AbilityExtraRule` and the Class Editor Extra Rules UI.
+- [x] Delete `GameEnums.MotionMode` and module/editor/factory Motion Mode fields.
+- [x] Remove combat reads of `module.motion_mode` and all compatibility inference.
+- [x] Run full grep exit check: `_add_extra`, `AbilityExtraRule`, `MotionMode`, `motion_mode` = zero in production code.
+- [x] Run final planning QA and full deterministic regression.
 
 ---
 

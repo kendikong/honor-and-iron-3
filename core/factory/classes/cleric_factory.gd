@@ -36,7 +36,6 @@ static func build(basic_staff: WeaponData) -> UnitData:
 		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 5,
 		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	guardian_module.cost_all_movement = true
 	var guardian_upgraded := DataLibrary._duplicate_modules([guardian_module])

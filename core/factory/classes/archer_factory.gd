@@ -26,7 +26,6 @@ static func build(basic_bow: WeaponData) -> UnitData:
 	var sidestep_module := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	sidestep_module.preserve_facing = true
 	sidestep_module.ignore_zoc = true
@@ -539,7 +538,6 @@ static func _parting_shot() -> AbilityData:
 	var move := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	move.aim_binding = GameEnums.AimBinding.NEW_AIM
 	move.execution_phase = GameEnums.ModulePhase.ON_POST

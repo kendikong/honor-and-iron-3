@@ -208,11 +208,10 @@ static func _module(
 	shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE,
 	shape_size: int = 1,
 	scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE,
-	motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE,
 ) -> AbilityModule:
 	return DataLibrary._module(
 		primary_type, amount, min_range, max_range, targeting_flags,
-		shape, shape_size, scaling_stat, motion_mode,
+		shape, shape_size, scaling_stat,
 	)
 
 
@@ -286,7 +285,6 @@ static func _shadow_step() -> AbilityData:
 		GameEnums.EffectType.TELEPORT_ADJACENT_TO, 0, 1, 4,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.NONE,
 	)
 	base.shadow_step = true
 	var upgraded := _clone([base])
@@ -341,7 +339,6 @@ static func _evasive_strike() -> AbilityData:
 	var move := _module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
 	var strike := _module(GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
@@ -381,7 +378,6 @@ static func _switcheroo() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.SWAP, 0, 1, 3, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	base.switcheroo = true
 	var upgraded := _clone([base])
@@ -466,7 +462,6 @@ static func _shadow_swap() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.SWAP, 0, 1, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	var upgraded := _clone([base])
 	upgraded[0].layers = [
@@ -483,7 +478,6 @@ static func _kidnap() -> AbilityData:
 	var base := _module(
 		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	base.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
 	base.kidnap = true
