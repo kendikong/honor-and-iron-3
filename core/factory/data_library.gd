@@ -710,6 +710,27 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.pierce_vs_blind = from_module.pierce_vs_blind
 	to_module.hazard_blind_on_entry = from_module.hazard_blind_on_entry
 	to_module.enemy_collision_stagger_both = from_module.enemy_collision_stagger_both
+	to_module.reposition_opposite_side = from_module.reposition_opposite_side
+	to_module.reposition_movement_cost = from_module.reposition_movement_cost
+	to_module.reposition_range = from_module.reposition_range
+	to_module.pounce_land_adjacent = from_module.pounce_land_adjacent
+	to_module.feral_drag = from_module.feral_drag
+	to_module.drag_remaining_movement = from_module.drag_remaining_movement
+	to_module.redirect_incoming_damage = from_module.redirect_incoming_damage
+	to_module.drop_adjacent = from_module.drop_adjacent
+	to_module.does_not_consume_action_slot = from_module.does_not_consume_action_slot
+	to_module.drop_trap_damage_multiplier = from_module.drop_trap_damage_multiplier
+	to_module.pull_before_attack = from_module.pull_before_attack
+	to_module.purge_buffs = from_module.purge_buffs
+	to_module.on_kill_shield = from_module.on_kill_shield
+	to_module.run_down_pass_adjacent_push = from_module.run_down_pass_adjacent_push
+	to_module.trample_atk = from_module.trample_atk
+	to_module.run_down_push_bleed_weapon = from_module.run_down_push_bleed_weapon
+	to_module.intercept_push_attacker = from_module.intercept_push_attacker
+	to_module.airlift_pickup_step = from_module.airlift_pickup_step
+	to_module.airlift_drop_step = from_module.airlift_drop_step
+	to_module.airlift_keep_caster = from_module.airlift_keep_caster
+	to_module.airlift_ally_attack_strength = from_module.airlift_ally_attack_strength
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

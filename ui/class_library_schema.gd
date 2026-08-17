@@ -734,6 +734,10 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"from_behind_only": src.from_behind_only,
 		"hazard_blind_on_entry": src.hazard_blind_on_entry,
 		"poison_hazard": src.poison_hazard,
+		"landing_push": src.landing_push,
+		"status_requires_debuff": src.status_requires_debuff,
+		"cone_all_targets": src.cone_all_targets,
+		"wall_collision_stagger": src.wall_collision_stagger,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -839,6 +843,14 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 		data.get("hazard_blind_on_entry", layer.hazard_blind_on_entry)
 	)
 	layer.poison_hazard = bool(data.get("poison_hazard", layer.poison_hazard))
+	layer.landing_push = int(data.get("landing_push", layer.landing_push))
+	layer.status_requires_debuff = bool(
+		data.get("status_requires_debuff", layer.status_requires_debuff)
+	)
+	layer.cone_all_targets = bool(data.get("cone_all_targets", layer.cone_all_targets))
+	layer.wall_collision_stagger = bool(
+		data.get("wall_collision_stagger", layer.wall_collision_stagger)
+	)
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -1122,6 +1134,27 @@ static func module_to_dict(
 		"pierce_vs_blind": src.pierce_vs_blind,
 		"hazard_blind_on_entry": src.hazard_blind_on_entry,
 		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
+		"reposition_opposite_side": src.reposition_opposite_side,
+		"reposition_movement_cost": src.reposition_movement_cost,
+		"reposition_range": src.reposition_range,
+		"pounce_land_adjacent": src.pounce_land_adjacent,
+		"feral_drag": src.feral_drag,
+		"drag_remaining_movement": src.drag_remaining_movement,
+		"redirect_incoming_damage": src.redirect_incoming_damage,
+		"drop_adjacent": src.drop_adjacent,
+		"does_not_consume_action_slot": src.does_not_consume_action_slot,
+		"drop_trap_damage_multiplier": src.drop_trap_damage_multiplier,
+		"pull_before_attack": src.pull_before_attack,
+		"purge_buffs": src.purge_buffs,
+		"on_kill_shield": src.on_kill_shield,
+		"run_down_pass_adjacent_push": src.run_down_pass_adjacent_push,
+		"trample_atk": src.trample_atk,
+		"run_down_push_bleed_weapon": src.run_down_push_bleed_weapon,
+		"intercept_push_attacker": src.intercept_push_attacker,
+		"airlift_pickup_step": src.airlift_pickup_step,
+		"airlift_drop_step": src.airlift_drop_step,
+		"airlift_keep_caster": src.airlift_keep_caster,
+		"airlift_ally_attack_strength": src.airlift_ally_attack_strength,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1593,6 +1626,47 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	)
 	dst.enemy_collision_stagger_both = bool(
 		data.get("enemy_collision_stagger_both", dst.enemy_collision_stagger_both)
+	)
+	dst.reposition_opposite_side = bool(
+		data.get("reposition_opposite_side", dst.reposition_opposite_side)
+	)
+	dst.reposition_movement_cost = int(
+		data.get("reposition_movement_cost", dst.reposition_movement_cost)
+	)
+	dst.reposition_range = int(data.get("reposition_range", dst.reposition_range))
+	dst.pounce_land_adjacent = bool(data.get("pounce_land_adjacent", dst.pounce_land_adjacent))
+	dst.feral_drag = bool(data.get("feral_drag", dst.feral_drag))
+	dst.drag_remaining_movement = bool(
+		data.get("drag_remaining_movement", dst.drag_remaining_movement)
+	)
+	dst.redirect_incoming_damage = bool(
+		data.get("redirect_incoming_damage", dst.redirect_incoming_damage)
+	)
+	dst.drop_adjacent = bool(data.get("drop_adjacent", dst.drop_adjacent))
+	dst.does_not_consume_action_slot = bool(
+		data.get("does_not_consume_action_slot", dst.does_not_consume_action_slot)
+	)
+	dst.drop_trap_damage_multiplier = float(
+		data.get("drop_trap_damage_multiplier", dst.drop_trap_damage_multiplier)
+	)
+	dst.pull_before_attack = int(data.get("pull_before_attack", dst.pull_before_attack))
+	dst.purge_buffs = bool(data.get("purge_buffs", dst.purge_buffs))
+	dst.on_kill_shield = int(data.get("on_kill_shield", dst.on_kill_shield))
+	dst.run_down_pass_adjacent_push = int(
+		data.get("run_down_pass_adjacent_push", dst.run_down_pass_adjacent_push)
+	)
+	dst.trample_atk = int(data.get("trample_atk", dst.trample_atk))
+	dst.run_down_push_bleed_weapon = bool(
+		data.get("run_down_push_bleed_weapon", dst.run_down_push_bleed_weapon)
+	)
+	dst.intercept_push_attacker = int(
+		data.get("intercept_push_attacker", dst.intercept_push_attacker)
+	)
+	dst.airlift_pickup_step = int(data.get("airlift_pickup_step", dst.airlift_pickup_step))
+	dst.airlift_drop_step = int(data.get("airlift_drop_step", dst.airlift_drop_step))
+	dst.airlift_keep_caster = bool(data.get("airlift_keep_caster", dst.airlift_keep_caster))
+	dst.airlift_ally_attack_strength = int(
+		data.get("airlift_ally_attack_strength", dst.airlift_ally_attack_strength)
 	)
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])

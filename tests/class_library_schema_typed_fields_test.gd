@@ -109,6 +109,27 @@ static func run_all(failures: Array[String]) -> void:
 	source.swap_collision_stagger_both = true
 	source.pierce_vs_blind = true
 	source.hazard_blind_on_entry = true
+	source.reposition_opposite_side = true
+	source.reposition_movement_cost = 2
+	source.reposition_range = 2
+	source.pounce_land_adjacent = true
+	source.feral_drag = true
+	source.drag_remaining_movement = true
+	source.redirect_incoming_damage = true
+	source.drop_adjacent = true
+	source.does_not_consume_action_slot = true
+	source.drop_trap_damage_multiplier = 2.0
+	source.pull_before_attack = 1
+	source.purge_buffs = true
+	source.on_kill_shield = 2
+	source.run_down_pass_adjacent_push = 1
+	source.trample_atk = 2
+	source.run_down_push_bleed_weapon = true
+	source.intercept_push_attacker = 2
+	source.airlift_pickup_step = 1
+	source.airlift_drop_step = 3
+	source.airlift_keep_caster = true
+	source.airlift_ally_attack_strength = 1
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -148,6 +169,10 @@ static func run_all(failures: Array[String]) -> void:
 	layer.from_behind_only = true
 	layer.hazard_blind_on_entry = true
 	layer.poison_hazard = true
+	layer.landing_push = 1
+	layer.status_requires_debuff = true
+	layer.cone_all_targets = true
+	layer.wall_collision_stagger = true
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -256,6 +281,39 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "swap_collision_stagger_both", restored.swap_collision_stagger_both)
 	_assert(failures, "pierce_vs_blind", restored.pierce_vs_blind)
 	_assert(failures, "hazard_blind_on_entry", restored.hazard_blind_on_entry)
+	_assert(
+		failures,
+		"beast_module_typed_fields",
+		restored.reposition_opposite_side
+		and restored.reposition_movement_cost == 2
+		and restored.reposition_range == 2
+		and restored.pounce_land_adjacent
+		and restored.feral_drag
+		and restored.drag_remaining_movement
+		and restored.redirect_incoming_damage
+		and restored.drop_adjacent
+		and restored.does_not_consume_action_slot
+		and is_equal_approx(restored.drop_trap_damage_multiplier, 2.0)
+		and restored.pull_before_attack == 1
+		and restored.purge_buffs
+		and restored.on_kill_shield == 2
+		and restored.run_down_pass_adjacent_push == 1
+		and restored.trample_atk == 2
+		and restored.run_down_push_bleed_weapon
+		and restored.intercept_push_attacker == 2
+		and restored.airlift_pickup_step == 1
+		and restored.airlift_drop_step == 3
+		and restored.airlift_keep_caster
+		and restored.airlift_ally_attack_strength == 1,
+	)
+	_assert(
+		failures,
+		"beast_layer_typed_fields",
+		restored.layers[0].landing_push == 1
+		and restored.layers[0].status_requires_debuff
+		and restored.layers[0].cone_all_targets
+		and restored.layers[0].wall_collision_stagger,
+	)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -326,6 +384,27 @@ static func run_all(failures: Array[String]) -> void:
 		and copied.kidnap
 		and copied.swap_collision_stagger_both
 		and copied.hazard_blind_on_entry,
+	)
+	_assert(
+		failures,
+		"copy_beast_rider_typed_fields",
+		copied.reposition_opposite_side
+		and copied.reposition_movement_cost == 2
+		and copied.pounce_land_adjacent
+		and copied.feral_drag
+		and copied.drop_trap_damage_multiplier == 2.0
+		and copied.run_down_push_bleed_weapon
+		and copied.airlift_drop_step == 3,
+	)
+	var copied_beast_module := source.duplicate(true) as AbilityModule
+	_assert(
+		failures,
+		"copy_beast_rider_layer_typed_fields",
+		copied_beast_module.layers.size() == 1
+		and copied_beast_module.layers[0].landing_push == 1
+		and copied_beast_module.layers[0].status_requires_debuff
+		and copied_beast_module.layers[0].cone_all_targets
+		and copied_beast_module.layers[0].wall_collision_stagger,
 	)
 
 

@@ -197,21 +197,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Rogue | Kidnap | ☑ | ☑ | ☑ | ☑ | Enemy swap + push on Action; typed conversion and critic pass |
 | Rogue | Shuriken Volley | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
 | Rogue | Poison Flask | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
-| Beast Rider | Reposition | ☐ | ☐ | ☐ | ☐ | Ally-step destination |
-| Beast Rider | Pounce | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Feral Drag | ☐ | ☐ | ☐ | ☐ | Enemy drag on Action is legal |
-| Beast Rider | Maul | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Bestial Roar | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Raking Claws | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Rest and Recover | ☐ | ☐ | ☐ | ☐ | Spend remaining MP |
-| Beast Rider | Intimidate | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Fetch / Snatch | ☐ | ☐ | ☐ | ☐ | Condition: CON ≤ STR |
-| Beast Rider | Savage Bite | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Run Down | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Defensive Posture | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Airlift | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Tail Swipe | ☐ | ☐ | ☐ | ☐ |  |
-| Beast Rider | Gore | ☐ | ☐ | ☐ | ☐ |  |
+| Beast Rider | Reposition | ☑ | ☑ | ☑ | ☑ | Ally-step destination; typed conversion |
+| Beast Rider | Pounce | ☑ | ☑ | ☑ | ☑ | Typed conversion and movement proof |
+| Beast Rider | Feral Drag | ☑ | ☑ | ☑ | ☑ | Enemy drag on Action is legal; typed conversion |
+| Beast Rider | Maul | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Bestial Roar | ☑ | ☑ | ☑ | ☑ | Typed conversion and cone proof |
+| Beast Rider | Raking Claws | ☑ | ☑ | ☑ | ☑ | Typed conversion and ARC proof |
+| Beast Rider | Thrash | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Rest and Recover | ☑ | ☑ | ☑ | ☑ | Spend remaining MP; typed conversion |
+| Beast Rider | Intimidate | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Fetch / Snatch | ☑ | ☑ | ☑ | ☑ | Condition: CON ≤ STR; typed conversion |
+| Beast Rider | Savage Bite | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Run Down | ☑ | ☑ | ☑ | ☑ | Typed conversion and movement proof |
+| Beast Rider | Defensive Posture | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Airlift | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Tail Swipe | ☑ | ☑ | ☑ | ☑ | Typed conversion and collision proof |
+| Beast Rider | Gore | ☑ | ☑ | ☑ | ☑ | Typed conversion |
 | Engineer | Recall | ☐ | ☐ | ☐ | ☐ |  |
 | Engineer | Dismantle | ☐ | ☐ | ☐ | ☐ |  |
 | Engineer | Sludge Bomb | ☐ | ☐ | ☐ | ☐ |  |
@@ -379,23 +380,24 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 8. Beast Rider
 
-- [ ] `beast_reposition`
-- [ ] `beast_pounce`
-- [ ] `beast_feral_drag`
-- [ ] `beast_maul`
-- [ ] `beast_bestial_roar`
-- [ ] `beast_raking_claws`
-- [ ] `beast_rest_recover`
-- [ ] `beast_intimidate`
-- [ ] `beast_fetch`
-- [ ] `beast_savage_bite`
-- [ ] `beast_run_down`
-- [ ] `beast_defensive_posture`
-- [ ] `beast_airlift`
-- [ ] `beast_tail_swipe`
-- [ ] `beast_gore`
-- [ ] Beast Rider class gate: `run_beast_rider_qa_gate.ps1`.
-- [ ] Beast Rider live gate: `run_beast_rider_live_qa.ps1`.
+- [x] `beast_reposition`
+- [x] `beast_pounce`
+- [x] `beast_feral_drag`
+- [x] `beast_maul`
+- [x] `beast_bestial_roar`
+- [x] `beast_raking_claws`
+- [x] `beast_rest_recover`
+- [x] `beast_intimidate`
+- [x] `beast_fetch`
+- [x] `beast_savage_bite`
+- [x] `beast_run_down`
+- [x] `beast_thrash`
+- [x] `beast_defensive_posture`
+- [x] `beast_airlift`
+- [x] `beast_tail_swipe`
+- [x] `beast_gore`
+- [x] Beast Rider class gate: `run_beast_rider_qa_gate.ps1` — PASS (32/32 matrix; Tier 1 + AOE).
+- [x] Beast Rider live gate: `run_beast_rider_live_qa.ps1` — PASS.
 
 #### 9. Cleric
 

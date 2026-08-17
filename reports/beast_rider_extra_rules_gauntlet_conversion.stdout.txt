@@ -1,0 +1,5 @@
+﻿Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract

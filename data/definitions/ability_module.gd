@@ -306,6 +306,27 @@ extends Resource
 @export var pierce_vs_blind: bool = false
 @export var hazard_blind_on_entry: bool = false
 @export var enemy_collision_stagger_both: bool = false
+@export var reposition_opposite_side: bool = false
+@export var reposition_movement_cost: int = 0
+@export var reposition_range: int = 0
+@export var pounce_land_adjacent: bool = false
+@export var feral_drag: bool = false
+@export var drag_remaining_movement: bool = false
+@export var redirect_incoming_damage: bool = false
+@export var drop_adjacent: bool = false
+@export var does_not_consume_action_slot: bool = false
+@export var drop_trap_damage_multiplier: float = 0.0
+@export var pull_before_attack: int = 0
+@export var purge_buffs: bool = false
+@export var on_kill_shield: int = 0
+@export var run_down_pass_adjacent_push: int = 0
+@export var trample_atk: int = 0
+@export var run_down_push_bleed_weapon: bool = false
+@export var intercept_push_attacker: int = 0
+@export var airlift_pickup_step: int = 0
+@export var airlift_drop_step: int = 0
+@export var airlift_keep_caster: bool = false
+@export var airlift_ally_attack_strength: int = 0
 
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
@@ -834,6 +855,48 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["hazard_blind_on_entry"] = true
 	if enemy_collision_stagger_both:
 		bag["enemy_collision_stagger_both"] = true
+	if reposition_opposite_side:
+		bag["reposition_opposite_side"] = true
+	if reposition_movement_cost != 0:
+		bag["reposition_movement_cost"] = reposition_movement_cost
+	if reposition_range != 0:
+		bag["reposition_range"] = reposition_range
+	if pounce_land_adjacent:
+		bag["pounce_land_adjacent"] = true
+	if feral_drag:
+		bag["feral_drag"] = true
+	if drag_remaining_movement:
+		bag["drag_remaining_movement"] = true
+	if redirect_incoming_damage:
+		bag["redirect_incoming_damage"] = true
+	if drop_adjacent:
+		bag["drop_adjacent"] = true
+	if does_not_consume_action_slot:
+		bag["does_not_consume_action_slot"] = true
+	if not is_zero_approx(drop_trap_damage_multiplier):
+		bag["drop_trap_damage_multiplier"] = drop_trap_damage_multiplier
+	if pull_before_attack != 0:
+		bag["pull_before_attack"] = pull_before_attack
+	if purge_buffs:
+		bag["purge_buffs"] = true
+	if on_kill_shield != 0:
+		bag["on_kill_shield"] = on_kill_shield
+	if run_down_pass_adjacent_push != 0:
+		bag["run_down_pass_adjacent_push"] = run_down_pass_adjacent_push
+	if trample_atk != 0:
+		bag["trample_atk"] = trample_atk
+	if run_down_push_bleed_weapon:
+		bag["run_down_push_bleed_weapon"] = true
+	if intercept_push_attacker != 0:
+		bag["intercept_push_attacker"] = intercept_push_attacker
+	if airlift_pickup_step != 0:
+		bag["airlift_pickup_step"] = airlift_pickup_step
+	if airlift_drop_step != 0:
+		bag["airlift_drop_step"] = airlift_drop_step
+	if airlift_keep_caster:
+		bag["airlift_keep_caster"] = true
+	if airlift_ally_attack_strength != 0:
+		bag["airlift_ally_attack_strength"] = airlift_ally_attack_strength
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -1578,6 +1641,69 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"enemy_collision_stagger_both":
 			enemy_collision_stagger_both = bool(value)
+			return
+		"reposition_opposite_side":
+			reposition_opposite_side = bool(value)
+			return
+		"reposition_movement_cost":
+			reposition_movement_cost = int(value)
+			return
+		"reposition_range":
+			reposition_range = int(value)
+			return
+		"pounce_land_adjacent":
+			pounce_land_adjacent = bool(value)
+			return
+		"feral_drag":
+			feral_drag = bool(value)
+			return
+		"drag_remaining_movement":
+			drag_remaining_movement = bool(value)
+			return
+		"redirect_incoming_damage":
+			redirect_incoming_damage = bool(value)
+			return
+		"drop_adjacent":
+			drop_adjacent = bool(value)
+			return
+		"does_not_consume_action_slot":
+			does_not_consume_action_slot = bool(value)
+			return
+		"drop_trap_damage_multiplier":
+			drop_trap_damage_multiplier = float(value)
+			return
+		"pull_before_attack":
+			pull_before_attack = int(value)
+			return
+		"purge_buffs":
+			purge_buffs = bool(value)
+			return
+		"on_kill_shield":
+			on_kill_shield = int(value)
+			return
+		"run_down_pass_adjacent_push":
+			run_down_pass_adjacent_push = int(value)
+			return
+		"trample_atk":
+			trample_atk = int(value)
+			return
+		"run_down_push_bleed_weapon":
+			run_down_push_bleed_weapon = bool(value)
+			return
+		"intercept_push_attacker":
+			intercept_push_attacker = int(value)
+			return
+		"airlift_pickup_step":
+			airlift_pickup_step = int(value)
+			return
+		"airlift_drop_step":
+			airlift_drop_step = int(value)
+			return
+		"airlift_keep_caster":
+			airlift_keep_caster = bool(value)
+			return
+		"airlift_ally_attack_strength":
+			airlift_ally_attack_strength = int(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

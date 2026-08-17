@@ -2800,7 +2800,10 @@ func _add_typed_module_bindings(
 		"if_target_unacted_stagger", "on_kill_spread_silence_adjacent",
 		"confusion_next_turn", "on_kill_refresh_mark_zero_ap", "kidnap",
 		"swap_collision_stagger_both", "pierce_vs_blind", "hazard_blind_on_entry",
-		"enemy_collision_stagger_both",
+		"enemy_collision_stagger_both", "reposition_opposite_side",
+		"pounce_land_adjacent", "feral_drag", "drag_remaining_movement",
+		"redirect_incoming_damage", "drop_adjacent", "does_not_consume_action_slot",
+		"purge_buffs", "run_down_push_bleed_weapon", "airlift_keep_caster",
 	]:
 		_bind_bool(grid, field_name, bool(module.get(field_name)), func(value: bool) -> void:
 			module.set(field_name, value)
@@ -2814,8 +2817,17 @@ func _add_typed_module_bindings(
 		"pulse_status", "ally_def_buff", "behind_target_strength",
 		"smoke_ally_heal_per_turn", "trap_collision_damage_multiplier",
 		"if_target_staggered_bonus", "bonus_if_target_debuffed",
+		"reposition_movement_cost", "reposition_range", "pull_before_attack",
+		"on_kill_shield", "run_down_pass_adjacent_push", "trample_atk",
+		"intercept_push_attacker", "airlift_pickup_step", "airlift_drop_step",
+		"airlift_ally_attack_strength",
 	]:
 		_bind_int(grid, field_name, int(module.get(field_name)), func(value: int) -> void:
+			module.set(field_name, value)
+			_on_module_field_edited(ability)
+		)
+	for field_name: String in ["drop_trap_damage_multiplier"]:
+		_bind_float(grid, field_name, float(module.get(field_name)), func(value: float) -> void:
 			module.set(field_name, value)
 			_on_module_field_edited(ability)
 		)
@@ -2865,6 +2877,22 @@ func _add_typed_layer_bindings(
 	)
 	_bind_bool(grid, "poison_hazard", layer.poison_hazard, func(value: bool) -> void:
 		layer.poison_hazard = value
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "landing_push", layer.landing_push, func(value: int) -> void:
+		layer.landing_push = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "status_requires_debuff", layer.status_requires_debuff, func(value: bool) -> void:
+		layer.status_requires_debuff = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "cone_all_targets", layer.cone_all_targets, func(value: bool) -> void:
+		layer.cone_all_targets = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "wall_collision_stagger", layer.wall_collision_stagger, func(value: bool) -> void:
+		layer.wall_collision_stagger = value
 		_on_module_field_edited(ability)
 	)
 

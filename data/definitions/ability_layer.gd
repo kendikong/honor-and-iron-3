@@ -62,6 +62,10 @@ extends Resource
 @export var from_behind_only: bool = false
 @export var hazard_blind_on_entry: bool = false
 @export var poison_hazard: bool = false
+@export var landing_push: int = 0
+@export var status_requires_debuff: bool = false
+@export var cone_all_targets: bool = false
+@export var wall_collision_stagger: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -170,6 +174,14 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["hazard_blind_on_entry"] = true
 	if poison_hazard:
 		modifiers["poison_hazard"] = true
+	if landing_push != 0:
+		modifiers["landing_push"] = landing_push
+	if status_requires_debuff:
+		modifiers["status_requires_debuff"] = true
+	if cone_all_targets:
+		modifiers["cone_all_targets"] = true
+	if wall_collision_stagger:
+		modifiers["wall_collision_stagger"] = true
 	return modifiers
 
 
@@ -279,3 +291,11 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			hazard_blind_on_entry = bool(value)
 		"poison_hazard":
 			poison_hazard = bool(value)
+		"landing_push":
+			landing_push = int(value)
+		"status_requires_debuff":
+			status_requires_debuff = bool(value)
+		"cone_all_targets":
+			cone_all_targets = bool(value)
+		"wall_collision_stagger":
+			wall_collision_stagger = bool(value)

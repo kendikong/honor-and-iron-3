@@ -127,6 +127,22 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"rogue_kidnap",
 	&"rogue_shuriken_volley",
 	&"rogue_poison_flask",
+	&"beast_reposition",
+	&"beast_pounce",
+	&"beast_feral_drag",
+	&"beast_maul",
+	&"beast_bestial_roar",
+	&"beast_raking_claws",
+	&"beast_rest_recover",
+	&"beast_intimidate",
+	&"beast_fetch",
+	&"beast_savage_bite",
+	&"beast_run_down",
+	&"beast_thrash",
+	&"beast_defensive_posture",
+	&"beast_airlift",
+	&"beast_tail_swipe",
+	&"beast_gore",
 	&"shaman_usher",
 	&"shaman_curse_of_weakness",
 	&"shaman_healing_totem",
@@ -820,6 +836,56 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.from_behind_only
 		"poison_hazard":
 			return layer.poison_hazard
+		"reposition_opposite_side":
+			return module.reposition_opposite_side
+		"reposition_movement_cost":
+			return module.reposition_movement_cost != 0
+		"reposition_range":
+			return module.reposition_range != 0
+		"pounce_land_adjacent":
+			return module.pounce_land_adjacent
+		"feral_drag":
+			return module.feral_drag
+		"drag_remaining_movement":
+			return module.drag_remaining_movement
+		"redirect_incoming_damage":
+			return module.redirect_incoming_damage
+		"drop_adjacent":
+			return module.drop_adjacent
+		"does_not_consume_action_slot":
+			return module.does_not_consume_action_slot
+		"drop_trap_damage_multiplier":
+			return not is_zero_approx(module.drop_trap_damage_multiplier)
+		"pull_before_attack":
+			return module.pull_before_attack != 0
+		"purge_buffs":
+			return module.purge_buffs
+		"on_kill_shield":
+			return module.on_kill_shield != 0
+		"run_down_pass_adjacent_push":
+			return module.run_down_pass_adjacent_push != 0
+		"trample_atk":
+			return module.trample_atk != 0
+		"run_down_push_bleed_weapon":
+			return module.run_down_push_bleed_weapon
+		"intercept_push_attacker":
+			return module.intercept_push_attacker != 0
+		"airlift_pickup_step":
+			return module.airlift_pickup_step != 0
+		"airlift_drop_step":
+			return module.airlift_drop_step != 0
+		"airlift_keep_caster":
+			return module.airlift_keep_caster
+		"airlift_ally_attack_strength":
+			return module.airlift_ally_attack_strength != 0
+		"landing_push":
+			return layer.landing_push != 0
+		"status_requires_debuff":
+			return layer.status_requires_debuff
+		"cone_all_targets":
+			return layer.cone_all_targets
+		"wall_collision_stagger":
+			return layer.wall_collision_stagger
 		"density_shift":
 			return module.density_shift
 		"ignore_target_magic_pct":

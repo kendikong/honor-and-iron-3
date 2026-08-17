@@ -156,7 +156,7 @@ static func _module_has_key(modules: Array[AbilityModule], key: StringName) -> b
 		if module.runtime_has(String(key)):
 			return true
 		for layer: AbilityLayer in module.layers:
-			if layer != null and layer.effect != null and layer.effect.modifiers.has(key):
+			if layer != null and layer.compile_runtime_modifiers().has(String(key)):
 				return true
 	return false
 
@@ -959,6 +959,13 @@ static func _assert_ability_sim_outcome(
 				failures,
 				"%s/outcome/three_physical_hits" % ability_id,
 				thrash_hits == 3,
+			)
+			_assert(
+				failures,
+				"%s/outcome/upgraded_bleed" % ability_id,
+				ability.upgraded_modules.size() > 0
+					and ability.upgraded_modules[0].layers.size() > 0
+					and ability.upgraded_modules[0].layers[0].bleed_weapon,
 			)
 		_:
 			ClassScenarioSimOutcome.assert_from_events(

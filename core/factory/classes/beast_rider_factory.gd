@@ -251,11 +251,11 @@ static func _reposition() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.SLIDE_TARGET_OPPOSITE,
 	)
-	DataLibrary._add_extra(base, "reposition_opposite_side", true)
-	DataLibrary._add_extra(base, "reposition_movement_cost", 2)
+	base.reposition_opposite_side = true
+	base.reposition_movement_cost = 2
 	var upgraded := _clone([base])
 	upgraded[0].max_range = 2
-	DataLibrary._add_extra(upgraded[0], "reposition_range", 2)
+	upgraded[0].reposition_range = 2
 	return _movement(
 		&"beast_reposition", "Reposition", 2, base, upgraded,
 		"Move an adjacent ally to the empty tile directly on your opposite side.",
@@ -271,15 +271,16 @@ static func _pounce() -> AbilityData:
 		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
-	DataLibrary._add_extra(move, "pounce_land_adjacent", true)
+	move.pounce_land_adjacent = true
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 3)
 	strike.scaling_stat = GameEnums.StatType.PHYSICAL
 	move.layers.append(_layer(strike))
 	var modules: Array[AbilityModule] = [move]
 	var upgraded := _clone(modules)
 	var landing_push := DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
-	landing_push.modifiers["landing_push"] = 1
-	upgraded[0].layers.append(_layer(landing_push))
+	var landing_push_layer := _layer(landing_push)
+	landing_push_layer.landing_push = 1
+	upgraded[0].layers.append(landing_push_layer)
 	return _ability(
 		&"beast_pounce", "Pounce", modules, upgraded,
 		GameEnums.TargetingFlags.ENEMY,
@@ -294,13 +295,11 @@ static func _feral_drag() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	DataLibrary._add_extras_from_dict(drag, {
-		"feral_drag": true,
-		"drag_remaining_movement": true,
-	})
+	drag.feral_drag = true
+	drag.drag_remaining_movement = true
 	drag.set_condition_con_leq_caster_str()
 	var upgraded := _clone([drag])
-	DataLibrary._add_extra(upgraded[0], "redirect_incoming_damage", true)
+	upgraded[0].redirect_incoming_damage = true
 	return _ability(
 		&"beast_feral_drag", "Feral Drag", [drag], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -314,13 +313,12 @@ static func _maul() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	DataLibrary._add_extras_from_dict(hit, {
-		"drop_adjacent": true,
-		"does_not_consume_action_slot": true, "limit_once_per_turn": true,
-	})
+	hit.drop_adjacent = true
+	hit.does_not_consume_action_slot = true
+	hit.limit_once_per_turn = true
 	hit.set_condition_occupant(GameEnums.ModuleTargetFilterOccupant.DRAGGED_ENEMY)
 	var upgraded := _clone([hit])
-	DataLibrary._add_extra(upgraded[0], "drop_trap_damage_multiplier", 2.0)
+	upgraded[0].drop_trap_damage_multiplier = 2.0
 	var ability := _ability(
 		&"beast_maul", "Maul", [hit], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -337,12 +335,14 @@ static func _bestial_roar() -> AbilityData:
 		GameEnums.TargetShape.CONE, 3,
 	)
 	var fear := DataLibrary._status_effect(GameEnums.StatusType.FEAR, 1)
-	fear.modifiers["status_requires_debuff"] = true
-	push.layers = [_layer(fear)]
+	var fear_layer := _layer(fear)
+	fear_layer.status_requires_debuff = true
+	push.layers = [fear_layer]
 	var upgraded := _clone([push])
 	var defense := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, -1, 1)
-	defense.modifiers["cone_all_targets"] = true
-	upgraded[0].layers.append(_layer(defense))
+	var defense_layer := _layer(defense)
+	defense_layer.cone_all_targets = true
+	upgraded[0].layers.append(defense_layer)
 	return _ability(
 		&"beast_bestial_roar", "Bestial Roar", [push], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -358,10 +358,11 @@ static func _raking_claws() -> AbilityData:
 		GameEnums.TargetShape.ARC, 1, GameEnums.StatType.PHYSICAL,
 	)
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
-	bleed.modifiers["bleed_weapon"] = true
-	claws.layers = [_layer(bleed)]
+	var bleed_layer := _layer(bleed)
+	bleed_layer.bleed_weapon = true
+	claws.layers = [bleed_layer]
 	var upgraded := _clone([claws])
-	DataLibrary._add_extra(upgraded[0], "pull_before_attack", 1)
+	upgraded[0].pull_before_attack = 1
 	return _ability(
 		&"beast_raking_claws", "Raking Claws", [claws], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -376,7 +377,7 @@ static func _rest_and_recover() -> AbilityData:
 		GameEnums.TargetingFlags.SELF, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.NONE,
 	)
-	DataLibrary._add_extra(heal, "cost_all_movement", true)
+	heal.cost_all_movement = true
 	var defense := DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 5)
 	heal.layers = [_layer(defense)]
 	var upgraded := _clone([heal])
@@ -402,7 +403,7 @@ static func _intimidate() -> AbilityData:
 	stagger.status_duration = 1
 	stagger.set_condition_hp_below_caster()
 	var upgraded := _clone([stagger])
-	DataLibrary._add_extra(upgraded[0], "purge_buffs", true)
+	upgraded[0].purge_buffs = true
 	return _ability(
 		&"beast_intimidate", "Intimidate", [stagger], upgraded,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE
@@ -417,7 +418,6 @@ static func _fetch() -> AbilityData:
 		GameEnums.EffectType.PULL, 2, 1, 4,
 		GameEnums.TargetingFlags.ALLY,
 	)
-	DataLibrary._add_extras_from_dict(fetch, {})
 	var upgraded := _clone([fetch])
 	upgraded[0].targeting_flags = GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY
 	upgraded[0].set_condition_con_leq_caster_str()
@@ -435,10 +435,9 @@ static func _savage_bite() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	DataLibrary._add_extras_from_dict(bite, {})
 	bite.set_condition_status(GameEnums.StatusType.BLEED, GameEnums.StatusType.POISON)
 	var upgraded := _clone([bite])
-	DataLibrary._add_extra(upgraded[0], "on_kill_shield", 2)
+	upgraded[0].on_kill_shield = 2
 	return _ability(
 		&"beast_savage_bite", "Savage Bite", [bite], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -452,10 +451,10 @@ static func _run_down() -> AbilityData:
 		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	DataLibrary._add_extra(dash, "run_down_pass_adjacent_push", 1)
-	DataLibrary._add_extra(dash, "trample_atk", 2)
+	dash.run_down_pass_adjacent_push = 1
+	dash.trample_atk = 2
 	var upgraded := _clone([dash])
-	DataLibrary._add_extra(upgraded[0], "run_down_push_bleed_weapon", true)
+	upgraded[0].run_down_push_bleed_weapon = true
 	return _ability(
 		&"beast_run_down", "Run Down", [dash], upgraded,
 		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
@@ -473,8 +472,9 @@ static func _thrash() -> AbilityData:
 	thrash.hit_count = 3
 	var upgraded := _clone([thrash])
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
-	bleed.modifiers["bleed_weapon"] = true
-	upgraded[0].layers = [_layer(bleed)]
+	var bleed_layer := _layer(bleed)
+	bleed_layer.bleed_weapon = true
+	upgraded[0].layers = [bleed_layer]
 	return _ability(
 		&"beast_thrash", "Thrash", [thrash], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -492,7 +492,7 @@ static func _defensive_posture() -> AbilityData:
 	var defense := DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 2)
 	posture.layers = [_layer(defense)]
 	var upgraded := _clone([posture])
-	DataLibrary._add_extra(upgraded[0], "intercept_push_attacker", 2)
+	upgraded[0].intercept_push_attacker = 2
 	return _ability(
 		&"beast_defensive_posture", "Defensive Posture", [posture], upgraded,
 		GameEnums.TargetingFlags.SELF, [AbilityModuleBridge.TAG_POSITIONING],
@@ -507,11 +507,11 @@ static func _airlift() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.NONE,
 	)
-	DataLibrary._add_extras_from_dict(lift, {
-		"airlift_pickup_step": 1, "airlift_drop_step": 3, "airlift_keep_caster": true,
-	})
+	lift.airlift_pickup_step = 1
+	lift.airlift_drop_step = 3
+	lift.airlift_keep_caster = true
 	var upgraded := _clone([lift])
-	DataLibrary._add_extra(upgraded[0], "airlift_ally_attack_strength", 1)
+	upgraded[0].airlift_ally_attack_strength = 1
 	return _ability(
 		&"beast_airlift", "Airlift", [lift], upgraded,
 		GameEnums.TargetingFlags.ALLY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -529,8 +529,10 @@ static func _tail_swipe() -> AbilityData:
 	)
 	swipe.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
 	var upgraded := _clone([swipe])
-	DataLibrary._add_extra(upgraded[0], "wall_collision_stagger", true)
-	DataLibrary._add_extra(upgraded[0], "object_collision_stagger", true)
+	var wall_layer := _layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 0))
+	wall_layer.wall_collision_stagger = true
+	wall_layer.object_collision_stagger = true
+	upgraded[0].layers.append(wall_layer)
 	return _ability(
 		&"beast_tail_swipe", "Tail Swipe", [swipe], upgraded,
 		GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.TILE
@@ -546,7 +548,7 @@ static func _gore() -> AbilityData:
 		GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1,
 		GameEnums.StatType.PHYSICAL,
 	)
-	DataLibrary._add_extra(gore, "bleed_bonus_damage", 2)
+	gore.bleed_bonus_damage = 2
 	gore.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var upgraded := _clone([gore])
 	var vulnerable := DataLibrary._status_effect(GameEnums.StatusType.VULNERABLE, 1)
