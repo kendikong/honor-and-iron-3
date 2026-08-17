@@ -48,6 +48,7 @@ extends Resource
 @export var hazard_damage_bonus: int = 0
 @export var trap_damage_bonus: int = 0
 @export var grant_ap: int = 0
+@export var grant_scrap: int = 0
 @export var next_turn: bool = false
 @export var burning_splash_magic: int = 0
 @export var burning_splash_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
@@ -150,6 +151,8 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["trap_damage_bonus"] = trap_damage_bonus
 	if grant_ap != 0:
 		modifiers["grant_ap"] = grant_ap
+	if grant_scrap != 0:
+		modifiers["grant_scrap"] = grant_scrap
 	if next_turn:
 		modifiers["next_turn"] = true
 	if burning_splash_magic != 0:
@@ -275,6 +278,8 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			trap_damage_bonus = int(value)
 		"grant_ap":
 			grant_ap = int(value)
+		"grant_scrap":
+			grant_scrap = int(value)
 		"next_turn":
 			next_turn = bool(value)
 		"burning_splash_magic":

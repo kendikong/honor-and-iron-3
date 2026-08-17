@@ -46,6 +46,7 @@ static func run_all(failures: Array[String]) -> void:
 	source.stagger_if_debuffed = true
 	source.push = 2
 	source.grant_ap = 1
+	source.grant_scrap = 2
 	source.self_move_zero_next_turn = true
 	source.link_two_enemies = true
 	source.magic_link_damage = 1
@@ -193,6 +194,7 @@ static func run_all(failures: Array[String]) -> void:
 	layer.hazard_damage_bonus = 1
 	layer.trap_damage_bonus = 2
 	layer.grant_ap = 1
+	layer.grant_scrap = 2
 	layer.next_turn = true
 	layer.burning_splash_magic = 2
 	layer.burning_splash_shape = GameEnums.TargetShape.AOE_CROSS
@@ -265,6 +267,7 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "stagger_if_debuffed", restored.stagger_if_debuffed)
 	_assert(failures, "push", restored.push == 2)
 	_assert(failures, "grant_ap", restored.grant_ap == 1)
+	_assert(failures, "grant_scrap", restored.grant_scrap == 2)
 	_assert(failures, "self_move_zero_next_turn", restored.self_move_zero_next_turn)
 	_assert(failures, "link_two_enemies", restored.link_two_enemies)
 	_assert(failures, "magic_link_damage", restored.magic_link_damage == 1)
@@ -433,6 +436,7 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_hazard_damage_bonus", restored.layers[0].hazard_damage_bonus == 1)
 	_assert(failures, "layer_trap_damage_bonus", restored.layers[0].trap_damage_bonus == 2)
 	_assert(failures, "layer_grant_ap", restored.layers[0].grant_ap == 1)
+	_assert(failures, "layer_grant_scrap", restored.layers[0].grant_scrap == 2)
 	_assert(failures, "layer_next_turn", restored.layers[0].next_turn)
 	_assert(failures, "layer_burning_splash_magic", restored.layers[0].burning_splash_magic == 2)
 	_assert(failures, "layer_burning_splash_shape", restored.layers[0].burning_splash_shape == GameEnums.TargetShape.AOE_CROSS)

@@ -41,7 +41,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 	))
 
 	var pullback_module := _module(
-		GameEnums.EffectType.MOVE,
+		GameEnums.EffectType.PAIRED_MOVE,
 		1,
 		1,
 		1,

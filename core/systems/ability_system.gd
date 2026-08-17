@@ -1055,8 +1055,9 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 	if not _target_filters_allow(board, actor, ability, action, target_unit):
 		return false
-	if not MercenarySystems.can_use_extra(board, actor, ability, action):
-		return false
+	if motion_module != null and motion_module.primary_type == GameEnums.EffectType.PAIRED_MOVE:
+		if not _paired_move_target_valid(board, actor, action):
+			return false
 	if not BeastRiderSystems.can_use_extra(board, actor, ability, action):
 		return false
 
@@ -1072,6 +1073,71 @@ static func _adjacent_enemy_count(board: BoardState, actor: UnitState) -> int:
 		if unit != null and unit.team != actor.team:
 			count += 1
 	return count
+
+
+static func _paired_move_target_valid(
+	board: BoardState,
+	actor: UnitState,
+	action: TimelineAction,
+) -> bool:
+	if board == null or actor == null or action == null:
+		return false
+	var delta := action.target_coord - actor.position
+	if delta == Vector2i.ZERO:
+		return false
+	var paired: UnitState = board.get_unit_at(actor.position - delta)
+	return (
+		paired != null
+		and paired.is_alive()
+		and paired.team == actor.team
+		and paired.id != actor.id
+	)
+
+
+static func _resolve_paired_move_after_walk(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	events: Array[SimEvent],
+) -> void:
+	if board == null or actor == null or ability == null:
+		return
+	var start_pos: Vector2i = actor.passive_flags.get(
+		"__paired_move_start_pos", actor.position,
+	)
+	actor.passive_flags.erase("__paired_move_start_pos")
+	var delta := actor.position - start_pos
+	if delta == Vector2i.ZERO:
+		return
+	var paired: UnitState = board.get_unit_at(start_pos - delta)
+	if (
+		paired == null
+		or not paired.is_alive()
+		or paired.team != actor.team
+		or paired.id == actor.id
+	):
+		return
+	var destination := paired.position + delta
+	if GridSystem.is_wall(board, destination) or GridSystem.is_occupied(board, destination):
+		return
+	GridSystem.set_occupant(board, paired.position, -1)
+	paired.position = destination
+	GridSystem.set_occupant(board, destination, paired.id)
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+		"unit": paired.id,
+		"to": destination,
+		"paired_move": true,
+	}))
+	var module: AbilityModule = active_motion_module(actor, ability)
+	if module != null and module.pullback_ally_def != 0:
+		paired.active_statuses.append(
+			DataLibrary.make_status(
+				GameEnums.StatusType.STAT_BUFF_DEF,
+				1,
+				module.pullback_ally_def,
+			),
+		)
+		paired._recalculate_stats(board)
 
 
 static func get_action_point_cost(actor: UnitState, ability: AbilityData, board: BoardState = null) -> int:
@@ -3070,6 +3136,8 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			actor.active_statuses.append(ghost_status)
 			actor._recalculate_stats()
 
+		if motion_module != null and motion_module.primary_type == GameEnums.EffectType.PAIRED_MOVE:
+			actor.passive_flags["__paired_move_start_pos"] = actor.position
 		MercenarySystems.before_skill_move(board, actor, ability, events)
 		MonkSystems.before_skill_move(board, actor, ability, events)
 		RogueSystems.before_skill_move(board, actor, ability, events)
@@ -3104,6 +3172,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		if ghost_status != null:
 			actor.active_statuses.erase(ghost_status)
 			actor._recalculate_stats()
+		_resolve_paired_move_after_walk(board, actor, ability, events)
 		MercenarySystems.after_skill_move(board, actor, ability, events)
 		MonkSystems.after_skill_move(board, actor, ability, events)
 		RogueSystems.after_skill_move(board, actor, ability, events)
@@ -3266,10 +3335,13 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				effect_index += 1
 				continue
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
-		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_TO_BEHIND, GameEnums.EffectType.TELEPORT_TOWARD, GameEnums.EffectType.MOVE_INTO_AND_PUSH]:
+		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_TO_BEHIND, GameEnums.EffectType.TELEPORT_TOWARD, GameEnums.EffectType.MOVE_INTO_AND_PUSH, GameEnums.EffectType.PAIRED_MOVE]:
 			if effect.modifiers.has("paired_ally_charge"):
 				if effect.type == GameEnums.EffectType.DASH:
 					resolve_pending_pushes(board, events)
+				effect_index += 1
+				continue
+			if effect.type == GameEnums.EffectType.PAIRED_MOVE:
 				effect_index += 1
 				continue
 			var departure_tile: Vector2i = actor.position
@@ -4856,7 +4928,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		GameEnums.EffectType.GRANT_AP:
 			var ap_target: UnitState = target if target != null else actor
 			if ap_target != null and ap_target.ability != null:
-				ap_target.ability.grant(maxi(1, effect.amount))
+				var ap_amount := int(effect.modifiers.get("grant_ap", effect.amount))
+				ap_target.ability.grant(maxi(1, ap_amount))
+		GameEnums.EffectType.GRANT_SCRAP:
+			if actor != null:
+				var scrap_amount := int(effect.modifiers.get("grant_scrap", effect.amount))
+				actor.scrap += maxi(0, scrap_amount)
 		GameEnums.EffectType.HEAL:
 			if target != null:
 				if effect.modifiers.has("enemy_mag_atk") and target.team != actor.team:

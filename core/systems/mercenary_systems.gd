@@ -126,22 +126,6 @@ static func adjust_movement_point_cost(actor: UnitState, ability: AbilityData, b
 	return base_cost
 
 
-static func can_use_extra(
-	board: BoardState,
-	actor: UnitState,
-	ability: AbilityData,
-	action: TimelineAction,
-) -> bool:
-	if actor == null or ability == null or board == null:
-		return true
-	var mods: Dictionary = _ability_legacy_mods(actor, ability)
-	if mods.get("pullback", false):
-		var pulled: UnitState = _pullback_front_unit(board, actor.position, action.target_coord)
-		if pulled == null or not pulled.is_alive() or pulled.team != actor.team or pulled.id == actor.id:
-			return false
-	return true
-
-
 static func before_skill_move(
 	board: BoardState,
 	actor: UnitState,
@@ -165,9 +149,6 @@ static func after_skill_move(
 	if actor == null or board == null or ability == null:
 		return
 	var mods: Dictionary = _ability_legacy_mods(actor, ability)
-	if mods.get("pullback", false):
-		var start_pos: Vector2i = actor.passive_flags.get("__move_start_pos", actor.position)
-		_execute_pullback(board, actor, start_pos, events, mods)
 	if mods.has("flank_run_adjacent_enemy_bonus"):
 		var bonus := int(mods["flank_run_adjacent_enemy_bonus"])
 		if _adjacent_enemy_count(board, actor) > 0:
@@ -581,48 +562,6 @@ static func _queue_bonus_basic(
 		)
 	ability_system.execute(board, followup, events)
 	actor.passive_flags.erase("dual_wield_bonus_basic")
-
-
-static func _pullback_front_unit(
-	board: BoardState,
-	start_pos: Vector2i,
-	dest: Vector2i,
-) -> UnitState:
-	if board == null:
-		return null
-	var delta := dest - start_pos
-	if delta == Vector2i.ZERO:
-		return null
-	return board.get_unit_at(start_pos - delta)
-
-
-static func _execute_pullback(
-	board: BoardState,
-	actor: UnitState,
-	start_pos: Vector2i,
-	events: Array[SimEvent],
-	mods: Dictionary,
-) -> void:
-	var delta := actor.position - start_pos
-	if delta == Vector2i.ZERO:
-		return
-	var pulled: UnitState = _pullback_front_unit(board, start_pos, actor.position)
-	if pulled == null or not pulled.is_alive() or pulled.team != actor.team or pulled.id == actor.id:
-		return
-	var dest := pulled.position + delta
-	if GridSystem.is_wall(board, dest) or GridSystem.is_occupied(board, dest):
-		return
-	GridSystem.set_occupant(board, pulled.position, -1)
-	pulled.position = dest
-	GridSystem.set_occupant(board, dest, pulled.id)
-	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {"unit": pulled.id, "to": dest}))
-	if mods.has("pullback_ally_def"):
-		pulled.active_statuses.append(
-			DataLibrary.make_status(
-				GameEnums.StatusType.STAT_BUFF_DEF, 1, int(mods["pullback_ally_def"]),
-			),
-		)
-		pulled._recalculate_stats(board)
 
 
 static func _place_smoke(board: BoardState, coord: Vector2i, events: Array[SimEvent]) -> void:

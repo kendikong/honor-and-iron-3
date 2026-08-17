@@ -720,6 +720,7 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"hazard_damage_bonus": src.hazard_damage_bonus,
 		"trap_damage_bonus": src.trap_damage_bonus,
 		"grant_ap": src.grant_ap,
+		"grant_scrap": src.grant_scrap,
 		"next_turn": src.next_turn,
 		"burning_splash_magic": src.burning_splash_magic,
 		"burning_splash_shape": src.burning_splash_shape,
@@ -817,6 +818,7 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.hazard_damage_bonus = int(data.get("hazard_damage_bonus", layer.hazard_damage_bonus))
 	layer.trap_damage_bonus = int(data.get("trap_damage_bonus", layer.trap_damage_bonus))
 	layer.grant_ap = int(data.get("grant_ap", layer.grant_ap))
+	layer.grant_scrap = int(data.get("grant_scrap", layer.grant_scrap))
 	layer.next_turn = bool(data.get("next_turn", layer.next_turn))
 	layer.burning_splash_magic = int(data.get("burning_splash_magic", layer.burning_splash_magic))
 	layer.burning_splash_shape = int(data.get("burning_splash_shape", layer.burning_splash_shape))
@@ -1000,6 +1002,7 @@ static func module_to_dict(
 		"stagger_if_debuffed": src.stagger_if_debuffed,
 		"push": src.push,
 		"grant_ap": src.grant_ap,
+		"grant_scrap": src.grant_scrap,
 		"self_move_zero_next_turn": src.self_move_zero_next_turn,
 		"link_two_enemies": src.link_two_enemies,
 		"magic_link_damage": src.magic_link_damage,
@@ -1445,6 +1448,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.stagger_if_debuffed = bool(data.get("stagger_if_debuffed", dst.stagger_if_debuffed))
 	dst.push = int(data.get("push", dst.push))
 	dst.grant_ap = int(data.get("grant_ap", dst.grant_ap))
+	dst.grant_scrap = int(data.get("grant_scrap", dst.grant_scrap))
 	dst.self_move_zero_next_turn = bool(
 		data.get("self_move_zero_next_turn", dst.self_move_zero_next_turn)
 	)
@@ -2377,7 +2381,9 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 	)
 	if not use_legacy_base:
 		var parsed_modules: Array[AbilityModule] = modules_from_dict_array(module_data as Array)
-		var base_errors: Array[String] = AbilityModuleBridge.validate_modules(parsed_modules)
+		var base_errors: Array[String] = AbilityModuleBridge.validate_modules(
+			parsed_modules, dst.planner_group,
+		)
 		if not base_errors.is_empty():
 			push_error("Ability JSON rejected base module profile: %s" % "; ".join(base_errors))
 			return
@@ -2394,7 +2400,9 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		var parsed_upgraded_modules: Array[AbilityModule] = modules_from_dict_array(
 			upgraded_module_data as Array
 		)
-		var upgrade_errors: Array[String] = AbilityModuleBridge.validate_modules(parsed_upgraded_modules)
+		var upgrade_errors: Array[String] = AbilityModuleBridge.validate_modules(
+			parsed_upgraded_modules, _upgrade_planner_group(dst),
+		)
 		if not upgrade_errors.is_empty():
 			push_error("Ability JSON rejected upgraded module profile: %s" % "; ".join(upgrade_errors))
 			return

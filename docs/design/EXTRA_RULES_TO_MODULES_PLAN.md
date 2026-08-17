@@ -136,15 +136,15 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
 | PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** for allies (Pullback). Not Glorious Charge (Action **ally** relocate). |
-| PULL_SELF_TO_TARGET | Missing (module bible §2.2) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
-| Carry / place-unit (Airlift, Maul drop) | Missing | New type in **Move someone**. Airlift = Pre/Post (legal). Kidnap = enemy SWAP then PUSH — convert (legal on Action). |
-| Drag-while-walking (Feral Drag) | Missing | New type in **Forced Movement**. Legal on Action (enemy). |
-| CREATE_HAZARD knobs | Partially typed on module; still extras/layer bags | Typed fields on CREATE_HAZARD |
-| SPAWN knobs (HP%, turret ATK, furthest-on-line) | Partial | Typed fields on SPAWN |
-| Header once-per-turn / skip-Action / spend-all-MP | Partial (`once_per_turn`, `SPEND_ALL_MOVEMENT`) | Header |
-| DELAY_TURNS | Named in ability-data; not fully wired | Header turn_flags |
-| LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK | Missing or leftover | New StatusType |
-| New LayerCondition as needed | Grow the condition dropdown | Same as Condition work |
+| PULL_SELF_TO_TARGET | **Done** (`PULL` + typed pull-self fields) | Shared **Movement (Self)** path; Grapple Arrow uses the typed pull-self rider, while pull-them remains **Forced Movement**. |
+| Carry / place-unit (Airlift, Maul drop) | **Done** (typed movement/placement riders) | Airlift uses the shared teleport/movement path with typed pickup/drop fields; Maul uses the typed dragged-target placement path. |
+| Drag-while-walking (Feral Drag) | **Done** (`PULL` + typed drag fields) | Shared **Forced Movement** path; legal on Action because the target is an enemy. |
+| CREATE_HAZARD knobs | **Done** (typed module/layer fields) | Terrain, duration, status, entry, spread, and reaction data compile through the module bridge. |
+| SPAWN knobs (HP%, turret ATK, furthest-on-line) | **Done** (typed module/layer fields) | Spawn unit, construct HP, turret, placement, and detonation data are typed and serialized. |
+| Header once-per-turn / skip-Action / spend-all-MP | **Done** (`AbilityData` + module economy fields) | Shared header/module economy path covers the authored cases without Extra Rules. |
+| DELAY_TURNS | **Done** (`delayed_next_turn`) | Delayed resolution is a typed module timing field consumed by `AbilitySystem`. |
+| LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK | **Done** (typed status/behavior fields) | These behaviors are typed on modules and consumed by shared status/combat systems; no Extra Rule fallback remains. |
+| New LayerCondition as needed | **Done** | Required collision, kill, landing, movement, and target conditions are present in the shared enum and bridge. |
 
 ---
 

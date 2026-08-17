@@ -182,6 +182,7 @@ extends Resource
 @export var stagger_if_debuffed: bool = false
 @export var push: int = 0
 @export var grant_ap: int = 0
+@export var grant_scrap: int = 0
 @export var self_move_zero_next_turn: bool = false
 @export var link_two_enemies: bool = false
 @export var magic_link_damage: int = 0
@@ -653,6 +654,8 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["push"] = push
 	if grant_ap != 0:
 		bag["grant_ap"] = grant_ap
+	if grant_scrap != 0:
+		bag["grant_scrap"] = grant_scrap
 	if self_move_zero_next_turn:
 		bag["self_move_zero_next_turn"] = true
 	if link_two_enemies:
@@ -1388,6 +1391,9 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"grant_ap":
 			grant_ap = int(value)
+			return
+		"grant_scrap":
+			grant_scrap = int(value)
 			return
 		"self_move_zero_next_turn":
 			self_move_zero_next_turn = bool(value)

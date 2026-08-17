@@ -84,7 +84,10 @@ static func normalize_module_authoring_fields(
 				break
 
 
-static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
+static func validate_modules(
+	modules: Array[AbilityModule],
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+) -> Array[String]:
 	var errors: Array[String] = []
 	for index: int in modules.size():
 		var module: AbilityModule = modules[index]
@@ -116,6 +119,11 @@ static func validate_modules(modules: Array[AbilityModule]) -> Array[String]:
 			and module.target_shape_size < 1
 		):
 			errors.append("module %d shaped target requires size >= 1" % index)
+		if (
+			planner_group == GameEnums.PlannerGroup.ACTION
+			and module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+		):
+			errors.append("module %d PAIRED_MOVE is legal only in PRE_MOVE" % index)
 	return errors
 
 

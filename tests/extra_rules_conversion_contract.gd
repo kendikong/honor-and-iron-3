@@ -275,6 +275,8 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.push != 0
 		"grant_ap":
 			return module.grant_ap != 0 or layer.grant_ap != 0
+		"grant_scrap":
+			return module.grant_scrap != 0 or layer.grant_scrap != 0
 		"self_move_zero_next_turn":
 			return module.self_move_zero_next_turn
 		"link_two_enemies":

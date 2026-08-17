@@ -375,12 +375,16 @@ static func _time_warp() -> AbilityData:
 		GameEnums.EffectType.DAMAGE_SELF, 4, 0, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	base.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 1)))
+	var base_grant_ap := _layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 0))
+	base_grant_ap.grant_ap = 1
+	base.layers.append(base_grant_ap)
 	var upgraded := DataLibrary._module(
 		GameEnums.EffectType.DAMAGE_SELF, 4, 0, 3, GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	upgraded.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 1)))
+	var upgraded_grant_ap := _layer(DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 0))
+	upgraded_grant_ap.grant_ap = 1
+	upgraded.layers.append(upgraded_grant_ap)
 	upgraded.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.STAT_BUFF_MOV, 1, 2)))
 	return _spell(
 		&"mage_time_warp", "Time Warp", [base], [upgraded],

@@ -31,7 +31,13 @@ foreach ($script in $checks) {
 	if (Test-Path $stderrPath) { $output += Get-Content $stderrPath }
 	$required = switch ($script) {
 		"res://tests/run_ability_module_bridge_test.gd" {
-			@("ABILITY_MODULE_SCENARIO: motion_range_legality PASS", "ABILITY_MODULE_BRIDGE_TEST: PASS")
+			@(
+				"ABILITY_MODULE_CHECK: er1_shared_homes PASS",
+				"ABILITY_MODULE_SCENARIO: grant_scrap_runtime PASS",
+				"ABILITY_MODULE_SCENARIO: grant_ap_runtime PASS",
+				"ABILITY_MODULE_SCENARIO: hazard_spawn_runtime PASS",
+				"ABILITY_MODULE_BRIDGE_TEST: PASS"
+			)
 		}
 		"res://tests/run_class_library_schema_typed_fields_test.gd" {
 			@("[PASS] typed class-library schema roundtrip")

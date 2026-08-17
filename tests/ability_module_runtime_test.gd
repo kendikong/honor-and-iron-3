@@ -26,6 +26,18 @@ static func run_all(failures: Array[String]) -> void:
 	_test_shared_module_parity(failures)
 	_report_scenario("shared_module_parity", failures, scenario_failures)
 	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: grant_scrap_runtime START")
+	_test_grant_scrap_runtime(failures)
+	_report_scenario("grant_scrap_runtime", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: grant_ap_runtime START")
+	_test_grant_ap_runtime(failures)
+	_report_scenario("grant_ap_runtime", failures, scenario_failures)
+	scenario_failures = failures.size()
+	print("ABILITY_MODULE_SCENARIO: hazard_spawn_runtime START")
+	_test_hazard_spawn_runtime(failures)
+	_report_scenario("hazard_spawn_runtime", failures, scenario_failures)
+	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START")
 	_test_reposition_skills_ally_only(failures)
 	_report_scenario("reposition_skills_ally_only", failures, scenario_failures)
@@ -249,6 +261,156 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 		failures.append(
 			"identical authored modules diverged across ability ids in profile, animation, or timeline",
 		)
+
+
+static func _test_grant_scrap_runtime(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(5, 3))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	_place(board, actor)
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.GRANT_SCRAP
+	module.amount = 2
+	module.min_range = 0
+	module.max_range = 1
+	module.targeting_flags = GameEnums.TargetingFlags.SELF
+	module.grant_scrap = 2
+	var ability: AbilityData = _ability(&"runtime_grant_scrap", GameEnums.TargetingFlags.SELF)
+	ability.targeting_mode = GameEnums.TargetingMode.SELF
+	ability.modules = [module]
+	var effects: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	var events: Array[SimEvent] = []
+	AbilitySystem._apply_effect_to_tile(
+		board,
+		actor,
+		TimelineAction.make_ability(actor.id, ability, actor.position, -1),
+		effects[0],
+		events,
+		actor.position,
+		null,
+	)
+	if actor.scrap != 2:
+		failures.append("GRANT_SCRAP module did not update caster scrap (got %d)" % actor.scrap)
+
+
+static func _test_grant_ap_runtime(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(5, 3))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	_place(board, actor)
+	actor.ability.points_left = 0
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	var grant_ap_layer := AbilityLayer.new()
+	grant_ap_layer.effect = DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 0)
+	grant_ap_layer.grant_ap = 2
+	module.layers.append(grant_ap_layer)
+	var ability: AbilityData = _ability(&"runtime_grant_ap", GameEnums.TargetingFlags.SELF)
+	ability.targeting_mode = GameEnums.TargetingMode.SELF
+	ability.modules = [module]
+	var effects: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	var events: Array[SimEvent] = []
+	AbilitySystem._apply_effect_to_tile(
+		board,
+		actor,
+		TimelineAction.make_ability(actor.id, ability, actor.position, -1),
+		effects[1],
+		events,
+		actor.position,
+		null,
+	)
+	if actor.ability.points_left != 2:
+		failures.append(
+			"GRANT_AP module did not update caster AP (got %d)" % actor.ability.points_left,
+		)
+	var scrap_layer := AbilityLayer.new()
+	scrap_layer.effect = DataLibrary._effect(GameEnums.EffectType.GRANT_SCRAP, 0)
+	scrap_layer.grant_scrap = 3
+	module.layers = [scrap_layer]
+	effects = AbilityModuleBridge.compile_module_to_effects(module)
+	actor.scrap = 0
+	AbilitySystem._apply_effect_to_tile(
+		board,
+		actor,
+		TimelineAction.make_ability(actor.id, ability, actor.position, -1),
+		effects[1],
+		events,
+		actor.position,
+		null,
+	)
+	if actor.scrap != 3:
+		failures.append(
+			"GRANT_SCRAP layer did not update caster scrap (got %d)" % actor.scrap,
+		)
+
+
+static func _test_hazard_spawn_runtime(failures: Array[String]) -> void:
+	var board: BoardState = _plain_board(Vector2i(7, 3))
+	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
+	_place(board, actor)
+	var hazard := AbilityModule.new()
+	hazard.primary_type = GameEnums.EffectType.CREATE_HAZARD
+	hazard.terrain_id = &"fire"
+	hazard.hazard_duration = 3
+	hazard.reaction_terrain = &"fire"
+	var reaction_terrain := DataLibrary.get_terrain(&"fire")
+	if reaction_terrain != null:
+		board.set_tile_terrain(Vector2i(2, 1), reaction_terrain)
+	var hazard_ability: AbilityData = _ability(
+		&"runtime_hazard", GameEnums.TargetingFlags.TILE,
+	)
+	hazard_ability.modules = [hazard]
+	var hazard_effects: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(hazard)
+	var events: Array[SimEvent] = []
+	AbilitySystem._apply_effect_to_tile(
+		board,
+		actor,
+		TimelineAction.make_ability(actor.id, hazard_ability, Vector2i(2, 1), -1),
+		hazard_effects[0],
+		events,
+		Vector2i(2, 1),
+		null,
+	)
+	var hazard_tile := board.get_tile(Vector2i(2, 1))
+	if (
+		hazard_tile == null
+		or hazard_tile.definition == null
+		or hazard_tile.definition.id != &"steam"
+		or int(board.temporary_terrain_turns.get(Vector2i(2, 1), 0)) != 3
+	):
+		failures.append("CREATE_HAZARD typed reaction/duration fields did not create steam for 3 turns")
+	var spawn := AbilityModule.new()
+	spawn.primary_type = GameEnums.EffectType.SPAWN
+	spawn.spawn_unit_id = &"construct_turret"
+	spawn.construct_spawn = true
+	spawn.construct_hp_pct = 0.5
+	spawn.turret_attack = 4
+	var spawn_ability: AbilityData = _ability(
+		&"runtime_spawn", GameEnums.TargetingFlags.TILE,
+	)
+	spawn_ability.modules = [spawn]
+	var spawn_effects: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(spawn)
+	var spawn_events: Array[SimEvent] = []
+	AbilitySystem._apply_effect_to_tile(
+		board,
+		actor,
+		TimelineAction.make_ability(actor.id, spawn_ability, Vector2i(3, 1), -1),
+		spawn_effects[0],
+		spawn_events,
+		Vector2i(3, 1),
+		null,
+	)
+	var spawned := board.get_unit_at(Vector2i(3, 1))
+	if (
+		spawned == null
+		or spawned.definition == null
+		or spawned.definition.id != &"construct_turret"
+		or not spawned.passive_flags.has("engineer_spawn_modifiers")
+	):
+		failures.append("SPAWN typed runtime fields did not create construct_turret")
+	elif (
+		int(spawned.passive_flags["engineer_spawn_modifiers"].get("turret_attack", 0)) != 4
+		or not bool(spawned.passive_flags["engineer_spawn_modifiers"].get("construct_spawn", false))
+	):
+		failures.append("SPAWN typed turret/construct knobs were not retained at runtime")
 
 
 static func _test_reposition_skills_ally_only(failures: Array[String]) -> void:

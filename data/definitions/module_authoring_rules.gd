@@ -189,6 +189,11 @@ static func normalize_module_context_fields(
 ) -> void:
 	if module == null:
 		return
+	if (
+		planner_group == GameEnums.PlannerGroup.ACTION
+		and module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+	):
+		push_error("PAIRED_MOVE is legal only for PRE_MOVE ally movement")
 	if planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 		module.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	for key: String in excluded_module_gates(module):

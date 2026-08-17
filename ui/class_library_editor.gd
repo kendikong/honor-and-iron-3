@@ -2585,6 +2585,10 @@ func _add_module_typed_extras_editor(
 		module.grant_ap = v
 		_on_module_field_edited(ability)
 	)
+	_bind_int(grid, "Grant Scrap", module.grant_scrap, func(v: int) -> void:
+		module.grant_scrap = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Self Move Zero Next Turn", module.self_move_zero_next_turn, func(v: bool) -> void:
 		module.self_move_zero_next_turn = v
 		_on_module_field_edited(ability)
@@ -3166,6 +3170,10 @@ func _add_module_layers_editor(
 		)
 		_bind_int(grid, "Grant AP", layer.grant_ap, func(v: int) -> void:
 			layer.grant_ap = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Grant Scrap", layer.grant_scrap, func(v: int) -> void:
+			layer.grant_scrap = v
 			_on_module_field_edited(ability)
 		)
 		_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:

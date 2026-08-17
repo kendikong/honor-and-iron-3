@@ -23,6 +23,10 @@ static func run_all() -> Dictionary:
 	_check_trampling_advance_modules(failures)
 	_report_check("trampling_advance_module_shape", failures, check_failures)
 	check_failures = failures.size()
+	print("ABILITY_MODULE_CHECK: er1_shared_homes START")
+	_check_er1_shared_homes(failures)
+	_report_check("er1_shared_homes", failures, check_failures)
+	check_failures = failures.size()
 	print("ABILITY_MODULE_CHECK: infer_motion_push_layer START")
 	_check_infer_motion_push_layer(failures)
 	_report_check("infer_motion_push_layer", failures, check_failures)
@@ -233,6 +237,126 @@ static func _check_trampling_advance_modules(failures: Array[String]) -> void:
 			has_push_layer = true
 	if not has_push_layer:
 		failures.append("trampling_advance missing PUSH layer on motion module")
+
+
+static func _check_er1_shared_homes(failures: Array[String]) -> void:
+	if not GameEnums.is_walk_motion(GameEnums.EffectType.PAIRED_MOVE):
+		failures.append("PAIRED_MOVE is not a shared walk-motion type")
+	var illegal_action_pair := AbilityModule.new()
+	illegal_action_pair.primary_type = GameEnums.EffectType.PAIRED_MOVE
+	if AbilityModuleBridge.validate_modules(
+		[illegal_action_pair], GameEnums.PlannerGroup.ACTION,
+	).is_empty():
+		failures.append("ACTION PAIRED_MOVE was not rejected by module validation")
+	for unit: UnitData in DataLibrary.get_all_player_units():
+		if unit == null:
+			continue
+		for ability: AbilityData in unit.abilities:
+			_check_paired_move_planner(failures, ability, ability.modules)
+			_check_paired_move_planner(failures, ability, ability.upgraded_modules)
+	var paired := AbilityModule.new()
+	paired.primary_type = GameEnums.EffectType.PAIRED_MOVE
+	paired.amount = 1
+	paired.min_range = 1
+	paired.max_range = 1
+	var paired_effects := AbilityModuleBridge.compile_module_to_effects(paired)
+	if paired_effects.is_empty() or paired_effects[0].type != GameEnums.EffectType.PAIRED_MOVE:
+		failures.append("PAIRED_MOVE module did not compile as its authored primary effect")
+	var resource := AbilityModule.new()
+	resource.primary_type = GameEnums.EffectType.GRANT_SCRAP
+	resource.amount = 2
+	resource.grant_scrap = 1
+	var layer := AbilityLayer.new()
+	layer.effect = DataLibrary._effect(GameEnums.EffectType.GRANT_SCRAP, 0)
+	layer.grant_scrap = 2
+	resource.layers.append(layer)
+	var resource_effects := AbilityModuleBridge.compile_module_to_effects(resource)
+	if resource_effects.is_empty() or not resource_effects[0].modifiers.has("grant_scrap"):
+		failures.append("GRANT_SCRAP module field missing from compiled effect")
+	if resource_effects.size() < 2 or not resource_effects[1].modifiers.has("grant_scrap"):
+		failures.append("GRANT_SCRAP layer field missing from compiled effect")
+	var grant_ap := AbilityModule.new()
+	grant_ap.primary_type = GameEnums.EffectType.GRANT_AP
+	grant_ap.grant_ap = 1
+	var grant_ap_layer := AbilityLayer.new()
+	grant_ap_layer.effect = DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 0)
+	grant_ap_layer.grant_ap = 2
+	grant_ap.layers.append(grant_ap_layer)
+	var grant_ap_effects := AbilityModuleBridge.compile_module_to_effects(grant_ap)
+	if grant_ap_effects.is_empty() or not grant_ap_effects[0].modifiers.has("grant_ap"):
+		failures.append("GRANT_AP module field missing from compiled effect")
+	if grant_ap_effects.size() < 2 or not grant_ap_effects[1].modifiers.has("grant_ap"):
+		failures.append("GRANT_AP layer field missing from compiled effect")
+	var hazard := AbilityModule.new()
+	hazard.primary_type = GameEnums.EffectType.CREATE_HAZARD
+	hazard.terrain_id = &"fire"
+	hazard.hazard_duration = 3
+	hazard.hazard_status = GameEnums.StatusType.ROOT
+	hazard.spread_status_adjacent = true
+	hazard.reaction_terrain = &"steam"
+	hazard.reaction_damage = 2
+	var hazard_effects := AbilityModuleBridge.compile_module_to_effects(hazard)
+	if (
+		hazard_effects.is_empty()
+		or not hazard_effects[0].modifiers.has_all([
+			"terrain_id", "hazard_duration", "hazard_status",
+			"spread_status_adjacent", "reaction_terrain", "reaction_damage",
+		])
+	):
+		failures.append("CREATE_HAZARD typed fields missing from compiled effect")
+	var spawn := AbilityModule.new()
+	spawn.primary_type = GameEnums.EffectType.SPAWN
+	spawn.spawn_unit_id = &"engineer_turret"
+	spawn.construct_spawn = true
+	spawn.turret_attack = 3
+	spawn.construct_hp_pct = 0.5
+	var spawn_layer := AbilityLayer.new()
+	spawn_layer.effect = DataLibrary._effect(GameEnums.EffectType.SPAWN, 0)
+	spawn_layer.construct_hp_pct = 0.75
+	spawn_layer.spawn_furthest_empty_on_line = true
+	spawn.layers.append(spawn_layer)
+	var spawn_effects := AbilityModuleBridge.compile_module_to_effects(spawn)
+	if (
+		spawn_effects.is_empty()
+		or not spawn_effects[0].modifiers.has_all([
+			"construct_spawn", "turret_attack", "construct_hp_pct",
+		])
+	):
+		failures.append("SPAWN module fields missing from compiled effect")
+	if (
+		spawn_effects.size() < 2
+		or not spawn_effects[1].modifiers.has("spawn_furthest_empty_on_line")
+	):
+		failures.append("SPAWN layer placement field missing from compiled effect")
+	var mercenary: UnitData = DataLibrary.get_unit(&"mercenary")
+	var pullback: AbilityData = null
+	if mercenary != null:
+		for ability: AbilityData in mercenary.abilities:
+			if ability != null and ability.id == &"mercenary_pullback":
+				pullback = ability
+				break
+	if pullback == null or pullback.modules.is_empty():
+		failures.append("mercenary_pullback missing from shared PAIRED_MOVE audit")
+	elif pullback.modules[0].primary_type != GameEnums.EffectType.PAIRED_MOVE:
+		failures.append("mercenary_pullback is not authored as PAIRED_MOVE")
+
+
+static func _check_paired_move_planner(
+	failures: Array[String],
+	ability: AbilityData,
+	modules: Array[AbilityModule],
+) -> void:
+	if ability == null:
+		return
+	for module: AbilityModule in modules:
+		if (
+			module != null
+			and module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+			and ability.planner_group != GameEnums.PlannerGroup.PRE_MOVE
+		):
+			failures.append(
+				"%s authors PAIRED_MOVE outside PRE_MOVE" % String(ability.id),
+			)
 
 
 static func _check_infer_motion_push_layer(failures: Array[String]) -> void:

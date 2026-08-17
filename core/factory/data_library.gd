@@ -578,6 +578,7 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.stagger_if_debuffed = from_module.stagger_if_debuffed
 	to_module.push = from_module.push
 	to_module.grant_ap = from_module.grant_ap
+	to_module.grant_scrap = from_module.grant_scrap
 	to_module.self_move_zero_next_turn = from_module.self_move_zero_next_turn
 	to_module.link_two_enemies = from_module.link_two_enemies
 	to_module.magic_link_damage = from_module.magic_link_damage

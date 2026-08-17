@@ -107,7 +107,7 @@ enum EffectType {
 	JUMP_TOWARD, ## Jump the default path toward an aimed unit.
 	TELEPORT_TOWARD, ## Warp toward / onto the approach tile of an aimed unit.
 	GRANT_AP, ## Add AP to the target's pool, capped at Max AP (3).
-	PAIRED_MOVE, ## You and another unit step together (Pullback / Glorious Charge).
+	PAIRED_MOVE, ## Pre-Move ally paired walk; Action ally relocates remain rework-only.
 	GRANT_SCRAP, ## Add Scrap to the caster (Engineer).
 }
 
@@ -192,6 +192,7 @@ static func is_walk_motion(effect_type: EffectType) -> bool:
 		EffectType.MOVE_ADJACENT_TO,
 		EffectType.MOVE_TO_BEHIND,
 		EffectType.MOVE_TOWARD,
+		EffectType.PAIRED_MOVE,
 	]
 
 

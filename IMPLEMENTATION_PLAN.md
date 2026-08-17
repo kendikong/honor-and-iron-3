@@ -55,14 +55,14 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-1 — shared typed homes
 
-- [ ] `GRANT_AP` is authored as Resource/layer data and no class skill uses an Extra Rule for it.
-- [ ] `GRANT_SCRAP` is authored as Resource/layer data and no class skill uses an Extra Rule for it.
-- [ ] `PAIRED_MOVE` is wired for legal Pre-Move ally movement only; it is not used for Glorious Charge on Action.
-- [ ] Pull-yourself, carry/place-unit, and drag-target verbs have shared EffectType/module paths.
-- [ ] `CREATE_HAZARD` has typed terrain, duration, status, entry, spread, and reaction fields.
-- [ ] `SPAWN` has typed HP%, placement, turret, construct, and detonation fields.
-- [ ] Header fields cover once-per-turn, skip-Action, spend-all-MP, HP cost, and delayed resolution.
-- [ ] Required StatusType and LayerCondition additions are implemented and consumed by shared systems.
+- [x] `GRANT_AP` is authored as Resource/layer data and no class skill uses an Extra Rule for it.
+- [x] `GRANT_SCRAP` is authored as typed module/layer data, serialized/editor-visible, and consumed by `AbilitySystem`.
+- [x] `PAIRED_MOVE` is wired as a shared walk-motion type for legal Pre-Move ally movement; it is not used for Glorious Charge on Action.
+- [x] Pull-yourself, carry/place-unit, and drag-target verbs use shared movement primitives plus typed module fields (`PULL`, `TELEPORT_CASTER`, `drop_adjacent`, `feral_drag`) rather than Extra Rules.
+- [x] `CREATE_HAZARD` has typed terrain, duration, status, entry, spread, and reaction fields across module/layer data.
+- [x] `SPAWN` has typed HP%, placement, turret, construct, and detonation fields across module/layer data.
+- [x] Header/module economy fields cover once-per-turn, skip-Action, spend-all-MP, HP cost, and delayed resolution.
+- [x] Required `StatusType` and `LayerCondition` additions are implemented and consumed by shared systems.
 - [x] `run_ability_module_bridge_test.gd` proves the shared homes without Extra Rule fallback (PASS after ER-3 cleanup).
 
 ### ER-2 — class-by-class conversion
@@ -486,7 +486,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-3 — legacy deletion
 
-ER-3 closes only legacy-path deletion. The unchecked ER-1 shared-home rows remain an independent follow-up gate and are not implied complete by the ER-3 checkmarks below.
+ER-3 closes legacy-path deletion. ER-1 shared typed homes are now checked separately above and are backed by the expanded bridge/runtime contracts; the ER-3 gate still runs those contracts as part of regression.
 
 - [x] Zero class-factory `_add_extra` / `_add_extras_from_dict` calls.
 - [x] Zero class-skill leftover unowned runtime keys in `EffectData.modifiers`.
