@@ -58,6 +58,10 @@ extends Resource
 @export var lightning_rod: bool = false
 @export var construct_hp_pct: float = 0.0
 @export var spawn_furthest_empty_on_line: bool = false
+@export var movement_penalty: int = 0
+@export var from_behind_only: bool = false
+@export var hazard_blind_on_entry: bool = false
+@export var poison_hazard: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -158,6 +162,14 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["construct_hp_pct"] = construct_hp_pct
 	if spawn_furthest_empty_on_line:
 		modifiers["spawn_furthest_empty_on_line"] = true
+	if movement_penalty != 0:
+		modifiers["movement_penalty"] = movement_penalty
+	if from_behind_only:
+		modifiers["from_behind_only"] = true
+	if hazard_blind_on_entry:
+		modifiers["hazard_blind_on_entry"] = true
+	if poison_hazard:
+		modifiers["poison_hazard"] = true
 	return modifiers
 
 
@@ -259,3 +271,11 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			construct_hp_pct = float(value)
 		"spawn_furthest_empty_on_line":
 			spawn_furthest_empty_on_line = bool(value)
+		"movement_penalty":
+			movement_penalty = int(value)
+		"from_behind_only":
+			from_behind_only = bool(value)
+		"hazard_blind_on_entry":
+			hazard_blind_on_entry = bool(value)
+		"poison_hazard":
+			poison_hazard = bool(value)

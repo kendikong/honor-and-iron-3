@@ -730,6 +730,10 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"lightning_rod": src.lightning_rod,
 		"construct_hp_pct": src.construct_hp_pct,
 		"spawn_furthest_empty_on_line": src.spawn_furthest_empty_on_line,
+		"movement_penalty": src.movement_penalty,
+		"from_behind_only": src.from_behind_only,
+		"hazard_blind_on_entry": src.hazard_blind_on_entry,
+		"poison_hazard": src.poison_hazard,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -829,6 +833,12 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.spawn_furthest_empty_on_line = bool(
 		data.get("spawn_furthest_empty_on_line", layer.spawn_furthest_empty_on_line)
 	)
+	layer.movement_penalty = int(data.get("movement_penalty", layer.movement_penalty))
+	layer.from_behind_only = bool(data.get("from_behind_only", layer.from_behind_only))
+	layer.hazard_blind_on_entry = bool(
+		data.get("hazard_blind_on_entry", layer.hazard_blind_on_entry)
+	)
+	layer.poison_hazard = bool(data.get("poison_hazard", layer.poison_hazard))
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -1087,6 +1097,31 @@ static func module_to_dict(
 		"linked_enemy_blind": src.linked_enemy_blind,
 		"pulse_status": src.pulse_status,
 		"pulse_weaken": src.pulse_weaken,
+		"slip_past": src.slip_past,
+		"land_opposite_target": src.land_opposite_target,
+		"move_through_adjacent_unit": src.move_through_adjacent_unit,
+		"ally_def_buff": src.ally_def_buff,
+		"shadow_step": src.shadow_step,
+		"behind_target_strength": src.behind_target_strength,
+		"smoke_field": src.smoke_field,
+		"smoke_stealth_outside_attackers": src.smoke_stealth_outside_attackers,
+		"smoke_ally_heal_per_turn": src.smoke_ally_heal_per_turn,
+		"grapple_bidirectional": src.grapple_bidirectional,
+		"pull_self_or_target": src.pull_self_or_target,
+		"trap_collision_damage_multiplier": src.trap_collision_damage_multiplier,
+		"switcheroo": src.switcheroo,
+		"inherit_incoming_attacks": src.inherit_incoming_attacks,
+		"if_target_unacted_stagger": src.if_target_unacted_stagger,
+		"if_target_staggered_bonus": src.if_target_staggered_bonus,
+		"on_kill_spread_silence_adjacent": src.on_kill_spread_silence_adjacent,
+		"confusion_next_turn": src.confusion_next_turn,
+		"on_kill_refresh_mark_zero_ap": src.on_kill_refresh_mark_zero_ap,
+		"bonus_if_target_debuffed": src.bonus_if_target_debuffed,
+		"kidnap": src.kidnap,
+		"swap_collision_stagger_both": src.swap_collision_stagger_both,
+		"pierce_vs_blind": src.pierce_vs_blind,
+		"hazard_blind_on_entry": src.hazard_blind_on_entry,
+		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1508,6 +1543,57 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.linked_enemy_blind = bool(data.get("linked_enemy_blind", dst.linked_enemy_blind))
 	dst.pulse_status = int(data.get("pulse_status", dst.pulse_status))
 	dst.pulse_weaken = bool(data.get("pulse_weaken", dst.pulse_weaken))
+	dst.slip_past = bool(data.get("slip_past", dst.slip_past))
+	dst.land_opposite_target = bool(data.get("land_opposite_target", dst.land_opposite_target))
+	dst.move_through_adjacent_unit = bool(
+		data.get("move_through_adjacent_unit", dst.move_through_adjacent_unit)
+	)
+	dst.ally_def_buff = int(data.get("ally_def_buff", dst.ally_def_buff))
+	dst.shadow_step = bool(data.get("shadow_step", dst.shadow_step))
+	dst.behind_target_strength = int(data.get("behind_target_strength", dst.behind_target_strength))
+	dst.smoke_field = bool(data.get("smoke_field", dst.smoke_field))
+	dst.smoke_stealth_outside_attackers = bool(
+		data.get("smoke_stealth_outside_attackers", dst.smoke_stealth_outside_attackers)
+	)
+	dst.smoke_ally_heal_per_turn = int(
+		data.get("smoke_ally_heal_per_turn", dst.smoke_ally_heal_per_turn)
+	)
+	dst.grapple_bidirectional = bool(data.get("grapple_bidirectional", dst.grapple_bidirectional))
+	dst.pull_self_or_target = bool(data.get("pull_self_or_target", dst.pull_self_or_target))
+	dst.trap_collision_damage_multiplier = int(
+		data.get("trap_collision_damage_multiplier", dst.trap_collision_damage_multiplier)
+	)
+	dst.switcheroo = bool(data.get("switcheroo", dst.switcheroo))
+	dst.inherit_incoming_attacks = bool(
+		data.get("inherit_incoming_attacks", dst.inherit_incoming_attacks)
+	)
+	dst.if_target_unacted_stagger = bool(
+		data.get("if_target_unacted_stagger", dst.if_target_unacted_stagger)
+	)
+	dst.if_target_staggered_bonus = int(
+		data.get("if_target_staggered_bonus", dst.if_target_staggered_bonus)
+	)
+	dst.on_kill_spread_silence_adjacent = bool(
+		data.get("on_kill_spread_silence_adjacent", dst.on_kill_spread_silence_adjacent)
+	)
+	dst.confusion_next_turn = bool(data.get("confusion_next_turn", dst.confusion_next_turn))
+	dst.on_kill_refresh_mark_zero_ap = bool(
+		data.get("on_kill_refresh_mark_zero_ap", dst.on_kill_refresh_mark_zero_ap)
+	)
+	dst.bonus_if_target_debuffed = int(
+		data.get("bonus_if_target_debuffed", dst.bonus_if_target_debuffed)
+	)
+	dst.kidnap = bool(data.get("kidnap", dst.kidnap))
+	dst.swap_collision_stagger_both = bool(
+		data.get("swap_collision_stagger_both", dst.swap_collision_stagger_both)
+	)
+	dst.pierce_vs_blind = bool(data.get("pierce_vs_blind", dst.pierce_vs_blind))
+	dst.hazard_blind_on_entry = bool(
+		data.get("hazard_blind_on_entry", dst.hazard_blind_on_entry)
+	)
+	dst.enemy_collision_stagger_both = bool(
+		data.get("enemy_collision_stagger_both", dst.enemy_collision_stagger_both)
+	)
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

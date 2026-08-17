@@ -139,7 +139,7 @@ static func build(basic_sword: WeaponData) -> UnitData:
 		&"panic_cascade",
 		"Panic Cascade",
 		"Applying any debuff causes extra damage equal to WPN per active unique debuff this turn.",
-		"If the target has CONFUSION, extra damage is 2Ã—WPN per unique debuff.",
+		"If the target has CONFUSION, extra damage is 2x WPN per unique debuff.",
 		{"promotion": &"saboteur", "panic_on_debuff": true,
 		"upgraded_confused_wpn_mult": 2},
 	))
@@ -270,11 +270,11 @@ static func _slip_past() -> AbilityData:
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	DataLibrary._add_extra(base, "slip_past", true)
-	DataLibrary._add_extra(base, "land_opposite_target", true)
-	DataLibrary._add_extra(base, "move_through_adjacent_unit", true)
+	base.slip_past = true
+	base.land_opposite_target = true
+	base.move_through_adjacent_unit = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "ally_def_buff", 1)
+	upgraded[0].ally_def_buff = 1
 	return _movement(
 		&"rogue_slip_past", "Slip Past", 1, base, upgraded,
 		"Move through an adjacent ally to the empty tile directly behind them; upgraded: that ally gains +1 DEF for 1 turn.",
@@ -288,9 +288,9 @@ static func _shadow_step() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.NONE,
 	)
-	DataLibrary._add_extra(base, "shadow_step", true)
+	base.shadow_step = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "behind_target_strength", 1)
+	upgraded[0].behind_target_strength = 1
 	return _ability(
 		&"rogue_shadow_step", "Shadow Step", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -302,12 +302,14 @@ static func _shadow_step() -> AbilityData:
 static func _kidney_strike() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	var slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 2, 2)
-	slow.modifiers["movement_penalty"] = 2
-	base.layers.append(_layer(slow))
+	var slow_layer := _layer(slow)
+	slow_layer.movement_penalty = 2
+	base.layers.append(slow_layer)
 	var upgraded := _clone([base])
 	var root := DataLibrary._status_effect(GameEnums.StatusType.ROOT, 1)
-	root.modifiers["from_behind_only"] = true
-	upgraded[0].layers.append(_layer(root, GameEnums.LayerCondition.IF_FROM_BEHIND))
+	var root_layer := _layer(root, GameEnums.LayerCondition.IF_FROM_BEHIND)
+	root_layer.from_behind_only = true
+	upgraded[0].layers.append(root_layer)
 	return _ability(
 		&"rogue_kidney_strike", "Kidney Strike", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -321,14 +323,12 @@ static func _smoke_bomb() -> AbilityData:
 		GameEnums.TargetingFlags.SELF, GameEnums.TargetShape.AOE_SQUARE, 1,
 		GameEnums.StatType.NONE,
 	)
-	DataLibrary._add_extras_from_dict(base, {
-		"terrain_id": &"smoke",
-		"hazard_duration": 2,
-		"smoke_field": true,
-		"smoke_stealth_outside_attackers": true,
-	})
+	base.terrain_id = &"smoke"
+	base.hazard_duration = 2
+	base.smoke_field = true
+	base.smoke_stealth_outside_attackers = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "smoke_ally_heal_per_turn", 1)
+	upgraded[0].smoke_ally_heal_per_turn = 1
 	return _ability(
 		&"rogue_smoke_bomb", "Smoke Bomb", [base], upgraded,
 		GameEnums.TargetingFlags.SELF,
@@ -365,10 +365,10 @@ static func _evasive_strike() -> AbilityData:
 
 static func _grappling_hook() -> AbilityData:
 	var base := _module(GameEnums.EffectType.PULL, 4, 1, 4, GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE)
-	DataLibrary._add_extra(base, "grapple_bidirectional", true)
-	DataLibrary._add_extra(base, "pull_self_or_target", true)
+	base.grapple_bidirectional = true
+	base.pull_self_or_target = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "trap_collision_damage_multiplier", 2)
+	upgraded[0].trap_collision_damage_multiplier = 2
 	return _ability(
 		&"rogue_grappling_hook", "Grappling Hook", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
@@ -383,9 +383,9 @@ static func _switcheroo() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
-	DataLibrary._add_extra(base, "switcheroo", true)
+	base.switcheroo = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "inherit_incoming_attacks", true)
+	upgraded[0].inherit_incoming_attacks = true
 	return _ability(
 		&"rogue_switcheroo", "Switcheroo", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -395,9 +395,9 @@ static func _switcheroo() -> AbilityData:
 
 static func _blindside() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	DataLibrary._add_extra(base, "if_target_unacted_stagger", true)
+	base.if_target_unacted_stagger = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "if_target_staggered_bonus", 2)
+	upgraded[0].if_target_staggered_bonus = 2
 	return _ability(
 		&"rogue_blindside", "Blindside", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -409,7 +409,7 @@ static func _throat_slit() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	base.layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.SILENCE, 1)))
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "on_kill_spread_silence_adjacent", true)
+	upgraded[0].on_kill_spread_silence_adjacent = true
 	return _ability(
 		&"rogue_throat_slit", "Throat Slit", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -420,12 +420,13 @@ static func _throat_slit() -> AbilityData:
 static func _amnesia_dust() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 0, 1, 2, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	var confusion := DataLibrary._status_effect(GameEnums.StatusType.CONFUSION, 1)
-	confusion.modifiers["next_turn"] = true
+	var confusion_layer := _layer(confusion)
+	confusion_layer.next_turn = true
 	base.layers = [
 		_layer(DataLibrary._status_effect(GameEnums.StatusType.BLIND, 1)),
-		_layer(confusion),
+		confusion_layer,
 	]
-	DataLibrary._add_extra(base, "confusion_next_turn", true)
+	base.confusion_next_turn = true
 	base.set_condition_not_acted()
 	var upgraded := _clone([base])
 	upgraded[0].layers.append(_layer(DataLibrary._status_effect(GameEnums.StatusType.POISON, 1)))
@@ -441,7 +442,7 @@ static func _death_mark() -> AbilityData:
 	base.status_type = GameEnums.StatusType.MARK
 	base.status_duration = 2
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "on_kill_refresh_mark_zero_ap", true)
+	upgraded[0].on_kill_refresh_mark_zero_ap = true
 	return _ability(
 		&"rogue_death_mark", "Death Mark", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -451,9 +452,9 @@ static func _death_mark() -> AbilityData:
 
 static func _lethal_flourish() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
-	DataLibrary._add_extra(base, "bonus_if_target_debuffed", 2)
+	base.bonus_if_target_debuffed = 2
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "kill_grant_ap", 1)
+	upgraded[0].kill_grant_ap = 1
 	return _ability(
 		&"rogue_lethal_flourish", "Lethal Flourish", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],
@@ -485,10 +486,10 @@ static func _kidnap() -> AbilityData:
 		GameEnums.MotionMode.TO_TARGET_UNIT,
 	)
 	base.layers = [_layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
-	DataLibrary._add_extra(base, "kidnap", true)
+	base.kidnap = true
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "swap_collision_stagger_both", true)
-	DataLibrary._add_extra(upgraded[0], "enemy_collision_stagger_both", true)
+	upgraded[0].swap_collision_stagger_both = true
+	upgraded[0].enemy_collision_stagger_both = true
 	return _ability(
 		&"rogue_kidnap", "Kidnap", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_POSITIONING],
@@ -502,10 +503,11 @@ static func _shuriken_volley() -> AbilityData:
 		GameEnums.TargetShape.CONE, 3, GameEnums.StatType.PHYSICAL,
 	)
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
-	bleed.modifiers["bleed_weapon"] = true
-	base.layers = [_layer(bleed)]
+	var bleed_layer := _layer(bleed)
+	bleed_layer.bleed_weapon = true
+	base.layers = [bleed_layer]
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "pierce_vs_blind", true)
+	upgraded[0].pierce_vs_blind = true
 	return _ability(
 		&"rogue_shuriken_volley", "Shuriken Volley", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
@@ -520,18 +522,17 @@ static func _poison_flask() -> AbilityData:
 		GameEnums.TargetShape.AOE_CROSS, 1, GameEnums.StatType.PHYSICAL,
 	)
 	var hazard := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)
-	hazard.modifiers = {
-		"terrain_id": &"poison",
-		"hazard_duration": 2,
-		"poison_hazard": true,
-	}
-	base.layers = [_layer(hazard)]
+	var hazard_layer := _layer(hazard)
+	hazard_layer.terrain_id = &"poison"
+	hazard_layer.hazard_duration = 2
+	hazard_layer.poison_hazard = true
+	base.layers = [hazard_layer]
 	var upgraded := _clone([base])
-	DataLibrary._add_extra(upgraded[0], "hazard_blind_on_entry", true)
+	upgraded[0].hazard_blind_on_entry = true
 	for layer: AbilityLayer in upgraded[0].layers:
 		if layer != null and layer.effect != null \
 				and layer.effect.type == GameEnums.EffectType.CREATE_HAZARD:
-			layer.effect.modifiers["hazard_blind_on_entry"] = true
+			layer.hazard_blind_on_entry = true
 	return _ability(
 		&"rogue_poison_flask", "Poison Flask", [base], upgraded,
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,

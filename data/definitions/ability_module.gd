@@ -233,7 +233,7 @@ extends Resource
 @export var enemy_pushed_mov: int = 0
 @export var blind_on_pass_over: bool = false
 
-## Shaman typed relocation, curse, totem, link, and soul fields.
+## Class-specific typed relocation, utility, and combat fields.
 @export var relocate_subject_only: bool = false
 @export var relocate_target: bool = false
 @export var move_active_totem: bool = false
@@ -281,6 +281,31 @@ extends Resource
 @export var linked_enemy_blind: bool = false
 @export var pulse_status: GameEnums.StatusType = GameEnums.StatusType.NONE
 @export var pulse_weaken: bool = false
+@export var slip_past: bool = false
+@export var land_opposite_target: bool = false
+@export var move_through_adjacent_unit: bool = false
+@export var ally_def_buff: int = 0
+@export var shadow_step: bool = false
+@export var behind_target_strength: int = 0
+@export var smoke_field: bool = false
+@export var smoke_stealth_outside_attackers: bool = false
+@export var smoke_ally_heal_per_turn: int = 0
+@export var grapple_bidirectional: bool = false
+@export var pull_self_or_target: bool = false
+@export var trap_collision_damage_multiplier: int = 0
+@export var switcheroo: bool = false
+@export var inherit_incoming_attacks: bool = false
+@export var if_target_unacted_stagger: bool = false
+@export var if_target_staggered_bonus: int = 0
+@export var on_kill_spread_silence_adjacent: bool = false
+@export var confusion_next_turn: bool = false
+@export var on_kill_refresh_mark_zero_ap: bool = false
+@export var bonus_if_target_debuffed: int = 0
+@export var kidnap: bool = false
+@export var swap_collision_stagger_both: bool = false
+@export var pierce_vs_blind: bool = false
+@export var hazard_blind_on_entry: bool = false
+@export var enemy_collision_stagger_both: bool = false
 
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
@@ -759,6 +784,56 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["pulse_status"] = pulse_status
 	if pulse_weaken:
 		bag["pulse_weaken"] = true
+	if slip_past:
+		bag["slip_past"] = true
+	if land_opposite_target:
+		bag["land_opposite_target"] = true
+	if move_through_adjacent_unit:
+		bag["move_through_adjacent_unit"] = true
+	if ally_def_buff != 0:
+		bag["ally_def_buff"] = ally_def_buff
+	if shadow_step:
+		bag["shadow_step"] = true
+	if behind_target_strength != 0:
+		bag["behind_target_strength"] = behind_target_strength
+	if smoke_field:
+		bag["smoke_field"] = true
+	if smoke_stealth_outside_attackers:
+		bag["smoke_stealth_outside_attackers"] = true
+	if smoke_ally_heal_per_turn != 0:
+		bag["smoke_ally_heal_per_turn"] = smoke_ally_heal_per_turn
+	if grapple_bidirectional:
+		bag["grapple_bidirectional"] = true
+	if pull_self_or_target:
+		bag["pull_self_or_target"] = true
+	if trap_collision_damage_multiplier != 0:
+		bag["trap_collision_damage_multiplier"] = trap_collision_damage_multiplier
+	if switcheroo:
+		bag["switcheroo"] = true
+	if inherit_incoming_attacks:
+		bag["inherit_incoming_attacks"] = true
+	if if_target_unacted_stagger:
+		bag["if_target_unacted_stagger"] = true
+	if if_target_staggered_bonus != 0:
+		bag["if_target_staggered_bonus"] = if_target_staggered_bonus
+	if on_kill_spread_silence_adjacent:
+		bag["on_kill_spread_silence_adjacent"] = true
+	if confusion_next_turn:
+		bag["confusion_next_turn"] = true
+	if on_kill_refresh_mark_zero_ap:
+		bag["on_kill_refresh_mark_zero_ap"] = true
+	if bonus_if_target_debuffed != 0:
+		bag["bonus_if_target_debuffed"] = bonus_if_target_debuffed
+	if kidnap:
+		bag["kidnap"] = true
+	if swap_collision_stagger_both:
+		bag["swap_collision_stagger_both"] = true
+	if pierce_vs_blind:
+		bag["pierce_vs_blind"] = true
+	if hazard_blind_on_entry:
+		bag["hazard_blind_on_entry"] = true
+	if enemy_collision_stagger_both:
+		bag["enemy_collision_stagger_both"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -1428,6 +1503,81 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"pulse_weaken":
 			pulse_weaken = bool(value)
+			return
+		"slip_past":
+			slip_past = bool(value)
+			return
+		"land_opposite_target":
+			land_opposite_target = bool(value)
+			return
+		"move_through_adjacent_unit":
+			move_through_adjacent_unit = bool(value)
+			return
+		"ally_def_buff":
+			ally_def_buff = int(value)
+			return
+		"shadow_step":
+			shadow_step = bool(value)
+			return
+		"behind_target_strength":
+			behind_target_strength = int(value)
+			return
+		"smoke_field":
+			smoke_field = bool(value)
+			return
+		"smoke_stealth_outside_attackers":
+			smoke_stealth_outside_attackers = bool(value)
+			return
+		"smoke_ally_heal_per_turn":
+			smoke_ally_heal_per_turn = int(value)
+			return
+		"grapple_bidirectional":
+			grapple_bidirectional = bool(value)
+			return
+		"pull_self_or_target":
+			pull_self_or_target = bool(value)
+			return
+		"trap_collision_damage_multiplier":
+			trap_collision_damage_multiplier = int(value)
+			return
+		"switcheroo":
+			switcheroo = bool(value)
+			return
+		"inherit_incoming_attacks":
+			inherit_incoming_attacks = bool(value)
+			return
+		"if_target_unacted_stagger":
+			if_target_unacted_stagger = bool(value)
+			return
+		"if_target_staggered_bonus":
+			if_target_staggered_bonus = int(value)
+			return
+		"on_kill_spread_silence_adjacent":
+			on_kill_spread_silence_adjacent = bool(value)
+			return
+		"confusion_next_turn":
+			confusion_next_turn = bool(value)
+			return
+		"on_kill_refresh_mark_zero_ap":
+			on_kill_refresh_mark_zero_ap = bool(value)
+			return
+		"bonus_if_target_debuffed":
+			bonus_if_target_debuffed = int(value)
+			return
+		"kidnap":
+			kidnap = bool(value)
+			return
+		"swap_collision_stagger_both":
+			swap_collision_stagger_both = bool(value)
+			return
+		"pierce_vs_blind":
+			pierce_vs_blind = bool(value)
+			return
+		"hazard_blind_on_entry":
+			hazard_blind_on_entry = bool(value)
+			return
+		"enemy_collision_stagger_both":
+			enemy_collision_stagger_both = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

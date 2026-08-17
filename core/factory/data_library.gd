@@ -685,6 +685,31 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.linked_enemy_blind = from_module.linked_enemy_blind
 	to_module.pulse_status = from_module.pulse_status
 	to_module.pulse_weaken = from_module.pulse_weaken
+	to_module.slip_past = from_module.slip_past
+	to_module.land_opposite_target = from_module.land_opposite_target
+	to_module.move_through_adjacent_unit = from_module.move_through_adjacent_unit
+	to_module.ally_def_buff = from_module.ally_def_buff
+	to_module.shadow_step = from_module.shadow_step
+	to_module.behind_target_strength = from_module.behind_target_strength
+	to_module.smoke_field = from_module.smoke_field
+	to_module.smoke_stealth_outside_attackers = from_module.smoke_stealth_outside_attackers
+	to_module.smoke_ally_heal_per_turn = from_module.smoke_ally_heal_per_turn
+	to_module.grapple_bidirectional = from_module.grapple_bidirectional
+	to_module.pull_self_or_target = from_module.pull_self_or_target
+	to_module.trap_collision_damage_multiplier = from_module.trap_collision_damage_multiplier
+	to_module.switcheroo = from_module.switcheroo
+	to_module.inherit_incoming_attacks = from_module.inherit_incoming_attacks
+	to_module.if_target_unacted_stagger = from_module.if_target_unacted_stagger
+	to_module.if_target_staggered_bonus = from_module.if_target_staggered_bonus
+	to_module.on_kill_spread_silence_adjacent = from_module.on_kill_spread_silence_adjacent
+	to_module.confusion_next_turn = from_module.confusion_next_turn
+	to_module.on_kill_refresh_mark_zero_ap = from_module.on_kill_refresh_mark_zero_ap
+	to_module.bonus_if_target_debuffed = from_module.bonus_if_target_debuffed
+	to_module.kidnap = from_module.kidnap
+	to_module.swap_collision_stagger_both = from_module.swap_collision_stagger_both
+	to_module.pierce_vs_blind = from_module.pierce_vs_blind
+	to_module.hazard_blind_on_entry = from_module.hazard_blind_on_entry
+	to_module.enemy_collision_stagger_both = from_module.enemy_collision_stagger_both
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

@@ -601,20 +601,20 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_slip_past/ally_def_buff",
-				int(upgraded[0].runtime_value("ally_def_buff", 0)) >= 1,
+				upgraded[0].ally_def_buff >= 1,
 			)
 		&"rogue_shadow_step":
 			_assert(
 				failures,
 				"upgrade/rogue_shadow_step/behind_motion",
 				upgraded[0].primary_type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
-					and int(upgraded[0].runtime_value("behind_target_strength", 0)) >= 1,
+					and upgraded[0].behind_target_strength >= 1,
 			)
 		&"rogue_smoke_bomb":
 			_assert(
 				failures,
 				"upgrade/rogue_smoke_bomb/ally_heal",
-				int(upgraded[0].runtime_value("smoke_ally_heal_per_turn", 0)) >= 1,
+				upgraded[0].smoke_ally_heal_per_turn >= 1,
 			)
 		&"rogue_evasive_strike":
 			_assert(
@@ -626,19 +626,19 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_grappling_hook/trap_multiplier",
-				int(upgraded[0].runtime_value("trap_collision_damage_multiplier", 0)) >= 2,
+				upgraded[0].trap_collision_damage_multiplier >= 2,
 			)
 		&"rogue_switcheroo":
 			_assert(
 				failures,
 				"upgrade/rogue_switcheroo/inherit_attacks",
-				bool(upgraded[0].runtime_value("inherit_incoming_attacks", false)),
+				upgraded[0].inherit_incoming_attacks,
 			)
 		&"rogue_blindside":
 			_assert(
 				failures,
 				"upgrade/rogue_blindside/stagger_bonus",
-				int(upgraded[0].runtime_value("if_target_staggered_bonus", 0)) >= 2,
+				upgraded[0].if_target_staggered_bonus >= 2,
 			)
 		&"rogue_amnesia_dust":
 			_assert(
@@ -650,31 +650,34 @@ static func _assert_upgraded_bible_marker(ability_id: StringName, failures: Arra
 			_assert(
 				failures,
 				"upgrade/rogue_death_mark/refresh_mark",
-				bool(upgraded[0].runtime_value("on_kill_refresh_mark_zero_ap", false)),
+				upgraded[0].on_kill_refresh_mark_zero_ap,
 			)
 		&"rogue_shadow_swap":
 			_assert(
 				failures,
 				"upgrade/rogue_shadow_swap/def_layer",
-				not upgraded[0].layers.is_empty(),
+				not upgraded[0].layers.is_empty()
+				and upgraded[0].layers[0].effect != null
+				and upgraded[0].layers[0].effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+				and upgraded[0].layers[0].effect.amount == 1,
 			)
 		&"rogue_kidnap":
 			_assert(
 				failures,
 				"upgrade/rogue_kidnap/stagger_both",
-				bool(upgraded[0].runtime_value("swap_collision_stagger_both", false)),
+				upgraded[0].swap_collision_stagger_both,
 			)
 		&"rogue_shuriken_volley":
 			_assert(
 				failures,
 				"upgrade/rogue_shuriken_volley/pierce_blind",
-				bool(upgraded[0].runtime_value("pierce_vs_blind", false)),
+				upgraded[0].pierce_vs_blind,
 			)
 		&"rogue_poison_flask":
 			_assert(
 				failures,
 				"upgrade/rogue_poison_flask/hazard_blind",
-				bool(upgraded[0].runtime_value("hazard_blind_on_entry", false)),
+				upgraded[0].hazard_blind_on_entry,
 			)
 		&"rogue_kidney_strike", &"rogue_throat_slit", &"rogue_lethal_flourish":
 			pass

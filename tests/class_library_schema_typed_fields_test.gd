@@ -102,6 +102,13 @@ static func run_all(failures: Array[String]) -> void:
 	source.pain_spike = true
 	source.linked_enemy_damage = 1
 	source.linked_enemy_blind = true
+	source.slip_past = true
+	source.land_opposite_target = true
+	source.move_through_adjacent_unit = true
+	source.kidnap = true
+	source.swap_collision_stagger_both = true
+	source.pierce_vs_blind = true
+	source.hazard_blind_on_entry = true
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -137,6 +144,10 @@ static func run_all(failures: Array[String]) -> void:
 	layer.lightning_rod = true
 	layer.construct_hp_pct = 0.5
 	layer.spawn_furthest_empty_on_line = true
+	layer.movement_penalty = 2
+	layer.from_behind_only = true
+	layer.hazard_blind_on_entry = true
+	layer.poison_hazard = true
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -238,6 +249,13 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "pain_spike", restored.pain_spike)
 	_assert(failures, "linked_enemy_damage", restored.linked_enemy_damage == 1)
 	_assert(failures, "linked_enemy_blind", restored.linked_enemy_blind)
+	_assert(failures, "slip_past", restored.slip_past)
+	_assert(failures, "land_opposite_target", restored.land_opposite_target)
+	_assert(failures, "move_through_adjacent_unit", restored.move_through_adjacent_unit)
+	_assert(failures, "kidnap", restored.kidnap)
+	_assert(failures, "swap_collision_stagger_both", restored.swap_collision_stagger_both)
+	_assert(failures, "pierce_vs_blind", restored.pierce_vs_blind)
+	_assert(failures, "hazard_blind_on_entry", restored.hazard_blind_on_entry)
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -271,6 +289,10 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_lightning_rod", restored.layers[0].lightning_rod)
 	_assert(failures, "layer_construct_hp_pct", is_equal_approx(restored.layers[0].construct_hp_pct, 0.5))
 	_assert(failures, "layer_spawn_furthest_empty_on_line", restored.layers[0].spawn_furthest_empty_on_line)
+	_assert(failures, "layer_movement_penalty", restored.layers[0].movement_penalty == 2)
+	_assert(failures, "layer_from_behind_only", restored.layers[0].from_behind_only)
+	_assert(failures, "layer_hazard_blind_on_entry", restored.layers[0].hazard_blind_on_entry)
+	_assert(failures, "layer_poison_hazard", restored.layers[0].poison_hazard)
 	var copied := AbilityModule.new()
 	DataLibrary._copy_extras(source, copied)
 	_assert(failures, "copy_cleric_life_link", copied.life_link)
@@ -296,6 +318,14 @@ static func run_all(failures: Array[String]) -> void:
 		and copied.ghost_duration == 1
 		and copied.pain_spike
 		and copied.linked_enemy_damage == 1,
+	)
+	_assert(
+		failures,
+		"copy_rogue_typed_fields",
+		copied.slip_past
+		and copied.kidnap
+		and copied.swap_collision_stagger_both
+		and copied.hazard_blind_on_entry,
 	)
 
 

@@ -2794,6 +2794,13 @@ func _add_typed_module_bindings(
 		"boss_fallback_vulnerable", "poison_spread_on_push_collision", "bone_spear",
 		"echo_next_cast", "echo_upgraded", "sympathetic_bond", "link_ally_enemy",
 		"ally_heal_enemy_wpn", "pain_spike", "linked_enemy_blind", "pulse_weaken",
+		"slip_past", "land_opposite_target", "move_through_adjacent_unit", "shadow_step",
+		"smoke_field", "smoke_stealth_outside_attackers", "grapple_bidirectional",
+		"pull_self_or_target", "switcheroo", "inherit_incoming_attacks",
+		"if_target_unacted_stagger", "on_kill_spread_silence_adjacent",
+		"confusion_next_turn", "on_kill_refresh_mark_zero_ap", "kidnap",
+		"swap_collision_stagger_both", "pierce_vs_blind", "hazard_blind_on_entry",
+		"enemy_collision_stagger_both",
 	]:
 		_bind_bool(grid, field_name, bool(module.get(field_name)), func(value: bool) -> void:
 			module.set(field_name, value)
@@ -2804,7 +2811,9 @@ func _add_typed_module_bindings(
 		"bloodlust_def", "bloodlust_mov", "bloodlust_hp", "shared_damage_wpn",
 		"ranged_reduction", "melee_def", "enemy_damage_ally_heal",
 		"bonus_damage_per_debuff", "heal_per_debuff", "linked_enemy_damage", "ghost_duration",
-		"pulse_status",
+		"pulse_status", "ally_def_buff", "behind_target_strength",
+		"smoke_ally_heal_per_turn", "trap_collision_damage_multiplier",
+		"if_target_staggered_bonus", "bonus_if_target_debuffed",
 	]:
 		_bind_int(grid, field_name, int(module.get(field_name)), func(value: int) -> void:
 			module.set(field_name, value)
@@ -2841,6 +2850,22 @@ func _add_typed_layer_bindings(
 		func(value: float) -> void:
 			layer.construct_hp_pct = value
 			_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "movement_penalty", layer.movement_penalty, func(value: int) -> void:
+		layer.movement_penalty = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "from_behind_only", layer.from_behind_only, func(value: bool) -> void:
+		layer.from_behind_only = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "hazard_blind_on_entry", layer.hazard_blind_on_entry, func(value: bool) -> void:
+		layer.hazard_blind_on_entry = value
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "poison_hazard", layer.poison_hazard, func(value: bool) -> void:
+		layer.poison_hazard = value
+		_on_module_field_edited(ability)
 	)
 
 

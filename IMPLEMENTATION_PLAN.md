@@ -181,21 +181,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Monk | Cyclone Sweep | ☑ | ☑ | ☑ | ☑ | Typed conversion, ARC footprint/live proof + critic pass |
 | Monk | Updraft | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Monk | Geyser Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Slip Past | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Shadow Step | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Kidney Strike | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Smoke Bomb | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Grappling Hook | ☐ | ☐ | ☐ | ☐ | OR choice |
-| Rogue | Switcheroo | ☐ | ☐ | ☐ | ☐ | Enemy swap on Action is legal |
+| Rogue | Slip Past | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Shadow Step | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Kidney Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Smoke Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Evasive Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Grappling Hook | ☑ | ☑ | ☑ | ☑ | OR choice; typed conversion and critic pass |
+| Rogue | Switcheroo | ☑ | ☑ | ☑ | ☑ | Enemy swap on Action is legal; typed conversion and critic pass |
 | Rogue | Shadow Swap | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
-| Rogue | Blindside | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Throat Slit | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Amnesia Dust | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Death Mark | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Lethal Flourish | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Kidnap | ☐ | ☐ | ☐ | ☐ | Enemy swap + push on Action |
-| Rogue | Shuriken Volley | ☐ | ☐ | ☐ | ☐ |  |
-| Rogue | Poison Flask | ☐ | ☐ | ☐ | ☐ |  |
+| Rogue | Blindside | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Throat Slit | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Amnesia Dust | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Death Mark | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Lethal Flourish | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Kidnap | ☑ | ☑ | ☑ | ☑ | Enemy swap + push on Action; typed conversion and critic pass |
+| Rogue | Shuriken Volley | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
+| Rogue | Poison Flask | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
 | Beast Rider | Reposition | ☐ | ☐ | ☐ | ☐ | Ally-step destination |
 | Beast Rider | Pounce | ☐ | ☐ | ☐ | ☐ |  |
 | Beast Rider | Feral Drag | ☐ | ☐ | ☐ | ☐ | Enemy drag on Action is legal |
@@ -357,22 +358,23 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 7. Rogue
 
-- [ ] `rogue_slip_past`
-- [ ] `rogue_shadow_step`
-- [ ] `rogue_kidney_strike`
-- [ ] `rogue_smoke_bomb`
-- [ ] `rogue_grappling_hook`
-- [ ] `rogue_switcheroo`
-- [ ] `rogue_blindside`
-- [ ] `rogue_throat_slit`
-- [ ] `rogue_amnesia_dust`
-- [ ] `rogue_death_mark`
-- [ ] `rogue_lethal_flourish`
-- [ ] `rogue_kidnap`
-- [ ] `rogue_shuriken_volley`
-- [ ] `rogue_poison_flask`
-- [ ] Rogue class gate: `run_rogue_qa_gate.ps1`.
-- [ ] Rogue live gate: `run_rogue_live_qa.ps1`.
+- [x] `rogue_slip_past`
+- [x] `rogue_shadow_step`
+- [x] `rogue_kidney_strike`
+- [x] `rogue_smoke_bomb`
+- [x] `rogue_evasive_strike`
+- [x] `rogue_grappling_hook`
+- [x] `rogue_switcheroo`
+- [x] `rogue_blindside`
+- [x] `rogue_throat_slit`
+- [x] `rogue_amnesia_dust`
+- [x] `rogue_death_mark`
+- [x] `rogue_lethal_flourish`
+- [x] `rogue_kidnap`
+- [x] `rogue_shuriken_volley`
+- [x] `rogue_poison_flask`
+- [x] Rogue class gate: `run_rogue_qa_gate.ps1` — PASS with conversion contracts.
+- [x] Rogue live gate: `run_rogue_live_qa.ps1` — PASS; harsh critic PASS (89/100).
 - [ ] `rogue_shadow_swap` remains open as Action ally-relocate rework.
 
 #### 8. Beast Rider

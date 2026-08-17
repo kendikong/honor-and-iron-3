@@ -112,6 +112,21 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"monk_cyclone_sweep",
 	&"monk_updraft",
 	&"monk_geyser_strike",
+	&"rogue_slip_past",
+	&"rogue_shadow_step",
+	&"rogue_kidney_strike",
+	&"rogue_smoke_bomb",
+	&"rogue_evasive_strike",
+	&"rogue_grappling_hook",
+	&"rogue_switcheroo",
+	&"rogue_blindside",
+	&"rogue_throat_slit",
+	&"rogue_amnesia_dust",
+	&"rogue_death_mark",
+	&"rogue_lethal_flourish",
+	&"rogue_kidnap",
+	&"rogue_shuriken_volley",
+	&"rogue_poison_flask",
 	&"shaman_usher",
 	&"shaman_curse_of_weakness",
 	&"shaman_healing_totem",
@@ -749,6 +764,62 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 				not is_zero_approx(module.construct_hp_pct)
 				or not is_zero_approx(layer.construct_hp_pct)
 			)
+		"slip_past":
+			return module.slip_past
+		"land_opposite_target":
+			return module.land_opposite_target
+		"move_through_adjacent_unit":
+			return module.move_through_adjacent_unit
+		"ally_def_buff":
+			return module.ally_def_buff != 0
+		"shadow_step":
+			return module.shadow_step
+		"behind_target_strength":
+			return module.behind_target_strength != 0
+		"smoke_field":
+			return module.smoke_field
+		"smoke_stealth_outside_attackers":
+			return module.smoke_stealth_outside_attackers
+		"smoke_ally_heal_per_turn":
+			return module.smoke_ally_heal_per_turn != 0
+		"grapple_bidirectional":
+			return module.grapple_bidirectional
+		"pull_self_or_target":
+			return module.pull_self_or_target
+		"trap_collision_damage_multiplier":
+			return module.trap_collision_damage_multiplier != 0
+		"switcheroo":
+			return module.switcheroo
+		"inherit_incoming_attacks":
+			return module.inherit_incoming_attacks
+		"if_target_unacted_stagger":
+			return module.if_target_unacted_stagger
+		"if_target_staggered_bonus":
+			return module.if_target_staggered_bonus != 0
+		"on_kill_spread_silence_adjacent":
+			return module.on_kill_spread_silence_adjacent
+		"confusion_next_turn":
+			return module.confusion_next_turn
+		"on_kill_refresh_mark_zero_ap":
+			return module.on_kill_refresh_mark_zero_ap
+		"bonus_if_target_debuffed":
+			return module.bonus_if_target_debuffed != 0
+		"kidnap":
+			return module.kidnap
+		"swap_collision_stagger_both":
+			return module.swap_collision_stagger_both
+		"pierce_vs_blind":
+			return module.pierce_vs_blind
+		"hazard_blind_on_entry":
+			return module.hazard_blind_on_entry
+		"enemy_collision_stagger_both":
+			return module.enemy_collision_stagger_both or layer.enemy_collision_stagger_both
+		"movement_penalty":
+			return layer.movement_penalty != 0
+		"from_behind_only":
+			return layer.from_behind_only
+		"poison_hazard":
+			return layer.poison_hazard
 		"density_shift":
 			return module.density_shift
 		"ignore_target_magic_pct":
