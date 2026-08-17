@@ -14,11 +14,24 @@ Extra Rules was a leftover-bag rename. That pass is **rejected**. Chat tables ar
 
 ## What to do
 
-Convert every Extra Rule into the skill-module bible: header, module primary (including MOVE / JUMP / TELEPORT landing verbs), keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules in the same change.
+Convert every Extra Rule into the skill-module bible: header, module primary (including MOVE / JUMP / TELEPORT landing verbs), keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules **and leftover `modifiers` keys** in the same change.
 
-Combat reads those fields. Extra Rules is not a destination.
+**Cheat (forbidden):** empty Extra Rules while combat still runs the old leftover key. That is how the last pass failed.
+
+Combat must read header / module / keyword / layer / gate / targeting / typed fields — not Extra Rules and not `effect.modifiers["harvested_key"]`.
 
 **DELETE Motion Mode.** `GameEnums.MotionMode`, the Class Editor dropdown, factory stamps, and combat reads of `module.motion_mode` all go. Landing is dest EffectType only (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, …). Do not convert leftovers into Motion Mode.
+
+### Done for one skill (all required)
+
+1. Changelog quotes the **skill bible** line + upgrade from `class_abilities.txt`.
+2. Names **family** + **home** (header / type / keyword / layer / gate / targeting / field).
+3. That skill’s `extras` empty (base and upgrade). No `_add_extra` on that factory skill.
+4. No leftover Extra Rule keys on that skill’s `effect.modifiers`.
+5. `CONVERTED_SKILL_IDS` in `tests/extra_rules_conversion_contract.gd` includes that id.
+6. Class gate + live **PASS**.
+
+No bible quote in the changelog → the conversion did not happen.
 
 ---
 
@@ -27,7 +40,7 @@ Combat reads those fields. Extra Rules is not a destination.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE`; finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → Bruiser → Lancer → Archer → Mercenary → Monk → Rogue → Beast Rider → Cleric → Mage → Engineer → Shaman). One skill: implement Solution → extras empty → class gate + live **PASS** | Every matrix row converted |
+| **ER-2** | Convert class by class (Knight → Bruiser → Lancer → Archer → Mercenary → Monk → Rogue → Beast Rider → Cleric → Mage → Engineer → Shaman). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every matrix row converted; contract test PASS |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
@@ -75,5 +88,6 @@ Watch for later split: Link, Scrap, Destroy — only if they become their own ve
 ## QA
 
 After each class: `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1`.  
+Converted-skill extras: headless `res://tests/run_ability_module_bridge_test.gd` (includes `extra_rules_conversion_contract`).  
 Planning/commit edits: `.\scripts\run_planning_qa_gate.ps1`.  
 Sim/core: `.\scripts\run_regression_tests.ps1`.

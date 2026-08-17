@@ -17,9 +17,18 @@ Every class **skill** Extra Rule is gone. The skill is authored as header + modu
 
 **DELETE Motion Mode.** Marked for deletion: `GameEnums.MotionMode`, Class Editor Motion Mode dropdown, factory `motion_mode` stamps, combat `module.motion_mode` reads. Dest EffectType owns landing. Do not convert leftovers into Motion Mode.
 
-**Done for one skill:** that skill’s `AbilityModule.extras` is empty (base and upgrade), behavior matches Bible, class gate + live QA **PASS**.
+**Done for one skill (all required — missing any = not converted):**
 
-**Done for the project:** no class skill uses Extra Rules; `AbilityExtraRule` deleted; **Motion Mode deleted**; factories have no `_add_extra` / leftover modifier / `motion_mode` stamps.
+1. Changelog quotes the skill line + upgrade from `class_abilities.txt`.
+2. Names family + home.
+3. `AbilityModule.extras` empty (base and upgrade). Factory has no `_add_extra` on that skill.
+4. No Extra Rule leftover keys on that skill’s `effect.modifiers`.
+5. Ability id is in `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`.
+6. Behavior matches the skill bible. Class gate + live QA **PASS**.
+
+**Cheat (the last failure):** delete Extra Rules but leave `modifiers["key"]` / combat still reading the bag. Forbidden.
+
+**Done for the project:** no class skill uses Extra Rules; `AbilityExtraRule` deleted; **Motion Mode deleted**; factories have no `_add_extra` / leftover modifier / `motion_mode` stamps. Contract test: every Extra Rule id has a home; every converted skill has empty extras.
 
 ---
 
@@ -122,7 +131,7 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
 | PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | Module primary (Glorious Charge, Pullback) |
-| PULL_SELF_TO_TARGET | Missing (bible §12.7) | New effect or resolution_choice on PULL |
+| PULL_SELF_TO_TARGET | Missing (bible §12.7) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
 | Carry / place-unit (Airlift, Kidnap, Maul drop) | Missing | New type in **Move someone** |
 | Drag-while-walking (Feral Drag) | Missing | New type in **Move someone** |
 | CREATE_HAZARD knobs | Partially typed on module; still extras/layer bags | Typed fields on CREATE_HAZARD |
@@ -202,7 +211,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Power Shot [+] | Collision PIERCE + damage | Existing layer | Extra DAMAGE on PUSH **ON_COLLISION**. |
 | Piercing Shot | Skewer line | Existing shape | LINE shape. |
 | Piercing Shot [+] | Bounce 45° off walls | New field | Bounce on LINE. |
-| Grapple Arrow | Pull yourself to a wall | New effect | **PULL_SELF_TO_TARGET**. |
+| Grapple Arrow | Pull yourself to a wall | New type | **Movement (Self)** dest (pull-yourself). Not Forced Movement. |
 | Grapple Arrow [+] | Damage if you pass through | Existing keyword | **TRAMPLE** / path DAMAGE. |
 | Explosive Arrow | Destroy terrain | Existing effect | **DESTROY_OBSTACLE**. |
 | Explosive Arrow [+] | Ignite flammable | New field | Ignite on **CREATE_HAZARD**. |

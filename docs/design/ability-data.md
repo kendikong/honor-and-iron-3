@@ -15,7 +15,7 @@
 | Code migration | §12 → §14 |
 | History of audits | §16–§19 (not normative) |
 
-**Conflict precedence (highest wins):** Locked table → **§0–§11** (normative) → §12 migration notes → §14 checklist → §16+ audits.
+**Conflict precedence (highest wins):** Locked table → **§0–§11** (normative) → Extra Rules conversion families in `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` (must match §2.2) → §12 migration notes → §14 checklist → §16+ audits. Chat summaries are **not** authority. After any summarization, reread `class_abilities.txt` and this doc.
 
 ### Owner decisions (locked)
 
@@ -199,29 +199,31 @@ Naming note: header **`planner_group`** = which timeline column the **card** use
 
 ### 2.2 Primary effect (families)
 
-What this module *is*. One `EffectType` field. The Class Editor dropdown is **grouped by family**. When you add a type, pick a family — do not grow a flat dump.
+What this module *is*. One `EffectType` field. Families are **owner-locked** in [`docs/design/EXTRA_RULES_TO_MODULES_PLAN.md`](EXTRA_RULES_TO_MODULES_PLAN.md). Skill verb comes from `class_abilities.txt`. Do not split Movement (Self) into Walk vs Jump vs Teleport.
 
-| Family | Types now | Incoming (conversion) | Not this family |
-|--------|-----------|------------------------|-----------------|
-| **Hit** | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce / unmitigated / %HP / ignore-resist = **fields on DAMAGE** | |
-| **Heal / Shield** | HEAL, ARMOR_UP (SHIELD in UI) | Revive % = field on HEAL | HP spend = header cost, not DAMAGE_SELF |
-| **Status** | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType** | |
-| **Walk** | MOVE, MOVE_ADJACENT_TO, MOVE_TO_BEHIND, MOVE_TOWARD, MOVE_INTO_AND_PUSH | L-path, facing, ZOC = **fields on MOVE** | TRAMPLE / BULLDOZE = keywords |
-| **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | Vault restriction = field on JUMP_TO_BEHIND | |
-| **Teleport** | TELEPORT_CASTER, TELEPORT_ADJACENT_TO, TELEPORT_TO_BEHIND, TELEPORT_TOWARD | Visible/LOS = field on TELEPORT | |
-| **Dash / Swap** | DASH, SWAP | | |
-| **Pair / carry** | PAIRED_MOVE | Carry/place (Airlift, Kidnap, Maul), drag-walk (Feral Drag), ally-step (Usher), slide-opposite (Reposition) | THROW_BEHIND and PULL_SELF_TO_TARGET = **Control** |
-| **Control** | PUSH, PULL, THROW_BEHIND | PULL_SELF_TO_TARGET; pull-to-center / pull-surfaces = **fields on PULL** | Collision STAGGER = layer |
-| **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | Hazard / spawn knobs = **typed fields** | |
-| **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
-| **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Do not add new types here |
+**Add rule:** new verb → new **type** in a family. Rider → field / layer / keyword. New family only if nothing here fits.
+
+| Family | Opening verb | Types now | Not a new primary |
+|--------|--------------|-----------|-------------------|
+| **Attack** | Hurt (`ATK` / `MAG ATK`) | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce, unmitigated, %HP, ignore-resist = fields |
+| **Heal** | Restore HP | HEAL | Revive % = field. On-kill HEAL = layer |
+| **Shield** | Grant over-HP | ARMOR_UP | Scrap / missing-HP shield = fields / layers |
+| **Status** | Apply or strip a named condition | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = StatusType |
+| **Movement (Self)** | You change tiles | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = fields or dest types here |
+| **Forced Movement** | They slide | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = fields / layers |
+| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Usher, slide-opposite, Airlift/Kidnap, Feral Drag = types here |
+| **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, mines = knobs |
+| **Summon** | You make a unit or object | SPAWN | HP%, turret ATK, overclock = knobs |
+| **Stance** | You set yourself up this turn | ADD_STATUS_SELF / arm-next | Phalanx, Feint, Mana Shield, Brace |
+| **Resource** | Grant/refund AP, Scrap, later currencies | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | On-kill AP = layer |
+| **Convert off** | Not a family | TRAMPLE, BULLDOZE, PUSH_STAGGER_*, PULL_VULNERABLE_*, PUSH_CHAIN_* | Keywords / layers |
 
 Keywords (TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO) are a **separate module field** (§6), not a primary family.
 
-**DELETE Motion Mode.** Landing is the dest EffectType (Walk / Jump / Teleport / Pair/carry). Do not add modes. See `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` ER-3.
+**DELETE Motion Mode.** Landing is the dest type inside **Movement (Self)** or **Move someone**. Do not add modes. See conversion plan ER-3.
 
 **Player choice (OR)** — still inside the module, not a new system:  
-`resolution_choice`: `NONE` \| `PICK_ONE_OF_EFFECTS` (e.g. Grappling Hook: pull self **or** pull target). Planner shows the choice; commit stores which branch was picked.
+`resolution_choice`: `NONE` \| `PICK_ONE_OF_EFFECTS` (e.g. Grappling Hook: **Movement (Self)** pull-yourself **or** **Forced Movement** pull-them). Planner shows the choice; commit stores which branch was picked.
 
 ### 2.3 Min / max range + LOS
 
