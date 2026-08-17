@@ -213,6 +213,26 @@ extends Resource
 @export var marked_target_defense: int = 0
 @export var unacted_target_ignore_def_pct: float = 0.0
 
+## Monk typed movement, surface, combo, and follow-up fields.
+@export var leap_absorb_surface: bool = false
+@export var track_first_hit_zero: bool = false
+@export var chakra_shift: bool = false
+@export var chakra_burst_damage: int = 0
+@export var chakra_burst_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
+@export var chakra_burst_size: int = 0
+@export var stop_adjacent_first_enemy: bool = false
+@export var dash_absorb_element: bool = false
+@export var target_magic_defense: bool = false
+@export var steal_target_magic: int = 0
+@export var next_turn_move_penalty: int = 0
+@export var bonus_per_target_status: int = 0
+@export var mantra_peace_weaken: bool = false
+@export var inner_fire: bool = false
+@export var inner_fire_surface: bool = false
+@export var landed_magic_bonus: int = 0
+@export var enemy_pushed_mov: int = 0
+@export var blind_on_pass_over: bool = false
+
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
 
@@ -560,6 +580,42 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["marked_target_defense"] = marked_target_defense
 	if not is_zero_approx(unacted_target_ignore_def_pct):
 		bag["unacted_target_ignore_def_pct"] = unacted_target_ignore_def_pct
+	if leap_absorb_surface:
+		bag["leap_absorb_surface"] = true
+	if track_first_hit_zero:
+		bag["track_first_hit_zero"] = true
+	if chakra_shift:
+		bag["chakra_shift"] = true
+	if chakra_burst_damage != 0:
+		bag["chakra_burst_damage"] = chakra_burst_damage
+	if chakra_burst_shape != GameEnums.TargetShape.SINGLE:
+		bag["chakra_burst_shape"] = chakra_burst_shape
+	if chakra_burst_size != 0:
+		bag["chakra_burst_size"] = chakra_burst_size
+	if stop_adjacent_first_enemy:
+		bag["stop_adjacent_first_enemy"] = true
+	if dash_absorb_element:
+		bag["dash_absorb_element"] = true
+	if target_magic_defense:
+		bag["target_magic_defense"] = true
+	if steal_target_magic != 0:
+		bag["steal_target_magic"] = steal_target_magic
+	if next_turn_move_penalty != 0:
+		bag["next_turn_move_penalty"] = next_turn_move_penalty
+	if bonus_per_target_status != 0:
+		bag["bonus_per_target_status"] = bonus_per_target_status
+	if mantra_peace_weaken:
+		bag["mantra_peace_weaken"] = true
+	if inner_fire:
+		bag["inner_fire"] = true
+	if inner_fire_surface:
+		bag["inner_fire_surface"] = true
+	if landed_magic_bonus != 0:
+		bag["landed_magic_bonus"] = landed_magic_bonus
+	if enemy_pushed_mov != 0:
+		bag["enemy_pushed_mov"] = enemy_pushed_mov
+	if blind_on_pass_over:
+		bag["blind_on_pass_over"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -1034,6 +1090,60 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"unacted_target_ignore_def_pct":
 			unacted_target_ignore_def_pct = float(value)
+			return
+		"leap_absorb_surface":
+			leap_absorb_surface = bool(value)
+			return
+		"track_first_hit_zero":
+			track_first_hit_zero = bool(value)
+			return
+		"chakra_shift":
+			chakra_shift = bool(value)
+			return
+		"chakra_burst_damage":
+			chakra_burst_damage = int(value)
+			return
+		"chakra_burst_shape":
+			chakra_burst_shape = int(value)
+			return
+		"chakra_burst_size":
+			chakra_burst_size = int(value)
+			return
+		"stop_adjacent_first_enemy":
+			stop_adjacent_first_enemy = bool(value)
+			return
+		"dash_absorb_element":
+			dash_absorb_element = bool(value)
+			return
+		"target_magic_defense":
+			target_magic_defense = bool(value)
+			return
+		"steal_target_magic":
+			steal_target_magic = int(value)
+			return
+		"next_turn_move_penalty":
+			next_turn_move_penalty = int(value)
+			return
+		"bonus_per_target_status":
+			bonus_per_target_status = int(value)
+			return
+		"mantra_peace_weaken":
+			mantra_peace_weaken = bool(value)
+			return
+		"inner_fire":
+			inner_fire = bool(value)
+			return
+		"inner_fire_surface":
+			inner_fire_surface = bool(value)
+			return
+		"landed_magic_bonus":
+			landed_magic_bonus = int(value)
+			return
+		"enemy_pushed_mov":
+			enemy_pushed_mov = int(value)
+			return
+		"blind_on_pass_over":
+			blind_on_pass_over = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

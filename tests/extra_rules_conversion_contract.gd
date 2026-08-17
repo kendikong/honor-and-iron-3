@@ -96,6 +96,22 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"mercenary_hamstring",
 	&"mercenary_acrobatic_vault",
 	&"mercenary_duelists_challenge",
+	&"monk_leap",
+	&"monk_scorching_kick",
+	&"monk_thunder_palm",
+	&"monk_yin_yang_flurry",
+	&"monk_chakra_shift",
+	&"monk_phase_throw",
+	&"monk_flying_crane_kick",
+	&"monk_spirit_palm",
+	&"monk_soul_punch",
+	&"monk_hundred_fists",
+	&"monk_mantra_of_peace",
+	&"monk_inner_fire",
+	&"monk_void_step",
+	&"monk_cyclone_sweep",
+	&"monk_updraft",
+	&"monk_geyser_strike",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -756,6 +772,58 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.difficult_terrain_created
 		"rooted_push_bleed_weapon":
 			return layer.rooted_push_bleed_weapon
+		"leap_absorb_surface":
+			return module.leap_absorb_surface
+		"track_first_hit_zero":
+			return module.track_first_hit_zero
+		"chakra_shift":
+			return module.chakra_shift
+		"chakra_burst_damage":
+			return module.chakra_burst_damage != 0
+		"chakra_burst_shape":
+			return module.chakra_burst_shape != GameEnums.TargetShape.SINGLE
+		"chakra_burst_size":
+			return module.chakra_burst_size != 0
+		"stop_adjacent_first_enemy":
+			return module.stop_adjacent_first_enemy
+		"dash_absorb_element":
+			return module.dash_absorb_element or layer.dash_absorb_element
+		"target_magic_defense":
+			return module.target_magic_defense
+		"steal_target_magic":
+			return module.steal_target_magic != 0
+		"next_turn_move_penalty":
+			return module.next_turn_move_penalty != 0
+		"bonus_per_target_status":
+			return module.bonus_per_target_status != 0
+		"mantra_peace_weaken":
+			return module.mantra_peace_weaken
+		"inner_fire":
+			return module.inner_fire
+		"inner_fire_surface":
+			return module.inner_fire_surface
+		"landed_magic_bonus":
+			return module.landed_magic_bonus != 0
+		"enemy_pushed_mov":
+			return module.enemy_pushed_mov != 0
+		"blind_on_pass_over":
+			return module.blind_on_pass_over
+		"burning_splash_magic":
+			return layer.burning_splash_magic != 0
+		"burning_splash_shape":
+			return layer.burning_splash_shape != GameEnums.TargetShape.SINGLE
+		"pierce_if_first_zero":
+			return layer.pierce_if_first_zero
+		"damage_adjacent_on_landing":
+			return layer.damage_adjacent_on_landing
+		"require_dash_line_enemy":
+			return layer.require_dash_line_enemy
+		"collision_splash_damage":
+			return layer.collision_splash_damage != 0
+		"collision_splash_weaken":
+			return layer.collision_splash_weaken
+		"push_if_target_on_water":
+			return layer.push_if_target_on_water != 0
 		_:
 			return false
 

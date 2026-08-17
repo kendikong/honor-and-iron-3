@@ -46,6 +46,15 @@ extends Resource
 @export var trap_damage_bonus: int = 0
 @export var grant_ap: int = 0
 @export var next_turn: bool = false
+@export var burning_splash_magic: int = 0
+@export var burning_splash_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
+@export var pierce_if_first_zero: bool = false
+@export var damage_adjacent_on_landing: bool = false
+@export var require_dash_line_enemy: bool = false
+@export var dash_absorb_element: bool = false
+@export var collision_splash_damage: int = 0
+@export var collision_splash_weaken: bool = false
+@export var push_if_target_on_water: int = 0
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -122,6 +131,24 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["grant_ap"] = grant_ap
 	if next_turn:
 		modifiers["next_turn"] = true
+	if burning_splash_magic != 0:
+		modifiers["burning_splash_magic"] = burning_splash_magic
+	if burning_splash_shape != GameEnums.TargetShape.SINGLE:
+		modifiers["burning_splash_shape"] = burning_splash_shape
+	if pierce_if_first_zero:
+		modifiers["pierce_if_first_zero"] = true
+	if damage_adjacent_on_landing:
+		modifiers["damage_adjacent_on_landing"] = true
+	if require_dash_line_enemy:
+		modifiers["require_dash_line_enemy"] = true
+	if dash_absorb_element:
+		modifiers["dash_absorb_element"] = true
+	if collision_splash_damage != 0:
+		modifiers["collision_splash_damage"] = collision_splash_damage
+	if collision_splash_weaken:
+		modifiers["collision_splash_weaken"] = true
+	if push_if_target_on_water != 0:
+		modifiers["push_if_target_on_water"] = push_if_target_on_water
 	return modifiers
 
 
@@ -199,3 +226,21 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			grant_ap = int(value)
 		"next_turn":
 			next_turn = bool(value)
+		"burning_splash_magic":
+			burning_splash_magic = int(value)
+		"burning_splash_shape":
+			burning_splash_shape = int(value)
+		"pierce_if_first_zero":
+			pierce_if_first_zero = bool(value)
+		"damage_adjacent_on_landing":
+			damage_adjacent_on_landing = bool(value)
+		"require_dash_line_enemy":
+			require_dash_line_enemy = bool(value)
+		"dash_absorb_element":
+			dash_absorb_element = bool(value)
+		"collision_splash_damage":
+			collision_splash_damage = int(value)
+		"collision_splash_weaken":
+			collision_splash_weaken = bool(value)
+		"push_if_target_on_water":
+			push_if_target_on_water = int(value)

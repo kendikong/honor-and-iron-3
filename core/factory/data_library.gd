@@ -620,6 +620,24 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.duelist_mark_target = from_module.duelist_mark_target
 	to_module.marked_target_defense = from_module.marked_target_defense
 	to_module.unacted_target_ignore_def_pct = from_module.unacted_target_ignore_def_pct
+	to_module.leap_absorb_surface = from_module.leap_absorb_surface
+	to_module.track_first_hit_zero = from_module.track_first_hit_zero
+	to_module.chakra_shift = from_module.chakra_shift
+	to_module.chakra_burst_damage = from_module.chakra_burst_damage
+	to_module.chakra_burst_shape = from_module.chakra_burst_shape
+	to_module.chakra_burst_size = from_module.chakra_burst_size
+	to_module.stop_adjacent_first_enemy = from_module.stop_adjacent_first_enemy
+	to_module.dash_absorb_element = from_module.dash_absorb_element
+	to_module.target_magic_defense = from_module.target_magic_defense
+	to_module.steal_target_magic = from_module.steal_target_magic
+	to_module.next_turn_move_penalty = from_module.next_turn_move_penalty
+	to_module.bonus_per_target_status = from_module.bonus_per_target_status
+	to_module.mantra_peace_weaken = from_module.mantra_peace_weaken
+	to_module.inner_fire = from_module.inner_fire
+	to_module.inner_fire_surface = from_module.inner_fire_surface
+	to_module.landed_magic_bonus = from_module.landed_magic_bonus
+	to_module.enemy_pushed_mov = from_module.enemy_pushed_mov
+	to_module.blind_on_pass_over = from_module.blind_on_pass_over
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():
