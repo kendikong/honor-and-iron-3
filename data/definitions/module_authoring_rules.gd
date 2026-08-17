@@ -353,10 +353,9 @@ static func effect_primary_families() -> Array[Dictionary]:
 			],
 		},
 		{
-			"label": "Together",
+			"label": "Pair / carry",
 			"types": [
 				GameEnums.EffectType.PAIRED_MOVE,
-				GameEnums.EffectType.THROW_BEHIND,
 			],
 		},
 		{
@@ -364,6 +363,7 @@ static func effect_primary_families() -> Array[Dictionary]:
 			"types": [
 				GameEnums.EffectType.PUSH,
 				GameEnums.EffectType.PULL,
+				GameEnums.EffectType.THROW_BEHIND,
 			],
 		},
 		{

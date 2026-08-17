@@ -62,8 +62,8 @@ One dropdown, grouped. New EffectTypes go in a family. Do not dump them flat. Ca
 | **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | | Vault restriction = field on JUMP_TO_BEHIND |
 | **Teleport** | TELEPORT_CASTER, TELEPORT_* landing | | Visible/LOS = field on TELEPORT |
 | **Dash / Swap** | DASH, SWAP | | |
-| **Together** | PAIRED_MOVE, THROW_BEHIND | PULL_SELF_TO_TARGET, ally-step, slide-opposite, carry/place, drag-walk | |
-| **Control** | PUSH, PULL | | Pull-to-center / surfaces = **fields on PULL**. Collision STAGGER = **layer** |
+| **Pair / carry** | PAIRED_MOVE | Carry/place, drag-walk, ally-step, slide-opposite | THROW_BEHIND / PULL_SELF_TO_TARGET = **Control** |
+| **Control** | PUSH, PULL, THROW_BEHIND | PULL_SELF_TO_TARGET | Pull-to-center / surfaces = **fields on PULL**. Collision STAGGER = **layer** |
 | **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | | Hazard / spawn knobs = **typed fields** |
 | **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
 | **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Keywords / layers. Do not add here |
@@ -78,7 +78,8 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 | Header | `DOES_NOT_CONSUME_ACTION_SLOT`, `LIMIT_ONCE_PER_TURN`, `COST_ALL_MOVEMENT`, `SPEND_SELF_HP`, `DELAYED_NEXT_TURN` | Header |
 | Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
 | Walk / Jump / Teleport field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE` | Field on Walk / Jump / Teleport primary |
-| Together (new primary) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `PULL_SELF_OR_TARGET`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Together** |
+| Pair / carry (new primary) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Pair / carry** (two bodies moving as one package) |
+| Control (new or field) | `PULL_SELF_OR_TARGET` | **PULL_SELF_TO_TARGET** or resolution_choice on PULL |
 | Control field | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH` | Field on PUSH / PULL |
 | Hit field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on DAMAGE |
 | Heal / Shield field | `HEAL_PER_DEBUFF`, `REVIVE_*`, `SCRAP_SHIELD` | Field on HEAL / ARMOR_UP |

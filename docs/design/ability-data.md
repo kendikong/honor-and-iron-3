@@ -210,15 +210,15 @@ What this module *is*. One `EffectType` field. The Class Editor dropdown is **gr
 | **Jump** | JUMP, JUMP_ADJACENT_TO, JUMP_TO_BEHIND, JUMP_TOWARD | Vault restriction = field on JUMP_TO_BEHIND | |
 | **Teleport** | TELEPORT_CASTER, TELEPORT_ADJACENT_TO, TELEPORT_TO_BEHIND, TELEPORT_TOWARD | Visible/LOS = field on TELEPORT | |
 | **Dash / Swap** | DASH, SWAP | | |
-| **Together** | PAIRED_MOVE, THROW_BEHIND | PULL_SELF_TO_TARGET, ally-step, slide-opposite, carry/place, drag-walk | |
-| **Control** | PUSH, PULL | Pull-to-center / pull-surfaces = **fields on PULL** | Collision STAGGER = layer |
+| **Pair / carry** | PAIRED_MOVE | Carry/place (Airlift, Kidnap, Maul), drag-walk (Feral Drag), ally-step (Usher), slide-opposite (Reposition) | THROW_BEHIND and PULL_SELF_TO_TARGET = **Control** |
+| **Control** | PUSH, PULL, THROW_BEHIND | PULL_SELF_TO_TARGET; pull-to-center / pull-surfaces = **fields on PULL** | Collision STAGGER = layer |
 | **Board** | CHANGE_TERRAIN, CREATE_HAZARD, DESTROY_OBSTACLE, SPAWN | Hazard / spawn knobs = **typed fields** | |
 | **Grant** | GRANT_AP, GRANT_SCRAP, REFUND_AP_ON_CC | GRANT_NEXT_ATTACK_MOD, ARM_REACTION | REFUND_AP_ON_CC → layer + GRANT_AP |
 | **Legacy — convert off** | TRAMPLE, BULLDOZE, PUSH_STAGGER_ON_COLLISION, PULL_VULNERABLE_ON_ADJACENT, PUSH_CHAIN_COLLISION | | Do not add new types here |
 
 Keywords (TRAMPLE, BULLDOZE, GHOST, PIERCE, CANTO) are a **separate module field** (§6), not a primary family.
 
-**DELETE Motion Mode.** Landing is the dest EffectType (Walk / Jump / Teleport / Together). Do not add modes. See `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` ER-3.
+**DELETE Motion Mode.** Landing is the dest EffectType (Walk / Jump / Teleport / Pair/carry). Do not add modes. See `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` ER-3.
 
 **Player choice (OR)** — still inside the module, not a new system:  
 `resolution_choice`: `NONE` \| `PICK_ONE_OF_EFFECTS` (e.g. Grappling Hook: pull self **or** pull target). Planner shows the choice; commit stores which branch was picked.
