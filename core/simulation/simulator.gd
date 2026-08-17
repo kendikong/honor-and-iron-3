@@ -176,6 +176,14 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			if unit.passive_flags.get("next_turn_move_zero", false):
 				unit.movement.points_left = 0
 				unit.passive_flags.erase("next_turn_move_zero")
+			if unit.passive_flags.has("next_turn_attack_strength_bonus"):
+				unit.passive_flags["next_attack_strength_bonus"] = int(
+					unit.passive_flags["next_turn_attack_strength_bonus"]
+				)
+				unit.passive_flags.erase("next_turn_attack_strength_bonus")
+			if unit.passive_flags.get("next_turn_attack_bleed_weapon", false):
+				unit.passive_flags["next_attack_bleed_weapon"] = true
+				unit.passive_flags.erase("next_turn_attack_bleed_weapon")
 			unit.passive_flags.erase("life_link_source_id")
 			unit.passive_flags.erase("life_link_damage_reduction")
 			if unit.passive_flags.get("revived_next_turn", false):
@@ -199,6 +207,19 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 					)
 				unit.passive_flags.erase("next_turn_max_move_bonus")
 				unit.passive_flags.erase("next_turn_trample")
+				unit._recalculate_stats(board)
+			var next_str_bonus: int = int(
+				unit.passive_flags.get("next_turn_str_bonus", 0)
+			)
+			if next_str_bonus > 0:
+				unit.active_statuses.append(
+					DataLibrary.make_status(
+						GameEnums.StatusType.STAT_BUFF_STR,
+						1,
+						next_str_bonus,
+					)
+				)
+				unit.passive_flags.erase("next_turn_str_bonus")
 				unit._recalculate_stats(board)
 			if unit.has_status(GameEnums.StatusType.STAGGER):
 				unit.ability.points_left = maxi(0, unit.ability.points_left - 1)

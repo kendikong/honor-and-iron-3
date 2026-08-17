@@ -17,7 +17,6 @@ const _LIVE_EVENT_BARS: Dictionary = {
 	&"bruiser_suplex": {"damage": 1, "moves": 0, "pushes": 0, "self_damage": 0},
 	&"bruiser_adrenaline_surge": {"damage": 0, "moves": 0, "pushes": 0, "self_damage": 1},
 	&"bruiser_earthshatter": {"damage": 1, "moves": 0, "pushes": 0, "self_damage": 0},
-	&"bruiser_meat_shield": {"damage": 0, "moves": 0, "pushes": 2, "self_damage": 0},
 	&"bruiser_frenzy": {"damage": 3, "moves": 0, "pushes": 0, "self_damage": 0},
 	&"bruiser_guttural_roar": {"damage": 0, "moves": 0, "pushes": 1, "self_damage": 0},
 	&"bruiser_headbutt": {"damage": 1, "moves": 0, "pushes": 0, "self_damage": 1},
@@ -34,16 +33,15 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_concussion_blow", "observation": &"damage_displacement", "upgrade_keys": [&"enemy_collision_stagger_both"]},
 	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"]},
 	{"id": &"bruiser_suplex", "observation": &"damage_displacement", "upgrade_keys": [&"bonus_dmg_per_10_hp"]},
-	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": []},
+	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"pre_move_timing"]},
 	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
-	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
 	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
 	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"]},
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
-	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": []},
+	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": [&"next_attack_strength"]},
 	{"id": &"bruiser_violent_collision", "observation": &"movement", "upgrade_keys": [&"stagger_on_collision"]},
 	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_if_targets_gte"]},
-	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": []},
+	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": [&"landing_push"]},
 	{"id": &"bruiser_breaching_dash", "observation": &"movement", "upgrade_keys": [&"next_attack_pierce"]},
 ]
 
@@ -56,7 +54,7 @@ const _BATCHES: Array[Dictionary] = [
 	{
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(7, 8), Vector2i(8, 8)],
 		"dummies": [Vector2i(5, 5), Vector2i(4, 2), Vector2i(4, 8), Vector2i(3, 8)],
-		"skills": [&"bruiser_suplex", &"bruiser_adrenaline_surge", &"bruiser_earthshatter", &"bruiser_meat_shield"],
+		"skills": [&"bruiser_suplex", &"bruiser_adrenaline_surge", &"bruiser_earthshatter"],
 	},
 	{
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
@@ -93,7 +91,6 @@ const _CASE_ACTORS: Dictionary = {
 	&"bruiser_suplex": Vector2i(4, 5),
 	&"bruiser_adrenaline_surge": Vector2i(2, 2),
 	&"bruiser_earthshatter": Vector2i(2, 8),
-	&"bruiser_meat_shield": Vector2i(8, 8),
 	&"bruiser_frenzy": Vector2i(4, 5),
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(2, 8),
@@ -121,7 +118,6 @@ const _CASE_TARGETS: Dictionary = {
 	&"bruiser_suplex": Vector2i(5, 5),
 	&"bruiser_adrenaline_surge": Vector2i(2, 2),
 	&"bruiser_earthshatter": Vector2i(3, 8),
-	&"bruiser_meat_shield": Vector2i(7, 8),
 	&"bruiser_frenzy": Vector2i(5, 5),
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(3, 8),
@@ -156,7 +152,6 @@ func test_live_bruiser_multi_skill_session(timeout := 300000) -> void:
 	await _journey_bruiser_suplex(runner)
 	await _journey_bruiser_adrenaline_surge(runner)
 	await _journey_bruiser_earthshatter(runner)
-	await _journey_bruiser_meat_shield(runner)
 	await _journey_bruiser_frenzy(runner)
 	await _journey_bruiser_guttural_roar(runner)
 	await _journey_bruiser_headbutt(runner)
@@ -195,10 +190,6 @@ func _journey_bruiser_adrenaline_surge(runner: GdUnitSceneRunner) -> void:
 
 func _journey_bruiser_earthshatter(runner: GdUnitSceneRunner) -> void:
 	await _run_skill_journey(runner, &"bruiser_earthshatter")
-
-
-func _journey_bruiser_meat_shield(runner: GdUnitSceneRunner) -> void:
-	await _run_skill_journey(runner, &"bruiser_meat_shield")
 
 
 func _journey_bruiser_frenzy(runner: GdUnitSceneRunner) -> void:
@@ -752,21 +743,23 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	assert_int(ability.target_shape_size).override_failure_message(
 		"%s: target shape size drift" % case.id,
 	).is_equal(expected.target_shape_size)
-	assert_bool(ability.effects.size() > 0).is_true()
+	assert_bool(ability.modules.size() > 0).override_failure_message(
+		"%s: authored modules must not be empty" % case.id,
+	).is_true()
 	if case.upgrade_keys.size() > 0:
-		assert_bool(ability.upgraded_effects.size() > 0).override_failure_message(
-			"%s: compiled [+] effects must not be empty" % case.id,
+		assert_bool(ability.upgraded_modules.size() > 0).override_failure_message(
+			"%s: authored [+] modules must not be empty" % case.id,
 		).is_true()
-	var primary: EffectData = expected.effects[0]
-	assert_that(ability.effects[0].type).override_failure_message(
+	var primary: AbilityModule = expected.modules[0]
+	assert_that(ability.modules[0].primary_type).override_failure_message(
 		"%s: primary effect type drift" % case.id,
-	).is_equal(primary.type)
-	assert_int(ability.effects[0].amount).override_failure_message(
+	).is_equal(primary.primary_type)
+	assert_int(ability.modules[0].amount).override_failure_message(
 		"%s: primary effect amount drift" % case.id,
 	).is_equal(primary.amount)
 	for key: StringName in case.upgrade_keys:
-		assert_bool(_effects_have_key(ability.upgraded_effects, key)).override_failure_message(
-			"%s: missing [+] effect modifier %s" % [case.id, key],
+		assert_bool(_modules_have_key(ability, key)).override_failure_message(
+			"%s: missing [+] typed module field or keyword %s" % [case.id, key],
 		).is_true()
 
 
@@ -884,10 +877,10 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			).is_true()
 			assert_bool(
 				ability != null
-				and not ability.effects.is_empty()
-				and ability.effects[0].modifiers.has("violent_collision_recast"),
+				and not ability.modules.is_empty()
+				and ability.modules[0].violent_collision_recast > 0,
 			).override_failure_message(
-				"violent_collision: live selected ability must carry the recast collision rule",
+				"violent_collision: live selected module must carry the recast collision rule",
 			).is_true()
 			var projection_board: BoardState = _director.base_board.clone()
 			var projection_events: Array[SimEvent] = []
@@ -912,17 +905,6 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 				assert_bool(landing_target.health.current_hp < 10000).override_failure_message(
 					"belly_flop: adjacent dummy must take landing damage",
 				).is_true()
-		&"bruiser_meat_shield":
-			var ally_id: int = _unit_id_at(_director.base_board, Vector2i(7, 8))
-			var ally: UnitState = final_state.get_unit_by_id(ally_id)
-			assert_object(ally).is_not_null()
-			if ally != null:
-				assert_that(ally.position).override_failure_message(
-					"meat_shield: ally must swap with the Bruiser",
-				).is_equal(_case_actor_cell(skill_id))
-			assert_bool(final_actor.has_status(GameEnums.StatusType.INTERCEPT)).override_failure_message(
-				"meat_shield: committed swap must grant INTERCEPT to the Bruiser",
-			).is_true()
 		&"bruiser_frenzy":
 			var frenzy_target_id: int = int(_batch_target_ids.get(skill_id, -1))
 			assert_int(_count_damage_events(result.events, actor_id, frenzy_target_id)).override_failure_message(
@@ -932,13 +914,35 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			assert_int(_self_damage_total(result.events, actor_id)).override_failure_message(
 				"adrenaline_surge: self-cost must be exactly 5 HP",
 			).is_equal(5)
-			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).is_equal(1)
-			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_MOV)).is_equal(1)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).override_failure_message(
+				"adrenaline_surge: STR must be deferred to next turn",
+			).is_equal(0)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_MOV)).override_failure_message(
+				"adrenaline_surge: MOV must be deferred to next turn",
+			).is_equal(0)
+			assert_int(int(final_actor.passive_flags.get("next_turn_str_bonus", 0))).override_failure_message(
+				"adrenaline_surge: next-turn STR bonus must be pending",
+			).is_equal(1)
+			assert_int(int(final_actor.passive_flags.get("next_turn_max_move_bonus", 0))).override_failure_message(
+				"adrenaline_surge: next-turn MOV bonus must be pending",
+			).is_equal(1)
 		&"bruiser_blood_boil":
 			assert_int(_self_damage_total(result.events, actor_id)).override_failure_message(
 				"blood_boil: self-cost must be exactly 5 HP",
 			).is_equal(5)
-			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).is_equal(3)
+			assert_int(_status_value(final_actor, GameEnums.StatusType.STAT_BUFF_STR)).override_failure_message(
+				"blood_boil: no same-turn STR status; effect is deferred to next turn",
+			).is_equal(0)
+			assert_int(
+				int(final_actor.passive_flags.get("next_turn_attack_strength_bonus", 0))
+			).override_failure_message(
+				"blood_boil: next-turn ATK bonus must be pending after commit",
+			).is_equal(2)
+			assert_bool(
+				final_actor.passive_flags.get("next_turn_attack_bleed_weapon", false)
+			).override_failure_message(
+				"blood_boil: next-turn BLEED WPN flag must be pending after commit",
+			).is_true()
 		&"bruiser_headbutt":
 			var headbutt_target_id: int = int(_batch_target_ids.get(skill_id, -1))
 			var headbutt_target: UnitState = final_state.get_unit_by_id(headbutt_target_id)
@@ -1361,10 +1365,73 @@ func _ability_index(unit: UnitState, ability: AbilityData) -> int:
 	return -1
 
 
-func _effects_have_key(effects: Array[EffectData], key: StringName) -> bool:
-	for effect: EffectData in effects:
-		if effect != null and effect.modifiers.has(key):
-			return true
+func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
+	if key == &"pre_move_timing":
+		return ability.upgraded_planner_group == GameEnums.PlannerGroup.PRE_MOVE
+	var modules: Array[AbilityModule] = ability.upgraded_modules
+	for module: AbilityModule in modules:
+		if module == null:
+			continue
+		match key:
+			&"bonus_dmg_from_occupied":
+				if module.bonus_dmg_from_occupied > 0:
+					return true
+			&"bonus_dmg_per_10_hp":
+				if module.bonus_dmg_per_10_hp > 0:
+					return true
+			&"bonus_dmg_pct_max_hp":
+				if module.bonus_dmg_pct_max_hp > 0.0:
+					return true
+			&"buff_on_push":
+				if module.buff_on_push > 0:
+					return true
+			&"frenzy_on_kill_ap":
+				if module.frenzy_on_kill_ap > 0:
+					return true
+			&"next_attack_strength":
+				if module.next_attack_strength > 0:
+					return true
+			&"landing_push":
+				for layer: AbilityLayer in module.layers:
+					if (
+						layer != null
+						and layer.effect != null
+						and layer.effect.type == GameEnums.EffectType.PUSH
+					):
+						return true
+			&"heal_if_targets_gte":
+				if module.heal_if_targets_gte > 0:
+					return true
+			&"push_board_items":
+				if module.push_board_items > 0:
+					return true
+			&"item_collision_damage":
+				if module.item_collision_damage > 0:
+					return true
+			&"stagger_on_collision":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.stagger_on_collision:
+						return true
+			&"buff_per_destroyed_object":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.buff_per_destroyed_object > 0:
+						return true
+			&"enemy_collision_stagger_both":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.enemy_collision_stagger_both:
+						return true
+			&"weapon_scaled":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.weapon_scaled:
+						return true
+			&"ghost_move":
+				for keyword: AbilityKeyword in module.keywords:
+					if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
+						return true
+			&"next_attack_pierce":
+				for keyword: AbilityKeyword in module.keywords:
+					if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
+						return true
 	return false
 
 

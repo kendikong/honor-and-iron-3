@@ -4404,7 +4404,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 			if effect.modifiers.has("target_magic_defense"):
 				actor.passive_flags["target_magic_defense_override"] = true
-			CombatSystem.deal_damage(board, target, amount, events, dmg_type, pierce, false, actor, action.ability.display_name)
+			CombatSystem.deal_damage(
+				board, target, amount, events, dmg_type, pierce, false, actor,
+				action.ability.display_name,
+			)
 			if (
 				effect.modifiers.has("armor_explosion_atk")
 				and target != null
@@ -5280,6 +5283,24 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"next_turn": true,
 					}))
 					return
+				if (
+					effect.modifiers.get("next_turn", false)
+					and effect.modifiers.has("next_attack_strength")
+				):
+					target.passive_flags["next_turn_attack_strength_bonus"] = int(
+						effect.modifiers["next_attack_strength"]
+					)
+					if effect.modifiers.get("bleed_weapon", false):
+						target.passive_flags["next_turn_attack_bleed_weapon"] = true
+					return
+				if (
+					effect.modifiers.get("next_turn", false)
+					and effect.status_type == GameEnums.StatusType.STAT_BUFF_STR
+				):
+					target.passive_flags["next_turn_str_bonus"] = int(
+						target.passive_flags.get("next_turn_str_bonus", 0)
+					) + stat_val
+					return
 				if delayed_move and effect.status_type == GameEnums.StatusType.STAT_BUFF_MOV:
 					target.passive_flags["next_turn_max_move_bonus"] = int(
 						target.passive_flags.get("next_turn_max_move_bonus", 0)
@@ -5842,6 +5863,32 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						actor.ability.max_points,
 						actor.ability.points_left + int(effect.modifiers["elemental_surge_ap"]),
 					)
+				return
+			if (
+				effect.modifiers.get("next_turn", false)
+				and effect.modifiers.has("next_attack_strength")
+			):
+				actor.passive_flags["next_turn_attack_strength_bonus"] = int(
+					effect.modifiers["next_attack_strength"]
+				)
+				if effect.modifiers.get("bleed_weapon", false):
+					actor.passive_flags["next_turn_attack_bleed_weapon"] = true
+				return
+			if (
+				effect.modifiers.get("next_turn", false)
+				and effect.status_type == GameEnums.StatusType.STAT_BUFF_STR
+			):
+				actor.passive_flags["next_turn_str_bonus"] = int(
+					actor.passive_flags.get("next_turn_str_bonus", 0)
+				) + effect.amount
+				return
+			if (
+				effect.modifiers.get("next_turn", false)
+				and effect.status_type == GameEnums.StatusType.STAT_BUFF_MOV
+			):
+				actor.passive_flags["next_turn_max_move_bonus"] = int(
+					actor.passive_flags.get("next_turn_max_move_bonus", 0)
+				) + effect.amount
 				return
 			if actor.has_status(GameEnums.StatusType.INVULNERABLE) and GameEnums.is_debuff(effect.status_type):
 				events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {

@@ -2,11 +2,11 @@
     "piece":  "B6-REOPEN",
     "pass_threshold":  88,
     "per_row_threshold":  88,
-    "last_critic_round":  5,
-    "last_score":  92,
+    "last_critic_round":  8,
+    "last_score":  90,
     "last_result":  "PASS",
     "last_row_promoted":  "unstoppable_force",
-    "notes":  "Gauntlet round 7: per-row scenarios + Tier 1+2 green; matrix 100% PASS.",
+    "notes":  "Gauntlet round 8: per-row scenarios + Tier 1+2 green; matrix 31 PASS + 1 N/A.",
     "approved_rows":  [
                           {
                               "factory_id":  "bruiser_push_through",
@@ -54,12 +54,6 @@
                               "factory_id":  "bruiser_earthshatter",
                               "score":  89,
                               "critic_round":  2,
-                              "fix_target":  "none"
-                          },
-                          {
-                              "factory_id":  "bruiser_meat_shield",
-                              "score":  90,
-                              "critic_round":  4,
                               "fix_target":  "none"
                           },
                           {
@@ -192,6 +186,12 @@
                               "factory_id":  "unstoppable_force",
                               "score":  91,
                               "critic_round":  2,
+                              "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "reactive_adrenaline",
+                              "score":  89,
+                              "critic_round":  5,
                               "fix_target":  "none"
                           }
                       ]

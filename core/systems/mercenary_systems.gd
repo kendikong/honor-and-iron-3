@@ -292,6 +292,19 @@ static func on_dealt_damage(
 	if actor == null or not actor.is_alive():
 		return
 	actor.passive_flags["attacked_this_turn"] = true
+	if target != null and actor.passive_flags.get("next_attack_bleed_weapon", false):
+		var bleed_amount: int = 1
+		if actor.definition != null and actor.definition.equipped_weapon != null:
+			bleed_amount = actor.definition.equipped_weapon.might
+		target.active_statuses.append(
+			DataLibrary.make_status(GameEnums.StatusType.BLEED, 1, bleed_amount)
+		)
+		events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+			"unit": target.id,
+			"status_type": GameEnums.StatusType.BLEED,
+			"duration": 1,
+			"amount": bleed_amount,
+		}))
 	if _has_predatory_momentum(actor):
 		var str_bonus: int = passive_mod_value(actor, &"predatory_following_strength", &"upgraded_predatory_following_strength")
 		var mov_bonus: int = passive_mod_value(actor, &"predatory_following_move", &"upgraded_predatory_following_move")
@@ -431,6 +444,8 @@ static func after_ability_execute(
 				actor.passive_flags.erase("duelist_mark_defense_bonus")
 		if post_mods.get("next_skill_zero_ap", false) and actor.is_ability_upgraded(ability.id):
 			actor.passive_flags["next_skill_zero_ap"] = true
+	if attack_was_used:
+		actor.passive_flags.erase("next_attack_bleed_weapon")
 
 
 static func apply_feint_on_target(target: UnitState, actor: UnitState) -> void:

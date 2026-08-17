@@ -537,6 +537,15 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.bounce_count = from_module.bounce_count
 	to_module.bounce_range = from_module.bounce_range
 	to_module.buff_on_push = from_module.buff_on_push
+	to_module.frenzy_on_kill_ap = from_module.frenzy_on_kill_ap
+	to_module.push_board_items = from_module.push_board_items
+	to_module.item_collision_damage = from_module.item_collision_damage
+	to_module.item_collision_str_div = from_module.item_collision_str_div
+	to_module.item_collision_vulnerable = from_module.item_collision_vulnerable
+	to_module.violent_collision_recast = from_module.violent_collision_recast
+	to_module.next_attack_strength = from_module.next_attack_strength
+	to_module.next_attack_bleed_weapon = from_module.next_attack_bleed_weapon
+	to_module.next_turn = from_module.next_turn
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

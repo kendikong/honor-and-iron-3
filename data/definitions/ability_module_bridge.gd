@@ -182,7 +182,13 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 	if runtime.has(key) or runtime.has(key_text):
 		return true
 	for layer: AbilityLayer in module.layers:
-		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
+		if layer != null and (
+			layer.compile_runtime_modifiers().has(key_text)
+			or (
+				layer.effect != null
+				and layer.effect.modifiers.has(key_text)
+			)
+		):
 			return true
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
@@ -213,7 +219,12 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 	if runtime.has(key_text):
 		return int(runtime[key_text])
 	for layer: AbilityLayer in module.layers:
-		if layer != null and layer.effect != null and layer.effect.modifiers.has(key_text):
+		if layer == null:
+			continue
+		var layer_runtime := layer.compile_runtime_modifiers()
+		if layer_runtime.has(key_text):
+			return int(layer_runtime[key_text])
+		if layer.effect != null and layer.effect.modifiers.has(key_text):
 			return int(layer.effect.modifiers[key_text])
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
@@ -395,6 +406,7 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 			continue
 		var layer_eff: EffectData = _duplicate_effect(layer.effect)
 		_merge_runtime_modifiers(layer_eff, module.compile_runtime_modifiers())
+		_merge_runtime_modifiers(layer_eff, layer.compile_runtime_modifiers())
 		_apply_layer_condition_to_effect(layer_eff, layer.condition)
 		out.append(layer_eff)
 	return out

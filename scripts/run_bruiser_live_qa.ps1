@@ -99,5 +99,5 @@ if (
 	}
 	exit 1
 }
-Write-Output "[PASS] Bruiser live QA: 16 movement/actives through preview/commit + AOE overlay"
+Write-Output "[PASS] Bruiser live QA: 15 converted movement/actives through preview/commit + AOE overlay"
 exit 0

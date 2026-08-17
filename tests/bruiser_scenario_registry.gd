@@ -37,6 +37,7 @@ static func all_entries() -> Array[Dictionary]:
 		_entry(&"juggernaut", "juggernaut", "res://tests/passives/juggernaut_scenario.gd"),
 		_entry(&"battering_ram", "battering_ram", "res://tests/passives/battering_ram_scenario.gd"),
 		_entry(&"unstoppable_force", "unstoppable_force", "res://tests/passives/unstoppable_force_scenario.gd"),
+		_entry(&"reactive_adrenaline", "reactive_adrenaline", "res://tests/passives/reactive_adrenaline_scenario.gd"),
 	]
 
 

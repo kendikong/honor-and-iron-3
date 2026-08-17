@@ -6,6 +6,21 @@ extends RefCounted
 
 const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"knight_defensive_formation",
+	&"bruiser_push_through",
+	&"bruiser_charge_strike",
+	&"bruiser_concussion_blow",
+	&"bruiser_cleave",
+	&"bruiser_suplex",
+	&"bruiser_adrenaline_surge",
+	&"bruiser_earthshatter",
+	&"bruiser_frenzy",
+	&"bruiser_guttural_roar",
+	&"bruiser_headbutt",
+	&"bruiser_blood_boil",
+	&"bruiser_violent_collision",
+	&"bruiser_crimson_whirlwind",
+	&"bruiser_belly_flop",
+	&"bruiser_breaching_dash",
 ]
 
 const CLASS_IDS: Array[StringName] = [

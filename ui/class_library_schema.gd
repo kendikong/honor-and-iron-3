@@ -682,6 +682,12 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		return {}
 	return {
 		"condition": src.condition,
+		"object_collision_stagger": src.object_collision_stagger,
+		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
+		"weapon_scaled": src.weapon_scaled,
+		"buff_per_destroyed_object": src.buff_per_destroyed_object,
+		"stagger_on_collision": src.stagger_on_collision,
+		"intercept_grant_str": src.intercept_grant_str,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -689,6 +695,18 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	layer.condition = int(data.get("condition", layer.condition))
+	layer.object_collision_stagger = bool(
+		data.get("object_collision_stagger", layer.object_collision_stagger)
+	)
+	layer.enemy_collision_stagger_both = bool(
+		data.get("enemy_collision_stagger_both", layer.enemy_collision_stagger_both)
+	)
+	layer.weapon_scaled = bool(data.get("weapon_scaled", layer.weapon_scaled))
+	layer.buff_per_destroyed_object = int(
+		data.get("buff_per_destroyed_object", layer.buff_per_destroyed_object)
+	)
+	layer.stagger_on_collision = bool(data.get("stagger_on_collision", layer.stagger_on_collision))
+	layer.intercept_grant_str = int(data.get("intercept_grant_str", layer.intercept_grant_str))
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -754,6 +772,15 @@ static func module_to_dict(
 		"bounce_count": src.bounce_count,
 		"bounce_range": src.bounce_range,
 		"buff_on_push": src.buff_on_push,
+		"frenzy_on_kill_ap": src.frenzy_on_kill_ap,
+		"push_board_items": src.push_board_items,
+		"item_collision_damage": src.item_collision_damage,
+		"item_collision_str_div": src.item_collision_str_div,
+		"item_collision_vulnerable": src.item_collision_vulnerable,
+		"violent_collision_recast": src.violent_collision_recast,
+		"next_attack_strength": src.next_attack_strength,
+		"next_attack_bleed_weapon": src.next_attack_bleed_weapon,
+		"next_turn": src.next_turn,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -871,6 +898,21 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.bounce_count = int(data.get("bounce_count", dst.bounce_count))
 	dst.bounce_range = int(data.get("bounce_range", dst.bounce_range))
 	dst.buff_on_push = int(data.get("buff_on_push", dst.buff_on_push))
+	dst.frenzy_on_kill_ap = int(data.get("frenzy_on_kill_ap", dst.frenzy_on_kill_ap))
+	dst.push_board_items = int(data.get("push_board_items", dst.push_board_items))
+	dst.item_collision_damage = int(data.get("item_collision_damage", dst.item_collision_damage))
+	dst.item_collision_str_div = int(data.get("item_collision_str_div", dst.item_collision_str_div))
+	dst.item_collision_vulnerable = int(
+		data.get("item_collision_vulnerable", dst.item_collision_vulnerable)
+	)
+	dst.violent_collision_recast = int(
+		data.get("violent_collision_recast", dst.violent_collision_recast)
+	)
+	dst.next_attack_strength = int(data.get("next_attack_strength", dst.next_attack_strength))
+	dst.next_attack_bleed_weapon = bool(
+		data.get("next_attack_bleed_weapon", dst.next_attack_bleed_weapon)
+	)
+	dst.next_turn = bool(data.get("next_turn", dst.next_turn))
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

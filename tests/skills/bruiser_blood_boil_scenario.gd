@@ -7,9 +7,9 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Blood Boil - SELF | spend 5 HP for STR +3 (1 turn).
-## [+] spend 10 HP for STR +5 instead.
-## Globals: EffectType.DAMAGE_SELF + ADD_STATUS_SELF STAT_BUFF_STR.
+## Bible: Blood Boil - SELF | spend 5 HP; next-turn attacks gain ATK +2 and BLEED WPN.
+## [+] spend 10 HP; next-turn attacks gain ATK +4 and BLEED WPN.
+## Globals: ADD_STATUS_SELF next-turn attack payload; shared attack/turn systems.
 
 
 static func run_all(failures: Array[String]) -> void:

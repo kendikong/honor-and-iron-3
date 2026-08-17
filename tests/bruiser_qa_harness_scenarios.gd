@@ -80,11 +80,11 @@ static func run_concussion_blow(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "concussion_blow/push_amount", factory_ab.effects[1].amount, 1)
 	H.assert_true(
 		failures, "concussion_blow/object_stagger_mod",
-		factory_ab.effects[1].modifiers.has("object_collision_stagger"),
+		factory_ab.modules[0].layers[0].object_collision_stagger,
 	)
 	H.assert_eq_int(
 		failures, "concussion_blow/object_stagger_val",
-		int(factory_ab.effects[1].modifiers["object_collision_stagger"]),
+		int(factory_ab.modules[0].layers[0].object_collision_stagger),
 		1,
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
@@ -149,7 +149,7 @@ static func run_concussion_blow_upgrade(failures: Array[String]) -> void:
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_concussion_blow")
 	H.assert_true(
 		failures, "concussion_blow/upgrade_mod",
-		skill.upgraded_effects[1].modifiers.has("enemy_collision_stagger_both"),
+		skill.upgraded_modules[0].layers[0].enemy_collision_stagger_both,
 	)
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
@@ -364,11 +364,11 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_suplex")
 	H.assert_true(
 		failures, "suplex/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("bonus_dmg_per_10_hp"),
+		ab.upgraded_modules[0].bonus_dmg_per_10_hp > 0,
 	)
 	H.assert_eq_int(
 		failures, "suplex/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["bonus_dmg_per_10_hp"]),
+		ab.upgraded_modules[0].bonus_dmg_per_10_hp,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -417,7 +417,7 @@ static func run_suplex_upgrade(failures: Array[String]) -> void:
 	)
 
 static func run_adrenaline_surge(failures: Array[String]) -> void:
-	## Bible: Adrenaline Surge — SELF | spend 5 HP | +1 MOV +1 STR 1 turn; 0 AP if 2+ adjacent enemies.
+	## Bible: Adrenaline Surge — SELF | spend 5 HP | +1 MOV +1 STR next turn; 0 AP if 2+ adjacent enemies.
 	H.run_active_smoke(
 		failures, &"bruiser_adrenaline_surge", "SELF | spend 5 HP | +1 MOV +1 STR",
 		[],
@@ -445,8 +445,10 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(failures, "adrenaline_surge/self_cost", hp_before - after.health.current_hp, 5)
-	H.assert_eq_int(failures, "adrenaline_surge/str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 1)
-	H.assert_eq_int(failures, "adrenaline_surge/mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 1)
+	H.assert_eq_int(failures, "adrenaline_surge/no_same_turn_str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 0)
+	H.assert_eq_int(failures, "adrenaline_surge/no_same_turn_mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 0)
+	H.assert_eq_int(failures, "adrenaline_surge/next_turn_str", int(after.passive_flags.get("next_turn_str_bonus", 0)), 1)
+	H.assert_eq_int(failures, "adrenaline_surge/next_turn_mov", int(after.passive_flags.get("next_turn_max_move_bonus", 0)), 1)
 	for eff: EffectData in ab.effects:
 		if eff != null and eff.type in [
 			GameEnums.EffectType.ADD_STATUS_SELF,
@@ -733,17 +735,7 @@ static func run_frenzy(failures: Array[String]) -> void:
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_eq_int(failures, "frenzy/range", ab.range_tiles, 1)
-	var dmg_count: int = 0
-	for eff: EffectData in ab.effects:
-		if eff != null and eff.type == GameEnums.EffectType.DAMAGE:
-			dmg_count += 1
-			H.assert_eq_int(failures, "frenzy/dmg_amount", eff.amount, 1)
-			H.assert_eq_int(
-				failures, "frenzy/compiled_hit_count",
-				int(eff.modifiers.get("hit_count", 1)),
-				3,
-			)
-	H.assert_eq_int(failures, "frenzy/triple_hit", dmg_count, 1)
+	H.assert_eq_int(failures, "frenzy/module_amount", ab.modules[0].amount, 1)
 	H.assert_eq_int(failures, "frenzy/module_hit_count", ab.modules[0].hit_count, 3)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_frenzy"))
@@ -911,19 +903,23 @@ static func run_headbutt(failures: Array[String]) -> void:
 
 
 static func run_blood_boil(failures: Array[String]) -> void:
-	## Bible: Blood Boil — SELF | spend 5 HP for STR +3; [+] spend 10 HP for STR +5.
+	## Bible: Blood Boil — SELF | spend 5 HP; next-turn attacks gain ATK +2 and BLEED WPN.
 	H.run_active_smoke(
-		failures, &"bruiser_blood_boil", "SELF | 5 HP for STR +3",
+		failures, &"bruiser_blood_boil", "SELF | 5 HP for next-turn ATK + BLEED",
 		[],
-		[GameEnums.StatusType.STAT_BUFF_STR],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
 	H.assert_eq_int(failures, "blood_boil/header_hp_cost", factory_ab.secondary_value, 5)
 	H.assert_eq_int(failures, "blood_boil/header_hp_resource", factory_ab.secondary_resource, GameEnums.CostResource.HP)
-	H.assert_eq_int(failures, "blood_boil/str_amount", factory_ab.modules[0].amount, 3)
+	H.assert_eq_int(failures, "blood_boil/next_attack_strength", factory_ab.modules[0].next_attack_strength, 2)
+	H.assert_true(failures, "blood_boil/next_attack_bleed", factory_ab.modules[0].next_attack_bleed_weapon)
+	H.assert_true(failures, "blood_boil/next_turn", factory_ab.modules[0].next_turn)
 	H.assert_eq_int(failures, "blood_boil/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
-	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_blood_boil"))
+	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_blood_boil")
+	cfg["active_abilities"].append(H.factory_ability(&"bruiser_headbutt"))
+	H.place_bruiser(board, 1, Vector2i(3, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(4, 3))
 	var bruiser: UnitState = H.unit_on_board(board, 1)
 	var hp_before: int = bruiser.health.current_hp
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_blood_boil")
@@ -932,14 +928,49 @@ static func run_blood_boil(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(failures, "blood_boil/hp_cost", hp_before - after.health.current_hp, 5)
-	H.assert_eq_int(failures, "blood_boil/str_value", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 3)
-	var str_status: StatusData = null
-	for st: StatusData in after.active_statuses:
-		if st.type == GameEnums.StatusType.STAT_BUFF_STR:
-			str_status = st
+	H.assert_eq_int(failures, "blood_boil/no_same_turn_str", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 0)
+	H.assert_eq_int(
+		failures, "blood_boil/pending_strength",
+		int(after.passive_flags.get("next_turn_attack_strength_bonus", 0)), 2,
+	)
+	H.assert_true(
+		failures, "blood_boil/pending_bleed",
+		after.passive_flags.get("next_turn_attack_bleed_weapon", false),
+	)
+	H.simulate_plan(board, Timeline.new())
+	var next_turn_actor: UnitState = board.get_unit_by_id(1)
+	H.assert_eq_int(
+		failures, "blood_boil/promoted_strength",
+		int(next_turn_actor.passive_flags.get("next_attack_strength_bonus", 0)), 2,
+	)
+	H.assert_true(
+		failures, "blood_boil/promoted_bleed",
+		next_turn_actor.passive_flags.get("next_attack_bleed_weapon", false),
+	)
+	next_turn_actor.turn_action_used = false
+	next_turn_actor.ability.points_left = next_turn_actor.ability.max_points
+	var basic: AbilityData = H.ability_on_unit(next_turn_actor, &"bruiser_headbutt")
+	H.assert_true(failures, "blood_boil/attack_loaded", basic != null)
+	var attack_plan := Timeline.new()
+	attack_plan.add(H.plan_ability(1, basic, Vector2i(4, 3), 2))
+	var attack_result: SimResult = H.simulate_plan(board, attack_plan)
+	H.assert_true(
+		failures, "blood_boil/attack_used",
+		H.events_have_ability(attack_result.events, &"bruiser_headbutt"),
+	)
+	H.assert_true(
+		failures, "blood_boil/attack_damaged",
+		H.events_have_type(attack_result.events, GameEnums.SimEventType.UNIT_DAMAGED),
+	)
+	var bleed_applied := false
+	for event: SimEvent in attack_result.events:
+		if (
+			event.type == GameEnums.SimEventType.STATUS_APPLIED
+			and event.data.get("status_type") == GameEnums.StatusType.BLEED
+		):
+			bleed_applied = true
 			break
-	H.assert_true(failures, "blood_boil/str_status_present", str_status != null)
-	H.assert_eq_int(failures, "blood_boil/str_duration", str_status.duration if str_status != null else -1, 1)
+	H.assert_true(failures, "blood_boil/attack_bleed", bleed_applied)
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
@@ -949,11 +980,11 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
-	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.effects[0].amount, 3)
-	H.assert_true(failures, "violent_collision/bulldoze", ab.effects[0].modifiers.has("bulldoze"))
+	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.modules[0].amount, 3)
+	H.assert_true(failures, "violent_collision/bulldoze", ab.modules[0].runtime_has("bulldoze"))
 	H.assert_true(
 		failures, "violent_collision/recast_mod",
-		ab.effects[0].modifiers.has("violent_collision_recast"),
+		ab.modules[0].violent_collision_recast > 0,
 	)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
@@ -1176,9 +1207,18 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 
 
 static func run_cellular_regeneration(failures: Array[String]) -> void:
-	## Bible: Sanguine Regeneration + Reactive Adrenaline.
+	## Bible: Sanguine Regeneration trigger plus Reactive Adrenaline interaction.
 	H.assert_passive_registered(failures, &"cellular_regeneration")
+	_run_reactive_adrenaline(failures)
+
+
+static func run_reactive_adrenaline(failures: Array[String]) -> void:
+	## Bible: adjacent enemies convert Sanguine Regeneration into SHIELD and grant STR.
 	H.assert_passive_registered(failures, &"reactive_adrenaline")
+	_run_reactive_adrenaline(failures)
+
+
+static func _run_reactive_adrenaline(failures: Array[String]) -> void:
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.with_single_passive(&"reactive_adrenaline", true))
 	H.place_dummy(board, 2, Vector2i(4, 3))

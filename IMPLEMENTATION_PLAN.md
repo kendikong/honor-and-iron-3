@@ -72,20 +72,23 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Class | Skill | Real modules/layers | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
 |---|---|:---:|:---:|:---:|:---:|---|
 | Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
-| Bruiser | Push Through | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Concussion Blow | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Cleave | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Suplex | ☐ | ☐ | ☐ | ☐ | Enemy throw on Action is legal |
-| Bruiser | Adrenaline Surge | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Earthshatter | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Push Through | ☑ | ☑ | ☑ | ☑ | Typed `buff_on_push`; Tier-1/live gates pass; independent audit pass |
+| Bruiser | Charge Strike | ☑ | ☑ | ☑ | ☑ | Typed occupied-tile bonus + GHOST keyword; Tier-1/live gates pass; independent audit pass |
+| Bruiser | Concussion Blow | ☑ | ☑ | ☑ | ☑ | Typed collision layer flags; Tier-1/live gates pass; independent audit pass |
+| Bruiser | Cleave | ☑ | ☑ | ☑ | ☑ | Layered BLEED profile; Tier-1/live gates pass; independent audit pass |
+| Bruiser | Suplex | ☑ | ☑ | ☑ | ☑ | Typed HP-scaling bonus; enemy throw on Action is legal; gates pass; independent audit pass |
+| Bruiser | Adrenaline Surge | ☑ | ☑ | ☑ | ☑ | Pre-Move self status; gates pass; independent audit pass |
+| Bruiser | Earthshatter | ☑ | ☑ | ☑ | ☑ | Destroy-object layer; gates pass; independent audit pass |
 | Bruiser | Meat Shield | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
-| Bruiser | Frenzy | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Guttural Roar | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Headbutt | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Violent Collision | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Crimson Whirlwind | ☐ | ☐ | ☐ | ☐ |  |
-| Bruiser | Breaching Dash | ☐ | ☐ | ☐ | ☐ |  |
+| Bruiser | Frenzy | ☑ | ☑ | ☑ | ☑ | Typed kill AP field; gates pass; independent audit pass |
+| Bruiser | Guttural Roar | ☑ | ☑ | ☑ | ☑ | Typed board-item/collision fields; gates pass; independent audit pass |
+| Bruiser | Headbutt | ☑ | ☑ | ☑ | ☑ | Typed max-HP damage field; gates pass; independent audit pass |
+| Bruiser | Blood Boil | ☑ | ☑ | ☑ | ☑ | Fully module-authored HP/resource profile; gates pass; independent audit pass |
+| Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☑ | Typed recast field + collision layer; gates pass; independent audit pass |
+| Bruiser | Crimson Whirlwind | ☑ | ☑ | ☑ | ☑ | Typed target-count heal field; gates pass; independent audit pass |
+| Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
+| Bruiser | Breaching Dash | ☑ | ☑ | ☑ | ☑ | PIERCE keyword; gates pass; independent audit pass |
+| Bruiser | Reactive Adrenaline | ☑ | ☑ | ☑ | ☑ | Dedicated passive scenario + upgrade proof; shared turn-start passive path; independent audit pass |
 | Archer | Sidestep | ☐ | ☐ | ☐ | ☐ |  |
 | Archer | Volley | ☐ | ☐ | ☐ | ☐ |  |
 | Archer | Power Shot | ☐ | ☐ | ☐ | ☐ |  |
@@ -237,21 +240,24 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 2. Bruiser
 
-- [ ] `bruiser_push_through`
-- [ ] `bruiser_charge_strike`
-- [ ] `bruiser_concussion_blow`
-- [ ] `bruiser_cleave`
-- [ ] `bruiser_suplex`
-- [ ] `bruiser_adrenaline_surge`
-- [ ] `bruiser_earthshatter`
-- [ ] `bruiser_frenzy`
-- [ ] `bruiser_guttural_roar`
-- [ ] `bruiser_headbutt`
-- [ ] `bruiser_violent_collision`
-- [ ] `bruiser_crimson_whirlwind`
-- [ ] `bruiser_breaching_dash`
-- [ ] Bruiser class gate: `run_bruiser_qa_gate.ps1`.
-- [ ] Bruiser live gate: `run_bruiser_live_qa.ps1`.
+- [x] `bruiser_push_through`
+- [x] `bruiser_charge_strike`
+- [x] `bruiser_concussion_blow`
+- [x] `bruiser_cleave`
+- [x] `bruiser_suplex`
+- [x] `bruiser_adrenaline_surge`
+- [x] `bruiser_earthshatter`
+- [x] `bruiser_frenzy`
+- [x] `bruiser_guttural_roar`
+- [x] `bruiser_headbutt`
+- [x] `bruiser_blood_boil`
+- [x] `bruiser_violent_collision`
+- [x] `bruiser_crimson_whirlwind`
+- [x] `bruiser_belly_flop`
+- [x] `bruiser_breaching_dash`
+- [x] `reactive_adrenaline`
+- [x] Bruiser class gate: `run_bruiser_qa_gate.ps1`.
+- [x] Bruiser live gate: `run_bruiser_live_qa.ps1`.
 - [ ] `bruiser_meat_shield` remains open as Action ally-relocate rework.
 
 #### 3. Lancer

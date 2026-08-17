@@ -44,12 +44,14 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff == null:
+	var modules: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for module: AbilityModule in modules:
+		if module == null:
 			continue
-		if eff.type in [GameEnums.EffectType.ADD_STATUS, GameEnums.EffectType.ADD_STATUS_SELF]:
-			if eff.status_type == status_type:
+		if module.status_type == status_type:
+			return true
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.effect != null and layer.effect.status_type == status_type:
 				return true
 	return false
 
@@ -83,11 +85,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if ability.upgraded_modules.size() > 0:
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -309,10 +311,15 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var modules: Array[AbilityModule] = ability.upgraded_modules if upgraded else ability.modules
+	for module: AbilityModule in modules:
+		if module != null and module.primary_type == effect_type:
 			return true
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.effect != null and layer.effect.type == effect_type:
+				return true
 	return false
 
 
@@ -574,7 +581,7 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
 	assert_true(
 		failures, "push_through/upgrade_modifier",
-		push.upgraded_effects[0].modifiers.has("buff_on_push"),
+		push.upgraded_modules[0].buff_on_push > 0,
 	)
 	assert_eq_int(
 		failures, "push_through/upgrade_header_cost",

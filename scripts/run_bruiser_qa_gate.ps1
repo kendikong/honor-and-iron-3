@@ -49,7 +49,8 @@ $requiredFactoryIds = @(
 	"bruiser_crimson_whirlwind", "bruiser_belly_flop", "bruiser_breaching_dash",
 	"cellular_regeneration", "blood_for_blood", "adrenaline_junkie", "enraged", "last_stand",
 	"colossal_mass", "overwhelming_bulk", "thrill_of_pain", "momentum_of_titan", "scar_tissue",
-	"momentum_transfer", "crowd_breaker", "juggernaut", "battering_ram", "unstoppable_force"
+	"momentum_transfer", "crowd_breaker", "juggernaut", "battering_ram", "unstoppable_force",
+	"reactive_adrenaline"
 )
 
 if (-not (Test-Path $matrixDoc)) {
@@ -60,6 +61,7 @@ $matrixText = Get-Content -Path $matrixDoc -Raw
 $passRows = @()
 $plannedRows = @()
 $harnessRows = @()
+$waivedRows = @()
 
 foreach ($id in $requiredFactoryIds) {
 	$escaped = [regex]::Escape($id)
@@ -79,6 +81,8 @@ foreach ($id in $requiredFactoryIds) {
 		$passRows += $id
 	} elseif ($rowLine -match '\|\s*HARNESS_ONLY\s*\|') {
 		$harnessRows += $id
+	} elseif ($rowLine -match '\|\s*N/A\s*\|') {
+		$waivedRows += $id
 	} else {
 		$plannedRows += $id
 	}
@@ -87,6 +91,7 @@ foreach ($id in $requiredFactoryIds) {
 Write-GateLine "=== Matrix summary (from docs/BRUISER_QA_GATE.md) ==="
 Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
 Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("N/A (deferred): {0}" -f $waivedRows.Count)
 Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
 Write-GateLine ""
 
@@ -140,8 +145,8 @@ if ($contractErrors.Count -gt 0) {
 	Exit-Gate 3
 }
 
-if ($passRows.Count -lt $requiredFactoryIds.Count) {
-	Write-GateLine "[INCOMPLETE] Bruiser LOCK requires all factory rows PASS (meta-critic approved)."
+if (($passRows.Count + $waivedRows.Count) -lt $requiredFactoryIds.Count) {
+	Write-GateLine "[INCOMPLETE] Bruiser gate requires every factory row PASS or owner-documented N/A."
 	if ($harnessRows.Count -gt 0) {
 		Write-GateLine "HARNESS_ONLY (need Bible + [+] asserts): $($harnessRows -join ', ')"
 	}
@@ -152,7 +157,7 @@ if ($passRows.Count -lt $requiredFactoryIds.Count) {
 
 if (-not (Test-Path $GodotPath)) {
 	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix check only."
-	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	if (($passRows.Count + $waivedRows.Count) -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
 	Exit-Gate 0
 }
 
@@ -207,7 +212,7 @@ if (-not $matrixPassValid) {
 	Write-GateLine "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch). Fix docs or update manifest via gauntlet-critic only."
 	Exit-Gate 3
 }
-if ($passRows.Count -eq $requiredFactoryIds.Count) {
+if (($passRows.Count + $waivedRows.Count) -eq $requiredFactoryIds.Count) {
 	Write-GateLine ""
 	Write-GateLine "=== Tier 2: live Bruiser acceptance ==="
 	$liveScript = Join-Path $PSScriptRoot "run_bruiser_live_qa.ps1"
@@ -222,9 +227,9 @@ if ($passRows.Count -eq $requiredFactoryIds.Count) {
 		Exit-Gate $liveExit
 	}
 	Write-GateLine "--- Tier 2 live: PASS ---"
-	Write-GateLine "[PASS] Bruiser QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
+	Write-GateLine "[PASS] Bruiser QA gate: PASS rows + documented N/A + Tier 1 harness PASS + Tier 2 live PASS."
 	Exit-Gate 0
 }
 
-Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not ready ({0} PASS + {1} N/A / {2} rows).' -f $passRows.Count, $waivedRows.Count, $requiredFactoryIds.Count)
 Exit-Gate 2

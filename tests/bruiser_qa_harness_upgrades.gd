@@ -1,7 +1,7 @@
 class_name BruiserQaHarnessUpgrades
 extends RefCounted
 
-## [+] tier sim asserts for B6-LOCK matrix (factory upgraded_effects / upgraded passives).
+## [+] tier sim asserts for the Bruiser matrix (authoritative upgraded_modules / passives).
 
 const H := preload("res://tests/bruiser_qa_harness.gd")
 const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
@@ -47,20 +47,20 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
 	H.assert_true(
 		failures, "charge_strike/upgrade/ghost",
-		ab.upgraded_effects[0].modifiers.has("ghost_move"),
+		ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.GHOST,
 	)
 	H.assert_eq_int(
 		failures, "charge_strike/upgrade/ghost_val",
-		int(ab.upgraded_effects[0].modifiers["ghost_move"]),
+		int(ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.GHOST),
 		1,
 	)
 	H.assert_true(
 		failures, "charge_strike/upgrade/occupied_bonus",
-		ab.upgraded_effects[1].modifiers.has("bonus_dmg_from_occupied"),
+		ab.upgraded_modules[1].bonus_dmg_from_occupied > 0,
 	)
 	H.assert_eq_int(
 		failures, "charge_strike/upgrade/occupied_bonus_val",
-		int(ab.upgraded_effects[1].modifiers["bonus_dmg_from_occupied"]),
+		ab.upgraded_modules[1].bonus_dmg_from_occupied,
 		2,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -101,7 +101,7 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	plain_plan.add(_Scenarios._plan_charge_strike(10, plain_skill, Vector2i(3, 3), Vector2i(4, 3), 11))
 	var plain_result: SimResult = H.simulate_plan(board_plain, plain_plan)
 	var dmg_plain: int = hp_plain - H.unit_hp(plain_result.final_state, 11)
-	var base_power: int = ab.upgraded_effects[1].amount
+	var base_power: int = ab.upgraded_modules[1].amount
 	var expected_delta: int = (
 		CombatSystem.calculate_scaled_damage(bruiser, base_power + 2, GameEnums.StatType.PHYSICAL, board)
 		- CombatSystem.calculate_scaled_damage(bruiser, base_power, GameEnums.StatType.PHYSICAL, board)
@@ -115,19 +115,19 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 
 static func run_cleave_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_cleave")
-	H.assert_eq_int(failures, "cleave/upgrade/effects_size", ab.upgraded_effects.size(), 2)
+	H.assert_eq_int(failures, "cleave/upgrade/layers_size", ab.upgraded_modules[0].layers.size(), 1)
 	H.assert_eq_int(
 		failures, "cleave/upgrade/bleed_status",
-		ab.upgraded_effects[1].status_type,
+		ab.upgraded_modules[0].layers[0].effect.status_type,
 		GameEnums.StatusType.BLEED,
 	)
 	H.assert_true(
 		failures, "cleave/upgrade/weapon_scaled",
-		ab.upgraded_effects[1].modifiers.has("weapon_scaled"),
+		ab.upgraded_modules[0].layers[0].weapon_scaled,
 	)
 	H.assert_eq_int(
 		failures, "cleave/upgrade/weapon_scaled_val",
-		int(ab.upgraded_effects[1].modifiers["weapon_scaled"]),
+		int(ab.upgraded_modules[0].layers[0].weapon_scaled),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -182,7 +182,7 @@ static func run_meat_shield_upgrade(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "meat_shield/upgrade/range", skill.upgraded_modules[0].max_range, 3)
 	H.assert_eq_int(
 		failures, "meat_shield/upgrade/intercept_str_mod",
-		int(skill.upgraded_effects[1].modifiers["intercept_grant_str"]),
+		skill.upgraded_modules[0].layers[0].intercept_grant_str,
 		2,
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
@@ -256,6 +256,27 @@ static func run_adrenaline_surge_upgrade(failures: Array[String]) -> void:
 		failures, "adrenaline_surge/upgrade/action_after_pre_move",
 		H.events_have_ability(result.events, &"bruiser_concussion_blow"),
 	)
+	var upgraded_after: UnitState = result.final_state.get_unit_by_id(1)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/same_turn_str",
+		H.status_value(upgraded_after, GameEnums.StatusType.STAT_BUFF_STR),
+		1,
+	)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/same_turn_mov",
+		H.status_value(upgraded_after, GameEnums.StatusType.STAT_BUFF_MOV),
+		1,
+	)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/no_deferred_str",
+		int(upgraded_after.passive_flags.get("next_turn_str_bonus", 0)),
+		0,
+	)
+	H.assert_eq_int(
+		failures, "adrenaline_surge/upgrade/no_deferred_mov",
+		int(upgraded_after.passive_flags.get("next_turn_max_move_bonus", 0)),
+		0,
+	)
 	var base_cfg: Dictionary = H.bruiser_with_abilities([&"bruiser_adrenaline_surge", &"bruiser_concussion_blow"])
 	var base_board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(base_board, 10, Vector2i(3, 3), base_cfg)
@@ -298,11 +319,11 @@ static func run_earthshatter_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_earthshatter")
 	H.assert_true(
 		failures, "earthshatter/upgrade/mod",
-		ab.upgraded_effects[1].modifiers.has("buff_per_destroyed_object"),
+		ab.upgraded_modules[0].layers[0].buff_per_destroyed_object > 0,
 	)
 	H.assert_eq_int(
 		failures, "earthshatter/upgrade/mod_val",
-		int(ab.upgraded_effects[1].modifiers["buff_per_destroyed_object"]),
+		ab.upgraded_modules[0].layers[0].buff_per_destroyed_object,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -337,11 +358,11 @@ static func run_frenzy_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_true(
 		failures, "frenzy/upgrade/mod",
-		ab.upgraded_effects[0].modifiers.has("frenzy_on_kill_ap"),
+		ab.upgraded_modules[0].frenzy_on_kill_ap > 0,
 	)
 	H.assert_eq_int(
 		failures, "frenzy/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["frenzy_on_kill_ap"]),
+		ab.upgraded_modules[0].frenzy_on_kill_ap,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -385,20 +406,20 @@ static func run_guttural_roar_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_guttural_roar")
 	H.assert_true(
 		failures, "guttural_roar/upgrade/push_mod",
-		ab.upgraded_effects[0].modifiers.has("push_board_items"),
+		ab.upgraded_modules[0].push_board_items > 0,
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/push_mod_val",
-		int(ab.upgraded_effects[0].modifiers["push_board_items"]),
+		ab.upgraded_modules[0].push_board_items,
 		1,
 	)
 	H.assert_true(
 		failures, "guttural_roar/upgrade/collision_mod",
-		ab.upgraded_effects[0].modifiers.has("item_collision_damage"),
+		ab.upgraded_modules[0].item_collision_damage > 0,
 	)
 	H.assert_eq_int(
 		failures, "guttural_roar/upgrade/collision_mod_val",
-		int(ab.upgraded_effects[0].modifiers["item_collision_damage"]),
+		ab.upgraded_modules[0].item_collision_damage,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -482,7 +503,7 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 	var expected_bonus: int = floori(float(bruiser_up.health.max_hp) * 0.1)
 	H.assert_true(
 		failures, "headbutt/upgrade/mod",
-		skill.upgraded_effects[0].modifiers.has("bonus_dmg_pct_max_hp"),
+		skill.upgraded_modules[0].bonus_dmg_pct_max_hp > 0.0,
 	)
 	## Bible [+] is base-power % Max HP — compare MATH_TELEMETRY base, not scaled HP delta.
 	var base_up: int = int(H.first_damage_math(result.events).get("base", -1))
@@ -502,7 +523,14 @@ static func run_headbutt_upgrade(failures: Array[String]) -> void:
 static func run_blood_boil_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_blood_boil")
 	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost", ab.upgraded_secondary_value, 10)
-	H.assert_eq_int(failures, "blood_boil/upgrade/str", ab.upgraded_modules[0].amount, 5)
+	H.assert_eq_int(
+		failures, "blood_boil/upgrade/next_attack_strength",
+		ab.upgraded_modules[0].next_attack_strength, 4,
+	)
+	H.assert_true(
+		failures, "blood_boil/upgrade/next_attack_bleed",
+		ab.upgraded_modules[0].next_attack_bleed_weapon,
+	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_blood_boil"),
 		&"bruiser_blood_boil",
@@ -517,18 +545,25 @@ static func run_blood_boil_upgrade(failures: Array[String]) -> void:
 	var result: SimResult = H.simulate_plan(board, plan)
 	var after: UnitState = result.final_state.get_unit_by_id(1)
 	H.assert_eq_int(failures, "blood_boil/upgrade/hp_cost_sim", hp_before - after.health.current_hp, 10)
-	H.assert_eq_int(failures, "blood_boil/upgrade/str_sim", H.status_value(after, GameEnums.StatusType.STAT_BUFF_STR), 5)
+	H.assert_eq_int(
+		failures, "blood_boil/upgrade/pending_strength",
+		int(after.passive_flags.get("next_turn_attack_strength_bonus", 0)), 4,
+	)
+	H.assert_true(
+		failures, "blood_boil/upgrade/pending_bleed",
+		after.passive_flags.get("next_turn_attack_bleed_weapon", false),
+	)
 
 
 static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_true(
 		failures, "violent_collision/upgrade/stagger_mod",
-		ab.upgraded_modules[0].layers[0].effect.modifiers.has("stagger_on_collision"),
+		ab.upgraded_modules[0].layers[0].stagger_on_collision,
 	)
 	H.assert_eq_int(
 		failures, "violent_collision/upgrade/mod_val",
-		int(ab.upgraded_modules[0].layers[0].effect.modifiers["stagger_on_collision"]),
+		int(ab.upgraded_modules[0].layers[0].stagger_on_collision),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -555,11 +590,11 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_mod",
-		ab.upgraded_effects[0].modifiers.has("next_attack_pierce"),
+		ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.PIERCE,
 	)
 	H.assert_eq_int(
 		failures, "breaching_dash/upgrade/mod_val",
-		int(ab.upgraded_effects[0].modifiers["next_attack_pierce"]),
+		int(ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.PIERCE),
 		1,
 	)
 	var base_cfg: Dictionary = {
@@ -791,11 +826,13 @@ static func run_belly_flop_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_true(
 		failures, "belly_flop/upgrade/push_layer",
-		ab.upgraded_effects.size() > 2 and ab.upgraded_effects[2].type == GameEnums.EffectType.PUSH,
+		ab.upgraded_modules[0].layers.size() > 1
+		and ab.upgraded_modules[0].layers[1].effect.type == GameEnums.EffectType.PUSH,
 	)
 	H.assert_eq_int(
 		failures, "belly_flop/upgrade/push_amount",
-		ab.upgraded_effects[2].amount if ab.upgraded_effects.size() > 2 else 0,
+		ab.upgraded_modules[0].layers[1].effect.amount
+		if ab.upgraded_modules[0].layers.size() > 1 else 0,
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -866,6 +903,10 @@ static func run_cellular_regeneration_upgrade(failures: Array[String]) -> void:
 		H.has_status(one_after, GameEnums.StatusType.STAT_BUFF_STR),
 		"Reactive Adrenaline grants +1 STR for each adjacent enemy",
 	)
+
+
+static func run_reactive_adrenaline_upgrade(failures: Array[String]) -> void:
+	run_cellular_regeneration_upgrade(failures)
 
 
 static func run_blood_for_blood_upgrade(failures: Array[String]) -> void:

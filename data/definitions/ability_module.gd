@@ -16,7 +16,7 @@ extends Resource
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 @export var spawn_unit_id: StringName = &""
 
-## Motion mode when primary is motion (MOVE/DASH/SWAP/…).
+## Legacy motion metadata retained until ER-3 removes Motion Mode.
 @export var motion_mode: GameEnums.MotionMode = GameEnums.MotionMode.NONE
 
 @export var min_range: int = 0
@@ -74,6 +74,15 @@ extends Resource
 @export var bounce_count: int = 0
 @export var bounce_range: int = 0
 @export var buff_on_push: int = 0
+@export var frenzy_on_kill_ap: int = 0
+@export var push_board_items: int = 0
+@export var item_collision_damage: int = 0
+@export var item_collision_str_div: int = 0
+@export var item_collision_vulnerable: int = 0
+@export var violent_collision_recast: int = 0
+@export var next_attack_strength: int = 0
+@export var next_attack_bleed_weapon: bool = false
+@export var next_turn: bool = false
 
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
@@ -166,6 +175,24 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["bounce_range"] = bounce_range
 	if buff_on_push != 0:
 		bag["buff_on_push"] = buff_on_push
+	if frenzy_on_kill_ap != 0:
+		bag["frenzy_on_kill_ap"] = frenzy_on_kill_ap
+	if push_board_items != 0:
+		bag["push_board_items"] = push_board_items
+	if item_collision_damage != 0:
+		bag["item_collision_damage"] = item_collision_damage
+	if item_collision_str_div != 0:
+		bag["item_collision_str_div"] = item_collision_str_div
+	if item_collision_vulnerable != 0:
+		bag["item_collision_vulnerable"] = item_collision_vulnerable
+	if violent_collision_recast != 0:
+		bag["violent_collision_recast"] = violent_collision_recast
+	if next_attack_strength != 0:
+		bag["next_attack_strength"] = next_attack_strength
+	if next_attack_bleed_weapon:
+		bag["bleed_weapon"] = true
+	if next_turn:
+		bag["next_turn"] = true
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -256,6 +283,33 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"buff_on_push":
 			buff_on_push = int(value)
+			return
+		"frenzy_on_kill_ap":
+			frenzy_on_kill_ap = int(value)
+			return
+		"push_board_items":
+			push_board_items = int(value)
+			return
+		"item_collision_damage":
+			item_collision_damage = int(value)
+			return
+		"item_collision_str_div":
+			item_collision_str_div = int(value)
+			return
+		"item_collision_vulnerable":
+			item_collision_vulnerable = int(value)
+			return
+		"violent_collision_recast":
+			violent_collision_recast = int(value)
+			return
+		"next_attack_strength":
+			next_attack_strength = int(value)
+			return
+		"bleed_weapon":
+			next_attack_bleed_weapon = bool(value)
+			return
+		"next_turn":
+			next_turn = bool(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

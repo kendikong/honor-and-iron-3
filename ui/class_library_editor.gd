@@ -2173,6 +2173,54 @@ func _add_module_typed_extras_editor(
 		module.buff_on_push = v
 		_on_module_field_edited(ability)
 	)
+	_bind_int(grid, "Frenzy On Kill AP", module.frenzy_on_kill_ap, func(v: int) -> void:
+		module.frenzy_on_kill_ap = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Push Board Items", module.push_board_items, func(v: int) -> void:
+		module.push_board_items = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Item Collision Damage", module.item_collision_damage, func(v: int) -> void:
+		module.item_collision_damage = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Item Collision STR Div", module.item_collision_str_div, func(v: int) -> void:
+		module.item_collision_str_div = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_int(
+		grid,
+		"Item Collision Vulnerable",
+		module.item_collision_vulnerable,
+		func(v: int) -> void:
+			module.item_collision_vulnerable = maxi(0, v)
+			_on_module_field_edited(ability)
+	)
+	_bind_int(
+		grid,
+		"Violent Collision Recast",
+		module.violent_collision_recast,
+		func(v: int) -> void:
+			module.violent_collision_recast = maxi(0, v)
+			_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Next Attack Strength", module.next_attack_strength, func(v: int) -> void:
+		module.next_attack_strength = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(
+		grid,
+		"Next Attack BLEED WPN",
+		module.next_attack_bleed_weapon,
+		func(v: bool) -> void:
+			module.next_attack_bleed_weapon = v
+			_on_module_field_edited(ability),
+	)
+	_bind_bool(grid, "Next Turn", module.next_turn, func(v: bool) -> void:
+		module.next_turn = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -2340,6 +2388,46 @@ func _add_module_layers_editor(
 				layer.condition = v
 				_on_module_field_edited(ability),
 			ModuleAuthoringRules.excluded_layer_conditions(module),
+		)
+		_bind_bool(
+			grid,
+			"Object Collision Stagger",
+			layer.object_collision_stagger,
+			func(v: bool) -> void:
+				layer.object_collision_stagger = v
+				_on_module_field_edited(ability),
+		)
+		_bind_bool(
+			grid,
+			"Enemy Collision Stagger Both",
+			layer.enemy_collision_stagger_both,
+			func(v: bool) -> void:
+				layer.enemy_collision_stagger_both = v
+				_on_module_field_edited(ability),
+		)
+		_bind_bool(grid, "Weapon Scaled", layer.weapon_scaled, func(v: bool) -> void:
+			layer.weapon_scaled = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(
+			grid,
+			"Buff Per Destroyed Object",
+			layer.buff_per_destroyed_object,
+			func(v: int) -> void:
+				layer.buff_per_destroyed_object = maxi(0, v)
+				_on_module_field_edited(ability),
+		)
+		_bind_bool(grid, "Stagger On Collision", layer.stagger_on_collision, func(v: bool) -> void:
+			layer.stagger_on_collision = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(
+			grid,
+			"Intercept Grant STR",
+			layer.intercept_grant_str,
+			func(v: int) -> void:
+				layer.intercept_grant_str = maxi(0, v)
+				_on_module_field_edited(ability),
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
 			layer.effect.type = v
