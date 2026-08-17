@@ -239,7 +239,7 @@ Active Skills & Upgrades
 (The Behemoth) Suplex: RANGE 1 | ATK 4 | MOVE target to empty tile directly behind you. Upgrade: Gain ATK +1 for every 10 Current HP.
 (The Bloodrager) Adrenaline Surge: SELF | Spend 5 HP. Gain +1 MOV and +1 STR next turn. If adjacent to 2+ enemies: costs 0 AP. Upgrade: Pre-Move action (does not consume the Action slot, executes immediately, 1/turn) so the MOV/STR apply before this turn's Action.
 (The Siegebreaker / The Behemoth) Earthshatter: RANGE 1 | ARC | ATK 2 | Destroy all traps/cover in area. Upgrade: Gain ATK +1 per destroyed object.
-(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. You INTERCEPT 50% of damage that ally takes next turn. Upgrade: RANGE 3. Gain +2 STR per interception. [BLOCKED — Action ally relocate; rewrite before convert.]
+(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. You INTERCEPT 50% of damage that ally takes next turn. Upgrade: RANGE 3. Gain +2 STR per interception.
 (The Bloodrager) Frenzy: RANGE 1 | ATK 1 (3 times). Upgrade: On Kill: Gain 1 AP.
 (The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. Upgrade: PUSH 1 all items/coins/scrap. Item/scrap collision deals Floor(STR / 2) damage and applies VULNERABLE.
 (The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF suffers 1 HP (flat cost) | Apply STAGGER to SELF and target. Upgrade: Deal bonus damage equal to Floor(10% of Max HP).
@@ -334,7 +334,7 @@ Active Skills & Upgrades
 (The Saboteur / The Ninja) Amnesia Dust: RANGE 2 | Apply BLIND to a target that has not acted yet this round. Target also suffers CONFUSION on their next turn. Upgrade: Also applies POISON.
 (The Assassin / The Saboteur) Death Mark: RANGE 5 | Apply MARK. Upgrade: On Kill: Refresh Death Mark for 0 AP.
 (The Assassin / The Saboteur) Lethal Flourish: RANGE 1 | ATK 3 | If target debuffed, gain ATK +2. Upgrade: On Kill: Gain 1 AP.
-(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with ally. Upgrade: Gain +1 DEF next turn after swap. [BLOCKED — Action ally relocate; rewrite before convert.]
+(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with ally. Upgrade: Gain +1 DEF next turn after swap.
 (The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap with the enemy, then PUSH 2 that enemy away from you along the swap line (they start on your old tile). Upgrade: Their collision applies STAGGER to both.
 (The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Apply BLEED X (X = WPN). Upgrade: Gain PIERCE vs targets with BLIND.
 (The Saboteur) Poison Flask: RANGE 3 | ATK 1 | Create POISON hazard (AOE 1). Upgrade: Hazard applies BLIND on entry.
@@ -645,7 +645,7 @@ Active Skills & Upgrades
 (The Skystriker / The Cavalier) Wraparound: MOVE in an L to a flanking tile of an enemy | ATK 2 with damage doubled. Upgrade: Gain GHOST during the MOVE.
 (The Halberdier / The Cavalier) Brace: SELF | MOVEMENT = 0. Negate next melee hit, attacker suffers ATK 2. Upgrade: Attacker suffers STAGGER.
 (The Skystriker / The Halberdier) Harpoon Toss: RANGE 4 | ATK 1 | PULL target adjacent. Upgrade: If self ROOTED, PULL SELF.
-(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 | Dual-pick: Ally, then Enemy. You and that ally MOVE to empty tiles adjacent to the enemy (as space allows) and each deal ATK 2. Upgrade: On Kill: Both gain 1 AP. [BLOCKED — Action ally relocate; rewrite before convert. Do not PAIRED_MOVE this on Action.]
+(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 | Dual-pick: Ally, then Enemy. You and that ally MOVE to empty tiles adjacent to the enemy (as space allows) and each deal ATK 2. Upgrade: On Kill: Both gain 1 AP.
 (The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over an obstacle or gap to an empty tile (not over an enemy). Upgrade: Landing applies PUSH 1 adjacent.
 (The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through enemies dealing ATK 2 each. Upgrade: ATK +1 per enemy passed.
 (The Halberdier / The Cavalier) Spear Wall: RANGE 2 | ARC | Hazard line. Crossing suffers ATK 2 and ROOT. Upgrade: Lasts 2 turns.

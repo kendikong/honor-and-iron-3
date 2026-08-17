@@ -2,7 +2,7 @@
 
 **Status:** `ACTIVE` — owner-locked 2026-08-16  
 **Audience:** Every agent converting skills  
-**Authority chain:** **Skill bible** `class_abilities.txt` → **Module bible** `docs/design/ability-data.md` (§0–§11, §12.9) → **this doc** → `AbilitySystem` / planning / sim  
+**Authority chain:** **Skill bible** `class_abilities.txt` → **Module bible** `docs/design/ability-data.md` (§0–§11) → **this doc** → `AbilitySystem` / planning / sim
 **Non-authority:** Extra Rules. Chat tables. Chat summaries. “Combat still reads the key.”
 
 **Bibles stay in context (absolute).** After any chat summarization, compaction, or handoff, **reread** the skill line in `class_abilities.txt` and the matching module home in `docs/design/ability-data.md` before converting. Do not trust a summary for ATK/MOVE/PUSH text, targeting, or upgrades.
@@ -15,7 +15,7 @@ This is the work order that was built in chat and then ignored. Extra Rules was 
 
 Every class **skill** Extra Rule is gone. The skill is authored as header + modules + keywords + layers + gates + targeting / Condition + typed CREATE_HAZARD–SPAWN knobs. Combat reads those fields, not Extra Rules. Landing is a dest **EffectType** (`MOVE` / `JUMP` / `TELEPORT` family).
 
-**DELETE Motion Mode.** Marked for deletion: `GameEnums.MotionMode`, Class Editor Motion Mode dropdown, factory `motion_mode` stamps, combat `module.motion_mode` reads. Dest EffectType owns landing. Do not convert leftovers into Motion Mode.
+Legacy cleanup is tracked in `IMPLEMENTATION_PLAN.md` ER-3. This matrix only maps skill content into the module model; landing uses destination `EffectType`s.
 
 **Done for one skill (all required — missing any = not converted):**
 
@@ -28,7 +28,7 @@ Every class **skill** Extra Rule is gone. The skill is authored as header + modu
 
 **Cheat (the last failure):** delete Extra Rules but leave `modifiers["key"]` / combat still reading the bag. Forbidden.
 
-**Done for the project:** no class skill uses Extra Rules; `AbilityExtraRule` deleted; **Motion Mode deleted**; factories have no `_add_extra` / leftover modifier / `motion_mode` stamps. Contract test: every Extra Rule id has a home; every converted skill has empty extras.
+**ER-3 exit target:** no class skill uses Extra Rules; `AbilityExtraRule` is deleted; factories have no `_add_extra` or leftover authoring keys. Contract test: every Extra Rule id has a home; every converted skill has empty extras. Motion Mode cleanup is the separate ER-3 task in `IMPLEMENTATION_PLAN.md`.
 
 ---
 
@@ -45,7 +45,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 | **Gate** | Whether a **module** runs (IF_COLLIDED, IF_KILL, …) |
 | **Targeting checkbox / Condition** | Who you may click (EXCLUDE_CASTER, ally, HP/status/occupant filter) |
 | **Typed field on an existing punch** | Hazard terrain/duration/status, bounce count, HP% spawn, … |
-| **New EffectType / StatusType / LayerCondition** | Only if no row above fits. Grow the dest-effect / status / condition dropdown. Do **not** add Extra Rules or Motion Mode. |
+| **New EffectType / StatusType / LayerCondition** | Only if no row above fits. Grow the dest-effect / status / condition dropdown. Do **not** add Extra Rules or legacy landing modes. |
 
 **Forbidden**
 
@@ -53,7 +53,6 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - Harvesting leftover keys into an enum
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
-- Converting leftovers into **Motion Mode**. **Motion Mode is marked for deletion** (ER-3). Do not add modes. Do not keep the dropdown.
 - Relocating an **ally** on **Action**. Allies queue Walk/Attack/Skill in the same player execution. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy SWAP, drag. **Ally Action relocates to rewrite — do not convert:** Glorious Charge, Meat Shield, Shadow Swap.
 - Passives in this plan (separate bag; owner must ask)
 
@@ -106,7 +105,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 | Layer ON_KILL | `ON_KILL_*`, `FRENZY_ON_KILL_AP`, `KILL_GRANT_AP` | Layer + **Heal** / **Shield** / **Resource** |
 | Layer collision / land | `*_COLLISION_*`, `VIOLENT_COLLISION_RECAST`, `POUNCE_LAND_ADJACENT` | Layer or gate on **Movement (Self)** / **Forced Movement** |
 | Resource | `GRANT_AP`, `ON_HIT_SCRAP`, `REFUND_SCRAP_*`, `NEXT_SKILL_ZERO_AP` | **Resource** or header |
-| DELETE | Extra Rules themselves; Motion Mode | ER-3 |
+| DELETE | Extra Rules themselves | ER-3 in `IMPLEMENTATION_PLAN.md` |
 
 **Self vs skip caster:** Self = may click yourself. Skip caster in blast = aura/AOE does not apply to you. Not the same checkbox. `EXCLUDE_CASTER` Extra Rule → skip-caster blast checkbox, then delete.
 
@@ -122,7 +121,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
-If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
+If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
 
 Complete Extra Rule id → home map: `tests/extra_rules_conversion_contract.gd` `extra_rule_home()`. The category table above is a summary. The test fails if any `AbilityExtraRule.Id` (except NONE) has no home.
 
@@ -137,7 +136,7 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
 | PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** for allies (Pullback). Not Glorious Charge (Action **ally** relocate). |
-| PULL_SELF_TO_TARGET | Missing (bible §12.7) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
+| PULL_SELF_TO_TARGET | Missing (module bible §2.2) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
 | Carry / place-unit (Airlift, Maul drop) | Missing | New type in **Move someone**. Airlift = Pre/Post (legal). Kidnap = enemy SWAP then PUSH — convert (legal on Action). |
 | Drag-while-walking (Feral Drag) | Missing | New type in **Forced Movement**. Legal on Action (enemy). |
 | CREATE_HAZARD knobs | Partially typed on module; still extras/layer bags | Typed fields on CREATE_HAZARD |
@@ -239,12 +238,12 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Push [+] | Once per turn; +STR after push | Existing header + existing layer | `once_per_turn`; STR on PUSH. |
 | Polearm RANGE 1 | 30% less damage at RANGE 1 | New field | Range-band damage cut (basics too). |
 | Rally / similar | Status next turn | New field | Delay on ADD_STATUS. |
-| Wraparound (Flanking Maneuver) | L-shaped move | New field on MOVE | L-path on **MOVE**. Not Motion Mode. |
+| Wraparound (Flanking Maneuver) | L-shaped move | New field on MOVE | L-path on **MOVE**. |
 | Wraparound | ×2 only from the side | New field | Side-only DAMAGE multiplier. |
 | Wraparound [+] | GHOST | Existing keyword | **GHOST**. |
 | Glorious Charge | You + ally MOVE adjacent; each ATK 2 | **Rework skill** | Dual-pick = two modules. Relocating the ally on **Action** fights simultaneous queues. Do **not** convert as `PAIRED_MOVE` on Action. Wait for owner rework (Pre-Move relocate, or don’t move the ally). |
 | Glorious Charge [+] | Both gain AP on kill | Existing effect | **GRANT_AP** on **ON_KILL** for both — after the rework, as layers on the ATK modules. |
-| Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND**. Not VAULT_OVER Motion Mode. |
+| Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND**. |
 | Pole Vault [+] | PUSH + STAGGER beside landing | Existing layer | PUSH/STAGGER on **ON_LAND**. |
 | Line Breaker | Path ATK | Existing keyword | **TRAMPLE**. |
 | Line Breaker [+] | +1 per enemy passed | New field | Bonus per path hit. |
@@ -393,7 +392,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 | Skill | Leftover | Type | Solution |
 |---|---|---|---|
-| Reposition | Slide ally to opposite side | New effect | Dest **EffectType** for slide-ally-opposite. Not Motion Mode. |
+| Reposition | Slide ally to opposite side | New effect | Dest **EffectType** for slide-ally-opposite. |
 | Pounce | Land adjacent | Existing effect | **MOVE_TOWARD** ends adjacent. |
 | Pounce [+] | PUSH 1 on land | Existing layer | **PUSH** on **ON_LAND**. |
 | Feral Drag | Drag for leftover MOV | New effect | Drag-while-walk **Forced Movement**. Legal on Action (enemy). |
@@ -452,7 +451,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 | Skill | Leftover | Type | Solution |
 |---|---|---|---|
-| Usher | Ally steps; you don’t | New effect | Dest **EffectType** for ally-step (you stay). Not Motion Mode. |
+| Usher | Ally steps; you don’t | New effect | Dest **EffectType** for ally-step (you stay). |
 | Usher [+] | Can move a totem | New field | Allow-totem on that relocate. |
 | Curse of Weakness | STR −2 / DEF −2 | Existing effect | Two status layers. |
 | Curse [+] | No push mitigation | New field | On the curse. |
@@ -476,15 +475,14 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 ---
 
-## Phase ER-3 — DELETE Extra Rules and Motion Mode
+## Phase ER-3 — DELETE Extra Rules
 
 When every class skill row is converted:
 
 1. Grep `_add_extra`, `AbilityExtraRule`, `extras.append` in factories → **zero**.
 2. Delete `data/definitions/ability_extra_rule.gd` and Class Editor Extra Rules UI.
 3. Combat must not read Extra Rule keys as authoring.
-4. **DELETE Motion Mode:** remove `GameEnums.MotionMode`, Class Editor Motion Mode dropdown, every factory `motion_mode =` stamp, every combat / planning read of `module.motion_mode`. Grep `MotionMode` / `motion_mode` → **zero** (except this plan saying it is gone).
-5. Wraparound L-path, Pole Vault, Reposition slide, Usher ally-step must already live on dest EffectType / MOVE-JUMP fields before this delete. Do not leave a Motion Mode peek.
+4. Motion Mode cleanup is owned by `IMPLEMENTATION_PLAN.md` ER-3; complete it after destination `EffectType` / MOVE-JUMP fields cover Wraparound, Pole Vault, Reposition slide, and Usher ally-step.
 
 ---
 

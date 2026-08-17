@@ -6,6 +6,8 @@
 **Module bible:** [`docs/design/ability-data.md`](docs/design/ability-data.md) — header, modules, keywords, layers, gates, targeting  
 **Skill bible:** `class_abilities.txt` — every Active / Reposition line is law
 
+**Document boundaries:** `ability-data.md` explains how to author modules. The binding matrix explains how each existing leftover maps into that model. This plan owns migration order and legacy deletion, including Motion Mode.
+
 **Bibles stay in context.** Chat summaries, compaction, and handoff notes are **not** skill text. After any summarization, **reread** `class_abilities.txt` (that skill’s line + upgrade) and `docs/design/ability-data.md` (the module home) before converting. Do not author from memory of this chat.
 
 Extra Rules was a leftover-bag rename. That pass is **rejected**. Chat tables are not a substitute. Agents must execute the on-disk matrix.
@@ -20,7 +22,7 @@ Convert every Extra Rule into the skill-module bible: header, module primary (in
 
 Combat must read header / module / keyword / layer / gate / targeting / typed fields — not Extra Rules and not `effect.modifiers["harvested_key"]`.
 
-**DELETE Motion Mode.** `GameEnums.MotionMode`, the Class Editor dropdown, factory stamps, and combat reads of `module.motion_mode` all go. Landing is dest EffectType only (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, …). Do not convert leftovers into Motion Mode.
+**Legacy cleanup:** `GameEnums.MotionMode`, the Class Editor dropdown, factory stamps, and combat reads of `module.motion_mode` are removed in ER-3. Landing is authored as a destination `EffectType` (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, …).
 
 ### Done for one skill (all required)
 
@@ -40,7 +42,7 @@ No bible quote in the changelog → the conversion did not happen.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → … → Shaman). Skip **Rework skill** rows (Action **ally** relocates: Glorious Charge, Meat Shield, Shadow Swap). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; blocked rows still marked Rework |
+| **ER-2** | Convert class by class (Knight → … → Shaman). Skip the three **Rework skill** rows (Action **ally** relocates: Glorious Charge, Meat Shield, Shadow Swap). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; the three ally-relocate rows remain Rework |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
