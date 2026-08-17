@@ -346,6 +346,7 @@ static func effect_primary_families() -> Array[Dictionary]:
 			"types": [
 				GameEnums.EffectType.PUSH,
 				GameEnums.EffectType.PULL,
+				GameEnums.EffectType.THROW_BEHIND,
 			],
 		},
 		{
@@ -353,7 +354,6 @@ static func effect_primary_families() -> Array[Dictionary]:
 			"types": [
 				GameEnums.EffectType.SWAP,
 				GameEnums.EffectType.PAIRED_MOVE,
-				GameEnums.EffectType.THROW_BEHIND,
 			],
 		},
 		{

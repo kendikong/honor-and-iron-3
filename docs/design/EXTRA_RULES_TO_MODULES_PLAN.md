@@ -54,7 +54,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
 - Converting leftovers into **Motion Mode**. **Motion Mode is marked for deletion** (ER-3). Do not add modes. Do not keep the dropdown.
-- **Move someone** on an **Action** skill. Relocate only in **Pre-Move**, or rewrite. PUSH/PULL is fine on Action. **Blocked until rewritten — do not convert:** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag.
+- Relocating an **ally** on **Action**. Allies queue Walk/Attack/Skill in the same player execution. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy SWAP, drag. **Ally Action relocates to rewrite — do not convert:** Glorious Charge, Meat Shield, Shadow Swap.
 - Passives in this plan (separate bag; owner must ask)
 
 **Already done (do not redo as Extra Rules):** click **Condition** dropdown (Executioner's Blade HP, Hex, Terrify, Savage Bite, Fetch, Maul occupant, constructs, corpses, Amnesia Dust, Feral Drag CON, Intimidate HP). Those skills still appear below if they have *other* extras.
@@ -71,8 +71,8 @@ Reference only. **Skill bible** (`class_abilities.txt`) is the verb. **Module bi
 |--------|----------------------------|--------------------------|------------------------------|
 | **Attack** | Hurt (`ATK` / `MAG ATK`) | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce, unmitigated, %HP, ignore-resist = **fields** |
 | **Movement (Self)** | You change tiles (`MOVE` / `DASH` / `JUMP` / `TELEPORT`) | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = **fields** or dest types here |
-| **Forced Movement** | They slide (`PUSH` / `PULL`) | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = **fields / layers**. Legal on Action. |
-| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Legal Pre-Move: Pullback, Usher, Airlift, Maul drop. **Blocked on Action:** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag. |
+| **Forced Movement** | They are displaced by your punch (`PUSH` / `PULL` / throw) | PUSH, PULL, THROW_BEHIND | Push/pull are examples. Throw/Suplex/drag-the-target belong here. **Legal on Action** (enemies act after player execution). |
+| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Ally pair/swap/carry/usher on **Action** = rewrite (Glorious Charge, Meat Shield, Shadow Swap). Pre-Move: Pullback, Usher, Knight Swap, Airlift. Enemy SWAP on Action is legal. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, spear wall, sanctuary, mines = **knobs** |
 | **Summon** | You make a unit or object | SPAWN | Construct HP%, turret ATK, overclock = **knobs** |
 | **Status** | Apply or strip a named condition, no hit | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType**. Link may split later. |
@@ -94,8 +94,8 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 | Header | `DOES_NOT_CONSUME_ACTION_SLOT`, `LIMIT_ONCE_PER_TURN`, `COST_ALL_MOVEMENT`, `SPEND_SELF_HP`, `DELAYED_NEXT_TURN` | Header |
 | Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
 | Movement (Self) field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE`, `SHADOW_STEP`, `BLINK` | Field or dest type on **Movement (Self)** |
-| Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `FERAL_DRAG`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone** |
-| Forced Movement | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH`, `PUSH`, `MINE_PULL` | **Forced Movement** type or field. Pull-yourself is **not** here. |
+| Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone**. Kidnap = enemy SWAP (legal on Action) then PUSH. `PAIRED_ALLY_CHARGE` = ally relocate — Rework. |
+| Forced Movement | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH`, `PUSH`, `MINE_PULL`, `FERAL_DRAG`, `DRAG_REMAINING_MOVEMENT` | **Forced Movement** type or field. Throw/Suplex = `THROW_BEHIND`. Drag-the-target is legal on Action. Pull-yourself is **not** here. |
 | Movement (Self) pull-yourself | `GRAPPLE_WALL_PULL_SELF` | Dest type in **Movement (Self)** |
 | Player OR | `PULL_SELF_OR_TARGET`, `GRAPPLE_BIDIRECTIONAL` | `resolution_choice` (Movement (Self) pull-yourself **or** Forced Movement pull-them) |
 | Attack field | `BONUS_DMG_*`, `BLEED_*`, `IGNORE_TARGET_MAGIC_PCT`, `RANGE_ONE_DAMAGE_MULTIPLIER` | Field on **Attack** |
@@ -122,7 +122,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
-If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode. **New module = new player click.** Extra punches on the same click = layers. Do not relocate someone on Action (not PUSH/PULL).
+If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. Do not convert into Motion Mode. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
 
 Complete Extra Rule id → home map: `tests/extra_rules_conversion_contract.gd` `extra_rule_home()`. The category table above is a summary. The test fails if any `AbilityExtraRule.Id` (except NONE) has no home.
 
@@ -136,10 +136,10 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 |-------|--------|------|
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
-| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** (Pullback). Not Glorious Charge (blocked). |
+| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** for allies (Pullback). Not Glorious Charge (Action **ally** relocate). |
 | PULL_SELF_TO_TARGET | Missing (bible §12.7) | **Movement (Self)** dest type (Grapple Arrow / Grappling Hook pull-yourself). Not Forced Movement. OR-choice with pull-them = `resolution_choice`. |
-| Carry / place-unit (Airlift, Maul drop) | Missing | New type in **Move someone**. Airlift = Pre/Post (legal). Kidnap = **blocked** (Action swap). |
-| Drag-while-walking (Feral Drag) | Missing | **Blocked** — Action relocate. Rewrite before adding the type for conversion. |
+| Carry / place-unit (Airlift, Maul drop) | Missing | New type in **Move someone**. Airlift = Pre/Post (legal). Kidnap = enemy SWAP then PUSH — convert (legal on Action). |
+| Drag-while-walking (Feral Drag) | Missing | New type in **Forced Movement**. Legal on Action (enemy). |
 | CREATE_HAZARD knobs | Partially typed on module; still extras/layer bags | Typed fields on CREATE_HAZARD |
 | SPAWN knobs (HP%, turret ATK, furthest-on-line) | Partial | Typed fields on SPAWN |
 | Header once-per-turn / skip-Action / spend-all-MP | Partial (`once_per_turn`, `SPEND_ALL_MOVEMENT`) | Header |
@@ -157,18 +157,18 @@ Prove the method on the smallest leftover, then reuse punches.
 |-------|-------|----------------|
 | 1 | Knight | One leftover (exclude-self). Method check. |
 | 2 | Bruiser | Layers + GRANT_AP + IF_COLLIDED already named |
-| 3 | Lancer | JUMP_TO_BEHIND, TRAMPLE, L-path on MOVE. **Glorious Charge blocked** (Action relocate). |
+| 3 | Lancer | JUMP_TO_BEHIND, TRAMPLE, L-path on MOVE. **Glorious Charge blocked** (Action **ally** relocate). |
 | 4 | Archer | CREATE_HAZARD knobs + GHOST + layers |
 | 5 | Mercenary | Pullback **PAIRED_MOVE** (Pre-Move). GRANT_AP, GHOST |
-| 6 | Monk | ON_LAND / hazard knobs. **Phase Throw blocked**. |
-| 7 | Rogue | TELEPORT + layers. **Switcheroo / Shadow Swap / Kidnap blocked**. |
-| 8 | Beast Rider | Airlift Pre/Post (legal). **Feral Drag blocked**. |
+| 6 | Monk | ON_LAND / hazard knobs. Phase Throw = enemy SWAP (legal on Action). |
+| 7 | Rogue | TELEPORT + layers. Switcheroo / Kidnap = enemy (legal). **Shadow Swap blocked** (Action **ally** relocate). |
+| 8 | Beast Rider | Airlift Pre/Post (legal). Feral Drag = Forced Movement (legal on Action). |
 | 9 | Cleric | LINK + hazard knobs |
 | 10 | Mage | Bounce / reaction knobs |
 | 11 | Engineer | SPAWN knobs + GRANT_SCRAP |
 | 12 | Shaman | LINK / WITHER / totem SPAWN knobs |
 
-Each class: convert every row below **except Type = Rework skill** → extras empty → `run_<class>_qa_gate.ps1` **and** `run_<class>_live_qa.ps1` PASS. Rework rows: stop and leave them. Do not stamp SWAP / PAIRED_MOVE / THROW_BEHIND / drag on Action.
+Each class: convert every row below **except Type = Rework skill** → extras empty → `run_<class>_qa_gate.ps1` **and** `run_<class>_live_qa.ps1` PASS. Rework rows: stop and leave them. Do not stamp PAIRED_MOVE / **ally** SWAP on Action. Enemy SWAP / THROW_BEHIND / drag on Action is legal.
 
 ---
 
@@ -192,13 +192,13 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Concussion Blow | STAGGER if they hit an object | Existing layer | STAGGER on **ON_COLLISION**. |
 | Concussion Blow [+] | STAGGER both if they hit a unit | Existing layer | Same collision layer, both units. |
 | Cleave [+] | BLEED = WPN | Existing field | BLEED with weapon scaling. |
-| Suplex | Throw target behind you | **Rework skill** | Action relocate. Do **not** convert as THROW_BEHIND on Action. |
-| Suplex [+] | Extra damage per 10 HP | New field | After rework: damage scales with HP. |
+| Suplex | Throw target behind you | Existing effect | **THROW_BEHIND** / Forced Movement + ATK. Legal on Action (enemy). |
+| Suplex [+] | Extra damage per 10 HP | New field | Damage scales with current HP. |
 | Adrenaline Surge | 0 AP if 2+ adjacent enemies | Existing header | Cost header: 0 AP when 2+ adjacent. Not Extra Rules. |
 | Adrenaline Surge [+] | Pre-Move / does not consume Action | Existing header | Planner group **PRE_MOVE**. Not Extra Rules. |
 | Adrenaline Surge [+] | On kill, HEAL + SHIELD | Existing effect | HEAL and SHIELD on **ON_KILL**. |
 | Earthshatter [+] | Buff per object destroyed | Existing layer | Buff after **DESTROY_OBSTACLE**. |
-| Meat Shield | Swap with ally | **Rework skill** | Action relocate. Do **not** convert as SWAP on Action. |
+| Meat Shield | Swap with ally | **Rework skill** | Action **ally** relocate — they already queued. Do **not** convert as SWAP on Action. |
 | Meat Shield [+] | +STR while intercepting | New field | After rework: amount on **INTERCEPT**. |
 | Frenzy [+] | On kill, +1 AP | Existing effect | **GRANT_AP** on **ON_KILL**. |
 | Guttural Roar [+] | Push items; item collision damage / VULNERABLE | New field | PUSH-hits-items flags. |
@@ -346,8 +346,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Thunder Palm | Chain across surfaces | New field | Surface-chain on DAMAGE. |
 | Yin-Yang Flurry | First hit 0, then PIERCE | New field | Hit-count rules on DAMAGE. |
 | Chakra Shift | Convert / burst | New field | Burst AOE knobs. |
-| Phase Throw | Swap with enemy | **Rework skill** | Action relocate. Do **not** convert as SWAP on Action. |
-| Phase Throw [+] | ROOT after swap | Existing effect | After rework: **ROOT** layer. |
+| Phase Throw | Swap with enemy | Existing effect | **SWAP**. Legal on Action (enemy — they have not acted yet). |
+| Phase Throw [+] | ROOT after swap | Existing effect | **ROOT** layer. |
 | Flying Crane Kick | Stop at first enemy | New field | Dash stop rule. |
 | Flying Crane Kick | Adjacent damage on landing | Existing layer | DAMAGE on **ON_LAND**. |
 | Flying Crane Kick [+] | Absorb element on dash | New field | Absorb on DASH. |
@@ -373,9 +373,9 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Smoke Bomb [+] | Allies HEAL 1/turn | New field | Pulse HEAL on that hazard. |
 | Grappling Hook | Pull you **or** them | New field | OR-choice (`resolution_choice`). |
 | Grappling Hook [+] | Trap collision ×2 | New field | Collision vs trap. |
-| Switcheroo | Swap with enemy | **Rework skill** | Action relocate. Do **not** convert as SWAP on Action. |
-| Switcheroo [+] | You inherit incoming attacks | New status | After rework: inherit-hits status. |
-| Shadow Swap | Swap with ally | **Rework skill** | Action relocate. Do **not** convert as SWAP on Action. |
+| Switcheroo | Swap with enemy | Existing effect | **SWAP**. Legal on Action (enemy). |
+| Switcheroo [+] | You inherit incoming attacks | New status | Inherit-hits status. |
+| Shadow Swap | Swap with ally | **Rework skill** | Action **ally** relocate — they already queued. Do **not** convert as SWAP on Action. |
 | Shadow Swap [+] | +1 DEF next turn | Existing effect | After rework: DEF layer. |
 | Blindside | STAGGER if they haven’t acted | New field | STAGGER if unacted. |
 | Blindside [+] | +2 if already STAGGER | New field | Bonus vs STAGGER. |
@@ -384,8 +384,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Death Mark [+] | On kill, refresh mark at 0 AP | New field | Refresh + 0 AP on **ON_KILL**. |
 | Lethal Flourish | +2 if target debuffed | New field | Bonus if debuffed. |
 | Lethal Flourish [+] | +1 AP on kill | Existing effect | **GRANT_AP** on **ON_KILL**. |
-| Kidnap | Swap then PUSH 2 | **Rework skill** | Action relocate (the swap). Do **not** convert as SWAP/carry on Action. PUSH after a legal relocate is Forced Movement. |
-| Kidnap [+] | STAGGER both on collision | Existing layer | After rework: STAGGER on **ON_COLLISION**. |
+| Kidnap | Swap then PUSH 2 | Existing effect | Enemy **SWAP** then **PUSH** layer. Legal on Action (enemy). |
+| Kidnap [+] | STAGGER both on collision | Existing layer | STAGGER on **ON_COLLISION**. |
 | Shuriken Volley [+] | PIERCE vs BLIND | New field | PIERCE if BLIND. |
 | Poison Flask [+] | BLIND on entry | New field | On-enter on **CREATE_HAZARD**. |
 
@@ -396,8 +396,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Reposition | Slide ally to opposite side | New effect | Dest **EffectType** for slide-ally-opposite. Not Motion Mode. |
 | Pounce | Land adjacent | Existing effect | **MOVE_TOWARD** ends adjacent. |
 | Pounce [+] | PUSH 1 on land | Existing layer | **PUSH** on **ON_LAND**. |
-| Feral Drag | Drag for leftover MOV | **Rework skill** | Action relocate. Do **not** convert as drag-walk on Action. |
-| Feral Drag [+] | Hits on you go to them | New status | After rework: damage-sink. Not INTERCEPT. |
+| Feral Drag | Drag for leftover MOV | New effect | Drag-while-walk **Forced Movement**. Legal on Action (enemy). |
+| Feral Drag [+] | Hits on you go to them | New status | Damage-sink. Not INTERCEPT. |
 | Maul | Drop on adjacent empty | New effect | Place on clicked adjacent empty. Not THROW_BEHIND. |
 | Maul | 0 AP, skip Action, 1/turn | Existing header | Once-per-turn / skip-Action. |
 | Maul [+] | Trap damage ×2 | New field | On drop-onto-trap. |

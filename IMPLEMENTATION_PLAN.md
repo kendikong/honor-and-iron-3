@@ -40,7 +40,7 @@ No bible quote in the changelog → the conversion did not happen.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → … → Shaman). Skip **Rework skill** rows (Action relocates). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; blocked rows still marked Rework |
+| **ER-2** | Convert class by class (Knight → … → Shaman). Skip **Rework skill** rows (Action **ally** relocates: Glorious Charge, Meat Shield, Shadow Swap). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; blocked rows still marked Rework |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 Do **not** start ER-2 until the owner names the first skill or says proceed from Knight.
@@ -60,8 +60,8 @@ Do **not** start ER-2 until the owner names the first skill or says proceed from
 | Typed field on an existing punch | Hazard / spawn knobs, bounce, … |
 | New EffectType / StatusType / LayerCondition | Only if nothing above fits. Grow the dropdown. |
 
-**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**, relocating someone on **Action** (not PUSH/PULL).  
-**Blocked until rewritten (skip in ER-2):** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag.  
+**Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**, relocating an **ally** on **Action**. Enemy Forced Movement / enemy SWAP / drag on Action is legal.  
+**Blocked until rewritten (skip in ER-2):** Glorious Charge, Meat Shield, Shadow Swap.  
 **Out of scope:** passives (until owner asks).
 
 ### Module primary families (reference)
@@ -72,8 +72,8 @@ Locked names. Full add-rules and Extra Rule mapping: conversion plan. Module sha
 |--------|----------------|
 | **Attack** | Hurt (ATK / MAG ATK) |
 | **Movement (Self)** | You change tiles (MOVE / DASH / JUMP / TELEPORT) |
-| **Forced Movement** | They slide (PUSH / PULL) |
-| **Move someone** | You put a body on a tile (swap, carry, usher, throw-behind, drag) |
+| **Forced Movement** | They are displaced (PUSH / PULL / THROW_BEHIND). Legal on Action. |
+| **Move someone** | You put a body on a tile (swap, carry, usher). Ally on Action = rewrite. Enemy SWAP on Action is legal. |
 | **Hazard** | The tile keeps doing something |
 | **Summon** | You make a unit or object |
 | **Status** | Apply or strip a named condition (no hit) |

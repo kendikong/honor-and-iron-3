@@ -11,7 +11,7 @@
 |--------------|------|
 | Owner one-pager | **§0** + locked table below |
 | Module vs layer / new click | **§0** module-vs-layer table · §2.5 · §5 |
-| Relocate someone (not PUSH/PULL) | Locked table + **Global rules** (simultaneous execution) |
+| Relocate an **ally** on Action | Locked table + **Global rules** (allies queue in the same player execution; enemies act after) |
 | Authoring a skill | §0 → §1 → §2 → §6 → §10 examples |
 | Anim / tags | §7 |
 | Code migration | **Do not start here.** §12 is 2026-08-02 history. Author from §0–§11. |
@@ -32,7 +32,7 @@
 | Classification / anim | **Tags** (e.g. attack, movement) — not overloaded “movement skill” naming |
 | Basic positioning | Today’s MP Swap / Push Through style skills → **basic positioning** (`planner_group = PRE_MOVE`), distinct from “has a MOVE effect” |
 | Module vs layer | **New module = new player click.** Layers = extra punches on that module’s already-chosen targets. Complicated one-click results = multiple layers, not a fake second module. |
-| Relocate someone | **Move someone** on **Action** is illegal. PUSH/PULL is fine. Pre-Move only, or rewrite. **Blocked:** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag. |
+| Relocate an ally on Action | Player Actions resolve together — do not pair-move / swap / carry / usher an **ally** on Action. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy swap, drag, and similar Forced Movement. **Ally Action relocates to rewrite:** Glorious Charge, Meat Shield, Shadow Swap. |
 
 ---
 
@@ -113,9 +113,10 @@ From Master Bible / project rules (do not bypass silently):
 
 - **Timeline columns:** Pre-Move → Action → Post-Move (no hidden 4th column).
 - **One Action** per unit per turn for class skills (unless Bible says otherwise).
-- **Simultaneous execution:** Everyone queues a turn, then it all resolves. A unit you relocate already has Walk / Attack / Skill queued from their **old** cell.
-- **Relocate someone:** **Move someone** (you put a body on a tile — swap, pair-charge, carry, usher, throw-behind, drag) does **not** belong on **Action**. Do it in **Pre-Move**, or don’t move them. **PUSH / PULL** (they slide) is Forced Movement and **is** legal on Action. **You** moving yourself is Movement (Self) and is legal on Action.
-- **Blocked until rewritten (do not convert as SWAP / PAIRED_MOVE / THROW_BEHIND / drag on Action):** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag. Legal Pre-Move relocates: class Reposition (Swap, Pullback, Usher, Beast Rider Reposition), Airlift pickup, Maul drop (does not consume Action).
+- **Simultaneous execution:** Player Actions resolve together. Enemy actions wait until after the full player plan and execution.
+- **Ally relocate on Action:** Do not pair-move, swap, carry, or usher an **ally** on Action — they already queued Walk/Attack/Skill. Ally relocates belong in **Pre-Move**.
+- **Enemy displacement on Action:** Legal. Forced Movement (PUSH, PULL, throw/Suplex, and similar), enemy SWAP, drag. Enemies have not acted yet.
+- **Ally Action relocates to rewrite (do not convert as PAIRED_MOVE / ally SWAP on Action):** Glorious Charge, Meat Shield, Shadow Swap. Legal Pre-Move ally relocates: class Reposition (Swap, Pullback, Usher, Beast Rider Reposition), Airlift pickup.
 - **Preview == commit** — modules define what planning shows; commit ratifies that picture.
 - **Data over per-skill code** — new behavior = new shared effect/keyword/condition, not `if ability.id == …`.
 - **Sim never plays art** — presentation keys/anims are forwarded; Nodes stay out of simulation.
@@ -221,8 +222,8 @@ What this module *is*. One `EffectType` field. Families are **owner-locked** in 
 | **Shield** | Grant over-HP | ARMOR_UP | Scrap / missing-HP shield = fields / layers |
 | **Status** | Apply or strip a named condition | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = StatusType |
 | **Movement (Self)** | You change tiles | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = fields or dest types here |
-| **Forced Movement** | They slide | PUSH, PULL | Pull-to-center, push-items, collision STAGGER = fields / layers. **Legal on Action.** |
-| **Move someone** | You put a body on a tile | SWAP, PAIRED_MOVE, THROW_BEHIND | Legal Pre-Move: Pullback, Usher, Knight Swap, Beast Rider Reposition, Airlift pickup, Maul drop (no Action slot). **Blocked on Action:** Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag. |
+| **Forced Movement** | They are displaced by your punch | PUSH, PULL, THROW_BEHIND | Push/pull are examples. Throw/Suplex/drag-the-target and similar belong here. **Legal on Action** (enemies act after player execution). |
+| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Ally pair/swap/carry/usher on **Action** = rewrite (Glorious Charge, Meat Shield, Shadow Swap). Pre-Move: Pullback, Usher, Knight Swap, Airlift. Enemy SWAP on Action is legal. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, mines = knobs |
 | **Summon** | You make a unit or object | SPAWN | HP%, turret ATK, overclock = knobs |
 | **Stance** | You set yourself up this turn | ADD_STATUS_SELF / arm-next | Phalanx, Feint, Mana Shield, Brace |
@@ -747,7 +748,7 @@ Map each current `EffectType` into the modular model:
 | `TELEPORT_CASTER` | **Movement (Self)** TELEPORT dest | **Reuse**. Do **not** rename to Motion Mode. |
 | `TRAMPLE`, `BULLDOZE` | Keyword on Movement (Self) | **Reuse** as keywords (already engine-backed) |
 | `MOVE_INTO_AND_PUSH` | **Movement (Self)** dest type | **Reuse**. Keep the EffectType. Do **not** fold into Motion Mode. |
-| `THROW_BEHIND` | **Move someone** primary | **Reuse** |
+| `THROW_BEHIND` | **Forced Movement** (throw/Suplex) | **Reuse** |
 | `ADD_STATUS`, `ADD_STATUS_SELF`, `REMOVE_STATUS` | **Status** primary / layer (Stance often uses ADD_STATUS_SELF) | **Reuse** |
 | `CLEANSE`, `PURGE` | **Status** | **Reuse** |
 | `DESTROY_OBSTACLE` | **Hazard** | **Reuse** |
@@ -758,7 +759,7 @@ Map each current `EffectType` into the modular model:
 | `PUSH_STAGGER_ON_COLLISION`, `PULL_VULNERABLE_ON_ADJACENT`, `PUSH_CHAIN_COLLISION` | Layer conditions on PUSH/PULL | **Restructure** — these are **conditions**, not primaries |
 
 **Add** as first-class primaries when missing (use existing types; do not re-bag):  
-`GRANT_AP`, `GRANT_SCRAP`, `PAIRED_MOVE`, `PULL_SELF_TO_TARGET` (Movement (Self) dest), carry/place-unit and drag-walk (**Move someone**), `CREATE_HAZARD` knobs, hit_count on DAMAGE. `resolution_choice` for Grappling Hook (pull-yourself **or** pull-them).
+`GRANT_AP`, `GRANT_SCRAP`, `PAIRED_MOVE`, `PULL_SELF_TO_TARGET` (Movement (Self) dest), carry/place-unit (**Move someone**), drag-walk (**Forced Movement**), `CREATE_HAZARD` knobs, hit_count on DAMAGE. `resolution_choice` for Grappling Hook (pull-yourself **or** pull-them).
 
 ### 12.8 `EffectData` fields → layer / module values
 
@@ -896,7 +897,7 @@ Start at **§0**. Author: `planner_group` + tags + cost → `modules` / `upgrade
 - Column ≠ tags; basic positioning ≠ “has MOVE”  
 - MOVE min ≥ 1; grey out useless options  
 - **New click = new module.** Same click extras = layers (stack them). No fake second module.  
-- **Don’t relocate on Action** (not PUSH/PULL). Blocked until rewritten: Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag.  
+- **Don’t relocate an ally on Action.** Enemy displacement (Forced Movement, enemy swap, drag) is legal — they act after your execution. Rewrite: Glorious Charge, Meat Shield, Shadow Swap.  
 - After move, range from new tile  
 - Path hits = TRAMPLE/BULLDOZE keywords 
 
@@ -1006,7 +1007,8 @@ Defer: RULE_PICK, DELAY/ENDS_TURN, ally-origin range — unless a **current** mo
 | 2026-08-02 | §19 Audit pass 3: §0 normative summary, precedence, cost↔planner coupling, gated-aim rule, Example F, validation grey-out, trampling AP-only migration note |
 | 2026-08-02 | Status → READY_FOR_REFACTOR; push to origin |
 | 2026-08-16 | Status → ACTIVE. Locked families in §2.2. DELETE Motion Mode. Grappling Hook OR is in-scope. Condition filters are live. Must-migrate = all shipped classes. §12.7–§12.11 / §14 / §16 no longer tell agents to fold dest types into Motion Mode. |
-| 2026-08-16 | Module vs layer + Action relocate ban. Blocked until rewritten: Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag. §12 is history — do not author from it. |
+| 2026-08-16 | Module vs layer. First Action-relocate pass over-blocked enemy throw/swap/drag. §12 is history — do not author from it. |
+| 2026-08-16 | Ally-only Action relocate: queue conflict is allies in the same player execution. Enemy throw/swap/drag legal on Action (they act after the full player plan+execution). THROW_BEHIND in Forced Movement. Rework only Glorious Charge, Meat Shield, Shadow Swap. |
 
 ---
 

@@ -30,7 +30,7 @@ Action Economy: Max AP is 3 for every class. Combat starts at 0 AP. Each turn st
 The 1-Input Turn: During the planning phase, a player may plot a sequence to move up to their Max MOV and perform exactly 1 Skill (or basic attack).
 Movement Timing: Movement can be plotted to occur entirely before the action, OR entirely after the action. Standard movement cannot be split unless modified by an Innate Trait or skill effect.
 Simultaneous Execution & Status Timing (Authoritative): Player Actions resolve together. Statuses, stat buffs, and stat nerfs applied by an Action-column skill do not affect other Actions in the same execution — they begin on the following turn. Action-column skill lines must say "next turn" (not "this turn" / "for 1 turn" meaning this execution) so the rider is useful. Exceptions that may say this turn: (1) Pre-Move skills (class Reposition, Universal Run, and any Active that is a Pre-Move action) — they apply immediately; (2) a later module of the same skill; (3) passives that trigger off this turn's own movement/attack sequence (tiles moved this turn, Calculated Strike, Overwatch if you skip Action, and so on).
-Relocate someone (not PUSH/PULL): Swap, pair-charge, throw-behind, drag, carry, or usher that puts another unit on a new tile is NOT an Action-column effect. That unit already queued Walk/Attack/Skill from the old cell. PUSH/PULL is Forced Movement (resolves last) and is legal on Action. You moving yourself is legal on Action. Relocate another unit only in Pre-Move (class Reposition, Airlift pickup, or an Active that does not consume the Action slot), or rewrite the skill. Do not convert a blocked line as SWAP / PAIRED_MOVE / THROW_BEHIND / drag on Action. Blocked until rewritten: Glorious Charge, Meat Shield, Suplex, Switcheroo, Shadow Swap, Kidnap, Phase Throw, Feral Drag.
+Relocate an ally on Action: Player Actions resolve together, so moving an ally on Action conflicts with their queued Walk/Attack/Skill. Enemy actions do not run until after the full player plan and execution — displacing an enemy on Action is legal (PUSH, PULL, throw/Suplex, enemy swap, drag, and similar Forced Movement). Do not pair-move, swap, carry, or usher an ally on Action. Ally relocates belong in Pre-Move (class Reposition, Airlift pickup). Glorious Charge, Meat Shield, and Shadow Swap are Action ally-relocates — rewrite before convert.
 Phase Execution & Physics: When the player ends their planning phase, all planned actions execute mathematically simultaneously. The animation sequence resolves as:
 Pre-action movements and Reposition Skills.
 Skill actions/attacks (HP reduced to 0 does not remove entity yet; 0 HP entities remain targetable and interactive until step 5).
@@ -236,10 +236,10 @@ Active Skills & Upgrades
 (The Siegebreaker) Charge Strike: MOVE 2 | ATK 3 | PUSH 1 Upgrade: Gain GHOST during MOVE. Gain ATK +2 if you passed through an occupied tile.
 (The Siegebreaker) Concussion Blow: RANGE 1 | ATK 2 | PUSH 1 | Object collision applies STAGGER. Upgrade: Enemy collision applies STAGGER to both units.
 (The Bloodrager) Cleave: RANGE 1 | ARC | ATK 2 Upgrade: Apply BLEED X (X = your WPN) to all targets.
-(The Behemoth) Suplex: RANGE 1 | ATK 4 | MOVE target to empty tile directly behind you. Upgrade: Gain ATK +1 for every 10 Current HP. [BLOCKED — Action relocate; rewrite before convert.]
+(The Behemoth) Suplex: RANGE 1 | ATK 4 | MOVE target to empty tile directly behind you. Upgrade: Gain ATK +1 for every 10 Current HP.
 (The Bloodrager) Adrenaline Surge: SELF | Spend 5 HP. Gain +1 MOV and +1 STR next turn. If adjacent to 2+ enemies: costs 0 AP. Upgrade: Pre-Move action (does not consume the Action slot, executes immediately, 1/turn) so the MOV/STR apply before this turn's Action.
 (The Siegebreaker / The Behemoth) Earthshatter: RANGE 1 | ARC | ATK 2 | Destroy all traps/cover in area. Upgrade: Gain ATK +1 per destroyed object.
-(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. You INTERCEPT 50% of damage that ally takes next turn. Upgrade: RANGE 3. Gain +2 STR per interception. [BLOCKED — Action relocate; rewrite before convert.]
+(The Behemoth) Meat Shield: RANGE 1 (Ally) | Swap positions. You INTERCEPT 50% of damage that ally takes next turn. Upgrade: RANGE 3. Gain +2 STR per interception. [BLOCKED — Action ally relocate; rewrite before convert.]
 (The Bloodrager) Frenzy: RANGE 1 | ATK 1 (3 times). Upgrade: On Kill: Gain 1 AP.
 (The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. Upgrade: PUSH 1 all items/coins/scrap. Item/scrap collision deals Floor(STR / 2) damage and applies VULNERABLE.
 (The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF suffers 1 HP (flat cost) | Apply STAGGER to SELF and target. Upgrade: Deal bonus damage equal to Floor(10% of Max HP).
@@ -328,14 +328,14 @@ Active Skills & Upgrades
 (The Ninja / The Saboteur) Smoke Bomb: SELF | Create SMOKE field (AOE 3x3, Duration: 2 turns). Units inside SMOKE gain STEALTH against attackers outside. Upgrade: Allies inside HEAL 1/turn.
 (The Ninja / The Assassin) Evasive Strike: MOVE 2 | ATK 1 | Gain DEF +1. Upgrade: MOVE 3 | ATK 2 | Gain DEF +2.
 (The Saboteur / The Ninja) Grappling Hook: RANGE 4 | Choose: PULL SELF adjacent to the target, OR PULL the target adjacent to SELF. Upgrade: If the pulled unit collides with a trap, that trap deals x2 damage.
-(The Saboteur / The Assassin) Switcheroo: RANGE 3 | Swap position with target enemy. Upgrade: Target inherits incoming attacks aimed at you. [BLOCKED — Action relocate; rewrite before convert.]
+(The Saboteur / The Assassin) Switcheroo: RANGE 3 | Swap position with target enemy. Upgrade: Target inherits incoming attacks aimed at you.
 (The Assassin) Blindside: RANGE 1 | ATK 2 | If target has not acted yet, apply STAGGER. Upgrade: If target is STAGGERED, gain ATK +2.
 (The Ninja / The Assassin) Throat Slit: RANGE 1 | ATK 3 | Apply SILENCE. Upgrade: On Kill: Spread SILENCE to adjacent enemy.
 (The Saboteur / The Ninja) Amnesia Dust: RANGE 2 | Apply BLIND to a target that has not acted yet this round. Target also suffers CONFUSION on their next turn. Upgrade: Also applies POISON.
 (The Assassin / The Saboteur) Death Mark: RANGE 5 | Apply MARK. Upgrade: On Kill: Refresh Death Mark for 0 AP.
 (The Assassin / The Saboteur) Lethal Flourish: RANGE 1 | ATK 3 | If target debuffed, gain ATK +2. Upgrade: On Kill: Gain 1 AP.
-(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with ally. Upgrade: Gain +1 DEF next turn after swap. [BLOCKED — Action relocate; rewrite before convert.]
-(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap with the enemy, then PUSH 2 that enemy away from you along the swap line (they start on your old tile). Upgrade: Their collision applies STAGGER to both. [BLOCKED — Action relocate; rewrite before convert.]
+(The Ninja / The Saboteur) Shadow Swap: RANGE 3 | Swap position with ally. Upgrade: Gain +1 DEF next turn after swap. [BLOCKED — Action ally relocate; rewrite before convert.]
+(The Saboteur / The Ninja) Kidnap: RANGE 1 | Swap with the enemy, then PUSH 2 that enemy away from you along the swap line (they start on your old tile). Upgrade: Their collision applies STAGGER to both.
 (The Ninja) Shuriken Volley: CONE 3 | ATK 1 | Apply BLEED X (X = WPN). Upgrade: Gain PIERCE vs targets with BLIND.
 (The Saboteur) Poison Flask: RANGE 3 | ATK 1 | Create POISON hazard (AOE 1). Upgrade: Hazard applies BLIND on entry.
 
@@ -372,7 +372,7 @@ Active Skills & Upgrades
 (The Avatar / The Mystic) Thunder Palm: RANGE 1 | MAG ATK 3 | On WATER/FROZEN: chain 50% damage to all units on surface. Upgrade: Apply STAGGER.
 (The Mystic / The Windwalker) Yin-Yang Flurry: RANGE 1 | Deal ATK 1, then MAG ATK 1. Upgrade: If first hit 0 damage, second hit gains PIERCE.
 (The Mystic / The Avatar) Chakra Shift: SELF | Swap current STR and MAG stats for 2 turns. Upgrade: Trigger MAG ATK 1 (AOE 2) burst.
-(The Windwalker / The Mystic) Phase Throw: RANGE 1 | Swap position with target enemy. Upgrade: Apply ROOT after swapping. [BLOCKED — Action relocate; rewrite before convert.]
+(The Windwalker / The Mystic) Phase Throw: RANGE 1 | Swap position with target enemy. Upgrade: Apply ROOT after swapping.
 (The Windwalker / The Avatar) Flying Crane Kick: DASH 3 | Stop adjacent to the first enemy in the dash line | ATK 2. If no enemy is in the dash line, DASH 3 and deal no ATK. Upgrade: Dashing over a hazard absorbs that element into the attack.
 (The Mystic) Spirit Palm: RANGE 2 | MAG ATK 2 | PUSH 1 | Collision triggers ATK 2 physical splash. Upgrade: Splash applies WEAKEN.
 (The Mystic / The Avatar) Soul Punch: RANGE 1 | ATK 3 | (Targets MAG instead of DEF). Upgrade: Steal 1 MAG from the target for 2 turns.
@@ -414,7 +414,7 @@ Passives
 (The Apex Predator) Furious Charge: Moving straight 3+ tiles applies PUSH 1 on next attack. Upgrade: Applies PUSH 2.
 Active Skills & Upgrades
 (The Griffin Rider / The Apex Predator) Pounce: MOVE 3 | ATK 3 | Land adjacent to target. Upgrade: Landing applies PUSH 1.
-(The Griffin Rider / The Wyvern Lord) Feral Drag: RANGE 1 | Target CON must be <= your STR. Drag target for remaining MOVEMENT. Upgrade: Incoming damage redirected to target. [BLOCKED — Action relocate; rewrite before convert.]
+(The Griffin Rider / The Wyvern Lord) Feral Drag: RANGE 1 | Target CON must be <= your STR. Drag target for remaining MOVEMENT. Upgrade: Incoming damage redirected to target.
 (The Griffin Rider / The Apex Predator) Maul: 0 AP while dragging a unit (does not consume the Action slot, 1/turn) | ATK 2 to the dragged enemy, then drop them in an adjacent empty tile. Upgrade: Drop on a trap: trap damage x2.
 (The Wyvern Lord / The Apex Predator) Bestial Roar: CONE 3 | PUSH 2 | Apply FEAR (target must be debuffed). Upgrade: Apply DEF -1 in cone.
 (The Wyvern Lord / The Apex Predator) Raking Claws: RANGE 1 | ARC | ATK 2 | Apply BLEED X (X = WPN). Upgrade: PULL 1 before ATK.
@@ -645,7 +645,7 @@ Active Skills & Upgrades
 (The Skystriker / The Cavalier) Wraparound: MOVE in an L to a flanking tile of an enemy | ATK 2 with damage doubled. Upgrade: Gain GHOST during the MOVE.
 (The Halberdier / The Cavalier) Brace: SELF | MOVEMENT = 0. Negate next melee hit, attacker suffers ATK 2. Upgrade: Attacker suffers STAGGER.
 (The Skystriker / The Halberdier) Harpoon Toss: RANGE 4 | ATK 1 | PULL target adjacent. Upgrade: If self ROOTED, PULL SELF.
-(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 | Dual-pick: Ally, then Enemy. You and that ally MOVE to empty tiles adjacent to the enemy (as space allows) and each deal ATK 2. Upgrade: On Kill: Both gain 1 AP. [BLOCKED — Action relocate; rewrite before convert. Do not PAIRED_MOVE this on Action.]
+(The Cavalier / The Skystriker) Glorious Charge: RANGE 4 | Dual-pick: Ally, then Enemy. You and that ally MOVE to empty tiles adjacent to the enemy (as space allows) and each deal ATK 2. Upgrade: On Kill: Both gain 1 AP. [BLOCKED — Action ally relocate; rewrite before convert. Do not PAIRED_MOVE this on Action.]
 (The Skystriker / The Halberdier) Pole Vault: RANGE 3 | Jump over an obstacle or gap to an empty tile (not over an enemy). Upgrade: Landing applies PUSH 1 adjacent.
 (The Cavalier / The Halberdier) Line Breaker: DASH 4 | Pass through enemies dealing ATK 2 each. Upgrade: ATK +1 per enemy passed.
 (The Halberdier / The Cavalier) Spear Wall: RANGE 2 | ARC | Hazard line. Crossing suffers ATK 2 and ROOT. Upgrade: Lasts 2 turns.
