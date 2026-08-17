@@ -184,6 +184,15 @@ static func _tick_start_of_turn(board: BoardState, events: Array[SimEvent], team
 			if unit.passive_flags.get("next_turn_attack_bleed_weapon", false):
 				unit.passive_flags["next_attack_bleed_weapon"] = true
 				unit.passive_flags.erase("next_turn_attack_bleed_weapon")
+			if unit.passive_flags.get("next_turn_attack_pierce", false):
+				unit.passive_flags["next_attack_pierce"] = true
+				unit.passive_flags.erase("next_turn_attack_pierce")
+			if unit.passive_flags.has("next_turn_grant_ap"):
+				unit.ability.points_left = mini(
+					unit.ability.max_points,
+					unit.ability.points_left + int(unit.passive_flags["next_turn_grant_ap"]),
+				)
+				unit.passive_flags.erase("next_turn_grant_ap")
 			unit.passive_flags.erase("life_link_source_id")
 			unit.passive_flags.erase("life_link_damage_reduction")
 			if unit.passive_flags.get("revived_next_turn", false):

@@ -5298,6 +5298,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					)
 					if effect.modifiers.get("bleed_weapon", false):
 						target.passive_flags["next_turn_attack_bleed_weapon"] = true
+					if effect.modifiers.get("next_attack_pierce", false):
+						target.passive_flags["next_turn_attack_pierce"] = true
 					return
 				if (
 					effect.modifiers.get("next_turn", false)
@@ -5344,7 +5346,13 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if GameEnums.is_debuff(effect.status_type):
 					RogueSystems.on_debuff_applied(board, actor, target, events)
 				if effect.modifiers.has("grant_ap"):
-					target.ability.points_left += int(effect.modifiers["grant_ap"])
+					var grant_ap := int(effect.modifiers["grant_ap"])
+					if effect.modifiers.get("next_turn", false):
+						target.passive_flags["next_turn_grant_ap"] = (
+							int(target.passive_flags.get("next_turn_grant_ap", 0)) + grant_ap
+						)
+					else:
+						target.ability.points_left += grant_ap
 				if effect.modifiers.has("self_move_zero_next_turn"):
 					actor.passive_flags["next_turn_move_zero"] = true
 				if effect.modifiers.has("self_root_immune_next_turn"):
@@ -5861,6 +5869,18 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 					actor.ability.points_left = mini(actor.ability.max_points, actor.ability.points_left + 1)
 
 		GameEnums.EffectType.ADD_STATUS_SELF:
+			if effect.modifiers.has("grant_ap"):
+				var self_grant_ap := int(effect.modifiers["grant_ap"])
+				if effect.modifiers.get("next_turn", false):
+					actor.passive_flags["next_turn_grant_ap"] = (
+						int(actor.passive_flags.get("next_turn_grant_ap", 0)) + self_grant_ap
+					)
+				else:
+					actor.ability.points_left = mini(
+						actor.ability.max_points,
+						actor.ability.points_left + self_grant_ap,
+					)
+				return
 			if effect.modifiers.get("utility_only", false):
 				if effect.modifiers.has("elemental_surge"):
 					actor.passive_flags["elemental_surge_ready"] = true
@@ -5879,6 +5899,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				)
 				if effect.modifiers.get("bleed_weapon", false):
 					actor.passive_flags["next_turn_attack_bleed_weapon"] = true
+				if effect.modifiers.get("next_attack_pierce", false):
+					actor.passive_flags["next_turn_attack_pierce"] = true
 				return
 			if (
 				effect.modifiers.get("next_turn", false)

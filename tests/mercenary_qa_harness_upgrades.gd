@@ -16,6 +16,10 @@ static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:
 			_run_defense_strike_upgrade(failures)
 		"second_wind":
 			_run_second_wind_upgrade(failures)
+		"tactical_retreat":
+			_run_tactical_retreat_upgrade(failures)
+		"flank_and_run":
+			_run_flank_and_run_upgrade(failures)
 		"executioners_blade":
 			_run_executioners_blade_upgrade(failures)
 		"precision_strike":
@@ -85,10 +89,32 @@ static func _run_blade_storm_upgrade(failures: Array[String]) -> void:
 
 
 static func _run_defense_strike_upgrade(failures: Array[String]) -> void:
-	var ab: AbilityData = H.factory_ability(&"mercenary_defense_strike")
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_defense_strike"),
+		&"mercenary_defense_strike",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var target: UnitState = H.unit_on_board(board, 2)
+	target.passive_flags["push_mitigation_tiles"] = 2
+	var skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_defense_strike",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var upgraded_target: UnitState = H.unit_on_board(result.final_state, 2)
 	H.assert_true(
-		failures, "defense_strike/upgrade_mods",
-		ab.upgraded_modules[0].runtime_has("remove_push_mitigation"),
+		failures, "defense_strike/upgrade/push_mitigation",
+		upgraded_target.passive_flags.get("no_push_mitigation", false),
+	)
+	var shield_before: int = upgraded_target.armor
+	var shield_events: Array[SimEvent] = []
+	CombatSystem.add_armor(result.final_state, upgraded_target, 2, shield_events)
+	H.assert_eq_int(
+		failures, "defense_strike/upgrade/shield_block",
+		upgraded_target.armor, shield_before,
 	)
 
 
@@ -105,6 +131,53 @@ static func _run_second_wind_upgrade(failures: Array[String]) -> void:
 	H.assert_true(
 		failures, "second_wind/upgrade/zero_ap",
 		result.final_state.get_unit_by_id(1).passive_flags.get("next_skill_zero_ap", false),
+	)
+
+
+static func _run_tactical_retreat_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_tactical_retreat"),
+		&"mercenary_tactical_retreat",
+	)
+	H.place_mercenary(board, 1, Vector2i(1, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(7, 3))
+	var skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_tactical_retreat",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(4, 3)))
+	var result: SimResult = H.simulate_plan(board, plan)
+	H.assert_eq_cell(
+		failures, "tactical_retreat/upgrade/ghost_move",
+		H.unit_on_board(result.final_state, 1).position, Vector2i(4, 3),
+	)
+	H.assert_true(
+		failures, "tactical_retreat/upgrade/ghost_modifier",
+		AbilitySystem.ability_has_modifier(
+			skill, &"ghost_move", H.unit_on_board(result.final_state, 1),
+		),
+	)
+
+
+static func _run_flank_and_run_upgrade(failures: Array[String]) -> void:
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg: Dictionary = H.with_upgraded_ability(
+		H.mercenary_with_ability(&"mercenary_flank_and_run"),
+		&"mercenary_flank_and_run",
+	)
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	var skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(board, 1), &"mercenary_flank_and_run",
+	)
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, skill, Vector2i(2, 5)))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var actor: UnitState = H.unit_on_board(result.final_state, 1)
+	H.assert_eq_cell(failures, "flank_and_run/upgrade/landing", actor.position, Vector2i(2, 5))
+	H.assert_true(
+		failures, "flank_and_run/upgrade/ghost_modifier",
+		AbilitySystem.ability_has_modifier(skill, &"ghost_move", actor),
 	)
 
 
@@ -222,12 +295,32 @@ static func _run_blood_scent_upgrade(failures: Array[String]) -> void:
 
 
 static func _run_predatory_momentum_upgrade(failures: Array[String]) -> void:
-	var passive: PassiveData = H.factory_passive(&"predatory_momentum")
+	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
+	var cfg: Dictionary = H.mercenary_with_passive(&"predatory_momentum")
+	cfg = H.with_upgraded_passive(cfg, &"predatory_momentum")
+	H.place_mercenary(board, 1, Vector2i(2, 3), cfg)
+	H.place_dummy(board, 2, Vector2i(3, 3))
+	var target: UnitState = H.unit_on_board(board, 2)
+	target.health.current_hp = 60
+	target.health.max_hp = 100
+	var basic: AbilityData = H.basic_attack_for_unit(H.unit_on_board(board, 1))
+	var plan := Timeline.new()
+	plan.add(H.plan_ability(1, basic, Vector2i(3, 3), 2))
+	var result: SimResult = H.simulate_plan(board, plan)
+	var upgraded_merc: UnitState = H.unit_on_board(result.final_state, 1)
 	H.assert_true(
-		failures, "predatory_momentum/upgrade/threshold",
-		float(passive.modifiers.get("upgraded_predatory_threshold", 0.0)) > float(
-			passive.modifiers.get("predatory_threshold", 0.0),
-		),
+		failures, "predatory_momentum/upgrade/free_move",
+		upgraded_merc.movement.points_left > 0
+			and upgraded_merc.passive_flags.get("predatory_following_pending", false),
+	)
+	var upgraded_base_strength: int = upgraded_merc.current_strength
+	var upgraded_base_move: int = upgraded_merc.movement.max_points
+	MercenarySystems.turn_end_rollover(upgraded_merc)
+	MercenarySystems.turn_start(result.final_state, upgraded_merc, [])
+	H.assert_true(
+		failures, "predatory_momentum/upgrade/next_turn_bonus",
+		upgraded_merc.current_strength >= upgraded_base_strength + 2
+			and upgraded_merc.movement.max_points >= upgraded_base_move + 2,
 	)
 
 

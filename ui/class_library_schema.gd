@@ -711,6 +711,13 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		"hazard_duration": src.hazard_duration,
 		"counterattack_melee": src.counterattack_melee,
 		"counterattack_on_intercept": src.counterattack_on_intercept,
+		"bleed_weapon": src.bleed_weapon,
+		"skip_terrain_entry_status": src.skip_terrain_entry_status,
+		"skip_terrain_entry_bleed": src.skip_terrain_entry_bleed,
+		"hazard_damage_bonus": src.hazard_damage_bonus,
+		"trap_damage_bonus": src.trap_damage_bonus,
+		"grant_ap": src.grant_ap,
+		"next_turn": src.next_turn,
 		"effect": effect_to_dict(src.effect) if src.effect != null else {},
 	}
 
@@ -771,6 +778,17 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	layer.counterattack_on_intercept = bool(
 		data.get("counterattack_on_intercept", layer.counterattack_on_intercept)
 	)
+	layer.bleed_weapon = bool(data.get("bleed_weapon", layer.bleed_weapon))
+	layer.skip_terrain_entry_status = bool(
+		data.get("skip_terrain_entry_status", layer.skip_terrain_entry_status)
+	)
+	layer.skip_terrain_entry_bleed = bool(
+		data.get("skip_terrain_entry_bleed", layer.skip_terrain_entry_bleed)
+	)
+	layer.hazard_damage_bonus = int(data.get("hazard_damage_bonus", layer.hazard_damage_bonus))
+	layer.trap_damage_bonus = int(data.get("trap_damage_bonus", layer.trap_damage_bonus))
+	layer.grant_ap = int(data.get("grant_ap", layer.grant_ap))
+	layer.next_turn = bool(data.get("next_turn", layer.next_turn))
 	var effect_data: Variant = data.get("effect", {})
 	if effect_data is Dictionary and not (effect_data as Dictionary).is_empty():
 		layer.effect = EffectData.new()
@@ -844,6 +862,7 @@ static func module_to_dict(
 		"violent_collision_recast": src.violent_collision_recast,
 		"next_attack_strength": src.next_attack_strength,
 		"next_attack_bleed_weapon": src.next_attack_bleed_weapon,
+		"next_attack_pierce": src.next_attack_pierce,
 		"next_turn": src.next_turn,
 		"preserve_facing": src.preserve_facing,
 		"ignore_zoc": src.ignore_zoc,
@@ -940,6 +959,29 @@ static func module_to_dict(
 		"magic_link_damage": src.magic_link_damage,
 		"link_partner_pick": src.link_partner_pick,
 		"link_blind": src.link_blind,
+		"pullback": src.pullback,
+		"pullback_ally_def": src.pullback_ally_def,
+		"movement_mp_override": src.movement_mp_override,
+		"swift_strike": src.swift_strike,
+		"target_damaged_ap": src.target_damaged_ap,
+		"remove_push_mitigation": src.remove_push_mitigation,
+		"prevent_target_shield": src.prevent_target_shield,
+		"bonus_if_target_adjacent_to_ally": src.bonus_if_target_adjacent_to_ally,
+		"pierce": src.pierce,
+		"target_def_pct_debuff": src.target_def_pct_debuff,
+		"target_def_pct_duration": src.target_def_pct_duration,
+		"if_target_attacked_caster_last_turn_bonus": src.if_target_attacked_caster_last_turn_bonus,
+		"if_target_attacked_caster_last_turn_stagger": src.if_target_attacked_caster_last_turn_stagger,
+		"target_def_debuff": src.target_def_debuff,
+		"on_kill_all_allies_heal": src.on_kill_all_allies_heal,
+		"on_kill_all_allies_shield": src.on_kill_all_allies_shield,
+		"next_skill_zero_ap": src.next_skill_zero_ap,
+		"smoke_on_start": src.smoke_on_start,
+		"flank_run_adjacent_enemy_bonus": src.flank_run_adjacent_enemy_bonus,
+		"bleed_bonus_damage": src.bleed_bonus_damage,
+		"duelist_mark_target": src.duelist_mark_target,
+		"marked_target_defense": src.marked_target_defense,
+		"unacted_target_ignore_def_pct": src.unacted_target_ignore_def_pct,
 		"extras": extras_to_array(src),
 	}
 	if _ModuleAuthoringRules.module_uses_phase(planner_group):
@@ -1071,6 +1113,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.next_attack_bleed_weapon = bool(
 		data.get("next_attack_bleed_weapon", dst.next_attack_bleed_weapon)
 	)
+	dst.next_attack_pierce = bool(data.get("next_attack_pierce", dst.next_attack_pierce))
 	dst.next_turn = bool(data.get("next_turn", dst.next_turn))
 	dst.preserve_facing = bool(data.get("preserve_facing", dst.preserve_facing))
 	dst.ignore_zoc = bool(data.get("ignore_zoc", dst.ignore_zoc))
@@ -1216,6 +1259,55 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 	dst.magic_link_damage = int(data.get("magic_link_damage", dst.magic_link_damage))
 	dst.link_partner_pick = bool(data.get("link_partner_pick", dst.link_partner_pick))
 	dst.link_blind = bool(data.get("link_blind", dst.link_blind))
+	dst.pullback = bool(data.get("pullback", dst.pullback))
+	dst.pullback_ally_def = int(data.get("pullback_ally_def", dst.pullback_ally_def))
+	dst.movement_mp_override = int(data.get("movement_mp_override", dst.movement_mp_override))
+	dst.swift_strike = bool(data.get("swift_strike", dst.swift_strike))
+	dst.target_damaged_ap = int(data.get("target_damaged_ap", dst.target_damaged_ap))
+	dst.remove_push_mitigation = bool(data.get("remove_push_mitigation", dst.remove_push_mitigation))
+	dst.prevent_target_shield = bool(data.get("prevent_target_shield", dst.prevent_target_shield))
+	dst.bonus_if_target_adjacent_to_ally = int(
+		data.get("bonus_if_target_adjacent_to_ally", dst.bonus_if_target_adjacent_to_ally)
+	)
+	dst.pierce = bool(data.get("pierce", dst.pierce))
+	dst.target_def_pct_debuff = float(
+		data.get("target_def_pct_debuff", dst.target_def_pct_debuff)
+	)
+	dst.target_def_pct_duration = int(
+		data.get("target_def_pct_duration", dst.target_def_pct_duration)
+	)
+	dst.if_target_attacked_caster_last_turn_bonus = int(
+		data.get(
+			"if_target_attacked_caster_last_turn_bonus",
+			dst.if_target_attacked_caster_last_turn_bonus,
+		)
+	)
+	dst.if_target_attacked_caster_last_turn_stagger = bool(
+		data.get(
+			"if_target_attacked_caster_last_turn_stagger",
+			dst.if_target_attacked_caster_last_turn_stagger,
+		)
+	)
+	dst.target_def_debuff = int(data.get("target_def_debuff", dst.target_def_debuff))
+	dst.on_kill_all_allies_heal = int(
+		data.get("on_kill_all_allies_heal", dst.on_kill_all_allies_heal)
+	)
+	dst.on_kill_all_allies_shield = int(
+		data.get("on_kill_all_allies_shield", dst.on_kill_all_allies_shield)
+	)
+	dst.next_skill_zero_ap = bool(data.get("next_skill_zero_ap", dst.next_skill_zero_ap))
+	dst.smoke_on_start = bool(data.get("smoke_on_start", dst.smoke_on_start))
+	dst.flank_run_adjacent_enemy_bonus = int(
+		data.get("flank_run_adjacent_enemy_bonus", dst.flank_run_adjacent_enemy_bonus)
+	)
+	dst.bleed_bonus_damage = int(data.get("bleed_bonus_damage", dst.bleed_bonus_damage))
+	dst.duelist_mark_target = bool(data.get("duelist_mark_target", dst.duelist_mark_target))
+	dst.marked_target_defense = int(
+		data.get("marked_target_defense", dst.marked_target_defense)
+	)
+	dst.unacted_target_ignore_def_pct = float(
+		data.get("unacted_target_ignore_def_pct", dst.unacted_target_ignore_def_pct)
+	)
 	dst.extras.clear()
 	var extra_data: Variant = data.get("extras", [])
 	if extra_data is Array:

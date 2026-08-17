@@ -82,6 +82,7 @@ extends Resource
 @export var violent_collision_recast: int = 0
 @export var next_attack_strength: int = 0
 @export var next_attack_bleed_weapon: bool = false
+@export var next_attack_pierce: bool = false
 @export var next_turn: bool = false
 
 ## Archer typed positioning, hazard, targeting, and follow-up fields.
@@ -186,6 +187,31 @@ extends Resource
 @export var magic_link_damage: int = 0
 @export var link_partner_pick: bool = false
 @export var link_blind: bool = false
+
+## Mercenary typed movement, attack, trap, and follow-up fields.
+@export var pullback: bool = false
+@export var pullback_ally_def: int = 0
+@export var movement_mp_override: int = 0
+@export var swift_strike: bool = false
+@export var target_damaged_ap: int = 0
+@export var remove_push_mitigation: bool = false
+@export var prevent_target_shield: bool = false
+@export var bonus_if_target_adjacent_to_ally: int = 0
+@export var pierce: bool = false
+@export var target_def_pct_debuff: float = 0.0
+@export var target_def_pct_duration: int = 0
+@export var if_target_attacked_caster_last_turn_bonus: int = 0
+@export var if_target_attacked_caster_last_turn_stagger: bool = false
+@export var target_def_debuff: int = 0
+@export var on_kill_all_allies_heal: int = 0
+@export var on_kill_all_allies_shield: int = 0
+@export var next_skill_zero_ap: bool = false
+@export var smoke_on_start: bool = false
+@export var flank_run_adjacent_enemy_bonus: int = 0
+@export var bleed_bonus_damage: int = 0
+@export var duelist_mark_target: bool = false
+@export var marked_target_defense: int = 0
+@export var unacted_target_ignore_def_pct: float = 0.0
 
 ## Typed extras the Class Editor can add.
 @export var extras: Array[AbilityExtraRule] = []
@@ -294,6 +320,8 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["next_attack_strength"] = next_attack_strength
 	if next_attack_bleed_weapon:
 		bag["bleed_weapon"] = true
+	if next_attack_pierce:
+		bag["next_attack_pierce"] = true
 	if next_turn:
 		bag["next_turn"] = true
 	if preserve_facing:
@@ -486,6 +514,52 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["link_partner_pick"] = true
 	if link_blind:
 		bag["link_blind"] = true
+	if pullback:
+		bag["pullback"] = true
+	if pullback_ally_def != 0:
+		bag["pullback_ally_def"] = pullback_ally_def
+	if movement_mp_override != 0:
+		bag["movement_mp_override"] = movement_mp_override
+	if swift_strike:
+		bag["swift_strike"] = true
+	if target_damaged_ap != 0:
+		bag["target_damaged_ap"] = target_damaged_ap
+	if remove_push_mitigation:
+		bag["remove_push_mitigation"] = true
+	if prevent_target_shield:
+		bag["prevent_target_shield"] = true
+	if bonus_if_target_adjacent_to_ally != 0:
+		bag["bonus_if_target_adjacent_to_ally"] = bonus_if_target_adjacent_to_ally
+	if pierce:
+		bag["pierce"] = true
+	if not is_zero_approx(target_def_pct_debuff):
+		bag["target_def_pct_debuff"] = target_def_pct_debuff
+	if target_def_pct_duration != 0:
+		bag["target_def_pct_duration"] = target_def_pct_duration
+	if if_target_attacked_caster_last_turn_bonus != 0:
+		bag["if_target_attacked_caster_last_turn_bonus"] = if_target_attacked_caster_last_turn_bonus
+	if if_target_attacked_caster_last_turn_stagger:
+		bag["if_target_attacked_caster_last_turn_stagger"] = true
+	if target_def_debuff != 0:
+		bag["target_def_debuff"] = target_def_debuff
+	if on_kill_all_allies_heal != 0:
+		bag["on_kill_all_allies_heal"] = on_kill_all_allies_heal
+	if on_kill_all_allies_shield != 0:
+		bag["on_kill_all_allies_shield"] = on_kill_all_allies_shield
+	if next_skill_zero_ap:
+		bag["next_skill_zero_ap"] = true
+	if smoke_on_start:
+		bag["smoke_on_start"] = true
+	if flank_run_adjacent_enemy_bonus != 0:
+		bag["flank_run_adjacent_enemy_bonus"] = flank_run_adjacent_enemy_bonus
+	if bleed_bonus_damage != 0:
+		bag["bleed_bonus_damage"] = bleed_bonus_damage
+	if duelist_mark_target:
+		bag["duelist_mark_target"] = true
+	if marked_target_defense != 0:
+		bag["marked_target_defense"] = marked_target_defense
+	if not is_zero_approx(unacted_target_ignore_def_pct):
+		bag["unacted_target_ignore_def_pct"] = unacted_target_ignore_def_pct
 	if motion_mode == GameEnums.MotionMode.L_SHAPE:
 		bag["l_shape_move"] = true
 	for extra: AbilityExtraRule in extras:
@@ -600,6 +674,9 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"bleed_weapon":
 			next_attack_bleed_weapon = bool(value)
+			return
+		"next_attack_pierce":
+			next_attack_pierce = bool(value)
 			return
 		"next_turn":
 			next_turn = bool(value)
@@ -888,6 +965,75 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"link_blind":
 			link_blind = bool(value)
+			return
+		"pullback":
+			pullback = bool(value)
+			return
+		"pullback_ally_def":
+			pullback_ally_def = int(value)
+			return
+		"movement_mp_override":
+			movement_mp_override = int(value)
+			return
+		"swift_strike":
+			swift_strike = bool(value)
+			return
+		"target_damaged_ap":
+			target_damaged_ap = int(value)
+			return
+		"remove_push_mitigation":
+			remove_push_mitigation = bool(value)
+			return
+		"prevent_target_shield":
+			prevent_target_shield = bool(value)
+			return
+		"bonus_if_target_adjacent_to_ally":
+			bonus_if_target_adjacent_to_ally = int(value)
+			return
+		"pierce":
+			pierce = bool(value)
+			return
+		"target_def_pct_debuff":
+			target_def_pct_debuff = float(value)
+			return
+		"target_def_pct_duration":
+			target_def_pct_duration = int(value)
+			return
+		"if_target_attacked_caster_last_turn_bonus":
+			if_target_attacked_caster_last_turn_bonus = int(value)
+			return
+		"if_target_attacked_caster_last_turn_stagger":
+			if_target_attacked_caster_last_turn_stagger = bool(value)
+			return
+		"target_def_debuff":
+			target_def_debuff = int(value)
+			return
+		"on_kill_all_allies_heal":
+			on_kill_all_allies_heal = int(value)
+			return
+		"on_kill_all_allies_shield":
+			on_kill_all_allies_shield = int(value)
+			return
+		"next_skill_zero_ap":
+			next_skill_zero_ap = bool(value)
+			return
+		"smoke_on_start":
+			smoke_on_start = bool(value)
+			return
+		"flank_run_adjacent_enemy_bonus":
+			flank_run_adjacent_enemy_bonus = int(value)
+			return
+		"bleed_bonus_damage":
+			bleed_bonus_damage = int(value)
+			return
+		"duelist_mark_target":
+			duelist_mark_target = bool(value)
+			return
+		"marked_target_defense":
+			marked_target_defense = int(value)
+			return
+		"unacted_target_ignore_def_pct":
+			unacted_target_ignore_def_pct = float(value)
 			return
 		"l_shape_move":
 			motion_mode = GameEnums.MotionMode.L_SHAPE

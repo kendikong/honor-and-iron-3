@@ -545,6 +545,7 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.violent_collision_recast = from_module.violent_collision_recast
 	to_module.next_attack_strength = from_module.next_attack_strength
 	to_module.next_attack_bleed_weapon = from_module.next_attack_bleed_weapon
+	to_module.next_attack_pierce = from_module.next_attack_pierce
 	to_module.next_turn = from_module.next_turn
 	to_module.blink = from_module.blink
 	to_module.leave_elemental_surface = from_module.leave_elemental_surface
@@ -596,6 +597,29 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.magic_link_damage = from_module.magic_link_damage
 	to_module.link_partner_pick = from_module.link_partner_pick
 	to_module.link_blind = from_module.link_blind
+	to_module.pullback = from_module.pullback
+	to_module.pullback_ally_def = from_module.pullback_ally_def
+	to_module.movement_mp_override = from_module.movement_mp_override
+	to_module.swift_strike = from_module.swift_strike
+	to_module.target_damaged_ap = from_module.target_damaged_ap
+	to_module.remove_push_mitigation = from_module.remove_push_mitigation
+	to_module.prevent_target_shield = from_module.prevent_target_shield
+	to_module.bonus_if_target_adjacent_to_ally = from_module.bonus_if_target_adjacent_to_ally
+	to_module.pierce = from_module.pierce
+	to_module.target_def_pct_debuff = from_module.target_def_pct_debuff
+	to_module.target_def_pct_duration = from_module.target_def_pct_duration
+	to_module.if_target_attacked_caster_last_turn_bonus = from_module.if_target_attacked_caster_last_turn_bonus
+	to_module.if_target_attacked_caster_last_turn_stagger = from_module.if_target_attacked_caster_last_turn_stagger
+	to_module.target_def_debuff = from_module.target_def_debuff
+	to_module.on_kill_all_allies_heal = from_module.on_kill_all_allies_heal
+	to_module.on_kill_all_allies_shield = from_module.on_kill_all_allies_shield
+	to_module.next_skill_zero_ap = from_module.next_skill_zero_ap
+	to_module.smoke_on_start = from_module.smoke_on_start
+	to_module.flank_run_adjacent_enemy_bonus = from_module.flank_run_adjacent_enemy_bonus
+	to_module.bleed_bonus_damage = from_module.bleed_bonus_damage
+	to_module.duelist_mark_target = from_module.duelist_mark_target
+	to_module.marked_target_defense = from_module.marked_target_defense
+	to_module.unacted_target_ignore_def_pct = from_module.unacted_target_ignore_def_pct
 	if from_module.motion_mode == GameEnums.MotionMode.L_SHAPE:
 		to_module.motion_mode = GameEnums.MotionMode.L_SHAPE
 	if to_module.extras.is_empty():

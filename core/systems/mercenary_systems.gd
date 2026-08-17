@@ -75,6 +75,11 @@ static func turn_start(board: BoardState, unit: UnitState, events: Array[SimEven
 	if unit.passive_flags.get("next_turn_slow_immune", false):
 		unit.passive_flags["slow_immune_this_turn"] = true
 		unit.passive_flags.erase("next_turn_slow_immune")
+	if unit.passive_flags.has("next_turn_flank_run_attack_bonus"):
+		unit.passive_flags["flank_run_attack_bonus"] = int(
+			unit.passive_flags["next_turn_flank_run_attack_bonus"]
+		)
+		unit.passive_flags.erase("next_turn_flank_run_attack_bonus")
 	var adj_enemies := _adjacent_enemy_count(board, unit)
 	var per_enemy_mov: int = passive_mod_value(unit, &"adjacent_enemy_move")
 	if per_enemy_mov > 0 and adj_enemies > 0:
@@ -164,7 +169,15 @@ static func after_skill_move(
 		var start_pos: Vector2i = actor.passive_flags.get("__move_start_pos", actor.position)
 		_execute_pullback(board, actor, start_pos, events, mods)
 	if mods.has("flank_run_adjacent_enemy_bonus"):
-		actor.passive_flags["flank_run_attack_bonus"] = int(mods["flank_run_adjacent_enemy_bonus"])
+		var bonus := int(mods["flank_run_adjacent_enemy_bonus"])
+		if _adjacent_enemy_count(board, actor) > 0:
+			if mods.get("next_turn", false):
+				actor.passive_flags["next_turn_flank_run_attack_bonus"] = bonus
+			else:
+				actor.passive_flags["flank_run_attack_bonus"] = bonus
+		else:
+			actor.passive_flags.erase("next_turn_flank_run_attack_bonus")
+			actor.passive_flags.erase("flank_run_attack_bonus")
 	var start_pos: Vector2i = actor.passive_flags.get("__move_start_pos", actor.position)
 	track_movement_tiles(board, actor, start_pos, actor.position)
 	actor.passive_flags.erase("__move_start_pos")
@@ -428,9 +441,19 @@ static func after_ability_execute(
 	var post_mods: Dictionary = _ability_legacy_mods(actor, ability)
 	if ability != null:
 		if post_mods.get("next_attack_pierce", false):
-			actor.passive_flags["next_attack_pierce"] = true
+			var pierce_key: StringName = (
+				&"next_turn_attack_pierce"
+				if post_mods.get("next_turn", false)
+				else &"next_attack_pierce"
+			)
+			actor.passive_flags[pierce_key] = true
 		if post_mods.has("next_attack_strength"):
-			actor.passive_flags["next_attack_strength_bonus"] = int(post_mods["next_attack_strength"])
+			var strength_key: StringName = (
+				&"next_turn_attack_strength_bonus"
+				if post_mods.get("next_turn", false)
+				else &"next_attack_strength_bonus"
+			)
+			actor.passive_flags[strength_key] = int(post_mods["next_attack_strength"])
 		if post_mods.has("target_def_pct_debuff") and actor.is_ability_upgraded(ability.id):
 			actor.passive_flags["feint_def_debuff_pct"] = float(post_mods["target_def_pct_debuff"])
 			actor.passive_flags["feint_def_debuff_duration"] = int(

@@ -39,6 +39,13 @@ extends Resource
 @export var hazard_duration: int = 0
 @export var counterattack_melee: bool = false
 @export var counterattack_on_intercept: bool = false
+@export var bleed_weapon: bool = false
+@export var skip_terrain_entry_status: bool = false
+@export var skip_terrain_entry_bleed: bool = false
+@export var hazard_damage_bonus: int = 0
+@export var trap_damage_bonus: int = 0
+@export var grant_ap: int = 0
+@export var next_turn: bool = false
 
 
 func compile_runtime_modifiers() -> Dictionary:
@@ -101,6 +108,20 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["counterattack_melee"] = true
 	if counterattack_on_intercept:
 		modifiers["counterattack_on_intercept"] = true
+	if bleed_weapon:
+		modifiers["bleed_weapon"] = true
+	if skip_terrain_entry_status:
+		modifiers["skip_terrain_entry_status"] = true
+	if skip_terrain_entry_bleed:
+		modifiers["skip_terrain_entry_bleed"] = true
+	if hazard_damage_bonus != 0:
+		modifiers["hazard_damage_bonus"] = hazard_damage_bonus
+	if trap_damage_bonus != 0:
+		modifiers["trap_damage_bonus"] = trap_damage_bonus
+	if grant_ap != 0:
+		modifiers["grant_ap"] = grant_ap
+	if next_turn:
+		modifiers["next_turn"] = true
 	return modifiers
 
 
@@ -164,3 +185,17 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			counterattack_melee = bool(value)
 		"counterattack_on_intercept":
 			counterattack_on_intercept = bool(value)
+		"bleed_weapon":
+			bleed_weapon = bool(value)
+		"skip_terrain_entry_status":
+			skip_terrain_entry_status = bool(value)
+		"skip_terrain_entry_bleed":
+			skip_terrain_entry_bleed = bool(value)
+		"hazard_damage_bonus":
+			hazard_damage_bonus = int(value)
+		"trap_damage_bonus":
+			trap_damage_bonus = int(value)
+		"grant_ap":
+			grant_ap = int(value)
+		"next_turn":
+			next_turn = bool(value)

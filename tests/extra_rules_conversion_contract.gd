@@ -80,6 +80,22 @@ const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"cleric_divine_guidance",
 	&"cleric_shield_of_faith",
 	&"cleric_martyrs_chains",
+	&"mercenary_pullback",
+	&"mercenary_swift_strike",
+	&"mercenary_defense_strike",
+	&"mercenary_blade_storm",
+	&"mercenary_caltrop_toss",
+	&"mercenary_feint",
+	&"mercenary_riposte_strike",
+	&"mercenary_sever",
+	&"mercenary_second_wind",
+	&"mercenary_tactical_retreat",
+	&"mercenary_executioners_blade",
+	&"mercenary_precision_strike",
+	&"mercenary_flank_and_run",
+	&"mercenary_hamstring",
+	&"mercenary_acrobatic_vault",
+	&"mercenary_duelists_challenge",
 ]
 
 const CLASS_IDS: Array[StringName] = [
@@ -462,7 +478,7 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"push":
 			return module.push != 0
 		"grant_ap":
-			return module.grant_ap != 0
+			return module.grant_ap != 0 or layer.grant_ap != 0
 		"self_move_zero_next_turn":
 			return module.self_move_zero_next_turn
 		"link_two_enemies":
@@ -477,6 +493,64 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return layer.counterattack_melee
 		"counterattack_on_intercept":
 			return layer.counterattack_on_intercept
+		"pullback":
+			return module.pullback
+		"pullback_ally_def":
+			return module.pullback_ally_def != 0
+		"movement_mp_override":
+			return module.movement_mp_override != 0
+		"swift_strike":
+			return module.swift_strike
+		"target_damaged_ap":
+			return module.target_damaged_ap != 0
+		"remove_push_mitigation":
+			return module.remove_push_mitigation
+		"prevent_target_shield":
+			return module.prevent_target_shield
+		"bonus_if_target_adjacent_to_ally":
+			return module.bonus_if_target_adjacent_to_ally != 0
+		"next_attack_pierce":
+			return module.next_attack_pierce
+		"pierce":
+			return module.pierce
+		"target_def_pct_debuff":
+			return not is_zero_approx(module.target_def_pct_debuff)
+		"target_def_pct_duration":
+			return module.target_def_pct_duration != 0
+		"if_target_attacked_caster_last_turn_bonus":
+			return module.if_target_attacked_caster_last_turn_bonus != 0
+		"if_target_attacked_caster_last_turn_stagger":
+			return module.if_target_attacked_caster_last_turn_stagger
+		"target_def_debuff":
+			return module.target_def_debuff != 0
+		"on_kill_all_allies_heal":
+			return module.on_kill_all_allies_heal != 0
+		"on_kill_all_allies_shield":
+			return module.on_kill_all_allies_shield != 0
+		"next_skill_zero_ap":
+			return module.next_skill_zero_ap
+		"smoke_on_start":
+			return module.smoke_on_start
+		"flank_run_adjacent_enemy_bonus":
+			return module.flank_run_adjacent_enemy_bonus != 0
+		"bleed_bonus_damage":
+			return module.bleed_bonus_damage != 0
+		"duelist_mark_target":
+			return module.duelist_mark_target
+		"marked_target_defense":
+			return module.marked_target_defense != 0
+		"unacted_target_ignore_def_pct":
+			return not is_zero_approx(module.unacted_target_ignore_def_pct)
+		"bleed_weapon":
+			return module.next_attack_bleed_weapon or layer.bleed_weapon
+		"skip_terrain_entry_status":
+			return layer.skip_terrain_entry_status
+		"skip_terrain_entry_bleed":
+			return layer.skip_terrain_entry_bleed
+		"hazard_damage_bonus":
+			return layer.hazard_damage_bonus != 0
+		"trap_damage_bonus":
+			return layer.trap_damage_bonus != 0
 		"hazard_status":
 			return module.hazard_status != GameEnums.StatusType.NONE
 		"bonus_dmg_from_occupied":
@@ -507,10 +581,8 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.violent_collision_recast != 0
 		"next_attack_strength":
 			return module.next_attack_strength != 0
-		"bleed_weapon":
-			return module.next_attack_bleed_weapon
 		"next_turn":
-			return module.next_turn
+			return module.next_turn or layer.next_turn
 		"preserve_facing":
 			return module.preserve_facing
 		"ignore_zoc":

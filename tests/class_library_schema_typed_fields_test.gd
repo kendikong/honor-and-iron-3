@@ -50,6 +50,29 @@ static func run_all(failures: Array[String]) -> void:
 	source.link_two_enemies = true
 	source.magic_link_damage = 1
 	source.link_partner_pick = true
+	source.pullback = true
+	source.pullback_ally_def = 2
+	source.movement_mp_override = 1
+	source.swift_strike = true
+	source.target_damaged_ap = 1
+	source.remove_push_mitigation = true
+	source.prevent_target_shield = true
+	source.bonus_if_target_adjacent_to_ally = 2
+	source.next_attack_pierce = true
+	source.target_def_pct_debuff = 0.25
+	source.target_def_pct_duration = 2
+	source.if_target_attacked_caster_last_turn_bonus = 2
+	source.if_target_attacked_caster_last_turn_stagger = true
+	source.target_def_debuff = 2
+	source.on_kill_all_allies_heal = 1
+	source.on_kill_all_allies_shield = 1
+	source.next_skill_zero_ap = true
+	source.smoke_on_start = true
+	source.flank_run_adjacent_enemy_bonus = 2
+	source.bleed_bonus_damage = 2
+	source.duelist_mark_target = true
+	source.marked_target_defense = 2
+	source.unacted_target_ignore_def_pct = 0.5
 	var layer := AbilityLayer.new()
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
@@ -66,6 +89,13 @@ static func run_all(failures: Array[String]) -> void:
 	layer.hazard_duration = 2
 	layer.counterattack_melee = true
 	layer.counterattack_on_intercept = true
+	layer.bleed_weapon = true
+	layer.skip_terrain_entry_status = true
+	layer.skip_terrain_entry_bleed = true
+	layer.hazard_damage_bonus = 1
+	layer.trap_damage_bonus = 2
+	layer.grant_ap = 1
+	layer.next_turn = true
 	source.layers.append(layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
@@ -115,6 +145,29 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "link_two_enemies", restored.link_two_enemies)
 	_assert(failures, "magic_link_damage", restored.magic_link_damage == 1)
 	_assert(failures, "link_partner_pick", restored.link_partner_pick)
+	_assert(failures, "pullback", restored.pullback)
+	_assert(failures, "pullback_ally_def", restored.pullback_ally_def == 2)
+	_assert(failures, "movement_mp_override", restored.movement_mp_override == 1)
+	_assert(failures, "swift_strike", restored.swift_strike)
+	_assert(failures, "target_damaged_ap", restored.target_damaged_ap == 1)
+	_assert(failures, "remove_push_mitigation", restored.remove_push_mitigation)
+	_assert(failures, "prevent_target_shield", restored.prevent_target_shield)
+	_assert(failures, "bonus_if_target_adjacent_to_ally", restored.bonus_if_target_adjacent_to_ally == 2)
+	_assert(failures, "next_attack_pierce", restored.next_attack_pierce)
+	_assert(failures, "target_def_pct_debuff", is_equal_approx(restored.target_def_pct_debuff, 0.25))
+	_assert(failures, "target_def_pct_duration", restored.target_def_pct_duration == 2)
+	_assert(failures, "if_target_attacked_caster_last_turn_bonus", restored.if_target_attacked_caster_last_turn_bonus == 2)
+	_assert(failures, "if_target_attacked_caster_last_turn_stagger", restored.if_target_attacked_caster_last_turn_stagger)
+	_assert(failures, "target_def_debuff", restored.target_def_debuff == 2)
+	_assert(failures, "on_kill_all_allies_heal", restored.on_kill_all_allies_heal == 1)
+	_assert(failures, "on_kill_all_allies_shield", restored.on_kill_all_allies_shield == 1)
+	_assert(failures, "next_skill_zero_ap", restored.next_skill_zero_ap)
+	_assert(failures, "smoke_on_start", restored.smoke_on_start)
+	_assert(failures, "flank_run_adjacent_enemy_bonus", restored.flank_run_adjacent_enemy_bonus == 2)
+	_assert(failures, "bleed_bonus_damage", restored.bleed_bonus_damage == 2)
+	_assert(failures, "duelist_mark_target", restored.duelist_mark_target)
+	_assert(failures, "marked_target_defense", restored.marked_target_defense == 2)
+	_assert(failures, "unacted_target_ignore_def_pct", is_equal_approx(restored.unacted_target_ignore_def_pct, 0.5))
 	_assert(failures, "layer_push_collision_pierce", restored.layers[0].push_collision_pierce)
 	_assert(failures, "layer_crossing_blind", restored.layers[0].crossing_blind)
 	_assert(failures, "layer_elemental_surface", restored.layers[0].elemental_surface)
@@ -129,6 +182,13 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "layer_hazard_duration", restored.layers[0].hazard_duration == 2)
 	_assert(failures, "layer_counterattack_melee", restored.layers[0].counterattack_melee)
 	_assert(failures, "layer_counterattack_on_intercept", restored.layers[0].counterattack_on_intercept)
+	_assert(failures, "layer_bleed_weapon", restored.layers[0].bleed_weapon)
+	_assert(failures, "layer_skip_terrain_entry_status", restored.layers[0].skip_terrain_entry_status)
+	_assert(failures, "layer_skip_terrain_entry_bleed", restored.layers[0].skip_terrain_entry_bleed)
+	_assert(failures, "layer_hazard_damage_bonus", restored.layers[0].hazard_damage_bonus == 1)
+	_assert(failures, "layer_trap_damage_bonus", restored.layers[0].trap_damage_bonus == 2)
+	_assert(failures, "layer_grant_ap", restored.layers[0].grant_ap == 1)
+	_assert(failures, "layer_next_turn", restored.layers[0].next_turn)
 	var copied := AbilityModule.new()
 	DataLibrary._copy_extras(source, copied)
 	_assert(failures, "copy_cleric_life_link", copied.life_link)

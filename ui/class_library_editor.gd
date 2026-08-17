@@ -2610,6 +2610,98 @@ func _add_module_typed_extras_editor(
 		module.link_blind = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Pullback", module.pullback, func(v: bool) -> void:
+		module.pullback = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Pullback Ally DEF", module.pullback_ally_def, func(v: int) -> void:
+		module.pullback_ally_def = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Movement MP Override", module.movement_mp_override, func(v: int) -> void:
+		module.movement_mp_override = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Swift Strike", module.swift_strike, func(v: bool) -> void:
+		module.swift_strike = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Target Damaged AP", module.target_damaged_ap, func(v: int) -> void:
+		module.target_damaged_ap = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Remove Push Mitigation", module.remove_push_mitigation, func(v: bool) -> void:
+		module.remove_push_mitigation = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Prevent Target Shield", module.prevent_target_shield, func(v: bool) -> void:
+		module.prevent_target_shield = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Adjacent Ally Bonus", module.bonus_if_target_adjacent_to_ally, func(v: int) -> void:
+		module.bonus_if_target_adjacent_to_ally = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Pierce", module.pierce, func(v: bool) -> void:
+		module.pierce = v
+		_on_module_field_edited(ability)
+	)
+	_bind_float(grid, "Target DEF % Debuff", module.target_def_pct_debuff, func(v: float) -> void:
+		module.target_def_pct_debuff = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Target DEF % Duration", module.target_def_pct_duration, func(v: int) -> void:
+		module.target_def_pct_duration = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Riposte Bonus", module.if_target_attacked_caster_last_turn_bonus, func(v: int) -> void:
+		module.if_target_attacked_caster_last_turn_bonus = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Riposte Stagger", module.if_target_attacked_caster_last_turn_stagger, func(v: bool) -> void:
+		module.if_target_attacked_caster_last_turn_stagger = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Target DEF Debuff", module.target_def_debuff, func(v: int) -> void:
+		module.target_def_debuff = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Kill Allies Heal", module.on_kill_all_allies_heal, func(v: int) -> void:
+		module.on_kill_all_allies_heal = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Kill Allies Shield", module.on_kill_all_allies_shield, func(v: int) -> void:
+		module.on_kill_all_allies_shield = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Next Skill Zero AP", module.next_skill_zero_ap, func(v: bool) -> void:
+		module.next_skill_zero_ap = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Smoke On Start", module.smoke_on_start, func(v: bool) -> void:
+		module.smoke_on_start = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Flank Enemy Bonus", module.flank_run_adjacent_enemy_bonus, func(v: int) -> void:
+		module.flank_run_adjacent_enemy_bonus = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Bleed Bonus Damage", module.bleed_bonus_damage, func(v: int) -> void:
+		module.bleed_bonus_damage = v
+		_on_module_field_edited(ability)
+	)
+	_bind_bool(grid, "Duelist Mark Target", module.duelist_mark_target, func(v: bool) -> void:
+		module.duelist_mark_target = v
+		_on_module_field_edited(ability)
+	)
+	_bind_int(grid, "Marked Target DEF", module.marked_target_defense, func(v: int) -> void:
+		module.marked_target_defense = v
+		_on_module_field_edited(ability)
+	)
+	_bind_float(grid, "Unacted Target DEF Ignore", module.unacted_target_ignore_def_pct, func(v: float) -> void:
+		module.unacted_target_ignore_def_pct = v
+		_on_module_field_edited(ability)
+	)
 
 
 func _add_module_extras_editor(
@@ -2913,6 +3005,34 @@ func _add_module_layers_editor(
 		)
 		_bind_bool(grid, "Counterattack On Intercept", layer.counterattack_on_intercept, func(v: bool) -> void:
 			layer.counterattack_on_intercept = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Bleed Weapon", layer.bleed_weapon, func(v: bool) -> void:
+			layer.bleed_weapon = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Skip Terrain Status", layer.skip_terrain_entry_status, func(v: bool) -> void:
+			layer.skip_terrain_entry_status = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Skip Terrain Bleed", layer.skip_terrain_entry_bleed, func(v: bool) -> void:
+			layer.skip_terrain_entry_bleed = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Hazard Damage Bonus", layer.hazard_damage_bonus, func(v: int) -> void:
+			layer.hazard_damage_bonus = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Trap Damage Bonus", layer.trap_damage_bonus, func(v: int) -> void:
+			layer.trap_damage_bonus = v
+			_on_module_field_edited(ability)
+		)
+		_bind_int(grid, "Grant AP", layer.grant_ap, func(v: int) -> void:
+			layer.grant_ap = v
+			_on_module_field_edited(ability)
+		)
+		_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:
+			layer.next_turn = v
 			_on_module_field_edited(ability)
 		)
 		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
@@ -3413,6 +3533,28 @@ func _bind_int(
 	spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	spin.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	spin.value_changed.connect(func(v: float) -> void: setter.call(int(v)))
+	parent.add_child(spin)
+	return [lbl, spin]
+
+
+func _bind_float(
+	parent: GridContainer,
+	label: String,
+	value: float,
+	setter: Callable,
+	min_value: float = -999.0,
+	max_value: float = 9999.0,
+) -> Array[Control]:
+	var lbl := _field_label(label)
+	parent.add_child(lbl)
+	var spin := SpinBox.new()
+	spin.min_value = min_value
+	spin.max_value = max_value
+	spin.step = 0.01
+	spin.value = value
+	spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spin.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	spin.value_changed.connect(func(v: float) -> void: setter.call(v))
 	parent.add_child(spin)
 	return [lbl, spin]
 

@@ -51,10 +51,10 @@ static func build(basic_sword: WeaponData) -> UnitData:
 		GameEnums.StatType.NONE,
 		GameEnums.MotionMode.BACKWARDS,
 	)
-	DataLibrary._add_extra(pullback_module, "pullback", true)
+	pullback_module.pullback = true
 	var pullback_upgraded := _clone_modules([pullback_module])
-	DataLibrary._add_extra(pullback_upgraded[0], "pullback_ally_def", 2)
-	DataLibrary._add_extra(pullback_upgraded[0], "movement_mp_override", 1)
+	pullback_upgraded[0].pullback_ally_def = 2
+	pullback_upgraded[0].movement_mp_override = 1
 	var pullback := _movement(
 		&"mercenary_pullback",
 		"Pullback",
@@ -239,6 +239,10 @@ static func _layer(
 	var layer := AbilityLayer.new()
 	layer.effect = effect
 	layer.condition = condition
+	if effect != null:
+		for key: Variant in effect.modifiers:
+			layer.ingest_runtime_key(String(key), effect.modifiers[key])
+		effect.modifiers.clear()
 	return layer
 
 
@@ -316,10 +320,11 @@ static func _attack(
 		max_range,
 		GameEnums.TargetingFlags.ENEMY,
 	)
-	DataLibrary._add_extras_from_dict(module, modifiers)
+	for key: Variant in modifiers:
+		module.ingest_runtime_key(String(key), modifiers[key])
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extras_from_dict(upgraded[0], modifiers)
-	DataLibrary._add_extras_from_dict(upgraded[0], upgrade_modifiers)
+	for key: Variant in upgrade_modifiers:
+		upgraded[0].ingest_runtime_key(String(key), upgrade_modifiers[key])
 	return _ability(
 		id,
 		name,
@@ -345,13 +350,13 @@ static func _swift_strike() -> AbilityData:
 		GameEnums.MotionMode.NONE,
 	)
 	move.execution_phase = GameEnums.ModulePhase.ON_PRE
-	DataLibrary._add_extra(move, "swift_strike", true)
+	move.swift_strike = true
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	strike.scaling_stat = GameEnums.StatType.PHYSICAL
 	move.layers.append(_layer(strike))
 	var modules: Array[AbilityModule] = [move]
 	var upgraded := _clone_modules(modules)
-	DataLibrary._add_extra(upgraded[0], "target_damaged_ap", 1)
+	upgraded[0].target_damaged_ap = 1
 	return _ability(
 		&"mercenary_swift_strike",
 		"Swift Strike",
@@ -370,8 +375,8 @@ static func _defense_strike() -> AbilityData:
 	strike.layers.append(_layer(guard))
 	var modules: Array[AbilityModule] = [strike]
 	var upgraded := _clone_modules(modules)
-	DataLibrary._add_extra(upgraded[0], "remove_push_mitigation", true)
-	DataLibrary._add_extra(upgraded[0], "prevent_target_shield", true)
+	upgraded[0].remove_push_mitigation = true
+	upgraded[0].prevent_target_shield = true
 	return _ability(
 		&"mercenary_defense_strike",
 		"Defense Strike",
@@ -386,11 +391,12 @@ static func _defense_strike() -> AbilityData:
 
 static func _blade_storm() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	DataLibrary._add_extra(module, "bonus_if_target_adjacent_to_ally", 2)
+	module.bonus_if_target_adjacent_to_ally = 2
 	var upgraded := _clone_modules([module])
 	var bleed := DataLibrary._status_effect(GameEnums.StatusType.BLEED, 1)
-	bleed.modifiers["bleed_weapon"] = true
-	upgraded[0].layers.append(_layer(bleed))
+	var bleed_layer := _layer(bleed)
+	bleed_layer.bleed_weapon = true
+	upgraded[0].layers.append(bleed_layer)
 	return _ability(
 		&"mercenary_blade_storm",
 		"Blade Storm",
@@ -412,14 +418,15 @@ static func _caltrop_toss() -> AbilityData:
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 	)
 	var hazard := DataLibrary._effect(GameEnums.EffectType.CREATE_HAZARD, 1)
-	hazard.modifiers["terrain_id"] = &"caltrop_trap"
-	hazard.modifiers["hazard_duration"] = 3
-	hazard.modifiers["skip_terrain_entry_status"] = true
-	hazard.modifiers["skip_terrain_entry_bleed"] = true
-	hazard.modifiers["hazard_damage_bonus"] = 1
-	module.layers.append(_layer(hazard))
+	var hazard_layer := _layer(hazard)
+	hazard_layer.terrain_id = &"caltrop_trap"
+	hazard_layer.hazard_duration = 3
+	hazard_layer.skip_terrain_entry_status = true
+	hazard_layer.skip_terrain_entry_bleed = true
+	hazard_layer.hazard_damage_bonus = 1
+	module.layers.append(hazard_layer)
 	var upgraded := _clone_modules([module])
-	upgraded[0].layers[0].effect.modifiers["trap_damage_bonus"] = 2
+	upgraded[0].layers[0].trap_damage_bonus = 2
 	return _ability(
 		&"mercenary_caltrop_toss",
 		"Caltrop Toss",
@@ -445,11 +452,12 @@ static func _feint() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.PIERCE
 	module.status_duration = 1
-	DataLibrary._add_extra(module, "next_attack_strength", 1)
-	DataLibrary._add_extra(module, "next_attack_pierce", true)
+	module.next_turn = true
+	module.next_attack_strength = 1
+	module.next_attack_pierce = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "target_def_pct_debuff", 0.25)
-	DataLibrary._add_extra(upgraded[0], "target_def_pct_duration", 2)
+	upgraded[0].target_def_pct_debuff = 0.25
+	upgraded[0].target_def_pct_duration = 2
 	return _ability(
 		&"mercenary_feint",
 		"Feint",
@@ -464,10 +472,10 @@ static func _feint() -> AbilityData:
 
 static func _riposte_strike() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	DataLibrary._add_extra(module, "if_target_attacked_caster_last_turn_bonus", 2)
-	DataLibrary._add_extra(module, "if_target_attacked_caster_last_turn_stagger", true)
+	module.if_target_attacked_caster_last_turn_bonus = 2
+	module.if_target_attacked_caster_last_turn_stagger = true
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "target_def_debuff", 2)
+	upgraded[0].target_def_debuff = 2
 	return _ability(
 		&"mercenary_riposte_strike",
 		"Riposte Strike",
@@ -482,9 +490,9 @@ static func _riposte_strike() -> AbilityData:
 
 static func _sever() -> AbilityData:
 	var strike := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
-	DataLibrary._add_extra(strike, "on_kill_all_allies_heal", 1)
+	strike.on_kill_all_allies_heal = 1
 	var upgraded := _clone_modules([strike])
-	DataLibrary._add_extra(upgraded[0], "on_kill_all_allies_shield", 1)
+	upgraded[0].on_kill_all_allies_shield = 1
 	return _ability(
 		&"mercenary_sever",
 		"Sever",
@@ -509,10 +517,12 @@ static func _second_wind() -> AbilityData:
 		GameEnums.StatType.NONE,
 	)
 	var grant := DataLibrary._effect(GameEnums.EffectType.ADD_STATUS_SELF, 1)
-	grant.modifiers["grant_ap"] = 1
-	module.layers.append(_layer(grant))
+	var grant_layer := _layer(grant)
+	grant_layer.grant_ap = 1
+	grant_layer.next_turn = true
+	module.layers.append(grant_layer)
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "next_skill_zero_ap", true)
+	upgraded[0].next_skill_zero_ap = true
 	return _ability(
 		&"mercenary_second_wind",
 		"Second Wind",
@@ -537,7 +547,7 @@ static func _tactical_retreat() -> AbilityData:
 		GameEnums.StatType.NONE,
 		GameEnums.MotionMode.NONE,
 	)
-	DataLibrary._add_extra(module, "smoke_on_start", true)
+	module.smoke_on_start = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
 	return _ability(
@@ -591,7 +601,8 @@ static func _flank_and_run() -> AbilityData:
 		GameEnums.StatType.NONE,
 		GameEnums.MotionMode.TO_EMPTY_TILE,
 	)
-	DataLibrary._add_extra(module, "flank_run_adjacent_enemy_bonus", 2)
+	module.flank_run_adjacent_enemy_bonus = 2
+	module.next_turn = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
 	return _ability(
@@ -609,10 +620,11 @@ static func _flank_and_run() -> AbilityData:
 static func _hamstring() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY)
 	var slow := DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_MOV, 1, 0)
-	slow.modifiers["set_max_move"] = 1
-	module.layers.append(_layer(slow))
+	var slow_layer := _layer(slow)
+	slow_layer.set_max_move = 1
+	module.layers.append(slow_layer)
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "bleed_bonus_damage", 2)
+	upgraded[0].bleed_bonus_damage = 2
 	return _ability(
 		&"mercenary_hamstring",
 		"Hamstring",
@@ -645,7 +657,7 @@ static func _acrobatic_vault() -> AbilityData:
 	)
 	var modules: Array[AbilityModule] = [vault, strike]
 	var upgraded := _clone_modules(modules)
-	DataLibrary._add_extra(upgraded[1], "pierce", true)
+	upgraded[1].pierce = true
 	return _ability(
 		&"mercenary_acrobatic_vault",
 		"Acrobatic Vault",
@@ -668,11 +680,11 @@ static func _duelists_challenge() -> AbilityData:
 	)
 	module.status_type = GameEnums.StatusType.TAUNT
 	module.status_duration = 1
-	DataLibrary._add_extra(module, "duelist_mark_target", true)
+	module.duelist_mark_target = true
 	var mark := DataLibrary._status_effect(GameEnums.StatusType.MARK, 1)
 	module.layers.append(_layer(mark))
 	var upgraded := _clone_modules([module])
-	DataLibrary._add_extra(upgraded[0], "marked_target_defense", 2)
+	upgraded[0].marked_target_defense = 2
 	return _ability(
 		&"mercenary_duelists_challenge",
 		"Duelist's Challenge",
