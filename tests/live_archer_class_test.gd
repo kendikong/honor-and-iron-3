@@ -7,6 +7,11 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 const _ACTOR_CELL := Vector2i(4, 5)
 const _SETTLE_FRAMES := 8
 const _DELTA_MS := 16
+const _COMPLEX_SECOND_ARCHER_CELL := Vector2i(2, 8)
+const _COMPLEX_VOLLEY_AIM := Vector2i(6, 5)
+const _COMPLEX_SIDESTEP_DEST := Vector2i(3, 8)
+const _COMPLEX_POWER_TARGET := Vector2i(6, 8)
+const _COMPLEX_POST_MOVE_DEST := Vector2i(4, 8)
 const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
 const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
 
@@ -104,6 +109,218 @@ func test_live_archer_every_skill(timeout := 240000) -> void:
 		return
 	for batch: Array in _BATCHES:
 		await _run_live_batch(runner, batch)
+
+
+func test_live_second_archer_complex_turn_after_volley(timeout := 240000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"archer"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"archer", false)
+	session.set_all_skills_enabled(&"archer", true)
+	session.extra_player_coords = [_COMPLEX_SECOND_ARCHER_CELL]
+	session.dummy_coords = [
+		_COMPLEX_VOLLEY_AIM,
+		Vector2i(6, 4),
+		Vector2i(7, 5),
+		_COMPLEX_POWER_TARGET,
+		Vector2i(7, 8),
+	]
+	session.unkillable_dummies = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	assert_object(_input._planning).override_failure_message(
+		"complex turn: CombatPlanningInput planning owner missing",
+	).is_not_null()
+	var unit_layer := _scene.get_node(
+		"WorldModulate/MapRoot/UnitLayer",
+	) as TacticalUnitLayer
+	var first_id: int = _unit_id_at(_director.base_board, _ACTOR_CELL)
+	var second_id: int = _unit_id_at(_director.base_board, _COMPLEX_SECOND_ARCHER_CELL)
+	var volley_enemy_id: int = _unit_id_at(_director.base_board, _COMPLEX_VOLLEY_AIM)
+	var power_enemy_id: int = _unit_id_at(_director.base_board, _COMPLEX_POWER_TARGET)
+	assert_int(first_id).override_failure_message("complex turn: first Archer missing").is_greater(0)
+	assert_int(second_id).override_failure_message("complex turn: second Archer missing").is_greater(0)
+	assert_int(volley_enemy_id).override_failure_message(
+		"complex turn: Volley target dummy missing",
+	).is_greater(0)
+	assert_int(power_enemy_id).override_failure_message(
+		"complex turn: Power Shot target dummy missing",
+	).is_greater(0)
+	if first_id < 0 or second_id < 0 or volley_enemy_id < 0 or power_enemy_id < 0:
+		return
+
+	var first: UnitState = _director.board.get_unit_by_id(first_id)
+	var second: UnitState = _director.board.get_unit_by_id(second_id)
+	var volley: AbilityData = _ability_by_id(first, &"archer_volley")
+	var sidestep: AbilityData = _ability_by_id(second, &"archer_sidestep")
+	var power_shot: AbilityData = _ability_by_id(second, &"archer_power_shot")
+	assert_object(volley).override_failure_message(
+		"complex turn: first Archer Volley missing",
+	).is_not_null()
+	assert_object(sidestep).override_failure_message(
+		"complex turn: second Archer Sidestep missing",
+	).is_not_null()
+	assert_object(power_shot).override_failure_message(
+		"complex turn: second Archer Power Shot missing",
+	).is_not_null()
+	if volley == null or sidestep == null or power_shot == null:
+		return
+
+	# First Archer: commit the AOE that must remain visible after selection changes.
+	_director.select_unit(first_id)
+	_director.select_ability(_ability_index(first, volley))
+	await runner.simulate_frames(2, _DELTA_MS)
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self,
+		runner,
+		_overlay,
+		_input,
+		_director,
+		first_id,
+		volley,
+		_COMPLEX_VOLLEY_AIM,
+		&"complex/volley_hover",
+	)
+	var volley_slots: Dictionary = await _commit_live_click(
+		runner, first_id, _COMPLEX_VOLLEY_AIM,
+	)
+	assert_bool(_slots_invalid(volley_slots)).override_failure_message(
+		"complex/volley_commit rejected: %s" % _slots_debug(volley_slots),
+	).is_false()
+	assert_bool(_plan_has_ability(&"archer_volley")).override_failure_message(
+		"complex/volley_commit did not write Volley",
+	).is_true()
+	var committed_immediately: CombatPlanningForecast = (
+		_overlay.get_committed_preview().forecast
+	)
+	assert_object(committed_immediately).override_failure_message(
+		"complex/after_volley immediate committed forecast missing",
+	).is_not_null()
+	await _assert_projection_matches_player_sim(runner, "complex/after_volley")
+	var committed_after_volley: CombatPlanningForecast = (
+		_overlay.get_committed_preview().forecast
+	)
+	assert_object(committed_after_volley).override_failure_message(
+		"complex/after_volley committed forecast missing",
+	).is_not_null()
+	if committed_after_volley != null:
+		assert_bool(committed_after_volley.damage_hp(volley_enemy_id) > 0).override_failure_message(
+			"complex/after_volley committed HP damage disappeared",
+		).is_true()
+		var bar_after_volley: CombatPlanningForecast = unit_layer._bar_display_forecast()
+		assert_object(bar_after_volley).override_failure_message(
+			"complex/after_volley HP bar forecast missing",
+		).is_not_null()
+		if bar_after_volley != null:
+			assert_bool(bar_after_volley.damage_hp(volley_enemy_id) > 0).override_failure_message(
+				"complex/after_volley HP bar lost committed Volley damage",
+			).is_true()
+
+	# Second Archer: select after Volley, then commit PRE_MOVE -> ACTION -> POST_MOVE.
+	_director.select_unit(second_id)
+	await runner.simulate_frames(2, _DELTA_MS)
+	var bar_after_selection: CombatPlanningForecast = unit_layer._bar_display_forecast()
+	assert_object(bar_after_selection).override_failure_message(
+		"complex/second_select committed forecast missing",
+	).is_not_null()
+	if bar_after_selection != null:
+		assert_bool(bar_after_selection.damage_hp(volley_enemy_id) > 0).override_failure_message(
+			"complex/second_select cleared the first Archer's Volley damage",
+		).is_true()
+
+	_director.select_ability(_ability_index(second, sidestep))
+	await runner.simulate_frames(2, _DELTA_MS)
+	var sidestep_slots: Dictionary = await _commit_live_click(
+		runner, second_id, _COMPLEX_SIDESTEP_DEST,
+	)
+	assert_bool(_slots_invalid(sidestep_slots)).override_failure_message(
+		"complex/sidestep_commit rejected: %s" % _slots_debug(sidestep_slots),
+	).is_false()
+	await _MOVEMENT_QA.assert_committed(
+		self,
+		&"archer_sidestep",
+		_director,
+		second_id,
+		sidestep,
+		sidestep_slots,
+		_input,
+		_overlay,
+		runner,
+	)
+	var projected_after_sidestep: UnitState = _director.projected_state.get_unit_by_id(second_id)
+	assert_that(projected_after_sidestep.position).override_failure_message(
+		"complex/sidestep projected landing",
+	).is_equal(_COMPLEX_SIDESTEP_DEST)
+
+	_director.select_unit(second_id)
+	_director.select_ability(_ability_index(second, power_shot))
+	await _OVERLAY_QA.sync_attack_hover(
+		runner, _input, _overlay, _director, _COMPLEX_POWER_TARGET,
+	)
+	var live_power_preview: CombatPlanningPreview = _overlay.get_live_preview()
+	assert_object(live_power_preview.forecast).override_failure_message(
+		"complex/power_shot hover forecast missing",
+	).is_not_null()
+	if live_power_preview.forecast != null:
+		assert_bool(live_power_preview.forecast.damage_hp(power_enemy_id) > 0).override_failure_message(
+			"complex/power_shot hover forecast missing target damage",
+		).is_true()
+	var power_slots: Dictionary = await _commit_live_click(
+		runner, second_id, _COMPLEX_POWER_TARGET,
+	)
+	assert_bool(_slots_invalid(power_slots)).override_failure_message(
+		"complex/power_shot_commit rejected: %s" % _slots_debug(power_slots),
+	).is_false()
+	assert_bool(_plan_has_ability(&"archer_power_shot")).override_failure_message(
+		"complex/power_shot_commit did not write Power Shot",
+	).is_true()
+
+	var post_slots: Dictionary = await _MOVEMENT_QA.commit_universal_run(
+		self,
+		runner,
+		_director,
+		_input,
+		second_id,
+		_COMPLEX_POST_MOVE_DEST,
+		true,
+	)
+	assert_bool(_slots_invalid(post_slots)).override_failure_message(
+		"complex/post_move rejected: %s" % _slots_debug(post_slots),
+	).is_false()
+	var committed_post: TimelineAction = _committed_post_move_for_unit(second_id)
+	assert_object(committed_post).override_failure_message(
+		"complex/post_move action missing",
+	).is_not_null()
+	if committed_post != null:
+		assert_that(committed_post.target_coord).override_failure_message(
+			"complex/post_move target",
+		).is_equal(_COMPLEX_POST_MOVE_DEST)
+	await _assert_projection_matches_player_sim(runner, "complex/final")
+	var final_second: UnitState = _director.projected_state.get_unit_by_id(second_id)
+	assert_that(final_second.position).override_failure_message(
+		"complex/final second Archer position",
+	).is_equal(_COMPLEX_POST_MOVE_DEST)
+	assert_bool(_plan_has_ability(&"archer_volley")).is_true()
+	assert_bool(_plan_has_ability(&"archer_power_shot")).is_true()
+	assert_int(_director.get_player_plan().entries.size()).override_failure_message(
+		"complex/final timeline action count",
+	).is_greater_equal(4)
 
 
 func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
@@ -302,6 +519,7 @@ func _commit_live_click(
 		if _slots_invalid(slots):
 			return slots
 		_input.call("_paint_intent_slots_before_commit", unit_id, slots)
+		_input._suppress_post_commit_hover_refresh = true
 		assert_bool(_director.commit_from_slots(unit_id, slots)).is_true()
 		await runner.simulate_frames(2, _DELTA_MS)
 	if _plan_has_awaiting(unit_id):
@@ -311,6 +529,7 @@ func _commit_live_click(
 	if _slots_invalid(slots):
 		return slots
 	_input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	_input._suppress_post_commit_hover_refresh = true
 	assert_bool(_director.commit_from_slots(unit_id, slots)).is_true()
 	_input.call("_promote_intent_preview_after_commit")
 	_director.flush_plan_refresh_signals_if_pending()
@@ -360,6 +579,52 @@ func _plan_has_ability(skill_id: StringName) -> bool:
 			if action.ability.id == skill_id and not action.awaiting_target:
 				return true
 	return false
+
+
+func _committed_post_move_for_unit(unit_id: int) -> TimelineAction:
+	for action: TimelineAction in _director.plan_post_move.entries:
+		if action != null and action.actor_id == unit_id and not action.awaiting_target:
+			return action
+	return null
+
+
+func _assert_projection_matches_player_sim(
+	runner: GdUnitSceneRunner,
+	label: String,
+) -> void:
+	_director.flush_plan_refresh_signals_if_pending()
+	await runner.simulate_frames(2, _DELTA_MS)
+	var expected: BoardState = _director.base_board.clone()
+	var events: Array[SimEvent] = []
+	Simulator.simulate_player_turn(expected, _director.get_player_plan(), events)
+	var actual: BoardState = _director.projected_state
+	assert_object(actual).override_failure_message(
+		"%s: projected board missing" % label,
+	).is_not_null()
+	if actual == null:
+		return
+	for expected_unit: UnitState in expected.units:
+		var actual_unit: UnitState = actual.get_unit_by_id(expected_unit.id)
+		assert_object(actual_unit).override_failure_message(
+			"%s: projected unit %d missing" % [label, expected_unit.id],
+		).is_not_null()
+		if actual_unit == null:
+			continue
+		assert_that(actual_unit.position).override_failure_message(
+			"%s: unit %d position" % [label, expected_unit.id],
+		).is_equal(expected_unit.position)
+		assert_int(actual_unit.health.current_hp).override_failure_message(
+			"%s: unit %d HP" % [label, expected_unit.id],
+		).is_equal(expected_unit.health.current_hp)
+		assert_int(actual_unit.armor).override_failure_message(
+			"%s: unit %d armor" % [label, expected_unit.id],
+		).is_equal(expected_unit.armor)
+		assert_int(actual_unit.movement.points_left).override_failure_message(
+			"%s: unit %d MP" % [label, expected_unit.id],
+		).is_equal(expected_unit.movement.points_left)
+		assert_int(actual_unit.ability.points_left).override_failure_message(
+			"%s: unit %d AP" % [label, expected_unit.id],
+		).is_equal(expected_unit.ability.points_left)
 
 
 func _plan_has_awaiting(actor_id: int) -> bool:
