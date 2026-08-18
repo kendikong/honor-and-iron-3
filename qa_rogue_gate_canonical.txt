@@ -1,4 +1,4 @@
-﻿=== Rogue QA gate (class validation - NOT planning QA) ===
+=== Rogue QA gate (class validation - NOT planning QA) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/ROGUE_QA_GATE.md)
 
 === Matrix summary (from docs/ROGUE_QA_GATE.md) ===

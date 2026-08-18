@@ -1,4 +1,4 @@
-﻿=== Beast Rider QA gate (CLASS_QA_BIBLE) ===
+=== Beast Rider QA gate (CLASS_QA_BIBLE) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/BEAST_RIDER_QA_GATE.md)
 
 === Matrix summary (from docs/BEAST_RIDER_QA_GATE.md) ===

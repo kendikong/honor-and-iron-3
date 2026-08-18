@@ -1,4 +1,4 @@
-﻿=== Engineer QA gate (CLASS_QA_BIBLE) ===
+=== Engineer QA gate (CLASS_QA_BIBLE) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/ENGINEER_QA_GATE.md)
 
 === Matrix summary (from docs/ENGINEER_QA_GATE.md) ===

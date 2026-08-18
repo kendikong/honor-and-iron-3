@@ -1,4 +1,4 @@
-﻿=== Knight QA gate (class validation - NOT planning QA) ===
+=== Knight QA gate (class validation - NOT planning QA) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/KNIGHT_QA_GATE.md)
 
 === Matrix summary (from docs/KNIGHT_QA_GATE.md) ===
