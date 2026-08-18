@@ -434,6 +434,7 @@ static func normalize_ability(ability: AbilityData) -> void:
 	sync_legacy_from_header(ability)
 	_promote_header_extras(ability)
 	_prefer_authored_targeting_mode(ability)
+	_sync_shaped_targeting_flags(ability)
 	ability.sync_legacy_targeting()
 
 
@@ -445,6 +446,34 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 	):
 		ability.targeting_flags = GameEnums.TargetingFlags.SELF
 		ability.targeting_mode = GameEnums.TargetingMode.SELF
+
+
+static func _sync_shaped_targeting_flags(ability: AbilityData) -> void:
+	if ability == null or ability.is_movement_kind():
+		return
+	if (
+		ability.has_targeting(GameEnums.TargetingFlags.TILE)
+		or ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
+	):
+		return
+	var base_shaped: bool = (
+		ability.range_tiles > 0
+		and ability.target_shape != GameEnums.TargetShape.SINGLE
+	)
+	var upgraded_range: int = ability.range_tiles
+	if ability.upgraded_range_tiles >= 0:
+		upgraded_range = ability.upgraded_range_tiles
+	var upgraded_shaped: bool = (
+		upgraded_range > 0
+		and ability.upgraded_target_shape != GameEnums.TargetShape.SINGLE
+	)
+	if not base_shaped and not upgraded_shaped:
+		return
+	if (
+		ability.has_targeting(GameEnums.TargetingFlags.ENEMY)
+		or ability.has_targeting(GameEnums.TargetingFlags.ALLY)
+	):
+		ability.targeting_flags |= GameEnums.TargetingFlags.TILE
 
 
 static func _apply_module_range_to_ability(ability: AbilityData, modules: Array[AbilityModule]) -> void:
