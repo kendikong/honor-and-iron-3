@@ -17,8 +17,12 @@ function Write-GateLine([string]$Line) {
 }
 
 function Save-GateLog() {
-	$gateLogLines | Set-Content -Path $canonicalGateLog -Encoding utf8
-	$gateLogLines | Set-Content -Path $latestGateLog -Encoding utf8
+	$canonicalTmp = "$canonicalGateLog.tmp"
+	$latestTmp = "$latestGateLog.tmp"
+	$gateLogLines | Set-Content -Path $canonicalTmp -Encoding utf8
+	$gateLogLines | Set-Content -Path $latestTmp -Encoding utf8
+	Move-Item -LiteralPath $canonicalTmp -Destination $canonicalGateLog -Force
+	Move-Item -LiteralPath $latestTmp -Destination $latestGateLog -Force
 }
 
 function Exit-Gate([int]$Code) {
