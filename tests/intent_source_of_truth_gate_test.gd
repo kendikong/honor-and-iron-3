@@ -104,6 +104,13 @@ static func _test_swap_01(failures: Array[String]) -> void:
 		PlanningChecklistHarness.SWAP_ALLY_CELL,
 		k1_id,
 	)
+	var swap_sig: String = PlanningQAGateTest._intent_slot_signature_from_timeline(
+		fix.director, k1_id,
+	)
+	if not swap_sig.contains("knight_swap"):
+		PlanningChecklistHarness.assert_fail(
+			failures, "SWAP-01", "slot signature must include knight_swap: %s" % swap_sig,
+		)
 	PlanningDragE2EHarness.cleanup_all()
 
 
@@ -195,6 +202,13 @@ static func _test_trample_01(failures: Array[String]) -> void:
 				str(committed.waypoints if committed != null else null),
 				str(TramplingAdvanceE2ETest.EAST_THEN_NORTH),
 			],
+		)
+	var trample_sig: String = PlanningQAGateTest._intent_slot_signature_from_timeline(director, 1)
+	if not trample_sig.contains(str(TramplingAdvanceE2ETest.EAST_THEN_NORTH)):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"TRAMPLE-01",
+			"slot signature must include painted action waypoints: %s" % trample_sig,
 		)
 	PlanningDragE2EHarness.cleanup_all()
 

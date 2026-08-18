@@ -2359,6 +2359,30 @@ func _intent_slot_signature(slots: Dictionary) -> String:
 	return PlanningQAGateTest._intent_slot_signature(slots)
 
 
+func _slot_plan_width(slots: Dictionary) -> Vector3i:
+	return Vector3i(
+		(slots.get("pre", []) as Array).size(),
+		(slots.get("action", []) as Array).size(),
+		(slots.get("post", []) as Array).size(),
+	)
+
+
+func _timeline_plan_width(director: CombatDirector, unit_id: int) -> Vector3i:
+	var pre_n: int = 0
+	var action_n: int = 0
+	var post_n: int = 0
+	for action: TimelineAction in director.plan_pre_move.entries:
+		if action.actor_id == unit_id:
+			pre_n += 1
+	for action: TimelineAction in director.plan_action.entries:
+		if action.actor_id == unit_id:
+			action_n += 1
+	for action: TimelineAction in director.plan_post_move.entries:
+		if action.actor_id == unit_id:
+			post_n += 1
+	return Vector3i(pre_n, action_n, post_n)
+
+
 func _commit_slots_for_interaction(
 	ctx: Dictionary,
 	unit_id: int,
@@ -2492,6 +2516,16 @@ func _assert_commit_ratifies_preview(
 			assert_that(action.waypoints).override_failure_message(
 				"%s: committed action waypoints must ratify preview" % label,
 			).is_equal(slot_act.waypoints)
+	var preview_sig: String = str(pre.get("slots_signature", ""))
+	var timeline_sig: String = PlanningQAGateTest._intent_slot_signature_from_timeline(
+		director, unit_id,
+	)
+	if _slot_plan_width(slots) == _timeline_plan_width(director, unit_id):
+		assert_that(timeline_sig).override_failure_message(
+			"%s: committed timeline signature %s != preview slots %s" % [
+				label, timeline_sig, preview_sig,
+			],
+		).is_equal(preview_sig)
 	var preview_path: Array = pre.get("preview_path", [])
 	if not preview_path.is_empty():
 		var preview_end: Vector2i = preview_path[preview_path.size() - 1] as Vector2i

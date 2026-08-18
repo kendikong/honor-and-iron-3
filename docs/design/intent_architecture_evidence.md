@@ -66,22 +66,20 @@ Shared path for every **valid** journey:
 
 ## 5. Fixture signatures
 
-Recorded 2026-08-18 from `IntentSourceOfTruthGateTest` `[SOT-SIG]` (also dumped to Godot `user://intent_sot_signatures.txt`). Format: `_intent_slot_signature` = `pre_target|pre_waypoints|action_target_unit|ability|post_count|invalid`. Full-turn `_sim_result_signature` is `units=…||events=…`. Player-phase economy/stand is compared to `simulate_player_turn`, not the full-turn AP after `reset_for_turn`.
-
-Helper note (not a production FAIL): `_intent_slot_signature` records **pre-move** waypoints and `action[0].ability`, not action-column waypoints. TRAMPLE-01 still asserts painted `EAST_THEN_NORTH` on the committed action. SWAP-01 slot string omits `knight_swap` because that journey’s slots encode the ally cell on pre-move; sim events still show the swap pair.
+Recorded 2026-08-18 from `IntentSourceOfTruthGateTest` `[SOT-SIG]`. Format: `_intent_slot_signature` = `pre_target|pre_waypoints|action_target_unit|ability|action_waypoints|post_count|invalid`. Ability falls back to the pre-move column when the action column has no ability (Swap). Full-turn `_sim_result_signature` is `units=…||events=…`. Player-phase economy/stand is compared to `simulate_player_turn`, not the full-turn AP after `reset_for_turn`.
 
 Exact slot strings (pipe-delimited; hover = click = timeline):
 
-- **WALK-01** slot `(5, 5)|[(5, 5)]|-1||0|false` — path `[(4, 5), (5, 5)]`, stand `(4, 5)`, pos `(5, 5)` — sim units `1@5,5:ap1:mp3;2@7,5:ap0:mp0`
-- **MOVE-SKILL-01** slot `(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|0|false` — path to `(6, 5)`, stand `(4, 5)`, pos `(6, 5)` — sim units `1@6,5:ap1:mp3;2@9,5:ap0:mp0`
-- **PUSH-PULL-01/bash** same slot and sim units as MOVE-SKILL-01; enemy pushed `(7, 5)→(9, 5)`
-- **PUSH-PULL-01/hook** slot `(-999, -999)|[]|2|knight_chain_hook|0|false` — stand/pos `(1, 3)`; enemy pulled to `(2, 3)` — sim units `1@1,3:ap1:mp3;2@2,3:ap0:mp0`
-- **SWAP-01** slot `(4, 4)|[]|-1||0|false` — path `[(4, 5), (4, 4)]`, stand `(4, 5)` — sim units `1@4,4:ap1:mp3;2@4,5:ap1:mp3`
-- **AWAIT-01** slot `(-999, -999)|[]|2|knight_chain_hook|0|false` — far hover rejected first; valid enemy matches hook
-- **TRAMPLE-01** slot `(-999, -999)|[]|-1|knight_trampling_advance|0|false` — painted east-then-north; sim path `(5, 4)→(6, 3)` — sim units `1@6,3:ap1:mp3`
-- **STALE-01** slot `(-999, -999)|[]|-1||0|true` — OOB invalid; commit false; timeline unchanged; Simulator must not run
+- **WALK-01** `(5, 5)|[(5, 5)]|-1||[]|0|false` — path `[(4, 5), (5, 5)]`, stand `(4, 5)`, pos `(5, 5)` — sim units `1@5,5:ap1:mp3;2@7,5:ap0:mp0`
+- **MOVE-SKILL-01** `(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false` — pos `(6, 5)` — sim units `1@6,5:ap1:mp3;2@9,5:ap0:mp0`
+- **PUSH-PULL-01/bash** same as MOVE-SKILL-01; enemy pushed `(7, 5)→(9, 5)`
+- **PUSH-PULL-01/hook** `(-999, -999)|[]|2|knight_chain_hook|[]|0|false` — stand/pos `(1, 3)`; enemy pulled to `(2, 3)` — sim units `1@1,3:ap1:mp3;2@2,3:ap0:mp0`
+- **SWAP-01** `(4, 4)|[]|-1|knight_swap|[]|0|false` — path `[(4, 5), (4, 4)]` — sim units `1@4,4:ap1:mp3;2@4,5:ap1:mp3`
+- **AWAIT-01** `(-999, -999)|[]|2|knight_chain_hook|[]|0|false` — far hover rejected first; valid enemy matches hook
+- **TRAMPLE-01** `(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false` — painted east-then-north in the **action** waypoint field; sim path `(5, 4)→(6, 3)` — sim units `1@6,3:ap1:mp3`
+- **STALE-01** `(-999, -999)|[]|-1||[]|0|true` — OOB invalid; commit false; Simulator must not run
 
-Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`. Exact event strings are in the `[SOT-SIG]` dump.
+Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 
 ## 6. CM-01–CM-12
 
@@ -97,26 +95,37 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`. Exact event st
 | CM-08 | **PASS** | STALE-01 OOB. Bundle `new_fails=0`: stale hover, bash hover-change, undo, drag-drop undo, ability-switch cache clear, drag-cleared enemy intent restore, stale drag route ignore, hover-order invariant, timeline ghost/snapshot, invalid slots block commit, enemy-skill hover ≠ move route, `StalePreMoveTest`, swap undo cascade (`PlanningInputTest._test_swap_undo_cascades_all_plans_after`). Existing identity already rejects stale promotion — no new identity system. |
 | CM-09 | **PASS** | Bundle `new_fails=0` plus seven journeys: Pre/Post-Move origin, push-through premove, latest-stand action range, trample post-move painted route, bash sim determinism, swap dependency cancellation, awaiting hook (AWAIT-01), enemy replan marker on full-turn sim. |
 | CM-10 | **PASS** | Tests + this evidence file only. No production `ability.id` branch, no UI-only authority, no second range rule, no global exception. |
-| CM-11 | **PASS** (measure only; **no optimize**) | `[SOT-PERF]` Shield Bash hover cell: hover **7511 µs**, slot build **6061 µs**, `simulate_committed` **2662 µs** (averages; T3-mimic sample). Slot signature unchanged across the timing loop: `(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|0|false`. No cache / skip-sim / validation weaken. |
-| CM-12 | **PASS** | `.\scripts\run_planning_qa_gate.ps1` default **PASS** 2026-08-18 (AOE + headless contracts + T3 mimic). SWAP-01 is inside that gate (and T3 mimic). Class gates / full regression **not run**: no factory, `Simulator`, or class-owner production change. Unresolved: owner Layer B (F5 pixels) not claimed; `-LiveTier3` not run. |
+| CM-11 | **PASS** (measure only; **no optimize**) | `[SOT-PERF]` Shield Bash: hover **7520 µs**, slot build **6091 µs**, `simulate_committed` **2686 µs**. Slot signature unchanged across the timing loop. No cache / skip-sim / validation weaken. |
+| CM-12 | **PASS** | `.\scripts\run_planning_qa_gate.ps1` default **PASS**. SWAP-01 inside that gate. Live twins: `_assert_commit_ratifies_preview` now compares `_intent_slot_signature` to `_intent_slot_signature_from_timeline` when captured slots are the unit’s full plan. Class gates / full regression **not run**: no factory or `Simulator` production change. Unresolved: owner Layer B (F5 pixels) not claimed; `-LiveTier3` not run (plan forbids unless asked). |
 
 ## 7. preserve / improve / defer
 
 | Issue | Decision | Target |
 |-------|----------|--------|
-| Enforcement gap (helpers can reconstruct intent) | **improve** via characterization gate | Phase 1 **done** — seven rows + CM-08/09/11 proof; no production refactor |
-| `ResolutionPipeline` clones in `_refresh_plan_core` | **preserve** as support | no Phase 2 (no FAIL) |
-| Typed `PlanningResult` wrapper | **defer** — callers can consume existing slots/preview | Phase 3 not started |
-| Stale identity strengthening | **preserve** existing reject/refresh paths (CM-08 `new_fails=0`) | no Phase 2 |
-| Projection perf | **preserve** — measured, not optimized (CM-11) | Phase 4 only if a later hotspot is proven |
-| `_intent_slot_signature` omits action-column waypoints | **defer** — trample waypoints asserted separately; changing the helper is not a SoT FAIL | later test-only turn |
+| Enforcement gap (helpers can reconstruct intent) | **improve** via characterization gate | Phase 1 **done** |
+| `ResolutionPipeline` clones in `_refresh_plan_core` | **preserve** as support | Phase 2 **closed** — no FAIL, no production change |
+| Typed `PlanningResult` wrapper | **defer / not started** — callers already consume slots/preview | Phase 3 skipped (Phase 2 did not prove multiple callers lack a shared result) |
+| Stale identity strengthening | **preserve** existing reject/refresh (CM-08 `new_fails=0`) | Phase 2 **closed** — no stale-promotion FAIL |
+| Projection perf | **preserve** — measured, not optimized (CM-11) | Phase 4 skipped (no hotspot large enough to justify a result-changing optimize) |
+| Slot signature completeness | **improve** (test helper only) | Action waypoints + pre-column ability now in `_intent_slot_signature` |
 | Stale “legacy” labels in `PLANNING_QA_GATE.md` | **defer** (plan forbids reconciling this slice) | later owner turn |
 
 ## 8. QA log
 
 | Date | Command | Result | Notes |
 |------|---------|--------|--------|
-| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default, no `-LiveTier3`) | **PASS** | Phase 1 seven journeys |
-| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default, no `-LiveTier3`) | **PASS** | CM-08/09/11 wired; `[SOT-SIG]` / `[SOT-PERF]` recorded |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Phase 1 seven journeys |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | CM-08/09/11; commit `6452d2d0d74fae4ee665b76f401eb27619b4393a` |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Complete slot signatures + live timeline twin |
 
-Phase 1 → 2: all seven rows PASS and CM-01–CM-12 have named evidence. Do **not** refactor the source-of-truth path. Remaining risk: live TestBattle (`-LiveTier3`) was not run; owner F5 Layer B is not claimed. Direct `ResolutionPipeline` clones remain classified as support.
+## 9. Slice close
+
+Phases 0–1 done. Phase 2 closed with **no owner-system edit**: seven-journey four-way **PASS**, so the source-of-truth path was not rewritten. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because Phase 2 found no defect and CM-11 showed no hotspot worth changing results.
+
+Gameplay behavior is unchanged. Automated proof is the default planning gate. Owner F5 Layer B remains the owner’s visual check.
+
+Remaining risks (not blockers):
+
+- Live TestBattle (`-LiveTier3`) was not executed this slice; asserts are in `live_planning_scene_test.gd` for when it is.
+- Godot harness still prints RID/object leak warnings at exit (pre-existing, not `[FAIL]`).
+- Direct `ResolutionPipeline` clones in `_refresh_plan_core` stay classified as support.

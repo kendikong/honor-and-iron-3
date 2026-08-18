@@ -522,20 +522,29 @@ static func _slot_signature(slots: Dictionary) -> String:
 
 static func _intent_slot_signature(slots: Dictionary) -> String:
 	var pre_wps: String = "[]"
+	var pre_ability: String = ""
 	var pre: Array = slots.get("pre", []) as Array
 	if not pre.is_empty() and pre[0] is TimelineAction:
-		pre_wps = str((pre[0] as TimelineAction).waypoints)
+		var pre_act: TimelineAction = pre[0] as TimelineAction
+		pre_wps = str(pre_act.waypoints)
+		if pre_act.ability != null:
+			pre_ability = str(pre_act.ability.id)
 	var action_ability: String = ""
+	var action_wps: String = "[]"
 	var action_steps: Array = slots.get("action", []) as Array
 	if not action_steps.is_empty() and action_steps[0] is TimelineAction:
 		var act: TimelineAction = action_steps[0] as TimelineAction
 		action_ability = str(act.ability.id) if act.ability != null else ""
+		action_wps = str(act.waypoints)
+	if action_ability.is_empty():
+		action_ability = pre_ability
 	var post_count: int = (slots.get("post", []) as Array).size()
-	return "%s|%s|%s|%s|%d|%s" % [
+	return "%s|%s|%s|%s|%s|%d|%s" % [
 		str(_pre_target(slots)),
 		pre_wps,
 		str(_action_target_unit(slots)),
 		action_ability,
+		action_wps,
 		post_count,
 		str(_slots_invalid(slots)),
 	]
