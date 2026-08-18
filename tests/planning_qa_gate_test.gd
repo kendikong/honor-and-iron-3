@@ -3268,8 +3268,20 @@ static func _test_volley_hover_damage_survives_board_changed(failures: Array[Str
 
 static func _test_selecting_unit_keeps_movement_points(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bible_board()
+	var k1_id: int = fix.k1_id as int
 	var k2_id: int = fix.k2_id as int
-	var before: UnitState = fix.board.get_unit_by_id(k2_id)
+	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.KNIGHT_START)
+	PlanningChecklistHarness.select_ability_for_unit(
+		fix, k1_id, PlanningChecklistHarness.SHIELD_BASH_ID,
+	)
+	PlanningChecklistHarness.refresh_attack_hover(fix, PlanningChecklistHarness.E_BASH_CELL)
+	var committed: Dictionary = PlanningChecklistHarness.commit_production(
+		fix, PlanningChecklistHarness.E_BASH_CELL,
+	)
+	if PlanningChecklistHarness.slots_invalid(committed):
+		failures.append("PlanningQAGate selection_is_mp_read_only: setup attack commit failed")
+		return
+	var before: UnitState = PlanningChecklistHarness.projected_unit(fix, k2_id)
 	if before == null:
 		failures.append("PlanningQAGate selection_is_mp_read_only: second Knight missing")
 		return
