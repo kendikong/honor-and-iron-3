@@ -4,8 +4,11 @@ extends RefCounted
 ## Phase 1 source-of-truth gate: last valid preview slots == finalized slots ==
 ## committed timeline == Simulator result for the seven reference journeys.
 
+static var _recorded: Dictionary = {}
+
 
 static func run_all(failures: Array[String]) -> void:
+	_recorded.clear()
 	_test_walk_01(failures)
 	_test_move_skill_01(failures)
 	_test_push_pull_01(failures)
@@ -13,6 +16,10 @@ static func run_all(failures: Array[String]) -> void:
 	_test_await_01(failures)
 	_test_trample_01(failures)
 	_test_stale_01(failures)
+	_test_cm08_stale_identity(failures)
+	_test_cm09_intent_mechanics(failures)
+	_test_cm11_measure(failures)
+	_dump_recorded()
 
 
 static func _test_walk_01(failures: Array[String]) -> void:
@@ -218,6 +225,13 @@ static func _test_stale_01(failures: Array[String]) -> void:
 		PlanningChecklistHarness.assert_fail(
 			failures, "STALE-01", "rejected intent must not mutate the timeline",
 		)
+	_record_sot(
+		"STALE-01",
+		PlanningQAGateTest._intent_slot_signature(oob),
+		"(uncommitted)",
+		"n/a",
+		"invalid=true commit=false",
+	)
 	PlanningDragE2EHarness.cleanup_all()
 
 
@@ -246,6 +260,36 @@ static func _assert_valid_four_way(
 	if PlanningChecklistHarness.slots_invalid(hover_slots):
 		PlanningChecklistHarness.assert_fail(failures, label, "expected valid hover slots")
 		return
+	var preview_path: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, unit_id)
+	var red_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	if label.begins_with("WALK-01") or label.begins_with("MOVE-SKILL") or label.begins_with("PUSH-PULL"):
+		if preview_path.is_empty():
+			PlanningChecklistHarness.assert_fail(
+				failures, label, "preview_paths must derive from hover slots (empty path)",
+			)
+			return
+	if label.begins_with("MOVE-SKILL") or label.begins_with("PUSH-PULL/bash"):
+		if red_tiles.is_empty():
+			PlanningChecklistHarness.assert_fail(
+				failures, label, "hover action-range tiles must be non-empty for bash",
+			)
+			return
+	if label.begins_with("WALK-01"):
+		var blue_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+		if blue_tiles.is_empty():
+			PlanningChecklistHarness.assert_fail(
+				failures, label, "hover move tiles must be non-empty for walk",
+			)
+			return
+	if label.begins_with("MOVE-SKILL") or label.begins_with("PUSH-PULL/bash"):
+		var cursor_icon: String = fix.input._cursor_icon_from_commit_slots(
+			hover_slots, fix.get("knight", null),
+		)
+		if cursor_icon.is_empty():
+			PlanningChecklistHarness.assert_fail(
+				failures, label, "cursor icon must derive from hover slots",
+			)
+			return
 	var preview_pos: Vector2i = PlanningChecklistHarness.preview_unit_pos(fix, unit_id)
 	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 		fix.director, fix.director.board, unit_id,
@@ -267,6 +311,14 @@ static func _assert_valid_four_way(
 	var player_board: BoardState = PlanningChecklistHarness.simulate_player_committed(fix.director)
 	_assert_comparison_four(
 		failures, label, fix, unit_id, preview_pos, stand, player_board, result,
+	)
+	_record_sot(
+		label,
+		hover_sig,
+		timeline_sig,
+		PlanningQAGateTest._sim_result_signature(result),
+		"path=%s stand=%s pos=%s"
+		% [str(preview_path), str(stand), str(preview_pos)],
 	)
 
 
@@ -305,6 +357,13 @@ static func _assert_slot_commit_sim(
 	var result: SimResult = PlanningChecklistHarness.simulate_committed(director)
 	_assert_player_phase_matches(
 		failures, label, director.projected_state, player_board, result,
+	)
+	_record_sot(
+		label,
+		preview_sig,
+		timeline_sig,
+		PlanningQAGateTest._sim_result_signature(result),
+		"",
 	)
 
 
@@ -364,6 +423,10 @@ static func _assert_player_phase_matches(
 		PlanningChecklistHarness.assert_fail(failures, label, "player-turn sim missing")
 		return
 	var sim_sig: String = PlanningQAGateTest._sim_result_signature(result)
+	if not sim_sig.contains("ENEMY_PHASE_BEGAN"):
+		PlanningChecklistHarness.assert_fail(
+			failures, label, "full-turn sim signature must include enemy replan marker",
+		)
 	for unit: UnitState in projected.units:
 		if unit.team != GameEnums.Team.PLAYER:
 			continue
@@ -398,3 +461,127 @@ static func _assert_player_phase_matches(
 				"player %d player-turn MP %d != projected %d (%s)"
 				% [unit.id, turn_mp, proj_mp, sim_sig],
 			)
+
+
+static func _test_cm08_stale_identity(failures: Array[String]) -> void:
+	var before: int = failures.size()
+	PlanningQAGateTest._test_stale_hover_updates_commit_waypoints(failures)
+	PlanningQAGateTest._test_shield_bash_hover_change_clears_stale_approach(failures)
+	PlanningQAGateTest._test_undo_action_keeps_premove(failures)
+	PlanningQAGateTest._test_drag_drop_commit_undo_clears_plan(failures)
+	PlanningQAGateTest._test_ability_switch_clears_preview_cache(failures)
+	PlanningQAGateTest._test_drag_cleared_restores_canonical_bash_intent(failures)
+	PlanningQAGateTest._test_hook_in_range_ignores_stale_drag_route(failures)
+	PlanningQAGateTest._test_hover_order_invariant(failures)
+	PlanningQAGateTest._test_timeline_ghost_clears_when_committed(failures)
+	PlanningQAGateTest._test_invalid_slots_block_commit(failures)
+	PlanningQAGateTest._test_enemy_skill_hover_not_movement_route(failures)
+	StalePreMoveTest.run_all(failures)
+	PlanningInputTest._test_swap_undo_cascades_all_plans_after(failures)
+	_record_sot(
+		"CM-08",
+		"(stale identity bundle)",
+		"(reject/refresh)",
+		"n/a",
+		"new_fails=%d hover/drag/snapshot/undo/ability-switch/timeline-reorder/enemy-intent"
+		% (failures.size() - before),
+	)
+	PlanningDragE2EHarness.cleanup_all()
+
+
+static func _test_cm09_intent_mechanics(failures: Array[String]) -> void:
+	var before: int = failures.size()
+	PlanningQAGateTest._test_move_preview_origin_premove_and_postmove(failures)
+	PlanningQAGateTest._test_push_through_premove_moves_both_units(failures)
+	PlanningQAGateTest._test_action_range_centered_on_live_stand(failures)
+	TramplingAdvanceE2ETest._test_post_move_leg_keeps_painted_route_after_trample(failures)
+	PlanningQAGateTest._test_bash_sim_determinism(failures)
+	PlanningInputTest._test_swap_undo_cascades_all_plans_after(failures)
+	_record_sot(
+		"CM-09",
+		"(intent mechanics bundle)",
+		"(pre/post/stand/push/swap/trample/replan)",
+		"ENEMY_PHASE_BEGAN via four-way",
+		"new_fails=%d" % (failures.size() - before),
+	)
+	PlanningDragE2EHarness.cleanup_all()
+
+
+static func _test_cm11_measure(failures: Array[String]) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.SHIELD_BASH_ID) < 0:
+		PlanningChecklistHarness.assert_fail(failures, "CM-11", "Shield Bash missing")
+		PlanningDragE2EHarness.cleanup_all()
+		return
+	var cell: Vector2i = PlanningChecklistHarness.ENEMY_POS
+	PlanningChecklistHarness.hover(fix, cell)
+	var before_sig: String = PlanningQAGateTest._intent_slot_signature(
+		PlanningChecklistHarness.slots_for_hover(fix, cell),
+	)
+	const HOVER_N: int = 40
+	var t0: int = Time.get_ticks_usec()
+	for _i: int in range(HOVER_N):
+		PlanningChecklistHarness.hover(fix, cell)
+		PlanningChecklistHarness.slots_for_hover(fix, cell)
+	var hover_usec: int = int((Time.get_ticks_usec() - t0) / float(HOVER_N))
+	const SLOT_N: int = 40
+	t0 = Time.get_ticks_usec()
+	for _j: int in range(SLOT_N):
+		PlanningChecklistHarness.slots_for_click(fix, cell)
+	var slot_usec: int = int((Time.get_ticks_usec() - t0) / float(SLOT_N))
+	var after_loop_sig: String = PlanningQAGateTest._intent_slot_signature(
+		PlanningChecklistHarness.slots_for_hover(fix, cell),
+	)
+	if after_loop_sig != before_sig:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"CM-11",
+			"hover/slot timing loop changed slot signature %s vs %s"
+			% [after_loop_sig, before_sig],
+		)
+		PlanningDragE2EHarness.cleanup_all()
+		return
+	if not PlanningChecklistHarness.commit_slots_production(
+		fix, PlanningChecklistHarness.slots_for_click(fix, cell),
+	):
+		PlanningChecklistHarness.assert_fail(failures, "CM-11", "commit failed before sim timing")
+		PlanningDragE2EHarness.cleanup_all()
+		return
+	const SIM_N: int = 12
+	t0 = Time.get_ticks_usec()
+	for _k: int in range(SIM_N):
+		PlanningChecklistHarness.simulate_committed(fix.director)
+	var sim_usec: int = int((Time.get_ticks_usec() - t0) / float(SIM_N))
+	var line: String = "hover_usec=%d slot_usec=%d sim_usec=%d sig=%s" % [
+		hover_usec, slot_usec, sim_usec, before_sig,
+	]
+	print("[SOT-PERF] %s" % line)
+	_record_sot("CM-11", before_sig, before_sig, "(timing only; no optimize)", line)
+	PlanningDragE2EHarness.cleanup_all()
+
+
+static func _record_sot(
+	id: String, slot_sig: String, timeline_sig: String, sim_sig: String, extra: String
+) -> void:
+	var row: String = "slot=%s timeline=%s sim=%s %s" % [slot_sig, timeline_sig, sim_sig, extra]
+	_recorded[id] = row
+	print("[SOT-SIG] %s %s" % [id, row])
+
+
+static func _dump_recorded() -> void:
+	var path: String = "user://intent_sot_signatures.txt"
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		print("[SOT-SIG] write_failed %s" % path)
+		return
+	file.store_line("# Intent source-of-truth signatures")
+	var keys: Array = _recorded.keys()
+	keys.sort()
+	for key: Variant in keys:
+		file.store_line("%s %s" % [str(key), str(_recorded[key])])
+	file.close()
+	print(
+		"[SOT-SIG] wrote %s (%d rows)"
+		% [ProjectSettings.globalize_path(path), _recorded.size()]
+	)
