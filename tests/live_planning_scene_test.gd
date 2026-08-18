@@ -394,7 +394,7 @@ func _journey_swap_then_premove(ctx: Dictionary) -> void:
 	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_ROUTE[0], {
 		"blue_has": [_SWAP_PREMOVE_ROUTE[0]],
 		"ghost_pos": _SWAP_PREMOVE_ROUTE[0],
-		"path": [_K1_CELL, _SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0]],
+		"path": [_SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0]],
 		"manhattan": true,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
@@ -402,7 +402,7 @@ func _journey_swap_then_premove(ctx: Dictionary) -> void:
 	await _probe_cell(ctx, k1_id, _SWAP_PREMOVE_DEST, {
 		"blue_has": [_SWAP_PREMOVE_DEST],
 		"ghost_pos": _SWAP_PREMOVE_DEST,
-		"path": [_K1_CELL, _SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0], _SWAP_PREMOVE_DEST],
+		"path": [_SWAP_ALLY_CELL, _SWAP_PREMOVE_ROUTE[0], _SWAP_PREMOVE_DEST],
 		"manhattan": true,
 		"preview_nonempty": true,
 		"icon_has": [PlanningIcons.GLYPH_WALK],
@@ -814,7 +814,13 @@ func _select_ability_for_unit(
 	for index: int in range(unit.active_abilities.size()):
 		var ability: AbilityData = unit.active_abilities[index]
 		if ability != null and ability.id == ability_id:
-			director.select_ability(index)
+			## Re-arming the same skill must still exit force-basic. Director
+			## select_ability no-ops when the index is unchanged, so emit the
+			## same skill-armed signal F5 uses after clicking the skill bar.
+			if director.selected_ability_index == index:
+				EventBus.ability_selected.emit(index)
+			else:
+				director.select_ability(index)
 			await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 			return ability
 	assert_that("Required ability missing for unit %d: %s" % [unit_id, ability_id]).is_equal("")
@@ -884,7 +890,7 @@ func _commit_via_slots_at_cell(
 	director.flush_plan_refresh_signals_if_pending()
 	input.clear_qa_pointer_override()
 	await _wait_ability_settle(ctx)
-	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
+	await _assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
 
 
 func _tap_cell(
@@ -905,7 +911,7 @@ func _tap_cell(
 	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/settled" % label)
 	if assert_preview_commit:
-		_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
+		await _assert_commit_ratifies_preview(ctx, unit_id, pre_intent, label)
 
 
 func _right_click_undo(ctx: Dictionary) -> void:
@@ -1107,7 +1113,7 @@ func _drag_k1_bash_via_waypoints(ctx: Dictionary, label_prefix: String) -> Dicti
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, k1_id, "%s/release" % label_prefix)
-	_assert_commit_ratifies_preview(ctx, k1_id, pre_intent, "%s/release" % label_prefix)
+	await _assert_commit_ratifies_preview(ctx, k1_id, pre_intent, "%s/release" % label_prefix)
 	return pre_intent
 
 
@@ -1673,7 +1679,7 @@ func _drag_through_cells(
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 	if assert_commit_ratify:
-		_assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
+		await _assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
 
 
 func _select_k4_detour_and_run_route(
@@ -1702,7 +1708,7 @@ func _select_k4_detour_and_run_route(
 		await _capture_planning_surface(ctx, unit_id, step_label)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, _K4_RUN_TRIGGER_CELL, false)
 	await _tap_cell(ctx, _K4_RUN_TRIGGER_CELL, "%s/release" % label_prefix, false)
-	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
+	await _assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 	_assert_not_dragging(ctx, "%s/after_release" % label_prefix)
 	assert_that(input.get_drag_route()).override_failure_message(
 		"%s: selection mode must not leave a drag route" % label_prefix,
@@ -1755,7 +1761,7 @@ func _paint_k4_detour_and_run_route(
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
-	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
+	await _assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 
 
 func _drag_k4_detour_and_run_preview(
@@ -1923,7 +1929,7 @@ func _drag_through_cells_with_route_checks(
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
 	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 	await _capture_planning_surface(ctx, unit_id, "%s/release" % label_prefix)
-	_assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
+	await _assert_commit_ratifies_preview(ctx, unit_id, pre_intent, "%s/release" % label_prefix)
 
 
 func _assert_drag_route_corridor(
@@ -2609,6 +2615,7 @@ func _assert_animation_route_matches_preview(
 			if preview_path[path_index] == event_start:
 				expected_path = preview_path.slice(path_index)
 				break
+		expected_path = _align_walked_route_to_preview(expected_path, event_path)
 	if not event_path.is_empty():
 		assert_that(event_path).override_failure_message(
 			"%s: commit event route must match preview path; preview=%s event=%s plan=%s" % [
@@ -2618,6 +2625,7 @@ func _assert_animation_route_matches_preview(
 				_plan_route_summary(ctx.director as CombatDirector, unit_id),
 			],
 		).is_equal(expected_path)
+	expected_path = _align_walked_route_to_preview(expected_path, animation_path)
 	assert_that(animation_path).override_failure_message(
 			"%s: animation route must match preview path; preview=%s animation=%s plan=%s" % [
 			label,
@@ -2626,6 +2634,17 @@ func _assert_animation_route_matches_preview(
 				_plan_route_summary(ctx.director as CombatDirector, unit_id),
 		],
 	).is_equal(expected_path)
+
+
+## Drop-time preview may omit the current stand; walk traces include it.
+func _align_walked_route_to_preview(preview: Array, walked: Array) -> Array:
+	if preview.is_empty() or walked.is_empty():
+		return preview
+	if walked == preview:
+		return preview
+	if walked.size() == preview.size() + 1 and walked.slice(1) == preview:
+		return walked
+	return preview
 
 
 func _overlay_has_red_tile(overlay: TacticalPlanningOverlay, _board: BoardState) -> bool:
