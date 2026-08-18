@@ -8,6 +8,7 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [RUN] action_range/bowling_enemy_hover_not_bash
 [RUN] action_range/bowling_dash_only_not_blue
 [RUN] action_range/bowling_dash_only_no_premove_click
+[RUN] action_range/bowling_awaiting_occupied_end
 [RUN] action_range/hide_after_commit_run_icon_bash
 [RUN] action_range/hide_after_commit_run_icon_bowling
 [RUN] action_range/hide_committed_run_timeline_bowling
@@ -15,6 +16,7 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [RUN] action_range/hide_no_ability
 [RUN] action_range/show_awaiting_trample
 [RUN] action_range/hover_step_updates_stand
+[RUN] action_range/awaiting_module_range_after_premove
 [RUN] action_range/parity_gate_show
 [RUN] action_range/parity_gate_hide
 [SUITE] intent_contract_e2e

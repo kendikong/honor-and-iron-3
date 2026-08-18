@@ -8,5 +8,129 @@ PLANNED/other: 0
 
 === Meta-critic manifest (32 approved, threshold 85) ===
 
-[FAIL] Meta-critic manifest gate:
-  manifest last_score 86 -lt minimum 88
+=== Typed conversion contracts ===
+[QA] res://tests/run_extra_rules_conversion_contract.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+[QA] res://tests/run_class_library_schema_typed_fields_test.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+[QA] res://tests/run_ability_module_bridge_test.gd
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ABILITY_MODULE_CHECK: bruiser_module_fingerprints START
+ABILITY_MODULE_CHECK: bruiser_module_fingerprints PASS
+ABILITY_MODULE_CHECK: knight_module_fingerprints START
+ABILITY_MODULE_CHECK: knight_module_fingerprints PASS
+ABILITY_MODULE_CHECK: violent_collision_module_shape START
+ABILITY_MODULE_CHECK: violent_collision_module_shape PASS
+ABILITY_MODULE_CHECK: trampling_advance_module_shape START
+ABILITY_MODULE_CHECK: trampling_advance_module_shape PASS
+ABILITY_MODULE_CHECK: infer_motion_push_layer START
+ABILITY_MODULE_CHECK: infer_motion_push_layer PASS
+ABILITY_MODULE_CHECK: ability_module_runtime START
+ABILITY_MODULE_SCENARIO: module_only_execution START
+ABILITY_MODULE_SCENARIO: module_only_execution PASS
+ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order START
+ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order PASS
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order PASS
+ABILITY_MODULE_SCENARIO: upgraded_module_profile START
+ABILITY_MODULE_SCENARIO: upgraded_module_profile PASS
+ABILITY_MODULE_SCENARIO: shared_module_parity START
+ABILITY_MODULE_SCENARIO: shared_module_parity PASS
+ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START
+ABILITY_MODULE_SCENARIO: reposition_skills_ally_only PASS
+ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START
+ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim PASS
+ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START
+ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility PASS
+ABILITY_MODULE_SCENARIO: motion_range_legality START
+ABILITY_MODULE_SCENARIO: motion_range_legality PASS
+ABILITY_MODULE_SCENARIO: if_collided_follow_up START
+ABILITY_MODULE_SCENARIO: if_collided_follow_up PASS
+ABILITY_MODULE_SCENARIO: schema_module_round_trip START
+ABILITY_MODULE_SCENARIO: schema_module_round_trip PASS
+ABILITY_MODULE_SCENARIO: skill_card_shows_condition START
+ABILITY_MODULE_SCENARIO: skill_card_shows_condition PASS
+ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip START
+ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip PASS
+ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import START
+ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import PASS
+ABILITY_MODULE_SCENARIO: module_profile_clear_projection START
+ABILITY_MODULE_SCENARIO: module_profile_clear_projection PASS
+ABILITY_MODULE_CHECK: ability_module_runtime PASS
+ABILITY_MODULE_CHECK: extra_rules_conversion_contract START
+ABILITY_MODULE_CHECK: extra_rules_conversion_contract PASS
+ABILITY_MODULE_CHECK: module_authoring_rules START
+ABILITY_MODULE_CHECK: module_authoring_rules PASS
+ABILITY_MODULE_CHECK: class_editor_module_boundary START
+ABILITY_MODULE_CHECK: class_editor_module_boundary PASS
+ABILITY_MODULE_CHECK: compatibility_reader_boundary START
+ABILITY_MODULE_CHECK: compatibility_reader_boundary PASS
+ABILITY_MODULE_CHECK: ability_formatter_audit START
+ABILITY_MODULE_CHECK: ability_formatter_audit PASS
+ABILITY_MODULE_BRIDGE_TEST: PASS
+WARNING: Ability JSON rejected unknown tag: control
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _canonical_tags_from_variant (res://ui/class_library_schema.gd:2426)
+       [1] apply_ability_dict (res://ui/class_library_schema.gd:2358)
+       [2] _test_schema_module_round_trip (res://tests/ability_module_runtime_test.gd:544)
+       [3] run_all (res://tests/ability_module_runtime_test.gd:50)
+       [4] _run_script_check (res://tests/ability_module_bridge_runner.gd:96)
+       [5] run_all (res://tests/ability_module_bridge_runner.gd:29)
+       [6] _initialize (res://tests/run_ability_module_bridge_test.gd:10)
+--- Typed conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] shaman_qa_tier1
+[SHAMAN_QA] hexing_presence
+[SHAMAN_QA] echoing_spirits
+[SHAMAN_QA] spiritual_offering
+[SHAMAN_QA] spiritual_guardian
+[SHAMAN_QA] miasma_resonance
+[SHAMAN_QA] voodoo_conduit
+[SHAMAN_QA] voodoo_doll
+[SHAMAN_QA] spirit_link
+[SHAMAN_QA] pain_sharing
+[SHAMAN_QA] sympathetic_magic
+[SHAMAN_QA] chain_reaction
+[SHAMAN_QA] soul_collector
+[SHAMAN_QA] hexing_touch
+[SHAMAN_QA] ritual_sacrifice
+[SHAMAN_QA] soul_burn
+[SHAMAN_QA] soul_weaver
+[SHAMAN_QA] shaman_usher
+[SHAMAN_QA] shaman_curse_of_weakness
+[SHAMAN_QA] shaman_healing_totem
+[SHAMAN_QA] shaman_flame_totem
+[SHAMAN_QA] shaman_bloodlust
+[SHAMAN_QA] shaman_hex
+[SHAMAN_QA] shaman_voodoo_link
+[SHAMAN_QA] shaman_terrify
+[SHAMAN_QA] shaman_miasma
+[SHAMAN_QA] shaman_bone_spear
+[SHAMAN_QA] shaman_ancestral_spirit
+[SHAMAN_QA] shaman_totem_guard
+[SHAMAN_QA] shaman_sympathetic_bond
+[SHAMAN_QA] shaman_soul_siphon
+[SHAMAN_QA] shaman_pain_spike
+[SHAMAN_QA] shaman_earthbind_totem
+[PASS] Shaman QA gate: factory matrix, per-row scenarios, and movement smoke
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live preview/commit ===
+--- Tier 2 live: PASS ---
+[PASS] Shaman QA gate: Tier 1 + Tier 2 + matrix manifest
