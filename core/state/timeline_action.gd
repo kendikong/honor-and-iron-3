@@ -132,6 +132,7 @@ static func make_ability_awaiting(
 ) -> TimelineAction:
 	var action := make_ability(p_actor_id, p_ability, p_origin, -1, GameEnums.MoveTiming.PRE_ACTION, p_waypoints)
 	action.awaiting_target = true
+	action.awaiting_module_index = 0
 	return action
 
 

@@ -400,6 +400,10 @@ func set_awaiting_action(unit_id: int, ability: AbilityData) -> void:
 	var action: TimelineAction = TimelineAction.make_ability_awaiting(
 		unit_id, ability, actor.position,
 	)
+	AbilitySystem.prepare_planning_action(
+		projected_state if projected_state != null else board,
+		action,
+	)
 	plan_action.entries.append(action)
 	plan_affected_unit_ids = [unit_id]
 	_refresh_plan()

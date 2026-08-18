@@ -95,6 +95,9 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hook_in_range_approach_tile_is_actor_position,
 		_test_hook_in_range_ignores_stale_drag_route,
 		_test_hook_out_of_range_enemy_hover_invalid,
+		_test_volley_awaiting_hover_damage_and_targeting_arrow,
+		_test_volley_hover_damage_survives_board_changed,
+		_test_bash_hover_keeps_targeting_arrow,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -174,6 +177,9 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_in_range_approach",
 		"hook_in_range_no_stale_drag",
 		"hook_out_of_range_null",
+		"volley_hover_damage_arrow",
+		"volley_hover_board_changed",
+		"bash_hover_targeting_arrow",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -234,6 +240,47 @@ static func _planning_fixture(
 		"board": board,
 		"knight": knight,
 		"enemy": units[1] if units.size() > 1 else null,
+	}
+	PlanningDragE2EHarness.track_raw_fixture(fix)
+	return fix
+
+
+static func _archer_volley_fixture(
+	archer_pos: Vector2i,
+	enemy_pos: Vector2i,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var volley: AbilityData = ArcherQaHarness.factory_ability(&"archer_volley")
+	var archer_def: UnitData = ArcherQaHarness.archer_unit_data()
+	var archer: UnitState = UnitState.create(1, archer_def, GameEnums.Team.PLAYER, archer_pos)
+	archer.active_abilities = [volley]
+	archer.movement.points_left = archer.movement.max_points
+	archer.ability.points_left = maxi(1, archer.ability.max_points)
+	archer.ability.max_points = maxi(1, archer.ability.max_points)
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var enemy: UnitState = UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, enemy_pos)
+	var units: Array[UnitState] = [archer, enemy]
+	var board := _plain_board(Vector2i(12, 12), units)
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"archer": archer,
+		"knight": archer,
+		"enemy": enemy,
+		"volley": volley,
 	}
 	PlanningDragE2EHarness.track_raw_fixture(fix)
 	return fix
@@ -3110,4 +3157,124 @@ static func _test_hook_out_of_range_enemy_hover_invalid(failures: Array[String])
 		failures.append(
 			"PlanningQAGate hook_out_of_range_null: unreachable enemy hover must show null icon, got %s"
 			% icon,
+		)
+
+
+static func _bind_bar_layer(overlay: TacticalPlanningOverlay, director: CombatDirector, board: BoardState) -> TacticalUnitLayer:
+	var layer := TacticalUnitLayer.new()
+	layer._director = director
+	layer._board = board
+	layer._phase = CombatDirector.Phase.PLANNING
+	overlay.bind_unit_layer(layer)
+	return layer
+
+
+static func _test_volley_awaiting_hover_damage_and_targeting_arrow(failures: Array[String]) -> void:
+	var archer_pos := Vector2i(4, 5)
+	var enemy_pos := Vector2i(7, 5)
+	var fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var layer: TacticalUnitLayer = _bind_bar_layer(overlay, fix.director, fix.board)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.set_awaiting_action(1, fix.volley)
+	if director.has_method("flush_plan_refresh_signals_if_pending"):
+		director.flush_plan_refresh_signals_if_pending()
+	if not input.awaiting_targeting_active():
+		failures.append("PlanningQAGate volley_hover_damage_arrow: Volley must be awaiting input")
+		return
+	if not input.is_skill_aim_hover_at(enemy_pos):
+		failures.append("PlanningQAGate volley_hover_damage_arrow: enemy tile must count as live skill aim")
+		return
+	if input._should_restore_stand_hover_preview(enemy_pos):
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: TILE AOE hover must not restore committed preview",
+		)
+		return
+	input.on_hover_moved(enemy_pos)
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.preview_board == null:
+		failures.append("PlanningQAGate volley_hover_damage_arrow: live preview board missing on Volley hover")
+		return
+	if live.forecast == null or live.forecast.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: hover sim must forecast damage on the aimed enemy",
+		)
+		return
+	var merged: CombatPlanningForecast = CombatPlanningForecast.merge_for_bar_display(
+		null, live.forecast, fix.board, director.plan_revision,
+	)
+	if merged.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: bar merge must show uncommitted Volley hover damage",
+		)
+	var bar: CombatPlanningForecast = layer._bar_display_forecast()
+	if bar == null or bar.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: HP bar display forecast must include hover damage",
+		)
+	if not overlay._should_draw_interaction_overlay():
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: targeting overlay must draw while aiming Volley",
+		)
+	var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+	if arrow.size() < 2:
+		failures.append("PlanningQAGate volley_hover_damage_arrow: targeting dash arrow missing on Volley hover")
+	elif arrow[0] != archer_pos or arrow[1] != enemy_pos:
+		failures.append(
+			"PlanningQAGate volley_hover_damage_arrow: targeting arrow must be stand %s -> aim %s, got %s -> %s"
+			% [str(archer_pos), str(enemy_pos), str(arrow[0]), str(arrow[1])],
+		)
+
+
+static func _test_volley_hover_damage_survives_board_changed(failures: Array[String]) -> void:
+	var fix: Dictionary = _archer_volley_fixture(Vector2i(4, 5), Vector2i(7, 5))
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var layer: TacticalUnitLayer = _bind_bar_layer(overlay, fix.director, fix.board)
+	var input: CombatPlanningInput = fix.input
+	fix.director.set_awaiting_action(1, fix.volley)
+	if fix.director.has_method("flush_plan_refresh_signals_if_pending"):
+		fix.director.flush_plan_refresh_signals_if_pending()
+	input.on_hover_moved(Vector2i(7, 5))
+	var before: CombatPlanningForecast = layer._bar_display_forecast()
+	if before == null or before.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate volley_hover_board_changed: need hover damage before board_changed",
+		)
+		return
+	layer._on_board_changed(fix.board)
+	var after: CombatPlanningForecast = layer._bar_display_forecast()
+	if after == null or after.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate volley_hover_board_changed: board_changed must not wipe live hover damage",
+		)
+	if overlay.targeting_intent_arrow_cells().size() < 2:
+		failures.append(
+			"PlanningQAGate volley_hover_board_changed: targeting arrow must survive board_changed",
+		)
+
+
+static func _test_bash_hover_keeps_targeting_arrow(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bash_hover_targeting_arrow: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	input.on_hover_moved(ENEMY_POS)
+	var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+	if arrow.size() < 2:
+		failures.append("PlanningQAGate bash_hover_targeting_arrow: Shield Bash hover must draw targeting arrow")
+	elif arrow[1] != ENEMY_POS:
+		failures.append(
+			"PlanningQAGate bash_hover_targeting_arrow: arrow must aim at enemy cell, got %s"
+			% str(arrow[1]),
+		)
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.forecast == null or not live.forecast.has_stat_change():
+		failures.append(
+			"PlanningQAGate bash_hover_targeting_arrow: Shield Bash hover must forecast HP/armor change",
 		)

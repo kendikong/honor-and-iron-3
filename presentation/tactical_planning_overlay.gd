@@ -2007,6 +2007,50 @@ func _resolve_overlay_attack_target_id() -> int:
 	return _attack_target_id
 
 
+## Dotted targeting arrow from latest stand to aim cell. Tests and draw share this.
+func targeting_intent_arrow_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _director == null or _board == null or _director.selected_unit_id < 0:
+		return cells
+	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
+		return cells
+	var prev: CombatPlanningPreview = _active_preview()
+	var actor: UnitState = null
+	if prev != null and prev.preview_board != null:
+		actor = prev.preview_board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		actor = _board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		return cells
+	var sel_ability: AbilityData = _selected_ability_data(actor, _director.selected_ability_index)
+	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
+		return cells
+	var origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		_director, _board, actor.id,
+	)
+	var attack_target_id: int = _resolve_overlay_attack_target_id()
+	if attack_target_id >= 0:
+		var target_coord: Vector2i = _hover_coord
+		var target_unit: UnitState = _board.get_unit_by_id(attack_target_id)
+		if target_unit == null and prev != null and prev.preview_board != null:
+			target_unit = prev.preview_board.get_unit_by_id(attack_target_id)
+		if target_unit != null:
+			target_coord = target_unit.position
+		if origin != target_coord:
+			cells.append(origin)
+			cells.append(target_coord)
+		return cells
+	if (
+		sel_ability != null
+		and _planning_input != null
+		and _planning_input.is_skill_aim_hover_at(_hover_coord)
+		and origin != _hover_coord
+	):
+		cells.append(origin)
+		cells.append(_hover_coord)
+	return cells
+
+
 func _draw_interaction_overlay(flowing: bool) -> void:
 	if _director == null or _director.selected_unit_id < 0:
 		return
@@ -2073,34 +2117,9 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 			)
 			_draw_dashed_route(other_route, Color(other_col.r, other_col.g, other_col.b, 0.85))
 	var route_col := Color(p_col.r, p_col.g, p_col.b, 0.95)
-	var attack_target_id: int = _resolve_overlay_attack_target_id()
-	var self_target_skill: bool = (
-		sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability)
-	)
-	if attack_target_id >= 0 and not self_target_skill:
-		var origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
-			_director, _board, actor.id,
-		)
-		var target_coord: Vector2i = _hover_coord
-		# Targeting dotted arrow = aim at current enemy tile; forced push uses orange only.
-		var target_unit: UnitState = null
-		if _board != null:
-			target_unit = _board.get_unit_by_id(attack_target_id)
-		if target_unit == null and prev.preview_board != null:
-			target_unit = prev.preview_board.get_unit_by_id(attack_target_id)
-		if target_unit != null:
-			target_coord = target_unit.position
-		if origin != target_coord:
-			_draw_targeting_intent_arrow(origin, target_coord, route_col)
-	elif (
-		sel_ability != null
-		and _planning_input != null
-		and _planning_input.awaiting_targeting_active()
-		and not AbilitySystem.ability_has_movement_effect(sel_ability)
-		and AbilitySystem.planning_commit_flow(actor, sel_ability) == GameEnums.PlanningCommitFlow.AWAITING_TARGET
-		and AbilitySystem.planning_is_valid_awaiting_endpoint(_proj_origin(actor), _hover_coord, sel_ability)
-	):
-		_draw_targeting_intent_arrow(actor.position, _hover_coord, route_col)
+	var arrow_cells: Array[Vector2i] = targeting_intent_arrow_cells()
+	if arrow_cells.size() >= 2:
+		_draw_targeting_intent_arrow(arrow_cells[0], arrow_cells[1], route_col)
 
 
 func _unit_can_still_move(unit_id: int) -> bool:

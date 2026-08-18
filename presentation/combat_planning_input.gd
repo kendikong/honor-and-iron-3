@@ -1562,6 +1562,8 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			return false
+	if _director.selected_ability_index >= 0 and is_skill_aim_hover_at(cell):
+		return false
 	return true
 
 
@@ -3148,6 +3150,40 @@ func _normalize_adjacent_single_step_waypoints(
 	return waypoints
 
 
+## True when the hover cell is a live skill aim (TILE/AOE in range, or dash endpoint).
+## Restore must not wipe this — HP forecast and targeting arrows both need the live sim.
+func is_skill_aim_hover_at(cell: Vector2i) -> bool:
+	if _director == null or _director.board == null or _director.selected_unit_id < 0:
+		return false
+	if not _director.board.is_in_bounds(cell):
+		return false
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		return false
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability == null:
+		return false
+	if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
+		return AbilitySystem.planning_is_valid_awaiting_endpoint(
+			_proj_origin(actor), cell, ability, actor,
+		)
+	return _is_in_range_tile_skill_aim(actor, cell)
+
+
+func _is_in_range_tile_skill_aim(actor: UnitState, cell: Vector2i) -> bool:
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability == null or AbilitySystem.ability_has_movement_effect(ability):
+		return false
+	if (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) == 0:
+		return false
+	return _in_ability_range_of_coord(actor, cell)
+
+
 func awaiting_targeting_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
@@ -4341,6 +4377,8 @@ func _build_commit_slots_at_cell(
 	var awaiting_action: TimelineAction = (
 		_director.find_awaiting_action(unit_id) if has_awaiting_action else null
 	)
+	if awaiting_action != null:
+		AbilitySystem.prepare_planning_action(_proj(), awaiting_action)
 	## DASH / teleport primary aim stays on the waypoint endpoint
 	## pipeline below. MOVE skills (L-shape flanking) and TARGET_PICK keep module 0.
 	var skip_primary_endpoint_aim := false

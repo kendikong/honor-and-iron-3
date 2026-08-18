@@ -366,9 +366,8 @@ func _display_scale() -> float:
 
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
-	if _is_planning_phase():
-		## Keep committed global forecast visible; overlay re-pushes after plan refresh.
-		clear_live_forecast()
+	## Live hover forecast is owned by overlay apply/restore. Do not wipe it here —
+	## plan refresh would erase uncommitted hover damage while aiming.
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
 	if _director != null and _director.plan_refresh_snap_units:
@@ -934,7 +933,7 @@ func _snap_all_actors_to_board() -> void:
 
 
 func _sync_actors() -> void:
-	if _board == null:
+	if _board == null or _map_view == null:
 		return
 	var live: Dictionary = {}
 	for unit in _board.units:
