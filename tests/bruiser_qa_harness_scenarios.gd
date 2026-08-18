@@ -1980,7 +1980,9 @@ static func run_unstoppable_force(failures: Array[String]) -> void:
 	## Collision / physics STAGGER path must also respect Unstoppable Force (shared helper).
 	var push_only: AbilityData = DataLibrary._make_ability(
 		&"qa_plain_push_uf", "QA Plain Push", 1,
-		[DataLibrary._effect(GameEnums.EffectType.PUSH, 1)],
+		[DataLibrary._module(
+			GameEnums.EffectType.PUSH, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+		)],
 		1,
 	)
 	var col_board: BoardState = H.make_plain_board(Vector2i(8, 8), [Vector2i(4, 3)])

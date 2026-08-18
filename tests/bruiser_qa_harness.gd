@@ -8,6 +8,14 @@ const BRUISER_DEF_ID: StringName = &"bruiser"
 const _PlanningFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
 
 
+static func compiled_effects(ability: AbilityData, upgraded: bool = false) -> Array[EffectData]:
+	if ability == null:
+		return []
+	return AbilityModuleBridge.compile_modules_to_effects(
+		ability.get_active_modules(upgraded),
+	)
+
+
 static func assert_fail(failures: Array[String], tag: String, message: String) -> void:
 	failures.append("%s: %s" % [tag, message])
 
