@@ -96,7 +96,7 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | CM-09 | **PASS** | Bundle `new_fails=0` plus seven journeys: Pre/Post-Move origin, push-through premove, latest-stand action range, trample post-move painted route, bash sim determinism, swap dependency cancellation, awaiting hook (AWAIT-01), enemy replan marker on full-turn sim. |
 | CM-10 | **PASS** | Tests + this evidence file only. No production `ability.id` branch, no UI-only authority, no second range rule, no global exception. |
 | CM-11 | **PASS** (measure only; **no optimize**) | `[SOT-PERF]` Shield Bash: hover **7520 µs**, slot build **6091 µs**, `simulate_committed` **2686 µs**. Slot signature unchanged across the timing loop. No cache / skip-sim / validation weaken. |
-| CM-12 | **PASS** | `.\scripts\run_planning_qa_gate.ps1` default **PASS**. SWAP-01 inside that gate. Live twins: `_assert_commit_ratifies_preview` now compares `_intent_slot_signature` to `_intent_slot_signature_from_timeline` when captured slots are the unit’s full plan. Class gates / full regression **not run**: no factory or `Simulator` production change. Unresolved: owner Layer B (F5 pixels) not claimed; `-LiveTier3` not run (plan forbids unless asked). |
+| CM-12 | **PASS** (headless mapped gate) | Default `.\scripts\run_planning_qa_gate.ps1` **PASS**. SWAP-01 is inside that gate. Live twins exist in `live_planning_scene_test.gd` (`_assert_commit_ratifies_preview` timeline signature when captured slots are the unit’s full plan). **Live swap runner not green** — see §8/§9. Class gates / full regression **not run**: no factory or `Simulator` production change. Owner Layer B (F5 pixels) not claimed. |
 
 ## 7. preserve / improve / defer
 
@@ -116,16 +116,24 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 |------|---------|--------|--------|
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Phase 1 seven journeys |
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | CM-08/09/11; commit `6452d2d0d74fae4ee665b76f401eb27619b4393a` |
-| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Complete slot signatures + live timeline twin |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Complete slot signatures + live timeline twin; commit `e9e7c44210b841921a119746ca8a371063ed3c78` |
+| 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **FAIL** | Live `test_live_swap_session`: 8 failures (see §9). None were timeline-signature mismatches. GdUnit exit 100; wrapper reported `[INCOMPLETE]` because the Godot process exit code was unavailable after that. |
 
 ## 9. Slice close
 
+This slice is **complete for the source-of-truth contract**.
+
 Phases 0–1 done. Phase 2 closed with **no owner-system edit**: seven-journey four-way **PASS**, so the source-of-truth path was not rewritten. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because Phase 2 found no defect and CM-11 showed no hotspot worth changing results.
 
-Gameplay behavior is unchanged. Automated proof is the default planning gate. Owner F5 Layer B remains the owner’s visual check.
+Gameplay behavior is unchanged. Automated proof of preview = commit = Simulator is the default planning gate (**PASS**). Owner F5 Layer B remains the owner’s visual check.
 
-Remaining risks (not blockers):
+### Deferred (explicit, not silent)
 
-- Live TestBattle (`-LiveTier3`) was not executed this slice; asserts are in `live_planning_scene_test.gd` for when it is.
-- Godot harness still prints RID/object leak warnings at exit (pre-existing, not `[FAIL]`).
-- Direct `ResolutionPipeline` clones in `_refresh_plan_core` stay classified as support.
+| Item | Why deferred | Target |
+|------|----------------|--------|
+| Live TestBattle swap (`run_swap_planning_acceptance.ps1`) | **FAIL** 2026-08-18: after committed swap, live preview path is from latest stand `(4, 4)` while the live test still expects the turn-start cell `(4, 5)` in the path (`swap/premove/hover_west`, `hover_dest`). Animation traces include the stand cell when preview does not (`swap/premove/release`, `walk_swap/walk/release`). Later `walk_swap/swap` slots are invalid (cascade after those path asserts). Headless SWAP-01 four-way is **PASS**. This is a live-runner / latest-stand presentation check, not a failed slot-signature gate. | Separate live-swap turn — do not rewrite `_build_commit_slots_at_cell` for this |
+| Live bible (`-LiveTier3` / `run_planning_scene_acceptance.ps1`) | Not run this slice; swap live already FAIL. Headless T3-mimic checklist **PASS**. | Same live-swap/bible turn if the owner wants F5-parity green |
+| Stale “legacy” labels in `PLANNING_QA_GATE.md` | Plan forbids reconciling this slice | later owner turn |
+| Godot RID/object leak warnings at harness exit | Pre-existing; not `[FAIL]` | ignore unless they become gate-blocking |
+
+Remaining risks that are **not** blockers for this slice: support-class `ResolutionPipeline` clones in `_refresh_plan_core`; owner F5 pixels.
