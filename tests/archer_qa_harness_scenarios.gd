@@ -29,7 +29,7 @@ static func run_sidestep(failures: Array[String]) -> void:
 
 static func run_power_shot(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"archer_power_shot")
-	H.assert_eq_int(failures, "power_shot/dmg", ab.effects[0].amount, 3)
+	H.assert_eq_int(failures, "power_shot/dmg", ab.modules[0].amount, 3)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_archer(board, 1, Vector2i(2, 3), H.archer_with_ability(&"archer_power_shot"))
 	H.place_dummy(board, 2, Vector2i(5, 3))

@@ -42,15 +42,18 @@ static func run_all(failures: Array[String]) -> void:
 		_assert(failures, "ability/%s" % ability_id, _ability(definition, ability_id) != null)
 
 	var guardian := _ability(definition, &"cleric_guardian_step")
+	var guardian_effects := _H.compiled_effects(guardian)
+	var guardian_upgrade_effects := _H.compiled_effects(guardian, true)
 	_assert(failures, "guardian_step/all_mov",
 		guardian != null and guardian.movement_point_cost == 0
-		and guardian.effects[0].modifiers.get("cost_all_movement", false)
-		and guardian.effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
-		and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
+		and guardian_effects[0].modifiers.get("cost_all_movement", false)
+		and guardian_effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
+		and guardian_upgrade_effects[0].modifiers.get("cleanse_target", false))
 	var holy_light := _ability(definition, &"cleric_holy_light")
+	var holy_light_effects := _H.compiled_effects(holy_light)
 	_assert(failures, "holy_light/mag_heal",
-		holy_light != null and holy_light.effects[0].type == GameEnums.EffectType.HEAL
-		and holy_light.effects[0].modifiers.get("mag_heal", false))
+		holy_light != null and holy_light_effects[0].type == GameEnums.EffectType.HEAL
+		and holy_light_effects[0].modifiers.get("mag_heal", false))
 	_run_selfless_siphon(failures, definition)
 
 
@@ -77,17 +80,20 @@ static func run_ability_row(ability_id: StringName, failures: Array[String]) -> 
 	_assert(failures, "ability/%s" % ability_id, _ability(definition, ability_id) != null)
 	if ability_id == &"cleric_guardian_step":
 		var guardian := _ability(definition, ability_id)
+		var guardian_effects := _H.compiled_effects(guardian)
+		var guardian_upgrade_effects := _H.compiled_effects(guardian, true)
 		_assert(failures, "guardian_step/all_mov",
 			guardian != null and guardian.movement_point_cost == 0
-			and guardian.effects[0].modifiers.get("cost_all_movement", false)
-			and guardian.effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
-			and guardian.upgraded_effects[0].modifiers.get("cleanse_target", false))
+			and guardian_effects[0].modifiers.get("cost_all_movement", false)
+			and guardian_effects[0].type == GameEnums.EffectType.TELEPORT_ADJACENT_TO
+			and guardian_upgrade_effects[0].modifiers.get("cleanse_target", false))
 		_sim_ability_used(failures, ability_id, guardian, false)
 	elif ability_id == &"cleric_holy_light":
 		var holy_light := _ability(definition, ability_id)
+		var holy_light_effects := _H.compiled_effects(holy_light)
 		_assert(failures, "holy_light/mag_heal",
-			holy_light != null and holy_light.effects[0].type == GameEnums.EffectType.HEAL
-			and holy_light.effects[0].modifiers.get("mag_heal", false))
+			holy_light != null and holy_light_effects[0].type == GameEnums.EffectType.HEAL
+			and holy_light_effects[0].modifiers.get("mag_heal", false))
 		_sim_ability_used(failures, ability_id, holy_light, false)
 	else:
 		var ability := _ability(definition, ability_id)
@@ -133,7 +139,7 @@ static func _sim_ability_used(
 		"active_abilities": [ability],
 		"active_passives": [],
 	}
-	if use_upgrade and not ability.upgraded_effects.is_empty():
+	if use_upgrade and not ability.upgraded_modules.is_empty():
 		cleric_cfg["upgraded_abilities"] = [ability_id]
 	var cleric := UnitState.create(1, definition, GameEnums.Team.PLAYER, Vector2i(2, 3), cleric_cfg)
 	var ally := UnitState.create(2, definition, GameEnums.Team.PLAYER, Vector2i(3, 3), {})
@@ -148,7 +154,7 @@ static func _sim_ability_used(
 	board.units.append(enemy)
 	for unit: UnitState in board.units:
 		GridSystem.set_occupant(board, unit.position, unit.id)
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in _H.compiled_effects(ability):
 		if effect != null and effect.type == GameEnums.EffectType.HEAL:
 			ally.health.current_hp = maxi(1, ally.health.max_hp - 3)
 			break
@@ -210,7 +216,7 @@ static func _sim_ability_used(
 static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
 	var definition: UnitData = FactoryTestHelpers.build_unit(&"cleric")
 	var ability := _ability(definition, ability_id)
-	if ability == null or ability.upgraded_effects.is_empty():
+	if ability == null or ability.upgraded_modules.is_empty():
 		return
 	_sim_ability_used(failures, ability_id, ability, true)
 
@@ -226,7 +232,7 @@ static func _assert_cleric_outcome(
 	target_id: int,
 	use_upgrade: bool = false,
 ) -> void:
-	var effects: Array = ability.upgraded_effects if use_upgrade else ability.effects
+	var effects: Array[EffectData] = _H.compiled_effects(ability, use_upgrade)
 	var has_damage_effect := false
 	var has_heal_effect := false
 	for effect: EffectData in effects:
@@ -431,7 +437,7 @@ static func _sim_target_for_ability(
 	enemy: UnitState,
 ) -> Dictionary:
 	if use_upgrade and cleric.is_ability_upgraded(ability_id):
-		for effect: EffectData in ability.upgraded_effects:
+		for effect: EffectData in _H.compiled_effects(ability, true):
 			if effect != null and effect.type == GameEnums.EffectType.DAMAGE:
 				return {"coord": enemy.position, "id": enemy.id}
 			if effect != null and effect.type == GameEnums.EffectType.HEAL:

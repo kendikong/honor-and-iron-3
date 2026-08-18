@@ -37,6 +37,6 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "redirect/contract/upgrade_intercept_value",
-		redirect != null and redirect.upgraded_effects[0].amount == 1,
+		redirect != null and redirect.upgraded_modules[0].amount == 1,
 		"upgraded INTERCEPT effect amount must be 1 for [+] DEF tracking",
 	)

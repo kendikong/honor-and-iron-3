@@ -26,7 +26,8 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/missing_hp_scaling",
-		indo != null and indo.effects[0].scaling_stat == GameEnums.StatType.MISSING_HP,
+		indo != null and _KnightQaHarness.compiled_effects(indo)[0].scaling_stat
+			== GameEnums.StatType.MISSING_HP,
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/status",
@@ -36,6 +37,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "indomitable/contract/upgrade_status",
-		indo != null and indo.upgraded_effects.size() > 0
-		and indo.upgraded_effects[1].status_type == GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED,
+		indo != null and _KnightQaHarness.compiled_effects(indo, true).size() > 1
+		and _KnightQaHarness.compiled_effects(indo, true)[1].status_type
+			== GameEnums.StatusType.INDOMITABLE_WILL_UPGRADED,
 	)

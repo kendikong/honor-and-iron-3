@@ -472,7 +472,7 @@ static func _run_passive_trigger(passive_id: StringName, failures: Array[String]
 			spawn_module.totem_kind = &"healing"
 			spawn_module.pulse_aoe = 2
 			spawn_module.pulse_heal = 1
-			var spawn_effects := AbilityModuleBridge.compile_modules_for_runtime([spawn_module])
+			var spawn_effects := AbilityModuleBridge.compile_modules_to_effects([spawn_module])
 			var spawn_effect: EffectData = spawn_effects[0]
 			var scaled_hp := maxi(1, floori(shaman.health.max_hp * 0.5))
 			var base_totem := UnitState.create(6, totem_def, GameEnums.Team.PLAYER, Vector2i(1, 1))

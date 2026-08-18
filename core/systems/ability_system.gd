@@ -47,47 +47,14 @@ static func active_modifier_profile(actor: UnitState, ability: AbilityData) -> D
 	return profile
 
 
-## Canonical metadata effect view. Unlike compatibility_effects_for(), this
-## includes authored gated modules because callers only inspect the profile.
+## Canonical transient EffectData view for metadata and presentation readers.
+## Gated modules are included because this is an authored-profile scan only.
 static func active_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
 	var out: Array[EffectData] = []
 	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if modules.is_empty():
-		return _legacy_flat_effects_for(actor, ability)
 	for module: AbilityModule in modules:
 		out.append_array(AbilityModuleBridge.compile_module_to_effects(module))
 	return out
-
-
-## Transitional compatibility API for presentation and unmigrated EffectData readers.
-## Modules remain the only authored runtime profile; this is their shared compiler.
-static func compatibility_effects_for(
-	actor: UnitState,
-	ability: AbilityData,
-) -> Array[EffectData]:
-	if ability == null:
-		return []
-	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
-	if not modules.is_empty():
-		return AbilityModuleBridge.compile_modules_for_runtime(modules)
-	return _legacy_flat_effects_for(actor, ability)
-
-
-static func _legacy_flat_effects_for(
-	actor: UnitState,
-	ability: AbilityData,
-) -> Array[EffectData]:
-	if ability == null:
-		return []
-	if actor != null and actor.is_ability_upgraded(ability.id) and not ability.upgraded_effects.is_empty():
-		return ability.upgraded_effects
-	return ability.effects
-
-
-## Backward-compatible name for callers that still consume flat effects.
-## It must compile the active module profile instead of creating a second behavior path.
-static func legacy_effects_for(actor: UnitState, ability: AbilityData) -> Array[EffectData]:
-	return compatibility_effects_for(actor, ability)
 
 
 static func active_motion_module(actor: UnitState, ability: AbilityData) -> AbilityModule:
@@ -547,8 +514,6 @@ static func _prefix_action(action: TimelineAction, module_count: int) -> Timelin
 	var ability_copy: AbilityData = action.ability.duplicate(true) as AbilityData
 	ability_copy.modules = profile_copy
 	ability_copy.upgraded_modules = profile_copy.duplicate()
-	ability_copy.effects = []
-	ability_copy.upgraded_effects = []
 	prefix.ability = ability_copy
 	prefix.awaiting_target = false
 	prefix.awaiting_module_index = -1
@@ -798,14 +763,6 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		max_range += 1
 	if _is_spell(ability):
 		max_range += int(actor.passive_flags.get(GameEnums.RUNTIME_SPELL_RANGE_BONUS, 0))
-	if motion_module == null and not has_authored_modules:
-		var legacy_move_range: int = (
-			0
-			if ability_has_post_attack_move(ability, actor)
-			else effect_amount(ability, GameEnums.EffectType.MOVE, actor)
-		)
-		if legacy_move_range > 0:
-			max_range = maxi(max_range, legacy_move_range)
 	if motion_module != null and GameEnums.is_path_motion(motion_module.primary_type):
 		max_range = maxi(max_range, planning_max_target_distance(actor, ability))
 	var skip_landing_range: bool = (
@@ -3045,16 +3002,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	}))
 	
 	var runtime_modules: Array[AbilityModule] = active_modules_for(actor, action.ability)
-	var legacy_runtime_effects: Array[EffectData] = []
-	if runtime_modules.is_empty():
-		legacy_runtime_effects = legacy_effects_for(actor, action.ability)
 	var effects_to_apply: Array[EffectData] = []
 	var effect_modules: Array[AbilityModule] = []
 	var module_cursor: int = 0
 	var module_event_start: int = events.size()
-	if runtime_modules.is_empty():
-		effects_to_apply = legacy_runtime_effects
-	else:
+	if not runtime_modules.is_empty():
 		while module_cursor < runtime_modules.size():
 			var first_module: AbilityModule = runtime_modules[module_cursor]
 			module_cursor += 1
@@ -3080,15 +3032,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var is_move := _is_skill_path_walk(ability, actor)
 	if (has_pass_through_effects(ability, actor) or is_move) and not ability_has_dash(ability, actor) and target_coord != actor.position:
 		var motion_module: AbilityModule = active_motion_module(actor, ability)
-		var walk_steps: int = (
-			active_motion_max_range(actor, ability)
-			if motion_module != null
-			else (
-				effect_amount(ability, GameEnums.EffectType.MOVE, actor)
-				if active_modules_for(actor, ability).is_empty()
-				else 0
-			)
-		)
+		var walk_steps: int = active_motion_max_range(actor, ability)
 		if motion_module != null and not active_motion_range_valid(actor, ability):
 			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 				"actor": actor.id, "reason": "invalid_motion_module_range",
@@ -3161,68 +3105,38 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	var targets_hit_count = 0
 	var objects_destroyed_count = 0
 	
-	if (
-		(
-			not runtime_modules.is_empty()
-			and AbilityModuleBridge.modules_have_modifier(runtime_modules, &"pull_surfaces")
-		)
-		or (
-			runtime_modules.is_empty()
-			and _effects_have_modifier(legacy_runtime_effects, &"pull_surfaces")
-		)
-	):
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"pull_surfaces"):
 		_pull_surfaces_to_center(board, action.target_coord, affected_tiles, events)
 
-	if runtime_modules.is_empty():
-		for eff: EffectData in legacy_runtime_effects:
-			if eff.modifiers.has("heal_per_target_hit"): heal_per_target_hit = true
-			if int(eff.modifiers.get("heal_if_targets_gte", 0)) > 0:
-				heal_if_targets_gte = int(eff.modifiers["heal_if_targets_gte"])
-			if eff.modifiers.has("buff_per_destroyed_object"): buff_per_object = true
-			if eff.modifiers.has("destroy_corpse_on_kill"):
-				actor.passive_flags["destroy_corpse_on_kill"] = true
-			if eff.modifiers.has("kill_grant_ap"):
-				actor.passive_flags["kill_grant_ap"] = int(eff.modifiers["kill_grant_ap"])
-			if eff.modifiers.has("next_attack_pierce"):
-				actor.passive_flags["breaching_dash_pierce"] = true
-			if eff.modifiers.has("on_kill_heal_shield"):
-				actor.passive_flags["adrenaline_surge_active"] = true
-			if eff.modifiers.has("intercept_grant_str"):
-				actor.passive_flags["meat_shield_intercept_str"] = int(eff.modifiers["intercept_grant_str"])
-			if eff.modifiers.has("frenzy_on_kill_ap"):
-				actor.passive_flags["frenzy_on_kill_ap"] = true
-			if eff.modifiers.has("on_kill_max_move"):
-				actor.passive_flags["on_kill_max_move"] = int(eff.modifiers["on_kill_max_move"])
-	else:
-		heal_per_target_hit = AbilityModuleBridge.modules_have_modifier(
-			runtime_modules, &"heal_per_target_hit",
+	heal_per_target_hit = AbilityModuleBridge.modules_have_modifier(
+		runtime_modules, &"heal_per_target_hit",
+	)
+	heal_if_targets_gte = AbilityModuleBridge.modules_modifier_value(
+		runtime_modules, &"heal_if_targets_gte",
+	)
+	buff_per_object = AbilityModuleBridge.modules_have_modifier(
+		runtime_modules, &"buff_per_destroyed_object",
+	)
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"destroy_corpse_on_kill"):
+		actor.passive_flags["destroy_corpse_on_kill"] = true
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"kill_grant_ap"):
+		actor.passive_flags["kill_grant_ap"] = AbilityModuleBridge.modules_modifier_value(
+			runtime_modules, &"kill_grant_ap",
 		)
-		heal_if_targets_gte = AbilityModuleBridge.modules_modifier_value(
-			runtime_modules, &"heal_if_targets_gte",
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"next_attack_pierce"):
+		actor.passive_flags["breaching_dash_pierce"] = true
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_heal_shield"):
+		actor.passive_flags["adrenaline_surge_active"] = true
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"intercept_grant_str"):
+		actor.passive_flags["meat_shield_intercept_str"] = AbilityModuleBridge.modules_modifier_value(
+			runtime_modules, &"intercept_grant_str",
 		)
-		buff_per_object = AbilityModuleBridge.modules_have_modifier(
-			runtime_modules, &"buff_per_destroyed_object",
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"frenzy_on_kill_ap"):
+		actor.passive_flags["frenzy_on_kill_ap"] = true
+	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_max_move"):
+		actor.passive_flags["on_kill_max_move"] = AbilityModuleBridge.modules_modifier_value(
+			runtime_modules, &"on_kill_max_move",
 		)
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"destroy_corpse_on_kill"):
-			actor.passive_flags["destroy_corpse_on_kill"] = true
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"kill_grant_ap"):
-			actor.passive_flags["kill_grant_ap"] = AbilityModuleBridge.modules_modifier_value(
-				runtime_modules, &"kill_grant_ap",
-			)
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"next_attack_pierce"):
-			actor.passive_flags["breaching_dash_pierce"] = true
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_heal_shield"):
-			actor.passive_flags["adrenaline_surge_active"] = true
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"intercept_grant_str"):
-			actor.passive_flags["meat_shield_intercept_str"] = AbilityModuleBridge.modules_modifier_value(
-				runtime_modules, &"intercept_grant_str",
-			)
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"frenzy_on_kill_ap"):
-			actor.passive_flags["frenzy_on_kill_ap"] = true
-		if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_max_move"):
-			actor.passive_flags["on_kill_max_move"] = AbilityModuleBridge.modules_modifier_value(
-				runtime_modules, &"on_kill_max_move",
-			)
 
 	if buff_per_object:
 		for tile_coord in affected_tiles:
@@ -5486,20 +5400,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							GameEnums.EffectType.DAMAGE,
 							actor,
 						)
-				else:
-					for candidate: EffectData in legacy_effects_for(actor, action.ability):
-						if candidate != null and candidate.type == GameEnums.EffectType.PUSH:
-							push_amt += _push_synergy_bonus(
-								actor,
-								candidate,
-								&"push_bonus_if_push_used",
-							)
-							if trample_atk <= 0:
-								for damage_effect: EffectData in legacy_effects_for(actor, action.ability):
-									if damage_effect != null and damage_effect.type == GameEnums.EffectType.DAMAGE:
-										trample_atk = damage_effect.amount
-										break
-							break
 				if trample_atk > 0:
 					pending["trample_atk"] = trample_atk
 				if effect.modifiers.has("line_breaker"):

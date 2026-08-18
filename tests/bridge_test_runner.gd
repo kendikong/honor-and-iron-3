@@ -325,7 +325,10 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	var swap_plan := Timeline.new()
 	var swap_ab := AbilityData.new()
 	swap_ab.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
-	swap_ab.effects = [DataLibrary._effect(GameEnums.EffectType.SWAP, 0)]
+	var swap_module := DataLibrary._module(
+		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
+	)
+	swap_ab.modules = [swap_module]
 	swap_plan.add(TimelineAction.make_ability(1, swap_ab, ally.position, 2, GameEnums.MoveTiming.PRE_ACTION))
 	swap_plan.add(
 		TimelineAction.make_move(
@@ -387,10 +390,10 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	director_stub.base_board = board_stub
 	director_stub.plan_action = Timeline.new()
 	var trample_ability := AbilityData.new()
-	var trample_move := EffectData.new()
-	trample_move.type = GameEnums.EffectType.MOVE
-	trample_move.amount = 1
-	trample_ability.effects = [trample_move]
+	var trample_move := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 1, 1, 1, GameEnums.TargetingFlags.TILE,
+	)
+	trample_ability.modules = [trample_move]
 	var trample := TimelineAction.make_ability(1, trample_ability, Vector2i(2, 0), -1)
 	director_stub.plan_action.entries.append(trample)
 	preview.preview_post_splits[1] = 3
@@ -430,10 +433,10 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	en_unit.position = Vector2i(6, 3)
 	en_board.units = [en_unit]
 	var trample_ab := AbilityData.new()
-	var move_eff := EffectData.new()
-	move_eff.type = GameEnums.EffectType.MOVE
-	move_eff.amount = 2
-	trample_ab.effects = [move_eff]
+	var move_eff := DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+	)
+	trample_ab.modules = [move_eff]
 	var en_action := TimelineAction.make_ability(
 		1, trample_ab, Vector2i(7, 2), -1, GameEnums.MoveTiming.PRE_ACTION,
 		[Vector2i(7, 3), Vector2i(7, 2)],

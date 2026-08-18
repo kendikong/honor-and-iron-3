@@ -40,6 +40,6 @@ static func build_unit(class_id: StringName) -> UnitData:
 	if unit == null:
 		return null
 	var basic := DataLibrary._make_class_basic_attack(class_id)
-	basic.finalize_modular()
+	AbilityModuleBridge.normalize_ability(basic)
 	unit.abilities.append(basic)
 	return unit

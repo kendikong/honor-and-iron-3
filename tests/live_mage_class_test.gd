@@ -222,16 +222,22 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	).is_not_null()
 	if ability == null:
 		return
-	assert_bool(ability.effects.size() > 0).override_failure_message(
-		"%s: base effect list is empty" % case.id,
+	var base_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.modules,
+	)
+	var upgraded_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.upgraded_modules,
+	)
+	assert_bool(not base_effects.is_empty()).override_failure_message(
+		"%s: base module list is empty" % case.id,
 	).is_true()
-	assert_bool(ability.upgraded_effects.size() > 0).override_failure_message(
-		"%s: [+] effect list is empty" % case.id,
+	assert_bool(not upgraded_effects.is_empty()).override_failure_message(
+		"%s: [+] module list is empty" % case.id,
 	).is_true()
 	assert_bool(ability.upgrade_description.length() > 0).override_failure_message(
 		"%s: [+] description is empty" % case.id,
 	).is_true()
-	assert_that(ability.effects[0].type).override_failure_message(
+	assert_that(base_effects[0].type).override_failure_message(
 		"%s: primary effect type mismatch" % case.id,
 	).is_equal(case.effect)
 

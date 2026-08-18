@@ -1848,7 +1848,7 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	_normalize_modules_for_ability(dst.upgraded_modules, upgrade_group)
 	if src.is_universal_run() or src.is_universal_wait():
 		dst.kind = src.kind
-	dst.finalize_modular()
+	AbilityModuleBridge.normalize_ability(dst)
 
 
 static func _planning_note(ability: AbilityData) -> String:
@@ -2149,7 +2149,7 @@ static func read_editor_save_from_path(path: String) -> Dictionary:
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if typeof(parsed) == TYPE_DICTIONARY:
-		return migrate_editor_save_to_modules(parsed as Dictionary)
+		return parsed as Dictionary
 	return {}
 
 
@@ -2162,34 +2162,6 @@ static func write_editor_save(data: Dictionary) -> bool:
 	file.store_string(JSON.stringify(payload, "\t"))
 	file.close()
 	return true
-
-
-static func migrate_editor_save_to_modules(data: Dictionary) -> Dictionary:
-	var migrated: Dictionary = data.duplicate(true)
-	var units_value: Variant = migrated.get("units", {})
-	if not units_value is Dictionary:
-		return migrated
-	var units: Dictionary = units_value
-	for unit_key: Variant in units.keys():
-		var unit_value: Variant = units[unit_key]
-		if not unit_value is Dictionary:
-			continue
-		var unit_data: Dictionary = unit_value
-		var abilities_value: Variant = unit_data.get("abilities", {})
-		if not abilities_value is Dictionary:
-			continue
-		var normalized_abilities: Dictionary = {}
-		for ability_key: Variant in (abilities_value as Dictionary).keys():
-			var payload: Variant = (abilities_value as Dictionary)[ability_key]
-			if not payload is Dictionary:
-				continue
-			var ability := AbilityData.new()
-			apply_ability_dict(ability, payload as Dictionary)
-			normalized_abilities[ability_key] = ability_to_dict(ability)
-		unit_data["abilities"] = normalized_abilities
-		units[unit_key] = unit_data
-	migrated["units"] = units
-	return migrated
 
 
 static func collect_player_unit_overrides() -> Dictionary:
@@ -2253,24 +2225,6 @@ static func apply_effect_dict(dst: EffectData, data: Dictionary) -> void:
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
 	dst.modifiers = data.get("modifiers", {}).duplicate()
 	AbilityModuleBridge.normalize_effect_authoring_fields(dst)
-
-
-static func effects_to_dict_array(effects: Array[EffectData]) -> Array:
-	var out: Array = []
-	for eff: EffectData in effects:
-		out.append(effect_to_dict(eff))
-	return out
-
-
-static func effects_from_dict_array(data: Array) -> Array[EffectData]:
-	var out: Array[EffectData] = []
-	for entry: Variant in data:
-		if typeof(entry) != TYPE_DICTIONARY:
-			continue
-		var eff := EffectData.new()
-		apply_effect_dict(eff, entry as Dictionary)
-		out.append(eff)
-	return out
 
 
 static func ability_to_dict(src: AbilityData) -> Dictionary:
@@ -2366,28 +2320,20 @@ static func apply_ability_dict(
 	dst.presentation_anim = int(data.get("presentation_anim", dst.presentation_anim))
 	var authored_range_tiles: int = int(data.get("range_tiles", -1))
 	var module_data: Variant = data.get("modules", null)
-	var use_legacy_base: bool = (
-		not (module_data is Array)
-		or ((module_data as Array).is_empty() and data.has("effects"))
+	if not module_data is Array:
+		push_error("Ability JSON rejected: missing modules array")
+		return
+	var parsed_modules: Array[AbilityModule] = modules_from_dict_array(module_data as Array)
+	var base_errors: Array[String] = AbilityModuleBridge.validate_modules(
+		parsed_modules, dst.planner_group,
 	)
-	if not use_legacy_base:
-		var parsed_modules: Array[AbilityModule] = modules_from_dict_array(module_data as Array)
-		var base_errors: Array[String] = AbilityModuleBridge.validate_modules(
-			parsed_modules, dst.planner_group,
-		)
-		if not base_errors.is_empty():
-			push_error("Ability JSON rejected base module profile: %s" % "; ".join(base_errors))
-			return
-		dst.modules = parsed_modules
-		_normalize_modules_for_ability(dst.modules, dst.planner_group)
-	else:
-		_apply_legacy_ability_migration(dst, data)
+	if not base_errors.is_empty():
+		push_error("Ability JSON rejected base module profile: %s" % "; ".join(base_errors))
+		return
+	dst.modules = parsed_modules
+	_normalize_modules_for_ability(dst.modules, dst.planner_group)
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
-	var use_legacy_upgrade: bool = (
-		not (upgraded_module_data is Array)
-		or ((upgraded_module_data as Array).is_empty() and data.has("upgraded_effects"))
-	)
-	if not use_legacy_upgrade:
+	if upgraded_module_data is Array:
 		var parsed_upgraded_modules: Array[AbilityModule] = modules_from_dict_array(
 			upgraded_module_data as Array
 		)
@@ -2399,9 +2345,7 @@ static func apply_ability_dict(
 			return
 		dst.upgraded_modules = parsed_upgraded_modules
 		_normalize_modules_for_ability(dst.upgraded_modules, _upgrade_planner_group(dst))
-	elif use_legacy_upgrade and data.has("upgraded_effects"):
-		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
-	dst.finalize_modular()
+	AbilityModuleBridge.normalize_ability(dst)
 	if authored_range_tiles >= 0:
 		dst.range_tiles = authored_range_tiles
 
@@ -2427,56 +2371,6 @@ static func _canonical_tags_from_variant(
 			elif warn_unknown_tags:
 				push_warning("Ability JSON rejected unknown tag: %s" % String(tag))
 	return tags_out
-
-
-static func _apply_legacy_ability_migration(dst: AbilityData, data: Dictionary) -> void:
-	## One-way migration for pre-module editor saves. New saves never emit this shape.
-	if data.has("kind"):
-		dst.kind = int(data.get("kind", dst.kind)) as GameEnums.AbilityKind
-		dst.planner_group = AbilityModuleBridge.planner_group_from_kind(dst.kind)
-	if data.has("action_point_cost"):
-		dst.action_point_cost = int(data.get("action_point_cost", dst.action_point_cost))
-	if data.has("movement_point_cost"):
-		dst.movement_point_cost = int(data.get("movement_point_cost", dst.movement_point_cost))
-	if data.has("range_tiles"):
-		dst.range_tiles = int(data.get("range_tiles", dst.range_tiles))
-	if data.has("targeting_mode"):
-		dst.targeting_mode = int(data.get("targeting_mode", dst.targeting_mode))
-	if data.has("targeting_flags"):
-		dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
-	if data.has("can_target_self"):
-		dst.can_target_self = bool(data.get("can_target_self", dst.can_target_self))
-	if data.has("target_shape"):
-		dst.target_shape = int(data.get("target_shape", dst.target_shape))
-	if data.has("target_shape_size"):
-		dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
-	if data.has("upgraded_range_tiles"):
-		dst.upgraded_range_tiles = int(data.get("upgraded_range_tiles", dst.upgraded_range_tiles))
-	if data.has("upgraded_movement_point_cost"):
-		dst.upgraded_movement_point_cost = int(
-			data.get("upgraded_movement_point_cost", dst.upgraded_movement_point_cost)
-		)
-	if data.has("upgraded_target_shape"):
-		dst.upgraded_target_shape = int(data.get("upgraded_target_shape", dst.upgraded_target_shape))
-	if data.has("upgraded_target_shape_size"):
-		dst.upgraded_target_shape_size = int(
-			data.get("upgraded_target_shape_size", dst.upgraded_target_shape_size)
-		)
-	if data.has("scaling_stat"):
-		dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
-	if data.has("is_movement_skill"):
-		dst.is_movement_skill = bool(data.get("is_movement_skill", dst.is_movement_skill))
-	if data.has("effects"):
-		dst.effects = effects_from_dict_array(data.get("effects", []))
-	if data.has("upgraded_effects"):
-		dst.upgraded_effects = effects_from_dict_array(data.get("upgraded_effects", []))
-	if (
-		bool(data.get("can_target_self", false))
-		or int(data.get("targeting_mode", -1)) == GameEnums.TargetingMode.SELF
-	):
-		dst.targeting_flags = GameEnums.TargetingFlags.SELF
-		dst.targeting_mode = GameEnums.TargetingMode.SELF
-		dst.can_target_self = true
 
 
 static func passive_to_dict(src: PassiveData) -> Dictionary:

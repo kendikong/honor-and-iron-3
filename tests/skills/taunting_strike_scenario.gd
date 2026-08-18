@@ -15,13 +15,19 @@ static func run_all(failures: Array[String]) -> void:
 
 static func _sim_contract(failures: Array[String]) -> void:
 	var strike: AbilityData = _KnightQaHarness.factory_ability(&"knight_taunting_strike")
+	var base_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		strike.modules,
+	)
+	var upgraded_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		strike.upgraded_modules,
+	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/damage",
 		_KnightQaHarness.ability_has_effect(strike, GameEnums.EffectType.DAMAGE, false),
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/damage_amount",
-		strike != null and strike.effects[0].amount == 1,
+		strike != null and base_effects[0].amount == 1,
 		"taunting strike base DAMAGE must be ATK 1",
 	)
 	_KnightQaHarness.assert_true(
@@ -30,7 +36,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/pull_amount",
-		strike != null and strike.effects[1].amount == 1,
+		strike != null and base_effects[1].amount == 1,
 		"taunting strike base PULL must be 1",
 	)
 	_KnightQaHarness.assert_true(
@@ -54,5 +60,5 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "taunting/contract/upgrade_pull2",
-		strike != null and strike.upgraded_effects[1].amount == 2,
+		strike != null and upgraded_effects[1].amount == 2,
 	)

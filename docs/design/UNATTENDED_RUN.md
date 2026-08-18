@@ -24,7 +24,7 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 ### Machine bar (all must be true to claim STOP_ON success)
 
 1. Schema matches bible §12.14: `AbilityData` header (`planner_group`, tags, cost) + `AbilityModule` + layers/gates/keywords
-2. Factories/class library author **modules** (not dual flat+modular UIs); runtime may compile modules → `effects[]` during transition
+2. Factories/class library author **modules** (not dual flat+modular UIs); runtime compiles active modules into transient `EffectData` payloads
 3. `godot --headless --path . --script res://tests/regression_test.gd` — no new FAIL vs baseline attributable to this refactor
 4. Planning QA: `godot --headless --path . --script res://tests/run_planning_qa_gate.gd` (or project equivalent) → **PASS**
 5. Knight QA + Bruiser QA gates → **PASS** (behavior-identical skills)

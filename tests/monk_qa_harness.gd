@@ -441,7 +441,7 @@ static func _has_expected_outcome(
 ) -> bool:
 	if events.is_empty():
 		return false
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(ability.modules):
 		if effect == null:
 			continue
 		if effect.type in [

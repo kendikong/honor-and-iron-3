@@ -1531,7 +1531,7 @@ func _refresh_passive_preview(passive: PassiveData, preview: RichTextLabel) -> v
 func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) -> void:
 	_field_tracks.erase(ability.id)
 	_normalize_editor_modules(ability)
-	ability.finalize_modular()
+	AbilityModuleBridge.normalize_ability(ability)
 	if not _ability_ui.has(ability):
 		_ability_ui[ability] = {}
 	_ability_ui[ability]["module_grey_cbs"] = []
@@ -1548,7 +1548,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 				ability.primary_resource = GameEnums.CostResource.MP
 			else:
 				ability.primary_resource = GameEnums.CostResource.AP
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_rebuild_ability_detail_panes(ability)
 	)
 	_track_ability_field(ability, "planner_group", planner_row)
@@ -1560,7 +1560,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 			ability.upgraded_planner_group = (
 				GameEnums.PlannerGroup.PRE_MOVE if v else -1
 			)
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_rebuild_ability_detail_panes(ability)
 	)
 	_track_ability_field(ability, "upgraded_planner_group", upgrade_pre_move_row)
@@ -1577,13 +1577,13 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 				ability.primary_resource = GameEnums.CostResource.MP
 			else:
 				ability.primary_resource = GameEnums.CostResource.AP
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "primary_resource", resource_row)
 	var primary_value_row := _bind_int(grid, "Primary Cost", ability.primary_value, func(v: int) -> void:
 		ability.primary_value = maxi(0, v)
-		ability.finalize_modular()
+		AbilityModuleBridge.normalize_ability(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "primary_value", primary_value_row)
@@ -1591,14 +1591,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		grid, "Secondary Resource", GameEnums.CostResource, ability.secondary_resource,
 		func(v: int) -> void:
 			ability.secondary_resource = v as GameEnums.CostResource
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "secondary_resource", secondary_resource_row)
 	var secondary_value_row := _bind_int(
 		grid, "Secondary Cost", ability.secondary_value, func(v: int) -> void:
 			ability.secondary_value = maxi(0, v)
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "secondary_value", secondary_value_row)
@@ -1606,14 +1606,14 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 		grid, "Cost Modifier", GameEnums.CostModifier, ability.cost_modifier,
 		func(v: int) -> void:
 			ability.cost_modifier = v as GameEnums.CostModifier
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "cost_modifier", cost_modifier_row)
 	var cost_modifier_n_row := _bind_int(
 		grid, "Cost Modifier N", ability.cost_modifier_n, func(v: int) -> void:
 			ability.cost_modifier_n = maxi(0, v)
-			ability.finalize_modular()
+			AbilityModuleBridge.normalize_ability(ability)
 			_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "cost_modifier_n", cost_modifier_n_row)
@@ -1624,7 +1624,7 @@ func _populate_ability_data_editor(parent: VBoxContainer, ability: AbilityData) 
 	_track_ability_field(ability, "uses_per_combat", uses_row)
 	var once_row := _bind_bool(grid, "Once Per Turn", ability.once_per_turn, func(v: bool) -> void:
 		ability.once_per_turn = v
-		ability.finalize_modular()
+		AbilityModuleBridge.normalize_ability(ability)
 		_refresh_ability_ui(ability)
 	)
 	_track_ability_field(ability, "once_per_turn", once_row)
@@ -1823,14 +1823,14 @@ func _on_modules_edited(
 	if modules.is_empty():
 		AbilityModuleBridge.clear_module_profile(ability, upgraded)
 	_normalize_editor_modules(ability)
-	ability.finalize_modular()
+	AbilityModuleBridge.normalize_ability(ability)
 	_rebuild_modules_editor(parent, ability, modules, upgraded)
 	_refresh_ability_ui(ability)
 
 
 func _on_module_field_edited(ability: AbilityData) -> void:
 	_normalize_editor_modules(ability)
-	ability.finalize_modular()
+	AbilityModuleBridge.normalize_ability(ability)
 	_refresh_ability_ui(ability)
 
 
@@ -1881,7 +1881,7 @@ func _build_module_fields(
 	var changed := func() -> void: _on_module_field_edited(ability)
 	var rebuild_detail := func() -> void:
 		_normalize_editor_modules(ability)
-		ability.finalize_modular()
+		AbilityModuleBridge.normalize_ability(ability)
 		_rebuild_ability_detail_panes(ability)
 	var grey_rows: Dictionary = {}
 	grey_rows["phase"] = _bind_enum_excluding(

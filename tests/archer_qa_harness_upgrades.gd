@@ -72,7 +72,7 @@ static func run_power_shot_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"archer_power_shot")
 	H.assert_true(
 		failures, "power_shot/upgrade/compiled",
-		not ab.upgraded_effects.is_empty(),
+		not ab.upgraded_modules.is_empty(),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	var cfg: Dictionary = H.with_upgraded_ability(H.archer_with_ability(&"archer_power_shot"), &"archer_power_shot")
@@ -93,7 +93,7 @@ static func run_volley_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"archer_volley")
 	H.assert_true(
 		failures, "volley/upgrade/compiled",
-		not ab.upgraded_effects.is_empty(),
+		not ab.upgraded_modules.is_empty(),
 	)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	var cfg: Dictionary = H.with_upgraded_ability(H.archer_with_ability(&"archer_volley"), &"archer_volley")

@@ -7,7 +7,7 @@ extends RefCounted
 static func run_all(failures: Array[String]) -> void:
 	_test_module_authored_motion_range(failures)
 	_test_gated_follow_up_preview_commit_parity(failures)
-	_test_module_only_empty_compatibility_effects(failures)
+	_test_module_only_runtime_payload(failures)
 	_test_committed_prefix_simulates_while_later_aim_awaits(failures)
 
 
@@ -23,7 +23,6 @@ static func _test_module_authored_motion_range(failures: Array[String]) -> void:
 	motion.max_range = 3
 	motion.targeting_flags = GameEnums.TargetingFlags.TILE
 	ability.modules = [motion]
-	ability.effects = []
 	var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
 		board, actor, ability, actor.position,
 	)
@@ -60,7 +59,6 @@ static func _test_gated_follow_up_preview_commit_parity(failures: Array[String])
 	follow_up.gate = GameEnums.ModuleGate.IF_COLLIDED
 	follow_up.aim_binding = GameEnums.AimBinding.NEW_AIM
 	ability.modules = [dash, follow_up]
-	ability.effects = []
 	var action: TimelineAction = TimelineAction.make_ability(
 		actor.id, ability, Vector2i(2, 2), blocker.id,
 	)
@@ -93,7 +91,7 @@ static func _test_gated_follow_up_preview_commit_parity(failures: Array[String])
 		failures.append("failed collision gate incorrectly exposed a follow-up aim")
 
 
-static func _test_module_only_empty_compatibility_effects(failures: Array[String]) -> void:
+static func _test_module_only_runtime_payload(failures: Array[String]) -> void:
 	var board: BoardState = _plain_board(Vector2i(6, 4))
 	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1))
 	var target: UnitState = _unit(2, GameEnums.Team.ENEMY, Vector2i(3, 1))
@@ -108,14 +106,12 @@ static func _test_module_only_empty_compatibility_effects(failures: Array[String
 	damage.max_range = 3
 	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	ability.modules = [damage]
-	ability.effects = []
-	ability.upgraded_effects = []
 	var action: TimelineAction = TimelineAction.make_ability(
 		actor.id, ability, target.position, target.id,
 	)
 	AbilitySystem.prepare_planning_action(board, action)
 	if AbilitySystem.active_modules_for(actor, ability).is_empty() or action.awaiting_target:
-		failures.append("module-only planning ignored authored modules with empty flat compatibility data")
+		failures.append("module-only planning ignored authored modules")
 
 
 static func _test_committed_prefix_simulates_while_later_aim_awaits(failures: Array[String]) -> void:
@@ -143,7 +139,6 @@ static func _test_committed_prefix_simulates_while_later_aim_awaits(failures: Ar
 	strike.max_range = 1
 	strike.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	ability.modules = [motion, strike]
-	ability.effects = []
 	var action: TimelineAction = TimelineAction.make_ability(actor.id, ability, Vector2i(4, 1))
 	AbilitySystem.set_module_target(action, 0, Vector2i(4, 1), -1)
 	action.awaiting_target = true

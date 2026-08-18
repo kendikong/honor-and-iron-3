@@ -15,9 +15,10 @@ static func run_charge_strike(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
 	H.assert_eq_int(failures, "charge_strike/range", factory_ab.range_tiles, 2)
-	H.assert_eq_int(failures, "charge_strike/move_amount", factory_ab.effects[0].amount, 2)
-	H.assert_eq_int(failures, "charge_strike/dmg_amount", factory_ab.effects[1].amount, 3)
-	H.assert_eq_int(failures, "charge_strike/push_amount", factory_ab.effects[2].amount, 1)
+	var charge_effects := KH.compiled_effects(factory_ab)
+	H.assert_eq_int(failures, "charge_strike/move_amount", charge_effects[0].amount, 2)
+	H.assert_eq_int(failures, "charge_strike/dmg_amount", charge_effects[1].amount, 3)
+	H.assert_eq_int(failures, "charge_strike/push_amount", charge_effects[2].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(10, 8))
 	H.place_bruiser(board, 1, Vector2i(1, 3), H.bruiser_with_ability(&"bruiser_charge_strike"))
 	H.place_dummy(board, 2, Vector2i(3, 3))
@@ -76,8 +77,9 @@ static func run_concussion_blow(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_concussion_blow")
 	H.assert_eq_int(failures, "concussion_blow/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "concussion_blow/dmg_amount", factory_ab.effects[0].amount, 2)
-	H.assert_eq_int(failures, "concussion_blow/push_amount", factory_ab.effects[1].amount, 1)
+	var concussion_effects := KH.compiled_effects(factory_ab)
+	H.assert_eq_int(failures, "concussion_blow/dmg_amount", concussion_effects[0].amount, 2)
+	H.assert_eq_int(failures, "concussion_blow/push_amount", concussion_effects[1].amount, 1)
 	H.assert_true(
 		failures, "concussion_blow/object_stagger_mod",
 		factory_ab.modules[0].layers[0].object_collision_stagger,
@@ -173,7 +175,7 @@ static func run_cleave(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_cleave")
 	H.assert_eq_int(failures, "cleave/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "cleave/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
-	H.assert_eq_int(failures, "cleave/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "cleave/dmg_amount", KH.compiled_effects(factory_ab)[0].amount, 2)
 	H.assert_true(
 		failures, "cleave/tile_flags",
 		factory_ab.has_targeting(GameEnums.TargetingFlags.TILE)
@@ -284,7 +286,7 @@ static func run_suplex(failures: Array[String]) -> void:
 		failures, "suplex/primary",
 		factory_ab.modules[0].primary_type, GameEnums.EffectType.THROW_BEHIND,
 	)
-	H.assert_eq_int(failures, "suplex/dmg_amount", factory_ab.effects[1].amount, 4)
+	H.assert_eq_int(failures, "suplex/dmg_amount", KH.compiled_effects(factory_ab)[1].amount, 4)
 	H.assert_true(
 		failures, "suplex/not_swap",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.SWAP, false),
@@ -449,7 +451,7 @@ static func run_adrenaline_surge(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "adrenaline_surge/no_same_turn_mov", H.status_value(after, GameEnums.StatusType.STAT_BUFF_MOV), 0)
 	H.assert_eq_int(failures, "adrenaline_surge/next_turn_str", int(after.passive_flags.get("next_turn_str_bonus", 0)), 1)
 	H.assert_eq_int(failures, "adrenaline_surge/next_turn_mov", int(after.passive_flags.get("next_turn_max_move_bonus", 0)), 1)
-	for eff: EffectData in ab.effects:
+	for eff: EffectData in KH.compiled_effects(ab):
 		if eff != null and eff.type in [
 			GameEnums.EffectType.ADD_STATUS_SELF,
 		] and eff.status_type in [
@@ -489,7 +491,7 @@ static func run_earthshatter(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_earthshatter")
 	H.assert_eq_int(failures, "earthshatter/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "earthshatter/shape", factory_ab.target_shape, GameEnums.TargetShape.ARC)
-	H.assert_eq_int(failures, "earthshatter/dmg_amount", factory_ab.effects[0].amount, 2)
+	H.assert_eq_int(failures, "earthshatter/dmg_amount", KH.compiled_effects(factory_ab)[0].amount, 2)
 	H.assert_true(
 		failures, "earthshatter/destroy_effect",
 		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),
@@ -798,8 +800,9 @@ static func run_guttural_roar(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "guttural_roar/range", ab.range_tiles, 0)
 	H.assert_eq_int(failures, "guttural_roar/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "guttural_roar/aoe_size", ab.target_shape_size, 2)
-	H.assert_eq_int(failures, "guttural_roar/push_amount", ab.effects[0].amount, 1)
-	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", ab.effects[1].amount, 2)
+	var roar_effects := KH.compiled_effects(ab)
+	H.assert_eq_int(failures, "guttural_roar/push_amount", roar_effects[0].amount, 1)
+	H.assert_eq_int(failures, "guttural_roar/def_debuff_amount", roar_effects[1].amount, 2)
 	ab.ensure_targeting_flags_from_mode()
 	H.assert_eq_int(failures, "guttural_roar/self_targeting", ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	H.assert_true(failures, "guttural_roar/self_flags", ab.has_targeting(GameEnums.TargetingFlags.SELF))
@@ -872,8 +875,9 @@ static func run_headbutt(failures: Array[String]) -> void:
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_headbutt")
 	H.assert_eq_int(failures, "headbutt/range", factory_ab.range_tiles, 1)
-	H.assert_eq_int(failures, "headbutt/dmg_amount", factory_ab.effects[0].amount, 3)
-	H.assert_eq_int(failures, "headbutt/self_dmg_amount", factory_ab.effects[1].amount, 1)
+	var headbutt_effects := KH.compiled_effects(factory_ab)
+	H.assert_eq_int(failures, "headbutt/dmg_amount", headbutt_effects[0].amount, 3)
+	H.assert_eq_int(failures, "headbutt/self_dmg_amount", headbutt_effects[1].amount, 1)
 	var board: BoardState = H.make_plain_board(Vector2i(8, 8))
 	H.place_bruiser(board, 1, Vector2i(3, 3), H.bruiser_with_ability(&"bruiser_headbutt"))
 	H.place_dummy(board, 2, Vector2i(4, 3))
@@ -1064,7 +1068,7 @@ static func run_crimson_whirlwind(failures: Array[String]) -> void:
 	H.assert_eq_int(failures, "crimson_whirlwind/range", ab.range_tiles, 0)
 	H.assert_eq_int(failures, "crimson_whirlwind/aoe", ab.target_shape, GameEnums.TargetShape.AOE_SQUARE)
 	H.assert_eq_int(failures, "crimson_whirlwind/aoe_size", ab.target_shape_size, 1)
-	H.assert_eq_int(failures, "crimson_whirlwind/dmg_amount", ab.effects[0].amount, 1)
+	H.assert_eq_int(failures, "crimson_whirlwind/dmg_amount", KH.compiled_effects(ab)[0].amount, 1)
 	ab.ensure_targeting_flags_from_mode()
 	H.assert_eq_int(failures, "crimson_whirlwind/self_targeting", ab.targeting_mode, GameEnums.TargetingMode.SELF)
 	H.assert_true(failures, "crimson_whirlwind/self_flags", ab.has_targeting(GameEnums.TargetingFlags.SELF))
@@ -1119,8 +1123,9 @@ static func run_belly_flop(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_belly_flop")
 	H.assert_eq_int(failures, "belly_flop/range", factory_ab.range_tiles, 2)
 	H.assert_eq_int(failures, "belly_flop/ap_cost", factory_ab.action_point_cost, 1)
-	H.assert_eq_int(failures, "belly_flop/jump_amount", factory_ab.effects[0].amount, 2)
-	H.assert_eq_int(failures, "belly_flop/dmg_amount", factory_ab.effects[1].amount, 2)
+	var belly_effects := KH.compiled_effects(factory_ab)
+	H.assert_eq_int(failures, "belly_flop/jump_amount", belly_effects[0].amount, 2)
+	H.assert_eq_int(failures, "belly_flop/dmg_amount", belly_effects[1].amount, 2)
 	H.assert_eq_int(failures, "belly_flop/aoe", factory_ab.target_shape, GameEnums.TargetShape.AOE_CROSS)
 	H.assert_eq_int(failures, "belly_flop/aoe_size", factory_ab.target_shape_size, 1)
 	var flop_footprint: Array[Vector2i] = GridSystem.get_affected_tiles(
@@ -1187,7 +1192,7 @@ static func run_breaching_dash(failures: Array[String]) -> void:
 		[GameEnums.EffectType.DASH, GameEnums.EffectType.DESTROY_OBSTACLE],
 	)
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
-	H.assert_eq_int(failures, "breaching_dash/dash_amount", factory_ab.effects[0].amount, 3)
+	H.assert_eq_int(failures, "breaching_dash/dash_amount", KH.compiled_effects(factory_ab)[0].amount, 3)
 	H.assert_true(
 		failures, "breaching_dash/destroy_effect",
 		H.ability_has_effect(factory_ab, GameEnums.EffectType.DESTROY_OBSTACLE, false),

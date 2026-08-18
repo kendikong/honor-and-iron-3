@@ -16,7 +16,7 @@ const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
 static func run_for_factory(failures: Array[String], factory_id: StringName) -> void:
 	var ability: AbilityData = _AoeHarness.find_ability_by_id(factory_id)
 	if ability != null:
-		if ability.upgraded_effects.is_empty() and ability.upgraded_description.is_empty():
+		if ability.upgraded_modules.is_empty() and ability.upgraded_description.is_empty():
 			return
 		var class_id: String = String(factory_id).split("_")[0]
 		var row_name: String = String(factory_id).substr(class_id.length() + 1)

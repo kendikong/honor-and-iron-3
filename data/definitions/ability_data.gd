@@ -3,8 +3,8 @@ extends Resource
 
 ## Purpose: A data-driven ability — header + ordered modules (ability-data.md).
 ## Responsibilities: Describe planner column, cost, tags, presentation, and modules.
-## Legacy flat effects[] are compiled from modules for readers not yet migrated.
-## Dependencies: EffectData, AbilityModule, AbilityModuleBridge.
+## Runtime EffectData payloads are compiled from the active modules on demand.
+## Dependencies: AbilityModule, AbilityModuleBridge.
 ## Lifecycle: immutable definition shared by all units that own it.
 
 @export var id: StringName = &""
@@ -144,12 +144,6 @@ func _targeting_flags_to_mode() -> int:
 @export var upgraded_target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
 @export var upgraded_target_shape_size: int = -1
 
-## Ordered list of effects — compiled from modules for legacy AbilitySystem readers.
-@export var effects: Array[EffectData] = []
-
-## Effects applied to the target if this ability is upgraded (compiled from upgraded_modules).
-@export var upgraded_effects: Array[EffectData] = []
-
 ## Description of what the upgrade does.
 @export var upgrade_description: String = ""
 
@@ -170,11 +164,6 @@ func _targeting_flags_to_mode() -> int:
 
 ## Legacy mirror of planner_group == PRE_MOVE (synced; not authored separately).
 @export var is_movement_skill: bool = false
-
-
-## Infer modules from flat effects when needed; compile modules → effects; sync kind/cost mirrors.
-func finalize_modular() -> void:
-	AbilityModuleBridge.finalize_ability(self)
 
 
 ## Returns the one authored module profile active for this ability state.

@@ -28,7 +28,7 @@ static func run_all() -> Dictionary:
 	_report_check("er1_shared_homes", failures, check_failures)
 	check_failures = failures.size()
 	print("ABILITY_MODULE_CHECK: infer_motion_push_layer START")
-	_check_infer_motion_push_layer(failures)
+	_check_authored_motion_push_layer(failures)
 	_report_check("infer_motion_push_layer", failures, check_failures)
 	_run_script_check(
 		"res://tests/ability_module_runtime_test.gd",
@@ -66,7 +66,7 @@ static func run_all() -> Dictionary:
 		"res://tests/ability_module_reader_boundary_test.gd",
 		"run_all",
 		failures,
-		"compatibility_reader_boundary",
+		"module_reader_boundary",
 		check_failures,
 	)
 	check_failures = failures.size()
@@ -127,8 +127,8 @@ static func _check_bruiser(failures: Array[String]) -> void:
 	for ab: AbilityData in bruiser.abilities:
 		if ab == null:
 			continue
-		if ab.modules.is_empty() and not ab.effects.is_empty():
-			failures.append("%s has effects but empty modules" % String(ab.id))
+		if ab.modules.is_empty():
+			failures.append("%s has no authored modules" % String(ab.id))
 		if ab.planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 			if ab.primary_resource != GameEnums.CostResource.MP:
 				failures.append("%s PRE_MOVE primary_resource not MP" % String(ab.id))
@@ -154,8 +154,8 @@ static func _check_knight(failures: Array[String]) -> void:
 		return
 	if swap.planner_group != GameEnums.PlannerGroup.PRE_MOVE:
 		failures.append("knight_swap planner_group not PRE_MOVE")
-	if swap.effects.is_empty() or swap.effects[0].type != GameEnums.EffectType.SWAP:
-		failures.append("knight_swap lost SWAP effect after finalize")
+	if swap.modules.is_empty() or swap.modules[0].primary_type != GameEnums.EffectType.SWAP:
+		failures.append("knight_swap lost authored SWAP module")
 
 
 static func _check_violent_collision_modules(failures: Array[String]) -> void:
@@ -179,14 +179,10 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("violent_collision module[1] should be MOVE")
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
-	if vc.effects.is_empty() or not vc.effects[0].modifiers.has("violent_collision_recast"):
-		failures.append("violent_collision legacy effects lost violent_collision_recast")
-	if vc.effects.size() != 1:
-		failures.append(
-			"violent_collision legacy effects should stay 1 DASH (got %d)" % vc.effects.size()
-		)
-	if not vc.effects[0].modifiers.has("bulldoze"):
-		failures.append("violent_collision lost bulldoze modifier")
+	if vc.modules[0].violent_collision_recast <= 0:
+		failures.append("violent_collision module lost violent_collision_recast")
+	if not vc.modules[0].runtime_has("bulldoze"):
+		failures.append("violent_collision module lost bulldoze modifier")
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:
 		if ab2 != null and ab2.id == &"bruiser_charge_strike":
@@ -372,34 +368,28 @@ static func _check_relocation_planner(
 			)
 
 
-static func _check_infer_motion_push_layer(failures: Array[String]) -> void:
-	var move_eff := EffectData.new()
-	move_eff.type = GameEnums.EffectType.MOVE
-	move_eff.amount = 2
-	var push_eff := EffectData.new()
-	push_eff.type = GameEnums.EffectType.PUSH
-	push_eff.amount = 1
-	var damage_eff := EffectData.new()
-	damage_eff.type = GameEnums.EffectType.DAMAGE
-	damage_eff.amount = 3
-	var trample_proxy := AbilityData.new()
-	var trample_modules: Array[AbilityModule] = AbilityModuleBridge.infer_modules_from_effects(
-		[move_eff, push_eff], trample_proxy,
-	)
+static func _check_authored_motion_push_layer(failures: Array[String]) -> void:
+	var trample_module := AbilityModule.new()
+	trample_module.primary_type = GameEnums.EffectType.MOVE
+	trample_module.amount = 2
+	var push_layer := AbilityLayer.new()
+	push_layer.effect = DataLibrary._effect(GameEnums.EffectType.PUSH, 1)
+	trample_module.layers.append(push_layer)
+	var trample_modules: Array[AbilityModule] = [trample_module]
 	if trample_modules.size() != 1:
 		failures.append(
-			"infer MOVE+PUSH should be one module (got %d)" % trample_modules.size(),
+			"authored MOVE+PUSH should be one module (got %d)" % trample_modules.size(),
 		)
 	elif trample_modules[0].layers.is_empty() \
 			or trample_modules[0].layers[0].effect.type != GameEnums.EffectType.PUSH:
-		failures.append("infer MOVE+PUSH should attach PUSH as motion layer")
-	var charge_proxy := AbilityData.new()
-	var charge_modules: Array[AbilityModule] = AbilityModuleBridge.infer_modules_from_effects(
-		[move_eff.duplicate(true), damage_eff], charge_proxy,
-	)
+		failures.append("authored MOVE+PUSH should attach PUSH as motion layer")
+	var strike_module := AbilityModule.new()
+	strike_module.primary_type = GameEnums.EffectType.DAMAGE
+	strike_module.amount = 3
+	var charge_modules: Array[AbilityModule] = [trample_module, strike_module]
 	if charge_modules.size() != 2:
 		failures.append(
-			"infer MOVE+DAMAGE should stay two modules (got %d)" % charge_modules.size(),
+			"authored MOVE+DAMAGE should stay two modules (got %d)" % charge_modules.size(),
 		)
 	elif charge_modules[1].primary_type != GameEnums.EffectType.DAMAGE:
-		failures.append("infer MOVE+DAMAGE second module should be DAMAGE strike")
+		failures.append("authored MOVE+DAMAGE second module should be DAMAGE strike")

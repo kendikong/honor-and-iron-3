@@ -9,11 +9,11 @@ static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:
 	var ability: AbilityData = H.factory_ability(ability_id)
 	if ability == null:
 		return
-	if ability.upgraded_effects.is_empty() and ability.upgraded_modules.is_empty():
+	if ability.upgraded_modules.is_empty():
 		return
 	H.assert_true(
 		failures, "%s/upgrade/compiled" % ability_id,
-		not ability.upgraded_effects.is_empty() or not ability.upgraded_modules.is_empty(),
+		not ability.upgraded_modules.is_empty(),
 	)
 	match row_name:
 		"piercing_charge", "glorious_charge", "push":

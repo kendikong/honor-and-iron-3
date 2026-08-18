@@ -21,8 +21,7 @@ static func ability_has_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array = ability.upgraded_effects if upgraded else ability.effects
-	for effect: EffectData in effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(null, ability):
 		if effect != null and effect.type == effect_type:
 			return true
 	return false
@@ -206,14 +205,14 @@ static func run_data_contract(failures: Array[String]) -> void:
 		assert_true(
 			failures,
 			"%s/compiled" % ability_id,
-			not ability.effects.is_empty() and not ability.upgraded_effects.is_empty(),
-			"both profiles must compile through AbilityModuleBridge",
+			not ability.modules.is_empty() and not ability.upgraded_modules.is_empty(),
+			"both typed profiles must be authored",
 		)
 		assert_true(
 			failures,
 			"%s/primary" % ability_id,
-			ability.effects[0].type == expected[0]
-			and ability.effects[0].amount == int(expected[1])
+			ability.modules[0].primary_type == expected[0]
+			and ability.modules[0].amount == int(expected[1])
 			and ability.range_tiles == int(expected[2])
 			and ability.target_shape == expected[3],
 		)

@@ -9,7 +9,7 @@ extends Resource
 @export var effect: EffectData = null
 @export var condition: GameEnums.LayerCondition = GameEnums.LayerCondition.AT_RESOLUTION
 
-## Typed collision-layer behavior; compile into the compatibility EffectData view.
+## Typed collision-layer behavior; compile into the transient EffectData payload.
 @export var object_collision_stagger: bool = false
 @export var enemy_collision_stagger_both: bool = false
 @export var weapon_scaled: bool = false

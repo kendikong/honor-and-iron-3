@@ -192,7 +192,7 @@ The **structure** (header → modules → keywords → layers → gates) is fixe
 Factories and the class editor author behavior through typed `AbilityModule` / `AbilityLayer`
 fields. `AbilityModuleBridge` may compile those fields into `EffectData.modifiers` because
 the shared `AbilitySystem` and simulator consume one normalized effect payload at runtime.
-That dictionary is a compiled compatibility boundary, not an authoring escape hatch: new
+That dictionary is a compiled execution boundary, not an authoring escape hatch: new
 skills must add a typed owner and bridge mapping, never write an unowned modifier key.
 
 ---

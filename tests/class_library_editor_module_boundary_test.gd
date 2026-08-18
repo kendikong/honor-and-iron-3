@@ -4,7 +4,6 @@ extends RefCounted
 const EDITOR_PATH: String = "res://ui/class_library_editor.gd"
 const SCHEMA_PATH: String = "res://ui/class_library_schema.gd"
 const OVERRIDES_PATH: String = "res://data/class_library_data.json"
-const LEGACY_FIXTURE_PATH: String = "user://class_library_legacy_read_test.json"
 const _BibleText := preload("res://ui/class_library_bible_text.gd")
 
 
@@ -22,14 +21,13 @@ static func run_all(failures: Array[String]) -> void:
 		if source.contains(forbidden):
 			failures.append("class library editor still writes legacy field: %s" % forbidden)
 	var schema_source: String = FileAccess.get_file_as_string(SCHEMA_PATH)
-	if not schema_source.contains("return migrate_editor_save_to_modules(parsed as Dictionary)"):
-		failures.append("class library save reader bypasses module migration")
+	if schema_source.contains("migrate_editor_save_to_modules"):
+		failures.append("class library save reader still contains legacy migration")
 	if not source.contains("ability_skill_module_lines_bbcode"):
 		failures.append(
 			"class library In-Game Preview does not use CombatUiFormatters.ability_skill_module_lines_bbcode"
 		)
 	_assert_saved_abilities_are_module_first(failures)
-	_assert_runtime_legacy_read_migrates(failures)
 	_assert_non_status_modules_clear_status_type(failures)
 	_assert_bible_text_lookup(failures)
 
@@ -92,43 +90,6 @@ static func _assert_saved_abilities_are_module_first(failures: Array[String]) ->
 			]:
 				if ability_data.has(legacy_key):
 					failures.append("%s/%s emitted legacy key %s" % [unit_key, ability_key, legacy_key])
-
-
-static func _assert_runtime_legacy_read_migrates(failures: Array[String]) -> void:
-	var legacy_payload: Dictionary = {
-		"units": {
-			"legacy_fixture": {
-				"abilities": {
-					"legacy_strike": {
-						"display_name": "Legacy Strike",
-						"effects": [{
-							"type": GameEnums.EffectType.DAMAGE,
-							"amount": 3,
-						}],
-						"kind": GameEnums.AbilityKind.CLASS_SKILL,
-						"range_tiles": 2,
-						"targeting_flags": GameEnums.TargetingFlags.ENEMY,
-						"targeting_mode": GameEnums.TargetingMode.ENEMY_UNIT,
-					},
-				},
-			},
-		},
-	}
-	var file := FileAccess.open(LEGACY_FIXTURE_PATH, FileAccess.WRITE)
-	if file == null:
-		failures.append("could not create runtime legacy read fixture")
-		return
-	file.store_string(JSON.stringify(legacy_payload))
-	file.close()
-	var migrated: Dictionary = ClassLibrarySchema.read_editor_save_from_path(LEGACY_FIXTURE_PATH)
-	var ability_data: Dictionary = (
-		((migrated.get("units", {}) as Dictionary).get("legacy_fixture", {}) as Dictionary)
-		.get("abilities", {})
-		.get("legacy_strike", {})
-	)
-	if not ability_data.has("modules") or ability_data.has("effects") or ability_data.has("kind"):
-		failures.append("runtime legacy read did not return module-first payload")
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(LEGACY_FIXTURE_PATH))
 
 
 static func _assert_bible_text_lookup(failures: Array[String]) -> void:

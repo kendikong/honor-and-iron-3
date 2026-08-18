@@ -1001,7 +1001,7 @@ func _assert_live_shaped_targets(
 		if unit.team == GameEnums.Team.ENEMY and footprint.has(unit.position):
 			expected_ids.append(unit.id)
 	var expects_damage: bool = false
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilitySystem.active_effects_for(base_actor, ability):
 		if effect != null and effect.type == GameEnums.EffectType.DAMAGE:
 			expects_damage = true
 			break

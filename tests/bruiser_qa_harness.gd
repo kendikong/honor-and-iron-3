@@ -736,7 +736,9 @@ static func run_push_through_upgrade_next_attack(failures: Array[String]) -> voi
 	var result_base: SimResult = simulate_plan(board_base, plan_base)
 	var dmg_base: int = hp_base - unit_hp(result_base.final_state, 11)
 	var bruiser_after: UnitState = result.final_state.get_unit_by_id(1)
-	var base_cleave_power: int = cleave.effects[0].amount
+	var base_cleave_power: int = AbilityModuleBridge.compile_modules_to_effects(
+		cleave.modules,
+	)[0].amount
 	var str_val: int = CombatSystem.get_dynamic_strength(result.final_state, bruiser_after)
 	var wpn: int = 0
 	if bruiser_after.definition != null and bruiser_after.definition.equipped_weapon != null:

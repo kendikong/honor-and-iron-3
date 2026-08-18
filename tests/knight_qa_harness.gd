@@ -274,11 +274,21 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
+	var effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.get_active_modules(upgraded),
+	)
 	for eff: EffectData in effects:
 		if eff != null and eff.type == effect_type:
 			return true
 	return false
+
+
+static func compiled_effects(
+	ability: AbilityData, upgraded: bool = false,
+) -> Array[EffectData]:
+	if ability == null:
+		return []
+	return AbilityModuleBridge.compile_modules_to_effects(ability.get_active_modules(upgraded))
 
 
 static func ability_has_status_effect(
@@ -288,7 +298,9 @@ static func ability_has_status_effect(
 ) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = ability.upgraded_effects if upgraded else ability.effects
+	var effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.get_active_modules(upgraded),
+	)
 	for eff: EffectData in effects:
 		if eff == null:
 			continue
@@ -394,11 +406,11 @@ static func run_active_smoke(
 			ability_has_status_effect(ability, status_type, false),
 			"base effects must include status %s" % status_type,
 		)
-	if ability.upgraded_effects.size() > 0:
+	if not ability.upgraded_modules.is_empty():
 		assert_true(
 			failures, "%s/upgrade_data" % ability_id,
 			ability.upgrade_description.length() > 0,
-			"upgraded_effects require upgrade_description",
+			"upgraded_modules require upgrade_description",
 		)
 
 
@@ -1654,7 +1666,7 @@ static func run_redirect_strike(failures: Array[String]) -> void:
 	var redirect_up: AbilityData = ability_on_unit(knight_up, &"knight_redirect_strike")
 	assert_true(
 		failures, "redirect_strike/upgrade/intercept_flag",
-		redirect_up.upgraded_effects[0].amount == 1,
+		compiled_effects(redirect_up, true)[0].amount == 1,
 		"upgraded redirect strike must mark INTERCEPT with value 1 for [+] DEF",
 	)
 	var plan_up := Timeline.new()
@@ -2016,7 +2028,7 @@ static func run_phalanx_stance(failures: Array[String]) -> void:
 		module.max_range = 10
 	for module: AbilityModule in bolt_w.upgraded_modules:
 		module.max_range = 10
-	bolt_w.finalize_modular()
+	AbilityModuleBridge.normalize_ability(bolt_w)
 	var hp_wide: int = unit_on_board(board_wide, 31).health.current_hp
 	var atk_w := Timeline.new()
 	atk_w.add(plan_ability(31, bolt_w, Vector2i(2, 2), 30))
@@ -2095,7 +2107,7 @@ static func run_taunting_strike(failures: Array[String]) -> void:
 	assert_true(
 		failures, "taunting_strike/upgrade/pull2",
 		ability_has_effect(strike_up, GameEnums.EffectType.PULL, true)
-		and strike_up.upgraded_effects[1].amount == 2,
+		and compiled_effects(strike_up, true)[1].amount == 2,
 		"upgraded taunting strike must PULL 2",
 	)
 	assert_eq_int(

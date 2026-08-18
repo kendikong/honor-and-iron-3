@@ -567,14 +567,20 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 	assert_int(ability.target_shape_size).override_failure_message(
 		"%s: range shape size" % case.id,
 	).is_equal(int(case.shape_size))
-	assert_bool(ability.effects.size() > 0).override_failure_message(
-		"%s: compiled base effects must not be empty" % case.id,
+	var base_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.modules,
+	)
+	var upgraded_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.upgraded_modules,
+	)
+	assert_bool(not base_effects.is_empty()).override_failure_message(
+		"%s: authored base modules must not be empty" % case.id,
 	).is_true()
 	if case.upgrade_keys.size() > 0:
-		assert_bool(ability.upgraded_effects.size() > 0).override_failure_message(
-			"%s: compiled [+] effects must not be empty" % case.id,
+		assert_bool(not upgraded_effects.is_empty()).override_failure_message(
+			"%s: authored [+] modules must not be empty" % case.id,
 		).is_true()
-	var primary: EffectData = ability.effects[0]
+	var primary: EffectData = base_effects[0]
 	assert_that(primary.type).override_failure_message(
 		"%s: primary effect type" % case.id,
 	).is_equal(case.primary_type)
@@ -590,7 +596,7 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 				"%s: strike range expected 2 got %s" % [case.id, ability.modules[1].max_range],
 			).is_equal(2)
 	for key: StringName in case.upgrade_keys:
-		assert_bool(_effects_have_key(ability.upgraded_effects, key)).override_failure_message(
+		assert_bool(_effects_have_key(upgraded_effects, key)).override_failure_message(
 			"%s: missing [+] effect modifier %s" % [case.id, key],
 		).is_true()
 

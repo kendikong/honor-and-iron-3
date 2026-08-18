@@ -100,18 +100,16 @@ func _make_attack(p_id: StringName, dmg: int, push: int, p_range: int) -> Abilit
 	ability.display_name = String(p_id)
 	ability.action_point_cost = 1
 	ability.range_tiles = p_range
-	var effects: Array[EffectData] = []
+	var modules: Array[AbilityModule] = []
 	if dmg > 0:
-		var d := EffectData.new()
-		d.type = GameEnums.EffectType.DAMAGE
-		d.amount = dmg
-		effects.append(d)
+		modules.append(DataLibrary._module(
+			GameEnums.EffectType.DAMAGE, dmg, 1, p_range, GameEnums.TargetingFlags.ENEMY,
+		))
 	if push > 0:
-		var p := EffectData.new()
-		p.type = GameEnums.EffectType.PUSH
-		p.amount = push
-		effects.append(p)
-	ability.effects = effects
+		modules.append(DataLibrary._module(
+			GameEnums.EffectType.PUSH, push, 1, p_range, GameEnums.TargetingFlags.ENEMY,
+		))
+	ability.modules = modules
 	return ability
 
 func _make_unit_data(p_id: StringName, hp: int, move: int, ap: int, behavior: BehaviorData) -> UnitData:
@@ -288,10 +286,9 @@ func _test_bomber_explodes() -> bool:
 	bomb_ability.action_point_cost = 1
 	bomb_ability.range_tiles = 0
 	bomb_ability.targeting_mode = GameEnums.TargetingMode.SELF
-	var bomb_effect := EffectData.new()
-	bomb_effect.type = GameEnums.EffectType.EXPLODE
-	bomb_effect.amount = 4
-	bomb_ability.effects = [bomb_effect]
+	bomb_ability.modules = [DataLibrary._module(
+		GameEnums.EffectType.EXPLODE, 4, 0, 0, GameEnums.TargetingFlags.SELF,
+	)]
 	
 	var bomber_behavior := BehaviorData.new()
 	bomber_behavior.strategy = &"bomber"
@@ -336,10 +333,9 @@ func _test_summoner_spawns() -> bool:
 	spawn_ability.action_point_cost = 1
 	spawn_ability.range_tiles = 1
 	spawn_ability.targeting_mode = GameEnums.TargetingMode.TILE
-	var spawn_effect := EffectData.new()
-	spawn_effect.type = GameEnums.EffectType.SPAWN
-	spawn_effect.amount = 0
-	spawn_ability.effects = [spawn_effect]
+	spawn_ability.modules = [DataLibrary._module(
+		GameEnums.EffectType.SPAWN, 0, 1, 1, GameEnums.TargetingFlags.TILE,
+	)]
 	
 	var summoner_behavior := BehaviorData.new()
 	summoner_behavior.strategy = &"summoner"
@@ -393,10 +389,9 @@ func _test_teleporter_warps() -> bool:
 	attack_ability.display_name = "Strike"
 	attack_ability.action_point_cost = 1
 	attack_ability.range_tiles = 1
-	var attack_effect := EffectData.new()
-	attack_effect.type = GameEnums.EffectType.DAMAGE
-	attack_effect.amount = 3
-	attack_ability.effects = [attack_effect]
+	attack_ability.modules = [DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
+	)]
 	
 	var tele_behavior := BehaviorData.new()
 	tele_behavior.strategy = &"teleporter"
@@ -448,10 +443,9 @@ func _test_engineer_grenade() -> bool:
 	grenade_ability.action_point_cost = 1
 	grenade_ability.range_tiles = 3
 	grenade_ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
-	var grenade_effect := EffectData.new()
-	grenade_effect.type = GameEnums.EffectType.RANGED_EXPLODE
-	grenade_effect.amount = 2
-	grenade_ability.effects = [grenade_effect]
+	grenade_ability.modules = [DataLibrary._module(
+		GameEnums.EffectType.RANGED_EXPLODE, 2, 1, 3, GameEnums.TargetingFlags.ENEMY,
+	)]
 	
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_ability(1, grenade_ability, Vector2i(2, 5), 2))
@@ -483,9 +477,9 @@ func _test_movement_skill_spends_mp() -> bool:
 	swap.movement_point_cost = 2
 	swap.range_tiles = 1
 	swap.targeting_mode = GameEnums.TargetingMode.ALLY_UNIT
-	var swap_fx := EffectData.new()
-	swap_fx.type = GameEnums.EffectType.SWAP
-	swap.effects = [swap_fx]
+	swap.modules = [DataLibrary._module(
+		GameEnums.EffectType.SWAP, 0, 1, 1, GameEnums.TargetingFlags.ALLY,
+	)]
 	var actor_def := _make_unit_data(&"actor", 10, 4, 1, null)
 	var ally_def := _make_unit_data(&"ally", 10, 3, 1, null)
 	var actor := _place(board, 1, actor_def, GameEnums.Team.PLAYER, Vector2i(2, 2))
@@ -576,10 +570,9 @@ func _test_run_leaves_action_slot() -> bool:
 	basic.kind = GameEnums.AbilityKind.CLASS_SKILL
 	basic.action_point_cost = 0
 	basic.range_tiles = 1
-	var dmg := EffectData.new()
-	dmg.type = GameEnums.EffectType.DAMAGE
-	dmg.amount = 1
-	basic.effects = [dmg]
+	basic.modules = [DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 1, 1, 1, GameEnums.TargetingFlags.ENEMY,
+	)]
 
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_run_move(1, Vector2i(2, 1)))

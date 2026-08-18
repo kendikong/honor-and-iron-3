@@ -378,7 +378,7 @@ func _add_ability_panel(parent: Control, ab: AbilityData) -> void:
 	var a_vbox := VBoxContainer.new()
 	a_box.add_child(a_vbox)
 	
-	ab.finalize_modular()
+	AbilityModuleBridge.normalize_ability(ab)
 	var scaling_text := ""
 	for module: AbilityModule in ab.get_active_modules():
 		if module == null:

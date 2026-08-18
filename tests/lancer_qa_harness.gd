@@ -88,12 +88,14 @@ static func run_data_contract(failures: Array[String]) -> void:
 		)
 		assert_true(
 			failures, "%s/compiled" % ability_id,
-			not ability.effects.is_empty() and not ability.upgraded_effects.is_empty(),
-			"module bridge must compile both profiles",
+			not AbilityModuleBridge.compile_modules_to_effects(ability.modules).is_empty()
+			and not AbilityModuleBridge.compile_modules_to_effects(ability.upgraded_modules).is_empty(),
+			"both authored profiles must compile to runtime payloads",
 		)
 		assert_true(
 			failures, "%s/primary" % ability_id,
-			ability.effects[0].type == expected[0] and ability.effects[0].amount == int(expected[1]),
+			ability.modules[0].primary_type == expected[0]
+			and ability.modules[0].amount == int(expected[1]),
 			"compiled primary effect does not match Bible",
 		)
 		assert_true(
@@ -252,7 +254,7 @@ static func run_polearm_reach_smoke(failures: Array[String]) -> void:
 		failures,
 		"polearm_mastery/basic_modifier",
 		is_equal_approx(
-			float(basic.effects[0].modifiers.get("range_one_damage_multiplier", 0.0)),
+			float(basic.modules[0].modifiers.get("range_one_damage_multiplier", 0.0)),
 			0.7,
 		),
 		"basic Lance must carry the 30% Range 1 penalty",
@@ -264,7 +266,7 @@ static func run_polearm_reach_smoke(failures: Array[String]) -> void:
 	for ability: AbilityData in definition.abilities:
 		if ability == null or not ability.tags.has(AbilityModuleBridge.TAG_ATTACK):
 			continue
-		for effect: EffectData in ability.effects:
+		for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(ability.modules):
 			if effect == null or effect.type != GameEnums.EffectType.DAMAGE:
 				continue
 			assert_true(
@@ -327,7 +329,8 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 		failures,
 		"push_synergy/vault_modifier",
 		vault != null and _has_modifier(
-			vault.upgraded_effects, GameEnums.EffectType.JUMP_TO_BEHIND,
+			AbilityModuleBridge.compile_modules_to_effects(vault.upgraded_modules),
+			GameEnums.EffectType.JUMP_TO_BEHIND,
 			"landing_adjacent_push",
 		),
 		"Pole Vault [+] must PUSH adjacent enemies on landing",

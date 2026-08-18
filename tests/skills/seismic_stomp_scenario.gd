@@ -21,7 +21,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "seismic/contract/damage_amount",
-		stomp != null and stomp.effects[0].amount == 2,
+		stomp != null and stomp.modules[0].amount == 2,
 		"seismic stomp base DAMAGE must be ATK 2",
 	)
 	_KnightQaHarness.assert_true(

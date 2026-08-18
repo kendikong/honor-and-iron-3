@@ -67,7 +67,7 @@ static func run_factory_matrix(failures: Array[String]) -> void:
 		_assert(
 			failures,
 			"factory/upgrade/%s" % ability_id,
-			not ability.upgraded_effects.is_empty() and not ability.upgrade_description.is_empty(),
+			not ability.upgraded_modules.is_empty() and not ability.upgrade_description.is_empty(),
 		)
 		_check_upgrade_contract(failures, ability)
 	for row: Dictionary in PASSIVE_ROWS:
@@ -178,7 +178,7 @@ static func run_density_shift_bible(failures: Array[String]) -> void:
 static func run_upgrade_sim_for(ability_id: StringName, failures: Array[String]) -> void:
 	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
 	var ability := _ability(mage_def, ability_id)
-	if ability == null or ability.upgraded_effects.is_empty():
+	if ability == null or ability.upgraded_modules.is_empty():
 		return
 	_check_upgrade_contract(failures, ability)
 	var board := _plain_board(Vector2i(10, 8))
@@ -230,7 +230,7 @@ static func _assert_live_outcome(
 		var tu: UnitState = final_board.get_unit_by_id(target_id)
 		if tu != null:
 			hp_after = tu.health.current_hp
-	for effect: EffectData in ability.effects:
+	for effect: EffectData in AbilityModuleBridge.compile_modules_to_effects(ability.modules):
 		match effect.type:
 			GameEnums.EffectType.DAMAGE:
 				if hp_before <= 0 and not has_damage:
@@ -581,7 +581,9 @@ static func run_core_passive_triggers(failures: Array[String]) -> void:
 		run_single_passive(row.id, failures)
 
 static func _check_upgrade_contract(failures: Array[String], ability: AbilityData) -> void:
-	var effects := ability.upgraded_effects
+	var effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.upgraded_modules,
+	)
 	match ability.id:
 		&"mage_blink":
 			_assert(failures, "upgrade/mage_blink/surface", ability.upgraded_modules[0].leave_elemental_surface)

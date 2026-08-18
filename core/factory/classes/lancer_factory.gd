@@ -4,7 +4,7 @@ extends RefCounted
 ## Builds the Bible's complete Lancer promotion pool.
 ## The base class is Lancer; promotion names remain Cavalier, Skystriker, and
 ## Halberdier in passive/skill descriptions. Skills are authored as modular
-## AbilityData and compiled to legacy effects for the shared simulator bridge.
+## AbilityData modules compile to transient EffectData execution payloads.
 
 
 static func build(basic_lance: WeaponData) -> UnitData:

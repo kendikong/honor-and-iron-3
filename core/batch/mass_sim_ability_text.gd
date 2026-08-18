@@ -13,7 +13,7 @@ static func tooltip_for_ability_id(ability_id: String) -> String:
 		"%s — Range %d, AP %d, MOV %d"
 		% [ab.display_name, ab.range_tiles, ab.action_point_cost, ab.movement_point_cost],
 	)
-	for eff: EffectData in ab.effects:
+	for eff: EffectData in AbilitySystem.active_effects_for(null, ab):
 		var line: String = _effect_summary(eff)
 		if not line.is_empty():
 			lines.append(line)

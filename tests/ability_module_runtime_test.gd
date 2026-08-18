@@ -2,7 +2,7 @@ class_name AbilityModuleRuntimeTest
 extends RefCounted
 
 ## Focused AD-2 runtime bar. These scenarios exercise AbilitySystem with authored
-## modules and intentionally empty compatibility effects.
+## modules compiled into transient runtime payloads.
 
 static func run_all(failures: Array[String]) -> void:
 	var scenario_failures: int = failures.size()
@@ -10,9 +10,9 @@ static func run_all(failures: Array[String]) -> void:
 	_test_module_only_execution(failures)
 	_report_scenario("module_only_execution", failures, scenario_failures)
 	scenario_failures = failures.size()
-	print("ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order START")
-	_test_base_multi_module_compatibility_order(failures)
-	_report_scenario("base_multi_module_compatibility_order", failures, scenario_failures)
+	print("ABILITY_MODULE_SCENARIO: base_multi_module_compile_order START")
+	_test_base_multi_module_compile_order(failures)
+	_report_scenario("base_multi_module_compile_order", failures, scenario_failures)
 	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START")
 	_test_base_multi_module_native_execute_order(failures)
@@ -46,9 +46,9 @@ static func run_all(failures: Array[String]) -> void:
 	_test_planned_postmove_standing_aim(failures)
 	_report_scenario("planned_postmove_standing_aim", failures, scenario_failures)
 	scenario_failures = failures.size()
-	print("ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START")
-	_test_legacy_flat_targeting_compatibility(failures)
-	_report_scenario("legacy_flat_targeting_compatibility", failures, scenario_failures)
+	print("ABILITY_MODULE_SCENARIO: module_targeting START")
+	_test_module_targeting(failures)
+	_report_scenario("module_targeting", failures, scenario_failures)
 	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: motion_range_legality START")
 	_test_motion_range_legality(failures)
@@ -66,13 +66,13 @@ static func run_all(failures: Array[String]) -> void:
 	_test_skill_card_shows_condition(failures)
 	_report_scenario("skill_card_shows_condition", failures, scenario_failures)
 	scenario_failures = failures.size()
-	print("ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip START")
-	_test_legacy_json_import_round_trip(failures)
-	_report_scenario("legacy_json_import_round_trip", failures, scenario_failures)
+	print("ABILITY_MODULE_SCENARIO: module_json_requires_modules START")
+	_test_module_json_requires_modules(failures)
+	_report_scenario("module_json_requires_modules", failures, scenario_failures)
 	scenario_failures = failures.size()
-	print("ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import START")
-	_test_modular_base_legacy_upgrade_import(failures)
-	_report_scenario("modular_base_legacy_upgrade_import", failures, scenario_failures)
+	print("ABILITY_MODULE_SCENARIO: module_json_requires_upgrade_modules START")
+	_test_module_json_requires_upgrade_modules(failures)
+	_report_scenario("module_json_requires_upgrade_modules", failures, scenario_failures)
 	scenario_failures = failures.size()
 	print("ABILITY_MODULE_SCENARIO: module_profile_clear_projection START")
 	_test_module_profile_clear_projection(failures)
@@ -95,10 +95,6 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 	damage.max_range = 3
 	damage.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	ability.modules = [damage]
-	var stale_legacy_effect: EffectData = EffectData.new()
-	stale_legacy_effect.type = GameEnums.EffectType.DAMAGE
-	stale_legacy_effect.amount = 99
-	ability.effects = [stale_legacy_effect]
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(
 		board,
@@ -107,21 +103,15 @@ static func _test_module_only_execution(failures: Array[String]) -> void:
 	)
 	if target.health.current_hp != 16:
 		failures.append(
-			"module-only runtime did not apply authored DAMAGE (HP %d, effects %d, events %d)"
+			"module-only runtime did not apply authored DAMAGE (HP %d, events %d)"
 			% [
 				target.health.current_hp,
-				AbilitySystem.compatibility_effects_for(actor, ability).size(),
 				events.size(),
 			]
 		)
-	if ability.effects.size() != 1 or ability.effects[0].amount != 99:
-		failures.append("module-only runtime fixture mutated its legacy compatibility cache")
-	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
-	if compatibility_view.size() != 1 or compatibility_view[0].amount != 4:
-		failures.append("module-only runtime compatibility view did not derive from modules")
 
 
-static func _test_base_multi_module_compatibility_order(failures: Array[String]) -> void:
+static func _test_base_multi_module_compile_order(failures: Array[String]) -> void:
 	var ability: AbilityData = _ability(&"runtime_base_multi_module_order", GameEnums.TargetingFlags.ENEMY)
 	var damage: AbilityModule = AbilityModule.new()
 	damage.primary_type = GameEnums.EffectType.DAMAGE
@@ -135,16 +125,17 @@ static func _test_base_multi_module_compatibility_order(failures: Array[String])
 	push.effect.amount = 2
 	damage.layers.append(push)
 	ability.modules = [damage]
-	ability.effects = []
-	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(null, ability)
+	var runtime_effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
+		ability.modules,
+	)
 	if (
-		compatibility_view.size() != 2
-		or compatibility_view[0].type != GameEnums.EffectType.DAMAGE
-		or compatibility_view[0].amount != 3
-		or compatibility_view[1].type != GameEnums.EffectType.PUSH
-		or compatibility_view[1].amount != 2
+		runtime_effects.size() != 2
+		or runtime_effects[0].type != GameEnums.EffectType.DAMAGE
+		or runtime_effects[0].amount != 3
+		or runtime_effects[1].type != GameEnums.EffectType.PUSH
+		or runtime_effects[1].amount != 2
 	):
-		failures.append("base multi-module compatibility order changed DAMAGE + PUSH")
+		failures.append("base multi-module compile order changed DAMAGE + PUSH")
 
 
 static func _test_base_multi_module_native_execute_order(failures: Array[String]) -> void:
@@ -168,7 +159,6 @@ static func _test_base_multi_module_native_execute_order(failures: Array[String]
 	push.effect.amount = 2
 	damage.layers.append(push)
 	ability.modules = [damage]
-	ability.effects = []
 
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(
@@ -222,14 +212,12 @@ static func _test_upgraded_module_profile(failures: Array[String]) -> void:
 	upgraded.max_range = 4
 	ability.modules = [base]
 	ability.upgraded_modules = [upgraded]
-	ability.effects = []
-	ability.upgraded_effects = []
 	var actor: UnitState = _unit(7, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
 	actor.upgraded_abilities = [ability.id]
 	var active: Array[AbilityModule] = AbilitySystem.active_modules_for(actor, ability)
 	if active.size() != 1 or active[0] != upgraded:
 		failures.append("upgraded module profile was not selected as a complete replacement")
-	var effects: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
+	var effects: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
 	if effects.size() != 1 or effects[0].amount != 7:
 		failures.append("upgraded module profile did not compile its authored amount")
 
@@ -489,7 +477,7 @@ static func _test_planned_postmove_standing_aim(failures: Array[String]) -> void
 		)
 
 
-static func _test_legacy_flat_targeting_compatibility(failures: Array[String]) -> void:
+static func _test_module_targeting(failures: Array[String]) -> void:
 	var board: BoardState = _plain_board(Vector2i(8, 4))
 	var actor: UnitState = _unit(1, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
 	var target: UnitState = _unit(2, GameEnums.Team.ENEMY, Vector2i(3, 1), 20)
@@ -497,13 +485,12 @@ static func _test_legacy_flat_targeting_compatibility(failures: Array[String]) -
 	_place(board, actor)
 	_place(board, target)
 
-	var ability: AbilityData = _ability(&"runtime_legacy_flat", 0)
+	var ability: AbilityData = _ability(&"runtime_module_targeting", GameEnums.TargetingFlags.ENEMY)
 	ability.targeting_mode = GameEnums.TargetingMode.ENEMY_UNIT
 	ability.range_tiles = 3
-	var damage: EffectData = EffectData.new()
-	damage.type = GameEnums.EffectType.DAMAGE
-	damage.amount = 4
-	ability.effects = [damage]
+	ability.modules = [DataLibrary._module(
+		GameEnums.EffectType.DAMAGE, 4, 1, 3, GameEnums.TargetingFlags.ENEMY,
+	)]
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(
 		board,
@@ -512,7 +499,7 @@ static func _test_legacy_flat_targeting_compatibility(failures: Array[String]) -
 	)
 	if target.health.current_hp != 16:
 		failures.append(
-			"legacy flat targeting mode did not resolve DAMAGE (HP %d)" % target.health.current_hp
+			"module targeting did not resolve DAMAGE (HP %d)" % target.health.current_hp
 		)
 
 
@@ -529,7 +516,6 @@ static func _test_motion_range_legality(failures: Array[String]) -> void:
 	move.max_range = 3
 	move.targeting_flags = GameEnums.TargetingFlags.TILE
 	ability.modules = [move]
-	ability.effects = []
 
 	var too_short: TimelineAction = TimelineAction.make_ability(
 		actor.id, ability, Vector2i(2, 1),
@@ -556,7 +542,6 @@ static func _test_motion_range_legality(failures: Array[String]) -> void:
 		shaped_module.max_range = 3
 		shaped_module.targeting_flags = GameEnums.TargetingFlags.TILE
 		shaped_ability.modules = [shaped_module]
-		shaped_ability.effects = []
 		if AbilitySystem.can_use(
 			board, TimelineAction.make_ability(actor.id, shaped_ability, Vector2i(2, 1)),
 		):
@@ -593,19 +578,14 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 	follow_up.gate = GameEnums.ModuleGate.IF_COLLIDED
 	follow_up.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
 	ability.modules = [dash, follow_up]
-	ability.effects = []
 
 	if AbilitySystem._module_gate_passes(follow_up, actor, [], 0):
 		failures.append("IF_COLLIDED gate passed without a collision event")
 	if not AbilitySystem.ability_has_effect(ability, GameEnums.EffectType.MOVE, actor):
 		failures.append("typed metadata scan did not see gated MOVE module")
-	var compatibility_view: Array[EffectData] = AbilitySystem.compatibility_effects_for(actor, ability)
-	if (
-		compatibility_view.size() != 1
-		or compatibility_view[0].type != GameEnums.EffectType.DASH
-		or not compatibility_view[0].modifiers.has("violent_collision_recast")
-	):
-		failures.append("compatibility view did not stay gated-stripped for IF_COLLIDED")
+	var runtime_effects: Array[EffectData] = AbilitySystem.active_effects_for(actor, ability)
+	if runtime_effects.is_empty() or runtime_effects[0].type != GameEnums.EffectType.DASH:
+		failures.append("gated runtime compile did not expose the active DASH module")
 
 	var events: Array[SimEvent] = []
 	AbilitySystem.execute(
@@ -679,7 +659,7 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	authored.secondary_value = 2
 	authored.cost_modifier = GameEnums.CostModifier.ZERO_IF_ADJACENT_ENEMIES_GTE_N
 	authored.cost_modifier_n = 2
-	authored.finalize_modular()
+	AbilityModuleBridge.normalize_ability(authored)
 	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(authored)
 	for legacy_key: String in [
 		"effects", "upgraded_effects", "range_tiles", "targeting_mode",
@@ -755,33 +735,22 @@ static func _test_skill_card_shows_condition(failures: Array[String]) -> void:
 		)
 
 
-static func _test_legacy_json_import_round_trip(failures: Array[String]) -> void:
-	var legacy_effect: EffectData = EffectData.new()
-	legacy_effect.type = GameEnums.EffectType.DAMAGE
-	legacy_effect.amount = 6
-	var legacy_payload: Dictionary = {
+static func _test_module_json_requires_modules(failures: Array[String]) -> void:
+	var flat_payload: Dictionary = {
 		"display_name": "Legacy Strike",
 		"kind": GameEnums.AbilityKind.CLASS_SKILL,
 		"action_point_cost": 1,
 		"range_tiles": 3,
 		"targeting_mode": GameEnums.TargetingMode.ENEMY_UNIT,
-		"effects": ClassLibrarySchema.effects_to_dict_array([legacy_effect]),
+		"effects": [{"type": GameEnums.EffectType.DAMAGE, "amount": 6}],
 	}
 	var imported: AbilityData = AbilityData.new()
-	ClassLibrarySchema.apply_ability_dict(imported, legacy_payload)
-	if imported.modules.size() != 1 or imported.effects.size() != 1:
-		failures.append("legacy effects-only JSON did not infer a modular profile")
-	elif imported.modules[0].primary_type != GameEnums.EffectType.DAMAGE:
-		failures.append("legacy effects-only JSON inferred the wrong module effect")
-	var hybrid_payload: Dictionary = legacy_payload.duplicate(true)
-	hybrid_payload["modules"] = []
-	var hybrid: AbilityData = AbilityData.new()
-	ClassLibrarySchema.apply_ability_dict(hybrid, hybrid_payload)
-	if hybrid.modules.size() != 1 or hybrid.modules[0].amount != 6:
-		failures.append("hybrid empty-modules JSON dropped legacy effects")
+	ClassLibrarySchema.apply_ability_dict(imported, flat_payload)
+	if not imported.modules.is_empty():
+		failures.append("flat effects-only JSON bypassed the required modules array")
 
 
-static func _test_modular_base_legacy_upgrade_import(failures: Array[String]) -> void:
+static func _test_module_json_requires_upgrade_modules(failures: Array[String]) -> void:
 	var base_module: AbilityModule = AbilityModule.new()
 	base_module.primary_type = GameEnums.EffectType.DAMAGE
 	base_module.amount = 2
@@ -789,17 +758,13 @@ static func _test_modular_base_legacy_upgrade_import(failures: Array[String]) ->
 	base_module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	var base: AbilityData = AbilityData.new()
 	base.modules = [base_module]
-	base.finalize_modular()
-	var upgraded_effect: EffectData = EffectData.new()
-	upgraded_effect.type = GameEnums.EffectType.DAMAGE
-	upgraded_effect.amount = 9
 	var payload: Dictionary = ClassLibrarySchema.ability_to_dict(base)
 	payload.erase("upgraded_modules")
-	payload["upgraded_effects"] = ClassLibrarySchema.effects_to_dict_array([upgraded_effect])
+	payload["upgraded_effects"] = [{"type": GameEnums.EffectType.DAMAGE, "amount": 9}]
 	var imported: AbilityData = AbilityData.new()
 	ClassLibrarySchema.apply_ability_dict(imported, payload)
-	if imported.upgraded_modules.size() != 1 or imported.upgraded_modules[0].amount != 9:
-		failures.append("modular base plus legacy upgraded_effects lost upgrade profile")
+	if not imported.upgraded_modules.is_empty():
+		failures.append("legacy upgraded_effects bypassed the required upgraded_modules array")
 
 
 static func _test_module_profile_clear_projection(failures: Array[String]) -> void:
@@ -811,17 +776,13 @@ static func _test_module_profile_clear_projection(failures: Array[String]) -> vo
 	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	ability.modules = [module]
 	ability.upgraded_modules = [module]
-	ability.finalize_modular()
 	AbilityModuleBridge.clear_module_profile(ability, false)
 	AbilityModuleBridge.clear_module_profile(ability, true)
-	ability.finalize_modular()
 	if (
 		not ability.modules.is_empty()
 		or not ability.upgraded_modules.is_empty()
-		or not ability.effects.is_empty()
-		or not ability.upgraded_effects.is_empty()
 	):
-		failures.append("clearing authored module profiles left stale compatibility data")
+		failures.append("clearing authored module profiles did not clear module data")
 
 
 static func _ability(id: StringName, targeting_flags: int) -> AbilityData:

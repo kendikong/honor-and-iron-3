@@ -167,7 +167,7 @@ func _build_vectors(board: BoardState, units: Array[UnitState], unit_candidates:
 		if ab_idx != null and target_id != null and projected_hp.has(target_id):
 			var ab = u.active_abilities[ab_idx]
 			var dmg = 0.0
-			for ef in ab.effects:
+			for ef: EffectData in AbilitySystem.active_effects_for(u, ab):
 				if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
 					dmg += float(ef.amount)
 			if dmg > 0.0:
@@ -232,7 +232,7 @@ func _generate_legal_actions(board: BoardState, unit: UnitState) -> Array:
 				
 				var is_harmful = false
 				var is_helpful = false
-				for ef in ability.effects:
+				for ef: EffectData in AbilitySystem.active_effects_for(unit, ability):
 					if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]:
 						is_harmful = true
 					elif ef.type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP]:

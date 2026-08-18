@@ -43,10 +43,9 @@ static func _test_painted_skill_path_is_preview_and_execution_truth(
 	trample.range_tiles = 2
 	trample.targeting_mode = GameEnums.TargetingMode.TILE
 	trample.targeting_flags = AbilityData._targeting_mode_to_flags(trample.targeting_mode)
-	var move_effect := EffectData.new()
-	move_effect.type = GameEnums.EffectType.MOVE
-	move_effect.amount = 2
-	trample.effects = [move_effect]
+	trample.modules = [DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+	)]
 
 	var waypoints: Array[Vector2i] = [Vector2i(7, 3), Vector2i(7, 2)]
 	var action := TimelineAction.make_ability(

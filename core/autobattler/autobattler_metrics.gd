@@ -41,7 +41,7 @@ static func _is_support(unit: UnitState) -> bool:
 	if unit.definition == null or unit.active_abilities.is_empty(): return false
 	var has_dmg = false
 	for ab in unit.active_abilities:
-		for ef in ab.effects:
+		for ef: EffectData in AbilitySystem.active_effects_for(unit, ab):
 			if ef.type == GameEnums.EffectType.HEAL or ef.type == GameEnums.EffectType.ARMOR_UP: return true
 			if ef.type == GameEnums.EffectType.DAMAGE: has_dmg = true
 	return not has_dmg
@@ -49,7 +49,7 @@ static func _is_support(unit: UnitState) -> bool:
 static func _has_damage_ability(unit: UnitState) -> bool:
 	if unit.definition == null or unit.active_abilities.is_empty(): return false
 	for ab in unit.active_abilities:
-		for ef in ab.effects:
+		for ef: EffectData in AbilitySystem.active_effects_for(unit, ab):
 			if ef.type == GameEnums.EffectType.DAMAGE or ef.type == GameEnums.EffectType.EXPLODE or ef.type == GameEnums.EffectType.RANGED_EXPLODE:
 				return true
 	return false
@@ -58,7 +58,7 @@ static func _max_ability_damage(unit: UnitState) -> int:
 	var max_dmg = 0
 	if unit.definition != null and not unit.active_abilities.is_empty():
 		for ab in unit.active_abilities:
-			for ef in ab.effects:
+			for ef: EffectData in AbilitySystem.active_effects_for(unit, ab):
 				if ef.type == GameEnums.EffectType.DAMAGE or ef.type == GameEnums.EffectType.EXPLODE or ef.type == GameEnums.EffectType.RANGED_EXPLODE:
 					if ef.amount > max_dmg:
 						max_dmg = ef.amount
@@ -208,7 +208,7 @@ static func _ally_surv_dict(state: BoardState, u: UnitState, profile: AIProfile)
 				var e = state.get_unit_by_id(intent.enemy_id)
 				if e and e.definition:
 					for ab in e.active_abilities:
-						for ef in ab.effects:
+						for ef: EffectData in AbilitySystem.active_effects_for(e, ab):
 							if ef.type == GameEnums.EffectType.DAMAGE: inc += float(ef.amount)
 	var post = maxf(0.0, val - inc)
 	var death_pen = false
@@ -325,7 +325,9 @@ static func _calc_penalties(base: BoardState, final: BoardState, vector: TeamVec
 			
 			var is_disp = false
 			var is_dmg = false
-			for ef in act.ability.effects:
+			for ef: EffectData in AbilitySystem.active_effects_for(
+				base.get_unit_by_id(act.actor_id), act.ability
+			):
 				if ef.type in [GameEnums.EffectType.PUSH, GameEnums.EffectType.PULL, GameEnums.EffectType.SWAP]: is_disp = true
 				if ef.type in [GameEnums.EffectType.DAMAGE, GameEnums.EffectType.EXPLODE, GameEnums.EffectType.RANGED_EXPLODE]: is_dmg = true
 			if is_disp and not is_dmg and pos_score < 2.0:
@@ -383,7 +385,7 @@ static func score_fast_pass(board: BoardState, unit: UnitState, action: Dictiona
 		var ab = unit.active_abilities[action.ability_index]
 		var hp = 0.0
 		var dmg = 0.0
-		for ef in ab.effects:
+		for ef: EffectData in AbilitySystem.active_effects_for(unit, ab):
 			if ef.type == GameEnums.EffectType.DAMAGE: dmg += float(ef.amount)
 			if ef.type == GameEnums.EffectType.HEAL: hp += float(ef.amount)
 			

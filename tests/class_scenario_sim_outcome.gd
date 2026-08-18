@@ -35,7 +35,6 @@ static func _ability_has_effect(
 	effect_type: GameEnums.EffectType,
 	upgraded: bool,
 ) -> bool:
-	var effects: Array = ability.upgraded_effects if upgraded else ability.effects
 	for module: AbilityModule in ability.get_active_modules(upgraded):
 		if module == null:
 			continue
@@ -44,9 +43,6 @@ static func _ability_has_effect(
 		for layer: AbilityLayer in module.layers:
 			if layer != null and layer.effect != null and layer.effect.type == effect_type:
 				return true
-	for effect: EffectData in effects:
-		if effect != null and effect.type == effect_type:
-			return true
 	return false
 
 
