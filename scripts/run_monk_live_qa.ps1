@@ -23,7 +23,8 @@ $exitCode = [int]$process.ExitCode
 $stdoutText = Get-Content $stdoutPath -Raw
 $stderrText = Get-Content $stderrPath -Raw
 Get-Content $stdoutPath
-Get-Content $stderrPath
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 if ($stdoutText -match 'FAILED' -or $stderrText -match 'FAILED') {
 	Write-Output "[FAIL] Monk live QA reported test failures"
 	exit 100

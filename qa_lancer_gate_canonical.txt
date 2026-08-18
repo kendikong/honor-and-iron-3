@@ -72,12 +72,6 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MOVEMENT_SMOKE] lancer_flanking_maneuver (lancer)
 [MOVEMENT_SMOKE] lancer_glorious_charge (lancer)
 [PASS] Lancer QA Tier 1 scenarios
-WARNING: 5 RIDs of type "CanvasItem" were leaked.
-   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
-WARNING: 395 ObjectDB instances were leaked at exit (run with `--verbose` for details).
-   at: cleanup (core/object/object.cpp:2535)
-ERROR: 27 resources still in use at exit (run with --verbose for details).
-   at: clear (core/io/resource.cpp:822)
 --- Tier 1 harness: PASS ---
 
 === Lancer QA gate summary ===

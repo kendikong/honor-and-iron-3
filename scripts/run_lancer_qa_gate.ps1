@@ -206,7 +206,8 @@ if ($exitCode -eq 130) {
 	Exit-Gate 130
 }
 Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
-Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
+# Keep diagnostics in the temp stderr log; the canonical gate snapshot is
+# structured stdout while pass/fail evaluation still reads both streams.
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })

@@ -19,7 +19,8 @@ $process = Start-Process -FilePath $GodotPath -ArgumentList $args `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath -PassThru -Wait -NoNewWindow
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 if ($process.ExitCode -ne 0) {
 	Write-Output "[FAIL] Knight live QA exit $($process.ExitCode)"
 	exit 1

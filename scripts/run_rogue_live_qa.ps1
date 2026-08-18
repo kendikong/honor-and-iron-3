@@ -19,7 +19,8 @@ $process = Start-Process -FilePath $GodotPath -ArgumentList $args -WorkingDirect
 $process.WaitForExit()
 $exitCode = $process.ExitCode
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 if ($null -eq $exitCode -or $exitCode -eq "") {
 	$summary = Get-Content $stdoutPath -Raw
 	$exitCode = 1

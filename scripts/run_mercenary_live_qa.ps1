@@ -33,7 +33,8 @@ $process = Start-Process -FilePath $GodotPath -ArgumentList $args `
 	-RedirectStandardError $stderrPath -PassThru -NoNewWindow
 $exitCode = Wait-GodotProcessWithEscCancel -Process $process -Label "Mercenary live QA"
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath | ForEach-Object { Write-LiveLine $_ } }
-if (Test-Path $stderrPath) { Get-Content $stderrPath | ForEach-Object { Write-LiveLine $_ } }
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 
 $errors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:|^\[FAIL\]|FAILED')
 $passed = Select-String -Path $stdoutPath, $stderrPath -Pattern 'PASSED' -Quiet

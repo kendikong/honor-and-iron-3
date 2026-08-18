@@ -136,7 +136,6 @@ foreach ($entrypoint in $conversionEntrypoints) {
 		-WorkingDirectory $projectRoot -RedirectStandardOutput $conversionStdout `
 		-RedirectStandardError $conversionStderr -PassThru -Wait -NoNewWindow
 	Get-Content $conversionStdout
-	Get-Content $conversionStderr
 	if ([int]$conversionProcess.ExitCode -ne 0) {
 		Write-Output "[FAIL] Typed conversion contract exit $($conversionProcess.ExitCode) ($entrypoint)"
 		exit 4
@@ -164,7 +163,8 @@ $process = Start-Process -FilePath $GodotPath `
 	-RedirectStandardError $stderrPath -PassThru -Wait -NoNewWindow
 $code = $process.ExitCode
 Get-Content $stdoutPath
-Get-Content $stderrPath
+# Keep diagnostics in the temp stderr log; the canonical gate snapshot is
+# structured stdout while pass/fail evaluation still reads both streams.
 if ($null -eq $code -or $code -eq "") {
 	$summary = Get-Content $stdoutPath -Raw
 	$code = 1

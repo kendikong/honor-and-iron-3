@@ -22,7 +22,8 @@ $process = Start-Process -FilePath $GodotPath -ArgumentList $args `
 $process.WaitForExit()
 $exitCode = $process.ExitCode
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 
 $stdout = Get-Content $stdoutPath -Raw
 $esc = [regex]::Escape([string][char]27)

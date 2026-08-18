@@ -1,0 +1,147 @@
+﻿=== Beast Rider QA gate (CLASS_QA_BIBLE) ===
+Spec: docs/CLASS_QA_BIBLE.md (instance: docs/BEAST_RIDER_QA_GATE.md)
+
+=== Matrix summary (from docs/BEAST_RIDER_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 88, last_round 15, last_score 89, PASS) ===
+  meta-critic/beast_reposition: score 88 round 12
+  meta-critic/beast_pounce: score 88 round 12
+  meta-critic/beast_feral_drag: score 88 round 12
+  meta-critic/beast_maul: score 88 round 12
+  meta-critic/beast_bestial_roar: score 88 round 12
+  meta-critic/beast_raking_claws: score 88 round 12
+  meta-critic/beast_rest_recover: score 88 round 12
+  meta-critic/beast_intimidate: score 88 round 12
+  meta-critic/beast_fetch: score 88 round 12
+  meta-critic/beast_savage_bite: score 88 round 12
+  meta-critic/beast_run_down: score 88 round 12
+  meta-critic/beast_thrash: score 88 round 12
+  meta-critic/beast_defensive_posture: score 88 round 12
+  meta-critic/beast_airlift: score 88 round 12
+  meta-critic/beast_tail_swipe: score 88 round 12
+  meta-critic/beast_gore: score 88 round 16
+  meta-critic/gallop: score 88 round 12
+  meta-critic/isolation_tactics: score 88 round 12
+  meta-critic/terminal_velocity: score 88 round 12
+  meta-critic/snatch_and_grab: score 88 round 12
+  meta-critic/safe_landing: score 88 round 12
+  meta-critic/aerial_superiority: score 88 round 12
+  meta-critic/mount_resilience: score 88 round 12
+  meta-critic/beasts_instinct: score 88 round 12
+  meta-critic/territorial: score 88 round 12
+  meta-critic/intimidating_presence: score 88 round 12
+  meta-critic/dive_bomber: score 88 round 12
+  meta-critic/pack_hunter: score 88 round 12
+  meta-critic/blood_scent: score 88 round 12
+  meta-critic/vantage_striker: score 88 round 12
+  meta-critic/predatory_drive: score 88 round 12
+  meta-critic/furious_charge: score 88 round 12
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] beast_rider_qa_tier1
+[BEAST_RIDER_QA] reposition (beast_reposition)
+[BEAST_RIDER_QA] pounce (beast_pounce)
+[MOVEMENT_SMOKE] beast_pounce (beast_rider)
+[MOVEMENT_SMOKE] beast_pounce (beast_rider)
+[BEAST_RIDER_QA] feral_drag (beast_feral_drag)
+[BEAST_RIDER_QA] maul (beast_maul)
+[BEAST_RIDER_QA] bestial_roar (beast_bestial_roar)
+[BEAST_RIDER_QA] raking_claws (beast_raking_claws)
+[BEAST_RIDER_QA] rest_recover (beast_rest_recover)
+[BEAST_RIDER_QA] intimidate (beast_intimidate)
+[BEAST_RIDER_QA] fetch (beast_fetch)
+[BEAST_RIDER_QA] savage_bite (beast_savage_bite)
+[BEAST_RIDER_QA] run_down (beast_run_down)
+[MOVEMENT_SMOKE] beast_run_down (beast_rider)
+[MOVEMENT_SMOKE] beast_run_down (beast_rider)
+[BEAST_RIDER_QA] thrash (beast_thrash)
+[BEAST_RIDER_QA] defensive_posture (beast_defensive_posture)
+[BEAST_RIDER_QA] airlift (beast_airlift)
+[BEAST_RIDER_QA] tail_swipe (beast_tail_swipe)
+[BEAST_RIDER_QA] gore (beast_gore)
+[BEAST_RIDER_QA] gallop (gallop)
+[BEAST_RIDER_QA] isolation_tactics (isolation_tactics)
+[BEAST_RIDER_QA] terminal_velocity (terminal_velocity)
+[BEAST_RIDER_QA] snatch_and_grab (snatch_and_grab)
+[BEAST_RIDER_QA] safe_landing (safe_landing)
+[BEAST_RIDER_QA] aerial_superiority (aerial_superiority)
+[BEAST_RIDER_QA] mount_resilience (mount_resilience)
+[BEAST_RIDER_QA] beasts_instinct (beasts_instinct)
+[BEAST_RIDER_QA] territorial (territorial)
+[BEAST_RIDER_QA] intimidating_presence (intimidating_presence)
+[BEAST_RIDER_QA] dive_bomber (dive_bomber)
+[BEAST_RIDER_QA] pack_hunter (pack_hunter)
+[BEAST_RIDER_QA] blood_scent (blood_scent)
+[BEAST_RIDER_QA] vantage_striker (vantage_striker)
+[BEAST_RIDER_QA] predatory_drive (predatory_drive)
+[BEAST_RIDER_QA] furious_charge (furious_charge)
+[PASS] Beast Rider QA gate: factory matrix, 16 active rows, 16 passive rows
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Beast Rider acceptance ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_beast_rider_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_beast_rider_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_beast_rider_factory_loads_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_beast_rider_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_beast_rider_factory_loads_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 3s 409ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_beast_rider_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_beast_rider_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_beast_rider_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_beast_rider_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 13s 182ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 608ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (2/2)[0m
+[38;2;233;150;122mTotal execution time: 16s 608ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1240/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1240/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Beast Rider live QA
+[PASS] Beast Rider Tier 2 live preview/factory gate
+
+=== Beast Rider QA gate summary ===
+[PASS] Beast Rider QA gate: matrix 32/32 + Tier 1 harness + Tier 2 live + AOE footprint PASS (automated bar; owner sign-off separate per CLASS_QA_SIGNOFF.md).

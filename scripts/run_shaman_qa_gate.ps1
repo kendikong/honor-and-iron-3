@@ -177,7 +177,6 @@ foreach ($entrypoint in $conversionEntrypoints) {
 		-WorkingDirectory $projectRoot -RedirectStandardOutput $conversionStdout `
 		-RedirectStandardError $conversionStderr -PassThru -Wait -NoNewWindow
 	Get-Content $conversionStdout | ForEach-Object { Write-GateLine $_ }
-	Get-Content $conversionStderr | ForEach-Object { Write-GateLine $_ }
 	if ([int]$conversionProcess.ExitCode -ne 0) {
 		Write-GateLine "[FAIL] Typed conversion contract exit $($conversionProcess.ExitCode) ($entrypoint)"
 		Exit-Gate 4
@@ -207,7 +206,8 @@ $process.WaitForExit()
 $process.Refresh()
 $exitCode = [int]$process.ExitCode
 Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
-Get-Content $stderrPath | ForEach-Object { Write-GateLine $_ }
+# Keep diagnostics in the temp stderr log; the canonical gate snapshot is
+# structured stdout while pass/fail evaluation still reads both streams.
 
 $testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 $scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })

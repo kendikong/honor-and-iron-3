@@ -27,7 +27,8 @@ if ($exitCode -eq 130) {
 	exit 130
 }
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+# Keep diagnostics in the temp stderr log; the live snapshot remains
+# machine-readable while pass/fail checks still inspect both streams.
 
 $gdUnitFailures = @(
 	Select-String -Path $stdoutPath -Pattern 'Overall Summary:.*\|\s*(\d+)\s+failures' |
