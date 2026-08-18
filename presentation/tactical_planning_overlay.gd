@@ -606,7 +606,7 @@ func restore_committed_display() -> void:
 	_queue_overlay_redraw()
 
 
-## Global HP/armor forecast — committed simulator result, never live hover state.
+## Global HP/armor forecast — committed full-turn sim merged with live hover sim on the bar.
 func _push_committed_forecast_to_unit_layer() -> void:
 	if _unit_layer == null:
 		return

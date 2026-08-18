@@ -255,8 +255,21 @@ func clear_planning_forecasts() -> void:
 	queue_redraw()
 
 
-func _active_forecast() -> CombatPlanningForecast:
-	return _live_forecast if _live_forecast != null else _committed_forecast
+## Single health-bar forecast entry (mandatory). Merges committed full-turn sim + live hover.
+## Do not read _committed_forecast or _live_forecast in draw paths — regression trap.
+func _bar_display_forecast() -> CombatPlanningForecast:
+	if not _is_planning_phase():
+		return null
+	var baseline: BoardState = _board
+	if _director != null and _director.board != null:
+		baseline = _director.board
+	var revision: int = _director.plan_revision if _director != null else -1
+	return CombatPlanningForecast.merge_for_bar_display(
+		_committed_forecast,
+		_live_forecast,
+		baseline,
+		revision,
+	)
 
 
 func is_sprites_active() -> bool:
@@ -354,7 +367,8 @@ func _display_scale() -> float:
 func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	if _is_planning_phase():
-		clear_planning_forecasts()
+		## Keep committed global forecast visible; overlay re-pushes after plan refresh.
+		clear_live_forecast()
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
 	if _director != null and _director.plan_refresh_snap_units:
@@ -2456,7 +2470,7 @@ func _draw_hp_bar(unit: UnitState) -> void:
 		return
 	var armor: int = maxi(0, unit.armor)
 	var predicted_armor: int = armor
-	var forecast: CombatPlanningForecast = _active_forecast()
+	var forecast: CombatPlanningForecast = _bar_display_forecast()
 	if forecast != null and forecast.has_unit(unit.id):
 		current_hp = forecast.baseline_hp(unit.id, current_hp)
 		predicted = forecast.predicted_hp(unit.id, current_hp)
@@ -2597,7 +2611,7 @@ func _draw_centered_icon(pos: Vector2, text: String, color: Color, size_px: int)
 
 
 func _any_predicted_change() -> bool:
-	var forecast: CombatPlanningForecast = _active_forecast()
+	var forecast: CombatPlanningForecast = _bar_display_forecast()
 	return forecast != null and forecast.has_stat_change()
 
 

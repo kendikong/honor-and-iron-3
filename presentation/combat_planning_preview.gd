@@ -40,6 +40,7 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	forecast = CombatPlanningForecast.from_boards(
 		forecast_baseline_board(director, base_board),
 		temp_board,
+		director.plan_revision if director != null else -1,
 	)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
@@ -603,7 +604,7 @@ static func from_sim_result(
 	)
 	if base_board != null:
 		preview.forecast = CombatPlanningForecast.from_boards(
-			base_board,
+			forecast_baseline_board(director, base_board),
 			result.final_state,
 			director.plan_revision if director != null else -1,
 		)
