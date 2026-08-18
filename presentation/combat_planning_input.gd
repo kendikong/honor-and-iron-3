@@ -143,9 +143,10 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_invalidate_planning_hover_cache()
 	_drag_route.clear()
 	_drag_last_free = Vector2i(-1, -1)
-	preview_state.clear_interaction()
-	if _planning != null:
-		_planning.restore_committed_display()
+	if not _suppress_post_commit_hover_refresh:
+		preview_state.clear_interaction()
+		if _planning != null:
+			_planning.restore_committed_display()
 	if _drag_unit_id >= 0 and selected_phase_action_exhausted(_drag_unit_id):
 		_cancel_drag_if_exhausted()
 
@@ -2278,7 +2279,9 @@ func _commit_at_cell(
 	_notify_drag_plan_move_committed(unit_id)
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
+	_suppress_post_commit_hover_refresh = true
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
+		_suppress_post_commit_hover_refresh = false
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
