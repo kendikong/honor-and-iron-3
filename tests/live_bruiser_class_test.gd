@@ -1421,6 +1421,10 @@ func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
 			&"item_collision_damage":
 				if module.item_collision_damage > 0:
 					return true
+			&"intercept_grant_str":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.intercept_grant_str > 0:
+						return true
 			&"stagger_on_collision":
 				for layer: AbilityLayer in module.layers:
 					if layer != null and layer.stagger_on_collision:
