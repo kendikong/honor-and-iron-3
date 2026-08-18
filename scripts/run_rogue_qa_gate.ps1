@@ -182,13 +182,28 @@ if ($harnessPass) {
 }
 
 Write-Output ""
+Write-Output "=== Tier 2: live Rogue acceptance ==="
+$liveScript = Join-Path $PSScriptRoot "run_rogue_live_qa.ps1"
+if (-not (Test-Path $liveScript)) {
+	Write-Output "[FAIL] Missing Tier 2 runner: $liveScript"
+	exit 4
+}
+& $liveScript -GodotPath $GodotPath
+$liveExit = $LASTEXITCODE
+if ($liveExit -ne 0) {
+	Write-Output "[FAIL] Tier 2 live Rogue QA exit $liveExit"
+	exit $liveExit
+}
+Write-Output "--- Tier 2 live: PASS ---"
+
+Write-Output ""
 Write-Output "=== Rogue QA gate summary ==="
 if (-not $matrixPassValid) {
 	Write-Output "[INCOMPLETE] Harness PASS but matrix PASS rows lack meta-critic manifest approval."
 	exit 2
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-Output "[PASS] Rogue QA gate: matrix 100% PASS + Tier 1 harness PASS."
+	Write-Output "[PASS] Rogue QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
 	exit 0
 }
 
