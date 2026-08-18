@@ -220,6 +220,8 @@ func actor_grid_cell(unit_id: int) -> Vector2i:
 
 
 func set_committed_forecast(forecast: CombatPlanningForecast) -> void:
+	if forecast == null and _is_planning_phase():
+		return
 	if (
 		forecast != null
 		and _director != null

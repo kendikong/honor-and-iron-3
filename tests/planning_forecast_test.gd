@@ -11,6 +11,8 @@ static func run_all(failures: Array[String]) -> void:
 	_test_merge_adds_extra_hover_damage(failures)
 	_test_merge_hover_only_damage_without_committed(failures)
 	_test_merge_live_only_forecast_must_not_erase_committed(failures)
+	_test_committed_forecast_cannot_be_cleared_during_planning(failures)
+	_test_promoted_forecast_rebases_to_committed_plan_revision(failures)
 	_test_unit_layer_bar_display_source_contract(failures)
 
 
@@ -135,6 +137,52 @@ static func _test_merge_live_only_forecast_must_not_erase_committed(
 	if live.damage_hp(1) != 0 and merged.damage_hp(1) == live.damage_hp(1):
 		failures.append(
 			"PlanningForecast merge must not replace committed damage with live-only zeros",
+		)
+
+
+static func _test_committed_forecast_cannot_be_cleared_during_planning(
+	failures: Array[String],
+) -> void:
+	var baseline: BoardState = _board_with_units([_unit(1, 20, 0)])
+	var predicted: BoardState = _board_with_units([_unit(1, 12, 0)])
+	var director := CombatDirector.new()
+	director.board = baseline
+	director.plan_revision = 7
+	var layer := TacticalUnitLayer.new()
+	layer._director = director
+	layer._board = baseline
+	layer._phase = CombatDirector.Phase.PLANNING
+	layer.set_committed_forecast(
+		CombatPlanningForecast.from_boards(baseline, predicted, director.plan_revision),
+	)
+	layer.set_committed_forecast(null)
+	var display: CombatPlanningForecast = layer._bar_display_forecast()
+	if display == null or display.damage_hp(1) != 8:
+		failures.append(
+			"PlanningForecast committed damage must survive planner clears until phase end",
+		)
+
+
+static func _test_promoted_forecast_rebases_to_committed_plan_revision(
+	failures: Array[String],
+) -> void:
+	var baseline: BoardState = _board_with_units([_unit(1, 20, 0)])
+	var predicted: BoardState = _board_with_units([_unit(1, 12, 0)])
+	var director := CombatDirector.new()
+	director.plan_revision = 11
+	var overlay := TacticalPlanningOverlay.new()
+	overlay._director = director
+	overlay._live_preview.forecast = CombatPlanningForecast.from_boards(
+		baseline, predicted, 10,
+	)
+	overlay._live_preview.preview_board = predicted
+	overlay.promote_live_preview_to_committed()
+	if (
+		overlay._committed_preview.forecast == null
+		or overlay._committed_preview.forecast.revision != director.plan_revision
+	):
+		failures.append(
+			"PlanningForecast promoted commit must use the current plan revision",
 		)
 
 

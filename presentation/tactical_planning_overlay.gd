@@ -633,6 +633,8 @@ func promote_live_preview_to_committed() -> void:
 	_committed_preview.copy_from(_live_preview)
 	_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
+	if _director != null and _committed_preview.forecast != null:
+		_committed_preview.forecast.revision = _director.plan_revision
 	_lock_committed_from_intent = true
 	restore_committed_display()
 

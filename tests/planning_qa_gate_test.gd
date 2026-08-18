@@ -97,6 +97,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hook_out_of_range_enemy_hover_invalid,
 		_test_volley_awaiting_hover_damage_and_targeting_arrow,
 		_test_volley_hover_damage_survives_board_changed,
+		_test_selecting_unit_keeps_movement_points,
 		_test_tile_targeting_forbids_premove,
 		_test_bash_hover_keeps_targeting_arrow,
 	]
@@ -180,6 +181,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_out_of_range_null",
 		"volley_hover_damage_arrow",
 		"volley_hover_board_changed",
+		"selection_is_mp_read_only",
 		"tile_aim_forbids_premove",
 		"bash_hover_targeting_arrow",
 	]
@@ -3261,6 +3263,29 @@ static func _test_volley_hover_damage_survives_board_changed(failures: Array[Str
 	if overlay.targeting_intent_arrow_cells().size() < 2:
 		failures.append(
 			"PlanningQAGate volley_hover_board_changed: targeting arrow must survive board_changed",
+		)
+
+
+static func _test_selecting_unit_keeps_movement_points(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bible_board()
+	var k2_id: int = fix.k2_id as int
+	var before: UnitState = fix.board.get_unit_by_id(k2_id)
+	if before == null:
+		failures.append("PlanningQAGate selection_is_mp_read_only: second Knight missing")
+		return
+	var expected_mp: int = before.movement.points_left
+	PlanningChecklistHarness.select_unit(fix, k2_id, PlanningChecklistHarness.K2_CELL)
+	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, k2_id)
+	if projected == null or projected.movement.points_left != expected_mp:
+		failures.append(
+			"PlanningQAGate selection_is_mp_read_only: selecting second Knight changed projected MP "
+			+ "%d -> %d" % [expected_mp, projected.movement.points_left if projected != null else -1],
+		)
+	var displayed_mp: int = fix.input.planning_display_mp_left(k2_id)
+	if displayed_mp != expected_mp:
+		failures.append(
+			"PlanningQAGate selection_is_mp_read_only: displayed MP changed %d -> %d"
+			% [expected_mp, displayed_mp],
 		)
 
 
