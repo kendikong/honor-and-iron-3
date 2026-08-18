@@ -65,7 +65,7 @@ Copy Rules A/B from [`KNIGHT_QA_GATE.md`](KNIGHT_QA_GATE.md). Harness resolves s
 | `lancer_flanking_maneuver` | Active | `tests/skills/lancer_flanking_maneuver_scenario.gd` | PASS | Wraparound L-route |
 | `lancer_brace` | Active | `tests/skills/lancer_brace_scenario.gd` | PASS | ADD_STATUS_SELF brace |
 | `lancer_harpoon_toss` | Active | `tests/skills/lancer_harpoon_toss_scenario.gd` | PASS | PULL + DAMAGE |
-| `lancer_glorious_charge` | Active | `tests/skills/lancer_glorious_charge_scenario.gd` | PASS | Paired DASH |
+| `lancer_glorious_charge` | Active | `tests/skills/lancer_glorious_charge_scenario.gd` | PASS | Shared DASH + enemy Action attack + PUSH |
 | `lancer_pole_vault` | Active | `tests/skills/lancer_pole_vault_scenario.gd` | PASS | TELEPORT_CASTER |
 | `lancer_line_breaker` | Active | `tests/skills/lancer_line_breaker_scenario.gd` | PASS | DASH line break |
 | `lancer_spear_wall` | Active | `tests/skills/lancer_spear_wall_scenario.gd` | PASS | ARC CREATE_HAZARD |

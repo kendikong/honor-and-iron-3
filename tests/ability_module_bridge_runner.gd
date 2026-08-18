@@ -248,6 +248,12 @@ static func _check_er1_shared_homes(failures: Array[String]) -> void:
 		[illegal_action_pair], GameEnums.PlannerGroup.ACTION,
 	).is_empty():
 		failures.append("ACTION PAIRED_MOVE was not rejected by module validation")
+	var illegal_ally_charge := AbilityModule.new()
+	illegal_ally_charge.paired_ally_charge = true
+	if AbilityModuleBridge.validate_modules(
+		[illegal_ally_charge], GameEnums.PlannerGroup.ACTION,
+	).is_empty():
+		failures.append("ACTION paired_ally_charge was not rejected by module validation")
 	for unit: UnitData in DataLibrary.get_all_player_units():
 		if unit == null:
 			continue

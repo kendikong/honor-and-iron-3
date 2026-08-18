@@ -359,13 +359,11 @@ static func _ancestral_spirit() -> AbilityData:
 static func _totem_guard() -> AbilityData:
 	var base := _spawn(&"voodoo_totem", 2)
 	base.totem_kind = &"guard"
-	base.ranged_reduction = 2
 	var up := _spawn(&"voodoo_totem", 2)
 	up.totem_kind = &"guard"
-	up.ranged_reduction = 2
 	up.melee_def = 1
 	return _ability(&"shaman_totem_guard", "Totem Guard", [base], [up], GameEnums.TargetingFlags.TILE,
-		"Summon a Totem; adjacent allies reduce ranged damage by 2; [+] gain +1 DEF vs melee.")
+		"Summon a Totem; adjacent allies reduce ranged damage by Floor(caster MAG / 2); [+] gain +1 DEF vs melee.")
 
 
 static func _sympathetic_bond() -> AbilityData:

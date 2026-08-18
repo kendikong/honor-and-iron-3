@@ -228,15 +228,13 @@ static func _entries() -> Dictionary:
 			"class_id": &"lancer",
 			"factory_id": &"lancer_glorious_charge",
 			"tag": "glorious_charge",
-			"mode": "awaiting",
+			"mode": "click",
 			"actor_pos": Vector2i(5, 5),
-			"arm_cell": Vector2i(4, 5),
-			"ally_pos": Vector2i(4, 5),
+			"premove_cell": Vector2i(7, 5),
 			"enemy_pos": Vector2i(9, 5),
-			"commit_cell": Vector2i(9, 5),
+			"commit_cell": Vector2i(8, 5),
 			"verify_no_jump": false,
 			"postmove_cell": Vector2i(8, 5),
-			"arm_on_ally": true,
 		},
 		# --- Cleric ---
 		&"cleric_guardian_step": {

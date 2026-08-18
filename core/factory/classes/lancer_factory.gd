@@ -523,30 +523,12 @@ static func _flanking_maneuver() -> AbilityData:
 
 
 static func _glorious_charge() -> AbilityData:
-	var module := _module(
-		GameEnums.EffectType.DASH, 4, 1, 4,
-		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
+	var ability := _charge_skill(
+		&"lancer_glorious_charge", "Glorious Charge", 4, 2, 1,
+		"On Kill: gain 1 AP and leave TRAMPLED terrain on tiles you left.",
+		{"create_trampled_terrain": true},
 	)
-	module.paired_ally_charge = true
-	module.paired_ally_strike_atk = 2
-	module.layers.append(_layer(DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)))
-	var upgraded := _clone_modules([module])
-	upgraded[0].paired_ally_charge = true
-	upgraded[0].paired_ally_strike_atk = 2
-	upgraded[0].on_kill_both_ap = 1
-	var ability := _ability(
-		&"lancer_glorious_charge", "Glorious Charge", 1, [module],
-		GameEnums.TargetingFlags.ALLY | GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
-		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
-		"On Kill: both the Lancer and the allied charger gain +1 AP.", upgraded,
-	)
-	ability.targeting_flags = (
-		GameEnums.TargetingFlags.ALLY
-		| GameEnums.TargetingFlags.ENEMY
-		| GameEnums.TargetingFlags.TILE
-	)
-	ability.sync_legacy_targeting()
+	ability.upgraded_modules[1].kill_grant_ap = 1
 	return ability
 
 

@@ -225,7 +225,9 @@ static func run_all(failures: Array[String]) -> void:
 	source.layers.append(engineer_layer)
 	var encoded: Dictionary = schema.call("module_to_dict", source) as Dictionary
 	var restored := AbilityModule.new()
-	schema.call("apply_module_dict", restored, encoded)
+	schema.call(
+		"apply_module_dict", restored, encoded, GameEnums.PlannerGroup.PRE_MOVE,
+	)
 	_assert(failures, "strip_stealth", restored.strip_stealth)
 	_assert(failures, "spread_status_adjacent", restored.spread_status_adjacent)
 	_assert(failures, "next_ranged_attack_strength", restored.next_ranged_attack_strength == 2)

@@ -35,6 +35,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_suplex", "observation": &"damage_displacement", "upgrade_keys": [&"bonus_dmg_per_10_hp"]},
 	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"pre_move_timing"]},
 	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
+	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
 	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
 	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"]},
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
@@ -55,6 +56,11 @@ const _BATCHES: Array[Dictionary] = [
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(7, 8), Vector2i(8, 8)],
 		"dummies": [Vector2i(5, 5), Vector2i(4, 2), Vector2i(4, 8), Vector2i(3, 8)],
 		"skills": [&"bruiser_suplex", &"bruiser_adrenaline_surge", &"bruiser_earthshatter"],
+	},
+	{
+		"extra_players": [Vector2i(2, 2), Vector2i(3, 2)],
+		"dummies": [],
+		"skills": [&"bruiser_meat_shield"],
 	},
 	{
 		"extra_players": [Vector2i(2, 2), Vector2i(2, 8), Vector2i(8, 8)],
@@ -91,6 +97,7 @@ const _CASE_ACTORS: Dictionary = {
 	&"bruiser_suplex": Vector2i(4, 5),
 	&"bruiser_adrenaline_surge": Vector2i(2, 2),
 	&"bruiser_earthshatter": Vector2i(2, 8),
+	&"bruiser_meat_shield": Vector2i(2, 2),
 	&"bruiser_frenzy": Vector2i(4, 5),
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(2, 8),
@@ -118,6 +125,7 @@ const _CASE_TARGETS: Dictionary = {
 	&"bruiser_suplex": Vector2i(5, 5),
 	&"bruiser_adrenaline_surge": Vector2i(2, 2),
 	&"bruiser_earthshatter": Vector2i(3, 8),
+	&"bruiser_meat_shield": Vector2i(3, 2),
 	&"bruiser_frenzy": Vector2i(5, 5),
 	&"bruiser_guttural_roar": Vector2i(2, 2),
 	&"bruiser_headbutt": Vector2i(3, 8),
@@ -152,6 +160,7 @@ func test_live_bruiser_multi_skill_session(timeout := 300000) -> void:
 	await _journey_bruiser_suplex(runner)
 	await _journey_bruiser_adrenaline_surge(runner)
 	await _journey_bruiser_earthshatter(runner)
+	await _journey_bruiser_meat_shield(runner)
 	await _journey_bruiser_frenzy(runner)
 	await _journey_bruiser_guttural_roar(runner)
 	await _journey_bruiser_headbutt(runner)
@@ -190,6 +199,10 @@ func _journey_bruiser_adrenaline_surge(runner: GdUnitSceneRunner) -> void:
 
 func _journey_bruiser_earthshatter(runner: GdUnitSceneRunner) -> void:
 	await _run_skill_journey(runner, &"bruiser_earthshatter")
+
+
+func _journey_bruiser_meat_shield(runner: GdUnitSceneRunner) -> void:
+	await _run_skill_journey(runner, &"bruiser_meat_shield")
 
 
 func _journey_bruiser_frenzy(runner: GdUnitSceneRunner) -> void:

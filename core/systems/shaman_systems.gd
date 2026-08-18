@@ -614,7 +614,7 @@ static func incoming_damage_reduction(
 			and source.passive_flags.get("shaman_totem_kind", &"") == &"guard"
 			and GridSystem.manhattan(source.position, target.position) <= 1
 		):
-			return int(source.passive_flags.get("shaman_guard_ranged_reduction", 2))
+			return int(source.passive_flags.get("shaman_guard_ranged_reduction", 0))
 	return 0
 
 
@@ -705,9 +705,7 @@ static func on_spawned(
 	construct.passive_flags["shaman_guardian_link"] = _has_passive_modifier(
 		actor, &"spiritual_guardian",
 	)
-	construct.passive_flags["shaman_guard_ranged_reduction"] = int(
-		effect.modifiers.get("ranged_reduction", 0),
-	)
+	construct.passive_flags["shaman_guard_ranged_reduction"] = floori(actor.current_magic / 2.0)
 	construct.passive_flags["shaman_guard_melee_def"] = int(
 		effect.modifiers.get("melee_def", 0),
 	)

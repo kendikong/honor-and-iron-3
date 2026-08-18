@@ -31,7 +31,7 @@
 | Classification / anim | **Tags** (e.g. attack, movement) — not overloaded “movement skill” naming |
 | Basic positioning | Today’s MP Swap / Push Through style skills → **basic positioning** (`planner_group = PRE_MOVE`), distinct from “has a MOVE effect” |
 | Module vs layer | **New module = new player click.** Layers = extra punches on that module’s already-chosen targets. Complicated one-click results = multiple layers, not a fake second module. |
-| Relocate an ally on Action | Player Actions resolve together — do not pair-move / swap / carry / usher an **ally** on Action. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy swap, drag, and similar Forced Movement. **Ally Action relocates to rewrite:** Glorious Charge, Meat Shield, Shadow Swap. |
+| Relocate an ally on Action | Player Actions resolve together — do not pair-move / swap / carry / usher an **ally** on Action. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy swap, drag, and similar Forced Movement. The reworked Meat Shield and Shadow Swap are Pre-Move swaps; Glorious Charge is an enemy-focused Action charge. |
 
 ---
 
@@ -113,7 +113,7 @@ From Master Bible / project rules (do not bypass silently):
 - **Simultaneous execution:** Player Actions resolve together. Enemy actions wait until after the full player plan and execution.
 - **Ally relocate on Action:** Do not pair-move, swap, carry, or usher an **ally** on Action — they already queued Walk/Attack/Skill. Ally relocates belong in **Pre-Move**.
 - **Enemy displacement on Action:** Legal. Forced Movement (PUSH, PULL, throw/Suplex, and similar), enemy SWAP, drag. Enemies have not acted yet.
-- **Ally Action relocates to rewrite (do not convert as PAIRED_MOVE / ally SWAP on Action):** Glorious Charge, Meat Shield, Shadow Swap. Legal Pre-Move ally relocates: class Reposition (Swap, Pullback, Usher, Beast Rider Reposition), Airlift pickup.
+- **Reworked relocation skills:** Meat Shield and Shadow Swap are legal Pre-Move ally swaps. Glorious Charge is a legal enemy-focused Action charge; it no longer pairs an ally.
 - **Preview == commit** — modules define what planning shows; commit ratifies that picture.
 - **Data over per-skill code** — new behavior = new shared effect/keyword/condition, not `if ability.id == …`.
 - **Sim never plays art** — presentation keys/anims are forwarded; Nodes stay out of simulation.
@@ -187,6 +187,14 @@ Examples: basic attack → AP 0; Swap → MP 1; Blood Boil → AP 1 + HP 5 (or H
 The **structure** (header → modules → keywords → layers → gates) is fixed.  
 **Dropdown / option lists** (effects, conditions, filters, cost modifiers) grow as the Bible needs them — same fields, more choices. Filling gaps means adding options, not inventing a new architecture. Landing is a destination `EffectType`.
 
+### Typed authoring vs compiled effect payloads
+
+Factories and the class editor author behavior through typed `AbilityModule` / `AbilityLayer`
+fields. `AbilityModuleBridge` may compile those fields into `EffectData.modifiers` because
+the shared `AbilitySystem` and simulator consume one normalized effect payload at runtime.
+That dictionary is a compiled compatibility boundary, not an authoring escape hatch: new
+skills must add a typed owner and bridge mapping, never write an unowned modifier key.
+
 ---
 
 ## 2. Module (one step)
@@ -220,7 +228,7 @@ What this module *is*. One `EffectType` field. Families are **owner-locked** in 
 | **Status** | Apply or strip a named condition | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = StatusType |
 | **Movement (Self)** | You change tiles | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = fields or dest types here |
 | **Forced Movement** | They are displaced by your punch | PUSH, PULL, THROW_BEHIND | Push/pull are examples. Throw/Suplex/drag-the-target and similar belong here. **Legal on Action** (enemies act after player execution). |
-| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Ally pair/swap/carry/usher on **Action** = rewrite (Glorious Charge, Meat Shield, Shadow Swap). Pre-Move: Pullback, Usher, Knight Swap, Airlift. Enemy SWAP on Action is legal. |
+| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Pre-Move ally swaps include Pullback, Usher, Knight Swap, Airlift, Meat Shield, and Shadow Swap. Enemy SWAP on Action is legal. Glorious Charge uses the Movement (Self) DASH family instead. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, mines = knobs |
 | **Summon** | You make a unit or object | SPAWN | HP%, turret ATK, overclock = knobs |
 | **Stance** | You set yourself up this turn | ADD_STATUS_SELF / arm-next | Phalanx, Feint, Mana Shield, Brace |
@@ -671,7 +679,7 @@ Start at **§0**. Author: `planner_group` + tags + cost → `modules` / `upgrade
 - Column ≠ tags; basic positioning ≠ “has MOVE”  
 - MOVE min ≥ 1; grey out useless options  
 - **New click = new module.** Same click extras = layers (stack them). No fake second module.  
-- **Don’t relocate an ally on Action.** Enemy displacement (Forced Movement, enemy swap, drag) is legal — they act after your execution. Rewrite: Glorious Charge, Meat Shield, Shadow Swap.  
+- **Don’t relocate an ally on Action.** Enemy displacement (Forced Movement, enemy swap, drag) is legal — they act after your execution. Reworked forms: Pre-Move Meat Shield/Shadow Swap swaps and enemy-focused Action Glorious Charge.
 - After move, range from new tile  
 - Path hits = TRAMPLE/BULLDOZE keywords 
 

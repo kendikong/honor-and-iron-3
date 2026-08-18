@@ -7,13 +7,6 @@ extends RefCounted
 const KW_COLOR: String = "#FBBF24"
 const _ModuleAuthoringRules := preload("res://data/definitions/module_authoring_rules.gd")
 
-static var _ABILITY_CODE_BRANCHES: Dictionary = {
-	&"knight_defensive_formation": "Defensive Formation: AOE diamond 3; ADD_STATUS DEF+STURDY on allies via exclude_caster modifier in AbilitySystem.",
-	&"knight_shield_bash": "Shield Bash: upgrade adds PUSH 1 on hit (ID branch in ability_system).",
-	&"knight_chain_hook": "Chain Hook: upgrade extends PULL range / behavior (ID branch in ability_system).",
-	&"knight_bowling_charge": "Bowling Charge upgrade: enemy-enemy chain collision in ability_system (ID branch).",
-}
-
 
 static func manual_keywords() -> Dictionary:
 	## Master Bible — Keyword Terminology Glossary (class_abilities.txt §127–217).
@@ -597,8 +590,6 @@ static func ability_implementation_notes(ability: AbilityData) -> String:
 	for module: AbilityModule in ability.get_active_modules():
 		if module != null:
 			parts.append(_module_impl_note(module))
-	if ability.id in _ABILITY_CODE_BRANCHES:
-		parts.append("⚠ CODE BRANCH: %s" % _ABILITY_CODE_BRANCHES[ability.id])
 	return "\n".join(parts)
 
 
@@ -1243,7 +1234,11 @@ static func modules_to_dict_array(
 	return out
 
 
-static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
+static func apply_module_dict(
+	dst: AbilityModule,
+	data: Dictionary,
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+) -> void:
 	if dst == null or data.is_empty():
 		return
 	dst.execution_phase = int(data.get("execution_phase", dst.execution_phase))
@@ -1765,7 +1760,7 @@ static func apply_module_dict(dst: AbilityModule, data: Dictionary) -> void:
 		for raw: Variant in layer_data as Array:
 			if raw is Dictionary:
 				dst.layers.append(layer_from_dict(raw as Dictionary))
-	AbilityModuleBridge.normalize_module_authoring_fields(dst)
+	AbilityModuleBridge.normalize_module_authoring_fields(dst, planner_group)
 
 
 static func _normalize_modules_for_ability(

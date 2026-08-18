@@ -196,8 +196,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	meat_upgraded[0].layers[0].intercept_grant_str = 2
 	var meat_shield := DataLibrary._make_modular_ability(
 		&"bruiser_meat_shield", "Meat Shield", [meat_module], meat_upgraded, 1,
-		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP,
-		[], "RANGE 3. Gain STR +2 per interception.", GameEnums.TargetingFlags.ALLY,
+		GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
+		[AbilityModuleBridge.TAG_POSITIONING],
+		"INTERCEPT 50% of the ally's damage this turn; [+] RANGE 3 and gain STR +2 per interception.",
+		GameEnums.TargetingFlags.ALLY,
 	)
 	def.abilities.append(meat_shield)
 

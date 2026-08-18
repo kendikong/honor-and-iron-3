@@ -42,7 +42,7 @@ No bible quote in the changelog → the conversion did not happen.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → … → Shaman). Skip the three **Rework skill** rows (Action **ally** relocates: Glorious Charge, Meat Shield, Shadow Swap). One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every convert-able matrix row converted; the three ally-relocate rows remain Rework |
+| **ER-2** | Convert class by class (Knight → … → Shaman). Rework any unsafe Action ally relocate into a legal Pre-Move ally swap or enemy-focused Action module, then convert it. One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every active matrix row converted and gated |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 ER-2 is authorized from Knight in the current owner directive; continue in the listed class order.
@@ -51,7 +51,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ## Rollout checklist — update this section, not memory
 
-**Status rule:** `[x]` means the implementation, conversion contract, and required QA evidence are complete. `[ ]` means the row is still open. A factory that merely loads is not a converted row. Rework rows remain intentionally open until their Action ally-relocate design changes.
+**Status rule:** `[x]` means the implementation, conversion contract, and required QA evidence are complete. `[ ]` means the row is still open. A factory that merely loads is not a converted row.
 
 ### ER-1 — shared typed homes
 
@@ -79,7 +79,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Bruiser | Suplex | ☑ | ☑ | ☑ | ☑ | Typed HP-scaling bonus; enemy throw on Action is legal; gates pass; independent audit pass |
 | Bruiser | Adrenaline Surge | ☑ | ☑ | ☑ | ☑ | Pre-Move self status; gates pass; independent audit pass |
 | Bruiser | Earthshatter | ☑ | ☑ | ☑ | ☑ | Destroy-object layer; gates pass; independent audit pass |
-| Bruiser | Meat Shield | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Bruiser | Meat Shield | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn INTERCEPT; scenario and class gates pass |
 | Bruiser | Frenzy | ☑ | ☑ | ☑ | ☑ | Typed kill AP field; gates pass; independent audit pass |
 | Bruiser | Guttural Roar | ☑ | ☑ | ☑ | ☑ | Typed board-item/collision fields; gates pass; independent audit pass |
 | Bruiser | Headbutt | ☑ | ☑ | ☑ | ☑ | Typed max-HP damage field; gates pass; independent audit pass |
@@ -113,7 +113,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Lancer | Wraparound / Flanking Maneuver | ☑ | ☑ | ☑ | ☑ | L-path motion metadata + GHOST keyword; conversion contract pass |
 | Lancer | Brace | ☑ | ☑ | ☑ | ☑ | Typed attacker stagger field; conversion contract pass |
 | Lancer | Harpoon Toss | ☑ | ☑ | ☑ | ☑ | Typed pull-until-adjacent/rooted fields; conversion contract pass |
-| Lancer | Glorious Charge | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Lancer | Glorious Charge | ☑ | ☑ | ☑ | ☑ | Reworked as shared DASH + enemy Action attack; scenario and class gates pass |
 | Lancer | Pole Vault | ☑ | ☑ | ☑ | ☑ | Typed vault restriction and landing collision fields; conversion contract pass |
 | Lancer | Line Breaker | ☑ | ☑ | ☑ | ☑ | Typed line-break and passed-enemy fields; conversion contract pass |
 | Lancer | Spear Wall | ☑ | ☑ | ☑ | ☑ | Typed terrain/status/duration fields; conversion contract pass |
@@ -149,22 +149,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Cleric | Divine Guidance | ☑ | ☑ | ☑ | ☑ | Typed AP/movement fields; Tier 1 + live gate + critic pass |
 | Cleric | Shield of Faith | ☑ | ☑ | ☑ | ☑ | Flat SHIELD 3 + INTERCEPT proof; Tier 1 + live gate + critic pass |
 | Cleric | Martyr’s Chains | ☑ | ☑ | ☑ | ☑ | Typed link/blind fields; Tier 1 + live gate + critic pass |
-| Mercenary | Pullback | ☐ | ☐ | ☐ | ☐ | Pre-Move paired movement |
-| Mercenary | Swift Strike | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Defense Strike | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Blade Storm | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Caltrop Toss | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Feint | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Riposte | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Sever | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Second Wind | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Tactical Retreat | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Executioner’s Blade | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Precision Strike | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Flank & Run | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Hamstring | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Acrobatic Vault | ☐ | ☐ | ☐ | ☐ |  |
-| Mercenary | Duelist’s Challenge | ☐ | ☐ | ☐ | ☐ |  |
+| Mercenary | Pullback | ☑ | ☑ | ☑ | ☑ | Pre-Move paired movement; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Swift Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Defense Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Blade Storm | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Caltrop Toss | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Feint | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Riposte | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Sever | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Second Wind | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Tactical Retreat | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Executioner’s Blade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Precision Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Flank & Run | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Hamstring | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Acrobatic Vault | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Mercenary | Duelist’s Challenge | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
 | Monk | Leap | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Monk | Scorching Kick | ☑ | ☑ | ☑ | ☑ | Typed conversion, AOE/live proof + critic pass |
 | Monk | Thunder Palm | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
@@ -188,7 +188,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Rogue | Evasive Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Rogue | Grappling Hook | ☑ | ☑ | ☑ | ☑ | OR choice; typed conversion and critic pass |
 | Rogue | Switcheroo | ☑ | ☑ | ☑ | ☑ | Enemy swap on Action is legal; typed conversion and critic pass |
-| Rogue | Shadow Swap | ☐ | ☐ | ☐ | ☐ | Rework: Action ally relocation |
+| Rogue | Shadow Swap | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn DEF layer; scenario and class gates pass |
 | Rogue | Blindside | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Rogue | Throat Slit | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
 | Rogue | Amnesia Dust | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
@@ -213,21 +213,21 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Beast Rider | Airlift | ☑ | ☑ | ☑ | ☑ | Typed conversion |
 | Beast Rider | Tail Swipe | ☑ | ☑ | ☑ | ☑ | Typed conversion and collision proof |
 | Beast Rider | Gore | ☑ | ☑ | ☑ | ☑ | Typed conversion |
-| Engineer | Recall | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Dismantle | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Sludge Bomb | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Construct Turret | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Frag Bomb | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Magnetic Mine | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Tesla Barricade | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Flak Cannon | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Wrench Smack | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | EMP Grenade | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Rocket Launcher | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Scrap Shield | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Manual Detonation | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Overdrive Injection | ☐ | ☐ | ☐ | ☐ |  |
-| Engineer | Barbed Wire | ☐ | ☐ | ☐ | ☐ |  |
+| Engineer | Recall | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Dismantle | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Sludge Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Construct Turret | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Frag Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Magnetic Mine | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Tesla Barricade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Flak Cannon | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Wrench Smack | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | EMP Grenade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Rocket Launcher | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Scrap Shield | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Manual Detonation | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Overdrive Injection | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Engineer | Barbed Wire | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
 | Shaman | Usher | ☑ | ☑ | ☑ | ☑ | Ally-step destination |
 | Shaman | Curse of Weakness | ☑ | ☑ | ☑ | ☑ |  |
 | Shaman | Healing Totem | ☑ | ☑ | ☑ | ☑ |  |
@@ -239,11 +239,13 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Shaman | Terrify | ☑ | ☑ | ☑ | ☑ |  |
 | Shaman | Miasma | ☑ | ☑ | ☑ | ☑ |  |
 | Shaman | Bone Spear | ☑ | ☑ | ☑ | ☑ |  |
+| Shaman | Ancestral Spirit | ☑ | ☑ | ☑ | ☑ | Typed corpse-spawn conversion; scenario and class gates pass |
+| Shaman | Totem Guard | ☑ | ☑ | ☑ | ☑ | Typed totem guard conversion; scenario and class gates pass |
 | Shaman | Sympathetic Bond | ☑ | ☑ | ☑ | ☑ |  |
 | Shaman | Soul Siphon | ☑ | ☑ | ☑ | ☑ |  |
 | Shaman | Pain Spike | ☑ | ☑ | ☑ | ☑ |  |
 
-**Matrix completion rule:** check a skill’s four columns only after the skill-level conversion contract, class gate/live proof, Bible audit, and independent quality re-audit are all recorded. The three Action ally-relocate rows remain unchecked until rewritten.
+**Matrix completion rule:** check a skill’s four columns only after the skill-level conversion contract, class gate/live proof, Bible audit, and independent quality re-audit are all recorded. The former Action ally-relocate rows are now legal reworked forms and are included in the checked set.
 
 ### ER-2 — class QA command index (secondary)
 
@@ -273,7 +275,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] `reactive_adrenaline`
 - [x] Bruiser class gate: `run_bruiser_qa_gate.ps1`.
 - [x] Bruiser live gate: `run_bruiser_live_qa.ps1`.
-- [ ] `bruiser_meat_shield` remains open as Action ally-relocate rework.
+- [x] `bruiser_meat_shield` Pre-Move rework scenario and conversion contract — PASS.
 
 #### 3. Lancer
 
@@ -292,7 +294,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] `lancer_meteor_drop`
 - [x] Lancer class gate: `run_lancer_qa_gate.ps1` — PASS.
 - [x] Lancer live gate: `run_lancer_live_qa.ps1` — PASS.
-- [ ] `lancer_glorious_charge` remains open as Action ally-relocate rework.
+- [x] `lancer_glorious_charge` DASH + enemy Action rework scenario and conversion contract — PASS.
 
 #### 4. Archer
 
@@ -378,7 +380,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] `rogue_poison_flask`
 - [x] Rogue class gate: `run_rogue_qa_gate.ps1` — PASS with conversion contracts.
 - [x] Rogue live gate: `run_rogue_live_qa.ps1` — PASS; harsh critic PASS (89/100).
-- [ ] `rogue_shadow_swap` remains open as Action ally-relocate rework.
+- [x] `rogue_shadow_swap` Pre-Move rework scenario and conversion contract — PASS.
 
 #### 8. Beast Rider
 
@@ -513,7 +515,7 @@ ER-3 closes legacy-path deletion. ER-1 shared typed homes are now checked separa
 | New EffectType / StatusType / LayerCondition | Only if nothing above fits. Grow the dropdown. |
 
 **Forbidden:** new Extra Rules, leftover bags, harvesting keys, `if ability.id == …`, calling Extra Rules “modules,” converting into **Motion Mode**, relocating an **ally** on **Action**. Enemy Forced Movement / enemy SWAP / drag on Action is legal.  
-**Blocked until rewritten (skip in ER-2):** Glorious Charge, Meat Shield, Shadow Swap.  
+**Reworked and converted:** Glorious Charge uses shared DASH + enemy Action attack; Meat Shield and Shadow Swap use Pre-Move ally SWAP.
 **Out of scope:** passives (until owner asks).
 
 ### Module primary families (reference)

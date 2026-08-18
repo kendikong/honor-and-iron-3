@@ -467,10 +467,9 @@ static func _shadow_swap() -> AbilityData:
 	upgraded[0].layers = [
 		_layer(DataLibrary._status_effect_self(GameEnums.StatusType.STAT_BUFF_DEF, 1, 1)),
 	]
-	return _ability(
-		&"rogue_shadow_swap", "Shadow Swap", [base], upgraded,
-		GameEnums.TargetingFlags.ALLY, [AbilityModuleBridge.TAG_POSITIONING],
-		"Gain +1 DEF for 1 turn after the swap.",
+	return _movement(
+		&"rogue_shadow_swap", "Shadow Swap", 1, base, upgraded,
+		"Pre-Move ally SWAP; [+] gain +1 DEF this turn after the swap.",
 	)
 
 

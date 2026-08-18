@@ -121,9 +121,12 @@ static func validate_modules(
 			errors.append("module %d shaped target requires size >= 1" % index)
 		if (
 			planner_group == GameEnums.PlannerGroup.ACTION
-			and module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+			and (
+				module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+				or module.paired_ally_charge
+			)
 		):
-			errors.append("module %d PAIRED_MOVE is legal only in PRE_MOVE" % index)
+			errors.append("module %d ally relocation is legal only in PRE_MOVE" % index)
 	return errors
 
 

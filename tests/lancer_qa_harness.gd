@@ -478,7 +478,7 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		target_id = actor.id
 	if ability.id == &"lancer_glorious_charge":
 		target_coord = enemy.position
-		target_id = ally.id
+		target_id = enemy.id
 	if ability.id == &"lancer_spear_wall":
 		target_coord = Vector2i(4, 3)
 		target_id = -1

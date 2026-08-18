@@ -53,7 +53,7 @@ For each leftover / Extra Rule, pick **one** home from `ability-data.md`:
 - Harvesting leftover keys into an enum
 - `if ability.id == …` in `AbilitySystem` / physics / planning
 - Calling Extra Rules “typed modules”
-- Relocating an **ally** on **Action**. Allies queue Walk/Attack/Skill in the same player execution. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy SWAP, drag. **Ally Action relocates to rewrite — do not convert:** Glorious Charge, Meat Shield, Shadow Swap.
+- Relocating an **ally** on **Action**. Allies queue Walk/Attack/Skill in the same player execution. **Enemy** displacement is legal on Action (they act after the full player plan+execution): PUSH, PULL, throw/Suplex, enemy SWAP, drag. Reworked ally relocates use Pre-Move: Meat Shield and Shadow Swap. Glorious Charge is an enemy-focused Action charge.
 - Passives in this plan (separate bag; owner must ask)
 
 **Already done (do not redo as Extra Rules):** click **Condition** dropdown (Executioner's Blade HP, Hex, Terrify, Savage Bite, Fetch, Maul occupant, constructs, corpses, Amnesia Dust, Feral Drag CON, Intimidate HP). Those skills still appear below if they have *other* extras.
@@ -71,7 +71,7 @@ Reference only. **Skill bible** (`class_abilities.txt`) is the verb. **Module bi
 | **Attack** | Hurt (`ATK` / `MAG ATK`) | DAMAGE, DAMAGE_SELF, EXPLODE, RANGED_EXPLODE | Bounce, unmitigated, %HP, ignore-resist = **fields** |
 | **Movement (Self)** | You change tiles (`MOVE` / `DASH` / `JUMP` / `TELEPORT`) | MOVE / JUMP / TELEPORT dests, DASH, MOVE_INTO_AND_PUSH | L-path, vault-only, GHOST, facing, pull-yourself-to-wall = **fields** or dest types here |
 | **Forced Movement** | They are displaced by your punch (`PUSH` / `PULL` / throw) | PUSH, PULL, THROW_BEHIND | Push/pull are examples. Throw/Suplex/drag-the-target belong here. **Legal on Action** (enemies act after player execution). |
-| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Ally pair/swap/carry/usher on **Action** = rewrite (Glorious Charge, Meat Shield, Shadow Swap). Pre-Move: Pullback, Usher, Knight Swap, Airlift. Enemy SWAP on Action is legal. |
+| **Move someone** | You put a body on a tile (usually an ally) | SWAP, PAIRED_MOVE | Pre-Move ally swaps include Pullback, Usher, Knight Swap, Airlift, Meat Shield, and Shadow Swap. Enemy SWAP on Action is legal. Glorious Charge uses Movement (Self) DASH plus an enemy Action module. |
 | **Hazard** | The tile keeps doing something | CREATE_HAZARD, CHANGE_TERRAIN, DESTROY_OBSTACLE | Smoke, caltrops, spear wall, sanctuary, mines = **knobs** |
 | **Summon** | You make a unit or object | SPAWN | Construct HP%, turret ATK, overclock = **knobs** |
 | **Status** | Apply or strip a named condition, no hit | ADD_STATUS, ADD_STATUS_SELF, REMOVE_STATUS, CLEANSE, PURGE | LINK / WITHER / BLOODLUST / MANA_SHIELD / MARK = **StatusType**. Link may split later. |
@@ -93,7 +93,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 | Header | `DOES_NOT_CONSUME_ACTION_SLOT`, `LIMIT_ONCE_PER_TURN`, `COST_ALL_MOVEMENT`, `SPEND_SELF_HP`, `DELAYED_NEXT_TURN` | Header |
 | Keyword | `GHOST_MOVE`, `PIERCE`, `TRAMPLE_ATK`, `NEXT_ATTACK_PIERCE`, `IGNORE_ZOC` | Keyword field |
 | Movement (Self) field | `L_SHAPE_MOVE`, `VAULT_OBSTACLE_OR_GAP_ONLY`, `PRESERVE_FACING`, `TELEPORT_VISIBLE`, `SHADOW_STEP`, `BLINK` | Field or dest type on **Movement (Self)** |
-| Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone**. Kidnap = enemy SWAP (legal on Action) then PUSH. `PAIRED_ALLY_CHARGE` = ally relocate — Rework. |
+| Move someone (new type) | `AIRLIFT_*`, `KIDNAP`, `PAIRED_ALLY_CHARGE`, `PULLBACK`, `REPOSITION_OPPOSITE_SIDE`, `RELOCATE_SUBJECT_ONLY` | New type in **Move someone**. Kidnap = enemy SWAP (legal on Action) then PUSH. `PAIRED_ALLY_CHARGE` is retired; Glorious Charge now uses the shared DASH + Action attack pattern. |
 | Forced Movement | `PULL_TO_CENTER`, `PULL_SURFACES`, `PUSH_BOARD_ITEMS`, `LANDING_ADJACENT_PUSH`, `PUSH`, `MINE_PULL`, `FERAL_DRAG`, `DRAG_REMAINING_MOVEMENT` | **Forced Movement** type or field. Throw/Suplex = `THROW_BEHIND`. Drag-the-target is legal on Action. Pull-yourself is **not** here. |
 | Movement (Self) pull-yourself | `GRAPPLE_WALL_PULL_SELF` | Dest type in **Movement (Self)** |
 | Player OR | `PULL_SELF_OR_TARGET`, `GRAPPLE_BIDIRECTIONAL` | `resolution_choice` (Movement (Self) pull-yourself **or** Forced Movement pull-them) |
@@ -121,9 +121,13 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
-If the Solution cell is **Rework skill**, **stop**. Do not convert. Do not invent Extra Rules. Do not author from a chat summary. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
+If the Solution cell is **Rework skill**, **stop**. Do not convert until the rework is specified in the Bible and factory. Do not invent Extra Rules. Do not author from a chat summary. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
 
 The conversion contract now checks every layer runtime key on converted skills against a typed module/layer owner. This keeps the category table auditable without retaining a legacy `AbilityExtraRule` taxonomy.
+
+`EffectData.modifiers` remains only the compiled bridge payload consumed by shared runtime
+systems. It is not a second authoring API: a new key is valid only when a typed module or
+layer field, schema mapping, bridge compiler, and runtime owner exist together.
 
 ---
 
@@ -135,7 +139,7 @@ These are reused across classes. Wire them as real types **before** class-by-cla
 |-------|--------|------|
 | GRANT_AP | **Exists** (`EffectType.GRANT_AP`) | Layer ON_KILL / module |
 | GRANT_SCRAP | **Exists** (`EffectType.GRANT_SCRAP`) | Layer / module |
-| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** for allies (Pullback). Not Glorious Charge (Action **ally** relocate). |
+| PAIRED_MOVE | **Exists** (`EffectType.PAIRED_MOVE`) | **Move someone** — **Pre-Move only** for ally relocates (Pullback, Meat Shield, Shadow Swap). |
 | PULL_SELF_TO_TARGET | **Done** (`PULL` + typed pull-self fields) | Shared **Movement (Self)** path; Grapple Arrow uses the typed pull-self rider, while pull-them remains **Forced Movement**. |
 | Carry / place-unit (Airlift, Maul drop) | **Done** (typed movement/placement riders) | Airlift uses the shared teleport/movement path with typed pickup/drop fields; Maul uses the typed dragged-target placement path. |
 | Drag-while-walking (Feral Drag) | **Done** (`PULL` + typed drag fields) | Shared **Forced Movement** path; legal on Action because the target is an enemy. |
@@ -156,18 +160,18 @@ Prove the method on the smallest leftover, then reuse punches.
 |-------|-------|----------------|
 | 1 | Knight | One leftover (exclude-self). Method check. |
 | 2 | Bruiser | Layers + GRANT_AP + IF_COLLIDED already named |
-| 3 | Lancer | JUMP_TO_BEHIND, TRAMPLE, L-path on MOVE. **Glorious Charge blocked** (Action **ally** relocate). |
+| 3 | Lancer | JUMP_TO_BEHIND, TRAMPLE, L-path on MOVE, and the reworked enemy-focused Glorious Charge. |
 | 4 | Archer | CREATE_HAZARD knobs + GHOST + layers |
 | 5 | Mercenary | Pullback **PAIRED_MOVE** (Pre-Move). GRANT_AP, GHOST |
 | 6 | Monk | ON_LAND / hazard knobs. Phase Throw = enemy SWAP (legal on Action). |
-| 7 | Rogue | TELEPORT + layers. Switcheroo / Kidnap = enemy (legal). **Shadow Swap blocked** (Action **ally** relocate). |
+| 7 | Rogue | TELEPORT + layers. Switcheroo / Kidnap = enemy (legal); Shadow Swap is a Pre-Move ally swap. |
 | 8 | Beast Rider | Airlift Pre/Post (legal). Feral Drag = Forced Movement (legal on Action). |
 | 9 | Cleric | LINK + hazard knobs |
 | 10 | Mage | Bounce / reaction knobs |
 | 11 | Engineer | SPAWN knobs + GRANT_SCRAP |
 | 12 | Shaman | LINK / WITHER / totem SPAWN knobs |
 
-Each class: convert every row below **except Type = Rework skill** → extras empty → `run_<class>_qa_gate.ps1` **and** `run_<class>_live_qa.ps1` PASS. Rework rows: stop and leave them. Do not stamp PAIRED_MOVE / **ally** SWAP on Action. Enemy SWAP / THROW_BEHIND / drag on Action is legal.
+Each class: convert every row below → extras empty → `run_<class>_qa_gate.ps1` **and** `run_<class>_live_qa.ps1` PASS. A rework row must first be rewritten to a legal Pre-Move ally swap or enemy-focused Action module, then converted and gated. Do not stamp PAIRED_MOVE / **ally** SWAP on Action. Enemy SWAP / THROW_BEHIND / drag on Action is legal.
 
 ---
 
@@ -197,8 +201,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Adrenaline Surge [+] | Pre-Move / does not consume Action | Existing header | Planner group **PRE_MOVE**. Not Extra Rules. |
 | Adrenaline Surge [+] | On kill, HEAL + SHIELD | Existing effect | HEAL and SHIELD on **ON_KILL**. |
 | Earthshatter [+] | Buff per object destroyed | Existing layer | Buff after **DESTROY_OBSTACLE**. |
-| Meat Shield | Swap with ally | **Rework skill** | Action **ally** relocate — they already queued. Do **not** convert as SWAP on Action. |
-| Meat Shield [+] | +STR while intercepting | New field | After rework: amount on **INTERCEPT**. |
+| Meat Shield | Swap with ally | Existing effect | Pre-Move ally SWAP; INTERCEPT 50% of damage this turn. |
+| Meat Shield [+] | +STR while intercepting | New field | RANGE 3 and +2 STR per interception on the INTERCEPT layer. |
 | Frenzy [+] | On kill, +1 AP | Existing effect | **GRANT_AP** on **ON_KILL**. |
 | Guttural Roar [+] | Push items; item collision damage / VULNERABLE | New field | PUSH-hits-items flags. |
 | Headbutt | True damage | New field | Unmitigated flag on DAMAGE. |
@@ -241,8 +245,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Wraparound (Flanking Maneuver) | L-shaped move | New field on MOVE | L-path on **MOVE**. |
 | Wraparound | ×2 only from the side | New field | Side-only DAMAGE multiplier. |
 | Wraparound [+] | GHOST | Existing keyword | **GHOST**. |
-| Glorious Charge | You + ally MOVE adjacent; each ATK 2 | **Rework skill** | Dual-pick = two modules. Relocating the ally on **Action** fights simultaneous queues. Do **not** convert as `PAIRED_MOVE` on Action. Wait for owner rework (Pre-Move relocate, or don’t move the ally). |
-| Glorious Charge [+] | Both gain AP on kill | Existing effect | **GRANT_AP** on **ON_KILL** for both — after the rework, as layers on the ATK modules. |
+| Glorious Charge | DASH then ATK enemy | Existing modules | Shared DASH on **ON_PRE**, new enemy aim on **ON_ACTION**, PUSH 1 layer. |
+| Glorious Charge [+] | TRAMPLED + AP on kill | Existing fields | TRAMPLED on the DASH path and **GRANT_AP** on the upgraded attack’s **ON_KILL** layer. |
 | Pole Vault | Jump obstacle/gap only, not enemies | New field | Restriction on **JUMP_TO_BEHIND**. |
 | Pole Vault [+] | PUSH + STAGGER beside landing | Existing layer | PUSH/STAGGER on **ON_LAND**. |
 | Line Breaker | Path ATK | Existing keyword | **TRAMPLE**. |
@@ -374,8 +378,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Grappling Hook [+] | Trap collision ×2 | New field | Collision vs trap. |
 | Switcheroo | Swap with enemy | Existing effect | **SWAP**. Legal on Action (enemy). |
 | Switcheroo [+] | You inherit incoming attacks | New status | Inherit-hits status. |
-| Shadow Swap | Swap with ally | **Rework skill** | Action **ally** relocate — they already queued. Do **not** convert as SWAP on Action. |
-| Shadow Swap [+] | +1 DEF next turn | Existing effect | After rework: DEF layer. |
+| Shadow Swap | Swap with ally | Existing effect | Pre-Move ally SWAP; the queued ally action now sees the new position. |
+| Shadow Swap [+] | +1 DEF this turn | Existing effect | DEF layer applies immediately after the swap. |
 | Blindside | STAGGER if they haven’t acted | New field | STAGGER if unacted. |
 | Blindside [+] | +2 if already STAGGER | New field | Bonus vs STAGGER. |
 | Throat Slit [+] | On kill, SILENCE adjacent | Existing effect | **SILENCE** on **ON_KILL**, adjacent. |
@@ -466,6 +470,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Miasma [+] | POISON spreads on PUSH collision | Existing layer | POISON on **ON_COLLISION**. |
 | Bone Spear | Spawn furthest on the line | New field | Spawn placement on **SPAWN**. |
 | Bone Spear [+] | Lightning rod | New field | On the spawn. |
+| Ancestral Spirit | Ghost Ally from ally corpse | Existing effect | **SPAWN** typed ghost duration, HP%, echo, and corpse condition fields. |
+| Totem Guard | Totem with MAG-scaled ranged reduction | New field | **SPAWN** typed totem kind; shared Shaman lifecycle computes Floor(caster MAG / 2) at spawn. |
 | Sympathetic Bond | Ally/enemy link; HEAL hurts the enemy | New status | **LINK** ally–enemy. |
 | Sympathetic Bond [+] | Enemy damage HEALs ally | New field | On that link. |
 | Soul Siphon | +1 per debuff | New field | Bonus per debuff on DAMAGE. |
@@ -477,7 +483,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 
 ## Phase ER-3 — DELETE Extra Rules
 
-When every class skill row is converted:
+When every active class skill row is converted and its contract plus class/live QA are green:
 
 1. Grep `_add_extra`, `AbilityExtraRule`, `extras.append` in production code → **zero**.
 2. Delete `data/definitions/ability_extra_rule.gd` and Class Editor Extra Rules UI.

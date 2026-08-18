@@ -164,9 +164,7 @@ const _CASES: Array[Dictionary] = [
 	{
 		"id": &"lancer_glorious_charge",
 		"range": 4,
-		"flags": GameEnums.TargetingFlags.ALLY
-			| GameEnums.TargetingFlags.ENEMY
-			| GameEnums.TargetingFlags.TILE,
+		"flags": GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,
 		"shape": GameEnums.TargetShape.SINGLE,
 		"shape_size": 1,
 		"primary_type": GameEnums.EffectType.DASH,
@@ -174,10 +172,9 @@ const _CASES: Array[Dictionary] = [
 		"observation": &"movement_damage",
 		"target_kind": &"enemy",
 		"target": Vector2i(9, 5),
-		"ally": Vector2i(4, 5),
 		"dummies": [Vector2i(9, 5)],
 		"extra_players": _PUSH_EXTRA_PLAYERS,
-		"upgrade_keys": [&"paired_ally_charge", &"on_kill_both_ap"],
+		"upgrade_keys": [&"create_trampled_terrain", &"kill_grant_ap"],
 	},
 	{
 		"id": &"lancer_pole_vault",
@@ -350,7 +347,6 @@ const _FIXTURES: Dictionary = {
 
 const _CASE_ALLIES: Dictionary = {
 	&"lancer_push": Vector2i(5, 5),
-	&"lancer_glorious_charge": Vector2i(4, 5),
 }
 
 var _scene: TestBattleMapView
@@ -682,17 +678,21 @@ func _commit_glorious_charge(
 	var ability := _ability_by_id(
 		_director.board.get_unit_by_id(actor_id), case.id,
 	)
-	var ally_slots := await _commit_live_click(
-		runner, actor_id, _case_ally_cell(case.id),
+	var dash_cell := Vector2i(8, 5)
+	await _OVERLAY_QA.assert_live_overlay_parity(
+		self, runner, _overlay, _input, _director, actor_id, ability, dash_cell, case.id,
 	)
-	assert_bool(_slots_invalid(ally_slots)).override_failure_message(
-		"%s: selecting the allied charger must arm the second target step" % case.id,
+	var dash_slots := await _commit_live_click(
+		runner, actor_id, dash_cell,
+	)
+	assert_bool(_slots_invalid(dash_slots)).override_failure_message(
+		"%s: selecting the DASH landing tile must arm the enemy target step" % case.id,
 	).is_false()
 	assert_bool(_director.find_awaiting_action(actor_id) != null).override_failure_message(
-		"%s: allied charger selection did not enter awaiting-target flow" % case.id,
+		"%s: DASH landing selection did not enter awaiting-target flow" % case.id,
 	).is_true()
 	var target_cell := _case_target_cell(case.id)
-	if ability != null:
+	if ability != null and _director.find_awaiting_action(actor_id) != null:
 		await _OVERLAY_QA.assert_live_overlay_parity(
 			self, runner, _overlay, _input, _director, actor_id, ability, target_cell, case.id,
 		)

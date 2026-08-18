@@ -272,6 +272,13 @@ static func _assert_upgrade_outcome(
 			if guard == null:
 				return
 			var ally := board_after.get_unit_by_id(2)
+			var caster := board_after.get_unit_by_id(1)
+			var expected_ranged_reduction := floori(caster.current_magic / 2.0) if caster != null else 0
+			_assert(
+				failures, "upgrade/shaman_totem_guard/ranged_reduction_scales_with_mag",
+				int(guard.passive_flags.get("shaman_guard_ranged_reduction", 0))
+				== expected_ranged_reduction,
+			)
 			if ally == null or GridSystem.manhattan(guard.position, ally.position) > 1:
 				ally = _place_ally(board_after, 2, guard.position + Vector2i(1, 0))
 			var melee_spot := ally.position + Vector2i(0, 1)
@@ -311,6 +318,11 @@ static func _assert_upgrade_outcome(
 			_assert(
 				failures, "upgrade/shaman_totem_guard/ranged_no_melee_def",
 				_SHAMAN_SYSTEMS.guard_melee_defense_bonus(board_after, ally, ranged_enemy) == 0,
+			)
+			_assert(
+				failures, "upgrade/shaman_totem_guard/ranged_reduction_applies",
+				_SHAMAN_SYSTEMS.incoming_damage_reduction(board_after, ally, ranged_enemy)
+				== expected_ranged_reduction,
 			)
 		&"shaman_hex":
 			var target := board_after.get_unit_by_id(target_id)

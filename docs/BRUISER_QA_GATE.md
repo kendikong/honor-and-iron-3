@@ -2,7 +2,7 @@
 
 **Scope:** **Class validation** — every Bruiser **active skill**, **movement skill**, and **passive** in `core/factory/classes/bruiser_factory.gd` behaves per `class_abilities.txt` § Bruiser. **Not** gameplay-core planning/UI (see [`PLANNING_QA_GATE.md`](PLANNING_QA_GATE.md)).
 
-**End state:** every non-deferred coverage row is **PASS** (meta-critic approved), deferred rows are explicit **N/A**, and both automated tiers pass.
+**End state:** every coverage row is **PASS** (meta-critic approved), and both automated tiers pass.
 
 **Runner:** `scripts/run_bruiser_qa_gate.ps1` — cloned from Knight gate; **does not** invoke or modify `run_planning_qa_gate.ps1`. Each run writes **`qa_bruiser_gate_canonical.txt`** (authoritative stdout snapshot for gauntlet-critic BAR).
 
@@ -14,10 +14,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Automated matrix** | **31 PASS + 1 N/A**; planning smoke covers converted actives |
+| **Automated matrix** | **32 PASS**; planning smoke covers all actives |
 | **Tier 1** | PASS — converted rows plus dedicated passive scenarios |
 | **Tier 2** | PASS — converted actives through preview/commit/simulation |
-| **Deferred** | `bruiser_meat_shield` remains N/A until Action ally-relocation rework |
+| **Reworked** | `bruiser_meat_shield` is Pre-Move ally SWAP with same-turn INTERCEPT |
 
 ---
 
@@ -25,8 +25,8 @@
 
 | Tier | Runner | Gate status |
 |------|--------|-------------|
-| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **PASS** (automated) — 31 PASS + 1 N/A and `GridSystem.get_affected_tiles` geometry on ARC/AOE |
-| **2 — Live Bruiser acceptance** | `.\scripts\run_bruiser_live_qa.ps1` → `tests/live_bruiser_class_test.gd` | **PASS** (automated) — 15 converted actives; self-AOE + ARC blast overlay at hover |
+| **1 — Headless scenarios** | `.\scripts\run_bruiser_qa_gate.ps1` | **PASS** (automated) — 32 PASS and `GridSystem.get_affected_tiles` geometry on ARC/AOE |
+| **2 — Live Bruiser acceptance** | `.\scripts\run_bruiser_live_qa.ps1` → `tests/live_bruiser_class_test.gd` | **PASS** (automated) — all converted actives; self-AOE + ARC blast overlay at hover |
 | **Manual** | `docs/PLANNING_SKILL_QA_CHECKLIST.md` per ability | Required for feel/pixels Tier 1 cannot see |
 
 **Only Tier 1+2 matrix `PASS` + owner row in `CLASS_QA_SIGNOFF.md` + gauntlet-critic ≥88 blocks Bruiser LOCK.**
@@ -110,7 +110,7 @@ Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 | `bruiser_suplex` | Active | `tests/skills/bruiser_suplex_scenario.gd` | PASS | RANGE 1 ATK 4 THROW_BEHIND (not SWAP); `[+]` bonus_dmg_per_10_hp |
 | `bruiser_adrenaline_surge` | Active | `tests/skills/bruiser_adrenaline_surge_scenario.gd` | PASS | SELF spend 5 HP +MOV/+STR next turn; 0 AP if 2+ adjacent; `[+]` Pre-Move skip Action |
 | `bruiser_earthshatter` | Active | `tests/skills/bruiser_earthshatter_scenario.gd` | PASS | RANGE 1 ARC ATK 2 + destroy; `[+]` ATK per destroy |
-| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | N/A | Deferred: Action ally SWAP conflicts with queued ally actions; rework target remains open |
+| `bruiser_meat_shield` | Active | `tests/skills/bruiser_meat_shield_scenario.gd` | PASS | Pre-Move ally SWAP + same-turn INTERCEPT; `[+]` RANGE 3 and +2 STR per interception |
 | `bruiser_frenzy` | Active | `tests/skills/bruiser_frenzy_scenario.gd` | PASS | RANGE 1 ATK 1 x3; `[+]` on-kill +1 AP |
 | `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PASS | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
@@ -141,7 +141,7 @@ Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 | `battering_ram` | Battering Ram | `tests/passives/battering_ram_scenario.gd` | PASS | PUSH +1 tile; `[+]` wall STAGGER |
 | `unstoppable_force` | Unstoppable Force | `tests/passives/unstoppable_force_scenario.gd` | PASS | STAGGER/ROOT immune + SHIELD on resist |
 
-**LOCK rule:** All factory rows `PASS` (or owner-documented `N/A`). Gate script **fails** until then.
+**Gate rule:** All factory rows must be `PASS`. Gate script **fails** until then.
 
 Registry: `tests/bruiser_scenario_registry.gd` + `tests/bruiser_qa_runner.gd` (32 factory rows, including the dedicated Reactive Adrenaline row).
 

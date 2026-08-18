@@ -193,6 +193,12 @@
                               "score":  89,
                               "critic_round":  5,
                               "fix_target":  "none"
+                          },
+                          {
+                              "factory_id":  "bruiser_meat_shield",
+                              "score":  90,
+                              "critic_round":  9,
+                              "fix_target":  "none"
                           }
                       ]
 }
