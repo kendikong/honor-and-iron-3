@@ -248,18 +248,19 @@ static func _check_er1_shared_homes(failures: Array[String]) -> void:
 		[illegal_action_pair], GameEnums.PlannerGroup.ACTION,
 	).is_empty():
 		failures.append("ACTION PAIRED_MOVE was not rejected by module validation")
-	var illegal_ally_charge := AbilityModule.new()
-	illegal_ally_charge.paired_ally_charge = true
+	var illegal_ally_swap := AbilityModule.new()
+	illegal_ally_swap.primary_type = GameEnums.EffectType.SWAP
+	illegal_ally_swap.targeting_flags = GameEnums.TargetingFlags.ALLY
 	if AbilityModuleBridge.validate_modules(
-		[illegal_ally_charge], GameEnums.PlannerGroup.ACTION,
+		[illegal_ally_swap], GameEnums.PlannerGroup.ACTION,
 	).is_empty():
-		failures.append("ACTION paired_ally_charge was not rejected by module validation")
+		failures.append("ACTION ally SWAP was not rejected by module validation")
 	for unit: UnitData in DataLibrary.get_all_player_units():
 		if unit == null:
 			continue
 		for ability: AbilityData in unit.abilities:
-			_check_paired_move_planner(failures, ability, ability.modules)
-			_check_paired_move_planner(failures, ability, ability.upgraded_modules)
+			_check_relocation_planner(failures, ability, ability.modules)
+			_check_relocation_planner(failures, ability, ability.upgraded_modules)
 	var paired := AbilityModule.new()
 	paired.primary_type = GameEnums.EffectType.PAIRED_MOVE
 	paired.amount = 1
@@ -347,7 +348,7 @@ static func _check_er1_shared_homes(failures: Array[String]) -> void:
 		failures.append("mercenary_pullback is not authored as PAIRED_MOVE")
 
 
-static func _check_paired_move_planner(
+static func _check_relocation_planner(
 	failures: Array[String],
 	ability: AbilityData,
 	modules: Array[AbilityModule],
@@ -357,11 +358,17 @@ static func _check_paired_move_planner(
 	for module: AbilityModule in modules:
 		if (
 			module != null
-			and module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+			and (
+				module.primary_type == GameEnums.EffectType.PAIRED_MOVE
+				or (
+					module.primary_type == GameEnums.EffectType.SWAP
+					and (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
+				)
+			)
 			and ability.planner_group != GameEnums.PlannerGroup.PRE_MOVE
 		):
 			failures.append(
-				"%s authors PAIRED_MOVE outside PRE_MOVE" % String(ability.id),
+				"%s authors ally relocation outside PRE_MOVE" % String(ability.id),
 			)
 
 

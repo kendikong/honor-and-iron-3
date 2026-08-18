@@ -8,6 +8,19 @@ PLANNED/other: 0
 
 === Meta-critic manifest (31 approved) ===
 
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
 === AOE footprint contract (all classes) ===
 --- AOE footprint contract: PASS ---
 

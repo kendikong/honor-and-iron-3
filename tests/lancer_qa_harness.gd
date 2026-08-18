@@ -300,20 +300,27 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 	var charge := factory_ability(&"lancer_piercing_charge")
 	var sweep := factory_ability(&"lancer_sweeping_halberd")
 	var vault := factory_ability(&"lancer_pole_vault")
+	var charge_has_trample_upgrade := (
+		charge != null
+		and not charge.upgraded_modules.is_empty()
+		and charge.upgraded_modules[0].create_trampled_terrain
+	)
+	var sweep_has_stagger_upgrade := false
+	if sweep != null and not sweep.upgraded_modules.is_empty():
+		for layer: AbilityLayer in sweep.upgraded_modules[0].layers:
+			if layer != null and layer.stagger_on_collision:
+				sweep_has_stagger_upgrade = true
+				break
 	assert_true(
 		failures,
 		"push_synergy/charge_modifier",
-		charge != null and _has_modifier(
-			charge.upgraded_effects, GameEnums.EffectType.DASH, "create_trampled_terrain"
-		),
+		charge_has_trample_upgrade,
 		"Piercing Charge [+] must create TRAMPLED terrain on tiles left",
 	)
 	assert_true(
 		failures,
 		"push_synergy/sweep_modifier",
-		sweep != null and _has_modifier(
-			sweep.upgraded_effects, GameEnums.EffectType.PULL, "stagger_on_collision"
-		),
+		sweep_has_stagger_upgrade,
 		"Sweeping Halberd [+] must STAGGER on PULL collision",
 	)
 	assert_true(
@@ -431,6 +438,25 @@ static func run_single_active(ability_id: StringName, failures: Array[String]) -
 			before_pos != after_pos,
 			"movement skill must change actor tile (before %s after %s)" % [before_pos, after_pos],
 		)
+	if ability_id == &"lancer_glorious_charge":
+		assert_true(
+			failures,
+			"lancer_glorious_charge/dash_landing",
+			bool(result.get("glorious_dash_landed", false)),
+			"Glorious Charge must resolve its DASH module to the committed landing tile",
+		)
+		assert_true(
+			failures,
+			"lancer_glorious_charge/strike",
+			bool(result.get("glorious_struck_enemy", false)),
+			"Glorious Charge must resolve its NEW_AIM enemy strike after DASH",
+		)
+		assert_true(
+			failures,
+			"lancer_glorious_charge/push",
+			bool(result.get("glorious_pushed_enemy", false)),
+			"Glorious Charge must resolve its PUSH layer on the struck enemy",
+		)
 
 
 static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
@@ -491,9 +517,15 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 	if ability.id == &"lancer_piercing_charge":
 		target_coord = Vector2i(5, 3)
 		target_id = -1
+	if ability.id == &"lancer_glorious_charge":
+		target_coord = Vector2i(4, 3)
+		target_id = -1
 	var action := TimelineAction.make_ability(actor.id, ability, target_coord, target_id)
 	if ability.id == &"lancer_piercing_charge":
 		action.module_target_coords = [Vector2i(5, 3), enemy.position]
+		action.module_target_unit_ids = [-1, enemy.id]
+	if ability.id == &"lancer_glorious_charge":
+		action.module_target_coords = [Vector2i(4, 3), enemy.position]
 		action.module_target_unit_ids = [-1, enemy.id]
 	var before_pos: Vector2i = actor.position
 	var events: Array[SimEvent] = []
@@ -502,12 +534,37 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 	var used := false
 	var validation_failed := false
 	var failure_reason := ""
+	var glorious_dash_landed := false
+	var glorious_struck_enemy := false
+	var glorious_pushed_enemy := false
+	if (
+		ability.id == &"lancer_glorious_charge"
+		and after_unit != null
+		and after_unit.position == Vector2i(4, 3)
+	):
+		glorious_dash_landed = true
 	for event: SimEvent in events:
 		if event.type == GameEnums.SimEventType.ABILITY_USED and event.data.get("ability") == ability.id:
 			used = true
 		if event.type == GameEnums.SimEventType.ACTION_FAILED:
 			validation_failed = true
 			failure_reason = String(event.data.get("reason", "unknown"))
+		if ability.id == &"lancer_glorious_charge":
+			if (
+				event.type == GameEnums.SimEventType.UNIT_MOVED
+				and int(event.data.get("actor", event.data.get("unit", -1))) == actor.id
+			):
+				glorious_dash_landed = true
+			if (
+				event.type == GameEnums.SimEventType.UNIT_DAMAGED
+				and int(event.data.get("unit", -1)) == enemy.id
+			):
+				glorious_struck_enemy = true
+			if (
+				event.type == GameEnums.SimEventType.UNIT_PUSHED
+				and int(event.data.get("unit", -1)) == enemy.id
+			):
+				glorious_pushed_enemy = true
 	return {
 		"used": used,
 		"validation_failed": validation_failed,
@@ -515,6 +572,9 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		"events": events,
 		"before_pos": before_pos,
 		"after_pos": after_unit.position if after_unit != null else before_pos,
+		"glorious_dash_landed": glorious_dash_landed,
+		"glorious_struck_enemy": glorious_struck_enemy,
+		"glorious_pushed_enemy": glorious_pushed_enemy,
 	}
 
 

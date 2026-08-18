@@ -2365,18 +2365,6 @@ func _add_module_typed_extras_editor(
 		module.pull_self_if_rooted = v
 		_on_module_field_edited(ability)
 	)
-	_bind_bool(grid, "Paired Ally Charge", module.paired_ally_charge, func(v: bool) -> void:
-		module.paired_ally_charge = v
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "Paired Ally Strike ATK", module.paired_ally_strike_atk, func(v: int) -> void:
-		module.paired_ally_strike_atk = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "On Kill Both AP", module.on_kill_both_ap, func(v: int) -> void:
-		module.on_kill_both_ap = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
 	_bind_bool(grid, "Vault Obstacle/Gap Only", module.vault_obstacle_or_gap_only, func(v: bool) -> void:
 		module.vault_obstacle_or_gap_only = v
 		_on_module_field_edited(ability)

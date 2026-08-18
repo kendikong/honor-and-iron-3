@@ -75,5 +75,8 @@ ERROR: 27 resources still in use at exit (run with --verbose for details).
    at: clear (core/io/resource.cpp:822)
 --- Tier 1 harness: PASS ---
 
+=== Tier 2: live Mercenary acceptance ===
+--- Tier 2 live: PASS ---
+
 === Mercenary QA gate summary ===
-[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios
+[PASS] Mercenary QA gate: matrix + typed contracts + Tier 1 harness + Tier 2 live PASS

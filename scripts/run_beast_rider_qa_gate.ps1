@@ -131,6 +131,30 @@ if (-not (Test-Path $GodotPath)) {
 	exit 0
 }
 
+Write-Output "=== Typed module conversion contracts ==="
+foreach ($typedContract in @(
+	"res://tests/run_extra_rules_conversion_contract.gd",
+	"res://tests/run_class_library_schema_typed_fields_test.gd"
+)) {
+	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
+	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-beast-rider-$contractTag.stdout.log")
+	$contractStderr = Join-Path $env:TEMP ("honor-and-iron-beast-rider-$contractTag.stderr.log")
+	$contractProcess = Start-Process -FilePath $GodotPath `
+		-ArgumentList @("--headless", "--path", $projectRoot, "--script", $typedContract) `
+		-RedirectStandardOutput $contractStdout `
+		-RedirectStandardError $contractStderr `
+		-Wait -PassThru
+	$contractExit = $contractProcess.ExitCode
+	if (Test-Path $contractStdout) { Get-Content -Path $contractStdout }
+	if (Test-Path $contractStderr) { Get-Content -Path $contractStderr }
+	if ($contractExit -ne 0) {
+		Write-Output "[FAIL] Typed contract failed: $typedContract (exit $contractExit)"
+		exit 5
+	}
+}
+Write-Output "--- Typed module conversion contracts: PASS ---"
+Write-Output ""
+
 Write-Output "=== AOE footprint contract (all classes) ==="
 $aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
 & $aoeGate -GodotPath $GodotPath

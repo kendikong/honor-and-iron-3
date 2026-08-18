@@ -939,9 +939,6 @@ static func module_to_dict(
 		"brace_attacker_stagger": src.brace_attacker_stagger,
 		"pull_until_adjacent": src.pull_until_adjacent,
 		"pull_self_if_rooted": src.pull_self_if_rooted,
-		"paired_ally_charge": src.paired_ally_charge,
-		"paired_ally_strike_atk": src.paired_ally_strike_atk,
-		"on_kill_both_ap": src.on_kill_both_ap,
 		"vault_obstacle_or_gap_only": src.vault_obstacle_or_gap_only,
 		"landing_adjacent_push": src.landing_adjacent_push,
 		"landing_adjacent_push_stagger": src.landing_adjacent_push_stagger,
@@ -1369,11 +1366,6 @@ static func apply_module_dict(
 	)
 	dst.pull_until_adjacent = bool(data.get("pull_until_adjacent", dst.pull_until_adjacent))
 	dst.pull_self_if_rooted = bool(data.get("pull_self_if_rooted", dst.pull_self_if_rooted))
-	dst.paired_ally_charge = bool(data.get("paired_ally_charge", dst.paired_ally_charge))
-	dst.paired_ally_strike_atk = int(
-		data.get("paired_ally_strike_atk", dst.paired_ally_strike_atk)
-	)
-	dst.on_kill_both_ap = int(data.get("on_kill_both_ap", dst.on_kill_both_ap))
 	dst.vault_obstacle_or_gap_only = bool(
 		data.get("vault_obstacle_or_gap_only", dst.vault_obstacle_or_gap_only)
 	)
@@ -2344,7 +2336,11 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 	return "\n".join(lines)
 
 
-static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
+static func apply_ability_dict(
+	dst: AbilityData,
+	data: Dictionary,
+	warn_unknown_tags: bool = true,
+) -> void:
 	if dst == null or data.is_empty():
 		return
 	dst.display_name = String(data.get("display_name", dst.display_name))
@@ -2354,7 +2350,7 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.upgraded_planner_group = int(data.get("upgraded_planner_group", dst.upgraded_planner_group))
 	if data.has("tags"):
 		var tags_v: Variant = data.get("tags", [])
-		dst.tags = _canonical_tags_from_variant(tags_v)
+		dst.tags = _canonical_tags_from_variant(tags_v, warn_unknown_tags)
 	dst.primary_resource = int(data.get("primary_resource", dst.primary_resource)) as GameEnums.CostResource
 	dst.primary_value = int(data.get("primary_value", dst.primary_value))
 	dst.upgraded_primary_value = int(data.get("upgraded_primary_value", dst.upgraded_primary_value))
@@ -2410,7 +2406,10 @@ static func apply_ability_dict(dst: AbilityData, data: Dictionary) -> void:
 		dst.range_tiles = authored_range_tiles
 
 
-static func _canonical_tags_from_variant(value: Variant) -> Array[StringName]:
+static func _canonical_tags_from_variant(
+	value: Variant,
+	warn_unknown_tags: bool = true,
+) -> Array[StringName]:
 	var allowed: Array[StringName] = [
 		AbilityModuleBridge.TAG_ATTACK,
 		AbilityModuleBridge.TAG_MOVEMENT,
@@ -2425,7 +2424,7 @@ static func _canonical_tags_from_variant(value: Variant) -> Array[StringName]:
 			if allowed.has(tag):
 				if not tags_out.has(tag):
 					tags_out.append(tag)
-			else:
+			elif warn_unknown_tags:
 				push_warning("Ability JSON rejected unknown tag: %s" % String(tag))
 	return tags_out
 

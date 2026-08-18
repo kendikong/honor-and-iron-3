@@ -223,7 +223,7 @@ const R: Finding[] = [
   { cls: "Beast Rider", skill: "Raking Claws", bible: "RANGE 1 ARC ATK 2 BLEED WPN. [+] PULL 1 first", verdict: "MATCH", delta: "bleed_weapon scales ADD_STATUS; pull_before_attack runs before damage." },
   { cls: "Beast Rider", skill: "Rest & Recover", bible: "1 AP + consume remaining MOV; HEAL 1 DEF+5. [+] CLEANSE", verdict: "MATCH", delta: "CLASS_SKILL consumes remaining MOV. HEAL 1 DEF+5. [+] CLEANSE." },
   { cls: "Beast Rider", skill: "Intimidate", bible: "RANGE 0 AOE 2 STAGGER lower HP. [+] PURGE", verdict: "MATCH", delta: "AOE_CROSS. lower_hp_only and purge_buffs consumed." },
-  { cls: "Beast Rider", skill: "Fetch", bible: "RANGE 4 item/corpse to adj. [+] light allies 2", verdict: "MATCH", delta: "fetch_item_or_corpse pulls items/corpses; upgraded PULL light allies." },
+  { cls: "Beast Rider", skill: "Snatch", bible: "RANGE 4 ally; [+] may PULL a CON<=STR enemy 2 tiles", verdict: "MATCH", delta: "Base PULL targets allies; upgraded module adds conditional enemy targeting." },
   { cls: "Beast Rider", skill: "Savage Bite", bible: "RANGE 1 ATK 4 requires BLEED/POISON. [+] On Kill SHIELD 2", verdict: "MATCH", delta: "can_use_extra + on_kill_shield." },
   { cls: "Beast Rider", skill: "Run Down (Beast)", bible: "DASH 3 ATK 2; pass adj PUSH 1. [+] BLEED WPN", verdict: "MATCH", delta: "trample_atk 2, pass-adj PUSH, upgraded BLEED WPN." },
 	{ cls: "Beast Rider", skill: "Thrash", bible: "RANGE 1 ATK 1 ×3. [+] each BLEED WPN", verdict: "MATCH", delta: "3 physical ATK 1 hits via repeat_hits using the damage effect scaling_stat." },

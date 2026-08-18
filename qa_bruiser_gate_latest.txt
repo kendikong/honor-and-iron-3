@@ -2,12 +2,25 @@
 Spec: docs/BRUISER_QA_GATE.md
 
 === Matrix summary (from docs/BRUISER_QA_GATE.md) ===
-PASS:          31/32
+PASS:          32/32
 HARNESS_ONLY:  0
-N/A (deferred): 1
+N/A (deferred): 0
 PLANNED/other: 0
 
-=== Meta-critic manifest (31 approved, threshold 88) ===
+=== Meta-critic manifest (32 approved, threshold 88) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
 
 === AOE footprint contract (all classes) ===
 --- AOE footprint contract: PASS ---
@@ -27,7 +40,7 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [BRUISER_QA] suplex (bruiser_suplex)
 [BRUISER_QA] adrenaline_surge (bruiser_adrenaline_surge)
 [BRUISER_QA] earthshatter (bruiser_earthshatter)
-[BRUISER_QA] meat_shield (bruiser_meat_shield) N/A â€” Action ally relocation deferred
+[BRUISER_QA] meat_shield (bruiser_meat_shield)
 [BRUISER_QA] frenzy (bruiser_frenzy)
 [BRUISER_QA] guttural_roar (bruiser_guttural_roar)
 [BRUISER_QA] headbutt (bruiser_headbutt)

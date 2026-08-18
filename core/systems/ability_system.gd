@@ -763,19 +763,6 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		"ability_used_once:%s" % ability.id, false
 	):
 		return false
-	if _ability_has_modifier(actor, ability, &"paired_ally_charge"):
-		var paired_ally := board.get_unit_by_id(action.target_unit_id)
-		var paired_enemy := board.get_unit_at(action.target_coord)
-		var paired_range: int = planning_max_target_distance(actor, ability)
-		if (
-			paired_ally == null
-			or paired_ally.team != actor.team
-			or paired_enemy == null
-			or paired_enemy.team == actor.team
-			or GridSystem.manhattan(actor.position, paired_ally.position) > paired_range
-			or GridSystem.manhattan(actor.position, paired_enemy.position) > paired_range
-		):
-			return false
 	if not _has_resource_for_ability(actor, ability):
 		return false
 	if (
@@ -1043,7 +1030,6 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				and GameEnums.is_toward_destination(motion_module.primary_type)
 			)
 			and not _ability_has_modifier(actor, ability, &"land_opposite_target")
-			and not _ability_has_modifier(actor, ability, &"paired_ally_charge")
 			and not _ability_has_modifier(actor, ability, &"stop_adjacent_first_enemy")
 		):
 			var end_unit := board.get_unit_at(action.target_coord)
@@ -1957,8 +1943,6 @@ static func planning_auto_arms_after_premove(actor: UnitState, ability: AbilityD
 static func planning_awaiting_phase(ability: AbilityData, actor: UnitState = null) -> int:
 	if ability == null:
 		return GameEnums.PlanningAwaitingPhase.GENERIC
-	if ability_has_modifier(ability, &"paired_ally_charge", actor):
-		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	if ability_slides_reposition_target(ability, actor):
 		return GameEnums.PlanningAwaitingPhase.GENERIC
 	if ability_has_movement_effect(ability, actor):
@@ -1980,8 +1964,6 @@ static func planning_awaiting_phase_for_module(
 	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
 	if module == null:
 		return planning_awaiting_phase(ability, actor)
-	if ability_has_modifier(ability, &"paired_ally_charge", actor) and module_index == 0:
-		return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	if AbilityModuleBridge.is_motion_type(module.primary_type):
 		if (
 			AbilityModuleBridge.module_has_modifier(module, &"post_attack_move")
@@ -2019,12 +2001,6 @@ static func planning_is_valid_awaiting_endpoint(
 	ability: AbilityData,
 	actor: UnitState = null,
 ) -> bool:
-	if ability_has_modifier(ability, &"paired_ally_charge", actor):
-		var paired_range: int = planning_max_target_distance(actor, ability)
-		if paired_range <= 0 and ability != null:
-			paired_range = ability.range_tiles
-		var paired_dist: int = GridSystem.manhattan(origin, coord)
-		return paired_dist >= 1 and paired_dist <= paired_range
 	var module: AbilityModule = active_motion_module(actor, ability)
 	if module == null or module.min_range < 1 or module.max_range < module.min_range:
 		return false
@@ -2341,8 +2317,7 @@ static func has_displacement_effects(ability: AbilityData, actor: UnitState = nu
 	return effect_amount(ability, GameEnums.EffectType.PUSH, actor) > 0 \
 		or effect_amount(ability, GameEnums.EffectType.PULL, actor) > 0 \
 		or ability_has_swap_effect(ability, actor) \
-		or effect_amount(ability, GameEnums.EffectType.BULLDOZE, actor) > 0 \
-		or _ability_has_modifier(actor, ability, &"paired_ally_charge")
+		or effect_amount(ability, GameEnums.EffectType.BULLDOZE, actor) > 0
 
 
 static func dash_steps(ability: AbilityData, actor: UnitState = null) -> int:
@@ -3022,9 +2997,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.turn_action_used = true
 		return
 
-	if _ability_has_modifier(actor, ability, &"paired_ally_charge"):
-		_prepare_paired_charge(board, actor, action, events)
-
 	var target_coord: Vector2i = module_target_coord(action, 0)
 	if action.module_target_coords.is_empty():
 		target_coord = _resolve_target_coord(board, action)
@@ -3336,11 +3308,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				continue
 			actor.passive_flags["jumped_or_teleported_this_turn"] = true
 		if effect.type in [GameEnums.EffectType.DASH, GameEnums.EffectType.TELEPORT_CASTER, GameEnums.EffectType.TELEPORT_ADJACENT_TO, GameEnums.EffectType.TELEPORT_TO_BEHIND, GameEnums.EffectType.TELEPORT_TOWARD, GameEnums.EffectType.MOVE_INTO_AND_PUSH, GameEnums.EffectType.PAIRED_MOVE]:
-			if effect.modifiers.has("paired_ally_charge"):
-				if effect.type == GameEnums.EffectType.DASH:
-					resolve_pending_pushes(board, events)
-				effect_index += 1
-				continue
 			if effect.type == GameEnums.EffectType.PAIRED_MOVE:
 				effect_index += 1
 				continue
@@ -4511,32 +4478,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 							action.ability.display_name,
 							explosion_amount,
 						)
-			if (
-				target != null
-				and target.is_alive()
-			):
-				var paired_strike: int = int(actor.passive_flags.get("paired_ally_strike_atk", 0))
-				var paired_id: int = int(actor.passive_flags.get("paired_ally_strike_id", -1))
-				if paired_strike > 0 and paired_id >= 0:
-					var paired_ally := board.get_unit_by_id(paired_id)
-					if paired_ally != null and paired_ally.is_alive():
-						var paired_raw := CombatSystem.calculate_scaled_damage(
-							paired_ally,
-							paired_strike,
-							GameEnums.StatType.PHYSICAL,
-							board,
-						)
-						CombatSystem.deal_damage_raw(
-							board,
-							paired_ally,
-							target,
-							paired_raw,
-							GameEnums.StatType.PHYSICAL,
-							events,
-							action.ability.display_name,
-							paired_strike,
-						)
-					actor.passive_flags.erase("paired_ally_strike_atk")
 			if dmg_type == &"physical":
 				CombatSystem.apply_post_attack_push_passives(
 					board, actor, target, events, action.ability.id,
@@ -6096,84 +6037,12 @@ static func resolve_unit_target(
 
 
 ## Canonical unit-target lookup for an action.
-## Cell-targeted modules may still resolve an occupant; paired charge keeps its
-## authored enemy-cell semantics while all other actions prefer the committed id.
+## Cell-targeted modules may still resolve an occupant; all other actions prefer
+## the committed id.
 static func resolve_action_target(board: BoardState, action: TimelineAction) -> UnitState:
 	if action == null or board == null:
 		return null
-	var actor: UnitState = board.get_unit_by_id(action.actor_id)
-	if _ability_has_modifier(actor, action.ability, &"paired_ally_charge"):
-		return board.get_unit_at(action.target_coord)
 	return resolve_unit_target(board, action.target_coord, action.target_unit_id)
-
-
-static func _prepare_paired_charge(
-	board: BoardState,
-	actor: UnitState,
-	action: TimelineAction,
-	events: Array[SimEvent],
-) -> void:
-	var ally := board.get_unit_by_id(action.target_unit_id)
-	var enemy := board.get_unit_at(action.target_coord)
-	if ally == null or enemy == null or not ally.is_alive() or not enemy.is_alive():
-		return
-	var strike_atk: int = _ability_modifier_int(
-		actor, action.ability, &"paired_ally_strike_atk"
-	)
-	if strike_atk > 0:
-		actor.passive_flags["paired_ally_strike_id"] = ally.id
-		actor.passive_flags["paired_ally_strike_atk"] = strike_atk
-	if _ability_has_modifier(actor, action.ability, &"on_kill_both_ap"):
-		actor.passive_flags["paired_ally_id"] = ally.id
-	var candidates: Array[Vector2i] = []
-	var preferred := PhysicsSystem.cardinal_from_to(enemy.position, actor.position)
-	var directions: Array[Vector2i] = [preferred]
-	for dir: Vector2i in GridSystem.DIRECTIONS:
-		if not directions.has(dir):
-			directions.append(dir)
-	for dir: Vector2i in directions:
-		var cell := enemy.position + dir
-		if not board.is_in_bounds(cell) or not GridSystem.is_passable(board, cell):
-			continue
-		var occupant := board.get_unit_at(cell)
-		if occupant != null and occupant.id != actor.id and occupant.id != ally.id:
-			continue
-		candidates.append(cell)
-	if candidates.is_empty():
-		return
-	var actor_dest: Vector2i = candidates[0]
-	for cell: Vector2i in candidates:
-		if cell == actor.position:
-			actor_dest = cell
-			break
-	var ally_dest := Vector2i(-1, -1)
-	for cell: Vector2i in candidates:
-		if cell != actor_dest:
-			ally_dest = cell
-			break
-	_move_paired_charger(board, actor, actor_dest, events)
-	if ally_dest != Vector2i(-1, -1):
-		_move_paired_charger(board, ally, ally_dest, events)
-
-
-static func _move_paired_charger(
-	board: BoardState,
-	unit: UnitState,
-	destination: Vector2i,
-	events: Array[SimEvent],
-) -> void:
-	if unit == null or unit.position == destination:
-		return
-	GridSystem.set_occupant(board, unit.position, -1)
-	var from := unit.position
-	unit.position = destination
-	GridSystem.set_occupant(board, destination, unit.id)
-	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-		"actor": unit.id,
-		"from": from,
-		"to": destination,
-		"paired_charge": true,
-	}))
 
 
 static func _resolve_target_coord(board: BoardState, action: TimelineAction) -> Vector2i:
@@ -6181,9 +6050,6 @@ static func _resolve_target_coord(board: BoardState, action: TimelineAction) -> 
 		action.ability != null
 		and (
 			_ability_has_modifier(
-				board.get_unit_by_id(action.actor_id), action.ability, &"paired_ally_charge",
-			)
-			or _ability_has_modifier(
 				board.get_unit_by_id(action.actor_id),
 				action.ability,
 				&"target_after_move_adjacent",

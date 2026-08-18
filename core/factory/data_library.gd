@@ -142,9 +142,6 @@ static func _ensure_init() -> void:
 	_universal_wait.sync_legacy_targeting()
 	_universal_wait.finalize_modular()
 
-	var _trade := _make_ability(&"swap", "Swap", 1, [_effect(GameEnums.EffectType.SWAP, 0)], 0)
-	_trade.finalize_modular()
-	
 	var c_turret = _make_construct(&"construct_turret", "Construct Turret", 50.0)
 	var c_tesla = _make_construct(&"tesla_barricade", "Tesla Barricade", 150.0)
 	var c_mine = _make_construct(&"magnetic_mine", "Magnetic Mine", 25.0)

@@ -1,5 +1,5 @@
 ﻿{
-    "generated":  "2026-08-16T23:10:09",
+    "generated":  "2026-08-17T18:22:51",
     "source":  "C:\\Users\\Kendy\\Downloads\\honor-and-iron-3\\docs\\bible_skill_alignment_audit.canvas.tsx",
     "counts":  {
                    "MATCH":  397
@@ -1165,9 +1165,9 @@
                  },
                  {
                      "cls":  "Beast Rider",
-                     "skill":  "Fetch",
+                     "skill":  "Snatch",
                      "verdict":  "MATCH",
-                     "delta":  "fetch_item_or_corpse pulls items/corpses; upgraded PULL light allies."
+                     "delta":  "Base PULL targets allies; upgraded module adds conditional enemy targeting."
                  },
                  {
                      "cls":  "Beast Rider",

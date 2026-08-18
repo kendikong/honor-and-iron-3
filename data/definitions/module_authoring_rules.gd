@@ -193,7 +193,10 @@ static func normalize_module_context_fields(
 		planner_group == GameEnums.PlannerGroup.ACTION
 		and (
 			module.primary_type == GameEnums.EffectType.PAIRED_MOVE
-			or module.paired_ally_charge
+			or (
+				module.primary_type == GameEnums.EffectType.SWAP
+				and (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
+			)
 		)
 	):
 		push_error("Ally relocation modules are legal only for PRE_MOVE movement")

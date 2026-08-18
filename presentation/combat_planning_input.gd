@@ -4341,7 +4341,7 @@ func _build_commit_slots_at_cell(
 	var awaiting_action: TimelineAction = (
 		_director.find_awaiting_action(unit_id) if has_awaiting_action else null
 	)
-	## DASH / teleport / paired-charge primary aim stays on the waypoint endpoint
+	## DASH / teleport primary aim stays on the waypoint endpoint
 	## pipeline below. MOVE skills (L-shape flanking) and TARGET_PICK keep module 0.
 	var skip_primary_endpoint_aim := false
 	if awaiting_action != null and awaiting_action.awaiting_module_index == 0:
@@ -4349,14 +4349,11 @@ func _build_commit_slots_at_cell(
 		if _is_awaiting_movement_endpoint(actor, armed):
 			var motion: AbilityModule = AbilitySystem.active_motion_module(actor, armed)
 			skip_primary_endpoint_aim = (
-				AbilitySystem.ability_has_modifier(armed, &"paired_ally_charge", actor)
-				or (
-					motion != null
-					and motion.primary_type in [
-						GameEnums.EffectType.DASH,
-						GameEnums.EffectType.TELEPORT_CASTER,
-					]
-				)
+				motion != null
+				and motion.primary_type in [
+					GameEnums.EffectType.DASH,
+					GameEnums.EffectType.TELEPORT_CASTER,
+				]
 			)
 	if (
 		awaiting_action != null
@@ -4492,14 +4489,6 @@ func _build_commit_slots_at_cell(
 							committed_target_id = _enemy_adjacent_to_attack_tile(
 								actor, ability, cell,
 							)
-					if AbilitySystem.ability_has_modifier(
-						ability, &"paired_ally_charge", actor
-					):
-						var awaiting_charge := _director.find_awaiting_action(unit_id)
-						if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
-							slots["invalid"] = "Select an allied charger first."
-							return slots
-						committed_target_id = awaiting_charge.target_unit_id
 					slots[_ability_plan_column(ability)].append(TimelineAction.make_ability(
 						unit_id,
 						ability,
@@ -4773,16 +4762,6 @@ func _build_ally_commit_slots(
 	if not AbilitySystem.target_passes_mode(actor, ability, ally):
 		slots["invalid"] = "Invalid target for this skill."
 		return slots
-	if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-		if _director.find_awaiting_action(unit_id) != null:
-			slots["invalid"] = "Select an enemy for the paired charge."
-			return slots
-		var awaiting_charge := TimelineAction.make_ability_awaiting(
-			unit_id, ability, actor.position,
-		)
-		awaiting_charge.target_unit_id = ally.id
-		slots[_ability_plan_column(ability)].append(awaiting_charge)
-		return slots
 	if AbilitySystem.ability_has_modifier(ability, &"relocate_subject_only", actor):
 		var relocate_action := TimelineAction.make_ability(
 			unit_id,
@@ -4956,8 +4935,6 @@ func _build_enemy_commit_slots(
 			),
 		)
 		return slots
-	## Paired charges preserve the selected ally in the awaiting action while the
-	## second click supplies the enemy destination.
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
 			_proj_origin(actor), enemy.position, ability,
@@ -4965,12 +4942,6 @@ func _build_enemy_commit_slots(
 			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 				ability, enemy.id,
 			)
-			if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-				var awaiting_charge := _director.find_awaiting_action(unit_id)
-				if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
-					slots["invalid"] = "Select an allied charger first."
-					return slots
-				committed_target_id = awaiting_charge.target_unit_id
 			slots["action"].append(
 				TimelineAction.make_ability(
 					unit_id,
@@ -4999,12 +4970,6 @@ func _build_enemy_commit_slots(
 		)
 		if in_range_approach == actor.position:
 			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
-			if AbilitySystem.ability_has_modifier(ability, &"paired_ally_charge", actor):
-				var awaiting_charge := _director.find_awaiting_action(unit_id)
-				if awaiting_charge == null or awaiting_charge.target_unit_id < 0:
-					slots["invalid"] = "Select an allied charger first."
-					return slots
-				committed_target_id = awaiting_charge.target_unit_id
 			slots["action"].append(
 				TimelineAction.make_ability(
 					unit_id,

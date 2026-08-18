@@ -583,7 +583,23 @@ static func run_meat_shield(failures: Array[String]) -> void:
 	var factory_ab: AbilityData = H.factory_ability(&"bruiser_meat_shield")
 	H.assert_eq_int(failures, "meat_shield/range", factory_ab.range_tiles, 1)
 	H.assert_eq_int(failures, "meat_shield/targeting", factory_ab.targeting_mode, GameEnums.TargetingMode.ALLY_UNIT)
-	H.assert_eq_int(failures, "meat_shield/intercept_duration", factory_ab.effects[1].status_duration, 1)
+	var intercept_layer: AbilityLayer = factory_ab.modules[0].layers[0]
+	H.assert_true(
+		failures,
+		"meat_shield/intercept_layer",
+		intercept_layer != null
+			and intercept_layer.effect != null
+			and intercept_layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			and intercept_layer.effect.status_duration == 1,
+		"INTERCEPT must be authored on the module layer for one turn",
+	)
+	var upgraded_intercept: AbilityLayer = factory_ab.upgraded_modules[0].layers[0]
+	H.assert_eq_int(
+		failures,
+		"meat_shield/intercept_grant_str",
+		upgraded_intercept.intercept_grant_str,
+		2,
+	)
 	H.assert_true(
 		failures, "meat_shield/not_teleport",
 		not H.ability_has_effect(factory_ab, GameEnums.EffectType.TELEPORT_CASTER, false),

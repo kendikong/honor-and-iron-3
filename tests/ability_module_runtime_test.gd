@@ -727,7 +727,9 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	var unknown_tag_payload: Dictionary = payload.duplicate(true)
 	unknown_tag_payload["tags"] = ["attack", "control"]
 	var unknown_tag_result: AbilityData = AbilityData.new()
-	ClassLibrarySchema.apply_ability_dict(unknown_tag_result, unknown_tag_payload)
+	ClassLibrarySchema.apply_ability_dict(
+		unknown_tag_result, unknown_tag_payload, false,
+	)
 	if unknown_tag_result.tags.has(&"control"):
 		failures.append("module-first JSON retained an unknown tag")
 

@@ -124,9 +124,6 @@ extends Resource
 @export var brace_attacker_stagger: int = 0
 @export var pull_until_adjacent: bool = false
 @export var pull_self_if_rooted: bool = false
-@export var paired_ally_charge: bool = false
-@export var paired_ally_strike_atk: int = 0
-@export var on_kill_both_ap: int = 0
 @export var vault_obstacle_or_gap_only: bool = false
 @export var landing_adjacent_push: int = 0
 @export var landing_adjacent_push_stagger: bool = false
@@ -546,12 +543,6 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["pull_until_adjacent"] = true
 	if pull_self_if_rooted:
 		bag["pull_self_if_rooted"] = true
-	if paired_ally_charge:
-		bag["paired_ally_charge"] = true
-	if paired_ally_strike_atk != 0:
-		bag["paired_ally_strike_atk"] = paired_ally_strike_atk
-	if on_kill_both_ap != 0:
-		bag["on_kill_both_ap"] = on_kill_both_ap
 	if vault_obstacle_or_gap_only:
 		bag["vault_obstacle_or_gap_only"] = true
 	if landing_adjacent_push != 0:
@@ -1229,15 +1220,6 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			return
 		"pull_self_if_rooted":
 			pull_self_if_rooted = bool(value)
-			return
-		"paired_ally_charge":
-			paired_ally_charge = bool(value)
-			return
-		"paired_ally_strike_atk":
-			paired_ally_strike_atk = int(value)
-			return
-		"on_kill_both_ap":
-			on_kill_both_ap = int(value)
 			return
 		"vault_obstacle_or_gap_only":
 			vault_obstacle_or_gap_only = bool(value)

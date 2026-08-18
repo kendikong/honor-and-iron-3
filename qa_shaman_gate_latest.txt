@@ -32,6 +32,8 @@ ABILITY_MODULE_CHECK: violent_collision_module_shape START
 ABILITY_MODULE_CHECK: violent_collision_module_shape PASS
 ABILITY_MODULE_CHECK: trampling_advance_module_shape START
 ABILITY_MODULE_CHECK: trampling_advance_module_shape PASS
+ABILITY_MODULE_CHECK: er1_shared_homes START
+ABILITY_MODULE_CHECK: er1_shared_homes PASS
 ABILITY_MODULE_CHECK: infer_motion_push_layer START
 ABILITY_MODULE_CHECK: infer_motion_push_layer PASS
 ABILITY_MODULE_CHECK: ability_module_runtime START
@@ -45,6 +47,12 @@ ABILITY_MODULE_SCENARIO: upgraded_module_profile START
 ABILITY_MODULE_SCENARIO: upgraded_module_profile PASS
 ABILITY_MODULE_SCENARIO: shared_module_parity START
 ABILITY_MODULE_SCENARIO: shared_module_parity PASS
+ABILITY_MODULE_SCENARIO: grant_scrap_runtime START
+ABILITY_MODULE_SCENARIO: grant_scrap_runtime PASS
+ABILITY_MODULE_SCENARIO: grant_ap_runtime START
+ABILITY_MODULE_SCENARIO: grant_ap_runtime PASS
+ABILITY_MODULE_SCENARIO: hazard_spawn_runtime START
+ABILITY_MODULE_SCENARIO: hazard_spawn_runtime PASS
 ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START
 ABILITY_MODULE_SCENARIO: reposition_skills_ally_only PASS
 ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START
@@ -77,16 +85,6 @@ ABILITY_MODULE_CHECK: compatibility_reader_boundary PASS
 ABILITY_MODULE_CHECK: ability_formatter_audit START
 ABILITY_MODULE_CHECK: ability_formatter_audit PASS
 ABILITY_MODULE_BRIDGE_TEST: PASS
-WARNING: Ability JSON rejected unknown tag: control
-   at: push_warning (core/variant/variant_utility.cpp:1033)
-   GDScript backtrace (most recent call first):
-       [0] _canonical_tags_from_variant (res://ui/class_library_schema.gd:2426)
-       [1] apply_ability_dict (res://ui/class_library_schema.gd:2358)
-       [2] _test_schema_module_round_trip (res://tests/ability_module_runtime_test.gd:544)
-       [3] run_all (res://tests/ability_module_runtime_test.gd:50)
-       [4] _run_script_check (res://tests/ability_module_bridge_runner.gd:96)
-       [5] run_all (res://tests/ability_module_bridge_runner.gd:29)
-       [6] _initialize (res://tests/run_ability_module_bridge_test.gd:10)
 --- Typed conversion contracts: PASS ---
 
 === AOE footprint contract (all classes) ===

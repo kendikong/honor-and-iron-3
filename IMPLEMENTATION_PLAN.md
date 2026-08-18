@@ -479,6 +479,8 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] `shaman_terrify`
 - [x] `shaman_miasma`
 - [x] `shaman_bone_spear`
+- [x] `shaman_ancestral_spirit`
+- [x] `shaman_totem_guard`
 - [x] `shaman_sympathetic_bond`
 - [x] `shaman_soul_siphon`
 - [x] `shaman_pain_spike`

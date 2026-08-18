@@ -10,7 +10,6 @@ static func run_all(failures: Array[String]) -> void:
 	source.next_ranged_attack_strength = 2
 	source.allies_pierce = true
 	source.trap_def_debuff = 2
-	source.paired_ally_charge = true
 	source.bonus_per_enemy_passed = 1
 	source.create_trampled_terrain = true
 	source.vault_obstacle_or_gap_only = true
@@ -233,7 +232,6 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "next_ranged_attack_strength", restored.next_ranged_attack_strength == 2)
 	_assert(failures, "allies_pierce", restored.allies_pierce)
 	_assert(failures, "trap_def_debuff", restored.trap_def_debuff == 2)
-	_assert(failures, "paired_ally_charge", restored.paired_ally_charge)
 	_assert(failures, "bonus_per_enemy_passed", restored.bonus_per_enemy_passed == 1)
 	_assert(failures, "create_trampled_terrain", restored.create_trampled_terrain)
 	_assert(failures, "vault_obstacle_or_gap_only", restored.vault_obstacle_or_gap_only)

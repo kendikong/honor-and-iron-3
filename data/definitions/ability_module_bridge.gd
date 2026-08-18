@@ -123,7 +123,10 @@ static func validate_modules(
 			planner_group == GameEnums.PlannerGroup.ACTION
 			and (
 				module.primary_type == GameEnums.EffectType.PAIRED_MOVE
-				or module.paired_ally_charge
+				or (
+					module.primary_type == GameEnums.EffectType.SWAP
+					and (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
+				)
 			)
 		):
 			errors.append("module %d ally relocation is legal only in PRE_MOVE" % index)

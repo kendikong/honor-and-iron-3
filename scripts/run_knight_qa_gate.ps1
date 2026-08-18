@@ -130,6 +130,30 @@ if (-not (Test-Path $GodotPath)) {
 	exit 0
 }
 
+Write-Output "=== Typed module conversion contracts ==="
+foreach ($typedContract in @(
+	"res://tests/run_extra_rules_conversion_contract.gd",
+	"res://tests/run_class_library_schema_typed_fields_test.gd"
+)) {
+	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
+	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-knight-$contractTag.stdout.log")
+	$contractStderr = Join-Path $env:TEMP ("honor-and-iron-knight-$contractTag.stderr.log")
+	$contractProcess = Start-Process -FilePath $GodotPath `
+		-ArgumentList @("--headless", "--path", $projectRoot, "--script", $typedContract) `
+		-RedirectStandardOutput $contractStdout `
+		-RedirectStandardError $contractStderr `
+		-Wait -PassThru
+	$contractExit = $contractProcess.ExitCode
+	if (Test-Path $contractStdout) { Get-Content -Path $contractStdout }
+	if (Test-Path $contractStderr) { Get-Content -Path $contractStderr }
+	if ($contractExit -ne 0) {
+		Write-Output "[FAIL] Typed contract failed: $typedContract (exit $contractExit)"
+		exit 5
+	}
+}
+Write-Output "--- Typed module conversion contracts: PASS ---"
+Write-Output ""
+
 Write-Output "=== AOE footprint contract (all classes) ==="
 $aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
 & $aoeGate -GodotPath $GodotPath
@@ -176,13 +200,28 @@ if ($harnessPass) {
 }
 
 Write-Output ""
+Write-Output "=== Tier 2: live Knight acceptance ==="
+$liveScript = Join-Path $PSScriptRoot "run_knight_live_qa.ps1"
+if (-not (Test-Path $liveScript)) {
+	Write-Output "[FAIL] Missing Tier 2 runner: $liveScript"
+	exit 4
+}
+& $liveScript -GodotPath $GodotPath
+$liveExit = $LASTEXITCODE
+if ($liveExit -ne 0) {
+	Write-Output "[FAIL] Tier 2 live Knight QA exit $liveExit"
+	exit $liveExit
+}
+Write-Output "--- Tier 2 live: PASS ---"
+
+Write-Output ""
 Write-Output "=== Knight QA gate summary ==="
 if (-not $matrixPassValid) {
 	Write-Output "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch). Fix docs or update manifest via gauntlet-critic only."
 	exit 3
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-Output "[PASS] Knight QA gate: matrix 100% PASS + Tier 1 harness PASS."
+	Write-Output "[PASS] Knight QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS."
 	exit 0
 }
 

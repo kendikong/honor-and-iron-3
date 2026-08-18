@@ -1,7 +1,0 @@
-powershell.exe : WARNING: 56 ObjectDB instances were leaked at exit (run with `--verbose` for details).
-At C:\Users\Kendy\Downloads\honor-and-iron-3\scripts\run_full_qa.ps1:31 char:1
-+ & powershell.exe -NoProfile -File $regression -GodotPath $GodotPath 2 ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (WARNING: 56 Obj...` for details).:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 

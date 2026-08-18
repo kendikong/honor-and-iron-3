@@ -110,6 +110,38 @@ func test_live_shaman_every_skill(timeout := 600000) -> void:
 		assert_bool(_plan_has_ability(director, ability_id)).override_failure_message(
 			"%s: commit did not ratify preview intent plan=[%s]" % [ability_id, _plan_debug(director)],
 		).is_true()
+		if ability_id == &"shaman_totem_guard":
+			var guard_result: SimResult = Simulator.simulate(
+				director.base_board, director.get_player_plan(),
+			)
+			var simulated_caster := guard_result.final_state.get_unit_by_id(actor_id)
+			assert_object(simulated_caster).override_failure_message(
+				"Totem Guard simulation lost its caster",
+			).is_not_null()
+			var expected_reduction: int = (
+				floori(simulated_caster.current_magic / 2.0)
+				if simulated_caster != null else -1
+			)
+			var found_guard_totem := false
+			for spawned: UnitState in guard_result.final_state.units:
+				if (
+					spawned != null
+					and spawned.passive_flags.get("shaman_totem_kind", &"") == &"guard"
+					and int(spawned.passive_flags.get("shaman_totem_owner_id", -1)) == actor_id
+				):
+					found_guard_totem = true
+					assert_int(
+						int(spawned.passive_flags.get("shaman_guard_ranged_reduction", -1)),
+					).override_failure_message(
+						"Totem Guard live plan must use Floor(MAG / 2); actual=%s expected=%s"
+						% [
+							int(spawned.passive_flags.get("shaman_guard_ranged_reduction", -1)),
+							expected_reduction,
+						],
+					).is_equal(expected_reduction)
+			assert_bool(found_guard_totem).override_failure_message(
+				"Totem Guard live plan did not spawn its guard totem",
+			).is_true()
 
 
 func _dummy_coords_for(ability_id: StringName) -> Array[Vector2i]:

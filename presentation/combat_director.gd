@@ -436,17 +436,8 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 				continue
 			if awaiting.ability.id != action.ability.id:
 				continue
-			var armed_target_unit_id: int = awaiting.target_unit_id
 			awaiting.target_coord = action.target_coord
 			awaiting.target_unit_id = action.target_unit_id
-			if (
-				awaiting.target_unit_id < 0
-				and armed_target_unit_id >= 0
-				and AbilitySystem.ability_has_modifier(
-					action.ability, &"paired_ally_charge",
-				)
-			):
-				awaiting.target_unit_id = armed_target_unit_id
 			awaiting.waypoints = action.waypoints.duplicate()
 			awaiting.face_dir = action.face_dir
 			if not action.module_target_coords.is_empty():
@@ -794,14 +785,6 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> Strin
 			sim_action = awaiting.clone()
 			sim_action.target_coord = action.target_coord
 			sim_action.target_unit_id = action.target_unit_id
-			if (
-				sim_action.target_unit_id < 0
-				and awaiting.target_unit_id >= 0
-				and AbilitySystem.ability_has_modifier(
-					sim_action.ability, &"paired_ally_charge",
-				)
-			):
-				sim_action.target_unit_id = awaiting.target_unit_id
 			sim_action.waypoints = action.waypoints.duplicate()
 			sim_action.face_dir = action.face_dir
 			if not action.module_target_coords.is_empty():

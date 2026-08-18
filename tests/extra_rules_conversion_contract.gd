@@ -467,14 +467,8 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.pull_until_adjacent
 		"pull_self_if_rooted":
 			return module.pull_self_if_rooted
-		"paired_ally_charge":
-			return module.paired_ally_charge
-		"paired_ally_strike_atk":
-			return module.paired_ally_strike_atk != 0
 		"line_breaker":
 			return module.line_breaker
-		"on_kill_both_ap":
-			return module.on_kill_both_ap != 0
 		"vault_obstacle_or_gap_only":
 			return module.vault_obstacle_or_gap_only
 		"landing_adjacent_push":
@@ -732,8 +726,6 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.strip_stealth
 		"object_collision_stagger":
 			return layer.object_collision_stagger
-		"enemy_collision_stagger_both":
-			return layer.enemy_collision_stagger_both
 		"weapon_scaled":
 			return layer.weapon_scaled
 		"buff_per_destroyed_object":
@@ -872,8 +864,6 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return not is_zero_approx(module.ghost_hp_pct)
 		"echo_upgraded":
 			return module.echo_upgraded
-		"ranged_reduction":
-			return module.ranged_reduction != 0
 		"melee_def":
 			return module.melee_def != 0
 		"sympathetic_bond":

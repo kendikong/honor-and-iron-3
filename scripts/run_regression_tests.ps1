@@ -10,6 +10,7 @@ if (-not (Test-Path $GodotPath)) {
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $resultPath = Join-Path $env:APPDATA "Godot\app_userdata\Honor and Iron 3\regression_test_result.txt"
+$diagnosticPath = Join-Path $projectRoot "reports\regression_latest.stderr.txt"
 
 if (Test-Path $resultPath) {
 	Remove-Item $resultPath -Force
@@ -31,7 +32,14 @@ if ($regressionExit -eq 130) {
 	exit 130
 }
 if (Test-Path $stdoutPath) { Get-Content $stdoutPath }
-if (Test-Path $stderrPath) { Get-Content $stderrPath }
+if (Test-Path $stderrPath) {
+	$diagnosticDir = Split-Path -Parent $diagnosticPath
+	if (-not (Test-Path $diagnosticDir)) {
+		New-Item -ItemType Directory -Path $diagnosticDir -Force | Out-Null
+	}
+	Get-Content $stderrPath | Set-Content -Path $diagnosticPath -Encoding UTF8
+	Write-Output "[QA] Regression diagnostics saved to reports/regression_latest.stderr.txt"
+}
 
 $report = @()
 $complete = $false

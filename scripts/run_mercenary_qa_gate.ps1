@@ -215,13 +215,28 @@ if (-not $harnessPass) {
 Write-GateLine "--- Tier 1 harness: PASS ---"
 
 Write-GateLine ""
+Write-GateLine "=== Tier 2: live Mercenary acceptance ==="
+$liveScript = Join-Path $PSScriptRoot "run_mercenary_live_qa.ps1"
+if (-not (Test-Path $liveScript)) {
+	Write-GateLine "[FAIL] Missing Tier 2 runner: $liveScript"
+	Exit-Gate 4
+}
+& $liveScript -GodotPath $GodotPath
+$liveExit = $LASTEXITCODE
+if ($liveExit -ne 0) {
+	Write-GateLine "[FAIL] Tier 2 live Mercenary QA exit $liveExit"
+	Exit-Gate $liveExit
+}
+Write-GateLine "--- Tier 2 live: PASS ---"
+
+Write-GateLine ""
 Write-GateLine "=== Mercenary QA gate summary ==="
 if (-not $matrixPassValid) {
 	Write-GateLine "[FAIL] Matrix contains self-graded PASS rows (manifest mismatch)."
 	Exit-Gate 3
 }
 if ($passRows.Count -eq $requiredFactoryIds.Count) {
-	Write-GateLine "[PASS] Mercenary Tier 1: factory, modular upgrades, Simulator, and per-row scenarios"
+	Write-GateLine "[PASS] Mercenary QA gate: matrix + typed contracts + Tier 1 harness + Tier 2 live PASS"
 	Exit-Gate 0
 }
 
