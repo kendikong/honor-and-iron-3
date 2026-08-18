@@ -3287,6 +3287,10 @@ static func _test_selecting_unit_keeps_movement_points(failures: Array[String]) 
 		return
 	var expected_mp: int = before.movement.points_left
 	PlanningChecklistHarness.select_unit(fix, k2_id, PlanningChecklistHarness.K2_CELL)
+	if fix.input.is_live_preview_active():
+		failures.append(
+			"PlanningQAGate selection_is_mp_read_only: selecting a unit retained stale live preview",
+		)
 	var projected: UnitState = PlanningChecklistHarness.projected_unit(fix, k2_id)
 	if projected == null or projected.movement.points_left != expected_mp:
 		failures.append(

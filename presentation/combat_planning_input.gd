@@ -877,6 +877,7 @@ func _on_selection_changed(unit_id: int) -> void:
 			_planning._recompute_hover_ranges_from_inputs()
 		return
 	if not dragging and not _drag_armed:
+		_restore_hover_preview()
 		_drag_route.clear()
 		_drag_unit_id = unit_id
 	_play_sfx("select")
