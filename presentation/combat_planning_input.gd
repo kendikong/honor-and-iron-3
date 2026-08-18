@@ -1162,8 +1162,15 @@ func on_hover_moved(cell: Vector2i) -> void:
 					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
 				)
 			)
-			var allow_hover_paint: bool = is_awaiting_move or dragging or (
-				not move_already_planned and _basic_move_allowed()
+			## TARGET_PICK (Volley / TILE aim) is not a walk. Painted corridors would
+			## live-preview and commit a premove while the skill is still aiming.
+			var allow_hover_paint: bool = (
+				not _awaiting_target_pick_blocks_premove()
+				and (
+					is_awaiting_move
+					or dragging
+					or (not move_already_planned and _basic_move_allowed())
+				)
 			)
 			var should_extend_route: bool = planning_cell_changed
 			if (
@@ -1614,8 +1621,10 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_click_target_highlight()
 		return
 	## K4 / auto_run: selection-hover painted route is pre-move intent while class skill stays armed.
+	## TARGET_PICK awaiting is tile aim, not a walk — leftover paint must not preview MOVE.
 	if (
-		_drag_route_commits_active()
+		not _awaiting_target_pick_blocks_premove()
+		and _drag_route_commits_active()
 		and _drag_unit_id == p_unit.id
 		and _unit_move_slot_open(p_unit.id)
 		and _director.board.is_in_bounds(cell)
@@ -1672,6 +1681,8 @@ func _refresh_selected_interaction_preview() -> void:
 
 func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 	if p_unit == null or cell == p_unit.position:
+		return false
+	if _awaiting_target_pick_blocks_premove():
 		return false
 	if _director != null and _director.board != null:
 		var occ: UnitState = _director.board.get_unit_at(cell)
@@ -2950,6 +2961,8 @@ func _move_slot_timing_for_commit(unit_id: int, actor: UnitState, cell: Vector2i
 
 
 func _basic_move_allowed() -> bool:
+	if _awaiting_target_pick_blocks_premove():
+		return false
 	if _director != null and _director.selected_unit_id >= 0:
 		if selected_phase_action_exhausted(_director.selected_unit_id):
 			return false
@@ -3259,6 +3272,27 @@ func _enemy_adjacent_to_attack_tile(
 		):
 			return unit.id
 	return -1
+
+
+## TILE / TARGET_PICK awaiting is skill aim. Walk hover, walk preview, and walk
+## commit stay off until that pick finishes (or the awaiting action is cleared).
+func _awaiting_target_pick_blocks_premove() -> bool:
+	if not awaiting_targeting_active() or _director == null:
+		return false
+	var actor := _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		return false
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	var ability: AbilityData = awaiting.ability if awaiting != null else _selected_ability_data(actor)
+	if ability == null:
+		return false
+	var module_index: int = 0
+	if awaiting != null and awaiting.awaiting_module_index >= 0:
+		module_index = awaiting.awaiting_module_index
+	return (
+		AbilitySystem.planning_awaiting_phase_for_module(actor, ability, module_index)
+		== GameEnums.PlanningAwaitingPhase.TARGET_PICK
+	)
 
 
 func _is_awaiting_movement_endpoint(actor: UnitState, ability: AbilityData) -> bool:

@@ -97,6 +97,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hook_out_of_range_enemy_hover_invalid,
 		_test_volley_awaiting_hover_damage_and_targeting_arrow,
 		_test_volley_hover_damage_survives_board_changed,
+		_test_tile_targeting_forbids_premove,
 		_test_bash_hover_keeps_targeting_arrow,
 	]
 	var names: PackedStringArray = [
@@ -179,6 +180,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_out_of_range_null",
 		"volley_hover_damage_arrow",
 		"volley_hover_board_changed",
+		"tile_aim_forbids_premove",
 		"bash_hover_targeting_arrow",
 	]
 	for i: int in range(tests.size()):
@@ -408,6 +410,14 @@ static func _slots_invalid(slots: Dictionary) -> bool:
 	if flag is String:
 		return not (flag as String).is_empty()
 	return bool(flag)
+
+
+static func _slots_have_move(slots: Dictionary) -> bool:
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				return true
+	return false
 
 
 static func _hook_committed_approach_fixture() -> Dictionary:
@@ -3251,6 +3261,88 @@ static func _test_volley_hover_damage_survives_board_changed(failures: Array[Str
 	if overlay.targeting_intent_arrow_cells().size() < 2:
 		failures.append(
 			"PlanningQAGate volley_hover_board_changed: targeting arrow must survive board_changed",
+		)
+
+
+static func _test_tile_targeting_forbids_premove(failures: Array[String]) -> void:
+	## TARGET_PICK TILE aim (Volley) must not paint, preview, or slot a walk.
+	## Knight Bash/Hook/Trample fixtures never arm this phase, so they cannot catch it.
+	var archer_pos := Vector2i(4, 5)
+	var empty_step := Vector2i(5, 5)
+	var empty_aim := Vector2i(6, 5)
+	var enemy_pos := Vector2i(7, 5)
+	var fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	input._drag_unit_id = 1
+	input._drag_route = [archer_pos, empty_step]
+	director.set_awaiting_action(1, fix.volley)
+	if director.has_method("flush_plan_refresh_signals_if_pending"):
+		director.flush_plan_refresh_signals_if_pending()
+	if not input.awaiting_targeting_active():
+		failures.append("PlanningQAGate tile_aim_forbids_premove: Volley must be awaiting TARGET_PICK")
+		return
+	if not input._awaiting_target_pick_blocks_premove():
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TARGET_PICK must block basic walk/premove",
+		)
+		return
+	input.on_hover_moved(empty_step)
+	input.on_hover_moved(empty_aim)
+	if input._drag_route.size() >= 2:
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TILE aim hover must not paint a walk corridor (route %s)"
+			% str(input._drag_route),
+		)
+	if input.interaction_move_hover_active(1, empty_aim):
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TILE aim hover must not use movement hover route",
+		)
+	if not overlay.get_hover_move_tiles().is_empty():
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: blue walk tiles must hide during TILE targeting",
+		)
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.preview_board == null:
+		failures.append("PlanningQAGate tile_aim_forbids_premove: live TILE aim preview missing")
+		return
+	var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+	if live_archer == null or live_archer.position != archer_pos:
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TILE aim preview must not walk the caster (stand %s, got %s)"
+			% [str(archer_pos), str(live_archer.position if live_archer != null else Vector2i(-1, -1))],
+		)
+	var walk_path: Array = live.preview_paths.get(1, [])
+	if walk_path.size() >= 2:
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TILE aim must not preview a walk path (got %s)"
+			% str(walk_path),
+		)
+	var hover_slots: Dictionary = _commit_slots_at(input, 1, empty_aim)
+	if _slots_have_move(hover_slots):
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: hover/commit slots must not include MOVE during TILE aim",
+		)
+	var click_slots: Dictionary = _click_slots_at(input, 1, empty_aim)
+	if _slots_have_move(click_slots):
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: click slots must not include MOVE during TILE aim",
+		)
+	if director.plan_pre_move.size() > 0:
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: TILE aim hover must not commit a pre-move",
+		)
+	input.on_hover_moved(enemy_pos)
+	live = overlay.get_live_preview()
+	if live == null or live.forecast == null or live.forecast.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: enemy TILE hover must still forecast skill damage",
+		)
+	var enemy_slots: Dictionary = _click_slots_at(input, 1, enemy_pos)
+	if _slots_have_move(enemy_slots):
+		failures.append(
+			"PlanningQAGate tile_aim_forbids_premove: enemy TILE click must not slot a walk",
 		)
 
 
