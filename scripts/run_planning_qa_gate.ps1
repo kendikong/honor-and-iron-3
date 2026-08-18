@@ -28,7 +28,8 @@ if ($IncludeLegacyTier12) {
 		exit 130
 	}
 	Get-Content $stdoutPath
-	Get-Content $stderrPath
+	# Keep diagnostics in the temp stderr log; gate output remains structured
+	# while pass/fail evaluation still reads both streams.
 
 	$testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
 	$scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '(^|\s)SCRIPT ERROR:' | ForEach-Object { $_.Line })
