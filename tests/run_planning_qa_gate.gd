@@ -27,6 +27,7 @@ func _run_gate() -> void:
 		{"name": "action_range_regression", "path": "res://tests/action_range_regression_test.gd"},
 		{"name": "qa_checklist", "path": "res://tests/planning_qa_gate_test.gd"},
 		{"name": "intent_contract_e2e", "path": "res://tests/planning_intent_contract_e2e_test.gd"},
+		{"name": "intent_source_of_truth", "path": "res://tests/intent_source_of_truth_gate_test.gd"},
 	]
 	for suite: Dictionary in suites:
 		print("[SUITE] %s" % suite.name)

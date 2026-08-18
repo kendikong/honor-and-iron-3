@@ -2355,24 +2355,8 @@ func _post_target_from_slots(slots: Dictionary) -> Vector2i:
 
 
 func _intent_slot_signature(slots: Dictionary) -> String:
-	var pre_wps: String = "[]"
-	var pre: Array = slots.get("pre", []) as Array
-	if not pre.is_empty() and pre[0] is TimelineAction:
-		pre_wps = str((pre[0] as TimelineAction).waypoints)
-	var action_ability: String = ""
-	var action_steps: Array = slots.get("action", []) as Array
-	if not action_steps.is_empty() and action_steps[0] is TimelineAction:
-		var act: TimelineAction = action_steps[0] as TimelineAction
-		action_ability = str(act.ability.id) if act.ability != null else ""
-	var post_count: int = (slots.get("post", []) as Array).size()
-	return "%s|%s|%s|%s|%d|%s" % [
-		str(_pre_target_from_slots(slots)),
-		pre_wps,
-		str(_action_target_unit_from_slots(slots)),
-		action_ability,
-		post_count,
-		str(_slots_invalid(slots)),
-	]
+	## Canonical format owner is PlanningQAGateTest. Live twins must not drift.
+	return PlanningQAGateTest._intent_slot_signature(slots)
 
 
 func _commit_slots_for_interaction(

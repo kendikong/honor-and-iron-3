@@ -2177,6 +2177,39 @@ static func _intent_slot_signature_from_timeline(director: CombatDirector, unit_
 	return _intent_slot_signature(slots)
 
 
+static func _sim_result_signature(result: SimResult) -> String:
+	var unit_parts: PackedStringArray = PackedStringArray()
+	if result != null and result.final_state != null:
+		var ids: Array[int] = []
+		for unit: UnitState in result.final_state.units:
+			ids.append(unit.id)
+		ids.sort()
+		for unit_id: int in ids:
+			var unit: UnitState = result.final_state.get_unit_by_id(unit_id)
+			if unit == null:
+				continue
+			var ap_left: int = unit.ability.points_left if unit.ability != null else 0
+			var mp_left: int = unit.movement.points_left if unit.movement != null else 0
+			unit_parts.append(
+				"%s@%d,%d:ap%s:mp%s"
+				% [
+					str(unit.id),
+					unit.position.x,
+					unit.position.y,
+					str(ap_left),
+					str(mp_left),
+				]
+			)
+	var event_parts: PackedStringArray = PackedStringArray()
+	if result != null:
+		for event: SimEvent in result.events:
+			event_parts.append(event.describe())
+	return "units=%s||events=%s" % [
+		";".join(unit_parts),
+		";".join(event_parts),
+	]
+
+
 static func _test_drag_drop_commit_undo_clears_plan(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
 	_wire_click_drop_context(fix)
