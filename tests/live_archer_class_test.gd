@@ -323,6 +323,87 @@ func test_live_second_archer_complex_turn_after_volley(timeout := 240000) -> voi
 	).is_greater_equal(4)
 
 
+func test_live_selection_after_committed_archer_actions(timeout := 240000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"archer"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"archer", false)
+	session.set_all_skills_enabled(&"archer", true)
+	session.extra_player_coords = [_COMPLEX_SECOND_ARCHER_CELL]
+	session.dummy_coords = [
+		_COMPLEX_VOLLEY_AIM,
+		Vector2i(6, 4),
+		Vector2i(7, 5),
+		_COMPLEX_POWER_TARGET,
+	]
+	session.unkillable_dummies = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	var first_id: int = _unit_id_at(_director.base_board, _ACTOR_CELL)
+	var second_id: int = _unit_id_at(_director.base_board, _COMPLEX_SECOND_ARCHER_CELL)
+	var enemy_id: int = _unit_id_at(_director.base_board, _COMPLEX_VOLLEY_AIM)
+	assert_int(first_id).override_failure_message(
+		"selection regression: first Archer missing",
+	).is_greater(0)
+	assert_int(second_id).override_failure_message(
+		"selection regression: second Archer missing",
+	).is_greater(0)
+	assert_int(enemy_id).override_failure_message(
+		"selection regression: enemy missing",
+	).is_greater(0)
+	if first_id < 0 or second_id < 0 or enemy_id < 0:
+		return
+
+	var first: UnitState = _director.board.get_unit_by_id(first_id)
+	var volley: AbilityData = _ability_by_id(first, &"archer_volley")
+	assert_object(volley).override_failure_message(
+		"selection regression: Volley missing",
+	).is_not_null()
+	if volley == null:
+		return
+
+	# Commit Archer 1 through the existing slot fixture, then use real clicks
+	# for the selection sequence that previously required enemy → Archer 2.
+	_director.select_unit(first_id)
+	_director.select_ability(_ability_index(first, volley))
+	await runner.simulate_frames(2, _DELTA_MS)
+	var volley_slots: Dictionary = await _commit_live_click(
+		runner, first_id, _COMPLEX_VOLLEY_AIM,
+	)
+	assert_bool(_slots_invalid(volley_slots)).override_failure_message(
+		"selection regression: Volley commit rejected",
+	).is_false()
+	var first_mp: int = _director.projected_state.get_unit_by_id(first_id).movement.points_left
+	var second_mp: int = _director.projected_state.get_unit_by_id(second_id).movement.points_left
+
+	await _actual_click_cell(runner, _COMPLEX_VOLLEY_AIM)
+	assert_int(_director.selected_unit_id).override_failure_message(
+		"selection regression: enemy click did not select committed target",
+	).is_equal(enemy_id)
+	await _actual_click_cell(runner, _COMPLEX_SECOND_ARCHER_CELL)
+	assert_int(_director.selected_unit_id).override_failure_message(
+		"selection regression: enemy → second Archer click failed",
+	).is_equal(second_id)
+	_assert_projected_mp_unchanged(first_id, first_mp, "after enemy → second Archer")
+	_assert_projected_mp_unchanged(second_id, second_mp, "after enemy → second Archer")
+
+
 func _run_live_batch(runner: GdUnitSceneRunner, skill_ids: Array) -> void:
 	var session: TestBattleSession = _scene.get_session()
 	session.reset_defaults()
@@ -536,6 +617,31 @@ func _commit_live_click(
 	_input.clear_qa_pointer_override()
 	await runner.simulate_frames(2, _DELTA_MS)
 	return slots
+
+
+func _actual_click_cell(runner: GdUnitSceneRunner, cell: Vector2i) -> void:
+	_input.set_qa_pointer_grid_cell(cell)
+	_input.on_hover_moved(cell)
+	await runner.simulate_frames(2, _DELTA_MS)
+	var local: Vector2 = _input._mouse_local_for_facing()
+	_input.on_left_press(local)
+	await runner.simulate_frames(2, _DELTA_MS)
+	_input.on_left_release(local)
+	_director.flush_plan_refresh_signals_if_pending()
+	_input.clear_qa_pointer_override()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+
+func _assert_projected_mp_unchanged(unit_id: int, expected: int, label: String) -> void:
+	var unit: UnitState = _director.projected_state.get_unit_by_id(unit_id)
+	assert_object(unit).override_failure_message(
+		"%s: unit %d projected state missing" % [label, unit_id],
+	).is_not_null()
+	if unit != null:
+		assert_int(unit.movement.points_left).override_failure_message(
+			"%s: unit %d MP changed during selection %d -> %d"
+			% [label, unit_id, expected, unit.movement.points_left],
+		).is_equal(expected)
 
 
 func _case(skill_id: StringName) -> Dictionary:

@@ -210,7 +210,10 @@ func on_left_press(local: Vector2) -> void:
 	if unit != null and unit.is_enemy():
 		var sel := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
 		if sel != null and not sel.is_enemy():
-			if selected_phase_action_exhausted(sel.id):
+			if (
+				_director.unit_has_wait_planned(sel.id)
+				or _director.unit_has_committed_class_action(sel.id)
+			):
 				_director.select_unit(unit.id)
 			else:
 				_commit_at_interaction_cell(
@@ -287,6 +290,15 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 	_drag_move_commit_instant = had_movement
 	_flush_drag_preview_refresh()
 	var released_unit_id: int = _drag_unit_id
+	var clicked_unit: UnitState = _unit_at_input_cell(_pointer_grid_cell())
+	if (
+		clicked_unit != null
+		and clicked_unit.id == released_unit_id
+		and not _drag_unit_was_selected
+	):
+		_director.select_unit(released_unit_id)
+		_drag_move_commit_instant = false
+		return false
 	if selected_phase_action_exhausted(released_unit_id):
 		_play_sfx("invalid")
 		_drag_move_commit_instant = false
@@ -673,6 +685,9 @@ func is_drag_armed() -> bool:
 
 func _arm_drag(unit: UnitState, local: Vector2, was_already_selected: bool) -> void:
 	if selected_phase_action_exhausted(unit.id):
+		if not was_already_selected:
+			_director.select_unit(unit.id)
+			return
 		_play_sfx("invalid")
 		return
 	_cancel_drag_armed()
