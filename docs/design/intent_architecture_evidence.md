@@ -139,6 +139,11 @@ The default planning gate must retain every item below; removing any one is a re
 - [x] Blue movement tiles, red action-range tiles, and cursor/icon state are checked from the same intent.
 - [x] Real pointer hover → real pointer click commits the captured hover intent without rebuilding it.
 - [x] Committed timeline signature and `Simulator` result match the hovered intent.
+- [x] **Before commit:** every premove route, waypoint, stand, approach, facing, target, ability, affected tile set, economy result, and action metadata equals the last valid move preview.
+- [x] **At commit:** click only ratifies the captured finalized slots; it never rebuilds, corrects, normalizes, or reinterprets the displayed premove.
+- [x] **After commit:** committed timeline entries preserve the exact preview signature, including all premove waypoints and paired action metadata.
+- [x] **During execution:** `Simulator` movement, facing, target resolution, affected tiles, damage, displacement, statuses, terrain, AP/MP consumption, and event order equal the preview prediction.
+- [x] **No heuristic divergence:** any preview → slots → timeline → Simulator mismatch fails immediately; “close enough” final-state checks do not pass.
 - [x] Invalid hover clears/rejects intent and cannot turn a Sidestep hover into an unrelated ranged attack.
 - [x] Three sideflanking, full-MP waypoint premoves are followed by real enemy hover for ranged attack and tile AOE.
 - [x] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
