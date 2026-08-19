@@ -127,6 +127,22 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | After canonical movement-leg assertion fix. AOE + headless contracts + T3 mimic. |
 | 2026-08-18 | `.\scripts\run_planning_headless_contracts.ps1` | **PASS** | Added `waypoint_premove_enemy_hover_full_truth`: three side-flanking four-step routes exhaust MP, then simulated mouse hover over an out-of-range enemy. Each case checks hover path/stand/damage, finalized slots, pulsing timeline ghost, click-slot parity, and Simulator movement + damage. |
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Enemy-hover regression now uses the real headless `on_hover_moved` → `on_left_press` path. Valid hover slots are captured with unit/cell/target identity and committed without recomputation; pending ghost comparison includes full route metadata. |
+| 2026-08-18 | `.\scripts\run_planning_headless_contracts.ps1` | **PASS** | Expanded the checklist with three full-MP sideflanking premoves for Power Shot and Volley, three exhausted-MP Sidestep enemy-hover rejection cases, and two valid Sidestep post-premove cases. Each valid case checks path, latest stand, target/ability, facing semantics, affected tiles where applicable, blue/red tiles, cursor parity, finalized slots, pulsing ghost, real click ratification, and Simulator outcome. |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Final headless-only gate: AOE footprint contract, PlanningQaGate, and T3 fixture parity all pass. No live TestBattle/F5 runner was used. |
+
+## 8.1 Headless planning acceptance checklist
+
+The default planning gate must retain every item below; removing any one is a regression:
+
+- [x] Valid hover produces finalized slot data and a faded/flashing timeline ghost.
+- [x] Preview path, latest stand, approach route, target, ability, facing semantics, and affected footprint match the finalized slots.
+- [x] Blue movement tiles, red action-range tiles, and cursor/icon state are checked from the same intent.
+- [x] Real pointer hover → real pointer click commits the captured hover intent without rebuilding it.
+- [x] Committed timeline signature and `Simulator` result match the hovered intent.
+- [x] Invalid hover clears/rejects intent and cannot turn a Sidestep hover into an unrelated ranged attack.
+- [x] Three sideflanking, full-MP waypoint premoves are followed by real enemy hover for ranged attack and tile AOE.
+- [x] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
+- [x] Re-hover, ability switching, premoves, ranged approaches, tile targeting, and enemy-hover transitions remain covered by the existing suite.
 
 ## 9. Slice close
 

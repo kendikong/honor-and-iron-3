@@ -105,6 +105,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_bash_hover_keeps_targeting_arrow,
 		_test_waypoint_premove_enemy_hover_full_truth,
 		_test_sidestep_enemy_click_ratifies_move_preview,
+		_test_sidestep_valid_tile_after_waypoint_premove,
 		_test_waypoint_premove_then_tile_aoe_enemy_hover,
 	]
 	var names: PackedStringArray = [
@@ -192,6 +193,7 @@ static func run_all(failures: Array[String]) -> void:
 		"bash_hover_targeting_arrow",
 		"waypoint_premove_enemy_hover_full_truth",
 		"sidestep_enemy_click_ratifies_move",
+		"sidestep_valid_tile_after_waypoint_premove",
 		"waypoint_tile_aoe_enemy_hover",
 	]
 	for i: int in range(tests.size()):
@@ -3615,6 +3617,9 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 				% [label, str(input._drag_route), str(route)],
 			)
 			continue
+		var blue_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+		if not blue_tiles.has(route[1]):
+			failures.append("%s: blue movement tiles must include first premove waypoint" % label)
 
 		## This is the real hover boundary: leave the final waypoint and move
 		## the simulated mouse onto the enemy, where the preview must recompose
@@ -3662,6 +3667,22 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 			)
 		if hover_skill == null or hover_skill.ability != power_shot or hover_skill.target_unit_id != 2:
 			failures.append("%s: hover action must target enemy with Power Shot" % label)
+		if hover_skill != null and live_archer != null:
+			var expected_face: int = PhysicsSystem.facing_from_vector(enemy_cell - route.back())
+			if live_archer.facing != expected_face:
+				failures.append("%s: preview facing %d != target-facing %d" % [
+					label, live_archer.facing, expected_face,
+				])
+			if hover_skill.face_dir != -1 and hover_skill.face_dir != expected_face:
+				failures.append("%s: explicit slot facing %d != target-facing %d" % [
+					label, hover_skill.face_dir, expected_face,
+				])
+		var hover_icon: String = input.compute_hover_action_icon(enemy_cell)
+		var slot_icon: String = input._cursor_icon_from_commit_slots(hover_slots, fix.archer)
+		if hover_icon != slot_icon or hover_icon.is_empty():
+			failures.append("%s: hover cursor %s != finalized-slot cursor %s" % [
+				label, hover_icon, slot_icon,
+			])
 
 		var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
 		if (ghost_slots.get("pre", []) as Array).is_empty() or (
@@ -3719,107 +3740,312 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 static func _test_sidestep_enemy_click_ratifies_move_preview(
 	failures: Array[String],
 ) -> void:
-	var start := Vector2i(4, 5)
-	var destination := Vector2i(5, 5)
-	var enemy_cell := Vector2i(7, 5)
-	var fix: Dictionary = _archer_skill_fixture(start, enemy_cell, ARCHER_SIDESTEP_ID)
-	var input: CombatPlanningInput = fix.input
-	var director: CombatDirector = fix.director
-	var label := "PlanningQAGate sidestep_tile_hover"
-	PlanningChecklistHarness.hover(fix, start)
-	PlanningChecklistHarness.sweep_to_cell(fix, destination, start)
-	var live: CombatPlanningPreview = fix.overlay.get_live_preview()
-	if live == null or live.preview_board == null:
-		failures.append("%s: Sidestep hover preview board missing" % label)
-		return
-	var path: Array = live.preview_paths.get(1, [])
-	if path.size() < 2 or path.back() != destination:
-		failures.append("%s: Sidestep path must end at %s, got %s" % [
-			label, str(destination), str(path),
-		])
-	var slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
-	if not input._intent_snapshot_valid or _slots_invalid(slots):
-		failures.append("%s: valid Sidestep hover must retain slots" % label)
-		return
-	var actions: Array = slots.get("pre", []) as Array
-	if actions.is_empty():
-		actions = slots.get("action", []) as Array
-	if actions.is_empty() or not actions[0] is TimelineAction:
-		failures.append("%s: Sidestep hover must expose a movement action" % label)
-		return
-	var sidestep: TimelineAction = actions[0] as TimelineAction
-	if sidestep.ability == null or sidestep.ability.id != ARCHER_SIDESTEP_ID:
-		failures.append("%s: hover action must be Sidestep" % label)
-	if sidestep.target_coord != destination:
-		failures.append("%s: Sidestep target %s != %s" % [
-			label, str(sidestep.target_coord), str(destination),
-		])
-	_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
-	input.set_qa_pointer_grid_cell(destination)
-	input.on_left_press(fix.map_stub.grid_to_local(destination))
-	var committed: TimelineAction = _first_plan_action_for_unit(director, 1, ARCHER_SIDESTEP_ID)
-	if committed == null or committed.target_coord != destination:
-		failures.append("%s: click must commit the exact Sidestep hover" % label)
-	var result: SimResult = _simulate_committed_plan(director)
-	var final_archer: UnitState = result.final_state.get_unit_by_id(1)
-	if final_archer == null or final_archer.position != destination:
-		failures.append("%s: Simulator stand %s != Sidestep target %s" % [
-			label, str(final_archer.position if final_archer != null else null), str(destination),
-		])
+	var cases: Array[Dictionary] = [
+		{
+			"start": Vector2i(2, 2),
+			"route": [
+				Vector2i(2, 2), Vector2i(2, 3), Vector2i(3, 3),
+				Vector2i(3, 4), Vector2i(4, 4),
+			],
+			"enemy": Vector2i(5, 4),
+			"target": Vector2i(4, 3),
+		},
+		{
+			"start": Vector2i(8, 8),
+			"route": [
+				Vector2i(8, 8), Vector2i(8, 7), Vector2i(7, 7),
+				Vector2i(7, 6), Vector2i(6, 6),
+			],
+			"enemy": Vector2i(5, 6),
+			"target": Vector2i(6, 5),
+		},
+		{
+			"start": Vector2i(2, 8),
+			"route": [
+				Vector2i(2, 8), Vector2i(3, 8), Vector2i(3, 7),
+				Vector2i(4, 7), Vector2i(4, 6),
+			],
+			"enemy": Vector2i(5, 6),
+			"target": Vector2i(4, 5),
+		},
+	]
+	for case_index: int in range(cases.size()):
+		var spec: Dictionary = cases[case_index]
+		var start: Vector2i = spec["start"]
+		var route: Array[Vector2i] = _vector2i_array(spec["route"] as Array)
+		var enemy_cell: Vector2i = spec["enemy"]
+		var destination: Vector2i = spec["target"]
+		var label := "PlanningQAGate sidestep_waypoint_hover/%d" % (case_index + 1)
+		var fix: Dictionary = _archer_skill_fixture(start, enemy_cell, ARCHER_SIDESTEP_ID)
+		var input: CombatPlanningInput = fix.input
+		var director: CombatDirector = fix.director
+		if not _commit_archer_waypoint_premove(fix, route, label, failures):
+			continue
+		director.selected_ability_index = 0
+		input._on_ability_selected(0)
+		input.call("_run_ability_settled_refresh")
+		var projected: UnitState = director.projected_state.get_unit_by_id(1)
+		if projected == null or projected.movement.points_left <= 0:
+			## Exhausted-MP cases must reject enemy hover without inventing an attack.
+			input.set_qa_pointer_grid_cell(enemy_cell)
+			input.on_hover_moved(enemy_cell)
+			if input._intent_snapshot_valid or input.preview_state.preview_board != null:
+				failures.append("%s: exhausted Sidestep enemy hover must be invalid" % label)
+			input.on_left_press(fix.map_stub.grid_to_local(enemy_cell))
+			if _first_plan_action_for_unit(director, 1, ARCHER_SIDESTEP_ID) != null:
+				failures.append("%s: invalid enemy hover must not commit Sidestep" % label)
+			continue
+		PlanningChecklistHarness.sweep_to_cell(fix, destination, route.back())
+		var live: CombatPlanningPreview = fix.overlay.get_live_preview()
+		if live == null or live.preview_board == null:
+			failures.append("%s: Sidestep hover preview board missing" % label)
+			continue
+		var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+		if live_archer == null or live_archer.position != destination:
+			failures.append("%s: preview stand %s != Sidestep target %s" % [
+				label, str(live_archer.position if live_archer != null else null), str(destination),
+			])
+		var path: Array = live.preview_paths.get(1, [])
+		if path.is_empty() or path.back() != destination:
+			failures.append("%s: preview path must end at %s, got %s" % [
+				label, str(destination), str(path),
+			])
+		var slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+		if not input._intent_snapshot_valid or _slots_invalid(slots):
+			failures.append("%s: valid Sidestep hover must retain slots" % label)
+			continue
+		var action_steps: Array = slots.get("action", []) as Array
+		if action_steps.is_empty() or not action_steps[0] is TimelineAction:
+			failures.append("%s: Sidestep hover must expose an action slot" % label)
+			continue
+		var sidestep: TimelineAction = action_steps[0] as TimelineAction
+		if (
+			sidestep.ability == null
+			or sidestep.ability.id != ARCHER_SIDESTEP_ID
+			or sidestep.target_coord != destination
+		):
+			failures.append("%s: finalized Sidestep slot does not match hover" % label)
+		_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
+		input.set_qa_pointer_grid_cell(destination)
+		input.on_left_press(fix.map_stub.grid_to_local(destination))
+		var committed: TimelineAction = _first_plan_action_for_unit(
+			director, 1, ARCHER_SIDESTEP_ID,
+		)
+		if committed == null or committed.target_coord != destination:
+			failures.append("%s: click must commit the exact Sidestep hover" % label)
+			continue
+		var result: SimResult = _simulate_committed_plan(director)
+		var final_archer: UnitState = result.final_state.get_unit_by_id(1)
+		if final_archer == null or final_archer.position != destination:
+			failures.append("%s: Simulator stand %s != Sidestep target %s" % [
+				label, str(final_archer.position if final_archer != null else null), str(destination),
+			])
+		## Enemy hover after the valid tile intent must not reinterpret it as an attack.
+		input.set_qa_pointer_grid_cell(enemy_cell)
+		input.on_hover_moved(enemy_cell)
+		if input._intent_snapshot_valid:
+			failures.append("%s: enemy hover must not retain stale Sidestep tile intent" % label)
+
+
+static func _test_sidestep_valid_tile_after_waypoint_premove(
+	failures: Array[String],
+) -> void:
+	var cases: Array[Dictionary] = [
+		{
+			"start": Vector2i(2, 2),
+			"route": [Vector2i(2, 2), Vector2i(2, 3)],
+			"target": Vector2i(3, 3),
+			"enemy": Vector2i(6, 3),
+		},
+		{
+			"start": Vector2i(8, 8),
+			"route": [
+				Vector2i(8, 8), Vector2i(8, 7), Vector2i(7, 7),
+			],
+			"target": Vector2i(6, 7),
+			"enemy": Vector2i(4, 7),
+		},
+	]
+	for case_index: int in range(cases.size()):
+		var spec: Dictionary = cases[case_index]
+		var route: Array[Vector2i] = _vector2i_array(spec["route"] as Array)
+		var target: Vector2i = spec["target"]
+		var enemy_cell: Vector2i = spec["enemy"]
+		var label := "PlanningQAGate sidestep_valid_waypoint/%d" % (case_index + 1)
+		var fix: Dictionary = _archer_skill_fixture(spec["start"], enemy_cell, ARCHER_SIDESTEP_ID)
+		var input: CombatPlanningInput = fix.input
+		var director: CombatDirector = fix.director
+		if not _commit_archer_waypoint_premove(fix, route, label, failures):
+			continue
+		director.selected_ability_index = 0
+		input._on_ability_selected(0)
+		input.call("_run_ability_settled_refresh")
+		PlanningChecklistHarness.sweep_to_cell(fix, target, route.back())
+		var live: CombatPlanningPreview = fix.overlay.get_live_preview()
+		if live == null or live.preview_board == null:
+			failures.append("%s: valid Sidestep preview missing" % label)
+			continue
+		var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+		if live_archer == null or live_archer.position != target:
+			failures.append("%s: preview stand must equal Sidestep target %s" % [
+				label, str(target),
+			])
+		var preview_path: Array = live.preview_paths.get(1, [])
+		if preview_path.is_empty() or preview_path.back() != target:
+			failures.append("%s: preview path must end at Sidestep target" % label)
+		var hover_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+		if not input._intent_snapshot_valid or _slots_invalid(hover_slots):
+			failures.append("%s: valid Sidestep preview slots missing" % label)
+			continue
+		var sidestep: TimelineAction = _slot_action_with_ability(
+			hover_slots, ARCHER_SIDESTEP_ID,
+		)
+		if sidestep == null:
+			failures.append("%s: Sidestep action slot missing" % label)
+			continue
+		if (
+			sidestep.ability == null
+			or sidestep.ability.id != ARCHER_SIDESTEP_ID
+			or sidestep.target_coord != target
+		):
+			failures.append("%s: Sidestep slot does not match preview target" % label)
+		if live_archer != null:
+			var expected_face: int = PhysicsSystem.facing_from_vector(
+				route.back() - route[route.size() - 2],
+			)
+			if live_archer.facing != expected_face:
+				failures.append("%s: Sidestep preview facing %d != final movement-facing %d (stand %s -> %s)" % [
+					label, live_archer.facing, expected_face, str(route.back()), str(target),
+				])
+			if sidestep.face_dir != -1 and sidestep.face_dir != expected_face:
+				failures.append("%s: Sidestep explicit slot facing does not match target" % label)
+		var hover_icon: String = input.compute_hover_action_icon(target)
+		var slot_icon: String = input._cursor_icon_from_commit_slots(hover_slots, fix.archer)
+		if hover_icon != slot_icon or hover_icon.is_empty():
+			failures.append("%s: Sidestep hover cursor does not match slots" % label)
+		_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
+		input.set_qa_pointer_grid_cell(target)
+		input.on_left_press(fix.map_stub.grid_to_local(target))
+		var committed: TimelineAction = _first_plan_action_for_unit(
+			director, 1, ARCHER_SIDESTEP_ID,
+		)
+		if committed == null or committed.target_coord != target:
+			failures.append("%s: click must ratify Sidestep target" % label)
+			continue
+		var result: SimResult = _simulate_committed_plan(director)
+		var final_archer: UnitState = result.final_state.get_unit_by_id(1)
+		if final_archer == null or final_archer.position != target:
+			failures.append("%s: Simulator must end at Sidestep target" % label)
 
 
 static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
 	failures: Array[String],
 ) -> void:
-	var archer_cell := Vector2i(4, 5)
-	var enemy_cell := Vector2i(7, 5)
-	var fix: Dictionary = _archer_volley_fixture(archer_cell, enemy_cell)
-	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
-	var input: CombatPlanningInput = fix.input
-	var director: CombatDirector = fix.director
-	var volley: AbilityData = fix.volley
-	var label := "PlanningQAGate tile_aoe_enemy_hover"
-	director.set_awaiting_action(1, volley)
-	input.set_qa_pointer_grid_cell(enemy_cell)
-	input.on_hover_moved(enemy_cell)
-	var live: CombatPlanningPreview = overlay.get_live_preview()
-	if live == null or live.forecast == null or live.forecast.damage_hp(2) <= 0:
-		failures.append("%s: Volley enemy hover must forecast damage" % label)
-	var slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
-	if not input._intent_snapshot_valid or _slots_invalid(slots):
-		failures.append("%s: valid Volley hover must retain slots" % label)
-		return
-	if not (slots.get("pre", []) as Array).is_empty():
-		failures.append("%s: tile AOE targeting must not invent a premove" % label)
-	var action_steps: Array = slots.get("action", []) as Array
-	if action_steps.is_empty() or not action_steps[0] is TimelineAction:
-		failures.append("%s: Volley hover must expose an action slot" % label)
-		return
-	var volley_action: TimelineAction = action_steps[0] as TimelineAction
-	if volley_action.target_coord != enemy_cell or volley_action.target_unit_id >= 0:
-		failures.append("%s: tile AOE must preserve tile target semantics" % label)
-	var volley_module: AbilityModule = volley.modules[0] as AbilityModule
-	var affected_tiles: Array[Vector2i] = GridSystem.get_affected_tiles(
-		fix.board,
-		archer_cell,
-		enemy_cell,
-		volley_module.target_shape,
-		volley_module.target_shape_size,
-	)
-	if not affected_tiles.has(enemy_cell):
-		failures.append("%s: canonical AOE footprint must include hovered enemy tile" % label)
-	_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
-	var tile_px := float(TacticalConstants.TILE_PX)
-	input.on_left_press(Vector2(enemy_cell) * tile_px + Vector2(tile_px, tile_px) * 0.5)
-	var committed: TimelineAction = _first_plan_action_for_unit(director, 1, ARCHER_VOLLEY_ID)
-	if committed == null or committed.target_coord != enemy_cell or committed.target_unit_id >= 0:
-		failures.append("%s: enemy click must commit the exact tile AOE hover; entries=%d" % [
-			label, director.get_player_plan().entries.size(),
-		])
-	var result: SimResult = _simulate_committed_plan(director)
-	var final_enemy: UnitState = result.final_state.get_unit_by_id(2)
-	if final_enemy == null or final_enemy.health.current_hp >= fix.enemy.health.current_hp:
-		failures.append("%s: Simulator must apply tile AOE damage to hovered enemy" % label)
+	var cases: Array[Dictionary] = [
+		{
+			"start": Vector2i(2, 2),
+			"route": [
+				Vector2i(2, 2), Vector2i(2, 3), Vector2i(3, 3),
+				Vector2i(3, 4), Vector2i(4, 4),
+			],
+			"enemy": Vector2i(7, 4),
+		},
+		{
+			"start": Vector2i(8, 8),
+			"route": [
+				Vector2i(8, 8), Vector2i(8, 7), Vector2i(7, 7),
+				Vector2i(7, 6), Vector2i(6, 6),
+			],
+			"enemy": Vector2i(2, 6),
+		},
+		{
+			"start": Vector2i(2, 8),
+			"route": [
+				Vector2i(2, 8), Vector2i(3, 8), Vector2i(3, 7),
+				Vector2i(4, 7), Vector2i(4, 6),
+			],
+			"enemy": Vector2i(8, 6),
+		},
+	]
+	for case_index: int in range(cases.size()):
+		var spec: Dictionary = cases[case_index]
+		var start: Vector2i = spec["start"]
+		var route: Array[Vector2i] = _vector2i_array(spec["route"] as Array)
+		var enemy_cell: Vector2i = spec["enemy"]
+		var label := "PlanningQAGate tile_aoe_waypoint_hover/%d" % (case_index + 1)
+		var fix: Dictionary = _archer_volley_fixture(start, enemy_cell)
+		var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+		var input: CombatPlanningInput = fix.input
+		var director: CombatDirector = fix.director
+		var volley: AbilityData = fix.volley
+		if not _commit_archer_waypoint_premove(fix, route, label, failures):
+			continue
+		director.set_awaiting_action(1, volley)
+		input.set_qa_pointer_grid_cell(enemy_cell)
+		input.on_hover_moved(enemy_cell)
+		var live: CombatPlanningPreview = overlay.get_live_preview()
+		if live == null or live.preview_board == null or live.forecast == null:
+			failures.append("%s: Volley enemy hover preview missing" % label)
+			continue
+		var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+		if live_archer == null or live_archer.position != route.back():
+			failures.append("%s: AOE preview stand must remain latest premove stand" % label)
+		if live.forecast.damage_hp(2) <= 0:
+			failures.append("%s: Volley enemy hover must forecast damage" % label)
+		if not overlay.is_hover_action_range_tile(enemy_cell):
+			failures.append("%s: red action-range tiles must include hovered AOE tile" % label)
+		var path: Array = live.preview_paths.get(1, [])
+		if path.is_empty() or path.back() != route.back():
+			failures.append("%s: AOE preview path must end at latest stand %s, got %s" % [
+				label, str(route.back()), str(path),
+			])
+		var slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+		if not input._intent_snapshot_valid or _slots_invalid(slots):
+			failures.append("%s: valid Volley hover must retain slots" % label)
+			continue
+		var action_steps: Array = slots.get("action", []) as Array
+		if action_steps.is_empty() or not action_steps[0] is TimelineAction:
+			failures.append("%s: Volley hover must expose an action slot" % label)
+			continue
+		var volley_action: TimelineAction = action_steps[0] as TimelineAction
+		if volley_action.target_coord != enemy_cell or volley_action.target_unit_id >= 0:
+			failures.append("%s: tile AOE must preserve tile target semantics" % label)
+		if live_archer != null:
+			var expected_face: int = PhysicsSystem.facing_from_vector(enemy_cell - route.back())
+			if live_archer.facing != expected_face:
+				failures.append("%s: Volley preview facing does not face hovered tile" % label)
+			if volley_action.face_dir != -1 and volley_action.face_dir != expected_face:
+				failures.append("%s: Volley explicit slot facing does not match hovered tile" % label)
+		var hover_icon: String = input.compute_hover_action_icon(enemy_cell)
+		var slot_icon: String = input._cursor_icon_from_commit_slots(slots, fix.archer)
+		if hover_icon != slot_icon or hover_icon.is_empty():
+			failures.append("%s: Volley hover cursor does not match slots" % label)
+		var volley_module: AbilityModule = volley.modules[0] as AbilityModule
+		var affected_tiles: Array[Vector2i] = GridSystem.get_affected_tiles(
+			fix.board,
+			route.back(),
+			enemy_cell,
+			volley_module.target_shape,
+			volley_module.target_shape_size,
+		)
+		if not affected_tiles.has(enemy_cell):
+			failures.append("%s: canonical AOE footprint must include hovered enemy tile" % label)
+		_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
+		var tile_px := float(TacticalConstants.TILE_PX)
+		input.on_left_press(Vector2(enemy_cell) * tile_px + Vector2(tile_px, tile_px) * 0.5)
+		var committed: TimelineAction = _first_plan_action_for_unit(
+			director, 1, ARCHER_VOLLEY_ID,
+		)
+		if committed == null or committed.target_coord != enemy_cell or committed.target_unit_id >= 0:
+			failures.append("%s: enemy click must commit the exact tile AOE hover" % label)
+			continue
+		var result: SimResult = _simulate_committed_plan(director)
+		var final_archer: UnitState = result.final_state.get_unit_by_id(1)
+		var final_enemy: UnitState = result.final_state.get_unit_by_id(2)
+		if final_archer == null or final_archer.position != route.back():
+			failures.append("%s: Simulator stand must remain latest premove stand" % label)
+		if final_enemy == null or final_enemy.health.current_hp >= fix.enemy.health.current_hp:
+			failures.append("%s: Simulator must apply tile AOE damage to hovered enemy" % label)
 
 
 static func _assert_pending_hover_ghost(
@@ -3853,6 +4079,84 @@ static func _assert_pending_hover_ghost(
 		if is_equal_approx(alpha_before, pending_label.modulate.a):
 			failures.append("%s: pending timeline preview must pulse/fade" % label)
 	timeline_grid.free()
+
+
+static func _vector2i_array(raw_cells: Array) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for raw_cell: Variant in raw_cells:
+		cells.append(raw_cell as Vector2i)
+	return cells
+
+
+static func _commit_archer_waypoint_premove(
+	fix: Dictionary,
+	route: Array[Vector2i],
+	label: String,
+	failures: Array[String],
+) -> bool:
+	if route.size() < 2:
+		failures.append("%s: premove route must contain a waypoint" % label)
+		return false
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var map_stub: QaPlanningMapStub = fix.get("map_stub", null) as QaPlanningMapStub
+	if map_stub == null:
+		map_stub = QaPlanningMapStub.new()
+		fix["map_stub"] = map_stub
+		input._map_view = map_stub
+	input.force_basic_movement = true
+	director.selected_ability_index = -1
+	input._on_ability_selected(-1)
+	PlanningChecklistHarness.hover(fix, route[0])
+	var previous: Vector2i = route[0]
+	for waypoint: Vector2i in route.slice(1):
+		PlanningChecklistHarness.sweep_to_cell(fix, waypoint, previous)
+		previous = waypoint
+	if input._drag_route != route:
+		failures.append("%s: painted premove route %s != %s" % [
+			label, str(input._drag_route), str(route),
+		])
+		input.force_basic_movement = false
+		return false
+	input.set_qa_pointer_grid_cell(route.back())
+	input.on_left_press(map_stub.grid_to_local(route.back()))
+	input.force_basic_movement = false
+	director.flush_plan_refresh_signals_if_pending()
+	var committed_move: TimelineAction = null
+	for action: TimelineAction in director.get_player_plan().entries:
+		if (
+			action != null
+			and action.actor_id == 1
+			and action.type == GameEnums.ActionType.MOVE
+			and action.target_coord == route.back()
+			and action.waypoints == route.slice(1)
+		):
+			committed_move = action
+			break
+	if committed_move == null:
+		failures.append("%s: actual click did not commit the complete premove route" % label)
+		return false
+	var projected: UnitState = director.projected_state.get_unit_by_id(1)
+	if projected == null or projected.position != route.back():
+		failures.append("%s: committed premove stand is not %s" % [label, str(route.back())])
+		return false
+	return true
+
+
+static func _slot_action_with_ability(
+	slots: Dictionary,
+	ability_id: StringName,
+) -> TimelineAction:
+	for bucket_name: String in ["pre", "action", "post"]:
+		for raw_action: Variant in slots.get(bucket_name, []) as Array:
+			var action: TimelineAction = raw_action as TimelineAction
+			if (
+				action != null
+				and action.ability != null
+				and action.ability.id == ability_id
+			):
+				return action
+	return null
 
 
 static func _first_plan_action_for_unit(
