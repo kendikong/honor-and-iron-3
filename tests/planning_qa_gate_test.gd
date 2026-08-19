@@ -12,6 +12,7 @@ const PHALANX_STANCE_ID: StringName = &"knight_phalanx_stance"
 const CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
+const ARCHER_POWER_SHOT_ID: StringName = &"archer_power_shot"
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -100,6 +101,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_selecting_unit_keeps_movement_points,
 		_test_tile_targeting_forbids_premove,
 		_test_bash_hover_keeps_targeting_arrow,
+		_test_waypoint_premove_enemy_hover_full_truth,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -184,6 +186,7 @@ static func run_all(failures: Array[String]) -> void:
 		"selection_is_mp_read_only",
 		"tile_aim_forbids_premove",
 		"bash_hover_targeting_arrow",
+		"waypoint_premove_enemy_hover_full_truth",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -288,6 +291,47 @@ static func _archer_volley_fixture(
 	}
 	PlanningDragE2EHarness.track_raw_fixture(fix)
 	return fix
+
+
+static func _archer_power_shot_fixture(
+	archer_pos: Vector2i,
+	enemy_pos: Vector2i,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var power_shot: AbilityData = ArcherQaHarness.factory_ability(ARCHER_POWER_SHOT_ID)
+	var archer_def: UnitData = ArcherQaHarness.archer_unit_data()
+	var archer: UnitState = UnitState.create(
+		1, archer_def, GameEnums.Team.PLAYER, archer_pos,
+	)
+	archer.active_abilities = [power_shot]
+	archer.movement.points_left = archer.movement.max_points
+	archer.ability.points_left = maxi(1, archer.ability.max_points)
+	archer.ability.max_points = maxi(1, archer.ability.max_points)
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var enemy: UnitState = UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, enemy_pos)
+	var board: BoardState = _plain_board(Vector2i(12, 12), [archer, enemy])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = archer.id
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"archer": archer,
+		"knight": archer,
+		"enemy": enemy,
+		"power_shot": power_shot,
+	}
+	return PlanningDragE2EHarness.wire_fixture(fix)
 
 
 static func _commit_slots_at(
@@ -3453,3 +3497,171 @@ static func _test_bash_hover_keeps_targeting_arrow(failures: Array[String]) -> v
 		failures.append(
 			"PlanningQAGate bash_hover_targeting_arrow: Shield Bash hover must forecast HP/armor change",
 		)
+
+
+static func _test_waypoint_premove_enemy_hover_full_truth(
+	failures: Array[String],
+) -> void:
+	var cases: Array[Dictionary] = [
+		{
+			"start": Vector2i(2, 2),
+			"route": [
+				Vector2i(2, 2), Vector2i(2, 3), Vector2i(3, 3),
+				Vector2i(3, 4), Vector2i(4, 4),
+			],
+			"enemy": Vector2i(7, 4),
+		},
+		{
+			"start": Vector2i(8, 8),
+			"route": [
+				Vector2i(8, 8), Vector2i(8, 7), Vector2i(7, 7),
+				Vector2i(7, 6), Vector2i(6, 6),
+			],
+			"enemy": Vector2i(2, 6),
+		},
+		{
+			"start": Vector2i(2, 8),
+			"route": [
+				Vector2i(2, 8), Vector2i(3, 8), Vector2i(3, 7),
+				Vector2i(4, 7), Vector2i(4, 6),
+			],
+			"enemy": Vector2i(8, 6),
+		},
+	]
+	for case_index: int in range(cases.size()):
+		var spec: Dictionary = cases[case_index]
+		var start: Vector2i = spec["start"]
+		var route: Array[Vector2i] = []
+		for raw_cell: Variant in spec["route"] as Array:
+			route.append(raw_cell as Vector2i)
+		var enemy_cell: Vector2i = spec["enemy"]
+		var fix: Dictionary = _archer_power_shot_fixture(start, enemy_cell)
+		var input: CombatPlanningInput = fix.input
+		var director: CombatDirector = fix.director
+		var overlay: TacticalPlanningOverlay = fix.overlay
+		var label: String = "PlanningQAGate waypoint_enemy_hover/%d" % (case_index + 1)
+		var power_shot: AbilityData = fix.power_shot
+		if power_shot == null:
+			failures.append("%s: Power Shot missing" % label)
+			continue
+		if GridSystem.manhattan(start, enemy_cell) <= power_shot.range_tiles:
+			failures.append("%s: enemy must begin out of Power Shot range" % label)
+			continue
+		if GridSystem.manhattan(route.back(), enemy_cell) > power_shot.range_tiles:
+			failures.append("%s: final waypoint must enter Power Shot range" % label)
+			continue
+		if route.size() - 1 != input._move_budget(fix.archer):
+			failures.append(
+				"%s: route must exhaust all MP (%d steps, budget %d)"
+				% [label, route.size() - 1, input._move_budget(fix.archer)],
+			)
+			continue
+
+		PlanningChecklistHarness.hover(fix, start)
+		var previous: Vector2i = start
+		for waypoint: Vector2i in route.slice(1):
+			PlanningChecklistHarness.sweep_to_cell(fix, waypoint, previous)
+			previous = waypoint
+		if input._drag_route != route:
+			failures.append(
+				"%s: mouse waypoint route %s != expected %s"
+				% [label, str(input._drag_route), str(route)],
+			)
+			continue
+
+		## This is the real hover boundary: leave the final waypoint and move
+		## the simulated mouse onto the enemy, where the preview must recompose
+		## the exact move-plus-attack intent.
+		PlanningChecklistHarness.sweep_to_cell(fix, enemy_cell, previous)
+		var live: CombatPlanningPreview = overlay.get_live_preview()
+		if live == null or live.preview_board == null:
+			failures.append("%s: enemy hover live preview missing" % label)
+			continue
+		var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+		if live_archer == null or live_archer.position != route.back():
+			failures.append(
+				"%s: hover preview stand %s != final waypoint %s"
+				% [label, str(live_archer.position if live_archer != null else null), str(route.back())],
+			)
+		var live_path: Array = live.preview_paths.get(1, [])
+		if live_path != route:
+			failures.append(
+				"%s: hover preview path %s != mouse route %s"
+				% [label, str(live_path), str(route)],
+			)
+		if live.forecast == null or live.forecast.damage_hp(2) <= 0:
+			failures.append("%s: enemy hover must forecast Power Shot damage" % label)
+
+		var hover_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+		if not input._intent_snapshot_valid or _slots_invalid(hover_slots):
+			failures.append("%s: valid enemy hover must retain finalized preview slots" % label)
+			continue
+		var hover_pre: Array = hover_slots.get("pre", []) as Array
+		var hover_action: Array = hover_slots.get("action", []) as Array
+		if hover_pre.is_empty() or hover_action.is_empty():
+			failures.append(
+				"%s: hover slots must contain both exhaustive pre-move and Power Shot action"
+				% label,
+			)
+			continue
+		var hover_move: TimelineAction = hover_pre[0] as TimelineAction
+		var hover_skill: TimelineAction = hover_action[0] as TimelineAction
+		if hover_move == null or hover_move.target_coord != route.back():
+			failures.append("%s: hover pre-move target must be %s" % [label, str(route.back())])
+		if hover_move != null and hover_move.waypoints != route.slice(1):
+			failures.append(
+				"%s: hover pre-move waypoints %s != mouse route %s"
+				% [label, str(hover_move.waypoints), str(route.slice(1))],
+			)
+		if hover_skill == null or hover_skill.ability != power_shot or hover_skill.target_unit_id != 2:
+			failures.append("%s: hover action must target enemy with Power Shot" % label)
+
+		var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
+		if (ghost_slots.get("pre", []) as Array).is_empty() or (
+			ghost_slots.get("action", []) as Array
+		).is_empty():
+			failures.append(
+				"%s: planning slots must expose faded pending pre-move + action preview" % label,
+			)
+		var timeline_grid := TacticalTimelineGrid.new()
+		timeline_grid.setup(director)
+		timeline_grid.bind_planning_input(input)
+		timeline_grid.set_board(fix.board)
+		timeline_grid.set_display_board(fix.board)
+		timeline_grid.set_phase(CombatDirector.Phase.PLANNING)
+		timeline_grid.set_selected(1)
+		timeline_grid.rebuild(director.get_player_plan(), PackedStringArray())
+		if timeline_grid._pending_plan_labels.is_empty():
+			failures.append("%s: timeline must render a pending hover preview label" % label)
+		else:
+			var pending_label: Label = timeline_grid._pending_plan_labels[0]
+			var alpha_before: float = pending_label.modulate.a
+			timeline_grid._process(0.25)
+			var alpha_after: float = pending_label.modulate.a
+			if is_equal_approx(alpha_before, alpha_after):
+				failures.append("%s: pending timeline preview must pulse/fade" % label)
+		timeline_grid.free()
+
+		var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(
+			1, enemy_cell, Vector2.ZERO,
+		)
+		if _intent_slot_signature(click_slots) != _intent_slot_signature(hover_slots):
+			failures.append(
+				"%s: click slots %s != hover slots %s"
+				% [label, _intent_slot_signature(click_slots), _intent_slot_signature(hover_slots)],
+			)
+			continue
+		if not input._commit_at_interaction_cell(1, enemy_cell, Vector2.ZERO, 2):
+			failures.append("%s: actual enemy click failed" % label)
+			continue
+		director.flush_plan_refresh_signals_if_pending()
+		var result: SimResult = _simulate_committed_plan(director)
+		var final_archer: UnitState = result.final_state.get_unit_by_id(1)
+		var final_enemy: UnitState = result.final_state.get_unit_by_id(2)
+		if final_archer == null or final_archer.position != route.back():
+			failures.append(
+				"%s: committed simulator stand %s != hover stand %s"
+				% [label, str(final_archer.position if final_archer != null else null), str(route.back())],
+			)
+		if final_enemy == null or final_enemy.health.current_hp >= fix.enemy.health.current_hp:
+			failures.append("%s: committed Power Shot damage missing" % label)

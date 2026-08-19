@@ -125,6 +125,7 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | After strict route and same-index re-arm fixes. AOE + headless contracts + T3 mimic. |
 | 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **PASS** | Replaced remaining preview-prefix slicing with `CombatPlanningPreview.destination_cells_from_route(preview, event.from, event.to)`; 1 case, 0 failures. |
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | After canonical movement-leg assertion fix. AOE + headless contracts + T3 mimic. |
+| 2026-08-18 | `.\scripts\run_planning_headless_contracts.ps1` | **PASS** | Added `waypoint_premove_enemy_hover_full_truth`: three side-flanking four-step routes exhaust MP, then simulated mouse hover over an out-of-range enemy. Each case checks hover path/stand/damage, finalized slots, pulsing timeline ghost, click-slot parity, and Simulator movement + damage. |
 
 ## 9. Slice close
 
