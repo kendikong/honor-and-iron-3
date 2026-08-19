@@ -89,8 +89,9 @@ Simulator signatures are recorded:
 - **BASH-POST-01** — `planning_qa_gate_test.gd::_test_move_preview_origin_premove_and_postmove`
   proves the action-end origin; full committed POST route parity remains a
   checklist requirement.
-- **TRAMPLE-POST-01** — `trampling_advance_e2e_test.gd::_test_post_move_sim_preview_keeps_trample_paint_order`
-  proves the painted Trampling POST continuation.
+- **TRAMPLE-POST-01** — `planning_qa_gate_test.gd::_test_trample_post_move_preview_commit_sim`
+  delegates to `trampling_advance_e2e_test.gd::_test_post_move_sim_preview_keeps_trample_paint_order`
+  and proves the painted Trampling POST continuation through the planning gate.
 
 Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 

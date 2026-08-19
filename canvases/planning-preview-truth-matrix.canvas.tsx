@@ -35,7 +35,7 @@ const checkpoints = [
   "replan-from-stand",
 ];
 
-const dimensions = [
+const atomicDimensions = [
   "hover-cell", "selected-unit", "route-cells", "waypoints", "route-leg",
   "approach-origin", "latest-stand", "projected-board", "facing",
   "target-coord", "target-unit", "ability-id", "authored-ability",
@@ -105,7 +105,7 @@ const scenarioFacts = Object.fromEntries(
 
 const atomicRows: AtomicRow[] = scenarios.flatMap((scenario) =>
   checkpoints.flatMap((checkpoint) =>
-    dimensions.map((dimension) => ({
+    atomicDimensions.map((dimension) => ({
       id: `${scenario.id}::${checkpoint}::${dimension}`,
       scenario: scenario.id,
       checkpoint,
@@ -130,7 +130,7 @@ export default function PlanningPreviewTruthMatrix() {
       <Stack direction="row" gap={12}>
         <Stat label="Scenarios" value={scenarios.length} />
         <Stat label="Checkpoints" value={checkpoints.length} />
-        <Stat label="Dimensions" value={dimensions.length} />
+        <Stat label="Dimensions" value={atomicDimensions.length} />
         <Stat label="Required rows" value={total.toLocaleString()} />
         <Stat label="Scenario facts" value={Object.keys(scenarioFacts).length} />
         <Stat label="Executable atomic rows" value={executableAtomicRows} />
@@ -149,7 +149,7 @@ export default function PlanningPreviewTruthMatrix() {
         data={scenarios}
       />
       <H2>Atomic dimensions</H2>
-      <Text>{dimensions.join(" · ")}</Text>
+      <Text>{atomicDimensions.join(" · ")}</Text>
       <H2>Atomic checkpoints</H2>
       <Text>{checkpoints.join(" → ")}</Text>
       <Text>
@@ -157,6 +157,15 @@ export default function PlanningPreviewTruthMatrix() {
         `scenarioFacts` supplies the concrete fixture owner and legality expectation;
         all rows remain CHECKLIST — required until their owner asserts that cell.
       </Text>
+      <H2>Atomic row ledger</H2>
+      <Table
+        columns={[
+          { key: "id", header: "Atomic row ID" },
+          { key: "owner", header: "Scenario owner" },
+          { key: "status", header: "Status" },
+        ]}
+        data={atomicRows}
+      />
     </Stack>
   );
 }

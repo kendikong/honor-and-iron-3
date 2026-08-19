@@ -30,7 +30,7 @@ if (-not (Test-Path $MatrixPath)) {
 	).Groups["body"].Value
 	$dimensionBlock = [regex]::Match(
 		$content,
-		'const dimensions = \[(?<body>.*?)\];',
+		'const atomicDimensions = \[(?<body>.*?)\];',
 		[Text.RegularExpressions.RegexOptions]::Singleline
 	).Groups["body"].Value
 	$checkpointCount = @([regex]::Matches($checkpointBlock, '"[^"]+"')).Count
