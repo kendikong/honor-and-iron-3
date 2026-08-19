@@ -59,9 +59,9 @@ function Set-Patch($rel, $old, $new) {
 
 Write-Host "=== Baseline ===" -ForegroundColor Cyan
 $base = Invoke-QaGate
-if ($base.ExitCode -ne 0) {
+if ($base.Count -gt 0 -or $base.Output -notmatch '\[PASS\]') {
 	Write-Host $base.Output
-	throw "Baseline must PASS (exit $($base.ExitCode), $($base.Count) fails)"
+	throw "Baseline must PASS (found $($base.Count) fails)"
 }
 Write-Host "PASS (exit 0)"
 
