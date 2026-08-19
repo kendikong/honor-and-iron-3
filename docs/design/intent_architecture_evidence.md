@@ -96,7 +96,7 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | CM-09 | **PASS** | Bundle `new_fails=0` plus seven journeys: Pre/Post-Move origin, push-through premove, latest-stand action range, trample post-move painted route, bash sim determinism, swap dependency cancellation, awaiting hook (AWAIT-01), enemy replan marker on full-turn sim. |
 | CM-10 | **PASS** | Production selection re-emits the existing `ability_selected` signal for same-index re-arming; the planning walk trace records `start` separately from destination `actual_cells`; live assertions derive the exact movement leg through `CombatPlanningPreview.destination_cells_from_route`. No production `ability.id` branch, no UI-only authority, no second range rule, no global exception. |
 | CM-11 | **PASS** (measure only; **no optimize**) | `[SOT-PERF]` Shield Bash: hover **7520 µs**, slot build **6091 µs**, `simulate_committed` **2686 µs**. Slot signature unchanged across the timing loop. No cache / skip-sim / validation weaken. |
-| CM-12 | **PASS** | Default `.\scripts\run_planning_qa_gate.ps1` **PASS**. Live `.\scripts\run_swap_planning_acceptance.ps1` **PASS** (`test_live_swap_session`, 0 failures) with strict canonical movement-leg equality and painted-slot signature equality. Class gates / full regression **not run**: no factory or `Simulator` production change. Owner Layer B (F5 pixels) not claimed. |
+| CM-12 | **PASS** | Two separate proofs **PASS**: default `.\scripts\run_planning_qa_gate.ps1` covers headless planning/SoT contracts, while live `.\scripts\run_swap_planning_acceptance.ps1` covers `test_live_swap_session` with strict canonical movement-leg equality and painted-slot signature equality. The headless gate does not execute the live assertion. Class gates / full regression **not run**: no factory or `Simulator` production change. Owner Layer B (F5 pixels) not claimed. |
 
 ## 7. preserve / improve / defer
 
@@ -132,7 +132,7 @@ This slice is **complete for the source-of-truth contract**.
 
 Phases 0–1 done. Phase 2 closed with the smallest owner fixes required by strict live evidence: same-index ability re-arm now uses the existing selection signal, and animation diagnostics distinguish the route origin from destination cells. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because the gate found no need for a new result abstraction or result-changing optimization.
 
-Gameplay outcomes are unchanged; the only production behavior change is re-emitting the existing selection signal when the selected ability is clicked again, allowing the normal planning-input re-arm path. Automated proof of preview = commit = Simulator is the default planning gate (**PASS**). Live swap TestBattle is **PASS** with strict route assertions. Owner F5 Layer B remains the owner’s visual check.
+Gameplay outcomes are unchanged; the only production behavior change is re-emitting the existing selection signal when the selected ability is clicked again, allowing the normal planning-input re-arm path. The default planning gate (**PASS**) proves headless preview = commit = Simulator contracts; the live swap suite (**PASS**) separately proves TestBattle route parity with strict assertions. Owner F5 Layer B remains the owner’s visual check.
 
 ### Deferred (explicit, not silent)
 
