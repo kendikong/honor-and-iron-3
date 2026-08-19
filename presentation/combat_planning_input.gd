@@ -76,6 +76,9 @@ var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
 var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
+var _intent_snapshot_unit_id: int = -1
+var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
+var _intent_snapshot_target_id: int = -1
 var _suppress_post_commit_hover_refresh: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
 var _hover_preview_lru: Dictionary = {}
@@ -1836,6 +1839,7 @@ func _update_hover_attack_preview() -> void:
 	var preview_cell: Vector2i = target_unit.position if target_unit != null else cell
 	var res: Dictionary = _preview_from_commit_slots_at_cell(
 		_director.selected_unit_id, preview_cell, [], [], p_unit.position,
+		-1, target_id,
 	)
 	_apply_hover_preview_dict(res)
 
@@ -2232,6 +2236,23 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
+	_flush_hover_heavy_sync()
+	if (
+		_intent_snapshot_valid
+		and _intent_snapshot_unit_id == unit_id
+		and _intent_snapshot_hover_cell == cell
+		and _intent_snapshot_target_id == attack_target_id
+	):
+		return _commit_at_cell(
+			unit_id,
+			cell,
+			local,
+			[],
+			[],
+			_NO_PREFERRED_APPROACH,
+			-1,
+			_duplicate_commit_slots(_intent_snapshot_slots),
+		)
 	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
 	return _commit_at_cell(
 		unit_id,
@@ -2252,6 +2273,7 @@ func _commit_at_cell(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
+	intent_slots: Dictionary = {},
 ) -> bool:
 	_flush_hover_heavy_sync()
 	if selected_phase_action_exhausted(unit_id):
@@ -2263,20 +2285,21 @@ func _commit_at_cell(
 	var snapshot_key: String = _intent_snapshot_key_for(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
-	var slots: Dictionary
+	var slots: Dictionary = _duplicate_commit_slots(intent_slots) if not intent_slots.is_empty() else {}
 	var actor := _proj_unit(unit_id)
 	var ability: AbilityData = _selected_ability_data(actor)
 	var force_fresh_slots: bool = (
 		ability != null and AbilitySystem.ability_has_swap_effect(ability)
 	)
 	if (
-		not force_fresh_slots
+		slots.is_empty()
+		and not force_fresh_slots
 		and _intent_snapshot_valid
 		and _intent_snapshot_key == snapshot_key
 		and not _intent_snapshot_slots.is_empty()
 	):
 		slots = _duplicate_commit_slots(_intent_snapshot_slots)
-	else:
+	elif slots.is_empty():
 		slots = _final_commit_slots_for_interaction(
 			unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 		)
@@ -2432,12 +2455,21 @@ func _duplicate_commit_slots(slots: Dictionary) -> Dictionary:
 	return out
 
 
-func _store_intent_snapshot(key: String, slots: Dictionary) -> void:
+func _store_intent_snapshot(
+	key: String,
+	slots: Dictionary,
+	unit_id: int = -1,
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
+	target_id: int = -1,
+) -> void:
 	if _is_invalid_dict(slots) or slots.get("_noop", false) == true:
 		_clear_intent_snapshot()
 		return
 	_intent_snapshot_key = key
 	_intent_snapshot_slots = _duplicate_commit_slots(slots)
+	_intent_snapshot_unit_id = unit_id
+	_intent_snapshot_hover_cell = hover_cell
+	_intent_snapshot_target_id = target_id
 	_intent_snapshot_valid = true
 
 
@@ -2445,6 +2477,9 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_valid = false
 	_intent_snapshot_key = ""
 	_intent_snapshot_slots = {}
+	_intent_snapshot_unit_id = -1
+	_intent_snapshot_hover_cell = Vector2i(-999999, -999999)
+	_intent_snapshot_target_id = -1
 
 
 func _mouse_local_for_facing() -> Vector2:
@@ -2612,6 +2647,7 @@ func _preview_from_commit_slots_at_cell(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
+	attack_target_id: int = -1,
 ) -> Dictionary:
 	if _director == null or unit_id < 0:
 		_clear_intent_snapshot()
@@ -2631,7 +2667,7 @@ func _preview_from_commit_slots_at_cell(
 	var snapshot_key: String = _intent_snapshot_key_for(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
 	)
-	_store_intent_snapshot(snapshot_key, slots)
+	_store_intent_snapshot(snapshot_key, slots, unit_id, cell, attack_target_id)
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
 	if _hover_can_preview_move_without_simulate(slots, cell):
 		return {
@@ -2868,6 +2904,7 @@ func _preview_at_interaction_cell(
 		tiles,
 		params.preferred,
 		int(params.get("face_dir", -1)),
+		attack_target_id,
 	)
 
 
@@ -3899,13 +3936,28 @@ func _plan_action_equal(a: TimelineAction, b: TimelineAction) -> bool:
 		return false
 	if a.target_coord != b.target_coord or a.target_unit_id != b.target_unit_id:
 		return false
-	if a.uses_run != b.uses_run or a.awaiting_target != b.awaiting_target:
+	if (
+		a.face_dir != b.face_dir
+		or a.waypoints != b.waypoints
+		or a.module_target_coords != b.module_target_coords
+		or a.module_target_unit_ids != b.module_target_unit_ids
+	):
+		return false
+	if (
+		a.uses_run != b.uses_run
+		or a.awaiting_target != b.awaiting_target
+		or a.awaiting_module_index != b.awaiting_module_index
+		or a.irreversible != b.irreversible
+		or a.is_free_reaction != b.is_free_reaction
+	):
 		return false
 	if a.move_timing != b.move_timing:
 		return false
 	var a_ab: StringName = a.ability.id if a.ability != null else &""
 	var b_ab: StringName = b.ability.id if b.ability != null else &""
-	return a_ab == b_ab
+	var a_authored: StringName = a.authored_ability.id if a.authored_ability != null else &""
+	var b_authored: StringName = b.authored_ability.id if b.authored_ability != null else &""
+	return a_ab == b_ab and a_authored == b_authored
 
 
 func extended_move_budget_active(unit: UnitState = null) -> bool:

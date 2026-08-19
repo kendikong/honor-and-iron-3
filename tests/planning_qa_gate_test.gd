@@ -3651,7 +3651,9 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 				% [label, _intent_slot_signature(click_slots), _intent_slot_signature(hover_slots)],
 			)
 			continue
-		if not input._commit_at_interaction_cell(1, enemy_cell, Vector2.ZERO, 2):
+		input.set_qa_pointer_grid_cell(enemy_cell)
+		input.on_left_press(fix.map_stub.grid_to_local(enemy_cell))
+		if director.get_player_plan().entries.is_empty():
 			failures.append("%s: actual enemy click failed" % label)
 			continue
 		director.flush_plan_refresh_signals_if_pending()
