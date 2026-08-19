@@ -149,6 +149,27 @@ The default planning gate must retain every item below; removing any one is a re
 - [x] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
 - [x] Re-hover, ability switching, premoves, ranged approaches, tile targeting, and enemy-hover transitions remain covered by the existing suite.
 
+### Atomic per-scenario expansion requirement
+
+The category checklist above is not the executable depth target by itself. Each
+complex scenario must expand into **16 state checkpoints × 34 independently
+named behaviors = 544 atomic checklist items**. The atomic rows are requirements
+until the executable harness asserts them; they must not be reported as PASS
+merely because the category gate is green.
+
+Required scenario instances:
+
+- `PS-R1`, `PS-R2`, `PS-R3` — three full-MP, sideflanking Power Shot routes.
+- `VO-R1`, `VO-R2`, `VO-R3` — three full-MP, sideflanking Volley routes.
+- `SS-E1`, `SS-E2`, `SS-E3` — three exhausted-MP Sidestep enemy-hover rejection routes.
+- `SS-V1`, `SS-V2` — two valid Sidestep post-premove tile-target routes.
+
+Each instance must check the full behavior set at setup, selection, initial
+hover, route progress, final waypoint, target transition, settled target hover,
+snapshot capture, pre-click slots, click ratification, committed timeline,
+post-commit presentation, Simulator resolution, and final parity. The required
+per-scenario minimum is **544 atomic items**, not one summary assertion.
+
 ## 9. Slice close
 
 This slice is **complete for the source-of-truth contract**.
