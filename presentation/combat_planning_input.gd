@@ -3889,7 +3889,7 @@ func _hover_intent_ghost_active(unit_id: int) -> bool:
 		return false
 	if drag_preview_failed:
 		return false
-	return is_live_preview_active() or dragging or skill_interaction_active() or aiming
+	return preview_state.preview_board != null
 
 
 func _committed_plan_slots(unit_id: int) -> Dictionary:
