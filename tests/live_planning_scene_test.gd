@@ -2585,6 +2585,8 @@ func _assert_animation_route_matches_preview(
 	await _wait_planning_move_tween(ctx, unit_id)
 	var traces: Array[Dictionary] = _unit_layer(ctx).planning_route_trace()
 	var event_path: Array = []
+	var event_from: Variant = null
+	var event_to: Variant = null
 	var animation_path: Array = []
 	for i: int in range(traces.size() - 1, -1, -1):
 		var trace: Dictionary = traces[i]
@@ -2594,6 +2596,8 @@ func _assert_animation_route_matches_preview(
 			and int(trace.get("unit_id", -1)) == unit_id
 		):
 			event_path = (trace.get("path", []) as Array).duplicate()
+			event_from = trace.get("from", null)
+			event_to = trace.get("to", null)
 		if (
 			animation_path.is_empty()
 			and trace.get("kind") == &"animation"
@@ -2607,23 +2611,23 @@ func _assert_animation_route_matches_preview(
 			elif start is Vector2i:
 				animation_path = [start]
 	var expected_path: Array = preview_path
-	if not event_path.is_empty():
-		var event_start: Variant = event_path[0]
-		for path_index: int in range(preview_path.size()):
-			if preview_path[path_index] == event_start:
-				expected_path = preview_path.slice(path_index)
-				break
+	if event_from is Vector2i and event_to is Vector2i:
+		expected_path = CombatPlanningPreview.destination_cells_from_route(
+			preview_path, event_from as Vector2i, event_to as Vector2i,
+		)
 	if not event_path.is_empty():
 		assert_that(event_path).override_failure_message(
-			"%s: commit event route must match preview path; preview=%s event=%s plan=%s" % [
+			"%s: commit event route must match preview leg from %s to %s; preview=%s event=%s plan=%s" % [
 				label,
+				str(event_from),
+				str(event_to),
 				str(expected_path),
 				str(event_path),
 				_plan_route_summary(ctx.director as CombatDirector, unit_id),
 			],
 		).is_equal(expected_path)
 	assert_that(animation_path).override_failure_message(
-			"%s: animation route must match preview path; preview=%s animation=%s plan=%s" % [
+			"%s: animation route must match preview leg; preview=%s animation=%s plan=%s" % [
 			label,
 			str(expected_path),
 			str(animation_path),
