@@ -1,6 +1,8 @@
 # Intent architecture evidence
 
-Owner map and seven-journey traces for the source-of-truth slice. Fill fixture signature strings from Phase 1 gate output; do not invent a second planner.
+Owner map and seven recorded core-journey traces for the source-of-truth
+slice, plus explicitly marked extended checklist IDs. Fill fixture signature
+strings from gate output; do not invent a second planner.
 
 Roadmap / status at investigation: living-map and combat parity phases closed; this slice does not advance the roadmap, overwrite `IMPLEMENTATION_PLAN.md`, or mix Extra Rules / RunState work.
 
@@ -15,6 +17,8 @@ Roadmap / status at investigation: living-map and combat parity phases closed; t
 | AWAIT-01 | Chain Hook targeting (awaiting / invalid far hover, then valid target) |
 | TRAMPLE-01 | Trampling Advance painted route |
 | STALE-01 | Invalid / OOB hover must not commit |
+| BASH-POST-01 | Walk + Shield Bash + POST move origin |
+| TRAMPLE-POST-01 | Trampling painted-route POST continuation |
 
 ## 2. Call graph
 
@@ -75,9 +79,18 @@ Exact slot strings (pipe-delimited; hover = click = timeline):
 - **PUSH-PULL-01/bash** same as MOVE-SKILL-01; enemy pushed `(7, 5)→(9, 5)`
 - **PUSH-PULL-01/hook** `(-999, -999)|[]|2|knight_chain_hook|[]|0|false` — stand/pos `(1, 3)`; enemy pulled to `(2, 3)` — sim units `1@1,3:ap1:mp3;2@2,3:ap0:mp0`
 - **SWAP-01** `(4, 4)|[]|-1|knight_swap|[]|0|false` — path `[(4, 5), (4, 4)]` — sim units `1@4,4:ap1:mp3;2@4,5:ap1:mp3`
-- **AWAIT-01** `(-999, -999)|[]|2|knight_chain_hook|[]|0|false` — far hover rejected first; valid enemy matches hook
+- **AWAIT-01** `(-999, -999)|[]|2|knight_chain_hook|[]|0|false` — far `(11,11)` hover rejected first; valid enemy `(4,3)` matches hook
 - **TRAMPLE-01** `(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false` — painted east-then-north in the **action** waypoint field; sim path `(5, 4)→(6, 3)` — sim units `1@6,3:ap1:mp3`
 - **STALE-01** `(-999, -999)|[]|-1||[]|0|true` — OOB invalid; commit false; Simulator must not run
+
+Extended post-move rows are checklist requirements until their complete slot and
+Simulator signatures are recorded:
+
+- **BASH-POST-01** — `planning_qa_gate_test.gd::_test_move_preview_origin_premove_and_postmove`
+  proves the action-end origin; full committed POST route parity remains a
+  checklist requirement.
+- **TRAMPLE-POST-01** — `trampling_advance_e2e_test.gd::_test_post_move_sim_preview_keeps_trample_paint_order`
+  proves the painted Trampling POST continuation.
 
 Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 
@@ -130,30 +143,32 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | 2026-08-18 | `.\scripts\run_planning_headless_contracts.ps1` | **PASS** | Expanded the checklist with three full-MP sideflanking premoves for Power Shot and Volley, three exhausted-MP Sidestep enemy-hover rejection cases, and two valid Sidestep post-premove cases. Each valid case checks path, latest stand, target/ability, facing semantics, affected tiles where applicable, blue/red tiles, cursor parity, finalized slots, pulsing ghost, real click ratification, and Simulator outcome. |
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | Final headless-only gate: AOE footprint contract, PlanningQaGate, and T3 fixture parity all pass. No live TestBattle/F5 runner was used. |
 
-## 8.1 Headless planning acceptance checklist
+## 8.1 Headless planning acceptance checklist — category contract
 
-The default planning gate must retain every item below; removing any one is a regression:
+The default planning gate must retain every item below; removing any one is a
+regression. `[defined]` records that the category exists in the checklist;
+it does **not** claim that every atomic row below is already executable.
 
-- [x] Valid hover produces finalized slot data and a faded/flashing timeline ghost.
-- [x] Preview path, latest stand, approach route, target, ability, facing semantics, and affected footprint match the finalized slots.
-- [x] Blue movement tiles, red action-range tiles, and cursor/icon state are checked from the same intent.
-- [x] Real pointer hover → real pointer click commits the captured hover intent without rebuilding it.
-- [x] Committed timeline signature and `Simulator` result match the hovered intent.
-- [x] **Before commit:** every premove route, waypoint, stand, approach, facing, target, ability, affected tile set, economy result, and action metadata equals the last valid move preview.
-- [x] **At commit:** click only ratifies the captured finalized slots; it never rebuilds, corrects, normalizes, or reinterprets the displayed premove.
-- [x] **After commit:** committed timeline entries preserve the exact preview signature, including all premove waypoints and paired action metadata.
-- [x] **During execution:** `Simulator` movement, facing, target resolution, affected tiles, damage, displacement, statuses, terrain, AP/MP consumption, and event order equal the preview prediction.
-- [x] **No heuristic divergence:** any preview → slots → timeline → Simulator mismatch fails immediately; “close enough” final-state checks do not pass.
-- [x] Invalid hover clears/rejects intent and cannot turn a Sidestep hover into an unrelated ranged attack.
-- [x] Three sideflanking, full-MP waypoint premoves are followed by real enemy hover for ranged attack and tile AOE.
-- [x] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
-- [x] Re-hover, ability switching, premoves, ranged approaches, tile targeting, and enemy-hover transitions remain covered by the existing suite.
+- [defined] Valid hover produces finalized slot data and a faded/flashing timeline ghost.
+- [defined] Preview path, latest stand, approach route, target, ability, facing semantics, and affected footprint match the finalized slots.
+- [defined] Blue movement tiles, red action-range tiles, and cursor/icon state are checked from the same intent.
+- [defined] Real pointer hover → real pointer click commits the captured hover intent without rebuilding it.
+- [defined] Committed timeline signature and `Simulator` result match the hovered intent.
+- [defined] **Before commit:** every premove route, waypoint, stand, approach, facing, target, ability, affected tile set, economy result, and action metadata equals the last valid move preview.
+- [defined] **At commit:** click only ratifies the captured finalized slots; it never rebuilds, corrects, normalizes, or reinterprets the displayed premove.
+- [defined] **After commit:** committed timeline entries preserve the exact preview signature, including all premove waypoints and paired action metadata.
+- [defined] **During execution:** `Simulator` movement, facing, target resolution, affected tiles, damage, displacement, statuses, terrain, AP/MP consumption, and event order equal the preview prediction.
+- [defined] **No heuristic divergence:** any preview → slots → timeline → Simulator mismatch fails immediately; “close enough” final-state checks do not pass.
+- [defined] Invalid hover clears/rejects intent and cannot turn a Sidestep hover into an unrelated ranged attack.
+- [defined] Three sideflanking, full-MP waypoint premoves are followed by real enemy hover for ranged attack and tile AOE.
+- [defined] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
+- [defined] Re-hover, ability switching, premoves, ranged approaches, tile targeting, and enemy-hover transitions remain covered by the existing suite.
 
 ### Atomic per-scenario expansion requirement
 
 The category checklist above is not the executable depth target by itself. Each
-complex scenario must expand into **16 state checkpoints × 34 independently
-named behaviors = 544 atomic checklist items**. The atomic rows are requirements
+complex scenario must expand into **17 state checkpoints × 40 independently
+named behaviors = 680 atomic checklist items**. The atomic rows are requirements
 until the executable harness asserts them; they must not be reported as PASS
 merely because the category gate is green.
 
@@ -163,20 +178,93 @@ Required scenario instances:
 - `VO-R1`, `VO-R2`, `VO-R3` — three full-MP, sideflanking Volley routes.
 - `SS-E1`, `SS-E2`, `SS-E3` — three exhausted-MP Sidestep enemy-hover rejection routes.
 - `SS-V1`, `SS-V2` — two valid Sidestep post-premove tile-target routes.
+- `PS-R-INVALID` — full-MP route that remains out of ranged attack distance.
+- `WALK-01`, `MOVE-SKILL-01`, `PUSH-PULL-01`, `SWAP-01`, `AWAIT-01`,
+  `TRAMPLE-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`,
+  `TELEPORT-01` — shared movement, targeting, dependency, economy, and input
+  families.
+- `I-T01-01`…`I-T10-01` — ten explicit hover/drag/ability/undo/replan
+  transition scenarios.
+- `N-OOB-01`, `N-OCCUPIED-01`, `N-RANGE-01`, `N-AWAIT-FAR-01`,
+  `N-VOLLEY-TILE-01`, `N-SILENCE-01`, `N-SNAPSHOT-01` — seven explicit
+  rejection scenarios.
 
 Each instance must check the full behavior set at setup, selection, initial
 hover, route progress, final waypoint, target transition, settled target hover,
 snapshot capture, pre-click slots, click ratification, committed timeline,
-post-commit presentation, Simulator resolution, and final parity. The required
-per-scenario minimum is **544 atomic items**, not one summary assertion.
+post-commit presentation, Simulator resolution, final parity, and replan from
+the latest projected stand. The required per-scenario minimum is **680 atomic
+items**, not one summary assertion.
+
+### Atomic coverage ledger
+
+The canvas matrix is the checklist ledger. Every scenario must have a traceable
+row for each atomic item; a mechanical row count without an executable owner is
+not evidence.
+
+| Scenario family | Required instances | Atomic minimum each | Current checklist status |
+|---|---|---:|---|
+| Power Shot ranged approach | `PS-R1`…`PS-R3` | 680 | Required — bind every row to executable assertions |
+| Volley tile AOE | `VO-R1`…`VO-R3` | 680 | Required — bind every row to executable assertions |
+| Sidestep exhausted enemy hover | `SS-E1`…`SS-E3` | 680 | Required — bind every row to executable assertions |
+| Sidestep valid tile movement | `SS-V1`…`SS-V2` | 680 | Required — bind every row to executable assertions |
+| Power Shot invalid full-MP route | `PS-R-INVALID` | 680 | Required — explicit invalid/empty expectations |
+| Shared journey families | `WALK-01`…`TELEPORT-01` | 680 | Required — each family gets its own atomic expansion |
+| Explicit transitions | `I-T01-01`…`I-T10-01` | 680 | Required — each transition gets its own atomic expansion |
+| Explicit rejection paths | `N-OOB-01`…`N-SNAPSHOT-01` | 680 | Required — each rejection gets invalid/empty/n/a expectations |
+
+The canvas currently contains **40 atomic scenarios × 680 = 27,200 listed
+items**. Each item must eventually acquire an executable `file::function`
+owner; rows without one remain requirements and cannot contribute to PASS.
+`N-RANGE-01` is an explicit rejection-path alias of `PS-R-INVALID` and must
+inherit its route facts from that single source; it is not an independent
+fixture.
+
+### Phase and journey completeness requirements
+
+Every scenario family must explicitly cover all seven phases from
+`PLANNING_SKILL_QA_CHECKLIST.md`: select/rest, empty hover, drag/waypoints,
+enemy hover, commit, execute, and replan from the new projected stand. The
+phase matrix must name all applicable layers: preview board/path, blue tiles,
+red tiles, arrows, cursor, economy/timeline, ghosts, and commit/Simulator.
+
+The 17 checkpoints map explicitly to the seven phases:
+
+- **P1 select/rest:** `setup`, `select-unit`, `select-ability`.
+- **P2 empty hover:** `initial-hover`, `route-begin`, `route-progress`.
+- **P3 drag/waypoints:** `route-final`.
+- **P4 enemy/target hover:** `enemy-transition`, `target-settled`,
+  `snapshot-captured`, `pre-click`.
+- **P5 commit:** `click-ratified`, `timeline-written`, `post-commit`.
+- **P6 execute:** `sim-resolution`, `final-parity`.
+- **P7 replan:** `replan-from-stand` (re-enters P2–P6; it does not reuse old
+  execution values).
+
+The checklist must also contain scenario-applicable rows for:
+
+- WALK, MOVE-SKILL, PUSH/PULL, SWAP, AWAIT, TRAMPLE + post-move, RUN/WAIT,
+  and click/drop parity.
+- Mid-route waypoint changes, enemy A→B switching, pointer leave, ability
+  switching, same-index re-arm, drag cancellation, right-click undo, undo
+  dependency removal, invalid click, and post-commit re-hover.
+- Out-of-bounds, occupied endpoint, still-out-of-range, far awaiting target,
+  illegal AOE tile, AP/MP/state-blocked action, and stale snapshot rejection.
+
+### Traceability rule
+
+No row may be labeled `PASS — existing suite` without a concrete
+`file::function`, journey ID, or scenario ID. Any row lacking an executable
+owner remains `CHECKLIST — required`, not PASS.
 
 ## 9. Slice close
 
-This slice is **complete for the source-of-truth contract**.
+The category contract and atomic checklist structure are present. The
+executable 680-row-per-scenario harness expansion remains required before this
+checklist can be called an ironclad automated regression barrier.
 
 Phases 0–1 done. Phase 2 closed with the smallest owner fixes required by strict live evidence: same-index ability re-arm now uses the existing selection signal, and animation diagnostics distinguish the route origin from destination cells. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because the gate found no need for a new result abstraction or result-changing optimization.
 
-The planning behavior now explicitly ratifies the last valid hover snapshot: a displayed move-plus-attack route cannot be replaced by a rebuilt ranged-only action at click time. Pending timeline ghosts compare the complete `TimelineAction` intent, including route metadata, so a valid changed waypoint preview remains visible and pulsing. The default planning gate (**PASS**) proves headless preview = commit = Simulator contracts; the live swap suite (**PASS**) separately proves TestBattle route parity with strict assertions. Owner F5 Layer B remains the owner’s visual check.
+The planning behavior now explicitly ratifies the last valid hover snapshot: a displayed move-plus-attack route cannot be replaced by a rebuilt ranged-only action at click time. Pending timeline ghosts compare the complete `TimelineAction` intent, including route metadata, so a valid changed waypoint preview remains visible and pulsing. The default planning gate (**PASS**) proves the currently implemented headless contracts; it does not yet prove the full 680-row-per-scenario expansion. The live swap suite (**PASS**) separately proves TestBattle route parity with strict assertions. Owner F5 Layer B remains the owner’s visual check.
 
 ### Deferred (explicit, not silent)
 

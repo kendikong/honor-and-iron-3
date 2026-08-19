@@ -426,29 +426,33 @@ Below: exact boards, cells, cursors, timeline icons, and preview positions.
 | **Path** | `(1,3) → (2,3)` |
 | **Red** | Re-anchored to `(2,3)` — dummy still in red (distance 2 ≤ 3) |
 
-### Phase 3 — Pathing toward dummy
+### Phase 3 — Pathing / direct-range boundary
 
-Paint **`(1,3) → (2,3) → (3,3)`** (approach tile west of dummy).
+Do **not** paint an approach route for this fixture. Chain Hook is already in
+range from the canonical start `(1,3)` to enemy `(4,3)`; the direct-hook branch
+must prove that no `(3,3)` heuristic route is invented.
 
 | What | Exactly |
 |------|---------|
-| **Red at end** | From `(3,3)`, red includes **`(4,3)`** (adjacent) |
+| **Stand** | Remains `(1,3)` |
+| **Action range** | Enemy `(4,3)` remains legal at distance 3 |
+| **Slots** | ACTION Chain Hook only; no synthetic PRE approach |
 
 ### Phase 4 — Hover enemy `(4,3)`
 
 | What | Exactly |
 |------|---------|
-| **Ghost knight** | **`(3,3)`** (adjacent west of dummy) |
-| **Cursor** | **Walk + attack** composite |
+| **Ghost knight** | **`(1,3)`** (canonical direct-hook stand) |
+| **Cursor** | **Chain Hook action** |
 | **Orange pull arrow** | **`(4,3) → (2,3)`** (west, toward knight) — PULL 2 |
 | **Preview dummy** | Lands **`(2,3)`** on preview board |
-| **Dashed line (manual)** | Player `(3,3)` to enemy `(4,3)` targeting segment (Layer B pixels) |
+| **Dashed line (manual)** | Player `(1,3)` to enemy `(4,3)` targeting segment (Layer B pixels) |
 
 ### Phase 5 — Commit
 
 | What | Exactly |
 |------|---------|
-| **Timeline** | PRE walk to **`(3,3)`** + ACTION Chain Hook on enemy |
+| **Timeline** | ACTION Chain Hook on enemy; no invented PRE walk |
 | **AP after** | **0 / 1** (hook spent your only AP) |
 | **No jump** | Pull arrow and landing cell unchanged vs preview |
 
@@ -456,12 +460,14 @@ Paint **`(1,3) → (2,3) → (3,3)`** (approach tile west of dummy).
 
 | What | Exactly |
 |------|---------|
-| **Knight** | **`(3,3)`** |
+| **Knight** | **`(1,3)`** |
 | **Dummy** | **`(2,3)`** (matches preview landing) |
 
 ### Phase 7 — Committed pre-move then hook
 
-Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new stand · approach path updates · pull arrow still west · **no** approach built in POST column when rules require PRE.
+Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new
+stand · range/arrow refreshes from `(2,3)` · **no** `(3,3)` route or POST
+approach is invented.
 
 ---
 
@@ -583,14 +589,17 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 ## Automation vs this checklist
 
-| Skill | Phases with **automated** row-by-row coverage | Still manual / gap |
+| Skill | Current automated scope | Still manual / gap |
 |-------|-----------------------------------------------|-------------------|
-| Shield Bash | `tests/skills/shield_bash_scenario.gd` | Phases 1–7 (full) |
-| Chain Hook | `tests/skills/chain_hook_scenario.gd` | Phases 1–7 (full) |
-| Trample | `tests/skills/trampling_advance_scenario.gd` | Phases 1–7 (full) |
+| Shield Bash | `tests/skills/shield_bash_scenario.gd` — scenario-specific contracts | Full seven-phase × 40-dimension atomic expansion; F5 pixels |
+| Chain Hook | `tests/skills/chain_hook_scenario.gd` — scenario-specific contracts | Full seven-phase × 40-dimension atomic expansion; F5 pixels |
+| Trample | `tests/skills/trampling_advance_scenario.gd` — scenario-specific contracts | Full seven-phase × 40-dimension atomic expansion; F5 pixels |
 | Run + 0 AP | `tests/skills/run_economy_scenario.gd` + `hide_after_commit_run_icon_bash` | Run economy + F5 commit path |
 
-**Target:** `tests/skills/shield_bash_scenario.gd` snapshots **every table row** above at each phase.
+**Target:** The atomic contract in `docs/design/intent_architecture_evidence.md`
+§8.1 and `canvases/planning-preview-truth-matrix.canvas.tsx` expands every
+scenario to **17 checkpoints × 40 dimensions**. The current skill scenarios do
+not yet claim that full expansion.
 
 ---
 
@@ -598,12 +607,15 @@ Commit walk to `(2,3)` first · projected stand `(2,3)` · hover enemy from new 
 
 | Suite | File | Role |
 |-------|------|------|
-| Planning QA gate | `tests/run_planning_qa_gate.gd` | All suites below |
+| Planning QA gate | `scripts/run_planning_qa_gate.ps1` | Default headless orchestrator |
+| Headless contracts | `scripts/run_planning_headless_contracts.ps1` + `scripts/run_t3_mimic_headless.ps1` | Current headless contracts and seven-journey mimic |
+| Legacy fixture runner | `tests/run_planning_qa_gate.gd` | Legacy Tier 1/2 only with explicit `-IncludeLegacyTier12`; not the default gate |
 | Drag E2E | `planning_drag_e2e_test.gd` | Real drag → release → commit → undo |
 | Planning input | `planning_input_test.gd` | Cursor, AP gates, synthetic abilities |
 | Trample E2E | `trampling_advance_e2e_test.gd` | Trample paint → commit → sim |
 | Action-range regression | `action_range_regression_test.gd` | Red tile contract (visibility + overlay) |
 | Checklist mirror | `planning_qa_gate_test.gd` | Slots, sim, click/drop parity per skill |
+| Source-of-truth gate | `tests/intent_source_of_truth_gate_test.gd` | Seven recorded journey signatures, stale/await rejection, swap/trample parity |
 
 **Run:**
 
@@ -630,6 +642,58 @@ Each skill needs a **scenario test** that steps through phases 1–7 and snapsho
 
 Until that exists, use this document for manual sign-off and treat “partial” rows above as regression risk.
 
+### Journey and phase traceability
+
+The atomic matrix uses these journey IDs as its single naming source:
+`WALK-01`, `MOVE-SKILL-01`, `PUSH-PULL-01`, `SWAP-01`, `AWAIT-01`,
+`TRAMPLE-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`, `TELEPORT-01`,
+`I-T01-01`…`I-T10-01`, and `N-OOB-01`…`N-SNAPSHOT-01`. Their canonical
+core fixtures are recorded in `docs/design/intent_architecture_evidence.md`
+§5; extended Archer, transition, rejection, and post-move fixtures are defined in the
+canvas `scenarioFacts` bank and must not be confused with currently executed
+SoT signatures.
+`N-RANGE-01` is a rejection-path alias of `PS-R-INVALID` and inherits its
+route facts; it is not a second independent fixture.
+`STALE-01` is the recorded SoT OOB rejection at `(-1,0)`; `N-OOB-01` is a
+separate atomic invalid-path fixture at `(99,99)`. They share the same
+rejection contract but are different boundary fixtures, not an alias.
+
+`PUSH-PULL-01/bash` is the same fixture/signature as `MOVE-SKILL-01`;
+`PUSH-PULL-01/hook` is the direct Chain Hook fixture represented by atomic
+`PUSH-PULL-01`. The two displacement behaviors must not be collapsed.
+
+The canonical 40-dimension catalog is the `atomicDimensions` list in
+`canvases/planning-preview-truth-matrix.canvas.tsx`: `hover-cell`,
+`selected-unit`, `route-cells`, `waypoints`, `route-leg`, `approach-origin`,
+`latest-stand`, `projected-board`, `facing`, `target-coord`, `target-unit`,
+`ability-id`, `authored-ability`, `module-coords`, `module-units`,
+`affected-tiles`, `forecast-damage`, `forecast-status`, `terrain-forecast`,
+`ap-before`, `mp-before`, `ap-after`, `mp-after`, `legality`, `blue-tiles`,
+`red-tiles`, `arrows`, `cursor`, `unit-ghost-position`,
+`unit-ghost-facing`, `timeline-ghost-visible`, `timeline-ghost-metadata`,
+`snapshot-identity`, `slot-signature`, `sim-result`, `movement-events`,
+`displacement-events`, `execution-economy`, `execution-effects`, and
+`execution-parity`.
+
+The current matrix target is **40 scenarios × 17 checkpoints × 40 dimensions =
+27,200 required rows**. This is a regression specification count, not a claim
+that the current headless runner already executes every row.
+
+The 17 atomic checkpoints map to the seven phases as follows:
+
+| Phase | Checkpoints |
+|---|---|
+| P1 select/rest | `setup`, `select-unit`, `select-ability` |
+| P2 empty hover | `initial-hover`, `route-begin`, `route-progress` |
+| P3 drag/waypoints | `route-final` |
+| P4 enemy/target hover | `enemy-transition`, `target-settled`, `snapshot-captured`, `pre-click` |
+| P5 commit | `click-ratified`, `timeline-written`, `post-commit` |
+| P6 execute | `sim-resolution`, `final-parity` |
+| P7 replan | `replan-from-stand` and re-enter P2–P6 |
+
+This is the checklist mapping and target contract; current automated scenarios
+remain partial until each atomic row has a concrete `file::function` owner.
+
 ---
 
 ## Layer B — manual only (~3 min after headless PASS)
@@ -642,6 +706,7 @@ Until that exists, use this document for manual sign-off and treat “partial”
 
 ## Sign-off
 
-- [ ] Automated: `run_planning_qa_gate.ps1` → Tier 3 PASS  
+- [ ] Automated: `run_planning_qa_gate.ps1` → headless planning gate PASS  
+- [ ] Separate live Tier 3 / F5 acceptance (not claimed by the headless gate)  
 - [ ] This checklist: skill(s) touched → phases 1–7 manual PASS  
 - [ ] Commit hash: `________________`
