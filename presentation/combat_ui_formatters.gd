@@ -461,12 +461,13 @@ static func plan_action_origin_cell(
 	if plan == null:
 		return origin
 	var action_in_plan: bool = plan.entries.has(action)
+	var action_col: int = action.timeline_column()
 	for act: TimelineAction in plan.entries:
 		if act == action:
 			break
 		if act.actor_id != action.actor_id:
 			continue
-		if not action_in_plan and act.move_timing >= action.move_timing:
+		if not action_in_plan and act.timeline_column() >= action_col:
 			continue
 		origin = _plan_step_end_cell(origin, act)
 	return origin

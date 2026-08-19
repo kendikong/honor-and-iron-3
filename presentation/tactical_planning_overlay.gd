@@ -2645,7 +2645,7 @@ func _draw_move_ghosts() -> void:
 		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
 	):
 		return
-	var origin: Vector2i = _proj_origin(unit)
+	var origin: Vector2i = _intent_stand_origin(unit)
 	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
 		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)

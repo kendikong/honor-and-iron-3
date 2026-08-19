@@ -112,6 +112,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_sidestep_enemy_click_ratifies_move_preview,
 		_test_sidestep_valid_tile_after_waypoint_premove,
 		_test_waypoint_premove_then_tile_aoe_enemy_hover,
+		_test_committed_premove_then_enemy_hover_click_preserves_intent,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -204,6 +205,7 @@ static func run_all(failures: Array[String]) -> void:
 		"sidestep_enemy_click_ratifies_move",
 		"sidestep_valid_tile_after_waypoint_premove",
 		"waypoint_tile_aoe_enemy_hover",
+		"committed_premove_enemy_click",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -4418,3 +4420,118 @@ static func _first_plan_action_for_unit(
 		):
 			return action
 	return null
+
+
+static func _archer_fixture(
+	archer_pos: Vector2i,
+	enemy_pos: Vector2i,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var sidestep: AbilityData = ArcherQaHarness.factory_ability(&"archer_sidestep")
+	var power_shot: AbilityData = ArcherQaHarness.factory_ability(&"archer_power_shot")
+	var volley: AbilityData = ArcherQaHarness.factory_ability(&"archer_volley")
+	var archer_def: UnitData = ArcherQaHarness.archer_unit_data()
+	var archer: UnitState = UnitState.create(1, archer_def, GameEnums.Team.PLAYER, archer_pos)
+	archer.active_abilities = [sidestep, power_shot, volley]
+	archer.movement.points_left = archer.movement.max_points
+	archer.ability.points_left = maxi(1, archer.ability.max_points)
+	archer.ability.max_points = maxi(1, archer.ability.max_points)
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var enemy: UnitState = UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, enemy_pos)
+	var units: Array[UnitState] = [archer, enemy]
+	var board := _plain_board(Vector2i(12, 12), units)
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = 1
+	director.selected_ability_index = 1
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"archer": archer,
+		"knight": archer,
+		"enemy": enemy,
+	}
+	return PlanningDragE2EHarness.wire_fixture(fix)
+
+
+static func _test_committed_premove_then_enemy_hover_click_preserves_intent(failures: Array[String]) -> void:
+	var fix: Dictionary = _archer_fixture(Vector2i(4, 5), Vector2i(7, 7))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	
+	# Step 1: Commit curved 4-step walk to (7, 4)
+	var route: Array[Vector2i] = [Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(7, 4)]
+	var move_action: TimelineAction = director.make_planning_move_action(
+		1, Vector2i(7, 4), director.board, fix.archer, route, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	var commit_ok: bool = director.commit_from_slots(1, {"pre": [move_action], "action": [], "post": []})
+	if not commit_ok or director.plan_pre_move.entries.size() != 1:
+		failures.append("PlanningQAGate premove_enemy_hover: failed to commit initial pre-move")
+		return
+	
+	# Verify projected stand is (7, 4)
+	var proj_archer: UnitState = director.projected_state.get_unit_by_id(1)
+	if proj_archer == null or proj_archer.position != Vector2i(7, 4):
+		failures.append("PlanningQAGate premove_enemy_hover: projected stand not at (7, 4)")
+		return
+	
+	# Step 2: Hover enemy at (7, 7) with Power Shot selected
+	director.select_ability(1)
+	input.on_hover_moved(Vector2i(7, 7))
+	input._flush_hover_heavy_sync()
+	
+	# Assert overlay intent stand origin is at (7, 4) NOT (4, 5)
+	var stand_origin: Vector2i = overlay._intent_stand_origin(fix.archer)
+	if stand_origin != Vector2i(7, 4):
+		failures.append("PlanningQAGate premove_enemy_hover: overlay intent stand origin %s expected (7, 4)" % str(stand_origin))
+		return
+	
+	# Assert timeline ghost has action
+	var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
+	var ghost_actions: Array = ghost_slots.get("action", [])
+	if ghost_actions.is_empty():
+		failures.append("PlanningQAGate premove_enemy_hover: timeline ghost must display pending action on enemy hover")
+		return
+	
+	# Step 3: Click enemy at (7, 7) to commit
+	input.set_qa_pointer_grid_cell(Vector2i(7, 7))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(7, 7)))
+	
+	# Assert pre-move is STILL IN PLAN
+	if director.plan_pre_move.entries.size() != 1:
+		failures.append("PlanningQAGate premove_enemy_hover: pre-move was wiped out on enemy click! Expected 1, got %d" % director.plan_pre_move.entries.size())
+		return
+	if director.plan_pre_move.entries[0].target_coord != Vector2i(7, 4):
+		failures.append("PlanningQAGate premove_enemy_hover: pre-move destination changed! Expected (7, 4), got %s" % str(director.plan_pre_move.entries[0].target_coord))
+		return
+	if director.plan_action.entries.size() != 1:
+		failures.append("PlanningQAGate premove_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
+		return
+	
+	# Step 4: Verify Simulator execution
+	var trial: BoardState = director.base_board.clone()
+	var evs: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, director.get_player_plan(), evs)
+	var moved: bool = false
+	var shot: bool = false
+	for e: SimEvent in evs:
+		if e.type == GameEnums.SimEventType.UNIT_MOVED and e.data.get("actor", -1) == 1 and e.data.get("to") == Vector2i(7, 4):
+			moved = true
+		if e.type == GameEnums.SimEventType.ABILITY_USED and e.data.get("actor", -1) == 1:
+			shot = true
+	if not moved:
+		failures.append("PlanningQAGate premove_enemy_hover: simulator did not execute movement to (7, 4)")
+		return
+	if not shot:
+		failures.append("PlanningQAGate premove_enemy_hover: simulator did not execute ability from (7, 4)")
+		return

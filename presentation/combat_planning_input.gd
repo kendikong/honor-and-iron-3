@@ -4026,14 +4026,14 @@ func _ability_range_origin(actor: UnitState) -> Vector2i:
 			var stand: Vector2i = _drag_route_stand_cell()
 			if _director.board != null and _director.board.is_in_bounds(stand):
 				return stand
-	return _proj_origin(actor)
+	return _proj_move_origin(actor)
 
 
 func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:
 	var rng := _ability_range(actor)
 	if rng < 0:
 		return false
-	var actor_pos: Vector2i = _proj_origin(actor) if aiming else actor.position
+	var actor_pos: Vector2i = _ability_range_origin(actor)
 	return GridSystem.manhattan(actor_pos, coord) <= rng
 
 
