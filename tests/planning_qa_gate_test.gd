@@ -3754,11 +3754,18 @@ static func _test_sidestep_enemy_click_ratifies_move_preview(
 		failures.append("%s: Sidestep target %s != %s" % [
 			label, str(sidestep.target_coord), str(destination),
 		])
+	_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
 	input.set_qa_pointer_grid_cell(destination)
 	input.on_left_press(fix.map_stub.grid_to_local(destination))
 	var committed: TimelineAction = _first_plan_action_for_unit(director, 1, ARCHER_SIDESTEP_ID)
 	if committed == null or committed.target_coord != destination:
 		failures.append("%s: click must commit the exact Sidestep hover" % label)
+	var result: SimResult = _simulate_committed_plan(director)
+	var final_archer: UnitState = result.final_state.get_unit_by_id(1)
+	if final_archer == null or final_archer.position != destination:
+		failures.append("%s: Simulator stand %s != Sidestep target %s" % [
+			label, str(final_archer.position if final_archer != null else null), str(destination),
+		])
 
 
 static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
@@ -3791,6 +3798,17 @@ static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
 	var volley_action: TimelineAction = action_steps[0] as TimelineAction
 	if volley_action.target_coord != enemy_cell or volley_action.target_unit_id >= 0:
 		failures.append("%s: tile AOE must preserve tile target semantics" % label)
+	var volley_module: AbilityModule = volley.modules[0] as AbilityModule
+	var affected_tiles: Array[Vector2i] = GridSystem.get_affected_tiles(
+		fix.board,
+		archer_cell,
+		enemy_cell,
+		volley_module.target_shape,
+		volley_module.target_shape_size,
+	)
+	if not affected_tiles.has(enemy_cell):
+		failures.append("%s: canonical AOE footprint must include hovered enemy tile" % label)
+	_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
 	var tile_px := float(TacticalConstants.TILE_PX)
 	input.on_left_press(Vector2(enemy_cell) * tile_px + Vector2(tile_px, tile_px) * 0.5)
 	var committed: TimelineAction = _first_plan_action_for_unit(director, 1, ARCHER_VOLLEY_ID)
@@ -3798,6 +3816,43 @@ static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
 		failures.append("%s: enemy click must commit the exact tile AOE hover; entries=%d" % [
 			label, director.get_player_plan().entries.size(),
 		])
+	var result: SimResult = _simulate_committed_plan(director)
+	var final_enemy: UnitState = result.final_state.get_unit_by_id(2)
+	if final_enemy == null or final_enemy.health.current_hp >= fix.enemy.health.current_hp:
+		failures.append("%s: Simulator must apply tile AOE damage to hovered enemy" % label)
+
+
+static func _assert_pending_hover_ghost(
+	input: CombatPlanningInput,
+	director: CombatDirector,
+	board: BoardState,
+	unit_id: int,
+	label: String,
+	failures: Array[String],
+) -> void:
+	var ghost_slots: Dictionary = input.timeline_ghost_slots(unit_id)
+	if (ghost_slots.get("pre", []) as Array).is_empty() and (
+		ghost_slots.get("action", []) as Array
+	).is_empty():
+		failures.append("%s: valid hover must expose pending timeline ghost slots" % label)
+		return
+	var timeline_grid := TacticalTimelineGrid.new()
+	timeline_grid.setup(director)
+	timeline_grid.bind_planning_input(input)
+	timeline_grid.set_board(board)
+	timeline_grid.set_display_board(board)
+	timeline_grid.set_phase(CombatDirector.Phase.PLANNING)
+	timeline_grid.set_selected(unit_id)
+	timeline_grid.rebuild(director.get_player_plan(), PackedStringArray())
+	if timeline_grid._pending_plan_labels.is_empty():
+		failures.append("%s: timeline must render a pending hover preview label" % label)
+	else:
+		var pending_label: Label = timeline_grid._pending_plan_labels[0]
+		var alpha_before: float = pending_label.modulate.a
+		timeline_grid._process(0.25)
+		if is_equal_approx(alpha_before, pending_label.modulate.a):
+			failures.append("%s: pending timeline preview must pulse/fade" % label)
+	timeline_grid.free()
 
 
 static func _first_plan_action_for_unit(
