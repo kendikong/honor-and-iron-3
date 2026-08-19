@@ -472,6 +472,15 @@ func ensure_movement_intent_from_actions(
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
 			continue
 		var origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+		var relocation_actor: UnitState = start_board.get_unit_by_id(action.actor_id)
+		if AbilitySystem.ability_uses_direct_relocation(action.ability, relocation_actor):
+			var hop: Array = [origin, action.target_coord]
+			preview_paths[action.actor_id] = hop
+			preview_splits[action.actor_id] = hop.size()
+			if not action_splits.has(action.actor_id):
+				action_splits[action.actor_id] = 0
+			origins[action.actor_id] = action.target_coord
+			continue
 		var intent: Array = movement_intent_cells(origin, action)
 		if intent.size() < 2:
 			continue

@@ -15,6 +15,7 @@ const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 const ARCHER_SIDESTEP_ID: StringName = &"archer_sidestep"
 const ARCHER_POWER_SHOT_ID: StringName = &"archer_power_shot"
 const ARCHER_VOLLEY_ID: StringName = &"archer_volley"
+const MAGE_TELEPORT_ID: StringName = &"mage_teleport"
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -54,6 +55,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_sim_follows_painted_order,
 		_test_trample_repath_does_not_replace_painted_order,
 		_test_trample_post_move_preview_commit_sim,
+		_test_trample_full_preview_truth_click,
+		_test_teleport_full_preview_truth_click,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
 		_test_hover_click_drop_slot_parity,
@@ -145,6 +148,8 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_sim_order",
 		"trample_repath_preserves_painted_order",
 		"trample_post_move_truth",
+		"trample_full_preview_truth_click",
+		"teleport_full_preview_truth_click",
 		"bash_preview_board_parity",
 		"hover_click_drop_parity",
 		"click_drop_bash",
@@ -303,6 +308,49 @@ static func _archer_volley_fixture(
 	}
 	PlanningDragE2EHarness.track_raw_fixture(fix)
 	return fix
+
+
+static func _mage_teleport_fixture(start: Vector2i, target: Vector2i) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var mage_def: UnitData = FactoryTestHelpers.build_unit(&"mage")
+	var mage: UnitState = UnitState.create(1, mage_def, GameEnums.Team.PLAYER, start)
+	var teleport: AbilityData = null
+	for ability: AbilityData in mage_def.abilities:
+		if ability != null and ability.id == MAGE_TELEPORT_ID:
+			teleport = ability
+			break
+	mage.active_abilities = [DataLibrary.get_universal_run(), teleport]
+	mage.movement.points_left = mage.movement.max_points
+	mage.ability.points_left = 1
+	mage.ability.max_points = 1
+	var board: BoardState = _plain_board(Vector2i(12, 12), [mage])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = mage.id
+	var teleport_idx: int = 1 if teleport != null else -1
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"mage": mage,
+		"knight": mage,
+		"teleport": mage.active_abilities[teleport_idx] if teleport_idx >= 0 else null,
+		"teleport_idx": teleport_idx,
+		"start": start,
+		"target": target,
+	}
+	var wired: Dictionary = PlanningDragE2EHarness.wire_fixture(fix)
+	if teleport_idx >= 0:
+		director.select_ability(teleport_idx)
+	return wired
 
 
 static func _archer_power_shot_fixture(
@@ -1940,6 +1988,181 @@ static func _test_trample_post_move_preview_commit_sim(
 	TramplingAdvanceE2ETest._test_post_move_sim_preview_keeps_trample_paint_order(
 		failures,
 	)
+
+
+static func _test_trample_full_preview_truth_click(failures: Array[String]) -> void:
+	var raw_fix: Dictionary = TramplingAdvanceE2ETest._knight_fixture(
+		TramplingAdvanceE2ETest.START_CELL,
+	)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var unit: UnitState = fix.unit
+	var label := "PlanningQAGate trample_full_truth"
+	if fix.trample_idx < 0:
+		failures.append("%s: Trampling Advance missing" % label)
+		return
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
+		failures.append("%s: awaiting arm failed" % label)
+		return
+	var route: Array[Vector2i] = [
+		TramplingAdvanceE2ETest.START_CELL,
+		TramplingAdvanceE2ETest.EAST_THEN_NORTH[0],
+		TramplingAdvanceE2ETest.EAST_THEN_NORTH[1],
+	]
+	TramplingAdvanceE2ETest._paint_drag_route(
+		input,
+		unit,
+		route,
+		TramplingAdvanceE2ETest.END_CELL,
+	)
+	input.set_qa_pointer_grid_cell(TramplingAdvanceE2ETest.END_CELL)
+	input.on_hover_moved(TramplingAdvanceE2ETest.END_CELL)
+	input._flush_hover_heavy_sync()
+	overlay._flush_hover_recompute()
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.preview_board == null:
+		failures.append("%s: valid hover preview board missing" % label)
+		return
+	var live_unit: UnitState = live.preview_board.get_unit_by_id(unit.id)
+	if live_unit == null or live_unit.position != TramplingAdvanceE2ETest.END_CELL:
+		failures.append(
+			"%s: preview stand %s != %s"
+			% [
+				str(live_unit.position if live_unit != null else null),
+				str(TramplingAdvanceE2ETest.END_CELL),
+			],
+		)
+	var live_path: Array = live.preview_paths.get(unit.id, [])
+	if live_path != route:
+		failures.append("%s: preview path %s != painted %s" % [
+			label, str(live_path), str(route),
+		])
+	var blue_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if not blue_tiles.has(route[1]):
+		failures.append("%s: blue tiles missing first painted waypoint" % label)
+	if not input.action_range_visible_for_hover():
+		failures.append("%s: action-range overlay hidden for valid Trample hover" % label)
+	else:
+		var trample: AbilityData = unit.active_abilities[fix.trample_idx]
+		var origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
+			director,
+			fix.board,
+			unit.id,
+		)
+		var expected_red: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+			fix.board,
+			unit,
+			trample,
+			origin,
+		)
+		var red_matches: bool = false
+		for tile: Vector2i in expected_red:
+			if overlay.is_hover_action_range_tile(tile):
+				red_matches = true
+				break
+		if not red_matches:
+			failures.append("%s: red tiles do not match canonical Trample range" % label)
+	var hover_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	if not input._intent_snapshot_valid or _slots_invalid(hover_slots):
+		failures.append("%s: valid hover snapshot missing or invalid" % label)
+		return
+	var action: TimelineAction = _slot_action_with_ability(hover_slots, TRAMPLE_ID)
+	if action == null or action.target_coord != TramplingAdvanceE2ETest.END_CELL:
+		failures.append("%s: hover slots missing exact Trample target" % label)
+	elif action.waypoints != TramplingAdvanceE2ETest.EAST_THEN_NORTH:
+		failures.append("%s: hover waypoints drifted to %s" % [
+			label, str(action.waypoints),
+		])
+	var slot_icon: String = input._cursor_icon_from_commit_slots(hover_slots, unit)
+	if slot_icon.is_empty():
+		failures.append("%s: finalized Trample slots produced no cursor icon" % label)
+	_assert_pending_hover_ghost(input, director, fix.board, unit.id, label, failures)
+	var map_stub: QaPlanningMapStub = fix.map_stub
+	input.on_left_press(map_stub.grid_to_local(TramplingAdvanceE2ETest.END_CELL))
+	var committed: TimelineAction = TramplingAdvanceE2ETest._committed_trample_action(director)
+	if committed == null or committed.waypoints != TramplingAdvanceE2ETest.EAST_THEN_NORTH:
+		failures.append("%s: real click did not ratify hover waypoints" % label)
+		return
+	var result: SimResult = _simulate_committed_plan(director)
+	var final_unit: UnitState = result.final_state.get_unit_by_id(unit.id)
+	if final_unit == null or final_unit.position != TramplingAdvanceE2ETest.END_CELL:
+		failures.append("%s: Simulator landing %s != hover stand %s" % [
+			label,
+			str(final_unit.position if final_unit != null else null),
+			str(TramplingAdvanceE2ETest.END_CELL),
+		])
+
+
+static func _test_teleport_full_preview_truth_click(failures: Array[String]) -> void:
+	var start := Vector2i(2, 2)
+	var target := Vector2i(4, 3)
+	var fix: Dictionary = _mage_teleport_fixture(start, target)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var mage: UnitState = fix.mage
+	var label := "PlanningQAGate teleport_full_truth"
+	if int(fix.teleport_idx) < 0:
+		failures.append("%s: Mage Teleport missing" % label)
+		return
+	if not AbilitySystem.ability_uses_caster_teleport(fix.teleport, mage):
+		failures.append("%s: factory Teleport ability is not marked caster-teleport" % label)
+		return
+	director.set_awaiting_action(mage.id, fix.teleport)
+	director.flush_plan_refresh_signals_if_pending()
+	if not input.awaiting_targeting_active():
+		failures.append("%s: awaiting teleport target was not armed" % label)
+		return
+	input.on_hover_moved(target)
+	input._flush_hover_heavy_sync()
+	overlay._flush_hover_recompute()
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.preview_board == null:
+		failures.append("%s: valid teleport preview board missing" % label)
+		return
+	var live_mage: UnitState = live.preview_board.get_unit_by_id(mage.id)
+	if live_mage == null or live_mage.position != target:
+		failures.append("%s: preview landing %s != %s" % [
+			label,
+			str(live_mage.position if live_mage != null else null),
+			str(target),
+		])
+	var live_path: Array = live.preview_paths.get(mage.id, [])
+	if live_path != [start, target]:
+		failures.append("%s: teleport path %s != direct hop %s" % [
+			label, str(live_path), str([start, target]),
+		])
+	var hover_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	if not input._intent_snapshot_valid or _slots_invalid(hover_slots):
+		failures.append("%s: valid teleport snapshot missing or invalid" % label)
+		return
+	var teleport: TimelineAction = _slot_action_with_ability(hover_slots, MAGE_TELEPORT_ID)
+	if teleport == null or teleport.target_coord != target:
+		failures.append("%s: finalized slots lost teleport target" % label)
+	var slot_icon: String = input._cursor_icon_from_commit_slots(hover_slots, mage)
+	if slot_icon.is_empty():
+		failures.append("%s: finalized teleport slots produced no cursor icon" % label)
+	_assert_pending_hover_ghost(input, director, fix.board, mage.id, label, failures)
+	input.set_qa_pointer_grid_cell(target)
+	input.on_left_press(fix.map_stub.grid_to_local(target))
+	var committed: TimelineAction = _first_plan_action_for_unit(
+		director,
+		mage.id,
+		MAGE_TELEPORT_ID,
+	)
+	if committed == null or committed.target_coord != target:
+		failures.append("%s: real click did not ratify teleport target" % label)
+		return
+	var result: SimResult = _simulate_committed_plan(director)
+	var final_mage: UnitState = result.final_state.get_unit_by_id(mage.id)
+	if final_mage == null or final_mage.position != target:
+		failures.append("%s: Simulator landing %s != %s" % [
+			label,
+			str(final_mage.position if final_mage != null else null),
+			str(target),
+		])
 
 
 static func _test_bash_slots_preview_board_parity(failures: Array[String]) -> void:

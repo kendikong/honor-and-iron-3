@@ -638,6 +638,12 @@ Each skill needs a **scenario test** that steps through phases 1–7 and snapsho
 - Commit slots (phase 5)  
 - Sim result (phase 6)  
 
+**Movement-ability minimum bar:** Trampling Advance must cover painted
+waypoint order, pathfinder-repath protection, live preview overlays, faded
+timeline ghost, real click ratification, post-move continuation, and
+Simulator parity. Sidestep remains a separate tile-target regression and is
+not the movement-family bar.
+
 **Template skill:** Shield Bash (`tests/skills/shield_bash_scenario.gd`). Add new skills by copying that file + registering in `planning_skill_scenarios_test.gd`.
 
 Until that exists, use this document for manual sign-off and treat “partial” rows above as regression risk.
