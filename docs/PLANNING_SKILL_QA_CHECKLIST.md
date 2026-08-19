@@ -646,7 +646,7 @@ Until that exists, use this document for manual sign-off and treat “partial”
 
 The atomic matrix uses these journey IDs as its single naming source:
 `WALK-01`, `MOVE-SKILL-01`, `PUSH-PULL-01`, `SWAP-01`, `AWAIT-01`,
-`TRAMPLE-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`, `TELEPORT-01`,
+`TRAMPLE-01`, `TRAMPLE-REPATH-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`, `TELEPORT-01`,
 `I-T01-01`…`I-T10-01`, and `N-OOB-01`…`N-SNAPSHOT-01`. Their canonical
 core fixtures are recorded in `docs/design/intent_architecture_evidence.md`
 §5; extended Archer, transition, rejection, and post-move fixtures are defined in the
@@ -675,8 +675,8 @@ The canonical 40-dimension catalog is the `atomicDimensions` list in
 `displacement-events`, `execution-economy`, `execution-effects`, and
 `execution-parity`.
 
-The current matrix target is **40 scenarios × 17 checkpoints × 40 dimensions =
-27,200 required rows**. This is a regression specification count, not a claim
+The current matrix target is **41 scenarios × 17 checkpoints × 40 dimensions =
+27,880 required rows**. This is a regression specification count, not a claim
 that the current headless runner already executes every row.
 
 The 17 atomic checkpoints map to the seven phases as follows:

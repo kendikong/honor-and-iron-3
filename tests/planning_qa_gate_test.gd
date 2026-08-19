@@ -52,6 +52,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_paint_preview_matches_route,
 		_test_trample_commit_preserves_east_then_north,
 		_test_trample_sim_follows_painted_order,
+		_test_trample_repath_does_not_replace_painted_order,
+		_test_trample_post_move_preview_commit_sim,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
 		_test_hover_click_drop_slot_parity,
@@ -141,6 +143,8 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_paint_preview",
 		"trample_commit_wps",
 		"trample_sim_order",
+		"trample_repath_preserves_painted_order",
+		"trample_post_move_truth",
 		"bash_preview_board_parity",
 		"hover_click_drop_parity",
 		"click_drop_bash",
@@ -1920,6 +1924,22 @@ static func _test_trample_sim_follows_painted_order(failures: Array[String]) -> 
 			"PlanningQAGate integrity: trample sim walk %s expected painted E-then-N %s"
 			% [str(visited), str(expected)],
 		)
+
+
+static func _test_trample_repath_does_not_replace_painted_order(
+	failures: Array[String],
+) -> void:
+	TramplingAdvanceE2ETest._test_mouse_jump_drag_exposes_pathfinder_reorder(
+		failures,
+	)
+
+
+static func _test_trample_post_move_preview_commit_sim(
+	failures: Array[String],
+) -> void:
+	TramplingAdvanceE2ETest._test_post_move_sim_preview_keeps_trample_paint_order(
+		failures,
+	)
 
 
 static func _test_bash_slots_preview_board_parity(failures: Array[String]) -> void:

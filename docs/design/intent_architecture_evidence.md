@@ -161,7 +161,7 @@ it does **not** claim that every atomic row below is already executable.
 - [defined] **No heuristic divergence:** any preview → slots → timeline → Simulator mismatch fails immediately; “close enough” final-state checks do not pass.
 - [defined] Invalid hover clears/rejects intent and cannot turn a Sidestep hover into an unrelated ranged attack.
 - [defined] Three sideflanking, full-MP waypoint premoves are followed by real enemy hover for ranged attack and tile AOE.
-- [defined] Exhausted-MP Sidestep enemy hovers are rejected; valid Sidestep tile hovers after shorter premoves still ratify exactly.
+- [defined] Trampling Advance is the minimum movement-ability bar: alternate painted waypoint orders and post-move continuations must ratify exactly. Sidestep remains a separate tile-target regression, not the movement-family bar.
 - [defined] Re-hover, ability switching, premoves, ranged approaches, tile targeting, and enemy-hover transitions remain covered by the existing suite.
 
 ### Atomic per-scenario expansion requirement
@@ -180,7 +180,7 @@ Required scenario instances:
 - `SS-V1`, `SS-V2` — two valid Sidestep post-premove tile-target routes.
 - `PS-R-INVALID` — full-MP route that remains out of ranged attack distance.
 - `WALK-01`, `MOVE-SKILL-01`, `PUSH-PULL-01`, `SWAP-01`, `AWAIT-01`,
-  `TRAMPLE-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`,
+  `TRAMPLE-01`, `TRAMPLE-REPATH-01`, `BASH-POST-01`, `TRAMPLE-POST-01`, `RUN-WAIT-01`, `DRAG-DROP-01`,
   `TELEPORT-01` — shared movement, targeting, dependency, economy, and input
   families.
 - `I-T01-01`…`I-T10-01` — ten explicit hover/drag/ability/undo/replan
@@ -213,7 +213,7 @@ not evidence.
 | Explicit transitions | `I-T01-01`…`I-T10-01` | 680 | Required — each transition gets its own atomic expansion |
 | Explicit rejection paths | `N-OOB-01`…`N-SNAPSHOT-01` | 680 | Required — each rejection gets invalid/empty/n/a expectations |
 
-The canvas currently contains **40 atomic scenarios × 680 = 27,200 listed
+The canvas currently contains **41 atomic scenarios × 680 = 27,880 listed
 items**. Each item must eventually acquire an executable `file::function`
 owner; rows without one remain requirements and cannot contribute to PASS.
 `N-RANGE-01` is an explicit rejection-path alias of `PS-R-INVALID` and must
