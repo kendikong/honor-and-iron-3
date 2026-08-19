@@ -94,16 +94,16 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | CM-07 | **PASS** | Comparison 4: player-turn positions/AP/MP vs projected board; `_sim_result_signature(simulate_committed)` recorded; full-turn events must contain `ENEMY_PHASE_BEGAN`. Slot strings are **not** required to equal sim strings. |
 | CM-08 | **PASS** | STALE-01 OOB. Bundle `new_fails=0`: stale hover, bash hover-change, undo, drag-drop undo, ability-switch cache clear, drag-cleared enemy intent restore, stale drag route ignore, hover-order invariant, timeline ghost/snapshot, invalid slots block commit, enemy-skill hover ≠ move route, `StalePreMoveTest`, swap undo cascade (`PlanningInputTest._test_swap_undo_cascades_all_plans_after`). Existing identity already rejects stale promotion — no new identity system. |
 | CM-09 | **PASS** | Bundle `new_fails=0` plus seven journeys: Pre/Post-Move origin, push-through premove, latest-stand action range, trample post-move painted route, bash sim determinism, swap dependency cancellation, awaiting hook (AWAIT-01), enemy replan marker on full-turn sim. |
-| CM-10 | **PASS** | Tests + this evidence file only. No production `ability.id` branch, no UI-only authority, no second range rule, no global exception. |
+| CM-10 | **PASS** | Production selection re-emits the existing `ability_selected` signal for same-index re-arming; the planning walk trace records `start` separately from destination `actual_cells`. No production `ability.id` branch, no UI-only authority, no second range rule, no global exception. |
 | CM-11 | **PASS** (measure only; **no optimize**) | `[SOT-PERF]` Shield Bash: hover **7520 µs**, slot build **6091 µs**, `simulate_committed` **2686 µs**. Slot signature unchanged across the timing loop. No cache / skip-sim / validation weaken. |
-| CM-12 | **PASS** | Default `.\scripts\run_planning_qa_gate.ps1` **PASS**. Live `.\scripts\run_swap_planning_acceptance.ps1` **PASS** (`test_live_swap_session`, 0 failures). Class gates / full regression **not run**: no factory or `Simulator` production change. Owner Layer B (F5 pixels) not claimed. |
+| CM-12 | **PASS** | Default `.\scripts\run_planning_qa_gate.ps1` **PASS**. Live `.\scripts\run_swap_planning_acceptance.ps1` **PASS** (`test_live_swap_session`, 0 failures) with strict event/animation route equality and painted-slot signature equality. Class gates / full regression **not run**: no factory or `Simulator` production change. Owner Layer B (F5 pixels) not claimed. |
 
 ## 7. preserve / improve / defer
 
 | Issue | Decision | Target |
 |-------|----------|--------|
 | Enforcement gap (helpers can reconstruct intent) | **improve** via characterization gate | Phase 1 **done** |
-| `ResolutionPipeline` clones in `_refresh_plan_core` | **preserve** as support | Phase 2 **closed** — no FAIL, no production change |
+| `ResolutionPipeline` clones in `_refresh_plan_core` | **preserve** as support | Phase 2 **closed** — no semantic duplication proven |
 | Typed `PlanningResult` wrapper | **defer / not started** — callers already consume slots/preview | Phase 3 skipped (Phase 2 did not prove multiple callers lack a shared result) |
 | Stale identity strengthening | **preserve** existing reject/refresh (CM-08 `new_fails=0`) | Phase 2 **closed** — no stale-promotion FAIL |
 | Projection perf | **preserve** — measured, not optimized (CM-11) | Phase 4 skipped (no hotspot large enough to justify a result-changing optimize) |
@@ -120,14 +120,17 @@ Every valid row’s full-turn events include `ENEMY_PHASE_BEGAN`.
 | 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **FAIL** | Live `test_live_swap_session`: 8 failures. Hover paths expected turn-start `(4, 5)` after swap; animation traces included latest stand while drop-time preview did not; walk-then-swap commit raced because `_assert_commit_ratifies_preview` was not awaited. |
 | 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **PASS** | GdUnit `test_live_swap_session` PASSED (1 case, 0 failures, 9.3s). Wrapper printed `[INCOMPLETE]` because the Godot process exit code was unavailable; GdUnit `Exit code: 0` is the result. |
 | 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | After live-swap test fix. AOE + headless contracts + T3 mimic. |
+| 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **FAIL** | Strict critic follow-up rejected route normalization: the direct slot helper captured preview before painting finalized slots, exposing a stale `[ (3, 4) ]` path against event `[ (3, 5), (3, 4) ]`. |
+| 2026-08-18 | `.\scripts\run_swap_planning_acceptance.ps1` | **PASS** | After removing route normalization, separating production trace origin from destination cells, re-emitting same-index ability selection through `CombatDirector`, and capturing painted slots before commit: 1 case, 0 failures. |
+| 2026-08-18 | `.\scripts\run_planning_qa_gate.ps1` (default) | **PASS** | After strict route and same-index re-arm fixes. AOE + headless contracts + T3 mimic. |
 
 ## 9. Slice close
 
 This slice is **complete for the source-of-truth contract**.
 
-Phases 0–1 done. Phase 2 closed with **no owner-system edit**: seven-journey four-way **PASS**, so the source-of-truth path was not rewritten. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because Phase 2 found no defect and CM-11 showed no hotspot worth changing results.
+Phases 0–1 done. Phase 2 closed with the smallest owner fixes required by strict live evidence: same-index ability re-arm now uses the existing selection signal, and animation diagnostics distinguish the route origin from destination cells. Phase 3 (`PlanningResult`) and Phase 4 (optimize) were not started because the gate found no need for a new result abstraction or result-changing optimization.
 
-Gameplay behavior is unchanged. Automated proof of preview = commit = Simulator is the default planning gate (**PASS**). Live swap TestBattle is **PASS**. Owner F5 Layer B remains the owner’s visual check.
+Gameplay outcomes are unchanged; the only production behavior change is re-emitting the existing selection signal when the selected ability is clicked again, allowing the normal planning-input re-arm path. Automated proof of preview = commit = Simulator is the default planning gate (**PASS**). Live swap TestBattle is **PASS** with strict route assertions. Owner F5 Layer B remains the owner’s visual check.
 
 ### Deferred (explicit, not silent)
 

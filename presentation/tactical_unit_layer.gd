@@ -1644,7 +1644,8 @@ func _play_cell_path_tween(
 			"cells": cells.duplicate(),
 			"use_run": use_run or is_dash,
 			"step_time": CombatDirector.RUN_STEP_TIME if use_run else step_time,
-			"actual_cells": [start_cell],
+			## `start` is the origin; `actual_cells` records destinations only.
+			"actual_cells": [],
 			"stage": _planning_commit_stage,
 		}
 		_planning_route_trace.append(route_trace)

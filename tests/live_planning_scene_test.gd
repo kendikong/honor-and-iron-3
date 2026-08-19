@@ -814,13 +814,7 @@ func _select_ability_for_unit(
 	for index: int in range(unit.active_abilities.size()):
 		var ability: AbilityData = unit.active_abilities[index]
 		if ability != null and ability.id == ability_id:
-			## Re-arming the same skill must still exit force-basic. Director
-			## select_ability no-ops when the index is unchanged, so emit the
-			## same skill-armed signal F5 uses after clicking the skill bar.
-			if director.selected_ability_index == index:
-				EventBus.ability_selected.emit(index)
-			else:
-				director.select_ability(index)
+			director.select_ability(index)
 			await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
 			return ability
 	assert_that("Required ability missing for unit %d: %s" % [unit_id, ability_id]).is_equal("")
@@ -878,12 +872,16 @@ func _commit_via_slots_at_cell(
 	input.set_qa_pointer_grid_cell(cell)
 	if input._intent_state != null:
 		input._intent_state.set_hover_coord(cell)
-	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
-	assert_bool(_slots_invalid(pre_intent["slots"] as Dictionary)).override_failure_message(
+	var slots: Dictionary = _commit_slots_for_interaction(ctx, unit_id, cell, false)
+	assert_bool(_slots_invalid(slots)).override_failure_message(
 		"%s: commit slots must be valid before commit" % label,
 	).is_false()
-	input.call("_paint_intent_slots_before_commit", unit_id, pre_intent["slots"])
-	assert_bool(director.commit_from_slots(unit_id, pre_intent["slots"])).override_failure_message(
+	input.call("_paint_intent_slots_before_commit", unit_id, slots)
+	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
+	assert_that(_intent_slot_signature(pre_intent["slots"] as Dictionary)).override_failure_message(
+		"%s: painted preview slots must match commit slots" % label,
+	).is_equal(_intent_slot_signature(slots))
+	assert_bool(director.commit_from_slots(unit_id, slots)).override_failure_message(
 		"%s: commit_from_slots must succeed" % label,
 	).is_true()
 	input.call("_promote_intent_preview_after_commit")
@@ -2615,7 +2613,6 @@ func _assert_animation_route_matches_preview(
 			if preview_path[path_index] == event_start:
 				expected_path = preview_path.slice(path_index)
 				break
-		expected_path = _align_walked_route_to_preview(expected_path, event_path)
 	if not event_path.is_empty():
 		assert_that(event_path).override_failure_message(
 			"%s: commit event route must match preview path; preview=%s event=%s plan=%s" % [
@@ -2625,7 +2622,6 @@ func _assert_animation_route_matches_preview(
 				_plan_route_summary(ctx.director as CombatDirector, unit_id),
 			],
 		).is_equal(expected_path)
-	expected_path = _align_walked_route_to_preview(expected_path, animation_path)
 	assert_that(animation_path).override_failure_message(
 			"%s: animation route must match preview path; preview=%s animation=%s plan=%s" % [
 			label,
@@ -2634,17 +2630,6 @@ func _assert_animation_route_matches_preview(
 				_plan_route_summary(ctx.director as CombatDirector, unit_id),
 		],
 	).is_equal(expected_path)
-
-
-## Drop-time preview may omit the current stand; walk traces include it.
-func _align_walked_route_to_preview(preview: Array, walked: Array) -> Array:
-	if preview.is_empty() or walked.is_empty():
-		return preview
-	if walked == preview:
-		return preview
-	if walked.size() == preview.size() + 1 and walked.slice(1) == preview:
-		return walked
-	return preview
 
 
 func _overlay_has_red_tile(overlay: TacticalPlanningOverlay, _board: BoardState) -> bool:

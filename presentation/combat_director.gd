@@ -258,6 +258,7 @@ func select_ability(index: int, remember_choice: bool = true) -> void:
 			sync_selected_ability_if_invalid()
 			return
 	if selected_ability_index == index:
+		EventBus.ability_selected.emit(selected_ability_index)
 		return
 	selected_ability_index = index
 	if remember_choice:
