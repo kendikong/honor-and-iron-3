@@ -1,0 +1,3676 @@
+{
+	"actual": "enemies are taking damage one after the other.",
+	"category": "Design concern",
+	"context": {
+		"battle_log_tail": "Knight uses Taunting Strike on Training Dummy\nTraining Dummy takes 8 damage from Taunting Strike (100 HP -> 92 HP)\n   (Base + WPN) × STR mult - DEF\n   (1.0 + 4.0) × 2.0 = 10.0 - 2.0 = 8.0\nTraining Dummy is displaced to (6, 5)\n- enemy phase -\n--- Turn 1 ---\nKnight uses Bowling Charge on tile (7, 5)\nKnight moves to (7, 5)\nTraining Dummy takes 8 damage from Collision (Knight) (100 HP -> 92 HP)\n   0.75 × (BASE + WPN) × STR mult - DEF\n   BASE 1 + 1.0/3 + 2 Retaliator = 3.33\n   0.75 × (3.0 + 4.0) × 2.0 = 10.5\n   10.5 - 2.0 = 8.0 incoming\nTraining Dummy collides\nTraining Dummy is displaced to (6, 6)\n- enemy phase -\n--- Turn 2 ---\nKnight uses Seismic Stomp on Knight\nTraining Dummy takes 12 damage from Seismic Stomp (100 HP -> 88 HP)\n   (Base + WPN) × STR mult - DEF\n   (2.0 + 4.0) × 2.0 = 12.0 - 2.0 = 10.0\n   + Backstab (2.0)\nTraining Dummy takes 10 damage from Seismic Stomp (100 HP -> 90 HP)\n   (Base + WPN) × STR mult - DEF\n   (2.0 + 4.0) × 2.0 = 12.0 - 2.0 = 10.0\n- enemy phase -\n--- Turn 3 ---\n",
+		"board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10,
+				10
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						5
+					],
+					"occupant_id": 2,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						5
+					],
+					"occupant_id": 1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						5
+					],
+					"occupant_id": 4,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						6
+					],
+					"occupant_id": 3,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 3,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 1,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						7,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 2,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						5,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 88,
+					"id": 3,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						6,
+						6
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 90,
+					"id": 4,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						8,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		},
+		"mode": "tactical_combat",
+		"phase": 0,
+		"phase_name": "PLANNING",
+		"planning_input": {
+			"drag_preview_failed": false,
+			"hover_tile": [
+				4,
+				7
+			]
+		},
+		"planning_overlay": {
+			"action_range_origin": [
+				-999,
+				-999
+			],
+			"aiming": false,
+			"attack_target_id": -1,
+			"hover_action_icon": "",
+			"hover_action_range_tiles": [],
+			"hover_coord": [
+				4,
+				7
+			],
+			"hover_move_tiles": [],
+			"route": []
+		},
+		"projected_board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10,
+				10
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						5
+					],
+					"occupant_id": 2,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						5
+					],
+					"occupant_id": 1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						5
+					],
+					"occupant_id": 4,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						6
+					],
+					"occupant_id": 3,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 3,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 1,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						7,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 2,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						5,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 88,
+					"id": 3,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						6,
+						6
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 90,
+					"id": 4,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						8,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		},
+		"scene_name": "TestBattle",
+		"scene_path": "res://scenes/TestBattle.tscn",
+		"selected_ability_id": "",
+		"selected_ability_index": 0,
+		"selected_unit_id": -1,
+		"timelines": {
+			"action": [],
+			"post_move": [],
+			"pre_move": []
+		},
+		"turn_start_board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10,
+				10
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						0
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						1
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						2
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						3
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						4
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						5
+					],
+					"occupant_id": 2,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						5
+					],
+					"occupant_id": 1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						5
+					],
+					"occupant_id": 4,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						5
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						6
+					],
+					"occupant_id": 3,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						6
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						7
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						8
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9,
+						9
+					],
+					"occupant_id": -1,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 3,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 1,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						7,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"knight_swap",
+						"knight_basic",
+						"knight_shield_bash",
+						"knight_phalanx_stance",
+						"knight_taunting_strike",
+						"knight_seismic_stomp",
+						"knight_fortify",
+						"knight_bowling_charge",
+						"knight_iron_grip",
+						"knight_redirect_strike",
+						"knight_indomitable_will",
+						"knight_retaliation_protocol",
+						"knight_shield_slam",
+						"knight_defensive_formation",
+						"knight_chain_hook",
+						"knight_trampling_advance"
+					],
+					"alive": true,
+					"ap": 1,
+					"armor": 0,
+					"definition": "knight",
+					"facing": 1,
+					"facing_name": "EAST",
+					"hp": 35,
+					"id": 2,
+					"level": 5,
+					"max_ap": 1,
+					"max_hp": 35,
+					"max_mp": 3,
+					"mp": 3,
+					"passives": [
+						"collision_retaliator"
+					],
+					"position": [
+						5,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 100,
+					"id": 3,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						6,
+						6
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0,
+					"armor": 0,
+					"definition": "training_dummy",
+					"facing": 3,
+					"facing_name": "WEST",
+					"hp": 100,
+					"id": 4,
+					"level": 1,
+					"max_ap": 0,
+					"max_hp": 100,
+					"max_mp": 0,
+					"mp": 0,
+					"passives": [],
+					"position": [
+						8,
+						5
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		}
+	},
+	"created_at": "2026-08-14T04:44:19",
+	"description": "AOE damage should be inflicted to aoe targets simultaneously since aoe implies hitting an area at the same time.",
+	"expected": "",
+	"latest_preview": {
+		"event_count": 1,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 15
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 0,
+		"statuses": [
+			""
+		]
+	},
+	"recent_events": [
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 2,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 4,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 5,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 3,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "knight_taunting_strike",
+				"ability_name": "Taunting Strike",
+				"actor": 2,
+				"actor_id": 2,
+				"presentation_anim": 3,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": 3
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"beast_tiles_moved": 1,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 1,
+				"electrified": false,
+				"final_raw": 10,
+				"floored": 10,
+				"fortitude": 0,
+				"multiplier_raw": 10.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"amount": 8,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 92,
+				"hp_damaged": 8,
+				"source_label": "Taunting Strike",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"amount": 0,
+				"duration": 1,
+				"status_type": 19,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"distance": 1,
+				"from": [
+					7,
+					5
+				],
+				"pusher": 2,
+				"to": [
+					6,
+					5
+				],
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 1
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 8,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"beast_tiles_moved": 1,
+				"unit": 1
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"ability": "knight_bowling_charge",
+				"ability_name": "Bowling Charge",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 5,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": -1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor": 1,
+				"actor_id": 1,
+				"dash_step_time": 0.08,
+				"from": [
+					4,
+					5
+				],
+				"path": [
+					[
+						5,
+						5
+					],
+					[
+						6,
+						5
+					],
+					[
+						7,
+						5
+					]
+				],
+				"presentation_anim": 5,
+				"steps": 3,
+				"to": [
+					7,
+					5
+				]
+			},
+			"kind": "sim_event",
+			"type": 0,
+			"type_name": "UNIT_MOVED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"base": 3,
+				"base_bonus": 2,
+				"dash_hit_step": 1,
+				"excess_push": 1,
+				"final_raw": 10,
+				"floored": 10,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 10.5,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 8,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"dash_hit_step": 1,
+				"hp": 92,
+				"hp_damaged": 8,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Knight)",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"against": 1,
+				"against_unit": 1,
+				"coord": [
+					6,
+					5
+				],
+				"dash_hit_step": 1,
+				"excess_push": 1,
+				"is_collision_side_effect": true,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"dash_hit_step": 1,
+				"distance": 1,
+				"from": [
+					6,
+					5
+				],
+				"pusher": 1,
+				"to": [
+					6,
+					6
+				],
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"status_type": 19,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 16,
+			"type_name": "STATUS_REMOVED"
+		},
+		{
+			"data": {
+				"turn": 2
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 8,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 7,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 6,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "knight_seismic_stomp",
+				"ability_name": "Seismic Stomp",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": 1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": true,
+				"backstab_bonus": 2,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 14,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 12,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 88,
+				"hp_damaged": 12,
+				"source_label": "Seismic Stomp",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 10,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 90,
+				"hp_damaged": 10,
+				"source_label": "Seismic Stomp",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 12,
+				"floored": 12,
+				"fortitude": 0,
+				"multiplier_raw": 12.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 3
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		}
+	],
+	"report_id": "BUG-20260813T214419-929",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "94461f5b8ea98db6f3ba22b8cd3fe13aac4db794",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/TestBattle.tscn",
+		"window_size": [
+			3840.0,
+			2160.0
+		]
+	},
+	"screenshot": "",
+	"severity": "Medium",
+	"status": "open",
+	"title": "aoe damage timing"
+}

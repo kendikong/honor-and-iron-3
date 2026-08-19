@@ -1,0 +1,231 @@
+{
+	"actual": "not a push then damage at resolution",
+	"category": "Bug",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-14T04:53:04",
+	"description": "wrong\t modules",
+	"expected": "should be damage with a push modifier",
+	"latest_preview": {
+		"event_count": 1,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 5
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 0,
+		"statuses": [
+			""
+		]
+	},
+	"recent_events": [
+		{
+			"kind": "scene_changed",
+			"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 16,
+			"kind": "ability_selected"
+		}
+	],
+	"report_id": "BUG-20260813T215304-654",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "94461f5b8ea98db6f3ba22b8cd3fe13aac4db794",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			6502.0,
+			1800.0
+		]
+	},
+	"screenshot": "",
+	"severity": "Medium",
+	"status": "open",
+	"title": "tail swipe"
+}

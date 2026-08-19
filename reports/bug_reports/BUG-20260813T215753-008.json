@@ -1,0 +1,484 @@
+{
+	"actual": "",
+	"category": "Design concern",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-14T04:57:53",
+	"description": "Teleport is a direct movement from a to b. there is no cardianl movement like regular move. therefore it should actually be a direct dashed blue line to the destination (indicating that you are going directory over to it.",
+	"expected": "",
+	"latest_preview": {
+		"event_count": 1,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 12
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 1,
+		"statuses": [
+			""
+		]
+	},
+	"recent_events": [
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 16,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "beast_meteor_drop",
+				"ability_name": "Meteor Drop",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": -1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"beast_tiles_moved": 2,
+				"unit": 1
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 16,
+				"floored": 16,
+				"fortitude": 0,
+				"multiplier_raw": 16.8,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 9,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 16,
+				"floored": 16,
+				"fortitude": 0,
+				"multiplier_raw": 16.8,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 9,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 14,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 86,
+				"hp_damaged": 14,
+				"source_label": "Meteor Drop",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 16,
+				"floored": 16,
+				"fortitude": 0,
+				"multiplier_raw": 16.8,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 9,
+				"target_def": 0,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 2,
+				"electrified": false,
+				"final_raw": 16,
+				"floored": 16,
+				"fortitude": 0,
+				"multiplier_raw": 16.8,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 9,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 14,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 86,
+				"hp_damaged": 14,
+				"source_label": "Meteor Drop",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 1
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 17,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		}
+	],
+	"report_id": "BUG-20260813T215753-008",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "94461f5b8ea98db6f3ba22b8cd3fe13aac4db794",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			6502.0,
+			1800.0
+		]
+	},
+	"screenshot": "C:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260813T215753-008.png",
+	"severity": "Medium",
+	"status": "open",
+	"title": "teleport incorrect"
+}

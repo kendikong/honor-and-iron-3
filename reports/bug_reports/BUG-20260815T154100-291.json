@@ -1,0 +1,672 @@
+{
+	"actual": "",
+	"category": "Bug",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-15T22:41:00",
+	"description": "skills like charge strike with 2 modules, move and then damage are incorrectly showing the postmove movepreview during the attack module. an attack module is awaiting the target for the attack module not the postmove preview yet",
+	"expected": "",
+	"latest_preview": {
+		"event_count": 1,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 16
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 0,
+		"statuses": [
+			""
+		]
+	},
+	"recent_events": [
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 1
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 3,
+				"electrified": false,
+				"final_raw": 21,
+				"floored": 21,
+				"fortitude": 0,
+				"multiplier_raw": 21.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 19,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 81,
+				"hp_damaged": 19,
+				"source_label": "Charge Strike",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"against": 4,
+				"against_unit": 4,
+				"coord": [
+					8,
+					5
+				],
+				"excess_push": 1,
+				"is_collision_side_effect": true,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 1,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 2,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 9,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 72,
+				"hp_damaged": 9,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 0,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 0,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 2,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 9,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 91,
+				"hp_damaged": 9,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 1
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "bruiser_charge_strike",
+				"ability_name": "Charge Strike",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					7,
+					4
+				],
+				"target_unit": -1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"ability_id": "bruiser_charge_strike",
+				"actor": 1,
+				"actor_id": 1,
+				"from": [
+					6,
+					5
+				],
+				"is_pass_through_walk": true,
+				"path": [
+					[
+						6,
+						4
+					],
+					[
+						7,
+						4
+					]
+				],
+				"presentation_anim": 3,
+				"steps": 2,
+				"to": [
+					7,
+					4
+				]
+			},
+			"kind": "sim_event",
+			"type": 0,
+			"type_name": "UNIT_MOVED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 3,
+				"electrified": false,
+				"final_raw": 21,
+				"floored": 21,
+				"fortitude": 0,
+				"multiplier_raw": 21.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 19,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 81,
+				"hp_damaged": 19,
+				"source_label": "Charge Strike",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"distance": 1,
+				"from": [
+					7,
+					5
+				],
+				"pusher": 1,
+				"to": [
+					7,
+					6
+				],
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 2
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "bruiser_charge_strike",
+				"ability_name": "Charge Strike",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					8,
+					4
+				],
+				"target_unit": -1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"ability_id": "bruiser_charge_strike",
+				"actor": 1,
+				"actor_id": 1,
+				"from": [
+					7,
+					4
+				],
+				"is_pass_through_walk": true,
+				"path": [
+					[
+						8,
+						4
+					]
+				],
+				"presentation_anim": 3,
+				"steps": 1,
+				"to": [
+					8,
+					4
+				]
+			},
+			"kind": "sim_event",
+			"type": 0,
+			"type_name": "UNIT_MOVED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 1
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 3,
+				"electrified": false,
+				"final_raw": 21,
+				"floored": 21,
+				"fortitude": 0,
+				"multiplier_raw": 21.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 19,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 81,
+				"hp_damaged": 19,
+				"source_label": "Charge Strike",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"distance": 1,
+				"from": [
+					8,
+					5
+				],
+				"pusher": 1,
+				"to": [
+					8,
+					6
+				],
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 3
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		}
+	],
+	"report_id": "BUG-20260815T154100-291",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "d5b735beef87e43ddf9a9325cdd1a59dbb524e69",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			6502.0,
+			1800.0
+		]
+	},
+	"screenshot": "",
+	"severity": "Medium",
+	"status": "open",
+	"title": "charge strike movepreview"
+}

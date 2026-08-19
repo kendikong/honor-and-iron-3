@@ -2027,9 +2027,7 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 	var sel_ability: AbilityData = _selected_ability_data(actor, _director.selected_ability_index)
 	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
 		return cells
-	var origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
-		_director, _board, actor.id,
-	)
+	var origin: Vector2i = _intent_stand_origin(actor)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
 	if attack_target_id >= 0:
 		var target_coord: Vector2i = _hover_coord

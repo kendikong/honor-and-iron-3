@@ -1704,7 +1704,10 @@ func _refresh_selected_interaction_preview() -> void:
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, [])
+			var hover_waypoints: Array[Vector2i] = []
+			if _drag_route_commits_active():
+				hover_waypoints = _route_waypoints()
+			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return
 	_restore_hover_preview()
@@ -2040,18 +2043,10 @@ func _commit_interaction_params(
 				var route_waypoints: Array[Vector2i] = _route_waypoints()
 				if target.is_enemy():
 					if _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
-						var painted_stand: Vector2i = route_waypoints.back()
-						var needed_approach: Vector2i = _director.preview_approach_tile(
-							_director.selected_unit_id,
-							target.id,
-							_director.selected_ability_index,
-							painted_stand,
-						)
-						if needed_approach != actor.position:
-							waypoints = route_waypoints
-							legal_moves = _snapshot_drag_legal_move_tiles()
-							if _drag_last_free != commit_cell:
-								preferred = _drag_last_free
+						waypoints = route_waypoints
+						legal_moves = _snapshot_drag_legal_move_tiles()
+						if _drag_last_free != commit_cell:
+							preferred = _drag_last_free
 				elif (
 					actor != null
 					and ability != null
@@ -2894,7 +2889,7 @@ func _preview_at_interaction_cell(
 	legal_move_tiles: Array[Vector2i] = [],
 ) -> Dictionary:
 	var params: Dictionary = _commit_interaction_params(hover_cell, attack_target_id)
-	if not waypoints.is_empty():
+	if not waypoints.is_empty() and attack_target_id < 0:
 		params.waypoints = waypoints.duplicate()
 	var tiles: Array[Vector2i] = legal_move_tiles
 	if tiles.is_empty():
@@ -3598,6 +3593,12 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 				and AbilitySystem.planning_is_valid_awaiting_endpoint(projected, hover, ability)
 			):
 				return projected
+	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+	if live_path.size() >= 2:
+		return live_path[live_path.size() - 1] as Vector2i
+	var hover_target_id: int = _hover_attack_target_id()
+	if hover_target_id >= 0:
+		return projected
 	var dest: Vector2i = move_intent_destination(unit_id)
 	if _director.board.is_in_bounds(dest) and dest != projected and _is_hover_move_cell(actor, dest):
 		return dest
@@ -3789,8 +3790,8 @@ func move_intent_destination(unit_id: int) -> Vector2i:
 	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
 	if live_path.size() >= 2:
 		return live_path[live_path.size() - 1] as Vector2i
-	if dragging and _drag_unit_id == unit_id and not _drag_route.is_empty():
-		return _drag_route[_drag_route.size() - 1]
+	if _drag_route_commits_active() and _drag_unit_id == unit_id and not _drag_route.is_empty():
+		return _drag_route_stand_cell()
 	if unit_id == _director.selected_unit_id:
 		var hover: Vector2i = get_hover_tile_for_ui()
 		if _director.board != null and _director.board.is_in_bounds(hover):
@@ -4299,6 +4300,13 @@ func _enemy_hover_respects_painted_route(
 		return false
 	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
 		return false
+	var move_origin: Vector2i = _proj_move_origin(actor)
+	var stand: Vector2i = route_waypoints.back()
+	if stand == move_origin:
+		return false
+	if _in_ability_range_from(actor, enemy.position, enemy):
+		if not dragging and route_waypoints.size() <= 1 and GridSystem.manhattan(move_origin, stand) <= 1:
+			return false
 	if _director == null:
 		return true
 	var slots: Dictionary = _empty_commit_slots()
@@ -5104,16 +5112,8 @@ func _build_enemy_commit_slots(
 			slots["invalid"] = "Invalid endpoint for this skill."
 			return slots
 	if use_skill and _in_ability_range(actor, enemy):
-		var in_range_hint: Vector2i = cell
-		if preferred_approach != _NO_PREFERRED_APPROACH:
-			in_range_hint = preferred_approach
-		if not effective_waypoints.is_empty():
-			in_range_hint = effective_waypoints.back()
-		var in_range_approach: Vector2i = _director.preview_approach_tile(
-			unit_id, enemy.id, ability_index, in_range_hint,
-		)
-		if in_range_approach == actor.position:
-			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
+		var committed_target_id := AbilitySystem.planning_commit_target_unit_id(ability, enemy.id)
+		if effective_waypoints.is_empty():
 			slots["action"].append(
 				TimelineAction.make_ability(
 					unit_id,
@@ -5122,6 +5122,35 @@ func _build_enemy_commit_slots(
 					committed_target_id,
 					GameEnums.MoveTiming.PRE_ACTION,
 					[],
+				),
+			)
+			return slots
+		else:
+			var stand_cell: Vector2i = effective_waypoints.back()
+			var needs_run: bool = AbilitySystem.movement_requires_run(
+				_proj(), actor, stand_cell, effective_waypoints,
+			)
+			if needs_run and not AbilitySystem.can_afford_run_for_commit(actor, ability):
+				slots["invalid"] = "Not enough AP to run and use this skill."
+				return slots
+			slots["pre"].append(
+				_director.make_planning_move_action(
+					unit_id,
+					stand_cell,
+					_proj(),
+					actor,
+					effective_waypoints,
+					GameEnums.MoveTiming.PRE_ACTION,
+				),
+			)
+			slots["action"].append(
+				TimelineAction.make_ability(
+					unit_id,
+					ability,
+					enemy.position,
+					committed_target_id,
+					GameEnums.MoveTiming.PRE_ACTION,
+					effective_waypoints,
 				),
 			)
 			return slots

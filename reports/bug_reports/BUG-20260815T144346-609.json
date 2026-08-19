@@ -1,0 +1,702 @@
+{
+	"actual": "",
+	"category": "Design concern",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-15T21:43:46",
+	"description": "AOE 2, not aoe cross 2",
+	"expected": "",
+	"latest_preview": {
+		"event_count": 1,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 14
+	},
+	"latest_rejection": "no_actions_left",
+	"latest_timeline": {
+		"action_count": 0,
+		"statuses": [
+			""
+		]
+	},
+	"recent_events": [
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "bruiser_guttural_roar",
+				"ability_name": "Guttural Roar",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					6,
+					5
+				],
+				"target_unit": 1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 2,
+				"duration": 1,
+				"status_type": 6,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 2,
+				"duration": 1,
+				"status_type": 6,
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"against": 4,
+				"against_unit": 4,
+				"coord": [
+					8,
+					5
+				],
+				"excess_push": 1,
+				"is_collision_side_effect": true,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"distance": 1,
+				"from": [
+					8,
+					5
+				],
+				"pusher": 1,
+				"to": [
+					9,
+					5
+				],
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 1,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 0,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 11,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 89,
+				"hp_damaged": 11,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 0,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 0,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 0,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 11,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 89,
+				"hp_damaged": 11,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 3
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "bruiser_guttural_roar",
+				"ability_name": "Guttural Roar",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					6,
+					5
+				],
+				"target_unit": 1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 2,
+				"duration": 1,
+				"status_type": 6,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"distance": 1,
+				"from": [
+					7,
+					5
+				],
+				"pusher": 1,
+				"to": [
+					8,
+					5
+				],
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"status_type": 6,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 16,
+			"type_name": "STATUS_REMOVED"
+		},
+		{
+			"data": {
+				"status_type": 6,
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 16,
+			"type_name": "STATUS_REMOVED"
+		},
+		{
+			"data": {
+				"turn": 4
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "bruiser_guttural_roar",
+				"ability_name": "Guttural Roar",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 3,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": 1
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"amount": 2,
+				"armor": 2,
+				"unit": 2
+			},
+			"kind": "sim_event",
+			"type": 10,
+			"type_name": "UNIT_ARMORED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 2,
+				"duration": 1,
+				"status_type": 6,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 2,
+				"duration": 1,
+				"status_type": 6,
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 15,
+			"type_name": "STATUS_APPLIED"
+		},
+		{
+			"data": {
+				"against": 4,
+				"against_unit": 4,
+				"coord": [
+					9,
+					5
+				],
+				"excess_push": 1,
+				"is_collision_side_effect": true,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"against": "wall",
+				"against_unit": -1,
+				"coord": [
+					10,
+					5
+				],
+				"excess_push": 1,
+				"is_collision_side_effect": true,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 1,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 0,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 11,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 89,
+				"hp_damaged": 11,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 0,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 0,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 0,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 11,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 89,
+				"hp_damaged": 11,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 1,
+				"final_raw": 11,
+				"floored": 11,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 11.25,
+				"push_distance": 1,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 10,
+				"target_def": 0,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 11,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 78,
+				"hp_damaged": 11,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Bruiser)",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"status_type": 6,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 16,
+			"type_name": "STATUS_REMOVED"
+		},
+		{
+			"data": {
+				"turn": 5
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		}
+	],
+	"report_id": "BUG-20260815T144346-609",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "df7dbb74d6bb73e1294e68cb303e811cddcf206c",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			6502.0,
+			1800.0
+		]
+	},
+	"screenshot": "",
+	"severity": "Medium",
+	"status": "open",
+	"title": "gutteral roar"
+}
