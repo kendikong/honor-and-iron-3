@@ -1706,7 +1706,10 @@ func _refresh_selected_interaction_preview() -> void:
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			var hover_waypoints: Array[Vector2i] = []
 			if _drag_route_commits_active():
-				hover_waypoints = _route_waypoints()
+				var enemy: UnitState = _director.board.get_unit_by_id(target_id) if (target_id >= 0 and _director != null and _director.board != null) else null
+				var ability: AbilityData = _selected_ability_data(p_unit)
+				if enemy == null or _enemy_hover_respects_painted_route(p_unit, enemy, ability, _route_waypoints()):
+					hover_waypoints = _route_waypoints()
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return

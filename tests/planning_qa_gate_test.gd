@@ -4617,6 +4617,13 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 		failures.append("PlanningQAGate range2_enemy_hover: targeting arrow %s expected [(4, 5), (7, 5)]" % str(arrow))
 		return
 	
+	# Move preview arrow must NOT be drawn on screen when hovering an enemy in range with Range 2+
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	var move_arrow: Array = overlay._interaction_move_route(fix.archer.id, live, live.preview_paths.get(fix.archer.id, []) if live != null else [])
+	if not move_arrow.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: move preview arrow %s must NOT be drawn for Range 2+ stationary shot" % str(move_arrow))
+		return
+	
 	# Timeline ghost has action from (4, 5) and NO pre-move
 	var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
 	var ghost_pre: Array = ghost_slots.get("pre", [])
