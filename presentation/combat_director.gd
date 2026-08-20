@@ -826,10 +826,38 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> Strin
 	return ""
 
 
-func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
+func validate_commit_slots(unit_id: int, slots: Dictionary) -> String:
 	if slots.has("invalid") and (typeof(slots["invalid"]) == TYPE_BOOL and slots["invalid"] or typeof(slots["invalid"]) == TYPE_STRING and slots["invalid"] != ""):
-		var reason: String = slots["invalid"] if typeof(slots["invalid"]) == TYPE_STRING else "cannot_use_ability"
-		EventBus.action_rejected.emit(reason)
+		return slots["invalid"] if typeof(slots["invalid"]) == TYPE_STRING else "cannot_use_ability"
+	var actions: Array[TimelineAction] = []
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				actions.append(raw as TimelineAction)
+	if actions.is_empty():
+		return "invalid"
+	if _actions_are_wait_only(actions):
+		return "" if not unit_has_wait_planned(unit_id) else "no_actions_left"
+	if unit_has_wait_planned(unit_id):
+		return "no_actions_left"
+	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
+	var has_post_move: bool = not (slots.get("post", []) as Array).is_empty()
+	if find_awaiting_action(unit_id) == null:
+		if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
+			if _unit_has_move_queued_for_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION):
+				return "move_already_planned"
+		if has_post_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.POST_ACTION):
+			if _unit_has_move_queued_for_timing(unit_id, GameEnums.MoveTiming.POST_ACTION):
+				return "move_already_planned"
+	if slots.get("_preview_validated", false) != true:
+		return preview_commit_valid(unit_id, actions)
+	return ""
+
+
+func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
+	var validation_error: String = validate_commit_slots(unit_id, slots)
+	if validation_error != "":
+		EventBus.action_rejected.emit(validation_error)
 		return false
 	var actions: Array[TimelineAction] = []
 	var plans: Array[Timeline] = []
@@ -844,9 +872,6 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	if _actions_are_wait_only(actions):
 		rpc_plan_wait(unit_id)
 		return true
-	if unit_has_wait_planned(unit_id):
-		EventBus.action_rejected.emit("no_actions_left")
-		return false
 	var has_pre_move: bool = not (slots.get("pre", []) as Array).is_empty()
 	var has_action: bool = not (slots.get("action", []) as Array).is_empty()
 	var has_post_move: bool = not (slots.get("post", []) as Array).is_empty()
@@ -856,8 +881,6 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			if swap_entry != null:
 				_register_planning_swap_presentation(swap_entry)
 			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
-				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
-					return false
 				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
@@ -865,14 +888,7 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			plan_affected_unit_ids = [unit_id]
 			_refresh_plan()
 			return true
-	if slots.get("_preview_validated", false) != true:
-		var reason := preview_commit_valid(unit_id, actions)
-		if reason != "":
-			EventBus.action_rejected.emit(reason)
-			return false
 	if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
-		if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
-			return false
 		_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 	if has_action:
 		if _try_finalize_awaiting_from_slots(unit_id, slots):
@@ -880,8 +896,6 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			if swap_entry != null:
 				_register_planning_swap_presentation(swap_entry)
 			if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
-				if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
-					return false
 				_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 				for raw: Variant in slots.get("pre", []):
 					if raw is TimelineAction:
@@ -897,8 +911,6 @@ func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 		if swap_entry != null:
 			_register_planning_swap_presentation(swap_entry)
 		if has_pre_move and _slots_contain_move_for_unit(slots, unit_id, GameEnums.MoveTiming.PRE_ACTION):
-			if _reject_if_move_slot_filled(unit_id, GameEnums.MoveTiming.PRE_ACTION):
-				return false
 			_clear_unit_moves_from_plan_at_timing(unit_id, GameEnums.MoveTiming.PRE_ACTION)
 			for raw: Variant in slots.get("pre", []):
 				if raw is TimelineAction:

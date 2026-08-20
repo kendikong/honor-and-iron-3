@@ -4139,8 +4139,8 @@ func _enemy_attackable_from_legal_tiles(
 		return false
 	if _in_ability_range(actor, enemy):
 		return true
-	if legal_move_tiles.is_empty():
-		return true
+	if not _unit_move_slot_open(actor.id) or not _basic_move_allowed() or _move_budget(actor) <= 0:
+		return false
 	var ability := _selected_ability_data(actor)
 	var rng: int = 1
 	if ability != null:
@@ -4150,9 +4150,19 @@ func _enemy_attackable_from_legal_tiles(
 	var origin: Vector2i = _proj_origin(actor)
 	if GridSystem.manhattan(origin, enemy.position) <= rng:
 		return true
-	for tile: Vector2i in legal_move_tiles:
-		if GridSystem.manhattan(tile, enemy.position) <= rng:
-			return true
+	var effective_tiles: Array[Vector2i] = legal_move_tiles
+	if effective_tiles.is_empty():
+		effective_tiles = _snapshot_drag_legal_move_tiles()
+	if not effective_tiles.is_empty():
+		for tile: Vector2i in effective_tiles:
+			if GridSystem.manhattan(tile, enemy.position) <= rng:
+				return true
+		return false
+	if _director != null:
+		var ability_idx: int = _director.selected_ability_index if _director.selected_ability_index >= 0 else 0
+		var approach := _director.preview_approach_tile(actor.id, enemy.id, ability_idx, enemy.position)
+		if approach != actor.position and _can_move_to(actor, approach):
+			return GridSystem.manhattan(approach, enemy.position) <= rng
 	return false
 
 
@@ -5237,6 +5247,9 @@ func _build_enemy_commit_slots(
 			slots["invalid"] = "Target is out of range."
 			return slots
 		if approach != actor.position:
+			if not _unit_move_slot_open(unit_id, approach) or not _basic_move_allowed() or not _can_move_to(actor, approach):
+				slots["invalid"] = "Cannot move to approach target."
+				return slots
 			var board: BoardState = _proj()
 			var approach_path: Array[Vector2i] = []
 			if _enemy_hover_respects_painted_route(actor, enemy, ability, waypoints):
@@ -5247,6 +5260,10 @@ func _build_enemy_commit_slots(
 				approach_path = _director.preview_waypoints_for_hover(
 					board, actor, approach, [], ability,
 				)
+			var rng: int = _ability_range(actor)
+			if rng >= 0 and GridSystem.manhattan(approach, enemy.position) > rng:
+				slots["invalid"] = "Target is out of range."
+				return slots
 			var needs_run: bool = AbilitySystem.movement_requires_run(
 				board, actor, approach, approach_path,
 			)
@@ -5364,7 +5381,7 @@ func _finalize_commit_slots(
 		AbilitySystem.prepare_planning_action(_proj(), action)
 	if not sim_validate:
 		return slots
-	var error_reason: String = _director.preview_commit_valid(unit_id, actions) if _director != null else ""
+	var error_reason: String = _director.validate_commit_slots(unit_id, slots) if _director != null else ""
 	if error_reason != "":
 		slots["invalid"] = error_reason
 		return slots

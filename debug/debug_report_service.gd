@@ -128,6 +128,24 @@ func submit_report(
 		screenshot_path = _capture_screenshot(report_id, report_dir, project_dir)
 
 	var report := {
+		"mandatory_agent_instructions": {
+			"directive": "MANDATORY FOR ALL AGENTS: You are strictly forbidden from applying heuristic fixes. All fixes must use shared global systems and the canonical single sources of truth.",
+			"required_rules": [
+				".cursor/rules/global-systems-first.mdc",
+				".cursor/rules/no-bandaid-fixes.mdc",
+				".cursor/rules/move-preview-intent-truth.mdc",
+				".cursor/rules/action-range-latest-stand.mdc",
+				".cursor/rules/qa-after-gameplay-changes.mdc"
+			],
+			"architectural_sources_of_truth": {
+				"1_simulation": "Simulator.simulate_player_turn(state, timeline, events) is the pure RefCounted deterministic resolution for preview and commit.",
+				"2_commit_authority": "CombatDirector.validate_commit_slots(unit_id, slots) is the single authority on action legality and commit success.",
+				"3_move_preview": "CombatPlanningPreview and TacticalPlanningOverlay — preview is intent truth (what is previewed on hover is what gets committed).",
+				"4_action_range": "CombatPlanningPreview.committed_stand_tile(unit_id) — range tiles paint from committed stand on active timeline, never turn-start base_board.",
+				"5_abilities": "AbilitySystem and AbilityData Resources — data-driven resources, not hardcoded engine branches.",
+				"6_input_buffers": "Input buffers (_drag_route, waypoints) are transient staging and must never directly paint canvas routes without simulation validation."
+			}
+		},
 		"report_id": report_id,
 		"status": "open",
 		"created_at": Time.get_datetime_string_from_system(true),

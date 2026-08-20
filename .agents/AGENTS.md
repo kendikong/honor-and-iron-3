@@ -52,3 +52,19 @@ Whenever tasked with writing or executing an Implementation Plan based on a "Mas
 
 **Global rules first:** Skills must follow shared economy, timeline, targeting, and effect systems unless the Bible explicitly requires otherwise. If a new global rule or per-skill exception is needed, warn the project owner and get acceptance before implementing (see `class_abilities.txt` § Global Rules First).
 - **Never Overwrite the Plan**: When updating the implementation plan, always append new phases or fixes to the existing structure. Never overwrite, truncate, or delete future phases from the document unless that entire phase has been 100% completed.
+
+## Bug Report Triage & Architectural Sources of Truth Mandate
+Whenever tasked with investigating, diagnosing, or fixing any bug report (from `reports/bug_reports/` or from user logs), **ALL agents across all models MUST read and obey the core non-heuristic rules first**:
+- `.cursor/rules/global-systems-first.mdc`
+- `.cursor/rules/no-bandaid-fixes.mdc`
+- `.cursor/rules/move-preview-intent-truth.mdc`
+- `.cursor/rules/action-range-latest-stand.mdc`
+
+**Major Architectural Sources of Truth (Never Bypass with Heuristics):**
+1. **Simulation Truth:** `Simulator.simulate_player_turn(state, timeline, events)` is the pure, deterministic truth for both live planning preview and execution resolution. Plain RefCounted state only; never references Nodes.
+2. **Commit Authority Truth:** `CombatDirector.validate_commit_slots(unit_id, slots)` is the single validator for action/move legality, timeline slot availability, and AP budget. Hover candidate slots and click commits must both use this identical validator.
+3. **Move Preview & Intent Truth:** `CombatPlanningPreview` & `TacticalPlanningOverlay` — what is previewed on hover is what gets committed; committing must not rewrite or render a different outcome than the previewed state.
+4. **Action Range & Stand Origin Truth:** Range tiles paint from the committed stand position on the active timeline, never from turn-start `base_board`.
+5. **Ability Data Truth:** `AbilitySystem` & `AbilityData` Resources — abilities are data (`.tres`), not hardcoded engine branches or bespoke `if` conditions in UI layers.
+6. **Input Buffers vs. Render Truth:** Input buffers (`_drag_route`, waypoint caches) are strictly transient input staging. They must never directly dictate screen rendering or bypass simulation validation.
+

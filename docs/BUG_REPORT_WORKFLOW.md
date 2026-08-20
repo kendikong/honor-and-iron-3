@@ -41,6 +41,23 @@ The agent should read the JSON files (each has `"status": "open"` until fixed),
 triage design/balance concerns separately from implementation bugs, fix actionable
 reports, run the matching QA, and leave the report files available as the audit trail.
 
+## Agent Non-Heuristic Mandate (Mandatory for all models)
+
+Before proposing or implementing any fix for a bug report, **every agent MUST load and obey**:
+- `.cursor/rules/global-systems-first.mdc`
+- `.cursor/rules/no-bandaid-fixes.mdc`
+- `.cursor/rules/move-preview-intent-truth.mdc`
+- `.cursor/rules/action-range-latest-stand.mdc`
+
+**Never propose or write heuristic / band-aid fixes.** Always fix the underlying canonical global system and adhere to the **6 Major Architectural Sources of Truth**:
+1. **Simulation Truth:** `Simulator.simulate_player_turn(state, timeline, events)` (pure, deterministic).
+2. **Commit Authority Truth:** `CombatDirector.validate_commit_slots(unit_id, slots)` (single validator for action legality).
+3. **Move Preview & Intent Truth:** `CombatPlanningPreview` & `TacticalPlanningOverlay` (preview == execution).
+4. **Action Range & Stand Origin Truth:** Range tiles paint from the committed stand position on active timeline.
+5. **Ability Data Truth:** `AbilitySystem` & `AbilityData` Resources (data over engine branches).
+6. **Input Buffers vs. Render Truth:** Input buffers (`_drag_route`) are staging only and must never bypass simulation validation.
+
+
 ## Performance contract
 
 The report system does not record video, serialize the board every frame, scan

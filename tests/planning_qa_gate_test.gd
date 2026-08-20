@@ -115,6 +115,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_committed_premove_then_enemy_hover_click_preserves_intent,
 		_test_painted_route_then_enemy_hover_click_preserves_intent,
 		_test_range1_painted_route_enemy_hover_respects_waypoints,
+		_test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -210,6 +211,7 @@ static func run_all(failures: Array[String]) -> void:
 		"committed_premove_enemy_click",
 		"painted_route_enemy_click",
 		"range1_painted_route_enemy_click",
+		"out_of_range_enemy_hover_exhausted",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -706,11 +708,22 @@ static func _action_target_unit(slots: Dictionary) -> int:
 	return step.target_unit_id if step != null else -1
 
 
+static func _is_invalid(slots: Dictionary) -> bool:
+	if not slots.has("invalid"):
+		return false
+	var inv: Variant = slots["invalid"]
+	if typeof(inv) == TYPE_BOOL:
+		return inv as bool
+	if typeof(inv) == TYPE_STRING:
+		return not (inv as String).is_empty()
+	return true
+
+
 static func _slot_signature(slots: Dictionary) -> String:
 	return "%s|%s|%s" % [
 		str(_pre_target(slots)),
 		str(_action_target_unit(slots)),
-		str(bool(slots.get("invalid", true))),
+		str(_is_invalid(slots)),
 	]
 
 
@@ -1050,7 +1063,7 @@ static func _test_shield_bash_enemy_hover_commit_slots(failures: Array[String]) 
 	var slots: Dictionary = input._final_commit_slots_for_interaction(
 		1, ENEMY_POS, [], [], Vector2i(-999999, -999999),
 	)
-	if bool(slots.get("invalid", true)):
+	if _is_invalid(slots):
 		failures.append("PlanningQAGate Shield Bash 2A: enemy hover slots invalid")
 		return
 	var pre: Array = slots.get("pre", []) as Array
@@ -1442,7 +1455,7 @@ static func _test_commit_plan_matches_hover_slots(failures: Array[String]) -> vo
 		return
 	director.selected_ability_index = bash_idx
 	var slots: Dictionary = _commit_slots_at(input, 1, ENEMY_POS)
-	if bool(slots.get("invalid", true)):
+	if _is_invalid(slots):
 		failures.append("PlanningQAGate integrity: enemy hover must be committable")
 		return
 	if not director.commit_from_slots(1, slots):
@@ -4791,5 +4804,51 @@ static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: 
 	if not bashed:
 		failures.append("PlanningQAGate range1_enemy_hover: simulator did not execute Shield Bash from (7, 4)")
 		return
+
+
+static func _test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost(failures: Array[String]) -> void:
+	# Archer at (4, 5), Enemy at (8, 5) (distance 4, out of range for Snap Shot which has range 1-2)
+	var fix: Dictionary = _archer_power_shot_fixture(Vector2i(4, 5), Vector2i(8, 5))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	
+	# Step 1: Pre-plan a move for Archer to (4, 4) (move slot now closed)
+	director.rpc_plan_move(fix.archer.id, Vector2i(4, 4), -1, [Vector2i(4, 4)])
+	if director.plan_pre_move.entries.size() != 1:
+		failures.append("PlanningQAGate out_of_range_enemy_hover: failed to plan initial pre-move")
+		return
+	
+	# Select Snap Shot (Ability 1, Range 1-2)
+	director.selected_ability_index = 1
+	
+	# Step 2: Hover over enemy at (8, 5) (distance from (4, 4) is 4 > range 2, and move slot is closed)
+	input.on_hover_moved(Vector2i(8, 5))
+	input._flush_hover_heavy_sync()
+	
+	# Assert cursor icon is GLYPH_NULL (🚫)
+	var hover_icon: String = input.compute_hover_action_icon(Vector2i(8, 5))
+	if hover_icon != PlanningIcons.GLYPH_NULL:
+		failures.append("PlanningQAGate out_of_range_enemy_hover: hover cursor icon '%s' expected GLYPH_NULL ('%s')" % [hover_icon, PlanningIcons.GLYPH_NULL])
+		return
+	
+	# Assert live preview has NO targeting arrow and NO attack ghost
+	var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+	if not arrow.is_empty():
+		failures.append("PlanningQAGate out_of_range_enemy_hover: targeting arrow %s must NOT be present for unattackable enemy" % str(arrow))
+		return
+	
+	# Step 3: Click enemy at (8, 5)
+	input.set_qa_pointer_grid_cell(Vector2i(8, 5))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(8, 5)))
+	
+	# Assert action was NOT committed and pre-move remained intact
+	if director.plan_action.entries.size() != 0:
+		failures.append("PlanningQAGate out_of_range_enemy_hover: clicking out-of-range unattackable enemy committed action!")
+		return
+	if director.plan_pre_move.entries.size() != 1:
+		failures.append("PlanningQAGate out_of_range_enemy_hover: clicking out-of-range enemy corrupted pre-move!")
+		return
+
 
 
