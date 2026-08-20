@@ -1584,7 +1584,7 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 	if (
 		_drag_route_commits_active()
 		and _drag_unit_id == p_unit.id
-		and _unit_move_slot_open(p_unit.id)
+		and _basic_move_allowed()
 		and (
 			_drag_route.has(cell)
 			or (not _drag_route.is_empty() and cell == _drag_route.back())
@@ -1592,7 +1592,7 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 		)
 	):
 		return false
-	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
+	if _basic_move_allowed() and _is_hover_move_cell(p_unit, cell):
 		return false
 	if not _ally_skill_preview_slots(p_unit, cell).is_empty():
 		return false
@@ -1665,13 +1665,18 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
 		_refresh_click_target_highlight()
 		return
+	var target_enemy_id: int = -1
+	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
+		target_enemy_id = _attack_target_id_at_cell(p_unit, cell)
 	## K4 / auto_run: selection-hover painted route is pre-move intent while class skill stays armed.
 	## TARGET_PICK awaiting is tile aim, not a walk — leftover paint must not preview MOVE.
+	## If hovering an enemy with an armed skill, do not intercept as pure move.
 	if (
-		not _awaiting_target_pick_blocks_premove()
+		target_enemy_id < 0
+		and not _awaiting_target_pick_blocks_premove()
 		and _drag_route_commits_active()
 		and _drag_unit_id == p_unit.id
-		and _unit_move_slot_open(p_unit.id)
+		and _basic_move_allowed()
 		and _director.board.is_in_bounds(cell)
 		and (
 			cell == _drag_route_stand_cell()
@@ -1682,7 +1687,7 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, _route_waypoints())
 		_refresh_click_target_highlight()
 		return
-	if _unit_move_slot_open(p_unit.id) and _is_hover_move_cell(p_unit, cell):
+	if target_enemy_id < 0 and _basic_move_allowed() and _is_hover_move_cell(p_unit, cell):
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
 		_refresh_click_target_highlight()
 		return
@@ -2072,6 +2077,8 @@ func _commit_interaction_params(
 						and not AbilitySystem.is_movement_skill(ability)
 						and _director.selected_ability_index >= 0
 					):
+						if not dragging:
+							_clear_hover_drag_route()
 						var board: BoardState = _proj()
 						var approach: Vector2i = _director.preview_approach_tile(
 							_director.selected_unit_id,
