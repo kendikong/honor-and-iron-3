@@ -4619,9 +4619,9 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 	
 	# Move preview arrow must NOT be drawn on screen when hovering an enemy in range with Range 2+
 	var live: CombatPlanningPreview = overlay.get_live_preview()
-	var move_arrow: Array = overlay._interaction_move_route(fix.archer.id, live, live.preview_paths.get(fix.archer.id, []) if live != null else [])
-	if not move_arrow.is_empty():
-		failures.append("PlanningQAGate range2_enemy_hover: move preview arrow %s must NOT be drawn for Range 2+ stationary shot" % str(move_arrow))
+	var hover_move_arrow: Array = overlay._interaction_move_route(fix.archer.id, live, live.preview_paths.get(fix.archer.id, []) if live != null else [])
+	if not hover_move_arrow.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: hover move preview arrow %s must NOT be drawn for Range 2+ stationary shot" % str(hover_move_arrow))
 		return
 	
 	# Timeline ghost has action from (4, 5) and NO pre-move
@@ -4645,6 +4645,16 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 		return
 	if director.plan_action.entries.size() != 1:
 		failures.append("PlanningQAGate range2_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
+		return
+	
+	# Assert 100% parity between hover movepreview and committed movepreview
+	var committed: CombatPlanningPreview = overlay.get_committed_preview()
+	var commit_move_arrow: Array = CombatPlanningPreview.committed_move_route_leg(fix.archer.id, committed, director, director.base_board, GameEnums.MoveTiming.PRE_ACTION)
+	if not commit_move_arrow.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: committed move preview arrow %s must NOT be present for Range 2+ stationary shot" % str(commit_move_arrow))
+		return
+	if hover_move_arrow != commit_move_arrow:
+		failures.append("PlanningQAGate range2_enemy_hover: hover movepreview (%s) != commit movepreview (%s)" % [str(hover_move_arrow), str(commit_move_arrow)])
 		return
 	
 	# Step 4: Verify Simulator execution parity (direct shot from (4, 5), 0 movement)
@@ -4699,6 +4709,14 @@ static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: 
 		failures.append("PlanningQAGate range1_enemy_hover: targeting arrow %s expected [(7, 4), (7, 5)]" % str(arrow))
 		return
 	
+	# Move preview arrow on hover matches the painted route
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	var hover_move_arrow: Array = overlay._interaction_move_route(fix.knight.id, live, live.preview_paths.get(fix.knight.id, []) if live != null else [])
+	var expected_route: Array = [Vector2i(4, 5), Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(7, 4)]
+	if hover_move_arrow != expected_route:
+		failures.append("PlanningQAGate range1_enemy_hover: hover move preview arrow %s expected %s" % [str(hover_move_arrow), str(expected_route)])
+		return
+	
 	# Timeline ghost has BOTH pre-move to (7, 4) and action on enemy
 	var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
 	var ghost_pre: Array = ghost_slots.get("pre", [])
@@ -4726,6 +4744,16 @@ static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: 
 		return
 	if director.plan_action.entries.size() != 1:
 		failures.append("PlanningQAGate range1_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
+		return
+	
+	# Assert 100% parity between hover movepreview and committed movepreview
+	var committed: CombatPlanningPreview = overlay.get_committed_preview()
+	var commit_move_arrow: Array = CombatPlanningPreview.committed_move_route_leg(fix.knight.id, committed, director, director.base_board, GameEnums.MoveTiming.PRE_ACTION)
+	if commit_move_arrow != expected_route:
+		failures.append("PlanningQAGate range1_enemy_hover: committed move preview arrow %s expected %s" % [str(commit_move_arrow), str(expected_route)])
+		return
+	if hover_move_arrow != commit_move_arrow:
+		failures.append("PlanningQAGate range1_enemy_hover: hover movepreview (%s) != commit movepreview (%s)" % [str(hover_move_arrow), str(commit_move_arrow)])
 		return
 	
 	# Step 4: Simulator execution parity (walks along waypoints to (7, 4), then bashes)
