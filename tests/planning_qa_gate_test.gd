@@ -114,6 +114,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_waypoint_premove_then_tile_aoe_enemy_hover,
 		_test_committed_premove_then_enemy_hover_click_preserves_intent,
 		_test_painted_route_then_enemy_hover_click_preserves_intent,
+		_test_range1_painted_route_enemy_hover_respects_waypoints,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -208,6 +209,7 @@ static func run_all(failures: Array[String]) -> void:
 		"waypoint_tile_aoe_enemy_hover",
 		"committed_premove_enemy_click",
 		"painted_route_enemy_click",
+		"range1_painted_route_enemy_click",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -394,6 +396,49 @@ static func _archer_power_shot_fixture(
 		"knight": archer,
 		"enemy": enemy,
 		"power_shot": power_shot,
+	}
+	return PlanningDragE2EHarness.wire_fixture(fix)
+
+
+static func _knight_shield_bash_fixture(
+	knight_pos: Vector2i,
+	enemy_pos: Vector2i,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var bash: AbilityData = KnightQaHarness.factory_ability(&"knight_shield_bash")
+	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
+	var knight: UnitState = UnitState.create(
+		1, knight_def, GameEnums.Team.PLAYER, knight_pos,
+	)
+	knight.active_abilities = [bash]
+	knight.movement.max_points = 4
+	knight.movement.points_left = 4
+	knight.ability.points_left = maxi(1, knight.ability.max_points)
+	knight.ability.max_points = maxi(1, knight.ability.max_points)
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var enemy: UnitState = UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, enemy_pos)
+	var board: BoardState = _plain_board(Vector2i(12, 12), [knight, enemy])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = knight.id
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"archer": knight,
+		"knight": knight,
+		"enemy": enemy,
+		"bash": bash,
+		"power_shot": bash,
 	}
 	return PlanningDragE2EHarness.wire_fixture(fix)
 
@@ -3805,7 +3850,7 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 				Vector2i(2, 2), Vector2i(2, 3), Vector2i(3, 3),
 				Vector2i(3, 4), Vector2i(4, 4),
 			],
-			"enemy": Vector2i(7, 4),
+			"enemy": Vector2i(5, 4),
 		},
 		{
 			"start": Vector2i(8, 8),
@@ -3813,7 +3858,7 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 				Vector2i(8, 8), Vector2i(8, 7), Vector2i(7, 7),
 				Vector2i(7, 6), Vector2i(6, 6),
 			],
-			"enemy": Vector2i(2, 6),
+			"enemy": Vector2i(5, 6),
 		},
 		{
 			"start": Vector2i(2, 8),
@@ -3821,7 +3866,7 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 				Vector2i(2, 8), Vector2i(3, 8), Vector2i(3, 7),
 				Vector2i(4, 7), Vector2i(4, 6),
 			],
-			"enemy": Vector2i(8, 6),
+			"enemy": Vector2i(5, 6),
 		},
 	]
 	for case_index: int in range(cases.size()):
@@ -3831,7 +3876,7 @@ static func _test_waypoint_premove_enemy_hover_full_truth(
 		for raw_cell: Variant in spec["route"] as Array:
 			route.append(raw_cell as Vector2i)
 		var enemy_cell: Vector2i = spec["enemy"]
-		var fix: Dictionary = _archer_power_shot_fixture(start, enemy_cell)
+		var fix: Dictionary = _knight_shield_bash_fixture(start, enemy_cell)
 		var input: CombatPlanningInput = fix.input
 		var director: CombatDirector = fix.director
 		var overlay: TacticalPlanningOverlay = fix.overlay
@@ -4545,11 +4590,11 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 	var director: CombatDirector = fix.director
 	var overlay: TacticalPlanningOverlay = fix.overlay
 	
-	# Select Archer and Power Shot (skill index 1, range 3-5)
+	# Select Archer and Power Shot (skill index 1, range 3-5 / 1-5)
 	director.select_unit(1)
 	director.select_ability(1)
 	
-	# Step 1: Paint a move corridor to (7, 4)
+	# Step 1: Cursor moved/painted corridor toward enemy
 	input._drag_unit_id = 1
 	input._drag_route = [Vector2i(4, 5), Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(7, 4)]
 	input._drag_last_free = Vector2i(7, 4)
@@ -4560,30 +4605,105 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 	input.on_hover_moved(Vector2i(7, 5))
 	input._flush_hover_heavy_sync()
 	
-	# Assert overlay intent stand origin remains at (7, 4) (the painted stand)
+	# For Range 2+ (Power Shot), direct enemy hover attacks from current stand (4, 5) with 0 movement
 	var stand_origin: Vector2i = overlay._intent_stand_origin(fix.archer)
-	if stand_origin != Vector2i(7, 4):
-		failures.append("PlanningQAGate painted_route_enemy_hover: overlay intent stand origin %s expected (7, 4)" % str(stand_origin))
+	if stand_origin != Vector2i(4, 5):
+		failures.append("PlanningQAGate range2_enemy_hover: overlay intent stand origin %s expected (4, 5)" % str(stand_origin))
 		return
 	
-	# Assert targeting arrow originates from (7, 4) to (7, 5)
+	# Targeting arrow originates directly from (4, 5) to (7, 5)
+	var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+	if arrow.size() != 2 or arrow[0] != Vector2i(4, 5) or arrow[1] != Vector2i(7, 5):
+		failures.append("PlanningQAGate range2_enemy_hover: targeting arrow %s expected [(4, 5), (7, 5)]" % str(arrow))
+		return
+	
+	# Timeline ghost has action from (4, 5) and NO pre-move
+	var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
+	var ghost_pre: Array = ghost_slots.get("pre", [])
+	var ghost_act: Array = ghost_slots.get("action", [])
+	if not ghost_pre.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: timeline ghost must NOT have pre-move for Range 2+ in-range hover")
+		return
+	if ghost_act.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: timeline ghost missing action on enemy")
+		return
+	
+	# Step 3: Click enemy at (7, 5) to commit
+	input.set_qa_pointer_grid_cell(Vector2i(7, 5))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(7, 5)))
+	
+	# Assert action committed from (4, 5) and NO pre-move
+	if director.plan_pre_move.entries.size() != 0:
+		failures.append("PlanningQAGate range2_enemy_hover: pre-move must NOT be committed for Range 2+ in-range hover! Got %d" % director.plan_pre_move.entries.size())
+		return
+	if director.plan_action.entries.size() != 1:
+		failures.append("PlanningQAGate range2_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
+		return
+	
+	# Step 4: Verify Simulator execution parity (direct shot from (4, 5), 0 movement)
+	var trial: BoardState = director.base_board.clone()
+	var evs: Array[SimEvent] = []
+	Simulator.simulate_player_turn(trial, director.get_player_plan(), evs)
+	var moved: bool = false
+	var shot: bool = false
+	for e: SimEvent in evs:
+		if e.type == GameEnums.SimEventType.UNIT_MOVED and e.data.get("actor", -1) == 1:
+			moved = true
+		if e.type == GameEnums.SimEventType.ABILITY_USED and e.data.get("actor", -1) == 1:
+			shot = true
+	if moved:
+		failures.append("PlanningQAGate range2_enemy_hover: simulator must NOT execute movement for Range 2+ in-range attack")
+		return
+	if not shot:
+		failures.append("PlanningQAGate range2_enemy_hover: simulator did not execute ability from (4, 5)")
+		return
+
+
+static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_shield_bash_fixture(Vector2i(4, 5), Vector2i(7, 5))
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	
+	# Knight at (4, 5), Enemy at (7, 5). Shield Bash (Range 1). 4 MP for 4-step corridor.
+	director.select_unit(1)
+	director.select_ability(0)
+	
+	# Step 1: Paint corridor to adjacent tile (7, 4)
+	input._drag_unit_id = 1
+	input._drag_route = [Vector2i(4, 5), Vector2i(4, 4), Vector2i(5, 4), Vector2i(6, 4), Vector2i(7, 4)]
+	input._drag_last_free = Vector2i(7, 4)
+	input._sync_drag_route_stand()
+	overlay.set_drag_route(input._drag_route)
+	
+	# Step 2: Hover enemy at (7, 5)
+	input.on_hover_moved(Vector2i(7, 5))
+	input._flush_hover_heavy_sync()
+	
+	# For Range 1, painted waypoints ARE respected to chosen adjacent stand (7, 4)
+	var stand_origin: Vector2i = overlay._intent_stand_origin(fix.knight)
+	if stand_origin != Vector2i(7, 4):
+		failures.append("PlanningQAGate range1_enemy_hover: overlay intent stand origin %s expected (7, 4)" % str(stand_origin))
+		return
+	
+	# Targeting arrow originates from (7, 4) to (7, 5)
 	var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
 	if arrow.size() != 2 or arrow[0] != Vector2i(7, 4) or arrow[1] != Vector2i(7, 5):
-		failures.append("PlanningQAGate painted_route_enemy_hover: targeting arrow %s expected [(7, 4), (7, 5)]" % str(arrow))
+		failures.append("PlanningQAGate range1_enemy_hover: targeting arrow %s expected [(7, 4), (7, 5)]" % str(arrow))
 		return
 	
-	# Assert timeline ghost has BOTH pre-move to (7, 4) and action on enemy
+	# Timeline ghost has BOTH pre-move to (7, 4) and action on enemy
 	var ghost_slots: Dictionary = input.timeline_ghost_slots(1)
 	var ghost_pre: Array = ghost_slots.get("pre", [])
 	var ghost_act: Array = ghost_slots.get("action", [])
 	if ghost_pre.is_empty():
-		failures.append("PlanningQAGate painted_route_enemy_hover: timeline ghost missing pre-move to (7, 4)")
+		failures.append("PlanningQAGate range1_enemy_hover: timeline ghost missing pre-move to (7, 4)")
 		return
 	if (ghost_pre[0] as TimelineAction).target_coord != Vector2i(7, 4):
-		failures.append("PlanningQAGate painted_route_enemy_hover: timeline ghost pre-move target %s expected (7, 4)" % str((ghost_pre[0] as TimelineAction).target_coord))
+		failures.append("PlanningQAGate range1_enemy_hover: timeline ghost pre-move target %s expected (7, 4)" % str((ghost_pre[0] as TimelineAction).target_coord))
 		return
 	if ghost_act.is_empty():
-		failures.append("PlanningQAGate painted_route_enemy_hover: timeline ghost missing action on enemy")
+		failures.append("PlanningQAGate range1_enemy_hover: timeline ghost missing action on enemy")
 		return
 	
 	# Step 3: Click enemy at (7, 5) to commit
@@ -4592,30 +4712,31 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 	
 	# Assert BOTH pre-move and action are committed
 	if director.plan_pre_move.entries.size() != 1:
-		failures.append("PlanningQAGate painted_route_enemy_hover: pre-move was not committed! Expected 1, got %d" % director.plan_pre_move.entries.size())
+		failures.append("PlanningQAGate range1_enemy_hover: pre-move was not committed! Expected 1, got %d" % director.plan_pre_move.entries.size())
 		return
 	if director.plan_pre_move.entries[0].target_coord != Vector2i(7, 4):
-		failures.append("PlanningQAGate painted_route_enemy_hover: pre-move destination %s expected (7, 4)" % str(director.plan_pre_move.entries[0].target_coord))
+		failures.append("PlanningQAGate range1_enemy_hover: pre-move destination %s expected (7, 4)" % str(director.plan_pre_move.entries[0].target_coord))
 		return
 	if director.plan_action.entries.size() != 1:
-		failures.append("PlanningQAGate painted_route_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
+		failures.append("PlanningQAGate range1_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
 		return
 	
-	# Step 4: Verify Simulator execution parity
+	# Step 4: Simulator execution parity (walks along waypoints to (7, 4), then bashes)
 	var trial: BoardState = director.base_board.clone()
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(trial, director.get_player_plan(), evs)
 	var moved: bool = false
-	var shot: bool = false
+	var bashed: bool = false
 	for e: SimEvent in evs:
 		if e.type == GameEnums.SimEventType.UNIT_MOVED and e.data.get("actor", -1) == 1 and e.data.get("to") == Vector2i(7, 4):
 			moved = true
 		if e.type == GameEnums.SimEventType.ABILITY_USED and e.data.get("actor", -1) == 1:
-			shot = true
+			bashed = true
 	if not moved:
-		failures.append("PlanningQAGate painted_route_enemy_hover: simulator did not execute movement to (7, 4)")
+		failures.append("PlanningQAGate range1_enemy_hover: simulator did not execute movement to (7, 4)")
 		return
-	if not shot:
-		failures.append("PlanningQAGate painted_route_enemy_hover: simulator did not execute ability from (7, 4)")
+	if not bashed:
+		failures.append("PlanningQAGate range1_enemy_hover: simulator did not execute Shield Bash from (7, 4)")
 		return
+
 

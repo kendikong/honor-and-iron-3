@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-18" name="report_1261" tests="3" failures="3" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-18T07:20:53" hostname="localhost" tests="3" failures="3" errors="0" skipped="0" flaky="0" time="23.812">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="15.945">
+		</testcase>
+		<testcase name="test_live_second_archer_complex_turn_after_volley" classname="live_archer_class_test" time="4.024">
+		</testcase>
+		<testcase name="test_live_selection_after_committed_archer_actions" classname="live_archer_class_test" time="3.810">
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:429" type="FAILURE">
+<![CDATA[
+selection regression: first → second committed Archer click failed
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:429
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:661
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:670" type="FAILURE">
+<![CDATA[
+after committed-unit reselection: unit 1 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:670
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:432
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:661
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:670" type="FAILURE">
+<![CDATA[
+after committed-unit reselection: unit 2 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:670
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:433
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:661
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

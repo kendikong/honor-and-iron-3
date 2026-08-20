@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-18" name="report_1266" tests="3" failures="2" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-18T07:25:44" hostname="localhost" tests="3" failures="2" errors="0" skipped="0" flaky="0" time="23.901">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="16.019">
+		</testcase>
+		<testcase name="test_live_second_archer_complex_turn_after_volley" classname="live_archer_class_test" time="4.137">
+		</testcase>
+		<testcase name="test_live_selection_after_committed_archer_actions" classname="live_archer_class_test" time="3.714">
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:408" type="FAILURE">
+<![CDATA[
+selection regression: second Archer could not select enemy
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:408
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:652
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:420" type="FAILURE">
+<![CDATA[
+selection regression: first → second Archer click failed
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:420
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:652
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-18" name="report_1269" tests="1" failures="8" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-18T10:55:35" hostname="localhost" tests="1" failures="8" errors="0" skipped="0" flaky="0" time="8.582">
+		<testcase name="test_live_swap_session" classname="live_planning_scene_test" time="8.551">
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1975" type="FAILURE">
+<![CDATA[
+swap/premove/hover_west: preview path expected [(4, 5), (4, 4), (3, 4)] got [(4, 4), (3, 4)]; events=[11:(-999, -999):(-999, -999):[], 0:(4, 4):(3, 4):[(3, 4)]]; plan=[1:(4, 4):[]:2]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1975
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1435
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1404
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:2059
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:1975" type="FAILURE">
+<![CDATA[
+swap/premove/hover_dest: preview path expected [(4, 5), (4, 4), (3, 4), (3, 5)] got [(4, 4), (3, 4), (3, 5)]; events=[11:(-999, -999):(-999, -999):[], 0:(4, 4):(3, 5):[(3, 4), (3, 5)]]; plan=[1:(4, 4):[]:2]
+	at '_assert_preview_path_equals' in res://tests/live_planning_scene_test.gd:1975
+	at '_audit_surface' in res://tests/live_planning_scene_test.gd:1435
+	at '_probe_cell' in res://tests/live_planning_scene_test.gd:1404
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:2059
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2621" type="FAILURE">
+<![CDATA[
+swap/premove/release: animation route must match preview path; preview=[(3, 4), (3, 5)] animation=[(4, 4), (3, 4), (3, 5)] plan=[1:(4, 4):[]:2, 0:(3, 5):[(3, 4), (3, 5)]:-1]
+	at '_assert_animation_route_matches_preview' in res://tests/live_planning_scene_test.gd:2621
+	at '_wait_planning_move_tween' in res://tests/live_planning_scene_test.gd:1001
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2621" type="FAILURE">
+<![CDATA[
+walk_swap/walk/release: animation route must match preview path; preview=[(3, 5), (3, 4)] animation=[(4, 5), (3, 5), (3, 4)] plan=[0:(3, 4):[(3, 5), (3, 4)]:-1]
+	at '_assert_animation_route_matches_preview' in res://tests/live_planning_scene_test.gd:2621
+	at '_wait_planning_move_tween' in res://tests/live_planning_scene_test.gd:1001
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:876" type="FAILURE">
+<![CDATA[
+walk_swap/swap: commit slots must be valid before commit
+	at '_commit_via_slots_at_cell' in res://tests/live_planning_scene_test.gd:876
+	at '_journey_walk_then_swap' in res://tests/live_planning_scene_test.gd:272
+	at '_reposition_mouse_to_unit' in res://tests/live_planning_scene_test.gd:1311
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:880" type="FAILURE">
+<![CDATA[
+walk_swap/swap: commit_from_slots must succeed
+	at '_commit_via_slots_at_cell' in res://tests/live_planning_scene_test.gd:880
+	at '_journey_walk_then_swap' in res://tests/live_planning_scene_test.gd:272
+	at '_reposition_mouse_to_unit' in res://tests/live_planning_scene_test.gd:1311
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:2437" type="FAILURE">
+<![CDATA[
+walk_swap/swap: commit must not run when preview slots are invalid
+	at '_assert_commit_ratifies_preview' in res://tests/live_planning_scene_test.gd:2437
+	at '_commit_via_slots_at_cell' in res://tests/live_planning_scene_test.gd:887
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:2059
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_planning_scene_test.gd:275" type="FAILURE">
+<![CDATA[
+walk_swap: expected walk + swap pre-moves
+	at '_journey_walk_then_swap' in res://tests/live_planning_scene_test.gd:275
+	at '_commit_via_slots_at_cell' in res://tests/live_planning_scene_test.gd:887
+	at '_wait_ability_settle' in res://tests/live_planning_scene_test.gd:2059
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>

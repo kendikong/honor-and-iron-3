@@ -2047,6 +2047,23 @@ func _commit_interaction_params(
 						legal_moves = _snapshot_drag_legal_move_tiles()
 						if _drag_last_free != commit_cell:
 							preferred = _drag_last_free
+					elif (
+						actor != null
+						and ability != null
+						and not AbilitySystem.is_movement_skill(ability)
+						and _director.selected_ability_index >= 0
+					):
+						var board: BoardState = _proj()
+						var approach: Vector2i = _director.preview_approach_tile(
+							_director.selected_unit_id,
+							target.id,
+							_director.selected_ability_index,
+							target.position,
+						)
+						if approach != actor.position:
+							waypoints = _director.preview_waypoints_for_hover(
+								board, actor, approach, [], ability,
+							)
 				elif (
 					actor != null
 					and ability != null
@@ -4297,6 +4314,14 @@ func _enemy_hover_respects_painted_route(
 	route_waypoints: Array[Vector2i],
 ) -> bool:
 	if actor == null or enemy == null or route_waypoints.is_empty():
+		return false
+	if ability == null:
+		return false
+	var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
+	# Range 2+ actions never respect hover-painted detours on enemy hover.
+	# Direct hover always uses shortest approach (or stationary shot if already in range).
+	# To take a deliberate detour for Range 2+, the player pre-plans the move first.
+	if ability_range > 1:
 		return false
 	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
 		return false

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-18" name="report_1260" tests="3" failures="10" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-18T07:19:07" hostname="localhost" tests="3" failures="10" errors="0" skipped="0" flaky="0" time="23.790">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="15.968">
+		</testcase>
+		<testcase name="test_live_second_archer_complex_turn_after_volley" classname="live_archer_class_test" time="4.038">
+		</testcase>
+		<testcase name="test_live_selection_after_committed_archer_actions" classname="live_archer_class_test" time="3.749">
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:400" type="FAILURE">
+<![CDATA[
+selection regression: committed first Archer still exposes action slot
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:400
+	at '_commit_live_click' in res://tests/live_archer_class_test.gd:652
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:405" type="FAILURE">
+<![CDATA[
+selection regression: enemy click did not select committed target
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:405
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:409" type="FAILURE">
+<![CDATA[
+selection regression: enemy → second Archer click failed
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:409
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:674" type="FAILURE">
+<![CDATA[
+after enemy → second Archer: unit 1 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:674
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:412
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:674" type="FAILURE">
+<![CDATA[
+after enemy → second Archer: unit 2 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:674
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:413
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:421" type="FAILURE">
+<![CDATA[
+selection regression: Power Shot commit rejected
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:421
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:425" type="FAILURE">
+<![CDATA[
+selection regression: second committed Archer could not select enemy
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:425
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:429" type="FAILURE">
+<![CDATA[
+selection regression: enemy → first committed Archer click failed
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:429
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:674" type="FAILURE">
+<![CDATA[
+after committed-unit reselection: unit 1 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:674
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:436
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+			<failure message="FAILED: res://tests/live_archer_class_test.gd:674" type="FAILURE">
+<![CDATA[
+after committed-unit reselection: unit 2 MP changed during selection
+	at '_assert_projected_mp_unchanged' in res://tests/live_archer_class_test.gd:674
+	at 'test_live_selection_after_committed_archer_actions' in res://tests/live_archer_class_test.gd:437
+	at '_actual_click_cell' in res://tests/live_archer_class_test.gd:665
+]]>
+			</failure>
+		</testcase>
+	</testsuite>
+</testsuites>
