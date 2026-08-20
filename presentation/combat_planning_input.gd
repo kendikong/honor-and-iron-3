@@ -1360,12 +1360,20 @@ func _begin_hover_sim_throttled_flush() -> void:
 	)
 
 
+func _hover_sim_still_px() -> float:
+	if _planning != null:
+		var settings: GameSettings = _planning.game_settings()
+		if settings != null:
+			return maxf(0.0, settings.hover_settle_still_px)
+	return _HOVER_SIM_STILL_PX
+
+
 func _hover_sim_pointer_is_still() -> bool:
 	if _planning != null and _planning.qa_static_overlay:
 		return true
 	if _hover_sim_pointer_at_schedule.x >= 1.0e12:
 		return true
-	return _mouse_local_for_facing().distance_to(_hover_sim_pointer_at_schedule) <= _HOVER_SIM_STILL_PX
+	return _mouse_local_for_facing().distance_to(_hover_sim_pointer_at_schedule) <= _hover_sim_still_px()
 
 
 func _flush_hover_heavy_sync() -> void:

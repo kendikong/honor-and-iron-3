@@ -94,6 +94,8 @@ var _dev_shadow_checks: Dictionary = {}
 var _planning_preview_checks: Dictionary = {}
 var _hover_rate_throttle_slider: HSlider
 var _hover_rate_throttle_label: Label
+var _hover_still_px_slider: HSlider
+var _hover_still_px_label: Label
 var _dev_tile_labels_check: CheckButton
 var _dev_boredom_atmo_check: CheckButton
 var _dev_boredom_water_check: CheckButton
@@ -580,6 +582,26 @@ func _build_developer_tab(parent: TabContainer) -> void:
 			EventBus.interface_settings_changed.emit(),
 	)
 	_hover_rate_throttle_label = _hover_rate_throttle_slider.get_meta("value_label") as Label
+
+	_add_section(vbox, "Hover stillness radius")
+	_add_hint(
+		vbox,
+		"How still the mouse must be (in pixels) for hover replay to trigger. Default is 3px. Higher values allow the preview ghost to update even when moving the mouse slowly.",
+	)
+	_hover_still_px_slider = _add_dev_value_slider(
+		vbox,
+		"Stillness Radius",
+		0.0,
+		GameSettings.HOVER_SETTLE_STILL_PX_MAX,
+		1.0,
+		_game_settings.hover_settle_still_px,
+		" px",
+		func(v: float) -> void:
+			_game_settings.hover_settle_still_px = v
+			_save_game_settings()
+			EventBus.interface_settings_changed.emit(),
+	)
+	_hover_still_px_label = _hover_still_px_slider.get_meta("value_label") as Label
 
 	vbox.add_child(HSeparator.new())
 	_dev_tile_labels_check = _add_dev_check(

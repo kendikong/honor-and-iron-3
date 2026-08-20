@@ -40,6 +40,8 @@ const TEXT_SIZE_TITLE: PackedInt32Array = [22, 26, 30]
 const TEXT_SIZE_HINT: PackedInt32Array = [13, 17, 20]
 const HOVER_SETTLE_MS_DEFAULT: float = 45.0
 const HOVER_SETTLE_MS_MAX: float = 100.0
+const HOVER_SETTLE_STILL_PX_DEFAULT: float = 3.0
+const HOVER_SETTLE_STILL_PX_MAX: float = 64.0
 const OVERLAY_FLOW_FPS_DEFAULT: float = 30.0
 
 var resolution: Vector2i = Vector2i(3840, 1800)
@@ -74,6 +76,8 @@ var preview_show_arrows: bool = true
 var preview_show_committed_intents: bool = true
 ## Milliseconds the mouse must sit on a tile before hover replay catches up. 0 = immediate.
 var hover_settle_ms: float = HOVER_SETTLE_MS_DEFAULT
+## Maximum mouse displacement (px) during settle window before treated as active motion.
+var hover_settle_still_px: float = HOVER_SETTLE_STILL_PX_DEFAULT
 
 
 func preview_hover_sim_enabled() -> bool:
@@ -174,6 +178,12 @@ func load_from_disk() -> void:
 		)
 		var old_ms: float = lerpf(HOVER_SETTLE_MS_DEFAULT, 400.0, old_pct / 100.0)
 		hover_settle_ms = clampf(old_ms, 0.0, HOVER_SETTLE_MS_MAX)
+	if cfg.has_section_key("planning_preview", "hover_settle_still_px"):
+		hover_settle_still_px = clampf(
+			float(cfg.get_value("planning_preview", "hover_settle_still_px", HOVER_SETTLE_STILL_PX_DEFAULT)),
+			0.0,
+			HOVER_SETTLE_STILL_PX_MAX,
+		)
 	if cfg.has_section_key("display", "screen_index"):
 		screen_index = int(cfg.get_value("display", "screen_index", screen_index))
 	if cfg.has_section_key("display", "window_position_x"):
@@ -243,6 +253,7 @@ func save_to_disk() -> void:
 	cfg.set_value("planning_preview", "show_arrows", preview_show_arrows)
 	cfg.set_value("planning_preview", "show_committed_intents", preview_show_committed_intents)
 	cfg.set_value("planning_preview", "hover_settle_ms", hover_settle_ms)
+	cfg.set_value("planning_preview", "hover_settle_still_px", hover_settle_still_px)
 	if cfg.has_section_key("planning_preview", "hover_rate_throttle_pct"):
 		cfg.erase_section_key("planning_preview", "hover_rate_throttle_pct")
 	cfg.set_value("display", "screen_index", screen_index)
