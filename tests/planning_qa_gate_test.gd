@@ -4617,6 +4617,11 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 		failures.append("PlanningQAGate range2_enemy_hover: targeting arrow %s expected [(4, 5), (7, 5)]" % str(arrow))
 		return
 	
+	# Drag route in CombatPlanningInput must be immediately cleared when hovering Range 2+ enemy
+	if not input.get_drag_route().is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: input.get_drag_route() %s must be EMPTY on Range 2+ enemy hover" % str(input.get_drag_route()))
+		return
+	
 	# Move preview arrow must NOT be drawn on screen when hovering an enemy in range with Range 2+
 	var live: CombatPlanningPreview = overlay.get_live_preview()
 	var hover_move_arrow: Array = overlay._interaction_move_route(fix.archer.id, live, live.preview_paths.get(fix.archer.id, []) if live != null else [])
@@ -4647,6 +4652,11 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 		failures.append("PlanningQAGate range2_enemy_hover: action was not committed! Expected 1, got %d" % director.plan_action.entries.size())
 		return
 	
+	# Drag route must remain clean after commit
+	if not input.get_drag_route().is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: input.get_drag_route() %s must be EMPTY immediately after commit" % str(input.get_drag_route()))
+		return
+	
 	# Assert 100% parity between hover movepreview and committed movepreview
 	var committed: CombatPlanningPreview = overlay.get_committed_preview()
 	var commit_move_arrow: Array = CombatPlanningPreview.committed_move_route_leg(fix.archer.id, committed, director, director.base_board, GameEnums.MoveTiming.PRE_ACTION)
@@ -4657,7 +4667,15 @@ static func _test_painted_route_then_enemy_hover_click_preserves_intent(failures
 		failures.append("PlanningQAGate range2_enemy_hover: hover movepreview (%s) != commit movepreview (%s)" % [str(hover_move_arrow), str(commit_move_arrow)])
 		return
 	
-	# Step 4: Verify Simulator execution parity (direct shot from (4, 5), 0 movement)
+	# Step 4: Moving mouse to another tile after commit must not flicker or spawn movepreview
+	input.on_hover_moved(Vector2i(4, 4))
+	input._flush_hover_heavy_sync()
+	var post_move_mouse_arrow: Array = CombatPlanningPreview.committed_move_route_leg(fix.archer.id, overlay.get_committed_preview(), director, director.base_board, GameEnums.MoveTiming.PRE_ACTION)
+	if not post_move_mouse_arrow.is_empty():
+		failures.append("PlanningQAGate range2_enemy_hover: moving mouse after commit spawned move preview arrow %s" % str(post_move_mouse_arrow))
+		return
+	
+	# Step 5: Verify Simulator execution parity (direct shot from (4, 5), 0 movement)
 	var trial: BoardState = director.base_board.clone()
 	var evs: Array[SimEvent] = []
 	Simulator.simulate_player_turn(trial, director.get_player_plan(), evs)

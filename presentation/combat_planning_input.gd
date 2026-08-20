@@ -1213,6 +1213,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			):
 				should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
 			if allow_hover_paint:
+				var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
+				if target_enemy_id >= 0:
+					var enemy_unit: UnitState = _director.board.get_unit_by_id(target_enemy_id) if _director.board != null else null
+					if enemy_unit != null and not _enemy_hover_respects_painted_route(p_unit, enemy_unit, ability, _route_waypoints()):
+						_clear_hover_drag_route()
+						should_extend_route = false
 				if should_extend_route:
 					if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
 						_drag_unit_id = p_unit.id
@@ -1710,6 +1716,8 @@ func _refresh_selected_interaction_preview() -> void:
 				var ability: AbilityData = _selected_ability_data(p_unit)
 				if enemy == null or _enemy_hover_respects_painted_route(p_unit, enemy, ability, _route_waypoints()):
 					hover_waypoints = _route_waypoints()
+				else:
+					_clear_hover_drag_route()
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return
@@ -2349,6 +2357,7 @@ func _commit_at_cell(
 	_play_commit_sfx(slots)
 	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
+	_clear_hover_drag_route()
 	_clear_intent_snapshot()
 	return true
 

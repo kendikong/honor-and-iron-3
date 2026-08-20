@@ -2147,6 +2147,10 @@ func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
 		return
 	if _planning_input.dragging:
 		return
+	if _resolve_overlay_attack_target_id() >= 0:
+		return
+	if _director.selected_unit_id < 0 or not _unit_can_still_move(_director.selected_unit_id):
+		return
 	var cells: Array[Vector2i] = awaiting_movement_hover_route_cells()
 	if cells.size() < 2:
 		var drag_route: Array = _planning_input.get_drag_route()
