@@ -791,16 +791,6 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 			"actor": action.actor_id, "reason": "cannot_move_before_action",
 		}))
 		return
-	if action.move_timing == GameEnums.MoveTiming.POST_ACTION and unit.pre_move_used_this_turn:
-		if (
-			not BeastRiderSystems.can_post_move(unit)
-			and not unit.has_passive(&"canto")
-			and not unit.has_status(GameEnums.StatusType.CANTO)
-		):
-			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-				"actor": action.actor_id, "reason": "cannot_move_after_pre_move",
-			}))
-			return
 
 	if action.uses_run:
 		if not AbilitySystem.spend_run_for_move(unit, events):

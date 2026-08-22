@@ -1175,13 +1175,10 @@ func on_hover_moved(cell: Vector2i) -> void:
 				and ability != null
 				and AbilitySystem.ability_has_movement_effect(ability)
 			)
+			var current_timing: int = _director.get_planning_move_timing(p_unit.id)
 			var move_already_planned: bool = (
-				_director.unit_has_move_planned_at_timing(
-					p_unit.id, GameEnums.MoveTiming.PRE_ACTION,
-				)
-				or _director.unit_has_move_planned_at_timing(
-					p_unit.id, GameEnums.MoveTiming.POST_ACTION,
-				)
+				current_timing < 0
+				or _director.unit_has_move_planned_at_timing(p_unit.id, current_timing)
 			)
 			## TARGET_PICK (Volley / TILE aim) is not a walk. Painted corridors would
 			## live-preview and commit a premove while the skill is still aiming.

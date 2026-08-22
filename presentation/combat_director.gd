@@ -587,6 +587,13 @@ func _reject_if_move_slot_filled(unit_id: int, timing: int) -> bool:
 	return true
 
 
+func _unit_has_run_move_queued(unit_id: int) -> bool:
+	for a: TimelineAction in plan_pre_move.entries:
+		if a != null and a.actor_id == unit_id and a.type == GameEnums.ActionType.MOVE and a.uses_run:
+			return true
+	return false
+
+
 func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 	if unit_has_wait_planned(unit_id):
 		return false
@@ -594,12 +601,8 @@ func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 		return false
 	if not p_unit.has_used_turn_action():
 		return false
-	if _unit_has_pre_move_queued(unit_id):
-		return (
-			BeastRiderSystems.can_post_move(p_unit)
-			or p_unit.has_passive(&"canto")
-			or p_unit.has_status(GameEnums.StatusType.CANTO)
-		)
+	if _unit_has_run_move_queued(unit_id):
+		return false
 	return true
 
 @rpc("any_peer", "call_local", "reliable")

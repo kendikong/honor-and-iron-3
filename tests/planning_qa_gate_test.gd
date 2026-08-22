@@ -12,6 +12,7 @@ const PHALANX_STANCE_ID: StringName = &"knight_phalanx_stance"
 const CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
+const KNIGHT_SWAP_ID: StringName = &"knight_swap"
 const ARCHER_SIDESTEP_ID: StringName = &"archer_sidestep"
 const ARCHER_POWER_SHOT_ID: StringName = &"archer_power_shot"
 const ARCHER_VOLLEY_ID: StringName = &"archer_volley"
@@ -116,6 +117,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_painted_route_then_enemy_hover_click_preserves_intent,
 		_test_range1_painted_route_enemy_hover_respects_waypoints,
 		_test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost,
+		_test_post_move_after_variety_of_skills_contract,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -212,6 +214,7 @@ static func run_all(failures: Array[String]) -> void:
 		"painted_route_enemy_click",
 		"range1_painted_route_enemy_click",
 		"out_of_range_enemy_hover_exhausted",
+		"post_move_after_skills",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -4849,6 +4852,121 @@ static func _test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_
 	if director.plan_pre_move.entries.size() != 1:
 		failures.append("PlanningQAGate out_of_range_enemy_hover: clicking out-of-range enemy corrupted pre-move!")
 		return
+
+
+static func _test_post_move_after_variety_of_skills_contract(failures: Array[String]) -> void:
+	var label := "PlanningQAGate post_move_after_skills"
+	# 1. Stationary attack + Post-Move (Move 1 -> Slash -> Move 1)
+	var raw_fix: Dictionary = _planning_fixture(Vector2i(2, 2), Vector2i(2, 4))
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var knight: UnitState = fix.knight
+	knight.movement.points_left = 3
+	director.board.get_unit_by_id(1).movement.points_left = 3
+	
+	# Step 1: Pre-move to (2, 3)
+	input.set_qa_pointer_grid_cell(Vector2i(2, 3))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(2, 3)))
+	if director.plan_pre_move.entries.size() != 1:
+		failures.append("%s: stationary pre-move commit failed" % label)
+		return
+	
+	# Step 2: Shield Bash Dummy at (2, 4)
+	PlanningChecklistHarness.select_ability(fix, SHIELD_BASH_ID)
+	input.set_qa_pointer_grid_cell(Vector2i(2, 4))
+	input.on_hover_moved(Vector2i(2, 4))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(2, 4)))
+	if director.plan_action.entries.size() != 1:
+		failures.append("%s: stationary action commit failed" % label)
+		return
+	
+	# Step 3: Post-move to (3, 3) (adjacent to stand at (2, 3))
+	input.set_qa_pointer_grid_cell(Vector2i(3, 3))
+	input.on_hover_moved(Vector2i(3, 3))
+	input.on_left_press(fix.map_stub.grid_to_local(Vector2i(3, 3)))
+	if director.plan_post_move.entries.size() != 1:
+		failures.append("%s: post-move after stationary attack failed to commit" % label)
+		return
+	var post_action: TimelineAction = director.plan_post_move.entries[0] as TimelineAction
+	if post_action == null or post_action.target_coord != Vector2i(3, 3) or post_action.move_timing != GameEnums.MoveTiming.POST_ACTION:
+		failures.append("%s: post-move action entry corrupted" % label)
+		return
+	
+	# Verify projected state reflects [pre -> action -> post]
+	var proj_knight: UnitState = director.projected_state.get_unit_by_id(1)
+	if proj_knight == null or proj_knight.position != Vector2i(3, 3):
+		failures.append("%s: projected position %s != (3, 3)" % [label, str(proj_knight.position if proj_knight != null else null)])
+		return
+	if proj_knight.movement.points_left != 1:
+		failures.append("%s: projected MP %d expected 1" % [label, proj_knight.movement.points_left])
+		return
+	
+	# Verify complete simulation executes [pre -> action -> post] cleanly
+	var result: SimResult = _simulate_committed_plan(director)
+	if result == null or result.final_state == null:
+		failures.append("%s: sim failed for [pre -> action -> post]" % label)
+		return
+	var final_knight: UnitState = result.final_state.get_unit_by_id(1)
+	if final_knight == null or final_knight.position != Vector2i(3, 3):
+		failures.append("%s: final simulated position %s != (3, 3)" % [label, str(final_knight.position if final_knight != null else null)])
+		return
+
+	# 2. Post-move after Swap: [Swap -> Shield Bash -> Post-Move Walk]
+	var swap_fix: Dictionary = PlanningChecklistHarness.wire_swap_board(PlanningChecklistHarness.SWAP_ALLY_CELL)
+	var k1_id: int = swap_fix.k1_id
+	var swap_director: CombatDirector = swap_fix.director
+	# Add dummy at (4, 3) for Shield Bash target after swap
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var dummy: UnitState = UnitState.create(4, dummy_def, GameEnums.Team.ENEMY, Vector2i(4, 3))
+	swap_director.board.add_unit(dummy)
+	GridSystem.set_occupant(swap_director.board, dummy.position, dummy.id)
+	swap_director.base_board.add_unit(dummy.clone())
+	GridSystem.set_occupant(swap_director.base_board, dummy.position, dummy.id)
+	swap_director.projected_state.add_unit(dummy.clone())
+	GridSystem.set_occupant(swap_director.projected_state, dummy.position, dummy.id)
+
+	# 2a. Pre-move Swap with Ally at (4, 4)
+	var swap_idx: int = PlanningChecklistHarness.select_ability_for_unit(swap_fix, k1_id, PlanningChecklistHarness.KNIGHT_SWAP_ID)
+	if swap_idx >= 0:
+		PlanningChecklistHarness.select_unit(swap_fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL)
+		var swap_slots: Dictionary = PlanningChecklistHarness.commit_production(swap_fix, PlanningChecklistHarness.SWAP_ALLY_CELL)
+		if PlanningChecklistHarness.slots_invalid(swap_slots) or swap_director.plan_pre_move.entries.size() != 1:
+			failures.append("%s: swap pre-move commit failed (invalid=%s)" % [label, str(swap_slots.get("invalid", ""))])
+			return
+		
+		# 2b. Shield Bash Dummy at (4, 3) from swapped stand (4, 4)
+		PlanningChecklistHarness.select_ability_for_unit(swap_fix, k1_id, PlanningChecklistHarness.SHIELD_BASH_ID)
+		PlanningChecklistHarness.select_unit(swap_fix, k1_id, Vector2i(4, 3))
+		var bash_slots: Dictionary = PlanningChecklistHarness.commit_production(swap_fix, Vector2i(4, 3))
+		if PlanningChecklistHarness.slots_invalid(bash_slots) or swap_director.plan_action.entries.size() != 1:
+			failures.append("%s: shield bash after swap commit failed (invalid=%s)" % [label, str(bash_slots.get("invalid", ""))])
+			return
+
+		# 2c. Post-move to (3, 4) (1 step away from swapped stand at (4, 4))
+		PlanningChecklistHarness.select_unit(swap_fix, k1_id, Vector2i(3, 4))
+		var post_slots: Dictionary = PlanningChecklistHarness.commit_production(swap_fix, Vector2i(3, 4))
+		if PlanningChecklistHarness.slots_invalid(post_slots) or swap_director.plan_post_move.entries.size() != 1:
+			failures.append("%s: post-move after Swap failed to commit (invalid=%s)" % [label, str(post_slots.get("invalid", ""))])
+			return
+		var swap_post: TimelineAction = swap_director.plan_post_move.entries[0] as TimelineAction
+		if swap_post == null or swap_post.target_coord != Vector2i(3, 4):
+			failures.append("%s: post-move after Swap destination corrupted" % label)
+			return
+
+		# 2d. Simulate entire [Swap -> Bash -> Post-Move] timeline
+		var swap_result: SimResult = _simulate_committed_plan(swap_director)
+		if swap_result == null or swap_result.final_state == null:
+			failures.append("%s: swap sim failed" % label)
+			return
+		var final_swap_knight: UnitState = swap_result.final_state.get_unit_by_id(k1_id)
+		if final_swap_knight == null or final_swap_knight.position != Vector2i(3, 4):
+			failures.append("%s: final simulated swap knight %s != (3, 4)" % [label, str(final_swap_knight.position if final_swap_knight != null else null)])
+			return
+		var final_dummy: UnitState = swap_result.final_state.get_unit_by_id(4)
+		if final_dummy == null or final_dummy.position != Vector2i(4, 1):
+			failures.append("%s: final simulated dummy push %s != (4, 1)" % [label, str(final_dummy.position if final_dummy != null else null)])
+			return
 
 
 
