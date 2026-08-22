@@ -45,11 +45,22 @@ is self-contained; the screenshot is optional.
 1. Press Escape.
 2. Choose **Report Bug**.
 3. Describe what happened and save.
-4. Tell the agent: **“Fix all open bug reports.”**
+4. Tell the agent: **“Fix all ongoing bug reports.”** (or point at a specific report ID)
 
-The agent should read the JSON files (each has `"status": "open"` until fixed),
-triage design/balance concerns separately from implementation bugs, fix actionable
-reports, run the matching QA, and leave the report files available as the audit trail.
+The in-game **History** tab lets you mark reports **Still ongoing**, **Done**, or **Trash**.
+Trash keeps the file but hides it from the active list. Agents should treat **ongoing**
+as active work and ignore **done** / **trash** unless you ask otherwise.
+
+Legacy JSON may still say `"status": "open"` or `"fixed"`; the game normalizes those to
+**ongoing** and **done** when you open the history view.
+
+## Headless verification (debug-report / TestBattle bridge)
+
+After fixing bug-report capture or TestBattle arena bridge code, run:
+
+`godot --headless --path . --script res://tests/run_test_battle_bridge.gd`
+
+**Forbidden:** `godot --headless --script res://tests/bridge_test_runner.gd` — that file is a `RefCounted` helper, not a SceneTree entry; Godot shows an ALERT popup and does not run tests. Full bridge suite: `res://tests/bridge_test.gd`; sim + bridge regression: `res://tests/regression_test.gd`.
 
 ## Agent Non-Heuristic Mandate (Mandatory for all models)
 

@@ -12,8 +12,23 @@ const REPORT_DIR_PROJECT: String = "res://reports/bug_reports"
 const MAX_RECENT_EVENTS: int = 64
 const MAX_REPORT_DESCRIPTION_LENGTH: int = 4000
 
+const STATUS_ONGOING: String = "ongoing"
+const STATUS_DONE: String = "done"
+const STATUS_TRASH: String = "trash"
+
+const INDEX_HEADER: String = (
+	"# Bug Reports Index\n\n"
+	+ "> Owner statuses: **ongoing** (still open), **done** (resolved), **trash** (dismissed).\n"
+	+ "> Agents treat **ongoing** as active work; ignore **done** and **trash** unless asked.\n\n"
+	+ "> [!IMPORTANT]\n"
+	+ "> **MANDATORY FOR ALL AGENTS FIXING BUG REPORTS:**\n"
+	+ "> You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.\n"
+	+ "> All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).\n\n"
+)
+
 signal report_dialog_opened
 signal report_dialog_closed
+signal report_status_changed(report_id: String, status: String)
 
 var _recent_events: Array[Dictionary] = []
 var _latest_preview: Dictionary = {}
@@ -87,6 +102,7 @@ func _input(event: InputEvent) -> void:
 func open_report_dialog() -> void:
 	if _report_dialog != null:
 		return
+	_rebuild_index()
 	_pause_for_debug_capture()
 	_close_generic_menu(false)
 	var dialog_script: Script = load("res://debug/debug_report_dialog.gd")
@@ -147,7 +163,7 @@ func submit_report(
 			}
 		},
 		"report_id": report_id,
-		"status": "open",
+		"status": STATUS_ONGOING,
 		"created_at": Time.get_datetime_string_from_system(true),
 		"category": category,
 		"severity": severity,
@@ -176,7 +192,7 @@ func submit_report(
 	var project_path := project_dir.path_join("%s.json" % report_id)
 	if _write_text(project_path, report_json):
 		paths.append(project_path)
-	_append_index(report)
+	_rebuild_index()
 	var display_paths: Array[String] = []
 	for path: String in paths:
 		display_paths.append(_display_path(path))
@@ -186,6 +202,77 @@ func submit_report(
 		"display_paths": display_paths,
 		"screenshot": screenshot_path,
 	}
+
+
+static func normalize_status(raw: String) -> String:
+	match String(raw).strip_edges().to_lower():
+		"open":
+			return STATUS_ONGOING
+		"fixed":
+			return STATUS_DONE
+		STATUS_ONGOING, STATUS_DONE, STATUS_TRASH:
+			return String(raw).strip_edges().to_lower()
+		_:
+			return STATUS_ONGOING
+
+
+static func status_display_name(status: String) -> String:
+	match normalize_status(status):
+		STATUS_DONE:
+			return "Done"
+		STATUS_TRASH:
+			return "Trash"
+		_:
+			return "Still ongoing"
+
+
+func list_reports(include_trash: bool = true) -> Array[Dictionary]:
+	var merged: Dictionary = {}
+	_collect_reports_from_dir(_ensure_report_directory(REPORT_DIR_PROJECT), merged)
+	_collect_reports_from_dir(_ensure_report_directory(REPORT_DIR_USER), merged)
+	var summaries: Array[Dictionary] = []
+	for report_id: Variant in merged.keys():
+		var entry: Dictionary = merged[report_id] as Dictionary
+		var status: String = normalize_status(String(entry.get("status", STATUS_ONGOING)))
+		if not include_trash and status == STATUS_TRASH:
+			continue
+		summaries.append({
+			"report_id": String(entry.get("report_id", report_id)),
+			"status": status,
+			"created_at": String(entry.get("created_at", "")),
+			"category": String(entry.get("category", "")),
+			"severity": String(entry.get("severity", "")),
+			"title": String(entry.get("title", "(untitled)")),
+			"json_path": String(entry.get("json_path", "")),
+		})
+	summaries.sort_custom(_sort_report_summaries_newest_first)
+	return summaries
+
+
+func set_report_status(report_id: String, status: String) -> bool:
+	var normalized_id := report_id.strip_edges()
+	if normalized_id.is_empty():
+		return false
+	var normalized_status := normalize_status(status)
+	var user_path := _ensure_report_directory(REPORT_DIR_USER).path_join("%s.json" % normalized_id)
+	var project_path := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("%s.json" % normalized_id)
+	var source_path := user_path if FileAccess.file_exists(user_path) else project_path
+	if not FileAccess.file_exists(source_path):
+		return false
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(source_path))
+	if not parsed is Dictionary:
+		return false
+	var report: Dictionary = parsed as Dictionary
+	report["status"] = normalized_status
+	report["status_updated_at"] = Time.get_datetime_string_from_system(true)
+	var report_json := JSON.stringify(report, "\t")
+	if not _write_text(user_path, report_json):
+		return false
+	if FileAccess.file_exists(project_path) or _project_report_dir_writable():
+		_write_text(project_path, report_json)
+	_rebuild_index()
+	report_status_changed.emit(normalized_id, normalized_status)
+	return true
 
 
 static func serialize_board(board: BoardState) -> Dictionary:
@@ -462,28 +549,56 @@ func _write_text(path: String, text: String) -> bool:
 	return true
 
 
-func _append_index(report: Dictionary) -> void:
-	var title_text: String = String(report.title)
-	if title_text.is_empty():
-		title_text = "(untitled)"
-	var line := "- `%s` **%s** — %s — %s — %s\n" % [
-		report.report_id,
-		report.get("status", "open"),
-		report.severity,
-		report.category,
-		title_text,
-	]
+func _rebuild_index() -> void:
+	var summaries := list_reports(true)
+	var body := INDEX_HEADER
+	for summary: Dictionary in summaries:
+		var title_text: String = String(summary.get("title", "(untitled)"))
+		if title_text.is_empty():
+			title_text = "(untitled)"
+		body += "- `%s` **%s** — %s — %s — %s\n" % [
+			summary.get("report_id", ""),
+			summary.get("status", STATUS_ONGOING),
+			summary.get("severity", ""),
+			summary.get("category", ""),
+			title_text,
+		]
 	var project_index := _ensure_report_directory(REPORT_DIR_PROJECT).path_join("index.md")
-	_append_index_line(project_index, line)
+	_write_text(project_index, body)
 	var user_index := _ensure_report_directory(REPORT_DIR_USER).path_join("index.md")
-	_append_index_line(user_index, line)
+	_write_text(user_index, body)
 
 
-func _append_index_line(index_path: String, line: String) -> void:
-	var existing := ""
-	if FileAccess.file_exists(index_path):
-		existing = FileAccess.get_file_as_string(index_path)
-	_write_text(index_path, existing + line)
+func _collect_reports_from_dir(dir_path: String, merged: Dictionary) -> void:
+	var dir := DirAccess.open(dir_path)
+	if dir == null:
+		return
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".json"):
+			var json_path := dir_path.path_join(file_name)
+			var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(json_path))
+			if parsed is Dictionary:
+				var report: Dictionary = parsed as Dictionary
+				var report_id := String(report.get("report_id", file_name.get_basename()))
+				report["json_path"] = json_path
+				report["status"] = normalize_status(String(report.get("status", STATUS_ONGOING)))
+				merged[report_id] = report
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+
+static func _sort_report_summaries_newest_first(a: Dictionary, b: Dictionary) -> bool:
+	return String(a.get("created_at", "")) > String(b.get("created_at", ""))
+
+
+func _project_report_dir_writable() -> bool:
+	var probe := _ensure_report_directory(REPORT_DIR_PROJECT).path_join(".write_probe")
+	if _write_text(probe, "ok"):
+		DirAccess.remove_absolute(probe)
+		return true
+	return false
 
 
 func _on_sim_event(event: SimEvent) -> void:

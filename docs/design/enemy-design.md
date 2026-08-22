@@ -12,7 +12,7 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Bridge smoke (today)** | `godot --headless --path <repo> --script res://tests/bridge_test_runner.gd` PASS | — |
+| **Bridge smoke (today)** | `godot --headless --path <repo> --script res://tests/bridge_test.gd` PASS | — |
 | **Fixture JSON puzzles** (separate piece) | `PLANNED — tests/encounter_fixture_test.gd` loads `tests/fixtures/encounters/puzzle_001.json` | Puzzle fun |
 | Intent display (when enemies affect planning) | `.\scripts\run_planning_qa_gate.ps1` PASS | Difficulty curve |
 
@@ -50,7 +50,7 @@ Fixture `intent` field: **PLANNED** until loader + enemy intent data land (`enco
 ## Builder playbook
 
 1. Author fixture JSON per appendix encoding table.
-2. Run bridge smoke (`bridge_test_runner.gd`).
+2. Run bridge smoke (`bridge_test.gd`).
 3. When loader exists: add `encounter_fixture_test.gd` and sim smoke per puzzle.
 4. F5 intent readability when enemies affect planning preview.
 
