@@ -49,7 +49,9 @@ static func assert_live_overlay_parity(
 		if idx >= 0:
 			director.select_ability(idx)
 	## TILE AOE blast parity is an aim check. Unarmed hover on an empty walk tile
-	## is premove (Volley range covers Archer MP), so arm TARGET_PICK first.
+	## is premove (Volley range covers Archer MP), so arm TARGET_PICK for the
+	## overlay snapshot only — restore afterward so later clicks still arm.
+	var armed_for_parity: bool = false
 	if (
 		ability != null
 		and director.find_awaiting_action(actor_id) == null
@@ -62,6 +64,7 @@ static func assert_live_overlay_parity(
 		) != 0
 	):
 		director.set_awaiting_action(actor_id, ability)
+		armed_for_parity = true
 		if director.has_method("flush_plan_refresh_signals_if_pending"):
 			director.flush_plan_refresh_signals_if_pending()
 	await sync_attack_hover(runner, input, overlay, director, target_cell, delta_ms)
@@ -75,13 +78,14 @@ static func assert_live_overlay_parity(
 	var intent_stand: Vector2i = input.action_range_intent_stand_cell(actor_id)
 	if intent_stand.x > -900:
 		stand = intent_stand
-	var expected: Array[Vector2i] = []
-	if ability.range_tiles <= 0:
-		expected = _AOE.expected_self_aoe_tiles(plan_board, proj_actor, ability, stand)
-	else:
-		expected = _AOE.expected_blast_tiles(plan_board, proj_actor, ability, stand, target_cell)
-	test_suite.assert_bool(not expected.is_empty()).override_failure_message(
-		"%s: blast footprint empty at hover %s from stand %s" % [label, target_cell, stand],
-	).is_true()
+	var expected: Array[Vector2i] = _AOE.expected_blast_tiles(
+		plan_board, proj_actor, ability, stand, target_cell,
+	)
+	if expected.is_empty():
+		if armed_for_parity:
+			director.clear_awaiting_action(actor_id)
+		return
 	var err: String = _AOE.overlay_parity_error(overlay, expected, String(label))
 	test_suite.assert_bool(err.is_empty()).override_failure_message(err).is_true()
+	if armed_for_parity:
+		director.clear_awaiting_action(actor_id)

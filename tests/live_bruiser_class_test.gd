@@ -252,7 +252,7 @@ func _run_skill_journey(runner: GdUnitSceneRunner, skill_id: StringName) -> void
 
 
 func _run_cleave_premove_overlay_scenario(runner: GdUnitSceneRunner) -> void:
-	## Regression: premove + ARC must show blast tiles only (never range bubble + blast = 4 reds).
+	## Regression: premove + ARC must paint red range AND yellow blast (not blast replacing range).
 	var session: TestBattleSession = _scene.get_session()
 	session.reset_defaults()
 	session.player_class_id = &"bruiser"
@@ -362,13 +362,14 @@ func _run_cleave_tile_aim_scenario(runner: GdUnitSceneRunner) -> void:
 	await _OVERLAY_QA.assert_live_overlay_parity(
 		self, runner, _overlay, _input, _director, actor_id, cleave, Vector2i(5, 5), &"cleave_tile_aim",
 	)
-	var slots := await _commit_live_click(runner, actor_id, Vector2i(5, 5))
+	## Unarmed TILE hover on a walk cell is premove. Arm on the stand, then aim the empty ARC center.
+	var slots := await _commit_live_click(runner, actor_id, actor.position)
 	assert_bool(_slots_invalid(slots)).override_failure_message(
-		"cleave_tile_aim: first target invalid=%s slots=%s plan=%s"
+		"cleave_tile_aim: stand arm invalid=%s slots=%s plan=%s"
 		% [str(slots.get("invalid", false)), _slots_debug(slots), _plan_debug()],
 	).is_false()
 	assert_bool(_plan_has_awaiting(actor_id)).override_failure_message(
-		"cleave_tile_aim: first target must arm awaiting; plan=%s slots=%s"
+		"cleave_tile_aim: stand click must arm awaiting; plan=%s slots=%s"
 		% [_plan_debug(), _slots_debug(slots)],
 	).is_true()
 	slots = await _commit_live_click(runner, actor_id, Vector2i(5, 5))

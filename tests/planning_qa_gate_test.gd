@@ -109,6 +109,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_selecting_unit_keeps_movement_points,
 		_test_tile_targeting_forbids_premove,
 		_test_selected_tile_aoe_allows_premove,
+		_test_shaped_skill_red_range_yellow_blast,
 		_test_bash_hover_keeps_targeting_arrow,
 		_test_waypoint_premove_enemy_hover_full_truth,
 		_test_sidestep_enemy_click_ratifies_move_preview,
@@ -208,6 +209,7 @@ static func run_all(failures: Array[String]) -> void:
 		"selection_is_mp_read_only",
 		"tile_aim_forbids_premove",
 		"selected_tile_aoe_allows_premove",
+		"shaped_skill_red_range_yellow_blast",
 		"bash_hover_targeting_arrow",
 		"waypoint_premove_enemy_hover_full_truth",
 		"sidestep_enemy_click_ratifies_move",
@@ -3906,6 +3908,89 @@ static func _test_selected_tile_aoe_allows_premove(failures: Array[String]) -> v
 		)
 
 
+static func _test_shaped_skill_red_range_yellow_blast(failures: Array[String]) -> void:
+	## Red = AbilitySystem range from latest stand. Yellow = blast at aim hover only.
+	var archer_pos := Vector2i(4, 5)
+	var empty_step := Vector2i(5, 5)
+	var enemy_pos := Vector2i(8, 5)
+	var walk_fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var walk_overlay: TacticalPlanningOverlay = _wire_overlay(walk_fix)
+	var walk_input: CombatPlanningInput = walk_fix.input
+	var walk_archer: UnitState = walk_fix.archer
+	var walk_volley: AbilityData = walk_fix.volley
+	walk_input.on_hover_moved(empty_step)
+	walk_input._flush_hover_heavy_sync()
+	walk_overlay._recompute_hover_ranges_from_inputs()
+	if (
+		walk_overlay.is_hover_blast_tile(empty_step)
+		or not walk_overlay.get_hover_blast_tiles().is_empty()
+	):
+		failures.append(
+			"PlanningQAGate shaped_red_yellow: unarmed walk hover must not paint yellow blast (got %s)"
+			% str(walk_overlay.get_hover_blast_tiles()),
+		)
+	var walk_range: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		walk_fix.board, walk_archer, walk_volley, empty_step, [],
+	)
+	for tile: Vector2i in walk_range:
+		if not walk_overlay.is_hover_action_range_tile(tile):
+			failures.append(
+				"PlanningQAGate shaped_red_yellow: red range from intended walk stand missing %s"
+				% tile,
+			)
+			break
+	var aim_fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(aim_fix)
+	var input: CombatPlanningInput = aim_fix.input
+	var director: CombatDirector = aim_fix.director
+	var archer: UnitState = aim_fix.archer
+	var volley: AbilityData = aim_fix.volley
+	director.set_awaiting_action(1, volley)
+	input.set_qa_pointer_grid_cell(enemy_pos)
+	input.on_hover_moved(enemy_pos)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	var expected_red: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		aim_fix.board, archer, volley, archer_pos, [],
+	)
+	var awaiting: TimelineAction = director.find_awaiting_action(1)
+	if awaiting != null and awaiting.awaiting_module_index >= 0:
+		expected_red = AbilitySystem.planning_module_range_tiles(
+			aim_fix.board, awaiting, awaiting.awaiting_module_index, archer_pos,
+		)
+	var expected_yellow: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+		aim_fix.board, archer, volley, archer_pos, enemy_pos,
+	)
+	if expected_yellow.is_empty():
+		failures.append("PlanningQAGate shaped_red_yellow: Volley blast at enemy must be non-empty")
+		return
+	for tile: Vector2i in expected_red:
+		if not overlay.is_hover_action_range_tile(tile):
+			failures.append(
+				"PlanningQAGate shaped_red_yellow: armed aim must keep full red range (missing %s)"
+				% tile,
+			)
+			break
+	for tile: Vector2i in expected_yellow:
+		if not overlay.is_hover_blast_tile(tile):
+			failures.append(
+				"PlanningQAGate shaped_red_yellow: yellow blast missing %s (got %s)"
+				% [tile, overlay.get_hover_blast_tiles()],
+			)
+			break
+	for tile: Vector2i in overlay.get_hover_blast_tiles():
+		if not expected_yellow.has(tile):
+			failures.append(
+				"PlanningQAGate shaped_red_yellow: yellow extra tile %s outside blast %s"
+				% [tile, expected_yellow],
+			)
+			break
+	if overlay.get_hover_action_range_tiles().size() <= overlay.get_hover_blast_tiles().size():
+		failures.append(
+			"PlanningQAGate shaped_red_yellow: red must remain the range bubble, not collapse to yellow",
+		)
+
+
 static func _test_bash_hover_keeps_targeting_arrow(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
@@ -4378,6 +4463,8 @@ static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
 			failures.append("%s: Volley enemy hover must forecast damage" % label)
 		if not overlay.is_hover_action_range_tile(enemy_cell):
 			failures.append("%s: red action-range tiles must include hovered AOE tile" % label)
+		if not overlay.is_hover_blast_tile(enemy_cell):
+			failures.append("%s: yellow blast tiles must include hovered AOE tile" % label)
 		var path: Array = live.preview_paths.get(1, [])
 		if path.is_empty() or path.back() != route.back():
 			failures.append("%s: AOE preview path must end at latest stand %s, got %s" % [
@@ -4414,6 +4501,20 @@ static func _test_waypoint_premove_then_tile_aoe_enemy_hover(
 		)
 		if not affected_tiles.has(enemy_cell):
 			failures.append("%s: canonical AOE footprint must include hovered enemy tile" % label)
+		for tile: Vector2i in affected_tiles:
+			if not overlay.is_hover_blast_tile(tile):
+				failures.append("%s: yellow blast missing footprint tile %s" % [label, tile])
+		for tile: Vector2i in overlay.get_hover_blast_tiles():
+			if not affected_tiles.has(tile):
+				failures.append("%s: yellow blast extra tile %s outside footprint %s" % [
+					label, tile, affected_tiles,
+				])
+		var range_tiles: Array[Vector2i] = overlay.get_hover_action_range_tiles()
+		if range_tiles.size() <= overlay.get_hover_blast_tiles().size():
+			failures.append(
+				"%s: red range must stay the full bubble (got %d), not collapse to yellow blast (%d)"
+				% [label, range_tiles.size(), overlay.get_hover_blast_tiles().size()],
+			)
 		_assert_pending_hover_ghost(input, director, fix.board, 1, label, failures)
 		var tile_px := float(TacticalConstants.TILE_PX)
 		input.on_left_press(Vector2(enemy_cell) * tile_px + Vector2(tile_px, tile_px) * 0.5)

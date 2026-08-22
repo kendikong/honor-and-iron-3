@@ -127,17 +127,17 @@ static func overlay_parity_error(
 	expected: Array[Vector2i],
 	label: String,
 ) -> String:
-	if overlay == null or not overlay.has_method("get_hover_action_range_tiles"):
-		return "%s: missing planning overlay with get_hover_action_range_tiles()" % label
-	var overlay_tiles: Array[Vector2i] = overlay.get_hover_action_range_tiles()
+	if overlay == null or not overlay.has_method("get_hover_blast_tiles"):
+		return "%s: missing planning overlay with get_hover_blast_tiles()" % label
+	var overlay_tiles: Array[Vector2i] = overlay.get_hover_blast_tiles()
 	for tile: Vector2i in expected:
-		if not overlay.is_hover_action_range_tile(tile):
-			return "%s: overlay missing blast tile %s (expected %s)" % [label, tile, expected]
+		if not overlay.is_hover_blast_tile(tile):
+			return "%s: overlay missing yellow blast tile %s (expected %s)" % [label, tile, expected]
 	for tile: Vector2i in overlay_tiles:
 		if not expected.has(tile):
-			return "%s: overlay red tile %s outside blast footprint %s" % [label, tile, expected]
+			return "%s: overlay yellow tile %s outside blast footprint %s" % [label, tile, expected]
 	if overlay_tiles.size() != expected.size():
-		return "%s: overlay must be exactly %d red tiles, got %d (%s)" % [
+		return "%s: overlay must be exactly %d yellow blast tiles, got %d (%s)" % [
 			label, expected.size(), overlay_tiles.size(), overlay_tiles,
 		]
 	return ""
@@ -222,7 +222,7 @@ static func audit_premove_arc_regression(failures: Array[String]) -> void:
 		_assert_fail(
 			failures,
 			"audit/premove",
-			"live Bruiser must include _run_cleave_premove_overlay_scenario (range+blast stack guard)",
+			"live Bruiser must include _run_cleave_premove_overlay_scenario (red range + yellow blast)",
 		)
 
 

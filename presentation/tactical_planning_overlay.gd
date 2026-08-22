@@ -5,16 +5,21 @@ extends Node2D
 ##
 ## Planning tint contract:
 ## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
-## - RED (_hover_action_range_tiles): selected skill range from projected unit position
-##   (timeline projection). Phase-2 movement endpoints use dash/move tiles from that
-##   same origin — not cursor-shifted hypothetical stand cells.
+## - RED (_hover_action_range_tiles): selected skill range from latest stand
+##   (`planning_action_range_tiles` / module range). Never replaced by blast.
+## - YELLOW (_hover_blast_tiles): shaped-skill footprint at the aim hover
+##   (`planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles`).
+##   Empty on walk-only hovers (commit would walk, not fire).
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
+const _COLOR_BLAST := Color(0.98, 0.84, 0.14, 0.20)
 const _COLOR_MOVE_FILL_ALPHA: float = 0.22
 const _COLOR_MOVE_PERIMETER_ALPHA: float = 0.72
 const _COLOR_ACTION_RANGE_FILL_ALPHA: float = 0.24
 const _COLOR_ACTION_RANGE_PERIMETER_ALPHA: float = 0.72
+const _COLOR_BLAST_FILL_ALPHA: float = 0.34
+const _COLOR_BLAST_PERIMETER_ALPHA: float = 0.82
 const _COLOR_TILE_BORDER_ALPHA: float = 0.32
 const _COLOR_ROUTE := Color(0.98, 0.88, 0.38, 0.95)
 const _COLOR_GHOST := Color(0.98, 0.88, 0.38, 0.45)
@@ -71,6 +76,7 @@ var _hover_coord: Vector2i = Vector2i(-999, -999)
 var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_action_range_tiles: Array[Vector2i] = []
+var _hover_blast_tiles: Array[Vector2i] = []
 ## Tier 3 QA: skip flow redraws from committed plan entries (drag-only pulse).
 var qa_static_overlay: bool = false
 var _cached_hover_unit_id: int = -1
@@ -151,7 +157,7 @@ func setup(
 			_recompute_hover_ranges_from_inputs()
 		else:
 			_hover_move_tiles.clear()
-			_hover_action_range_tiles.clear()
+			_clear_hover_skill_tiles()
 			_queue_static_tiles_redraw()
 		mark_danger_dirty()
 		_queue_overlay_redraw(),
@@ -340,7 +346,7 @@ func _invalidate_hover_cache() -> void:
 
 
 func _hover_tile_perimeter_cache_key() -> int:
-	return hash([_hover_move_tiles, _hover_action_range_tiles])
+	return hash([_hover_move_tiles, _hover_action_range_tiles, _hover_blast_tiles])
 
 
 func _ensure_hover_perimeter_cache() -> void:
@@ -356,6 +362,12 @@ func _ensure_hover_perimeter_cache() -> void:
 		_hover_action_range_tiles,
 		_COLOR_ACTION_RANGE,
 		_COLOR_ACTION_RANGE_PERIMETER_ALPHA,
+		_cached_hover_perimeter_segments,
+	)
+	_collect_tile_perimeter_segments(
+		_hover_blast_tiles,
+		_COLOR_BLAST,
+		_COLOR_BLAST_PERIMETER_ALPHA,
 		_cached_hover_perimeter_segments,
 	)
 
@@ -412,6 +424,24 @@ func _planning_action_range_tiles_for_unit(
 	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
 
 
+func _hover_is_walk_only_premove(unit: UnitState) -> bool:
+	if unit == null or _board == null or not _board.is_in_bounds(_hover_coord):
+		return false
+	var actor: UnitState = _proj_unit(unit.id)
+	if actor == null:
+		actor = unit
+	if _planning_input != null:
+		return _planning_input._is_hover_move_cell(actor, _hover_coord)
+	if _director != null and _director.find_awaiting_action(unit.id) != null:
+		return false
+	return _hover_move_tiles.has(_hover_coord)
+
+
+func _clear_hover_skill_tiles() -> void:
+	_hover_action_range_tiles.clear()
+	_hover_blast_tiles.clear()
+
+
 func _hover_action_range_uses_blast_at_coord(
 	unit: UnitState,
 	p_unit: UnitState,
@@ -439,9 +469,11 @@ func _compute_hover_blast_action_range_tiles(
 ) -> Array[Vector2i]:
 	if not _can_show_action_range_tiles(unit, ability_index, cache_force):
 		return []
-	if ability_index < 0:
-		return []
 	var ability: AbilityData = _selected_ability_data(unit, ability_index)
+	if ability == null and _director != null:
+		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
+		if awaiting != null:
+			ability = awaiting.ability
 	if ability == null or not _board.is_in_bounds(_hover_coord):
 		return []
 	if AbilitySystem.active_target_shape(
@@ -489,6 +521,7 @@ func build_debug_context() -> Dictionary:
 		"hover_coord": [_hover_coord.x, _hover_coord.y],
 		"hover_move_tiles": _coords_to_arrays(_hover_move_tiles),
 		"hover_action_range_tiles": _coords_to_arrays(_hover_action_range_tiles),
+		"hover_blast_tiles": _coords_to_arrays(_hover_blast_tiles),
 		"route": _coords_to_arrays(_route),
 		"aiming": _aiming,
 		"attack_target_id": _attack_target_id,
@@ -512,12 +545,20 @@ func get_hover_action_range_tiles() -> Array[Vector2i]:
 	return _hover_action_range_tiles.duplicate()
 
 
+func get_hover_blast_tiles() -> Array[Vector2i]:
+	return _hover_blast_tiles.duplicate()
+
+
 func is_hover_move_tile(cell: Vector2i) -> bool:
 	return _hover_move_tiles.has(cell)
 
 
 func is_hover_action_range_tile(cell: Vector2i) -> bool:
 	return _hover_action_range_tiles.has(cell)
+
+
+func is_hover_blast_tile(cell: Vector2i) -> bool:
+	return _hover_blast_tiles.has(cell)
 
 
 func is_hover_threat_tile(cell: Vector2i) -> bool:
@@ -683,8 +724,8 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 		_queue_hover_tile_redraw()
 
 
-## Cheap red tiles at the cursor. Uses AbilitySystem blast/range from committed
-## (or hover-as-walk) stand — not leftover live preview / preview_actions.
+## Cheap red range + yellow blast at the cursor. Range from latest stand
+## (or walk-hover intended stand). Blast from AbilitySystem at aim hover only.
 func _refresh_cursor_action_tiles() -> void:
 	if _director == null or _board == null:
 		return
@@ -730,7 +771,7 @@ func _refresh_cursor_action_tiles() -> void:
 	if _director.projected_state != null:
 		plan_board = _director.projected_state
 	var origin: Vector2i = _proj_origin(unit)
-	if _hover_move_tiles.has(_hover_coord):
+	if _hover_is_walk_only_premove(unit):
 		origin = _hover_coord
 	var auto_run_move: bool = false
 	if _planning_input != null:
@@ -746,23 +787,13 @@ func _refresh_cursor_action_tiles() -> void:
 	if not awaiting_aim and not AbilitySystem.can_show_planning_action_range_after_premove(
 		plan_board, actor, ability, origin, auto_run_move,
 	):
-		if not _hover_action_range_tiles.is_empty():
-			_hover_action_range_tiles.clear()
+		if not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
+			_clear_hover_skill_tiles()
 			_queue_static_tiles_redraw()
 		return
-	var tiles: Array[Vector2i] = []
-	var shape_module: int = 0
-	if awaiting_aim:
-		var awaiting_shape: TimelineAction = _director.find_awaiting_action(unit.id)
-		if awaiting_shape != null and awaiting_shape.awaiting_module_index >= 0:
-			shape_module = awaiting_shape.awaiting_module_index
-	if AbilitySystem.active_target_shape(actor, ability, shape_module) != GameEnums.TargetShape.SINGLE:
-		tiles = AbilitySystem.planning_blast_tiles_at_target(
-			plan_board, actor, ability, origin, _hover_coord,
-		)
-	if tiles.is_empty():
-		tiles = _planning_action_range_tiles_for_unit(unit, origin, selected_ability)
-	_hover_action_range_tiles = tiles
+	_fill_hover_action_range_tiles(
+		unit, p_unit, origin, selected_ability, force_basic, true,
+	)
 	_queue_static_tiles_redraw()
 
 
@@ -1053,7 +1084,7 @@ func recompute_hover_ranges(
 	if unit == null or not unit.is_alive():
 		_invalidate_hover_cache()
 		_hover_move_tiles.clear()
-		_hover_action_range_tiles.clear()
+		_clear_hover_skill_tiles()
 		_queue_static_tiles_redraw()
 		return
 	var move_origin: Vector2i = _proj_origin(unit)
@@ -1093,15 +1124,20 @@ func recompute_hover_ranges(
 		move_cache_hit
 		and _cached_hover_action_range_origin == action_range_origin
 	)
-	if (
-		not is_selected_player
-		or unit.id != _director.selected_unit_id
-		or _hover_action_range_uses_blast_at_coord(
-			unit, p_unit, selected_ability, cache_force,
-		)
-	):
+	if not is_selected_player or unit.id != _director.selected_unit_id:
 		action_cache_hit = action_cache_hit and _cached_hover_coord == _hover_coord
 	if move_cache_hit and action_cache_hit:
+		if (
+			_cached_hover_coord != _hover_coord
+			and _hover_action_range_uses_blast_at_coord(
+				unit, p_unit, selected_ability, cache_force,
+			)
+		):
+			_cached_hover_coord = _hover_coord
+			_fill_hover_blast_tiles(
+				unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
+			)
+			_queue_static_tiles_redraw()
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
@@ -1119,7 +1155,7 @@ func recompute_hover_ranges(
 		_queue_static_tiles_redraw()
 		return
 	_hover_move_tiles.clear()
-	_hover_action_range_tiles.clear()
+	_clear_hover_skill_tiles()
 	if _intent_tiles_blocked(unit, selected_ability):
 		_queue_static_tiles_redraw()
 		return
@@ -1172,6 +1208,7 @@ func _fill_hover_action_range_tiles(
 	is_selected_player: bool,
 ) -> void:
 	_hover_action_range_tiles.clear()
+	_hover_blast_tiles.clear()
 	if _intent_tiles_blocked(unit, selected_ability):
 		return
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
@@ -1189,15 +1226,9 @@ func _fill_hover_action_range_tiles(
 			and budget_unit.ability.points_left >= ability.action_point_cost
 		):
 			return
-		var blast_tiles: Array[Vector2i] = _compute_hover_blast_action_range_tiles(
-			unit, p_unit, action_range_origin, ability_index, cache_force,
+		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+			unit, action_range_origin, ability_index,
 		)
-		if not blast_tiles.is_empty():
-			_hover_action_range_tiles = blast_tiles
-		else:
-			_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-				unit, action_range_origin, ability_index,
-			)
 	elif (
 		is_selected_player
 		and _director != null
@@ -1208,6 +1239,29 @@ func _fill_hover_action_range_tiles(
 		)
 	else:
 		_populate_action_range_tiles(unit, action_range_origin, ability_index)
+	_fill_hover_blast_tiles(
+		unit, p_unit, action_range_origin, ability_index, cache_force, is_selected_player,
+	)
+
+
+func _fill_hover_blast_tiles(
+	unit: UnitState,
+	p_unit: UnitState,
+	action_range_origin: Vector2i,
+	ability_index: int,
+	cache_force: bool,
+	is_selected_player: bool,
+) -> void:
+	_hover_blast_tiles.clear()
+	if not is_selected_player:
+		return
+	if _intent_tiles_blocked(unit, ability_index):
+		return
+	if _hover_is_walk_only_premove(unit):
+		return
+	_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
+		unit, p_unit, action_range_origin, ability_index, cache_force,
+	)
 
 
 func _on_board_changed(board: BoardState) -> void:
@@ -1382,6 +1436,8 @@ func _draw_hover_tiles(canvas: CanvasItem) -> void:
 		_draw_tile_tint(canvas, cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_action_range_tiles:
 		_draw_tile_tint(canvas, cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
+	for cell: Vector2i in _hover_blast_tiles:
+		_draw_tile_tint(canvas, cell, _COLOR_BLAST, _COLOR_BLAST_FILL_ALPHA, false)
 	_ensure_hover_perimeter_cache()
 	for entry: Variant in _cached_hover_perimeter_segments:
 		if entry is Array and entry.size() >= 3:

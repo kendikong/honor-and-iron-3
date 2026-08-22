@@ -88,13 +88,14 @@ func test_live_knight_seismic_stomp_overlay_uses_shared_geometry(
 	assert_object(ability).is_not_null()
 	if ability == null:
 		return
+	director.select_unit(actor.id)
+	director.select_ability(_ability_index(actor, ability))
 	await _OVERLAY_QA.sync_attack_hover(
 		runner, input, overlay, director, actor.position, _DELTA_MS,
 	)
-	var expected := _AOE_QA.expected_self_aoe_tiles(
-		director.board, actor, ability, actor.position,
+	var expected := _AOE_QA.expected_blast_tiles(
+		director.board, actor, ability, actor.position, actor.position,
 	)
-	expected.erase(actor.position)
 	var parity_error := _AOE_QA.overlay_parity_error(
 		overlay, expected, &"knight_seismic_stomp",
 	)
