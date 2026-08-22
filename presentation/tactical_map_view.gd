@@ -234,6 +234,10 @@ func get_map_root_scale() -> float:
 	return maxf(_map_root.scale.x, 0.001)
 
 
+func get_map_root() -> Node2D:
+	return _map_root
+
+
 func map_local_to_screen(local_pos: Vector2) -> Vector2:
 	if _map_root == null:
 		return local_pos

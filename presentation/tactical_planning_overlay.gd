@@ -12,10 +12,10 @@ extends Node2D
 ##   (`planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles`).
 ##   SINGLE = that one aimed tile. AOE/ARC/LINE = the footprint.
 ##   Empty on walk-only hovers (commit would walk, not fire).
-## Floor tints draw at Z_FLOOR_TINTS (9), below UnitLayer (10). Arrows/ghosts stay on overlay (11).
+## Floor tints are MapRoot children at Z_GROUND (0), below CharacterActor depth (min Z_UNDER_TREE = 1).
+## Arrows/ghosts stay on this overlay node (z=11).
 
-## Floor tints (blue/red/yellow/hover) render below unit sprites (UnitLayer z=10).
-const Z_FLOOR_TINTS: int = 9
+const _C = preload("res://scripts/mana_seed_constants.gd")
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
@@ -178,11 +178,32 @@ func setup(
 	_ensure_static_tiles_layer()
 	_ensure_flow_arrows_layer()
 	_ensure_hover_tile_layer()
+	_attach_floor_draw_layer_to_map_root(_static_tiles_layer)
+	_attach_floor_draw_layer_to_map_root(_hover_tile_layer)
 
 
 func _configure_floor_draw_layer(layer: Node2D) -> void:
 	layer.z_as_relative = false
-	layer.z_index = Z_FLOOR_TINTS
+	layer.z_index = _C.Z_GROUND
+	_attach_floor_draw_layer_to_map_root(layer)
+
+
+func _attach_floor_draw_layer_to_map_root(layer: Node2D) -> void:
+	if layer == null or _map_view == null:
+		return
+	var root: Node2D = _map_view.get_map_root()
+	if root == null:
+		return
+	if layer.get_parent() != root:
+		if layer.get_parent() != null:
+			layer.reparent(root)
+		else:
+			root.add_child(layer)
+	var unit_layer: Node = root.find_child("UnitLayer", false, false)
+	if unit_layer != null:
+		var unit_idx: int = unit_layer.get_index()
+		if layer.get_index() != unit_idx:
+			root.move_child(layer, unit_idx)
 
 
 func _ensure_static_tiles_layer() -> void:
@@ -190,9 +211,10 @@ func _ensure_static_tiles_layer() -> void:
 		return
 	_static_tiles_layer = Node2D.new()
 	_static_tiles_layer.name = "StaticTiles"
-	_configure_floor_draw_layer(_static_tiles_layer)
 	_static_tiles_layer.draw.connect(_draw_static_tile_layers)
-	add_child(_static_tiles_layer)
+	_configure_floor_draw_layer(_static_tiles_layer)
+	if _static_tiles_layer.get_parent() == null:
+		add_child(_static_tiles_layer)
 
 
 func _ensure_flow_arrows_layer() -> void:
@@ -230,9 +252,10 @@ func _ensure_hover_tile_layer() -> void:
 		return
 	_hover_tile_layer = Node2D.new()
 	_hover_tile_layer.name = "HoverTile"
-	_configure_floor_draw_layer(_hover_tile_layer)
 	_hover_tile_layer.draw.connect(_draw_hover_tile_layer)
-	add_child(_hover_tile_layer)
+	_configure_floor_draw_layer(_hover_tile_layer)
+	if _hover_tile_layer.get_parent() == null:
+		add_child(_hover_tile_layer)
 
 
 func _queue_hover_tile_redraw() -> void:
