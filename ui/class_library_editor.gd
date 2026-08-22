@@ -1754,44 +1754,88 @@ func _apply_module_field_greying(
 	ability: AbilityData,
 	module_index: int,
 ) -> void:
-	_grey_row(rows.get("phase", []), not ModuleAuthoringRules.module_uses_phase(ability.planner_group))
-	_grey_row(
+	_set_row_visible(rows.get("phase", []), ModuleAuthoringRules.module_uses_phase(ability.planner_group))
+	_set_row_visible(
 		rows.get("scaling", []),
-		not GameEnums.effect_type_uses_module_scaling(module.primary_type),
+		GameEnums.effect_type_uses_module_scaling(module.primary_type)
+		or module.scaling_stat != GameEnums.StatType.NONE,
 	)
-	_grey_row(rows.get("min_range", []), not ModuleAuthoringRules.module_uses_range(module))
-	_grey_row(rows.get("max_range", []), not ModuleAuthoringRules.module_uses_range(module))
-	_grey_row(rows.get("requires_los", []), not ModuleAuthoringRules.module_uses_los(module))
-	_grey_row(
+	_set_row_visible(
+		rows.get("min_range", []),
+		ModuleAuthoringRules.module_uses_range(module)
+		or module.min_range != 0
+		or module.max_range != 1,
+	)
+	_set_row_visible(
+		rows.get("max_range", []),
+		ModuleAuthoringRules.module_uses_range(module)
+		or module.min_range != 0
+		or module.max_range != 1,
+	)
+	_set_row_visible(
+		rows.get("requires_los", []),
+		ModuleAuthoringRules.module_uses_los(module) or not module.requires_los,
+	)
+	_set_row_visible(
 		rows.get("range_origin", []),
-		not ModuleAuthoringRules.module_uses_range_origin(module, module_index),
+		ModuleAuthoringRules.module_uses_range_origin(module, module_index)
+		or module.range_origin != GameEnums.RangeOrigin.ACTOR,
 	)
-	_grey_row(rows.get("hit_count", []), not ModuleAuthoringRules.module_uses_hit_count(module))
-	_grey_row(rows.get("adjacent_bonus", []), module.primary_type != GameEnums.EffectType.DAMAGE)
-	_grey_row(rows.get("def_debuff", []), module.primary_type != GameEnums.EffectType.DAMAGE)
-	_grey_row(rows.get("shape", []), not ModuleAuthoringRules.module_uses_shape(module))
-	_grey_row(rows.get("shape_size", []), not ModuleAuthoringRules.module_uses_shape_size(module))
-	_grey_row(rows.get("condition_hp", []), not ModuleAuthoringRules.module_uses_target_filter_hp(module))
-	_grey_row(
+	_set_row_visible(
+		rows.get("l_shape_move", []),
+		ModuleAuthoringRules.module_uses_l_shape_move(module) or module.l_shape_move,
+	)
+	_set_row_visible(
+		rows.get("hit_count", []),
+		ModuleAuthoringRules.module_uses_hit_count(module) or module.hit_count > 1,
+	)
+	_set_row_visible(
+		rows.get("adjacent_bonus", []),
+		module.primary_type == GameEnums.EffectType.DAMAGE
+		or module.bonus_if_adjacent_at_cast != 0,
+	)
+	_set_row_visible(
+		rows.get("def_debuff", []),
+		module.primary_type == GameEnums.EffectType.DAMAGE
+		or module.def_debuff_before_damage != 0,
+	)
+	_set_row_visible(rows.get("shape", []), ModuleAuthoringRules.module_uses_shape(module))
+	_set_row_visible(rows.get("shape_size", []), ModuleAuthoringRules.module_uses_shape_size(module))
+	_set_row_visible(
+		rows.get("condition", []),
+		module.target_filter != GameEnums.ModuleTargetFilter.NONE,
+	)
+	_set_row_visible(
+		rows.get("condition_hp", []),
+		ModuleAuthoringRules.module_uses_target_filter_hp(module),
+	)
+	_set_row_visible(
 		rows.get("condition_hp_pct", []),
-		not ModuleAuthoringRules.module_uses_target_filter_hp_pct(module),
+		ModuleAuthoringRules.module_uses_target_filter_hp_pct(module)
+		or module.target_filter_hp_pct != 0,
 	)
-	_grey_row(
+	_set_row_visible(
 		rows.get("condition_status", []),
-		not ModuleAuthoringRules.module_uses_target_filter_status(module),
+		ModuleAuthoringRules.module_uses_target_filter_status(module),
 	)
-	_grey_row(
+	_set_row_visible(
 		rows.get("condition_status_type", []),
-		not ModuleAuthoringRules.module_uses_target_filter_status_type(module),
+		ModuleAuthoringRules.module_uses_target_filter_status_type(module)
+		or module.target_filter_status != GameEnums.StatusType.NONE
+		or module.target_filter_status_or != GameEnums.StatusType.NONE,
 	)
-	_grey_row(
+	_set_row_visible(
 		rows.get("condition_status_or", []),
-		not ModuleAuthoringRules.module_uses_target_filter_status_type(module),
+		ModuleAuthoringRules.module_uses_target_filter_status_type(module)
+		or module.target_filter_status_or != GameEnums.StatusType.NONE,
 	)
-	_grey_row(rows.get("condition_stat", []), not ModuleAuthoringRules.module_uses_target_filter_stat(module))
-	_grey_row(
+	_set_row_visible(
+		rows.get("condition_stat", []),
+		ModuleAuthoringRules.module_uses_target_filter_stat(module),
+	)
+	_set_row_visible(
 		rows.get("condition_occupant", []),
-		not ModuleAuthoringRules.module_uses_target_filter_occupant(module),
+		ModuleAuthoringRules.module_uses_target_filter_occupant(module),
 	)
 
 
@@ -2065,53 +2109,57 @@ func _add_module_targeting_flags(
 	ability: AbilityData,
 	module: AbilityModule,
 ) -> void:
-	_add_subsection_label(parent, "Module Targeting — who you click", ClassLibraryTheme.ACCENT_DATA)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
-	parent.add_child(row)
-	for spec: Array in [
+	var targeting_specs: Array = [
 		[GameEnums.TargetingFlags.SELF, "Self"],
 		[GameEnums.TargetingFlags.ALLY, "Ally"],
 		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
 		[GameEnums.TargetingFlags.TILE, "Tile"],
 		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
-	]:
-		var flag: int = int(spec[0])
-		var check := CheckBox.new()
-		check.text = String(spec[1])
-		check.button_pressed = module.has_targeting(flag)
-		var dash_greyed: bool = not ModuleAuthoringRules.targeting_flag_applies(module, flag)
-		check.disabled = dash_greyed
-		check.modulate.a = 0.35 if dash_greyed else 1.0
-		check.toggled.connect(func(enabled: bool) -> void:
+	]
+	var any_click_targeting: bool = false
+	for spec: Array in targeting_specs:
+		if ModuleAuthoringRules.targeting_flag_applies(module, int(spec[0])):
+			any_click_targeting = true
+			break
+	if any_click_targeting:
+		_add_subsection_label(parent, "Module Targeting — who you click", ClassLibraryTheme.ACCENT_DATA)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+		parent.add_child(row)
+		for spec: Array in targeting_specs:
+			var flag: int = int(spec[0])
+			if not ModuleAuthoringRules.targeting_flag_applies(module, flag):
+				continue
+			var check := CheckBox.new()
+			check.text = String(spec[1])
+			check.button_pressed = module.has_targeting(flag)
+			check.toggled.connect(func(enabled: bool) -> void:
+				if enabled:
+					module.targeting_flags |= flag
+				else:
+					module.targeting_flags &= ~flag
+				_on_module_field_edited(ability)
+			)
+			row.add_child(check)
+	if ModuleAuthoringRules.targeting_flag_applies(
+		module, GameEnums.TargetingFlags.EXCLUDE_CASTER
+	):
+		_add_subsection_label(parent, "Module Targeting — blast", ClassLibraryTheme.ACCENT_DATA)
+		var blast_row := HBoxContainer.new()
+		blast_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+		parent.add_child(blast_row)
+		var skip := CheckBox.new()
+		skip.text = "Skip caster in blast"
+		skip.button_pressed = module.exclude_caster or module.has_targeting(GameEnums.TargetingFlags.EXCLUDE_CASTER)
+		skip.toggled.connect(func(enabled: bool) -> void:
+			module.exclude_caster = enabled
 			if enabled:
-				module.targeting_flags |= flag
+				module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
 			else:
-				module.targeting_flags &= ~flag
+				module.targeting_flags &= ~GameEnums.TargetingFlags.EXCLUDE_CASTER
 			_on_module_field_edited(ability)
 		)
-		row.add_child(check)
-	_add_subsection_label(parent, "Module Targeting — blast", ClassLibraryTheme.ACCENT_DATA)
-	var blast_row := HBoxContainer.new()
-	blast_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
-	parent.add_child(blast_row)
-	var skip := CheckBox.new()
-	skip.text = "Skip caster in blast"
-	skip.button_pressed = module.exclude_caster or module.has_targeting(GameEnums.TargetingFlags.EXCLUDE_CASTER)
-	var skip_greyed: bool = not ModuleAuthoringRules.targeting_flag_applies(
-		module, GameEnums.TargetingFlags.EXCLUDE_CASTER
-	)
-	skip.disabled = skip_greyed
-	skip.modulate.a = 0.35 if skip_greyed else 1.0
-	skip.toggled.connect(func(enabled: bool) -> void:
-		module.exclude_caster = enabled
-		if enabled:
-			module.targeting_flags |= GameEnums.TargetingFlags.EXCLUDE_CASTER
-		else:
-			module.targeting_flags &= ~GameEnums.TargetingFlags.EXCLUDE_CASTER
-		_on_module_field_edited(ability)
-	)
-	blast_row.add_child(skip)
+		blast_row.add_child(skip)
 
 
 func _add_module_typed_extras_editor(
@@ -2788,17 +2836,6 @@ func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -
 	var grid := GridContainer.new()
 	grid.columns = 2
 	body.add_child(grid)
-	var overflow_box := VBoxContainer.new()
-	overflow_box.visible = false
-	body.add_child(overflow_box)
-	var overflow_grid := GridContainer.new()
-	overflow_grid.columns = 2
-	overflow_box.add_child(overflow_grid)
-	var show_all_btn := Button.new()
-	show_all_btn.visible = false
-	show_all_btn.flat = true
-	show_all_btn.focus_mode = Control.FOCUS_NONE
-	body.add_child(show_all_btn)
 	header.pressed.connect(func() -> void:
 		body.visible = not body.visible
 		var open: bool = body.visible
@@ -2807,18 +2844,14 @@ func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -
 		)
 	)
 	return {
+		"outer": outer,
 		"grid": grid,
-		"overflow_box": overflow_box,
-		"overflow_grid": overflow_grid,
-		"show_all_btn": show_all_btn,
 	}
 
 
 func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> void:
+	var outer: VBoxContainer = shell["outer"] as VBoxContainer
 	var grid: GridContainer = shell["grid"] as GridContainer
-	var overflow_grid: GridContainer = shell["overflow_grid"] as GridContainer
-	var overflow_box: VBoxContainer = shell["overflow_box"] as VBoxContainer
-	var show_all_btn: Button = shell["show_all_btn"] as Button
 	var rows: Array[Array] = []
 	var child_count: int = grid.get_child_count()
 	for i: int in range(0, child_count, 2):
@@ -2827,32 +2860,22 @@ func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> vo
 		rows.append([grid.get_child(i), grid.get_child(i + 1)])
 	for child: Node in grid.get_children():
 		grid.remove_child(child)
-	var hidden: int = 0
 	for row: Array in rows:
 		var lbl: Label = row[0] as Label
 		var ctrl: Control = row[1] as Control
 		var prop: String = ModuleAuthoringRules.typed_extra_property_from_label(
 			lbl.text if lbl != null else "",
 		)
-		var show: bool = (
-			prop.is_empty()
-			or ModuleAuthoringRules.typed_extra_field_applies(module, prop)
-		)
-		var target: GridContainer = grid if show else overflow_grid
-		target.add_child(lbl)
-		target.add_child(ctrl)
-		if not show:
-			hidden += 1
-	show_all_btn.visible = hidden > 0
-	if hidden > 0:
-		show_all_btn.text = "Show %d more fields…" % hidden
-		show_all_btn.pressed.connect(func() -> void:
-			overflow_box.visible = not overflow_box.visible
-			show_all_btn.text = (
-				"Hide extra fields" if overflow_box.visible
-				else "Show %d more fields…" % hidden
-			)
-		)
+		if prop.is_empty() or not ModuleAuthoringRules.typed_extra_field_applies(module, prop):
+			if lbl != null:
+				lbl.queue_free()
+			if ctrl != null:
+				ctrl.queue_free()
+			continue
+		grid.add_child(lbl)
+		grid.add_child(ctrl)
+	if grid.get_child_count() == 0:
+		outer.queue_free()
 
 
 func _add_typed_module_bindings(
@@ -3025,17 +3048,20 @@ func _add_module_keywords_editor(
 		)
 		box.add_child(remove)
 		var keyword_grey_cb := func() -> void:
-			_grey_row(
+			_set_row_visible(
 				push_row,
-				not ModuleAuthoringRules.keyword_uses_push_amount(keyword.keyword_id),
+				ModuleAuthoringRules.keyword_uses_push_amount(keyword.keyword_id)
+				or keyword.push_amount != 0,
 			)
-			_grey_row(
+			_set_row_visible(
 				amount_row,
-				not ModuleAuthoringRules.keyword_uses_amount(keyword.keyword_id),
+				ModuleAuthoringRules.keyword_uses_amount(keyword.keyword_id)
+				or keyword.amount != 0,
 			)
-			_grey_row(
+			_set_row_visible(
 				emit_row,
-				not ModuleAuthoringRules.keyword_uses_emit_as_effect(keyword.keyword_id),
+				ModuleAuthoringRules.keyword_uses_emit_as_effect(keyword.keyword_id)
+				or keyword.emit_as_effect,
 			)
 		_ability_ui[ability]["module_grey_cbs"].append(keyword_grey_cb)
 		keyword_grey_cb.call()
@@ -3349,9 +3375,10 @@ func _add_module_layers_editor(
 					_on_module_field_edited(ability)
 			)
 		var layer_grey_cb := func() -> void:
-			_grey_row(
+			_set_row_visible(
 				layer_grey_rows.get("scaling", []),
-				not GameEnums.effect_type_uses_module_scaling(layer.effect.type),
+				GameEnums.effect_type_uses_module_scaling(layer.effect.type)
+				or layer.effect.scaling_stat != GameEnums.StatType.NONE,
 			)
 		layer_grey_cb.call()
 		var remove := Button.new()
@@ -3933,6 +3960,14 @@ func _grey_row(row: Array[Control], greyed: bool) -> void:
 		ctrl.modulate.a = alpha
 		if ctrl is BaseButton or ctrl is SpinBox or ctrl is OptionButton or ctrl is LineEdit:
 			ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE if greyed else Control.MOUSE_FILTER_STOP
+
+
+func _set_row_visible(row: Variant, visible: bool) -> void:
+	if row == null:
+		return
+	for ctrl: Control in row as Array:
+		if is_instance_valid(ctrl):
+			ctrl.visible = visible
 
 
 func _save_overrides() -> void:

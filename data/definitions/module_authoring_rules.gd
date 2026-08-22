@@ -83,6 +83,15 @@ static func module_uses_hit_count(module: AbilityModule) -> bool:
 	return module != null and module.primary_type == GameEnums.EffectType.DAMAGE
 
 
+static func module_uses_l_shape_move(module: AbilityModule) -> bool:
+	if module == null:
+		return false
+	return (
+		module.primary_type == GameEnums.EffectType.MOVE
+		or GameEnums.is_walk_motion(module.primary_type)
+	)
+
+
 static func module_uses_target_filter_hp(module: AbilityModule) -> bool:
 	return module != null and module.target_filter == GameEnums.ModuleTargetFilter.HP
 
