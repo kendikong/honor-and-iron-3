@@ -19,6 +19,7 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - **Red tiles = latest stand (absolute):** action range paints from the committed stand, never turn-start `base_board` — `.cursor/rules/action-range-latest-stand.mdc`. Read the failure log `docs/design/ACTION_RANGE_LATEST_STAND.md` before touching origin again.
 - **QA after gameplay changes (absolute):** Any edit to sim, combat systems, planning/commit, or ability data **must** run the matching headless suite and report PASS or FAIL in Changelog before ending the turn — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
 - **Test execution hierarchy (absolute):** Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) while debugging. When an edit is ready, run **`run_planning_qa_gate.ps1` for regression prevention** and **`run_<class>_qa_gate.ps1` for the specific class edited**. `run_all_background_class_tests.ps1` is heavy master CI only — **never run iteratively**; run only at final milestone completion or upon explicit user request.
+- **Headless `--script` entry points:** Godot requires `extends SceneTree` (or `MainLoop`). Files named `*_runner.gd` / `*_harness.gd` with `extends RefCounted` are **libraries** — load them from a `run_*.gd` wrapper or a `*QaGate.tscn` host. See table below.
 - **Automated QA = two planning suites:** **Tier 3 LIVE** — `run_planning_scene_acceptance.ps1` → `live_planning_scene_test.gd` (GdUnit + TestBattle, hidden window, **not** `--headless`). **Headless contracts** — `run_planning_headless_contracts.ps1` → `PlanningQaGate.tscn` (fixture harness). Do not conflate them with a `-Headless` flag on the live runner.
 - **Class kits are drafts:** never recite owner QA sign-off / LOCK / “Knight is the only PASS” — `.cursor/rules/skill-lists-are-drafts.mdc`. Still run matching automated class gates when you touch a class — `.cursor/rules/class-qa-knight-bar.mdc` · `.cursor/rules/class-qa-all-classes-mandatory.mdc`
 - One pure `Simulator.simulate(state, timeline)`; preview == execution.
@@ -26,6 +27,29 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - Static typing, enums over strings, composition over inheritance, data over hardcoding.
 - Validate mechanics before adding content; prototype code is temporary.
 - **Every commit is a full backup** — self-contained, exact copy of the working game at commit time. If revert would not restore the same playable game, do not commit yet. See `.agents/AGENTS.md` § Git Hygiene.
+
+## Headless Godot test entry points
+
+Godot `--script` / `-s` must target a **SceneTree** (or MainLoop) script. **`extends RefCounted` harnesses are not CLI entry points** — Godot shows *"Can't load the script … as it doesn't inherit from SceneTree or MainLoop."*
+
+| RefCounted harness (do **not** `--script` this) | Headless CLI entry (`godot --headless --path . --script …`) |
+|--------------------------------------------------|-------------------------------------------------------------|
+| `tests/ability_module_bridge_runner.gd` | `tests/run_ability_module_bridge_runner.gd` |
+| `tests/bridge_test_runner.gd` | `tests/bridge_test.gd` |
+| `tests/sim_test_runner.gd` | `tests/sim_test.gd` |
+| `tests/planning_t3_mimic_runner.gd` | `tests/run_t3_mimic_headless.gd` |
+| `tests/extra_rules_conversion_contract.gd` | `tests/run_extra_rules_conversion_contract.gd` |
+| `tests/class_library_schema_typed_fields_test.gd` | `tests/run_class_library_schema_typed_fields_test.gd` |
+| `tests/planning_input_test.gd` + `planning_module_parity_test.gd` | `tests/run_planning_input_only.gd` |
+| Bridge + sim combined regression | `tests/regression_test.gd` |
+| TestBattle / debug-report bridge only | `tests/run_test_battle_bridge.gd` |
+| Class Tier 1 scenarios (`*_qa_runner.gd` RefCounted libs) | F5 `tests/<Class>QaGate.tscn` (e.g. `KnightQaGate.tscn`) — not `--script` on the runner lib |
+| Bruiser Tier 1 (SceneTree CLI) | `tests/bruiser_qa_runner.gd` |
+
+Legacy alias still works: `tests/run_ability_module_bridge_test.gd` → same suite as `run_ability_module_bridge_runner.gd`.
+
+Windows example:
+`"<godot.exe>" --headless --path . --script res://tests/run_ability_module_bridge_runner.gd`
 
 ## Code Quality (All Agents — every model)
 
@@ -235,7 +259,7 @@ Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud
 - The `scripts/*.ps1` QA wrappers are **Windows/PowerShell + local `.exe`** only. On this VM, invoke Godot directly (the `.ps1` files just wrap these commands):
   - Sim/bridge regression (headless): `godot --headless --path . --script res://tests/regression_test.gd`
   - Result file is written to `~/.local/share/godot/app_userdata/Honor and Iron 3/regression_test_result.txt` (Linux user:// path; the `.ps1` scripts read the Windows `%APPDATA%` path instead).
-  - Other headless entry points: `res://tests/run_*.gd` (e.g. `run_planning_input_only.gd`, `run_skill_scenarios_only.gd`).
+  - Other headless entry points: `res://tests/run_*.gd` (e.g. `run_planning_input_only.gd`, `run_skill_scenarios_only.gd`, `run_ability_module_bridge_runner.gd`). **Never** `--script` a `*_runner.gd` / `*_harness.gd` file that `extends RefCounted` — see **Headless Godot test entry points** table in `AGENTS.md`.
 
 ### Running the GUI (no GPU on this VM)
 - This VM has **no GPU / no Vulkan**, so the default Forward+ renderer will not start. Run the app with the Compatibility renderer + software GL on the virtual display:

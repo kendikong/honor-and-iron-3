@@ -148,7 +148,7 @@ Write-GateLine "=== Typed conversion contracts ==="
 $conversionEntrypoints = @(
 	"res://tests/run_extra_rules_conversion_contract.gd",
 	"res://tests/run_class_library_schema_typed_fields_test.gd",
-	"res://tests/run_ability_module_bridge_test.gd"
+	"res://tests/run_ability_module_bridge_runner.gd"
 )
 foreach ($entrypoint in $conversionEntrypoints) {
 	Write-GateLine "[QA] $entrypoint"

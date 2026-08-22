@@ -1,6 +1,8 @@
 class_name AbilityModuleBridgeRunner
 extends RefCounted
 
+## RefCounted harness — do NOT run with --script.
+## Headless CLI: godot --headless --path . --script res://tests/run_ability_module_bridge_runner.gd
 ## Headless smoke: modular finalize preserves Knight/Bruiser fingerprints + module bar.
 
 

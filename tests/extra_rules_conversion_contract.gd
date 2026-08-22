@@ -1,6 +1,8 @@
 class_name ExtraRulesConversionContract
 extends RefCounted
 
+## RefCounted harness — do NOT run with --script.
+## Headless CLI: godot --headless --path . --script res://tests/run_extra_rules_conversion_contract.gd
 ## Fail-loud Extra Rules conversion bar.
 ## Add an ability id to CONVERTED_SKILL_IDS only after extras and leftover Extra Rule keys are gone.
 

@@ -1,6 +1,8 @@
 class_name SimTestRunner
 extends RefCounted
 
+## RefCounted harness — do NOT run with --script.
+## Headless CLI: godot --headless --path . --script res://tests/sim_test.gd
 ## Purpose: The actual Milestone 1 checks for the pure simulation, in one place so
 ## both the command-line runner and the in-editor runner share identical logic
 ## (no duplicated tests).

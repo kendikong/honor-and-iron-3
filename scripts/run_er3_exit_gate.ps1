@@ -10,7 +10,7 @@ if ([string]::IsNullOrWhiteSpace($ReportPath)) {
 }
 
 $checks = @(
-	"res://tests/run_ability_module_bridge_test.gd",
+	"res://tests/run_ability_module_bridge_runner.gd",
 	"res://tests/run_class_library_schema_typed_fields_test.gd",
 	"res://tests/run_extra_rules_conversion_contract.gd"
 )
@@ -30,7 +30,7 @@ foreach ($script in $checks) {
 	if (Test-Path $stdoutPath) { $output += Get-Content $stdoutPath }
 	if (Test-Path $stderrPath) { $output += Get-Content $stderrPath }
 	$required = switch ($script) {
-		"res://tests/run_ability_module_bridge_test.gd" {
+		"res://tests/run_ability_module_bridge_runner.gd" {
 			@(
 				"ABILITY_MODULE_CHECK: er1_shared_homes PASS",
 				"ABILITY_MODULE_SCENARIO: grant_scrap_runtime PASS",

@@ -1,6 +1,8 @@
 class_name BridgeTestRunner
 extends RefCounted
 
+## RefCounted harness — do NOT run with --script.
+## Headless CLI: godot --headless --path . --script res://tests/bridge_test.gd
 ## Headless smoke tests for bridge layer (Phase 1 expands coverage).
 
 static func run_all() -> Dictionary:

@@ -1,6 +1,9 @@
 class_name PlanningT3MimicRunner
 extends RefCounted
 
+## RefCounted harness — do NOT run with --script.
+## Headless CLI: godot --headless --path . --script res://tests/run_t3_mimic_headless.gd
+
 const _Checklist := preload("res://tests/planning_t3_live_headless_checklist_test.gd")
 const _IntentSot := preload("res://tests/intent_source_of_truth_gate_test.gd")
 
