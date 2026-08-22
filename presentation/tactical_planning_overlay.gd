@@ -952,7 +952,7 @@ func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: 
 		and _planning_input.auto_run_movement_active(p_unit)
 	):
 		return _move_budget_for_hover(p_unit, selected_ability)
-	if p_unit.movement.points_left <= 0:
+	if AbilitySystem.planning_available_movement_points(p_unit) <= 0:
 		return 0
 	return _move_budget_for_hover(p_unit, selected_ability)
 
@@ -2790,7 +2790,7 @@ func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
 	if _planning_input != null and _planning_input.extended_move_budget_active(budget_unit):
 		return AbilitySystem.preview_move_budget_with_run(budget_unit)
 	if selected_ability < 0:
-		return budget_unit.movement.points_left
+		return AbilitySystem.planning_available_movement_points(budget_unit)
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 	if (
 		ability != null
@@ -2798,7 +2798,7 @@ func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
 		and budget_unit.ability.points_left >= ability.action_point_cost
 	):
 		return AbilitySystem.preview_move_budget_with_run(budget_unit)
-	return budget_unit.movement.points_left
+	return AbilitySystem.planning_available_movement_points(budget_unit)
 
 
 func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:

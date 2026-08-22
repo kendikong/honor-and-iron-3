@@ -1733,8 +1733,6 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 		var occ: UnitState = _director.board.get_unit_at(cell)
 		if occ != null and occ.is_enemy() and not _can_move_to(p_unit, cell):
 			return false
-	if _planning != null and _planning.is_hover_move_tile(cell):
-		return true
 	if _skill_interaction_active():
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
@@ -1755,6 +1753,8 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 				return true
 			return _can_move_to(p_unit, cell)
 		return false
+	if _planning != null and _planning.is_hover_move_tile(cell):
+		return true
 	return _can_move_to(p_unit, cell)
 
 
@@ -2703,7 +2703,7 @@ func _preview_from_commit_slots_at_cell(
 		return {
 			"intents": [],
 			"events": [],
-			"temp_board": _hover_empty_move_preview_board(cell),
+			"temp_board": _hover_empty_move_preview_board(slots, cell),
 			"actions": actions,
 			"intent_preview": true,
 		}
@@ -2722,20 +2722,31 @@ func _preview_from_commit_slots_at_cell(
 	return _director.preview_actions(unit_id, actions)
 
 
-func _hover_empty_move_preview_board(cell: Vector2i) -> BoardState:
+func _hover_empty_move_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
 	var source: BoardState = _director.projected_state
 	if source == null:
 		source = _director.board
 	if source == null:
 		return BoardState.new()
 	var cheap: BoardState = source.clone()
-	var uid: int = _director.selected_unit_id
-	var u: UnitState = cheap.get_unit_by_id(uid)
-	if u == null or u.position == cell:
-		return cheap
-	GridSystem.set_occupant(cheap, u.position, -1)
-	u.position = cell
-	GridSystem.set_occupant(cheap, cell, uid)
+	var move_action: TimelineAction = null
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				move_action = raw as TimelineAction
+				break
+		if move_action != null:
+			break
+	if move_action != null:
+		var dummy_events: Array[SimEvent] = []
+		MovementSystem.execute_move(cheap, move_action, dummy_events)
+	else:
+		var uid: int = _director.selected_unit_id
+		var u: UnitState = cheap.get_unit_by_id(uid)
+		if u != null and u.position != cell:
+			GridSystem.set_occupant(cheap, u.position, -1)
+			u.position = cell
+			GridSystem.set_occupant(cheap, cell, uid)
 	return cheap
 
 
@@ -2747,6 +2758,8 @@ func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i)
 	if awaiting_targeting_active() or dragging:
 		return false
 	if _director == null or _director.board == null:
+		return false
+	if _director.selected_ability_index >= 0 and not force_basic_movement:
 		return false
 	var occupant: UnitState = _director.board.get_unit_at(cell)
 	if occupant != null and occupant.id != _director.selected_unit_id:
@@ -4015,7 +4028,7 @@ func _move_budget(unit: UnitState) -> int:
 		return 0
 	if extended_move_budget_active(unit):
 		return AbilitySystem.planning_move_budget(unit, true)
-	return unit.movement.points_left
+	return AbilitySystem.planning_available_movement_points(unit)
 
 
 func _ability_range(actor: UnitState) -> int:
@@ -4089,7 +4102,7 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	var move_origin: Vector2i = _proj_move_origin(unit)
 	if coord == move_origin:
 		return false
-	if unit.movement.points_left <= 0 and not extended_move_budget_active(unit):
+	if AbilitySystem.planning_available_movement_points(unit) <= 0 and not extended_move_budget_active(unit):
 		return false
 	if _planning != null and not _planning.get_hover_move_tiles().is_empty():
 		return _planning.is_hover_move_tile(coord)

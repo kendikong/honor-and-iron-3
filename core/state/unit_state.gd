@@ -522,7 +522,7 @@ func clone() -> UnitState:
 	copy.current_defense = current_defense
 	return copy
 
-func get_ability_range(ability_data: AbilityData) -> int:
+func get_ability_range(ability_data: AbilityData, ignore_steady_aim: bool = false) -> int:
 	if ability_data == null:
 		return 0
 	if has_status(GameEnums.StatusType.BLIND):
@@ -551,6 +551,8 @@ func get_ability_range(ability_data: AbilityData) -> int:
 				continue
 			var range_bonus := int(passive.modifiers.get("zero_move_attack_range", 0))
 			if passive.modifiers.has("steady_aim_range"):
+				if ignore_steady_aim:
+					continue
 				range_bonus = int(passive.modifiers["steady_aim_range"])
 				if (
 					is_passive_upgraded(passive.id)

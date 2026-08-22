@@ -420,6 +420,17 @@ static func active_range_tiles(
 	return actor.get_ability_range(ability) if actor != null else ability.range_tiles
 
 
+static func active_min_range_tiles(
+	actor: UnitState,
+	ability: AbilityData,
+	module_index: int = 0,
+) -> int:
+	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
+	if module != null:
+		return module.min_range
+	return 0
+
+
 ## Planning + can_use: authored range extended by MOVE steps or DASH length.
 static func planning_max_target_distance(actor: UnitState, ability: AbilityData) -> int:
 	if ability == null:
@@ -2212,7 +2223,7 @@ static func apply_standing_aim_passives(
 			continue
 		if _plan_uses_movement_for_unit(plan, unit):
 			continue
-		apply_standing_aim_passives_for_unit(board, unit, events)
+		apply_standing_aim_passives_for_unit(board, unit, events, plan)
 
 
 static func _plan_uses_movement_for_unit(plan: Timeline, unit: UnitState) -> bool:
@@ -2244,6 +2255,7 @@ static func apply_standing_aim_passives_for_unit(
 	board: BoardState,
 	actor: UnitState,
 	events: Array[SimEvent],
+	plan: Timeline = null,
 ) -> void:
 	if actor == null or actor.passive_flags.get("steady_aim_triggered", false):
 		return
@@ -2261,6 +2273,19 @@ static func apply_standing_aim_passives_for_unit(
 			)
 			actor._recalculate_stats(board)
 	if not _passive_has_modifier(actor, &"steady_aim"):
+		return
+	var requires_steady_aim: bool = false
+	if plan != null:
+		for action: TimelineAction in plan.entries:
+			if action == null or action.actor_id != actor.id:
+				continue
+			if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
+				var dist: int = GridSystem.manhattan(actor.position, action.target_coord)
+				var base_range: int = actor.get_ability_range(action.ability, true)
+				if dist > base_range:
+					requires_steady_aim = true
+					break
+	if not requires_steady_aim:
 		return
 	var remaining: int = actor.movement.points_left
 	if remaining > 0:
@@ -2531,15 +2556,13 @@ static func planning_blast_tiles_at_target(
 	if shape == GameEnums.TargetShape.SINGLE:
 		return empty
 	var ability_range: int = active_range_tiles(unit, ability)
+	var min_range: int = active_min_range_tiles(unit, ability)
 	if ability_range <= 0:
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
-	var cast_origin: Vector2i = origin
-	if GridSystem.manhattan(cast_origin, target) > ability_range:
+	var dist: int = GridSystem.manhattan(origin, target)
+	if dist < min_range or dist > ability_range:
 		return empty
-	var probe: TimelineAction = TimelineAction.make_ability(unit.id, ability, target, -1)
-	if not can_use(board, probe):
-		return empty
-	return GridSystem.get_affected_tiles(board, cast_origin, target, shape, shape_size)
+	return GridSystem.get_affected_tiles(board, origin, target, shape, shape_size)
 
 
 static func _single_coord(cell: Vector2i) -> Array[Vector2i]:
@@ -2733,6 +2756,16 @@ static func planning_display_ap_left(
 	return ap_left
 
 
+## Canonical available MP during planning — restores MP consumed tentatively by standing-only passives (e.g. Steady Aim).
+static func planning_available_movement_points(unit: UnitState) -> int:
+	if unit == null:
+		return 0
+	var points: int = unit.movement.points_left
+	if points <= 0 and unit.passive_flags.get("steady_aim_triggered", false):
+		return unit.movement.max_points
+	return points
+
+
 ## Canonical planning UI MP — projected economy; live sim only when non-negative.
 static func planning_display_mp_left(
 	committed_actor: UnitState,
@@ -2741,7 +2774,7 @@ static func planning_display_mp_left(
 ) -> int:
 	if committed_actor == null:
 		return -1
-	var committed_mp: int = committed_actor.movement.points_left
+	var committed_mp: int = planning_available_movement_points(committed_actor)
 	if not live_preview_valid or live_actor == null:
 		return committed_mp
 	var live_mp: int = live_actor.movement.points_left
@@ -2778,7 +2811,7 @@ static func can_plan_pre_move(unit: UnitState, move_slot_open: bool) -> bool:
 		return false
 	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER):
 		return false
-	return unit.movement.points_left > 0 or can_afford_run(unit)
+	return planning_available_movement_points(unit) > 0 or can_afford_run(unit)
 
 
 static func is_planning_fully_exhausted(unit: UnitState, move_slot_open: bool) -> bool:
@@ -2804,7 +2837,7 @@ static func planning_move_budget(unit: UnitState, run_mode: bool) -> int:
 		return 0
 	if run_mode:
 		return preview_move_budget_with_run(unit)
-	return unit.movement.points_left
+	return planning_available_movement_points(unit)
 
 
 ## Planning UI: skill button enabled when the unit could commit this ability now (ignores range).
