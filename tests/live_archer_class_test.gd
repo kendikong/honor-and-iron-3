@@ -615,11 +615,13 @@ func _commit_live_click(
 	_input.call("_promote_intent_preview_after_commit")
 	_director.flush_plan_refresh_signals_if_pending()
 	_input.clear_qa_pointer_override()
+	_input._suppress_post_commit_hover_refresh = false
 	await runner.simulate_frames(2, _DELTA_MS)
 	return slots
 
 
 func _actual_click_cell(runner: GdUnitSceneRunner, cell: Vector2i) -> void:
+	_input._suppress_post_commit_hover_refresh = false
 	_input.set_qa_pointer_grid_cell(cell)
 	_input.on_hover_moved(cell)
 	await runner.simulate_frames(2, _DELTA_MS)

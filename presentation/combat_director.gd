@@ -333,6 +333,8 @@ func unit_has_committed_class_action(unit_id: int) -> bool:
 	for action: TimelineAction in plan_action.entries:
 		if action.actor_id != unit_id:
 			continue
+		if action.awaiting_target:
+			continue
 		if action.type != GameEnums.ActionType.ABILITY:
 			continue
 		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
@@ -453,6 +455,10 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			if not action.awaiting_target:
 				awaiting.awaiting_target = false
 				awaiting.awaiting_module_index = -1
+				if action.authored_ability != null:
+					awaiting.ability = action.authored_ability
+				elif awaiting.authored_ability != null:
+					awaiting.ability = awaiting.authored_ability
 			return true
 	return false
 
@@ -787,7 +793,11 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> Strin
 			and awaiting.ability.id == action.ability.id
 			and not action.awaiting_target
 		):
-			sim_action = awaiting.clone()
+			sim_action = action.clone()
+			if sim_action.authored_ability != null:
+				sim_action.ability = sim_action.authored_ability
+			elif awaiting.authored_ability != null:
+				sim_action.ability = awaiting.authored_ability
 			sim_action.target_coord = action.target_coord
 			sim_action.target_unit_id = action.target_unit_id
 			sim_action.waypoints = action.waypoints.duplicate()
@@ -822,6 +832,10 @@ func preview_commit_valid(unit_id: int, actions: Array[TimelineAction]) -> Strin
 		if e.type != GameEnums.SimEventType.ACTION_FAILED:
 			continue
 		if int(e.data.get("actor", -1)) == unit_id:
+			var acts: Array[String] = []
+			for a in preview_actions:
+				acts.append("act=%s tgt=%s mod_tgts=%s await=%s await_idx=%s" % [a.ability.id if a.ability else "nil", a.target_coord, a.module_target_coords, a.awaiting_target, a.awaiting_module_index])
+			print("PREVIEW_COMMIT_VALID ACTION_FAILED: ", e.data, " actions: ", acts)
 			return e.data.get("reason", "cannot_use_ability") as String
 	return ""
 

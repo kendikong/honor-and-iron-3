@@ -44,6 +44,10 @@ static func assert_live_overlay_parity(
 	var actor := director.board.get_unit_by_id(actor_id)
 	if actor == null or overlay == null:
 		return
+	if ability != null:
+		var idx := actor.active_abilities.find(ability)
+		if idx >= 0:
+			director.select_ability(idx)
 	await sync_attack_hover(runner, input, overlay, director, target_cell, delta_ms)
 	var plan_board: BoardState = director.board
 	if director.projected_state != null:

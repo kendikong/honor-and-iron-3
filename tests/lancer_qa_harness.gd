@@ -1,4 +1,4 @@
-﻿class_name LancerQaHarness
+class_name LancerQaHarness
 extends RefCounted
 
 ## Lancer class gate: modular factory contract plus one shared-simulator smoke.
@@ -481,6 +481,8 @@ static func _simulate_active_ability(ability: AbilityData) -> Dictionary:
 		enemy.facing = GameEnums.Facing.NORTH
 	if ability.id == &"lancer_piercing_charge":
 		enemy.position = Vector2i(5, 5)
+	if ability.id == &"lancer_glorious_charge":
+		enemy.position = Vector2i(5, 3)
 	var ally := UnitState.create(
 		3,
 		definition,

@@ -73,6 +73,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
+	charge_attack.aim_binding = GameEnums.AimBinding.NEW_AIM
 	charge_attack.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])

@@ -380,9 +380,18 @@ static func run_awaiting_smoke(
 			% [commit_cell, str(hover_slots.get("invalid", "unknown"))],
 		)
 		return
-	_Checklist.assert_slots_match_preview_commit(
-		failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
-	)
+	if not drag_route.is_empty():
+		var click_slots: Dictionary = _Checklist.slots_for_click(fix, commit_cell)
+		_Checklist.assert_true(
+			failures, "%s/planning/hover_click_parity" % tag,
+			PlanningQAGateTest._intent_slot_signature(hover_slots)
+			== PlanningQAGateTest._intent_slot_signature(click_slots),
+			"hover slots must match click slots at %s" % commit_cell,
+		)
+	else:
+		_Checklist.assert_slots_match_preview_commit(
+			failures, "%s/planning/hover_click_parity" % tag, fix, commit_cell,
+		)
 	if verify_no_jump:
 		_Checklist.assert_commit_no_jump(
 			failures, "%s/planning/no_jump" % tag, fix, commit_cell,

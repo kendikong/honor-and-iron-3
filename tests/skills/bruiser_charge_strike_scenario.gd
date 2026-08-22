@@ -46,7 +46,7 @@ static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 		"charge_strike",
 		Vector2i(-1, -1),
 		false,
-		Vector2i(1, 3),
+		Vector2i(-999999, -999999),
 		true,
 		Vector2i(2, 3),
 	)

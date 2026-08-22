@@ -36,9 +36,22 @@ if (Test-Path $stdoutPath) { Get-Content $stdoutPath | ForEach-Object { Write-Li
 # Keep diagnostics in the temp stderr log; the live snapshot remains
 # machine-readable while pass/fail checks still inspect both streams.
 
-$errors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:|^\[FAIL\]|FAILED')
-$passed = Select-String -Path $stdoutPath, $stderrPath -Pattern 'PASSED' -Quiet
-if ($exitCode -eq 130 -or $errors.Count -gt 0 -or -not $passed) {
+$gdUnitFailures = @(
+	Select-String -Path $stdoutPath -Pattern 'Overall Summary:.*\|\s*(\d+)\s+failures' |
+		ForEach-Object {
+			if ($_.Matches[0].Groups[1].Value -ne "0") { $_.Line }
+		}
+)
+$testCaseFailed = @(
+	Select-String -Path $stdoutPath -Pattern '>\s*test_\S+\s+FAILED' |
+		ForEach-Object { $_.Line }
+)
+$scriptErrors = @(
+	Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:|^\[FAIL\]' |
+		ForEach-Object { $_.Line }
+)
+$passed = Select-String -Path $stdoutPath -Pattern 'PASSED' -Quiet
+if ($exitCode -eq 130 -or $gdUnitFailures.Count -gt 0 -or $testCaseFailed.Count -gt 0 -or $scriptErrors.Count -gt 0 -or -not $passed) {
 	Write-LiveLine "[FAIL] Mercenary live QA"
 	Save-LiveLog
 	Write-Output "[FAIL] Mercenary live QA"

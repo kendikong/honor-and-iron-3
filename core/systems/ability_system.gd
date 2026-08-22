@@ -208,7 +208,6 @@ static func motion_landing_legal(
 				return true
 		return false
 	if GameEnums.is_behind_destination(primary):
-		var allow_enemy: bool = not module.vault_obstacle_or_gap_only
 		for dir: Vector2i in GridSystem.DIRECTIONS:
 			var blocker: Vector2i = actor.position + dir
 			var far: Vector2i = actor.position + dir * 2
@@ -217,7 +216,7 @@ static func motion_landing_legal(
 			var dist: int = GridSystem.manhattan(actor.position, landing)
 			if dist < module.min_range or dist > module.max_range:
 				continue
-			if _is_behind_blocker(board, blocker, actor, allow_enemy):
+			if _is_behind_blocker(board, blocker, actor, true):
 				return true
 		return false
 	return true
@@ -468,7 +467,8 @@ static func planning_next_aim_module_index(
 static func module_target_coord(action: TimelineAction, module_index: int) -> Vector2i:
 	if action == null or module_index < 0:
 		return Vector2i.ZERO
-	var module: AbilityModule = active_module_for_index(null, action.ability, module_index)
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var module: AbilityModule = active_module_for_index(null, ability, module_index)
 	if module != null and module.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N:
 		return module_target_coord(action, module.aim_module_index)
 	if module_index < action.module_target_coords.size():
@@ -479,7 +479,8 @@ static func module_target_coord(action: TimelineAction, module_index: int) -> Ve
 static func module_target_unit_id(action: TimelineAction, module_index: int) -> int:
 	if action == null or module_index < 0:
 		return -1
-	var module: AbilityModule = active_module_for_index(null, action.ability, module_index)
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var module: AbilityModule = active_module_for_index(null, ability, module_index)
 	if module != null and module.aim_binding == GameEnums.AimBinding.SAME_AS_MODULE_N:
 		return module_target_unit_id(action, module.aim_module_index)
 	if module_index < action.module_target_unit_ids.size():
@@ -506,14 +507,19 @@ static func _prefix_action(action: TimelineAction, module_count: int) -> Timelin
 	if action == null or action.ability == null or module_count <= 0:
 		return null
 	var prefix: TimelineAction = action.clone()
-	var profile: Array[AbilityModule] = active_modules_for(null, action.ability)
+	var authored: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var profile: Array[AbilityModule] = active_modules_for(null, authored)
 	if module_count > profile.size():
 		return null
 	var profile_copy: Array[AbilityModule] = profile.slice(0, module_count)
-	prefix.authored_ability = action.ability
-	var ability_copy: AbilityData = action.ability.duplicate(true) as AbilityData
+	prefix.authored_ability = authored
+	var ability_copy: AbilityData = authored.duplicate(true) as AbilityData
 	ability_copy.modules = profile_copy
 	ability_copy.upgraded_modules = profile_copy.duplicate()
+	if not profile_copy.is_empty():
+		ability_copy.targeting_flags = profile_copy[0].targeting_flags
+		ability_copy.sync_legacy_targeting()
+		ability_copy.range_tiles = profile_copy[0].max_range
 	prefix.ability = ability_copy
 	prefix.awaiting_target = false
 	prefix.awaiting_module_index = -1
@@ -540,7 +546,8 @@ static func planning_gate_passes(
 	action: TimelineAction,
 	module_index: int,
 ) -> bool:
-	var module: AbilityModule = active_module_for_index(null, action.ability, module_index)
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var module: AbilityModule = active_module_for_index(null, ability, module_index)
 	if module == null or module.gate == GameEnums.ModuleGate.ALWAYS:
 		return module != null
 	var prefix: TimelineAction = _prefix_action(action, module_index)
@@ -576,9 +583,10 @@ static func planning_committed_prefix(action: TimelineAction) -> TimelineAction:
 static func prepare_planning_action(board: BoardState, action: TimelineAction) -> void:
 	if board == null or action == null or action.type != GameEnums.ActionType.ABILITY:
 		return
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
 	var modules: Array[AbilityModule] = active_modules_for(
 		board.get_unit_by_id(action.actor_id),
-		action.ability,
+		ability,
 	)
 	if modules.is_empty():
 		return
@@ -586,19 +594,20 @@ static func prepare_planning_action(board: BoardState, action: TimelineAction) -
 		if action.awaiting_module_index < 0:
 			action.awaiting_module_index = 0
 		return
-	set_module_target(
-		action,
-		0,
-		action.target_coord,
-		action.target_unit_id,
-	)
+	if action.module_target_coords.is_empty():
+		set_module_target(
+			action,
+			0,
+			action.target_coord,
+			action.target_unit_id,
+		)
 	var last_aim_index: int = 0
-	for index: int in planning_new_aim_indices(board.get_unit_by_id(action.actor_id), action.ability):
+	for index: int in planning_new_aim_indices(board.get_unit_by_id(action.actor_id), ability):
 		if index < action.module_target_coords.size():
 			last_aim_index = index
 	var next_index: int = planning_next_aim_module_index(
 		board.get_unit_by_id(action.actor_id),
-		action.ability,
+		ability,
 		last_aim_index,
 	)
 	if next_index >= 0 and planning_gate_passes(board, action, next_index):
@@ -616,7 +625,8 @@ static func planning_module_target_valid(
 	if board == null or action == null or action.ability == null:
 		return false
 	var actor: UnitState = board.get_unit_by_id(action.actor_id)
-	var module: AbilityModule = active_module_for_index(actor, action.ability, module_index)
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
 	if actor == null or module == null or module.min_range < 0 or module.max_range < module.min_range:
 		return false
 	var origin: Vector2i = actor.position
@@ -659,7 +669,11 @@ static func planning_module_target_valid(
 		):
 			return false
 		return true
-	if module.has_targeting(GameEnums.TargetingFlags.TILE):
+	if (
+		module.has_targeting(GameEnums.TargetingFlags.TILE)
+		or module.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
+		or module.primary_type == GameEnums.EffectType.DASH
+	):
 		return true
 	if target_coord == origin:
 		return module.has_targeting(GameEnums.TargetingFlags.SELF)
@@ -697,6 +711,9 @@ static func _effect_is_offensive(
 
 
 static func can_use(board: BoardState, action: TimelineAction) -> bool:
+	return _can_use_impl(board, action)
+
+static func _can_use_impl(board: BoardState, action: TimelineAction) -> bool:
 	var actor := board.get_unit_by_id(action.actor_id)
 	if actor == null or not actor.is_alive():
 		return false
@@ -741,17 +758,53 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		and actor.scrap < 1
 	):
 		return false
-	var dist := GridSystem.manhattan(actor.position, action.target_coord)
-	if ability_has_dash(ability, actor):
-		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
-			return false
-		dist = PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
+	if action.awaiting_target:
+		return true
 	var motion_module: AbilityModule = active_motion_module(actor, ability)
 	var has_authored_modules: bool = not active_modules_for(actor, ability).is_empty()
+	var authored_modules: Array[AbilityModule] = active_modules_for(actor, ability)
+	var is_multi_module_dash: bool = (
+		has_authored_modules
+		and authored_modules.size() > 1
+		and AbilityModuleBridge.is_motion_type(authored_modules[0].primary_type)
+		and action.module_target_coords.size() > 1
+	)
+	if is_multi_module_dash:
+		var motion_mod: AbilityModule = authored_modules[0]
+		var motion_dest: Vector2i = action.module_target_coords[0]
+		if motion_mod.primary_type == GameEnums.EffectType.DASH:
+			if PhysicsSystem.straight_line_dir(actor.position, motion_dest) == Vector2i.ZERO:
+				return false
+			var dash_dist: int = PhysicsSystem.straight_line_distance(actor.position, motion_dest)
+			var dash_min: int = motion_mod.min_range
+			var dash_max: int = motion_mod.max_range
+			if dash_dist < dash_min or (dash_max > 0 and dash_dist > dash_max):
+				return false
+		elif motion_mod.primary_type == GameEnums.EffectType.MOVE:
+			var move_dist: int = GridSystem.manhattan(actor.position, motion_dest)
+			var move_min: int = motion_mod.min_range
+			var move_max: int = motion_mod.max_range
+			if move_dist < move_min or (move_max > 0 and move_dist > move_max):
+				return false
+		if (
+			not has_displacement_effects(ability, actor)
+			and not has_pass_through_effects(ability, actor)
+		):
+			var landing_unit := board.get_unit_at(motion_dest)
+			if landing_unit != null and landing_unit.id != actor.id:
+				return false
+	var is_dash_action: bool = ability_has_dash(ability, actor) and not is_multi_module_dash
+	var origin_pos: Vector2i = action.module_target_coords[0] if is_multi_module_dash else actor.position
+	var target_coord: Vector2i = action.module_target_coords[1] if is_multi_module_dash else action.target_coord
+	var dist := GridSystem.manhattan(origin_pos, target_coord)
+	if is_dash_action:
+		if PhysicsSystem.straight_line_dir(origin_pos, target_coord) == Vector2i.ZERO:
+			return false
+		dist = PhysicsSystem.straight_line_distance(origin_pos, target_coord)
 	var max_range: int = (
-		active_motion_max_range(actor, ability)
-		if motion_module != null
-		else active_range_tiles(actor, ability)
+		active_module_for_index(actor, ability, 1).max_range
+		if (is_multi_module_dash and active_module_for_index(actor, ability, 1) != null and active_module_for_index(actor, ability, 1).max_range > 0)
+		else (active_motion_max_range(actor, ability) if motion_module != null else active_range_tiles(actor, ability))
 	)
 	var actor_tile := board.get_tile(actor.position)
 	if (
@@ -780,7 +833,11 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 	if dist == 0 and active_range_tiles(actor, ability) > 0 and not can_target_self(actor, ability):
 		return false
-	var target_unit: UnitState = resolve_action_target(board, action)
+	var target_unit: UnitState = (
+		resolve_unit_target(board, target_coord, module_target_unit_id(action, 1))
+		if is_multi_module_dash
+		else resolve_action_target(board, action)
+	)
 	if ability_occupant_is(actor, ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE):
 		if (
 			target_unit == null
@@ -831,6 +888,13 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 	):
 		return false
 	if (
+		_is_spell(ability)
+		and ability.is_pre_move_planner()
+		and target_unit != null
+		and target_unit.is_alive()
+	):
+		return false
+	if (
 		ability.is_pre_move_planner()
 		and ability.kind == GameEnums.AbilityKind.MOVEMENT_SKILL
 		and target_unit != null
@@ -838,14 +902,15 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 		and target_unit.team != actor.team
 	):
 		return false
+	var target_module_index: int = 1 if is_multi_module_dash else 0
 	if (
-		not _target_allowed(actor, ability, target_unit, action.target_coord)
+		not _target_allowed(actor, ability, target_unit, target_coord, origin_pos, target_module_index)
 		and not _can_push_destructible_target(
 			board,
 			actor,
 			ability,
 			target_unit,
-			action.target_coord,
+			target_coord,
 		)
 	):
 		return false
@@ -861,7 +926,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 
 	if dist > 1:
-		var tile = board.get_tile(action.target_coord)
+		var tile = board.get_tile(target_coord)
 		if tile != null and not tile.is_empty():
 			var target = board.get_unit_by_id(tile.occupant_id)
 			if (
@@ -897,7 +962,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 
 	var has_displacement := has_displacement_effects(ability, actor)
 		
-	var is_dash := ability_has_dash(ability, actor)
+	var is_dash := is_dash_action
 	var is_move := _is_skill_path_walk(ability, actor)
 	var is_teleport := (
 		motion_module != null
@@ -934,12 +999,12 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 			return false
 	
 	if is_dash:
-		var delta := action.target_coord - actor.position
+		var delta := action.target_coord - origin_pos
 		if delta.x != 0 and delta.y != 0:
 			return false
-		if PhysicsSystem.straight_line_dir(actor.position, action.target_coord) == Vector2i.ZERO:
+		if PhysicsSystem.straight_line_dir(origin_pos, action.target_coord) == Vector2i.ZERO:
 			return false
-		var steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
+		var steps := PhysicsSystem.straight_line_distance(origin_pos, action.target_coord)
 		var dash_min: int = active_motion_min_range(actor, ability)
 		var dash_max: int = active_motion_max_range(actor, ability)
 		if has_authored_modules and not active_motion_range_valid(actor, ability):
@@ -976,7 +1041,7 @@ static func can_use(board: BoardState, action: TimelineAction) -> bool:
 				if walk_distance < walk_min or walk_distance > max_walk_target:
 					return false
 				
-	if is_move or is_dash:
+	if not is_multi_module_dash and (is_move or is_dash):
 		if (
 			not has_displacement
 			and not has_pass_through_effects(ability, actor)
@@ -1523,12 +1588,15 @@ static func _target_allowed(
 	ability: AbilityData,
 	target: UnitState,
 	target_coord: Vector2i,
+	origin_coord: Vector2i = Vector2i(-999999, -999999),
+	module_index: int = 0,
 ) -> bool:
 	if ability == null or actor == null:
 		return false
-	if not _target_shape_is_valid(actor, ability, target_coord):
+	var origin: Vector2i = actor.position if origin_coord == Vector2i(-999999, -999999) else origin_coord
+	if not _target_shape_is_valid(actor, ability, target_coord, origin, module_index):
 		return false
-	var targeting_flags: int = active_targeting_flags(actor, ability)
+	var targeting_flags: int = active_targeting_flags(actor, ability, module_index)
 	if target != null:
 		if target.id == actor.id and (targeting_flags & GameEnums.TargetingFlags.SELF) != 0:
 			return true
@@ -1540,7 +1608,7 @@ static func _target_allowed(
 			return true
 		if target.team != actor.team and (targeting_flags & GameEnums.TargetingFlags.ENEMY) != 0:
 			return true
-	if target_coord == actor.position:
+	if target_coord == origin:
 		return (targeting_flags & GameEnums.TargetingFlags.SELF) != 0
 	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0:
 		return true
@@ -1553,16 +1621,19 @@ static func _target_shape_is_valid(
 	actor: UnitState,
 	ability: AbilityData,
 	target_coord: Vector2i,
+	origin_coord: Vector2i = Vector2i(-999999, -999999),
+	module_index: int = 0,
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	var shape: GameEnums.TargetShape = active_target_shape(actor, ability)
+	var origin: Vector2i = actor.position if origin_coord == Vector2i(-999999, -999999) else origin_coord
+	var shape: GameEnums.TargetShape = active_target_shape(actor, ability, module_index)
 	if shape in [
 		GameEnums.TargetShape.ARC,
 		GameEnums.TargetShape.CONE,
 		GameEnums.TargetShape.LINE,
 	]:
-		return PhysicsSystem.cardinal_from_to(actor.position, target_coord) != Vector2i.ZERO
+		return PhysicsSystem.cardinal_from_to(origin, target_coord) != Vector2i.ZERO
 	return true
 
 
@@ -1630,21 +1701,35 @@ static func _target_filters_allow(
 ) -> bool:
 	if actor == null or ability == null or action == null:
 		return true
-	var resolved: UnitState = target_unit
-	if resolved == null and board != null:
-		resolved = board.get_unit_at(action.target_coord)
-	for module: AbilityModule in active_modules_for(actor, ability):
+	var modules: Array[AbilityModule] = active_modules_for(actor, ability)
+	for mod_idx: int in range(modules.size()):
+		var module: AbilityModule = modules[mod_idx]
 		if module == null or module.target_filter == GameEnums.ModuleTargetFilter.NONE:
 			continue
+		var mod_target_coord: Vector2i = (
+			action.module_target_coords[mod_idx]
+			if mod_idx < action.module_target_coords.size()
+			else action.target_coord
+		)
+		var mod_unit_id: int = (
+			action.module_target_unit_ids[mod_idx]
+			if mod_idx < action.module_target_unit_ids.size()
+			else action.target_unit_id
+		)
+		var mod_resolved: UnitState = (
+			target_unit
+			if (mod_idx == 0 and target_unit != null)
+			else resolve_unit_target(board, mod_target_coord, mod_unit_id)
+		)
 		if module.target_filter == GameEnums.ModuleTargetFilter.OCCUPANT:
-			if not _occupant_filter_allows(board, actor, ability, action, module, resolved):
+			if not _occupant_filter_allows(board, actor, ability, action, module, mod_resolved):
 				return false
 			continue
 		if module.target_shape != GameEnums.TargetShape.SINGLE:
 			continue
-		if resolved == null:
+		if mod_resolved == null:
 			return false
-		if not _unit_passes_module_filter(actor, module, resolved):
+		if not _unit_passes_module_filter(actor, module, mod_resolved):
 			return false
 	return true
 
@@ -1941,14 +2026,17 @@ static func planning_awaiting_endpoint_range(
 	ability: AbilityData,
 	actor: UnitState = null,
 ) -> int:
-	if planning_awaiting_phase(ability) in [
-		GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT,
-		GameEnums.PlanningAwaitingPhase.TARGET_PICK,
-	]:
+	var phase := planning_awaiting_phase(ability, actor)
+	if phase == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
 		var module: AbilityModule = active_motion_module(actor, ability)
 		if module == null or module.min_range < 1 or module.max_range < module.min_range:
 			return 0
 		return module.max_range
+	elif phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+		var module: AbilityModule = active_module_for_index(actor, ability, 0)
+		if module != null and module.max_range >= module.min_range and module.max_range > 0:
+			return module.max_range
+		return active_range_tiles(actor, ability)
 	return 0
 
 
@@ -1958,17 +2046,39 @@ static func planning_is_valid_awaiting_endpoint(
 	ability: AbilityData,
 	actor: UnitState = null,
 ) -> bool:
-	var module: AbilityModule = active_motion_module(actor, ability)
-	if module == null or module.min_range < 1 or module.max_range < module.min_range:
+	if ability == null:
 		return false
-	if coord == origin:
-		return false
-	if module.primary_type == GameEnums.EffectType.DASH:
-		var delta: Vector2i = coord - origin
-		if delta.x != 0 and delta.y != 0:
+	var phase := planning_awaiting_phase(ability, actor)
+	if phase == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		var module: AbilityModule = active_motion_module(actor, ability)
+		if module == null or module.min_range < 1 or module.max_range < module.min_range:
 			return false
-	var dist: int = GridSystem.manhattan(origin, coord)
-	return dist >= module.min_range and dist <= module.max_range
+		if coord == origin:
+			return false
+		if module.primary_type == GameEnums.EffectType.DASH:
+			var delta: Vector2i = coord - origin
+			if delta.x != 0 and delta.y != 0:
+				return false
+		var dist: int = GridSystem.manhattan(origin, coord)
+		return dist >= module.min_range and dist <= module.max_range
+	elif phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+		var module: AbilityModule = active_module_for_index(actor, ability, 0)
+		var min_r: int = module.min_range if module != null else 1
+		var max_r: int = (
+			module.max_range
+			if module != null and module.max_range >= min_r and module.max_range > 0
+			else active_range_tiles(actor, ability)
+		)
+		var dist: int = GridSystem.manhattan(origin, coord)
+		if module != null and (
+			module.target_shape == GameEnums.TargetShape.LINE
+			or module.target_shape == GameEnums.TargetShape.ARC
+		):
+			var delta: Vector2i = coord - origin
+			if delta.x != 0 and delta.y != 0:
+				return false
+		return dist >= min_r and dist <= max_r
+	return false
 
 
 ## TILE / DASH_LINE abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
@@ -2308,7 +2418,8 @@ static func planning_module_range_tiles(
 	if board == null or action == null or action.ability == null:
 		return out
 	var actor: UnitState = board.get_unit_by_id(action.actor_id)
-	var module: AbilityModule = active_module_for_index(actor, action.ability, module_index)
+	var ability: AbilityData = action.authored_ability if action.authored_ability != null else action.ability
+	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
 	if actor == null or module == null:
 		return out
 	var origin: Vector2i = actor.position
@@ -3761,7 +3872,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 		elif effect.type in [GameEnums.EffectType.HEAL, GameEnums.EffectType.ARMOR_UP, GameEnums.EffectType.CLEANSE]:
 			friendly = true
 		elif effect.type == GameEnums.EffectType.ADD_STATUS:
-			if GameEnums.is_buff(effect.status_type):
+			if effect.modifiers.get("density_shift", false):
+				friendly = false
+				hostile = false
+			elif effect.modifiers.has("link_two_enemies") or effect.modifiers.has("voodoo_link") or effect.modifiers.has("life_link"):
+				hostile = true
+			elif GameEnums.is_buff(effect.status_type):
 				friendly = true
 			elif GameEnums.is_debuff(effect.status_type):
 				hostile = true

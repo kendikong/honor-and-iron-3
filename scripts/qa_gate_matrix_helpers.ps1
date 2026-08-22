@@ -317,11 +317,18 @@ function Get-FactoryPlanningFlags {
 	$idMarker = "&`"$escaped`""
 	$idPos = $text.IndexOf($idMarker)
 	if ($idPos -lt 0) { return $none }
-	$start = $text.LastIndexOf("static func _", $idPos)
+	$start = $text.LastIndexOf("static func ", $idPos)
 	if ($start -lt 0) { $start = 0 }
-	$nextFunc = $text.IndexOf("static func _", $idPos + $idMarker.Length)
-	$snippet = if ($nextFunc -ge 0) {
-		$text.Substring($start, $nextFunc - $start)
+	$prevAppend = $text.LastIndexOf("def.abilities.append", $idPos)
+	if ($prevAppend -gt $start) { $start = $prevAppend }
+	$nextAppend = $text.IndexOf("def.abilities.append", $idPos + $idMarker.Length)
+	$nextFunc = $text.IndexOf("static func ", $idPos + $idMarker.Length)
+	$end = -1
+	if ($nextAppend -ge 0 -and $nextFunc -ge 0) { $end = [Math]::Min($nextAppend, $nextFunc) }
+	elseif ($nextAppend -ge 0) { $end = $nextAppend }
+	elseif ($nextFunc -ge 0) { $end = $nextFunc }
+	$snippet = if ($end -ge 0) {
+		$text.Substring($start, $end - $start + 25)
 	} else {
 		$text.Substring($start)
 	}

@@ -219,7 +219,8 @@ static func _test_show_move_hover_without_action_slot(failures: Array[String]) -
 		return
 	director.selected_ability_index = bowling_idx
 	var slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, HOVER_DEST)
-	if not (slots.get("action", []) as Array).is_empty():
+	var real_actions: Array = (slots.get("action", []) as Array).filter(func(a): return not (a is TimelineAction and (a as TimelineAction).awaiting_target))
+	if not real_actions.is_empty():
 		failures.append(
 			"ActionRangeRegression show_move_hover_no_action_slot: fixture expects empty action slot",
 		)

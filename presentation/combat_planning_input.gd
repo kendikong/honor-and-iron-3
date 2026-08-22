@@ -192,10 +192,6 @@ func on_left_press(local: Vector2) -> void:
 		cancel_aim()
 		return
 	var unit := _unit_at_input_cell(cell)
-	if _intent_snapshot_matches_interaction(_director.selected_unit_id, cell):
-		var click_target_id: int = unit.id if unit != null and unit.is_enemy() else -1
-		if _commit_at_interaction_cell(_director.selected_unit_id, cell, local, click_target_id):
-			return
 	if unit != null and not unit.is_enemy() and unit.is_alive():
 		if NetworkManager != null and NetworkManager.is_multiplayer:
 			if unit.controlling_player_id != NetworkManager.local_player_id:
@@ -221,25 +217,15 @@ func on_left_press(local: Vector2) -> void:
 		_play_sfx("invalid")
 		cancel_aim()
 		return
+	var sel_actor := _proj_unit(_director.selected_unit_id)
 	if unit != null and unit.is_enemy():
-		var sel := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
-		if sel != null and not sel.is_enemy():
-			if (
-				_director.unit_has_wait_planned(sel.id)
-				or _director.unit_has_committed_class_action(sel.id)
-			):
+		if sel_actor != null and not sel_actor.is_enemy():
+			if not _commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id):
 				_director.select_unit(unit.id)
-			else:
-				_commit_at_interaction_cell(
-					_director.selected_unit_id, cell, local, unit.id,
-				)
 		else:
 			_director.select_unit(unit.id)
 	else:
-		var sel_unit := board.get_unit_by_id(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
-		if sel_unit != null and not sel_unit.is_enemy():
-			if selected_phase_action_exhausted(sel_unit.id):
-				return
+		if sel_actor != null and not sel_actor.is_enemy():
 			_commit_at_interaction_cell(_director.selected_unit_id, cell, local)
 
 
@@ -283,18 +269,14 @@ func _try_click_through_drag_armed(local: Vector2) -> bool:
 	if caster_id >= 0 and clicked_id != caster_id and not force_basic_movement:
 		if _director.selected_ability_index >= 0:
 			var caster: UnitState = _proj_unit(caster_id)
-			if caster != null:
+			if caster != null and not caster.is_enemy():
 				var ability: AbilityData = _selected_ability_data(caster)
 				if ability != null and AbilitySystem.target_passes_mode(caster, ability, clicked_unit):
-					if selected_phase_action_exhausted(caster_id):
-						_play_sfx("invalid")
+					if _commit_at_interaction_cell(caster_id, cell, local, clicked_id):
 						return true
-					return _commit_at_interaction_cell(caster_id, cell, local, clicked_id)
-				if _can_target_unit_with_selected_ability(caster, clicked_unit):
-					if selected_phase_action_exhausted(caster_id):
-						_play_sfx("invalid")
+				elif _can_target_unit_with_selected_ability(caster, clicked_unit):
+					if _commit_at_interaction_cell(caster_id, cell, local, clicked_id):
 						return true
-					return _commit_at_interaction_cell(caster_id, cell, local, clicked_id)
 	if clicked_id != caster_id:
 		_director.select_unit(clicked_id)
 	return false
@@ -1012,6 +994,14 @@ func _run_ability_settled_refresh() -> void:
 	if _director == null:
 		return
 	_ability_hover_settle_pending = false
+	var actor := _director.board.get_unit_by_id(_director.selected_unit_id) if _director.board != null and _director.selected_unit_id >= 0 else null
+	var cur_ability := _selected_ability_data(actor) if actor != null else null
+	var awaiting := _director.find_awaiting_action(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
+	if awaiting != null and cur_ability != null and awaiting.ability != null and awaiting.ability.id == cur_ability.id:
+		_resync_hover_after_ability_change()
+		if _intent_state != null:
+			refresh_mouse_cursor(_intent_state.hover_coord)
+		return
 	var had_awaiting: bool = awaiting_targeting_active()
 	clear_awaiting_targeting()
 	if had_awaiting:
@@ -2076,6 +2066,7 @@ func _commit_interaction_params(
 						and ability != null
 						and not AbilitySystem.is_movement_skill(ability)
 						and _director.selected_ability_index >= 0
+						and _director.find_awaiting_action(_director.selected_unit_id) == null
 					):
 						if not dragging:
 							_clear_hover_drag_route()
@@ -2108,6 +2099,7 @@ func _commit_interaction_params(
 					and ability != null
 					and not AbilitySystem.is_movement_skill(ability)
 					and _director.selected_ability_index >= 0
+					and _director.find_awaiting_action(_director.selected_unit_id) == null
 				):
 					var board: BoardState = _proj()
 					var approach: Vector2i = _director.preview_approach_tile(
@@ -3442,7 +3434,7 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if (
 		AbilitySystem.active_targeting_flags(actor, ability)
-		& GameEnums.TargetingFlags.TILE
+		& (GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.DASH_LINE)
 	) == 0:
 		return false
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
@@ -3454,14 +3446,9 @@ func _tile_target_movement_skill_commits_at_cell(
 			GameEnums.is_adjacent_destination(motion.primary_type)
 			or GameEnums.is_behind_destination(motion.primary_type)
 			or GameEnums.is_toward_destination(motion.primary_type)
-		)
-	):
-		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
-	if (
-		motion != null
-		and (
-			GameEnums.is_jump_motion(motion.primary_type)
+			or GameEnums.is_jump_motion(motion.primary_type)
 			or GameEnums.is_teleport_motion(motion.primary_type)
+			or (motion.primary_type == GameEnums.EffectType.DASH and not _can_move_to(actor, cell))
 		)
 	):
 		if not _in_ability_range_of_coord(actor, cell):
@@ -4185,6 +4172,8 @@ func _unit_at_input_cell(cell: Vector2i) -> UnitState:
 	if _director == null or _director.board == null:
 		return null
 	var occ := _proj().get_unit_at(cell)
+	if occ == null and _director.board != null:
+		occ = _director.board.get_unit_at(cell)
 	if occ == null:
 		return null
 	return _director.board.get_unit_by_id(occ.id)
@@ -4556,23 +4545,9 @@ func _build_commit_slots_at_cell(
 	if awaiting_action != null:
 		AbilitySystem.prepare_planning_action(_proj(), awaiting_action)
 	## DASH / teleport primary aim stays on the waypoint endpoint
-	## pipeline below. MOVE skills (L-shape flanking) and TARGET_PICK keep module 0.
-	var skip_primary_endpoint_aim := false
-	if awaiting_action != null and awaiting_action.awaiting_module_index == 0:
-		var armed: AbilityData = awaiting_action.ability
-		if _is_awaiting_movement_endpoint(actor, armed):
-			var motion: AbilityModule = AbilitySystem.active_motion_module(actor, armed)
-			skip_primary_endpoint_aim = (
-				motion != null
-				and motion.primary_type in [
-					GameEnums.EffectType.DASH,
-					GameEnums.EffectType.TELEPORT_CASTER,
-				]
-			)
 	if (
 		awaiting_action != null
 		and awaiting_action.awaiting_module_index >= 0
-		and not skip_primary_endpoint_aim
 		and (cell != actor.position or awaiting_action.awaiting_module_index > 0)
 	):
 		if _append_module_awaiting_target(
@@ -4610,6 +4585,7 @@ func _build_commit_slots_at_cell(
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
 	if (
 		ability != null
+		and (awaiting_action == null or awaiting_action.awaiting_module_index == 0)
 		and AbilitySystem.ability_has_dash(ability, actor)
 		and (
 			awaiting_tile_endpoint
@@ -4677,9 +4653,34 @@ func _build_commit_slots_at_cell(
 			)
 
 		if (
+			not has_awaiting_action
+			and AbilitySystem.planning_arms_on_self_tile(actor, ability)
+			and (cell == _awaiting_endpoint_origin(actor) or (hover_unit != null and hover_unit.id == actor.id))
+		):
+			slots[_ability_plan_column(ability)].append(
+				TimelineAction.make_ability_awaiting(
+					unit_id, ability, _awaiting_endpoint_origin(actor), effective_waypoints,
+				),
+			)
+			return slots
+
+		if (
+			awaiting_action != null
+			and awaiting_action.awaiting_module_index >= 0
+			and (cell != actor.position or awaiting_action.awaiting_module_index > 0)
+		):
+			if _append_module_awaiting_target(
+				slots, actor, awaiting_action, cell, hover_unit, effective_waypoints,
+			):
+				return slots
+			if slots.has("invalid"):
+				return slots
+
+		if (
 			has_awaiting_action
 			or (
-				awaiting_targeting_active()
+				not AbilitySystem.planning_arms_on_self_tile(actor, ability)
+				and awaiting_targeting_active()
 				and _awaiting_flow_selected(actor, ability)
 				and AbilitySystem.planning_awaiting_phase(ability, actor)
 					== GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
@@ -4703,14 +4704,16 @@ func _build_commit_slots_at_cell(
 							committed_target_id = _enemy_adjacent_to_attack_tile(
 								actor, ability, cell,
 							)
-					slots[_ability_plan_column(ability)].append(TimelineAction.make_ability(
+					var act := TimelineAction.make_ability(
 						unit_id,
 						ability,
 						cell,
 						committed_target_id,
 						GameEnums.MoveTiming.PRE_ACTION,
 						effective_waypoints,
-					))
+					)
+					AbilitySystem.prepare_planning_action(_proj(), act)
+					slots[_ability_plan_column(ability)].append(act)
 					return slots
 				slots["invalid"] = "Invalid target or distance for this ability."
 				return slots
@@ -4777,26 +4780,10 @@ func _build_commit_slots_at_cell(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
 					)
 					return slots
-			if (
-				AbilitySystem.ability_has_dash(ability, actor)
-				and AbilitySystem.planning_is_valid_awaiting_endpoint(
-					_awaiting_endpoint_origin(actor), cell, ability, actor,
-				)
-			):
-				slots[_ability_plan_column(ability)].append(
-					TimelineAction.make_ability(
-						unit_id,
-						ability,
-						cell,
-						-1,
-						GameEnums.MoveTiming.PRE_ACTION,
-						effective_waypoints,
-					),
-				)
-				return slots
+
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				if target_pick_skill and not has_awaiting_action:
-					slots["action"].append(
+					slots[_ability_plan_column(ability)].append(
 						TimelineAction.make_ability_awaiting(
 							unit_id, ability, actor.position, effective_waypoints,
 						),
@@ -4817,7 +4804,7 @@ func _build_commit_slots_at_cell(
 				hover_unit == null
 				and (
 					AbilitySystem.active_targeting_flags(actor, ability)
-					& GameEnums.TargetingFlags.TILE
+					& (GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.DASH_LINE)
 				) != 0
 			):
 				if _in_ability_range_of_coord(actor, cell):
@@ -4847,18 +4834,11 @@ func _build_commit_slots_at_cell(
 								),
 							)
 							return slots
-						slots[_ability_plan_column(ability)].append(
-							TimelineAction.make_ability(
-								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
-								effective_waypoints,
-							),
-						)
-						return slots
 					else:
 						if target_pick_skill and not has_awaiting_action:
 							slots["action"].append(
 								TimelineAction.make_ability_awaiting(
-									unit_id, ability, actor.position, effective_waypoints,
+									unit_id, ability, cell, effective_waypoints,
 								),
 							)
 							return slots
@@ -5296,7 +5276,7 @@ func _build_enemy_commit_slots(
 				),
 			)
 			slots["action"].append(
-				TimelineAction.make_ability(
+				_prepare_and_make_ability(
 					unit_id,
 					ability,
 					enemy.position,
@@ -5307,7 +5287,7 @@ func _build_enemy_commit_slots(
 			)
 			return slots
 		slots["action"].append(
-			TimelineAction.make_ability(
+			_prepare_and_make_ability(
 				unit_id,
 				ability,
 				enemy.position,
@@ -5322,6 +5302,19 @@ func _build_enemy_commit_slots(
 		return slots
 	slots["invalid"] = "Tile is not reachable."
 	return slots
+
+
+func _prepare_and_make_ability(
+	unit_id: int,
+	ability: AbilityData,
+	target_coord: Vector2i,
+	target_unit_id: int,
+	timing: GameEnums.MoveTiming,
+	waypoints: Array[Vector2i] = [],
+) -> TimelineAction:
+	var act := TimelineAction.make_ability(unit_id, ability, target_coord, target_unit_id, timing, waypoints)
+	AbilitySystem.prepare_planning_action(_proj(), act)
+	return act
 
 
 func _step_cursor_glyph(action: TimelineAction, _unit: UnitState = null) -> String:
@@ -5350,12 +5343,14 @@ func _append_module_awaiting_target(
 	var targeting_flags: int = AbilitySystem.active_targeting_flags(
 		actor, awaiting_action.ability, module_index,
 	)
-	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0 \
-			and (targeting_flags & (
-				GameEnums.TargetingFlags.ALLY
-				| GameEnums.TargetingFlags.ENEMY
-				| GameEnums.TargetingFlags.SELF
-			)) == 0:
+	var targets_units: bool = (
+		targeting_flags & (
+			GameEnums.TargetingFlags.ALLY
+			| GameEnums.TargetingFlags.ENEMY
+			| GameEnums.TargetingFlags.SELF
+		)
+	) != 0
+	if not targets_units:
 		target_unit_id = -1
 	if not AbilitySystem.planning_module_target_valid(
 		_proj(), awaiting_action, module_index, cell, target_unit_id,
@@ -5363,13 +5358,18 @@ func _append_module_awaiting_target(
 		slots["invalid"] = "Invalid target or distance for this ability."
 		return false
 	var committed: TimelineAction = awaiting_action.clone()
+	if committed.authored_ability != null:
+		committed.ability = committed.authored_ability
 	AbilitySystem.set_module_target(committed, module_index, cell, target_unit_id)
 	committed.awaiting_target = false
 	committed.awaiting_module_index = -1
 	if module_index == 0:
 		committed.target_coord = cell
 		committed.target_unit_id = target_unit_id
-		committed.waypoints = waypoints.duplicate()
+		var wps: Array[Vector2i] = waypoints.duplicate()
+		if wps.is_empty() and _director != null and AbilitySystem.ability_has_movement_effect(committed.ability):
+			wps = _director.preview_waypoints_for_hover(_proj(), actor, cell, [], committed.ability)
+		committed.waypoints = wps
 	AbilitySystem.prepare_planning_action(_proj(), committed)
 	slots[_ability_plan_column(awaiting_action.ability)].append(committed)
 	return true
