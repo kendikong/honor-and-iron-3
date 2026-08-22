@@ -2119,10 +2119,8 @@ func _add_module_typed_extras_editor(
 	ability: AbilityData,
 	module: AbilityModule,
 ) -> void:
-	_add_subsection_label(parent, "Typed Skill Fields", ClassLibraryTheme.ACCENT_DATA)
-	var grid := GridContainer.new()
-	grid.columns = 2
-	parent.add_child(grid)
+	var shell: Dictionary = _begin_effect_knobs_section(parent, module)
+	var grid: GridContainer = shell["grid"] as GridContainer
 	_bind_string(grid, "Terrain Id", String(module.terrain_id), func(v: String) -> void:
 		module.terrain_id = StringName(v)
 		_on_module_field_edited(ability)
@@ -2766,6 +2764,95 @@ func _add_module_typed_extras_editor(
 			_on_module_field_edited(ability)
 	)
 	_add_typed_module_bindings(grid, ability, module)
+	_finalize_effect_knobs_grid(shell, module)
+
+
+func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -> Dictionary:
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	parent.add_child(outer)
+	var header := Button.new()
+	header.flat = true
+	header.focus_mode = Control.FOCUS_NONE
+	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SUBSECTION))
+	header.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DATA)
+	var active_count: int = ModuleAuthoringRules.typed_extra_active_count(module)
+	var summary: String = "none set" if active_count == 0 else "%d active" % active_count
+	header.text = "▸ EFFECT KNOBS — %s" % summary
+	outer.add_child(header)
+	var body := VBoxContainer.new()
+	body.visible = false
+	body.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	outer.add_child(body)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	body.add_child(grid)
+	var overflow_box := VBoxContainer.new()
+	overflow_box.visible = false
+	body.add_child(overflow_box)
+	var overflow_grid := GridContainer.new()
+	overflow_grid.columns = 2
+	overflow_box.add_child(overflow_grid)
+	var show_all_btn := Button.new()
+	show_all_btn.visible = false
+	show_all_btn.flat = true
+	show_all_btn.focus_mode = Control.FOCUS_NONE
+	body.add_child(show_all_btn)
+	header.pressed.connect(func() -> void:
+		body.visible = not body.visible
+		var open: bool = body.visible
+		header.text = (
+			("▾ EFFECT KNOBS — %s" if open else "▸ EFFECT KNOBS — %s") % summary
+		)
+	)
+	return {
+		"grid": grid,
+		"overflow_box": overflow_box,
+		"overflow_grid": overflow_grid,
+		"show_all_btn": show_all_btn,
+	}
+
+
+func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> void:
+	var grid: GridContainer = shell["grid"] as GridContainer
+	var overflow_grid: GridContainer = shell["overflow_grid"] as GridContainer
+	var overflow_box: VBoxContainer = shell["overflow_box"] as VBoxContainer
+	var show_all_btn: Button = shell["show_all_btn"] as Button
+	var rows: Array[Array] = []
+	var child_count: int = grid.get_child_count()
+	for i: int in range(0, child_count, 2):
+		if i + 1 >= child_count:
+			break
+		rows.append([grid.get_child(i), grid.get_child(i + 1)])
+	for child: Node in grid.get_children():
+		grid.remove_child(child)
+	var hidden: int = 0
+	for row: Array in rows:
+		var lbl: Label = row[0] as Label
+		var ctrl: Control = row[1] as Control
+		var prop: String = ModuleAuthoringRules.typed_extra_property_from_label(
+			lbl.text if lbl != null else "",
+		)
+		var show: bool = (
+			prop.is_empty()
+			or ModuleAuthoringRules.typed_extra_field_applies(module, prop)
+		)
+		var target: GridContainer = grid if show else overflow_grid
+		target.add_child(lbl)
+		target.add_child(ctrl)
+		if not show:
+			hidden += 1
+	show_all_btn.visible = hidden > 0
+	if hidden > 0:
+		show_all_btn.text = "Show %d more fields…" % hidden
+		show_all_btn.pressed.connect(func() -> void:
+			overflow_box.visible = not overflow_box.visible
+			show_all_btn.text = (
+				"Hide extra fields" if overflow_box.visible
+				else "Show %d more fields…" % hidden
+			)
+		)
 
 
 func _add_typed_module_bindings(

@@ -415,3 +415,233 @@ static func log_uncategorized_effect_types_once() -> Array[GameEnums.EffectType]
 	_uncategorized_logged = true
 	push_error("ModuleAuthoringRules: uncategorized EffectType(s) must join a primary family: %s" % str(missing))
 	return missing
+
+
+static var _typed_extra_module_props: Array[String] = []
+
+
+static func _ensure_typed_extra_module_props() -> void:
+	if not _typed_extra_module_props.is_empty():
+		return
+	var probe := AbilityModule.new()
+	for info: Dictionary in probe.get_property_list():
+		var name: String = String(info.name)
+		if name.begins_with("_"):
+			continue
+		if int(info.usage) & PROPERTY_USAGE_STORAGE == 0:
+			continue
+		if name in [
+			"execution_phase", "primary_type", "amount", "status_type", "status_duration",
+			"scaling_stat", "spawn_unit_id", "l_shape_move", "min_range", "max_range",
+			"requires_los", "range_origin", "target_shape", "target_shape_size",
+			"aim_binding", "aim_module_index", "targeting_flags", "keywords", "layers",
+			"gate", "target_filter", "target_filter_hp", "target_filter_hp_pct",
+			"target_filter_status_mode", "target_filter_status", "target_filter_status_or",
+			"target_filter_stat", "target_filter_occupant", "presentation_anim",
+			"bonus_if_adjacent_at_cast", "def_debuff_before_damage", "hit_count",
+			"exclude_caster",
+		]:
+			continue
+		_typed_extra_module_props.append(name)
+
+
+static func typed_extra_property_from_label(label: String) -> String:
+	if label.is_empty():
+		return ""
+	_ensure_typed_extra_module_props()
+	if label in _typed_extra_module_props:
+		return label
+	var guess: String = _guess_typed_extra_property(label)
+	if guess in _typed_extra_module_props:
+		return guess
+	return _TYPED_EXTRA_LABEL_OVERRIDES.get(label, "")
+
+
+static func _guess_typed_extra_property(label: String) -> String:
+	var s: String = label.to_lower()
+	s = s.replace(" /10 hp", "_per_10_hp")
+	s = s.replace(" /", "_per_")
+	s = s.replace("%", "pct")
+	s = s.replace(">=", "gte")
+	s = s.replace("/", "_")
+	s = s.replace("-", "_")
+	s = s.replace(" ", "_")
+	while s.contains("__"):
+		s = s.replace("__", "_")
+	return s.strip_edges()
+
+
+static func typed_extra_active_count(module: AbilityModule) -> int:
+	if module == null:
+		return 0
+	_ensure_typed_extra_module_props()
+	var count: int = 0
+	for prop: String in _typed_extra_module_props:
+		if module.is_typed_extra_property_set(prop):
+			count += 1
+	return count
+
+
+static func typed_extra_field_applies(module: AbilityModule, property: String) -> bool:
+	if module == null or property.is_empty():
+		return false
+	if module.is_typed_extra_property_set(property):
+		return true
+	var primary: int = module.primary_type
+	if _typed_extra_property_in_group(property, _HAZARD_TYPED_PROPS):
+		return primary in [
+			GameEnums.EffectType.CREATE_HAZARD,
+			GameEnums.EffectType.CHANGE_TERRAIN,
+			GameEnums.EffectType.DESTROY_OBSTACLE,
+		]
+	if _typed_extra_property_in_group(property, _MOTION_TYPED_PROPS):
+		return _is_motion_type(primary) or primary == GameEnums.EffectType.DASH
+	if _typed_extra_property_in_group(property, _FORCED_MOVE_TYPED_PROPS):
+		return primary in [
+			GameEnums.EffectType.PUSH,
+			GameEnums.EffectType.PULL,
+			GameEnums.EffectType.THROW_BEHIND,
+			GameEnums.EffectType.MOVE_INTO_AND_PUSH,
+		] or _is_motion_type(primary)
+	if _typed_extra_property_in_group(property, _ATTACK_TYPED_PROPS):
+		return (
+			effect_type_can_deal_damage(primary)
+			or primary in [
+				GameEnums.EffectType.DAMAGE,
+				GameEnums.EffectType.DAMAGE_SELF,
+				GameEnums.EffectType.EXPLODE,
+				GameEnums.EffectType.RANGED_EXPLODE,
+			]
+		)
+	if _typed_extra_property_in_group(property, _HEAL_TYPED_PROPS):
+		return primary in [
+			GameEnums.EffectType.HEAL,
+			GameEnums.EffectType.ARMOR_UP,
+			GameEnums.EffectType.CLEANSE,
+			GameEnums.EffectType.PURGE,
+			GameEnums.EffectType.REMOVE_STATUS,
+			GameEnums.EffectType.ADD_STATUS,
+			GameEnums.EffectType.ADD_STATUS_SELF,
+		]
+	if _typed_extra_property_in_group(property, _RESOURCE_TYPED_PROPS):
+		return primary in [
+			GameEnums.EffectType.GRANT_AP,
+			GameEnums.EffectType.GRANT_SCRAP,
+			GameEnums.EffectType.REFUND_AP_ON_CC,
+		]
+	if _typed_extra_property_in_group(property, _SUMMON_TYPED_PROPS):
+		return primary == GameEnums.EffectType.SPAWN
+	if property == "violent_collision_recast":
+		return (
+			primary == GameEnums.EffectType.DASH
+			or parent_module_has_pass_through_keyword(module)
+		)
+	return false
+
+
+static func _typed_extra_property_in_group(property: String, group: Array[String]) -> bool:
+	return property in group
+
+
+const _TYPED_EXTRA_LABEL_OVERRIDES: Dictionary = {
+	"Range 1 Damage Multiplier": "range_one_damage_multiplier",
+	"Shield Closest Ally %": "shield_closest_ally_pct_damage",
+	"Revive Max HP %": "revive_percent_max_hp",
+	"Construct HP %": "construct_hp_pct",
+	"Ignore Target MAG %": "ignore_target_magic_pct",
+	"Unacted Target DEF Ignore": "unacted_target_ignore_def_pct",
+	"Target DEF % Debuff": "target_def_pct_debuff",
+	"Target DEF % Duration": "target_def_pct_duration",
+	"Bonus Dmg % Max HP": "bonus_dmg_pct_max_hp",
+	"Heal If Targets >=": "heal_if_targets_gte",
+	"MAG HEAL": "mag_heal",
+	"PUSH": "push",
+	"Surface Chain": "bounce_surface_chain",
+}
+
+
+const _HAZARD_TYPED_PROPS: Array[String] = [
+	"terrain_id", "hazard_duration", "hazard_status", "terrain_hazard_status",
+	"trap_damage", "trap_bleed_weapon", "trap_vulnerable", "trap_def_debuff",
+	"crossing_weapon_damage", "crossing_mov_penalty", "crossing_blind",
+	"strip_stealth", "smoke_on_start", "smoke_field", "smoke_stealth_outside_attackers",
+	"ignite_flammable_terrain", "destroy_terrain", "reaction_terrain", "reaction_damage",
+	"leave_elemental_surface", "lightning_surface", "strike_all_surface",
+	"bounce_surface_chain", "pull_surfaces", "pull_to_center", "create_crater",
+	"oil_field", "hazard_blind_on_entry", "barbed_wire", "entry_root",
+	"mine_pull", "mine_damage", "mine_explode", "tesla_wall", "ignite_oil",
+	"ignite_oil_area", "manual_detonation", "manual_detonation_stagger",
+	"holy_ground", "holy_ground_zone", "holy_ground_def_down", "inner_fire_surface",
+]
+
+
+const _MOTION_TYPED_PROPS: Array[String] = [
+	"preserve_facing", "ignore_zoc", "blink", "vault_obstacle_or_gap_only",
+	"pull_self_if_rooted", "pull_until_adjacent", "next_turn", "next_turn_max_move",
+	"on_kill_max_move", "movement_mp_override", "cost_all_movement",
+	"bonus_per_enemy_passed", "create_trampled_terrain", "upgraded_trample",
+	"line_breaker", "landing_adjacent_push", "landing_adjacent_push_stagger",
+	"stop_adjacent_first_enemy", "dash_absorb_element", "leap_absorb_surface",
+	"enemy_pushed_mov", "blind_on_pass_over", "violent_collision_recast",
+	"item_collision_damage", "item_collision_str_div", "item_collision_vulnerable",
+	"push_board_items", "grapple_wall_pull_self", "grapple_pass_through_damage",
+	"relocate_subject_only", "relocate_target", "move_active_totem",
+	"pounce_land_adjacent", "feral_drag", "drag_remaining_movement",
+	"reposition_opposite_side", "reposition_movement_cost", "reposition_range",
+	"airlift_pickup_step", "airlift_drop_step", "airlift_keep_caster",
+	"run_down_pass_adjacent_push", "run_down_push_bleed_weapon",
+	"slip_past", "land_opposite_target", "move_through_adjacent_unit",
+	"shadow_step", "kidnap", "pullback", "chakra_shift", "stop_adjacent_first_enemy",
+]
+
+
+const _FORCED_MOVE_TYPED_PROPS: Array[String] = [
+	"push", "buff_on_push", "landing_adjacent_push", "landing_adjacent_push_stagger",
+	"pull_until_adjacent", "pull_self_if_rooted", "pull_to_center", "pull_surfaces",
+	"intercept_push_attacker", "remove_push_mitigation", "enemy_pushed_mov",
+	"sanctuary_enemy_push", "creation_adjacent_push", "mine_pull",
+]
+
+
+const _ATTACK_TYPED_PROPS: Array[String] = [
+	"bonus_dmg_from_occupied", "bonus_dmg_per_10_hp", "bonus_dmg_pct_max_hp",
+	"bounce_count", "bounce_range", "bounce_walls_45", "skewer", "pierce",
+	"next_attack_strength", "next_attack_bleed_weapon", "next_attack_pierce",
+	"next_ranged_attack_strength", "root_break_on_damage", "spread_status_adjacent",
+	"halve_target_def_one_turn", "armor_explosion_atk", "bonus_atk_vs_fear_or_lower_movement",
+	"range_one_damage_multiplier", "bleed_bonus_damage", "target_def_debuff",
+	"target_def_pct_debuff", "target_def_pct_duration", "bonus_if_target_adjacent_to_ally",
+	"if_target_attacked_caster_last_turn_bonus", "if_target_attacked_caster_last_turn_stagger",
+	"unacted_target_ignore_def_pct", "marked_target_defense", "duelist_mark_target",
+	"flank_run_adjacent_enemy_bonus", "bonus_per_target_status", "chakra_burst_damage",
+	"chakra_burst_size", "landed_magic_bonus", "enemy_mag_atk", "target_magic_defense",
+	"steal_target_magic", "ignore_target_magic_pct", "apply_weaken_enemy",
+	"creation_adjacent_damage", "trap_damage", "magic_link_damage", "pulse_mag_atk",
+	"mechanical_boss_damage_wpn", "wrench_smack", "scrap_attack_bonus",
+	"on_hit_scrap", "turret_attack", "on_death_adjacent_damage",
+]
+
+
+const _HEAL_TYPED_PROPS: Array[String] = [
+	"heal_if_targets_gte", "mag_heal", "cleanse_target", "shield_closest_ally_pct_damage",
+	"ally_str_per_debuff", "sanctuary", "holy_aura", "life_link", "life_link_reduction",
+	"revive_percent_max_hp", "revive_shield", "spend_self_hp", "on_kill_all_allies_heal",
+	"on_kill_all_allies_shield", "pulse_heal", "pulse_cleanse", "emp_friendly_construct_heal",
+	"ally_heal_enemy_wpn", "heal_per_debuff", "sanctuary_enemy_push",
+]
+
+
+const _RESOURCE_TYPED_PROPS: Array[String] = [
+	"grant_ap", "grant_scrap", "kill_grant_ap", "frenzy_on_kill_ap", "elemental_surge_ap",
+	"target_damaged_ap", "next_skill_zero_ap", "construct_destruction_refund_ap",
+	"refund_scrap", "refund_scrap_on_construct_death", "on_hit_scrap",
+	"elemental_surge", "utility_only", "does_not_consume_action_slot",
+]
+
+
+const _SUMMON_TYPED_PROPS: Array[String] = [
+	"construct_hp_pct", "construct_spawn", "totem_kind", "pulse_aoe", "pulse_fire",
+	"turret_attack", "absorbs_items_scrap", "arrival_overclock", "overdrive_injection",
+	"sacrifice_construct_instant", "scrap_shield", "shield_depletion_explode",
+	"construct_unmitigated_damage", "drop_adjacent", "drop_trap_damage_multiplier",
+]

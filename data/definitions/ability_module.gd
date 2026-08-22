@@ -420,6 +420,26 @@ func compile_runtime_modifiers() -> Dictionary:
 	return _runtime_modifiers_cache.duplicate(true)
 
 
+## True when a typed extra field (below core module aim/range UI) carries a non-default value.
+func is_typed_extra_property_set(property: String) -> bool:
+	if property.is_empty() or not property in self:
+		return false
+	var value: Variant = get(property)
+	match typeof(value):
+		TYPE_BOOL:
+			return bool(value)
+		TYPE_INT:
+			return int(value) != 0
+		TYPE_FLOAT:
+			return not is_zero_approx(float(value))
+		TYPE_STRING:
+			return not String(value).is_empty()
+		TYPE_STRING_NAME:
+			return StringName(value) != StringName()
+		_:
+			return value != null
+
+
 func invalidate_runtime_modifiers_cache() -> void:
 	_runtime_modifiers_cache.clear()
 	_runtime_modifiers_cache_valid = false
