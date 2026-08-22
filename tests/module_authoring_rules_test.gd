@@ -22,6 +22,36 @@ static func run_all(failures: Array[String]) -> void:
 	_test_layer_condition_filter(failures)
 	_test_primary_as_effect_strips_junk(failures)
 	_test_every_effect_type_has_a_primary_family(failures)
+	_test_typed_extra_label_mapping(failures)
+	_test_violent_collision_recast_visibility(failures)
+
+
+static func _test_typed_extra_label_mapping(failures: Array[String]) -> void:
+	var mapped: String = ModuleAuthoringRules.typed_extra_property_from_label("Next Ranged Attack STR")
+	if mapped != "next_ranged_attack_strength":
+		failures.append("label mapping failed for Next Ranged Attack STR: %s" % mapped)
+	mapped = ModuleAuthoringRules.typed_extra_property_from_label("Grapple Pass Damage")
+	if mapped != "grapple_pass_through_damage":
+		failures.append("label mapping failed for Grapple Pass Damage: %s" % mapped)
+
+
+static func _test_violent_collision_recast_visibility(failures: Array[String]) -> void:
+	var dash_plain := AbilityModule.new()
+	dash_plain.primary_type = GameEnums.EffectType.DASH
+	if ModuleAuthoringRules.typed_extra_field_applies(dash_plain, "violent_collision_recast"):
+		failures.append("plain DASH should not show violent_collision_recast when unset")
+	var dash_bulldoze := AbilityModule.new()
+	dash_bulldoze.primary_type = GameEnums.EffectType.DASH
+	dash_bulldoze.keywords = [AbilityKeyword.new()]
+	dash_bulldoze.keywords[0].keyword_id = GameEnums.AbilityKeywordId.BULLDOZE
+	if not ModuleAuthoringRules.typed_extra_field_applies(dash_bulldoze, "violent_collision_recast"):
+		failures.append("DASH + BULLDOZE should show violent_collision_recast")
+	dash_bulldoze.violent_collision_recast = 0
+	var dash_set := AbilityModule.new()
+	dash_set.primary_type = GameEnums.EffectType.MOVE
+	dash_set.violent_collision_recast = 2
+	if not ModuleAuthoringRules.typed_extra_field_applies(dash_set, "violent_collision_recast"):
+		failures.append("non-zero violent_collision_recast must stay visible on any module")
 
 
 static func _test_move_clears_scaling_and_los(failures: Array[String]) -> void:

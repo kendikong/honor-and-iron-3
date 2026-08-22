@@ -458,12 +458,51 @@ static func typed_extra_property_from_label(label: String) -> String:
 	if label.is_empty():
 		return ""
 	_ensure_typed_extra_module_props()
+	if _TYPED_EXTRA_LABEL_OVERRIDES.has(label):
+		return String(_TYPED_EXTRA_LABEL_OVERRIDES[label])
 	if label in _typed_extra_module_props:
 		return label
-	var guess: String = _guess_typed_extra_property(label)
-	if guess in _typed_extra_module_props:
-		return guess
-	return _TYPED_EXTRA_LABEL_OVERRIDES.get(label, "")
+	for candidate: String in [
+		_guess_typed_extra_property(label),
+		_guess_typed_extra_property(_expand_authoring_label(label)),
+	]:
+		if candidate in _typed_extra_module_props:
+			return candidate
+	return ""
+
+
+static func layer_property_from_label(label: String) -> String:
+	if label.is_empty():
+		return ""
+	_ensure_typed_extra_layer_props()
+	var stripped: String = label
+	if stripped.begins_with("Layer "):
+		stripped = stripped.substr(6)
+	if _TYPED_EXTRA_LABEL_OVERRIDES.has(stripped):
+		var mapped: String = String(_TYPED_EXTRA_LABEL_OVERRIDES[stripped])
+		if mapped in _typed_extra_layer_props:
+			return mapped
+	if stripped in _typed_extra_layer_props:
+		return stripped
+	for candidate: String in [
+		_guess_typed_extra_property(stripped),
+		_guess_typed_extra_property(_expand_authoring_label(stripped)),
+	]:
+		if candidate in _typed_extra_layer_props:
+			return candidate
+	return ""
+
+
+static func _expand_authoring_label(label: String) -> String:
+	var s: String = label
+	s = s.replace(" BLEED WPN", " Bleed Weapon")
+	s = s.replace("Pass Damage", "Pass Through Damage")
+	s = s.replace(" STR Div", " Str Div")
+	s = s.replace(" STR", " Strength")
+	s = s.replace(" WPN", " Weapon")
+	s = s.replace(" MAG", " Magic")
+	s = s.replace(" MOV", " Move")
+	return s
 
 
 static func _guess_typed_extra_property(label: String) -> String:
@@ -541,10 +580,92 @@ static func typed_extra_field_applies(module: AbilityModule, property: String) -
 	if _typed_extra_property_in_group(property, _SUMMON_TYPED_PROPS):
 		return primary == GameEnums.EffectType.SPAWN
 	if property == "violent_collision_recast":
+		return parent_module_has_pass_through_keyword(module)
+	return false
+
+
+static var _typed_extra_layer_props: Array[String] = []
+
+
+static func _ensure_typed_extra_layer_props() -> void:
+	if not _typed_extra_layer_props.is_empty():
+		return
+	var probe := AbilityLayer.new()
+	for info: Dictionary in probe.get_property_list():
+		var name: String = String(info.name)
+		if name.begins_with("_"):
+			continue
+		if int(info.usage) & PROPERTY_USAGE_STORAGE == 0:
+			continue
+		if name in ["effect", "condition"]:
+			continue
+		_typed_extra_layer_props.append(name)
+
+
+static func _layer_collision_context(layer: AbilityLayer, parent: AbilityModule) -> bool:
+	if layer == null or parent == null:
+		return false
+	return layer.condition in [
+		GameEnums.LayerCondition.ON_COLLISION,
+		GameEnums.LayerCondition.ON_CHAIN_COLLISION,
+		GameEnums.LayerCondition.WHEN_MOVED_THROUGH_ENEMY,
+	] or _is_motion_type(parent.primary_type)
+
+
+static func _layer_effect_type(layer: AbilityLayer) -> GameEnums.EffectType:
+	if layer == null or layer.effect == null:
+		return GameEnums.EffectType.DAMAGE
+	return layer.effect.type
+
+
+static func layer_typed_field_applies(
+	layer: AbilityLayer,
+	parent: AbilityModule,
+	property: String,
+) -> bool:
+	if layer == null or property.is_empty():
+		return false
+	if layer.is_typed_property_set(property):
+		return true
+	if parent == null:
+		return false
+	var effect_type: GameEnums.EffectType = _layer_effect_type(layer)
+	if _typed_extra_property_in_group(property, _LAYER_COLLISION_PROPS):
+		return _layer_collision_context(layer, parent)
+	if _typed_extra_property_in_group(property, _LAYER_MOTION_PROPS):
 		return (
-			primary == GameEnums.EffectType.DASH
-			or parent_module_has_pass_through_keyword(module)
+			layer.condition in [
+				GameEnums.LayerCondition.ON_LAND,
+				GameEnums.LayerCondition.PER_TILE_MOVED,
+			]
+			or _is_motion_type(parent.primary_type)
+			or parent.primary_type == GameEnums.EffectType.DASH
 		)
+	if _typed_extra_property_in_group(property, _LAYER_HAZARD_PROPS):
+		return effect_type in [
+			GameEnums.EffectType.CREATE_HAZARD,
+			GameEnums.EffectType.CHANGE_TERRAIN,
+			GameEnums.EffectType.DESTROY_OBSTACLE,
+		] or layer.condition == GameEnums.LayerCondition.ON_LAND
+	if _typed_extra_property_in_group(property, _LAYER_ATTACK_PROPS):
+		return effect_type_can_deal_damage(effect_type) or effect_type == GameEnums.EffectType.DAMAGE
+	if _typed_extra_property_in_group(property, _LAYER_RESOURCE_PROPS):
+		return effect_type in [
+			GameEnums.EffectType.GRANT_AP,
+			GameEnums.EffectType.GRANT_SCRAP,
+			GameEnums.EffectType.REFUND_AP_ON_CC,
+		]
+	if _typed_extra_property_in_group(property, _LAYER_COUNTER_PROPS):
+		return effect_type_can_deal_damage(parent.primary_type)
+	if _typed_extra_property_in_group(property, _LAYER_SPAWN_PROPS):
+		return effect_type == GameEnums.EffectType.SPAWN
+	if _typed_extra_property_in_group(property, _LAYER_STATUS_PROPS):
+		return effect_type in [
+			GameEnums.EffectType.ADD_STATUS,
+			GameEnums.EffectType.REMOVE_STATUS,
+			GameEnums.EffectType.CLEANSE,
+			GameEnums.EffectType.PURGE,
+		]
 	return false
 
 
@@ -566,6 +687,14 @@ const _TYPED_EXTRA_LABEL_OVERRIDES: Dictionary = {
 	"MAG HEAL": "mag_heal",
 	"PUSH": "push",
 	"Surface Chain": "bounce_surface_chain",
+	"Violent Collision Recast": "violent_collision_recast",
+	"Next Ranged Attack STR": "next_ranged_attack_strength",
+	"Next Attack BLEED WPN": "next_attack_bleed_weapon",
+	"Grapple Pass Damage": "grapple_pass_through_damage",
+	"Item Collision STR Div": "item_collision_str_div",
+	"Trap BLEED WPN": "trap_bleed_weapon",
+	"Crossing WPN Damage": "crossing_weapon_damage",
+	"Terrain ID": "terrain_id",
 }
 
 
@@ -591,7 +720,7 @@ const _MOTION_TYPED_PROPS: Array[String] = [
 	"bonus_per_enemy_passed", "create_trampled_terrain", "upgraded_trample",
 	"line_breaker", "landing_adjacent_push", "landing_adjacent_push_stagger",
 	"stop_adjacent_first_enemy", "dash_absorb_element", "leap_absorb_surface",
-	"enemy_pushed_mov", "blind_on_pass_over", "violent_collision_recast",
+	"enemy_pushed_mov", "blind_on_pass_over",
 	"item_collision_damage", "item_collision_str_div", "item_collision_vulnerable",
 	"push_board_items", "grapple_wall_pull_self", "grapple_pass_through_damage",
 	"relocate_subject_only", "relocate_target", "move_active_totem",
@@ -653,4 +782,55 @@ const _SUMMON_TYPED_PROPS: Array[String] = [
 	"turret_attack", "absorbs_items_scrap", "arrival_overclock", "overdrive_injection",
 	"sacrifice_construct_instant", "scrap_shield", "shield_depletion_explode",
 	"construct_unmitigated_damage", "drop_adjacent", "drop_trap_damage_multiplier",
+]
+
+
+const _LAYER_COLLISION_PROPS: Array[String] = [
+	"object_collision_stagger", "enemy_collision_stagger_both", "stagger_on_collision",
+	"push_collision_pierce", "push_collision_damage", "collision_splash_damage",
+	"collision_splash_weaken", "wall_collision_stagger", "rooted_push_bleed_weapon",
+	"grapple_pass_through_damage", "push_if_target_on_water",
+]
+
+
+const _LAYER_MOTION_PROPS: Array[String] = [
+	"difficult_terrain_created", "damage_adjacent_on_landing", "arcane_trail",
+	"set_max_move", "target_after_move_adjacent", "dash_absorb_element",
+	"require_dash_line_enemy", "landing_push", "movement_penalty",
+	"spawn_furthest_empty_on_line", "elemental_surface",
+]
+
+
+const _LAYER_HAZARD_PROPS: Array[String] = [
+	"terrain_id", "hazard_duration", "hazard_blind_on_entry", "poison_hazard", "oil_field",
+	"hazard_damage_bonus", "trap_damage_bonus", "trap_vulnerable", "trap_def_debuff",
+	"crossing_blind", "ignite_flammable_terrain", "reaction_terrain",
+	"reaction_steam_splash", "reaction_steam_splash_size", "reaction_steam_splash_damage",
+	"skip_terrain_entry_status", "skip_terrain_entry_bleed",
+]
+
+
+const _LAYER_ATTACK_PROPS: Array[String] = [
+	"weapon_scaled", "range_one_damage_multiplier", "damage_multiplier", "side_attack_only",
+	"creation_adjacent_damage", "burning_splash_magic", "pierce_if_first_zero", "bleed_weapon",
+]
+
+
+const _LAYER_RESOURCE_PROPS: Array[String] = [
+	"grant_ap", "grant_scrap", "next_turn", "buff_per_destroyed_object", "intercept_grant_str",
+]
+
+
+const _LAYER_COUNTER_PROPS: Array[String] = [
+	"counterattack_melee", "counterattack_on_intercept",
+]
+
+
+const _LAYER_SPAWN_PROPS: Array[String] = [
+	"construct_hp_pct", "lightning_rod",
+]
+
+
+const _LAYER_STATUS_PROPS: Array[String] = [
+	"status_requires_debuff", "cone_all_targets", "from_behind_only", "ally_damage_zero",
 ]

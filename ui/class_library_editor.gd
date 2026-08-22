@@ -2852,6 +2852,54 @@ func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -
 func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> void:
 	var outer: VBoxContainer = shell["outer"] as VBoxContainer
 	var grid: GridContainer = shell["grid"] as GridContainer
+	_prune_irrelevant_grid_rows(
+		grid,
+		func(prop: String) -> bool:
+			return ModuleAuthoringRules.typed_extra_field_applies(module, prop),
+		func(label: String) -> bool:
+			return false,
+		ModuleAuthoringRules.typed_extra_property_from_label,
+	)
+	if grid.get_child_count() == 0:
+		outer.queue_free()
+
+
+func _finalize_layer_field_grid(
+	grid: GridContainer,
+	parent_module: AbilityModule,
+	layer: AbilityLayer,
+) -> void:
+	_prune_irrelevant_grid_rows(
+		grid,
+		func(prop: String) -> bool:
+			return ModuleAuthoringRules.layer_typed_field_applies(layer, parent_module, prop),
+		_is_layer_core_editor_label,
+		ModuleAuthoringRules.layer_property_from_label,
+	)
+
+
+func _is_layer_core_editor_label(label: String) -> bool:
+	if not label.begins_with("Layer "):
+		return false
+	return (
+		label.contains("Condition")
+		or label == "Layer Type"
+		or label == "Layer Amount"
+		or label == "Layer Status"
+		or label == "Layer Duration"
+		or label == "Layer Scaling"
+		or label == "Layer Spawn Id"
+		or label == "Layer Adjacent Bonus"
+		or label == "Layer DEF Debuff"
+	)
+
+
+func _prune_irrelevant_grid_rows(
+	grid: GridContainer,
+	applies_for_prop: Callable,
+	keep_label: Callable,
+	prop_from_label: Callable,
+) -> void:
 	var rows: Array[Array] = []
 	var child_count: int = grid.get_child_count()
 	for i: int in range(0, child_count, 2):
@@ -2863,10 +2911,13 @@ func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> vo
 	for row: Array in rows:
 		var lbl: Label = row[0] as Label
 		var ctrl: Control = row[1] as Control
-		var prop: String = ModuleAuthoringRules.typed_extra_property_from_label(
-			lbl.text if lbl != null else "",
-		)
-		if prop.is_empty() or not ModuleAuthoringRules.typed_extra_field_applies(module, prop):
+		var label_text: String = lbl.text if lbl != null else ""
+		if keep_label.is_valid() and keep_label.call(label_text):
+			grid.add_child(lbl)
+			grid.add_child(ctrl)
+			continue
+		var prop: String = prop_from_label.call(label_text) if prop_from_label.is_valid() else ""
+		if prop.is_empty() or not applies_for_prop.call(prop):
 			if lbl != null:
 				lbl.queue_free()
 			if ctrl != null:
@@ -2874,8 +2925,6 @@ func _finalize_effect_knobs_grid(shell: Dictionary, module: AbilityModule) -> vo
 			continue
 		grid.add_child(lbl)
 		grid.add_child(ctrl)
-	if grid.get_child_count() == 0:
-		outer.queue_free()
 
 
 func _add_typed_module_bindings(
@@ -3381,6 +3430,7 @@ func _add_module_layers_editor(
 				or layer.effect.scaling_stat != GameEnums.StatType.NONE,
 			)
 		layer_grey_cb.call()
+		_finalize_layer_field_grid(grid, module, layer)
 		var remove := Button.new()
 		remove.text = "Remove Layer"
 		remove.pressed.connect(func() -> void:

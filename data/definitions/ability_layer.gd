@@ -200,6 +200,26 @@ func compile_runtime_modifiers() -> Dictionary:
 	return modifiers
 
 
+## True when a layer typed extra carries a non-default value (editor visibility).
+func is_typed_property_set(property: String) -> bool:
+	if property.is_empty() or not property in self:
+		return false
+	var value: Variant = get(property)
+	match typeof(value):
+		TYPE_BOOL:
+			return bool(value)
+		TYPE_INT:
+			return int(value) != 0
+		TYPE_FLOAT:
+			return not is_zero_approx(float(value))
+		TYPE_STRING:
+			return not String(value).is_empty()
+		TYPE_STRING_NAME:
+			return StringName(value) != StringName()
+		_:
+			return value != null
+
+
 func ingest_runtime_key(key: String, value: Variant) -> void:
 	match key:
 		"object_collision_stagger":
