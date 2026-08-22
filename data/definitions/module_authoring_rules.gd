@@ -198,17 +198,14 @@ static func normalize_module_context_fields(
 ) -> void:
 	if module == null:
 		return
-	if (
-		planner_group == GameEnums.PlannerGroup.ACTION
-		and (
-			module.primary_type == GameEnums.EffectType.PAIRED_MOVE
-			or (
-				module.primary_type == GameEnums.EffectType.SWAP
-				and (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
-			)
-		)
-	):
-		push_error("Ally relocation modules are legal only for PRE_MOVE movement")
+	if planner_group == GameEnums.PlannerGroup.ACTION:
+		if module.primary_type == GameEnums.EffectType.PAIRED_MOVE:
+			module.primary_type = GameEnums.EffectType.MOVE
+		elif (
+			module.primary_type == GameEnums.EffectType.SWAP
+			and (module.targeting_flags & GameEnums.TargetingFlags.ALLY) != 0
+		):
+			module.targeting_flags &= ~GameEnums.TargetingFlags.ALLY
 	if planner_group == GameEnums.PlannerGroup.PRE_MOVE:
 		module.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	for key: String in excluded_module_gates(module):

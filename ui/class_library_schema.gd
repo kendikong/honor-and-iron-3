@@ -1765,12 +1765,16 @@ static func _normalize_modules_for_ability(
 			AbilityModuleBridge.normalize_module_authoring_fields(module, planner_group, index)
 
 
-static func modules_from_dict_array(data: Array) -> Array[AbilityModule]:
+static func modules_from_dict_array(
+	data: Array,
+	planner_group: GameEnums.PlannerGroup = GameEnums.PlannerGroup.ACTION,
+) -> Array[AbilityModule]:
 	var out: Array[AbilityModule] = []
-	for entry: Variant in data:
+	for index: int in range(data.size()):
+		var entry: Variant = data[index]
 		if entry is Dictionary:
 			var module := AbilityModule.new()
-			apply_module_dict(module, entry as Dictionary)
+			apply_module_dict(module, entry as Dictionary, planner_group)
 			out.append(module)
 	return out
 
@@ -1839,10 +1843,14 @@ static func copy_ability_into(dst: AbilityData, src: AbilityData) -> void:
 	dst.once_per_turn = src.once_per_turn
 	dst.presentation_key = src.presentation_key
 	dst.presentation_anim = src.presentation_anim
-	dst.modules = modules_from_dict_array(modules_to_dict_array(src.modules, src.planner_group))
+	dst.modules = modules_from_dict_array(
+		modules_to_dict_array(src.modules, src.planner_group),
+		src.planner_group,
+	)
 	var upgrade_group: int = _upgrade_planner_group(src)
 	dst.upgraded_modules = modules_from_dict_array(
-		modules_to_dict_array(src.upgraded_modules, upgrade_group)
+		modules_to_dict_array(src.upgraded_modules, upgrade_group),
+		upgrade_group as GameEnums.PlannerGroup,
 	)
 	_normalize_modules_for_ability(dst.modules, dst.planner_group)
 	_normalize_modules_for_ability(dst.upgraded_modules, upgrade_group)
@@ -2323,7 +2331,9 @@ static func apply_ability_dict(
 	if not module_data is Array:
 		push_error("Ability JSON rejected: missing modules array")
 		return
-	var parsed_modules: Array[AbilityModule] = modules_from_dict_array(module_data as Array)
+	var parsed_modules: Array[AbilityModule] = modules_from_dict_array(
+		module_data as Array, dst.planner_group,
+	)
 	var base_errors: Array[String] = AbilityModuleBridge.validate_modules(
 		parsed_modules, dst.planner_group,
 	)
@@ -2335,7 +2345,8 @@ static func apply_ability_dict(
 	var upgraded_module_data: Variant = data.get("upgraded_modules", null)
 	if upgraded_module_data is Array:
 		var parsed_upgraded_modules: Array[AbilityModule] = modules_from_dict_array(
-			upgraded_module_data as Array
+			upgraded_module_data as Array,
+			_upgrade_planner_group(dst) as GameEnums.PlannerGroup,
 		)
 		var upgrade_errors: Array[String] = AbilityModuleBridge.validate_modules(
 			parsed_upgraded_modules, _upgrade_planner_group(dst),
