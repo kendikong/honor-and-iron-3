@@ -67,6 +67,8 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-2 — class-by-class conversion
 
+> **Shape gate (2026-08-22):** `docs/design/LAYER_SHAPE_CONVERSION_GATE.md` — ER-2 ☑ rows below are **frozen** until `run_layer_shape_conversion_gate.gd` passes per skill. Modifier-ownership PASS (`extra_rules_conversion_contract`) is **not** layer conversion.
+
 ### ER-2 — authoritative skill quality matrix
 
 | Class | Skill | Real modules/layers | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
@@ -545,6 +547,7 @@ Watch for later split: Link, Scrap, Destroy — only if they become their own ve
 ## QA
 
 After each class: `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1`.  
-Converted-skill extras: headless `res://tests/run_ability_module_bridge_test.gd` (includes `extra_rules_conversion_contract`).  
+Converted-skill extras: headless `res://tests/run_ability_module_bridge_runner.gd` (includes `extra_rules_conversion_contract`).  
+**Layer shape (ER-2 anti-cheat):** `res://tests/run_layer_shape_conversion_gate.gd` (`--audit` for debt report).  
 Planning/commit edits: `.\scripts\run_planning_qa_gate.ps1`.  
 Sim/core: `.\scripts\run_regression_tests.ps1`.

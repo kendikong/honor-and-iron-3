@@ -525,12 +525,16 @@ static func _guess_typed_extra_property(label: String) -> String:
 static func typed_extra_active_count(module: AbilityModule) -> int:
 	if module == null:
 		return 0
-	_ensure_typed_extra_module_props()
 	var count: int = 0
-	for prop: String in _typed_extra_module_props:
+	for prop: String in typed_extra_module_property_names():
 		if module.is_typed_extra_property_set(prop):
 			count += 1
 	return count
+
+
+static func typed_extra_module_property_names() -> Array[String]:
+	_ensure_typed_extra_module_props()
+	return _typed_extra_module_props.duplicate()
 
 
 static func typed_extra_field_applies(module: AbilityModule, property: String) -> bool:

@@ -3,7 +3,8 @@ extends RefCounted
 
 ## RefCounted harness — do NOT run with --script.
 ## Headless CLI: godot --headless --path . --script res://tests/run_extra_rules_conversion_contract.gd
-## Fail-loud Extra Rules conversion bar.
+## Fail-loud Extra Rules conversion bar (modifier **ownership** only — not layer shape).
+## Shape bar: docs/design/LAYER_SHAPE_CONVERSION_GATE.md + run_layer_shape_conversion_gate.gd
 ## Add an ability id to CONVERTED_SKILL_IDS only after extras and leftover Extra Rule keys are gone.
 
 const CONVERTED_SKILL_IDS: Array[StringName] = [

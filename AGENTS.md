@@ -39,6 +39,7 @@ Godot `--script` / `-s` must target a **SceneTree** (or MainLoop) script. **`ext
 | `tests/sim_test_runner.gd` | `tests/sim_test.gd` |
 | `tests/planning_t3_mimic_runner.gd` | `tests/run_t3_mimic_headless.gd` |
 | `tests/extra_rules_conversion_contract.gd` | `tests/run_extra_rules_conversion_contract.gd` |
+| `tests/layer_shape_conversion_gate_test.gd` | `tests/run_layer_shape_conversion_gate.gd` (`-- --audit` for debt report only) |
 | `tests/class_library_schema_typed_fields_test.gd` | `tests/run_class_library_schema_typed_fields_test.gd` |
 | `tests/planning_input_test.gd` + `planning_module_parity_test.gd` | `tests/run_planning_input_only.gd` |
 | Bridge + sim combined regression | `tests/regression_test.gd` |
