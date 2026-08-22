@@ -40,7 +40,14 @@ func writable_tile(coord: Vector2i) -> TileState:
 
 func set_tile_terrain(coord: Vector2i, terrain: TerrainData) -> void:
 	assert(terrain != null, "BoardState.set_tile_terrain requires terrain")
-	tiles[coord] = TileState.create(coord, terrain)
+	var occupant_id: int = -1
+	var existing: TileState = get_tile(coord)
+	if existing != null:
+		occupant_id = existing.occupant_id
+	var tile := TileState.create(coord, terrain)
+	if occupant_id >= 0:
+		tile.occupant_id = occupant_id
+	tiles[coord] = tile
 
 
 func is_in_bounds(coord: Vector2i) -> bool:

@@ -169,6 +169,21 @@ static func run_explosive_arrow(failures: Array[String]) -> void:
 	var dmg_cross: int = hp_cross - (H.unit_hp(result.final_state, 2) + H.unit_hp(result.final_state, 3))
 	H.assert_true(failures, "explosive_arrow/square_hits", dmg_cross > 0)
 	H.assert_eq_int(failures, "explosive_arrow/outside_excluded", H.unit_hp(result.final_state, 4), hp_out)
+	H.assert_true(
+		failures,
+		"explosive_arrow/occupant_after_destroy",
+		result.final_state.get_unit_at(Vector2i(4, 3)) != null
+		and result.final_state.get_unit_at(Vector2i(4, 3)).id == 2,
+	)
+	var hp_after_first: int = H.unit_hp(result.final_state, 2)
+	var board2: BoardState = result.final_state.clone()
+	var archer: UnitState = board2.get_unit_by_id(1)
+	archer.reset_for_turn()
+	var tile_aim := Timeline.new()
+	tile_aim.add(H.plan_ability(1, skill, Vector2i(4, 3), -1))
+	var tile_result: SimResult = H.simulate_plan(board2, tile_aim)
+	var dmg_tile_aim: int = hp_after_first - H.unit_hp(tile_result.final_state, 2)
+	H.assert_true(failures, "explosive_arrow/tile_aim_after_destroy", dmg_tile_aim > 0)
 
 
 static func run_hunters_mark(failures: Array[String]) -> void:
