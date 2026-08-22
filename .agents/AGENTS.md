@@ -28,7 +28,7 @@ board states to solve spatial puzzles. **Positioning over damage. No RNG in comb
 - **Move preview = intent truth (absolute)**: `.cursor/rules/move-preview-intent-truth.mdc` — move preview is the intent system; commit must not rewrite or re-render a different outcome than the last valid preview.
 - **Red tiles = latest stand (absolute)**: `.cursor/rules/action-range-latest-stand.mdc` — never paint action range from turn-start `base_board`. Read `docs/design/ACTION_RANGE_LATEST_STAND.md` before any origin change.
 - **No bandaid fixes (absolute)**: `.cursor/rules/no-bandaid-fixes.mdc` — one commit/preview path; delete obsolete hacks in the same change.
-- **Test execution hierarchy (absolute)**: Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) during development. `run_all_background_class_tests.ps1` is master CI only — **never run iteratively**; run only at milestone completion or upon explicit user request.
+- **Test execution hierarchy (absolute)**: Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) while debugging. When an edit is ready, run **`run_planning_qa_gate.ps1` for regression prevention** and **`run_<class>_qa_gate.ps1` for the specific class edited**. `run_all_background_class_tests.ps1` is master CI only — **never run iteratively**; run only at milestone completion or upon explicit user request.
 
 ## Model Policy & API Efficiency
 - **Frontier Models (Gemini 1.5 Pro / Claude 3.5 Sonnet)** must be used for medium/big edits (30+ lines, architectural changes, multi-file edits), unless the user explicitly instructs otherwise.
