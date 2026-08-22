@@ -17,6 +17,16 @@ and actual result. The tool automatically adds:
 - Current board, projected board, turn-start board, units, statuses, abilities,
   passives, terrain, selected unit/skill, timelines, hover tiles, route, battle
   log tail, and planning preview-failure state.
+- Per-unit planning flags: `turn_action_used`, `action_column_spent`,
+  `has_used_turn_action`, `training_unlimited_actions`, `can_use_action_slot`.
+- Training arena session settings when applicable (`infinite_player_ap`, class,
+  level, dummy/ally counts).
+- Combat director planning snapshot per player unit (move timing, committed
+  action, awaiting target, pre/post move queued).
+- Planning input snapshot: drag route, hover tile, commit slots that would fire
+  at hover, latest stand, preview paths.
+- `diagnosis_hints` — short agent-readable summary (timeline counts, hover commit
+  column, infinite AP, latest rejection).
 - The latest preview summary and rejected-action reason.
 - An optional screenshot captured only when the player saves the report.
 

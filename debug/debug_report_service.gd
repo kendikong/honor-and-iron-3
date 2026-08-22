@@ -161,8 +161,13 @@ func submit_report(
 		"latest_timeline": _latest_timeline.duplicate(true),
 		"latest_rejection": _latest_rejection,
 		"context": _capture_scene_context(),
+		"diagnosis_hints": {},
 		"screenshot": screenshot_path,
 	}
+	report["diagnosis_hints"] = _build_diagnosis_hints(
+		report["context"] as Dictionary,
+		_latest_rejection,
+	)
 	var report_json := JSON.stringify(report, "\t")
 	var paths: Array[String] = []
 	var user_path := report_dir.path_join("%s.json" % report_id)
@@ -223,6 +228,12 @@ static func serialize_board(board: BoardState) -> Dictionary:
 			"upgraded_abilities": _string_names(unit.upgraded_abilities),
 			"upgraded_passives": _string_names(unit.upgraded_passives),
 			"statuses": _statuses(unit.active_statuses),
+			"turn_action_used": unit.turn_action_used,
+			"action_column_spent": unit.action_column_spent(),
+			"has_used_turn_action": unit.has_used_turn_action(),
+			"training_unlimited_actions": unit.has_unlimited_training_actions(),
+			"can_use_action_slot": unit.can_use_action_slot(),
+			"pre_move_used_this_turn": unit.pre_move_used_this_turn,
 		})
 	return {
 		"grid_size": _coord(board.grid_size),
@@ -235,6 +246,55 @@ static func serialize_board(board: BoardState) -> Dictionary:
 	}
 
 
+static func _move_timing_name(timing: int) -> String:
+	match timing:
+		GameEnums.MoveTiming.PRE_ACTION:
+			return "PRE_ACTION"
+		GameEnums.MoveTiming.POST_ACTION:
+			return "POST_ACTION"
+		_:
+			return ""
+
+
+static func serialize_timeline_action(action: TimelineAction) -> Dictionary:
+	if action == null:
+		return {}
+	return {
+		"actor_id": action.actor_id,
+		"type": action.type,
+		"type_name": _enum_name(GameEnums.ActionType.keys(), action.type),
+		"move_timing": action.move_timing,
+		"move_timing_name": _move_timing_name(action.move_timing),
+		"target_coord": _coord(action.target_coord),
+		"target_unit_id": action.target_unit_id,
+		"ability": String(action.ability.id) if action.ability != null else "",
+		"module_target_coords": action.module_target_coords.map(_coord),
+		"module_target_unit_ids": action.module_target_unit_ids,
+		"face_dir": action.face_dir,
+		"waypoints": action.waypoints.map(_coord),
+		"irreversible": action.irreversible,
+		"uses_run": action.uses_run,
+		"uses_steady_aim": action.uses_steady_aim,
+		"awaiting_target": action.awaiting_target,
+		"is_free_reaction": action.is_free_reaction,
+	}
+
+
+static func serialize_commit_slots(slots: Dictionary) -> Dictionary:
+	var result: Dictionary = {
+		"invalid": slots.get("invalid", false),
+		"preview_validated": slots.get("_preview_validated", false),
+		"noop": slots.get("_noop", false),
+	}
+	for col: String in ["pre", "action", "post"]:
+		var serialized: Array[Dictionary] = []
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				serialized.append(serialize_timeline_action(raw as TimelineAction))
+		result[col] = serialized
+	return result
+
+
 static func serialize_timeline(timeline: Timeline) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	if timeline == null:
@@ -242,25 +302,7 @@ static func serialize_timeline(timeline: Timeline) -> Array[Dictionary]:
 	for action: TimelineAction in timeline.entries:
 		if action == null:
 			continue
-		result.append({
-			"actor_id": action.actor_id,
-			"type": action.type,
-			"type_name": _enum_name(GameEnums.ActionType.keys(), action.type),
-			"move_timing": action.move_timing,
-			"move_timing_name": _enum_name(GameEnums.MoveTiming.keys(), action.move_timing),
-			"target_coord": _coord(action.target_coord),
-			"target_unit_id": action.target_unit_id,
-			"ability": String(action.ability.id) if action.ability != null else "",
-			"module_target_coords": action.module_target_coords.map(_coord),
-			"module_target_unit_ids": action.module_target_unit_ids,
-			"face_dir": action.face_dir,
-			"waypoints": action.waypoints.map(_coord),
-			"irreversible": action.irreversible,
-			"uses_run": action.uses_run,
-			"uses_steady_aim": action.uses_steady_aim,
-			"awaiting_target": action.awaiting_target,
-			"is_free_reaction": action.is_free_reaction,
-		})
+		result.append(serialize_timeline_action(action))
 	return result
 
 
@@ -337,6 +379,40 @@ func _capture_scene_context() -> Dictionary:
 		if provided is Dictionary:
 			context.merge(provided as Dictionary, true)
 	return _sanitize(context)
+
+
+func _build_diagnosis_hints(context: Dictionary, latest_rejection: String) -> Dictionary:
+	var hints: Dictionary = {}
+	var training: Dictionary = context.get("training_session", {}) as Dictionary
+	if not training.is_empty():
+		hints["infinite_player_ap"] = bool(training.get("infinite_player_ap", false))
+		hints["training_player_class"] = String(training.get("player_class_id", ""))
+	var director_ctx: Dictionary = context.get("combat_director", {}) as Dictionary
+	if not director_ctx.is_empty():
+		hints["auto_run"] = bool(director_ctx.get("auto_run", false))
+		hints["plan_revision"] = int(director_ctx.get("plan_revision", 0))
+	var planning: Dictionary = context.get("planning_input", {}) as Dictionary
+	if not planning.is_empty():
+		hints["hover_tile"] = planning.get("hover_tile", [])
+		hints["planning_move_timing"] = planning.get("planning_move_timing", -1)
+		hints["planning_move_timing_name"] = String(planning.get("planning_move_timing_name", ""))
+		hints["action_column_spent"] = bool(planning.get("action_column_spent", false))
+		hints["awaiting_targeting"] = bool(planning.get("awaiting_targeting", false))
+		hints["dragging"] = bool(planning.get("dragging", false))
+		var slots: Dictionary = planning.get("hover_commit_slots", {}) as Dictionary
+		if not slots.is_empty():
+			hints["hover_commit_pre_count"] = (slots.get("pre", []) as Array).size()
+			hints["hover_commit_action_count"] = (slots.get("action", []) as Array).size()
+			hints["hover_commit_post_count"] = (slots.get("post", []) as Array).size()
+			hints["hover_commit_invalid"] = slots.get("invalid", false)
+	var timelines: Dictionary = context.get("timelines", {}) as Dictionary
+	if not timelines.is_empty():
+		hints["timeline_pre_count"] = (timelines.get("pre_move", []) as Array).size()
+		hints["timeline_action_count"] = (timelines.get("action", []) as Array).size()
+		hints["timeline_post_count"] = (timelines.get("post_move", []) as Array).size()
+	if latest_rejection != "":
+		hints["latest_rejection"] = latest_rejection
+	return hints
 
 
 func _runtime_metadata() -> Dictionary:

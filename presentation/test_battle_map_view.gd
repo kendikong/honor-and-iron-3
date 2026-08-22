@@ -88,6 +88,21 @@ func get_session() -> TestBattleSession:
 	return _session
 
 
+func build_debug_context() -> Dictionary:
+	var context: Dictionary = super.build_debug_context()
+	context["training_session"] = {
+		"infinite_player_ap": _session.infinite_player_ap,
+		"player_class_id": String(_session.player_class_id),
+		"player_level": _session.player_level,
+		"unkillable_dummies": _session.unkillable_dummies,
+		"dummy_count": _session.dummy_coords.size(),
+		"extra_player_count": _session.extra_player_coords.size(),
+		"passive_enabled": _session.passive_enabled.duplicate(true),
+		"skill_enabled_count": _session.skill_enabled.size(),
+	}
+	return context
+
+
 func get_live_board() -> BoardState:
 	return _active_board()
 

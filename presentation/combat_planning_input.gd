@@ -1434,6 +1434,57 @@ func get_hover_tile_for_ui() -> Vector2i:
 	return Vector2i(-999, -999)
 
 
+func build_debug_context() -> Dictionary:
+	var context: Dictionary = {
+		"dragging": dragging,
+		"drag_unit_id": _drag_unit_id,
+		"drag_preview_failed": drag_preview_failed,
+		"force_basic_movement": force_basic_movement,
+		"auto_use_skill_after_move": auto_use_skill_after_move,
+		"awaiting_targeting": awaiting_targeting_active(),
+		"live_preview_active": is_live_preview_active(),
+	}
+	var drag_cells: Array[Array] = []
+	for cell: Vector2i in _drag_route:
+		drag_cells.append(DebugReportRuntime._coord(cell))
+	context["drag_route"] = drag_cells
+	var hover: Vector2i = get_hover_tile_for_ui()
+	context["hover_tile"] = DebugReportRuntime._coord(hover)
+	if _director == null:
+		return context
+	var unit_id: int = _director.selected_unit_id
+	context["selected_unit_id"] = unit_id
+	context["selected_ability_index"] = _director.selected_ability_index
+	if unit_id >= 0:
+		var move_timing: int = _director.get_planning_move_timing(unit_id)
+		context["planning_move_timing"] = move_timing
+		context["planning_move_timing_name"] = DebugReportRuntime._move_timing_name(move_timing)
+		context["action_column_spent"] = _director.unit_action_column_spent_for_movement(unit_id)
+		context["phase_action_exhausted"] = selected_phase_action_exhausted(unit_id)
+		var actor: UnitState = _proj_unit(unit_id)
+		if actor != null:
+			context["latest_stand"] = DebugReportRuntime._coord(
+				CombatPlanningPreview.planning_latest_stand_cell(_director, _proj(), unit_id),
+			)
+			context["projected_position"] = DebugReportRuntime._coord(actor.position)
+		if _director.board != null and _director.board.is_in_bounds(hover):
+			var slots: Dictionary = _final_commit_slots_for_click_at_cell(
+				unit_id, hover, Vector2.ZERO,
+			)
+			context["hover_commit_slots"] = DebugReportRuntime.serialize_commit_slots(slots)
+	if preview_state != null and not preview_state.preview_paths.is_empty():
+		var path_summary: Dictionary = {}
+		for path_unit_id: int in preview_state.preview_paths.keys():
+			var path_cells: Array = preview_state.preview_paths[path_unit_id] as Array
+			var serialized_path: Array[Array] = []
+			for cell: Variant in path_cells:
+				if cell is Vector2i:
+					serialized_path.append(DebugReportRuntime._coord(cell as Vector2i))
+			path_summary[str(path_unit_id)] = serialized_path
+		context["preview_paths"] = path_summary
+	return context
+
+
 func is_live_preview_active() -> bool:
 	if _director == null:
 		return false

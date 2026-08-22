@@ -546,6 +546,52 @@ func unit_action_column_spent_for_movement(unit_id: int) -> bool:
 	return unit_has_committed_class_action(unit_id)
 
 
+func build_debug_context() -> Dictionary:
+	var plan_board: BoardState = (
+		projected_state
+		if projected_state != null
+		else self.board if self.board != null else base_board
+	)
+	var units_planning: Array[Dictionary] = []
+	if plan_board != null:
+		for unit: UnitState in plan_board.units:
+			if unit == null or unit.team != GameEnums.Team.PLAYER or not unit.is_alive():
+				continue
+			var awaiting: TimelineAction = find_awaiting_action(unit.id)
+			var awaiting_summary: Dictionary = {}
+			if awaiting != null:
+				awaiting_summary = DebugReportRuntime.serialize_timeline_action(awaiting)
+			units_planning.append({
+				"unit_id": unit.id,
+				"position": DebugReportRuntime._coord(unit.position),
+				"planning_move_timing": get_planning_move_timing(unit.id),
+				"planning_move_timing_name": DebugReportRuntime._move_timing_name(
+					get_planning_move_timing(unit.id),
+				),
+				"action_column_spent": unit_action_column_spent_for_movement(unit.id),
+				"committed_class_action": unit_has_committed_class_action(unit.id),
+				"turn_action_used": unit.turn_action_used,
+				"has_used_turn_action": unit.has_used_turn_action(),
+				"training_unlimited_actions": unit.has_unlimited_training_actions(),
+				"can_use_action_slot": unit.can_use_action_slot(),
+				"has_pre_move_planned": unit_has_move_planned_at_timing(
+					unit.id, GameEnums.MoveTiming.PRE_ACTION,
+				),
+				"has_post_move_planned": unit_has_move_planned_at_timing(
+					unit.id, GameEnums.MoveTiming.POST_ACTION,
+				),
+				"wait_planned": unit_has_wait_planned(unit.id),
+				"awaiting_action": awaiting_summary,
+			})
+	return {
+		"auto_run": auto_run,
+		"plan_revision": plan_revision,
+		"selected_unit_id": selected_unit_id,
+		"selected_ability_index": selected_ability_index,
+		"units_planning": units_planning,
+	}
+
+
 func _get_move_timing(unit_id: int) -> int:
 	if unit_has_wait_planned(unit_id):
 		return -1

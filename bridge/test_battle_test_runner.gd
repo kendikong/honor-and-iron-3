@@ -12,6 +12,7 @@ static func run_all() -> Dictionary:
 	_test_spawn_validation(failures)
 	_test_class_visual_seed_differs(failures)
 	_test_unlimited_actions_flag(failures)
+	_test_debug_report_unit_serialization(failures)
 	_test_player_loadout_matches_normal_rules(failures)
 	_test_extra_players_get_distinct_timeline_slots(failures)
 	return {"passed": failures.is_empty(), "failures": failures}
@@ -86,6 +87,50 @@ static func _test_unlimited_actions_flag(failures: Array[String]) -> void:
 	player.turn_action_used = true
 	if not player.can_use_action_slot():
 		failures.append("Unlimited training actions should bypass turn_action_used gate")
+
+
+static func _test_debug_report_unit_serialization(failures: Array[String]) -> void:
+	var session := TestBattleSession.new()
+	session.infinite_player_ap = true
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var player: UnitState = board.units[0]
+	player.turn_action_used = true
+	var serialized: Dictionary = DebugReportRuntime.serialize_board(board)
+	var units: Array = serialized.get("units", [])
+	if units.is_empty():
+		failures.append("Debug report board serialization missing units")
+		return
+	var unit_entry: Dictionary = units[0] as Dictionary
+	for key: String in [
+		"turn_action_used",
+		"action_column_spent",
+		"has_used_turn_action",
+		"training_unlimited_actions",
+		"can_use_action_slot",
+	]:
+		if not unit_entry.has(key):
+			failures.append("Debug report unit serialization missing %s" % key)
+	if not bool(unit_entry.get("turn_action_used", false)):
+		failures.append("Debug report should record turn_action_used=true")
+	if bool(unit_entry.get("has_used_turn_action", true)):
+		failures.append("Debug report should record has_used_turn_action=false in unlimited mode")
+	if not bool(unit_entry.get("training_unlimited_actions", false)):
+		failures.append("Debug report should record training_unlimited_actions=true")
+	var move: TimelineAction = TimelineAction.make_move(
+		player.id, Vector2i(3, 5), -1, [], GameEnums.MoveTiming.POST_ACTION,
+	)
+	var slots: Dictionary = {
+		"pre": [],
+		"action": [],
+		"post": [move],
+		"_preview_validated": true,
+	}
+	var slot_dump: Dictionary = DebugReportRuntime.serialize_commit_slots(slots)
+	if (slot_dump.get("post", []) as Array).size() != 1:
+		failures.append("Debug report commit slot serialization missing post-move entry")
+	var post_entry: Dictionary = (slot_dump.get("post", []) as Array)[0] as Dictionary
+	if String(post_entry.get("move_timing_name", "")) != "POST_ACTION":
+		failures.append("Debug report commit slot should preserve POST_ACTION timing name")
 
 
 static func _test_player_loadout_matches_normal_rules(failures: Array[String]) -> void:

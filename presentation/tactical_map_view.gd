@@ -100,12 +100,10 @@ func build_debug_context() -> Dictionary:
 		context["planning_overlay"] = _planning_overlay.build_debug_context()
 	if _side_panels != null:
 		context["battle_log_tail"] = _side_panels.get_log_plain_text()
+	if _director != null:
+		context["combat_director"] = _director.build_debug_context()
 	if _planning_input != null:
-		var hover := _planning_input.get_hover_tile_for_ui()
-		context["planning_input"] = {
-			"drag_preview_failed": _planning_input.drag_preview_failed,
-			"hover_tile": [hover.x, hover.y],
-		}
+		context["planning_input"] = _planning_input.build_debug_context()
 	return context
 
 
