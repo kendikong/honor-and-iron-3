@@ -23,3 +23,4 @@
 - `BUG-20260819T195651-656` **open** — Medium — Bug — mouse cursor showing move/atk and commit ghost not showing sometimes
 - `BUG-20260822T123715-788` **fixed** — Medium — Bug — explosive arrow not dealing damage (set_tile_terrain preserved occupant)
 - `BUG-20260822T125232-308` **fixed** — Medium — Bug — premove and postmove bugs (action_column_spent timing with training unlimited-actions)
+- `BUG-20260822T131801-867` **fixed** — Medium — Bug — Lying/false damage indication when undoing actions (stale hover forecast + hit markers after undo).

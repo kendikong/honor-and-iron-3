@@ -13,6 +13,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_merge_live_only_forecast_must_not_erase_committed(failures)
 	_test_committed_forecast_cannot_be_cleared_during_planning(failures)
 	_test_promoted_forecast_rebases_to_committed_plan_revision(failures)
+	_test_merge_ignores_stale_live_after_plan_revision_bump(failures)
 	_test_unit_layer_bar_display_source_contract(failures)
 
 
@@ -183,6 +184,40 @@ static func _test_promoted_forecast_rebases_to_committed_plan_revision(
 	):
 		failures.append(
 			"PlanningForecast promoted commit must use the current plan revision",
+		)
+
+
+static func _test_merge_ignores_stale_live_after_plan_revision_bump(
+	failures: Array[String],
+) -> void:
+	var baseline: BoardState = _board_with_units([
+		_unit(1, 20, 0),
+		_unit(2, 100, 0),
+	])
+	var live_predicted: BoardState = _board_with_units([
+		_unit(1, 20, 0),
+		_unit(2, 87, 0),
+	])
+	var stale_live := CombatPlanningForecast.from_boards(baseline, live_predicted, 4)
+	var merged := CombatPlanningForecast.merge_for_bar_display(
+		null, stale_live, baseline, 5,
+	)
+	if merged.damage_hp(2) != 0:
+		failures.append(
+			"PlanningForecast merge must ignore live forecast from a prior plan revision after undo",
+		)
+	var director := CombatDirector.new()
+	director.board = baseline
+	director.plan_revision = 5
+	var layer := TacticalUnitLayer.new()
+	layer._director = director
+	layer._board = baseline
+	layer._phase = CombatDirector.Phase.PLANNING
+	layer.set_live_forecast(stale_live)
+	var bar: CombatPlanningForecast = layer._bar_display_forecast()
+	if bar == null or bar.damage_hp(2) != 0:
+		failures.append(
+			"PlanningForecast bar display must drop stale live hover damage after plan revision bump",
 		)
 
 

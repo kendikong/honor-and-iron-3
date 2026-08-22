@@ -99,6 +99,20 @@ static func merge_for_bar_display(
 	forecast.revision = plan_revision
 	if baseline == null:
 		return forecast
+	if (
+		committed != null
+		and committed.revision >= 0
+		and plan_revision >= 0
+		and committed.revision != plan_revision
+	):
+		committed = null
+	if (
+		live != null
+		and live.revision >= 0
+		and plan_revision >= 0
+		and live.revision != plan_revision
+	):
+		live = null
 	for unit: UnitState in baseline.units:
 		if unit == null:
 			continue

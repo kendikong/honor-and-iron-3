@@ -236,6 +236,13 @@ func set_committed_forecast(forecast: CombatPlanningForecast) -> void:
 
 
 func set_live_forecast(forecast: CombatPlanningForecast) -> void:
+	if (
+		forecast != null
+		and _director != null
+		and forecast.revision >= 0
+		and forecast.revision != _director.plan_revision
+	):
+		return
 	if forecast == _live_forecast:
 		return
 	_live_forecast = forecast
@@ -266,9 +273,25 @@ func _bar_display_forecast() -> CombatPlanningForecast:
 	if _director != null and _director.board != null:
 		baseline = _director.board
 	var revision: int = _director.plan_revision if _director != null else -1
+	var committed_fc: CombatPlanningForecast = _committed_forecast
+	var live_fc: CombatPlanningForecast = _live_forecast
+	if (
+		committed_fc != null
+		and committed_fc.revision >= 0
+		and revision >= 0
+		and committed_fc.revision != revision
+	):
+		committed_fc = null
+	if (
+		live_fc != null
+		and live_fc.revision >= 0
+		and revision >= 0
+		and live_fc.revision != revision
+	):
+		live_fc = null
 	return CombatPlanningForecast.merge_for_bar_display(
-		_committed_forecast,
-		_live_forecast,
+		committed_fc,
+		live_fc,
 		baseline,
 		revision,
 	)

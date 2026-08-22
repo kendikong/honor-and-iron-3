@@ -1393,12 +1393,16 @@ func _flush_deferred_preview_updated() -> void:
 
 
 func _apply_committed_preview_update(result: SimResult, light_refresh: bool = false) -> void:
+	_hit_markers.clear()
 	set_preview_board(result.final_state)
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 		_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
 	if light_refresh:
+		_live_preview.clear_interaction()
+		if _unit_layer != null:
+			_unit_layer.clear_live_forecast()
 		# Undo snap: red action-range tiles must track projected stand immediately.
 		_invalidate_hover_cache()
 		_recompute_hover_ranges_from_inputs()

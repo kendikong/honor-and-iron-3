@@ -106,6 +106,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hook_out_of_range_enemy_hover_invalid,
 		_test_volley_awaiting_hover_damage_and_targeting_arrow,
 		_test_volley_hover_damage_survives_board_changed,
+		_test_undo_clears_stale_hover_damage_forecast,
 		_test_selecting_unit_keeps_movement_points,
 		_test_tile_targeting_forbids_premove,
 		_test_selected_tile_aoe_allows_premove,
@@ -207,6 +208,7 @@ static func run_all(failures: Array[String]) -> void:
 		"hook_out_of_range_null",
 		"volley_hover_damage_arrow",
 		"volley_hover_board_changed",
+		"undo_clears_stale_damage",
 		"selection_is_mp_read_only",
 		"tile_aim_forbids_premove",
 		"selected_tile_aoe_allows_premove",
@@ -3714,6 +3716,53 @@ static func _test_volley_hover_damage_survives_board_changed(failures: Array[Str
 	if overlay.targeting_intent_arrow_cells().size() < 2:
 		failures.append(
 			"PlanningQAGate volley_hover_board_changed: targeting arrow must survive board_changed",
+		)
+
+
+static func _test_undo_clears_stale_hover_damage_forecast(failures: Array[String]) -> void:
+	var archer_pos := Vector2i(4, 5)
+	var enemy_pos := Vector2i(7, 5)
+	var fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var layer: TacticalUnitLayer = _bind_bar_layer(overlay, fix.director, fix.board)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	director.set_awaiting_action(1, fix.volley)
+	if director.has_method("flush_plan_refresh_signals_if_pending"):
+		director.flush_plan_refresh_signals_if_pending()
+	input.on_hover_moved(enemy_pos)
+	var before_undo: CombatPlanningForecast = layer._bar_display_forecast()
+	if before_undo == null or before_undo.damage_hp(fix.enemy.id) <= 0:
+		failures.append(
+			"PlanningQAGate undo_clears_stale_damage: Volley hover must forecast damage before commit",
+		)
+		return
+	var click_slots: Dictionary = _click_slots_at(input, 1, enemy_pos)
+	if _slots_invalid(click_slots):
+		failures.append(
+			"PlanningQAGate undo_clears_stale_damage: Volley commit slots invalid at %s"
+			% str(enemy_pos),
+		)
+		return
+	if not director.commit_from_slots(1, click_slots):
+		failures.append("PlanningQAGate undo_clears_stale_damage: Volley commit rejected")
+		return
+	input.call("_promote_intent_preview_after_commit")
+	PlanningChecklistHarness.flush_planning(fix)
+	if not director.unit_has_undoable_action(1):
+		failures.append("PlanningQAGate undo_clears_stale_damage: committed Volley must be undoable")
+		return
+	director.rpc_remove_last_for_unit(1)
+	if director.has_method("flush_plan_refresh_signals_if_pending"):
+		director.flush_plan_refresh_signals_if_pending()
+	var after_undo: CombatPlanningForecast = layer._bar_display_forecast()
+	if after_undo != null and after_undo.damage_hp(fix.enemy.id) > 0:
+		failures.append(
+			"PlanningQAGate undo_clears_stale_damage: HP bar must not show pre-undo hover damage",
+		)
+	if not overlay._hit_markers.is_empty():
+		failures.append(
+			"PlanningQAGate undo_clears_stale_damage: damage hit markers must clear on undo refresh",
 		)
 
 
