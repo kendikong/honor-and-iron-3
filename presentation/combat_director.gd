@@ -533,6 +533,12 @@ func get_planning_move_timing(unit_id: int) -> int:
 
 
 func unit_action_column_spent_for_movement(unit_id: int) -> bool:
+	## Timeline post-move unlocks only after the class action is fully committed.
+	## Modular skills (Parting Shot retreat, Charge Strike move leg, …) stay
+	## awaiting_target until every NEW_AIM module is locked — never treat preview
+	## sim turn_action_used as spent while that gate is open.
+	if find_awaiting_action(unit_id) != null:
+		return false
 	var planning_board: BoardState = (
 		projected_state
 		if projected_state != null

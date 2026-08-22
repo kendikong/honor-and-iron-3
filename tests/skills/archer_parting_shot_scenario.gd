@@ -65,6 +65,22 @@ static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 	_Checklist.assert_skill_timeline_columns(
 		failures, "%s/timeline/columns" % TAG, fix.director, unit_id, ability, commit_slots,
 	)
+	var awaiting: TimelineAction = fix.director.find_awaiting_action(unit_id)
+	_Checklist.assert_true(
+		failures, "%s/await_retreat" % TAG,
+		awaiting != null and awaiting.awaiting_module_index == 1,
+		"Parting Shot must await retreat module after enemy commit",
+	)
+	_Checklist.assert_true(
+		failures, "%s/no_postmove_during_module" % TAG,
+		fix.director.get_planning_move_timing(unit_id) != GameEnums.MoveTiming.POST_ACTION,
+		"Timeline post-move must stay locked while Parting Shot retreat module is open",
+	)
+	_Checklist.assert_true(
+		failures, "%s/no_postmove_slots_during_module" % TAG,
+		not fix.director.unit_action_column_spent_for_movement(unit_id),
+		"Action column must not read as spent for timeline post-move during open module aim",
+	)
 	if _Timeline.action_movement_needs_pre_or_post_leg(ability):
 		_Lib._restore_movement_mp(fix, 2)
 		_Timeline.commit_run_postmove_headless(failures, fix, ability, postmove_cell, TAG)
