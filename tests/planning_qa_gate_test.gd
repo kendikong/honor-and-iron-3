@@ -108,6 +108,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_volley_hover_damage_survives_board_changed,
 		_test_selecting_unit_keeps_movement_points,
 		_test_tile_targeting_forbids_premove,
+		_test_selected_tile_aoe_allows_premove,
 		_test_bash_hover_keeps_targeting_arrow,
 		_test_waypoint_premove_enemy_hover_full_truth,
 		_test_sidestep_enemy_click_ratifies_move_preview,
@@ -206,6 +207,7 @@ static func run_all(failures: Array[String]) -> void:
 		"volley_hover_board_changed",
 		"selection_is_mp_read_only",
 		"tile_aim_forbids_premove",
+		"selected_tile_aoe_allows_premove",
 		"bash_hover_targeting_arrow",
 		"waypoint_premove_enemy_hover_full_truth",
 		"sidestep_enemy_click_ratifies_move",
@@ -3751,8 +3753,9 @@ static func _test_selecting_unit_keeps_movement_points(failures: Array[String]) 
 
 
 static func _test_tile_targeting_forbids_premove(failures: Array[String]) -> void:
-	## TARGET_PICK TILE aim (Volley) must not paint, preview, or slot a walk.
+	## Once TARGET_PICK is armed, TILE aim must not paint, preview, or slot a walk.
 	## Knight Bash/Hook/Trample fixtures never arm this phase, so they cannot catch it.
+	## Selected-but-unarmed Volley premove is `_test_selected_tile_aoe_allows_premove`.
 	var archer_pos := Vector2i(4, 5)
 	var empty_step := Vector2i(5, 5)
 	var empty_aim := Vector2i(6, 5)
@@ -3829,6 +3832,77 @@ static func _test_tile_targeting_forbids_premove(failures: Array[String]) -> voi
 	if _slots_have_move(enemy_slots):
 		failures.append(
 			"PlanningQAGate tile_aim_forbids_premove: enemy TILE click must not slot a walk",
+		)
+
+
+static func _test_selected_tile_aoe_allows_premove(failures: Array[String]) -> void:
+	## Regression: Volley selected (not awaiting) must still premove on empty walk tiles.
+	## Live Archer QA missed this because it arms on self / walks with skill deselected first.
+	## Prior gate `_test_tile_targeting_forbids_premove` only covered the armed TARGET_PICK state.
+	var archer_pos := Vector2i(4, 5)
+	var empty_step := Vector2i(5, 5)
+	var enemy_pos := Vector2i(8, 5)
+	var fix: Dictionary = _archer_volley_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var archer: UnitState = fix.archer
+	if director.find_awaiting_action(1) != null:
+		failures.append("PlanningQAGate selected_tile_aoe_allows_premove: Volley must start unarmed")
+		return
+	if input._awaiting_target_pick_blocks_premove():
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: unarmed Volley must not block basic walk",
+		)
+		return
+	input.on_hover_moved(empty_step)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if overlay.get_hover_move_tiles().is_empty() or not overlay.is_hover_move_tile(empty_step):
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: blue walk tiles must stay visible with Volley selected (tiles %s)"
+			% str(overlay.get_hover_move_tiles()),
+		)
+	if not input._is_hover_move_cell(archer, empty_step):
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: empty walk tile must count as a move hover",
+		)
+	if input._is_armed_tile_skill_aim_cell(archer, empty_step, fix.volley):
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: unarmed in-range walk tile must not count as TILE aim",
+		)
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null or live.preview_board == null:
+		failures.append("PlanningQAGate selected_tile_aoe_allows_premove: live premove preview missing")
+		return
+	var live_archer: UnitState = live.preview_board.get_unit_by_id(1)
+	if live_archer == null or live_archer.position != empty_step:
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: hover preview must walk to %s, got %s"
+			% [str(empty_step), str(live_archer.position if live_archer != null else Vector2i(-1, -1))],
+		)
+	var hover_slots: Dictionary = _commit_slots_at(input, 1, empty_step)
+	if _slots_invalid(hover_slots) or not _slots_have_move(hover_slots):
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: hover/commit slots must include MOVE, got %s"
+			% str(hover_slots),
+		)
+	var click_slots: Dictionary = _click_slots_at(input, 1, empty_step)
+	if _slots_invalid(click_slots) or not _slots_have_move(click_slots):
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: click slots must include MOVE, got %s"
+			% str(click_slots),
+		)
+	if not director.commit_from_slots(1, click_slots):
+		failures.append("PlanningQAGate selected_tile_aoe_allows_premove: premove commit rejected")
+		return
+	if director.plan_pre_move.size() == 0:
+		failures.append("PlanningQAGate selected_tile_aoe_allows_premove: click did not write a pre-move")
+	var projected: UnitState = director.projected_state.get_unit_by_id(1) if director.projected_state != null else null
+	if projected == null or projected.position != empty_step:
+		failures.append(
+			"PlanningQAGate selected_tile_aoe_allows_premove: projected stand must be %s after premove, got %s"
+			% [str(empty_step), str(projected.position if projected != null else Vector2i(-1, -1))],
 		)
 
 

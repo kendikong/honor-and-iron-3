@@ -793,6 +793,77 @@ func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
 	return -1
 
 
+func test_live_volley_selected_allows_empty_tile_premove(timeout := 240000) -> void:
+	## Player path: select Volley, then click an empty blue tile. Must walk, not steal aim.
+	## `_commit_live_click` arms on self first, so it cannot catch this.
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"archer"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"archer", false)
+	session.set_all_skills_enabled(&"archer", true)
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(8, 5)]
+	session.unkillable_dummies = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	var archer_id: int = _unit_id_at(_director.base_board, _ACTOR_CELL)
+	assert_int(archer_id).override_failure_message(
+		"volley selected premove: Archer missing at %s" % _ACTOR_CELL,
+	).is_greater(0)
+	var archer: UnitState = _director.board.get_unit_by_id(archer_id)
+	var volley: AbilityData = _ability_by_id(archer, &"archer_volley")
+	assert_object(volley).override_failure_message(
+		"volley selected premove: Volley missing",
+	).is_not_null()
+	if volley == null:
+		return
+	var walk_cell := Vector2i(5, 5)
+	_director.select_unit(archer_id)
+	_director.select_ability(_ability_index(archer, volley))
+	await runner.simulate_frames(2, _DELTA_MS)
+	assert_object(_director.find_awaiting_action(archer_id)).override_failure_message(
+		"volley selected premove: selecting Volley must not auto-arm TARGET_PICK",
+	).is_null()
+	_input.set_qa_pointer_grid_cell(walk_cell)
+	_input.on_hover_moved(walk_cell)
+	await runner.simulate_frames(4, _DELTA_MS)
+	assert_bool(_overlay.is_hover_move_tile(walk_cell)).override_failure_message(
+		"volley selected premove: empty walk tile %s must stay blue with Volley selected"
+		% walk_cell,
+	).is_true()
+	assert_bool(_input._is_hover_move_cell(archer, walk_cell)).override_failure_message(
+		"volley selected premove: empty walk tile must count as a move hover",
+	).is_true()
+	await _actual_click_cell(runner, walk_cell)
+	assert_int(_director.plan_pre_move.entries.size()).override_failure_message(
+		"volley selected premove: click empty blue tile must write a pre-move; plan=%s"
+		% _plan_debug(),
+	).is_greater(0)
+	var projected: UnitState = _director.projected_state.get_unit_by_id(archer_id)
+	assert_object(projected).is_not_null()
+	if projected != null:
+		assert_that(projected.position).override_failure_message(
+			"volley selected premove: projected stand must be %s, got %s"
+			% [walk_cell, projected.position],
+		).is_equal(walk_cell)
+
+
 func test_live_archer_stationary_power_shot_then_direct_post_move(timeout := 240000) -> void:
 	var runner := scene_runner("res://scenes/TestBattle.tscn")
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)

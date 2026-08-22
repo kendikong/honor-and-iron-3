@@ -48,6 +48,22 @@ static func assert_live_overlay_parity(
 		var idx := actor.active_abilities.find(ability)
 		if idx >= 0:
 			director.select_ability(idx)
+	## TILE AOE blast parity is an aim check. Unarmed hover on an empty walk tile
+	## is premove (Volley range covers Archer MP), so arm TARGET_PICK first.
+	if (
+		ability != null
+		and director.find_awaiting_action(actor_id) == null
+		and AbilitySystem.planning_commit_flow(actor, ability)
+			== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+		and not AbilitySystem.ability_has_movement_effect(ability, actor)
+		and (
+			AbilitySystem.active_targeting_flags(actor, ability)
+			& GameEnums.TargetingFlags.TILE
+		) != 0
+	):
+		director.set_awaiting_action(actor_id, ability)
+		if director.has_method("flush_plan_refresh_signals_if_pending"):
+			director.flush_plan_refresh_signals_if_pending()
 	await sync_attack_hover(runner, input, overlay, director, target_cell, delta_ms)
 	var plan_board: BoardState = director.board
 	if director.projected_state != null:

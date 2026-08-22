@@ -1739,9 +1739,8 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 			return false
 	if _skill_interaction_active():
 		var selected_ability := _selected_ability_data(p_unit)
-		## TILE aim (Volley, traps): in-range hover is the blast cell, not a walk.
-		## Same rule as `_build_commit_slots_at_cell` / TILE preview — do not treat
-		## AWAITING_TARGET-but-unarmed as a pre-move when the cell is a legal tile target.
+		## Armed TARGET_PICK (Volley, traps): in-range hover is the blast cell, not a walk.
+		## Unarmed TILE skills still premove — range often covers every walk tile.
 		if _is_armed_tile_skill_aim_cell(p_unit, cell, selected_ability):
 			return false
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
@@ -3310,15 +3309,7 @@ func is_skill_aim_hover_at(cell: Vector2i) -> bool:
 
 
 func _is_in_range_tile_skill_aim(actor: UnitState, cell: Vector2i) -> bool:
-	var ability: AbilityData = _selected_ability_data(actor)
-	if ability == null or AbilitySystem.ability_has_movement_effect(ability):
-		return false
-	if (
-		AbilitySystem.active_targeting_flags(actor, ability)
-		& GameEnums.TargetingFlags.TILE
-	) == 0:
-		return false
-	return _in_ability_range_of_coord(actor, cell)
+	return _is_armed_tile_skill_aim_cell(actor, cell, _selected_ability_data(actor))
 
 
 func awaiting_targeting_active() -> bool:
@@ -4183,7 +4174,15 @@ func _drop_allows_move_tile(
 		effective_legal = _planning.get_hover_move_tiles()
 	if _skill_interaction_active():
 		if effective_legal.is_empty():
-			return _planning == null and _can_move_to(actor, cell)
+			## Awaiting TARGET_PICK hides blue tiles on purpose. Unarmed TILE
+			## skills still walk — do not require a populated overlay snapshot.
+			if awaiting_targeting_active() or (
+				_director != null
+				and _director.selected_unit_id >= 0
+				and _director.find_awaiting_action(_director.selected_unit_id) != null
+			):
+				return false
+			return _can_move_to(actor, cell)
 		return effective_legal.has(cell)
 	if not effective_legal.is_empty():
 		return effective_legal.has(cell)
@@ -4777,7 +4776,7 @@ func _build_commit_slots_at_cell(
 				return slots
 		else:
 			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
-			## TILE aim cells are the skill target, not a walk destination.
+			## Armed TILE aim cells are the skill target, not a walk destination.
 			if (
 				not effective_waypoints.is_empty()
 				and not _is_armed_tile_skill_aim_cell(actor, cell, ability)
@@ -4895,31 +4894,40 @@ func _build_commit_slots_at_cell(
 							)
 							return slots
 					else:
-						if target_pick_skill and not has_awaiting_action:
-							slots["action"].append(
-								TimelineAction.make_ability_awaiting(
-									unit_id, ability, cell, effective_waypoints,
+						## Unarmed TILE AOE on a legal empty walk tile is premove, not aim.
+						## Volley range 4 covers Archer MP 4, so in-range-alone cannot steal walk.
+						var empty_tile_is_premove := (
+							not has_awaiting_action
+							and _basic_move_allowed()
+							and _unit_move_slot_open(unit_id, cell)
+							and _drop_allows_move_tile(cell, legal_move_tiles, actor)
+						)
+						if not empty_tile_is_premove:
+							if target_pick_skill and not has_awaiting_action:
+								slots["action"].append(
+									TimelineAction.make_ability_awaiting(
+										unit_id, ability, cell, effective_waypoints,
+									),
+								)
+								return slots
+							var board_nm: BoardState = _proj()
+							if AbilitySystem.has_pass_through_effects(ability):
+								var path_nm: Array[Vector2i] = MovementSystem.find_path(
+									board_nm,
+									actor.position,
+									cell,
+									AbilitySystem.active_range_tiles(actor, ability),
+								)
+								if path_nm.is_empty():
+									slots["invalid"] = "No valid path to target tile."
+									return slots
+							slots[_ability_plan_column(ability)].append(
+								TimelineAction.make_ability(
+									unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
+									effective_waypoints,
 								),
 							)
 							return slots
-						var board_nm: BoardState = _proj()
-						if AbilitySystem.has_pass_through_effects(ability):
-							var path_nm: Array[Vector2i] = MovementSystem.find_path(
-								board_nm,
-								actor.position,
-								cell,
-								AbilitySystem.active_range_tiles(actor, ability),
-							)
-							if path_nm.is_empty():
-								slots["invalid"] = "No valid path to target tile."
-								return slots
-						slots[_ability_plan_column(ability)].append(
-							TimelineAction.make_ability(
-								unit_id, ability, cell, -1, GameEnums.MoveTiming.PRE_ACTION,
-								effective_waypoints,
-							),
-						)
-						return slots
 
 	if (
 		_basic_move_allowed()
@@ -5859,6 +5867,12 @@ func _is_armed_tile_skill_aim_cell(
 	if p_unit == null or ability == null:
 		return false
 	if _director != null and _director.unit_has_committed_class_action(p_unit.id):
+		return false
+	## "Armed" means TARGET_PICK is already awaiting. Selected-but-unarmed TILE
+	## skills (Volley) must still accept basic premove on empty walk tiles.
+	if not awaiting_targeting_active() and (
+		_director == null or _director.find_awaiting_action(p_unit.id) == null
+	):
 		return false
 	if AbilitySystem.ability_has_movement_effect(ability, p_unit):
 		return false
