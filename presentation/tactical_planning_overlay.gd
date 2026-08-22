@@ -12,6 +12,10 @@ extends Node2D
 ##   (`planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles`).
 ##   SINGLE = that one aimed tile. AOE/ARC/LINE = the footprint.
 ##   Empty on walk-only hovers (commit would walk, not fire).
+## Floor tints draw at Z_FLOOR_TINTS (9), below UnitLayer (10). Arrows/ghosts stay on overlay (11).
+
+## Floor tints (blue/red/yellow/hover) render below unit sprites (UnitLayer z=10).
+const Z_FLOOR_TINTS: int = 9
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
 const _COLOR_ACTION_RANGE := Color(0.92, 0.38, 0.32, 0.20)
@@ -176,12 +180,17 @@ func setup(
 	_ensure_hover_tile_layer()
 
 
+func _configure_floor_draw_layer(layer: Node2D) -> void:
+	layer.z_as_relative = false
+	layer.z_index = Z_FLOOR_TINTS
+
+
 func _ensure_static_tiles_layer() -> void:
 	if _static_tiles_layer != null:
 		return
 	_static_tiles_layer = Node2D.new()
 	_static_tiles_layer.name = "StaticTiles"
-	_static_tiles_layer.show_behind_parent = true
+	_configure_floor_draw_layer(_static_tiles_layer)
 	_static_tiles_layer.draw.connect(_draw_static_tile_layers)
 	add_child(_static_tiles_layer)
 
@@ -221,6 +230,7 @@ func _ensure_hover_tile_layer() -> void:
 		return
 	_hover_tile_layer = Node2D.new()
 	_hover_tile_layer.name = "HoverTile"
+	_configure_floor_draw_layer(_hover_tile_layer)
 	_hover_tile_layer.draw.connect(_draw_hover_tile_layer)
 	add_child(_hover_tile_layer)
 
