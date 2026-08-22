@@ -421,23 +421,31 @@ func compile_runtime_modifiers() -> Dictionary:
 
 
 ## True when a typed extra field (below core module aim/range UI) carries a non-default value.
+static var _typed_extra_probe: AbilityModule = null
+static var _typed_extra_authoring_defaults: Dictionary = {}
+
+
+static func _typed_extra_authoring_default(property: String) -> Variant:
+	if _typed_extra_probe == null:
+		_typed_extra_probe = AbilityModule.new()
+	if not _typed_extra_authoring_defaults.has(property):
+		if property in _typed_extra_probe:
+			_typed_extra_authoring_defaults[property] = _typed_extra_probe.get(property)
+		else:
+			_typed_extra_authoring_defaults[property] = null
+	return _typed_extra_authoring_defaults[property]
+
+
 func is_typed_extra_property_set(property: String) -> bool:
 	if property.is_empty() or not property in self:
 		return false
+	if property in ["script", "resource_name", "resource_path", "metadata"]:
+		return false
 	var value: Variant = get(property)
-	match typeof(value):
-		TYPE_BOOL:
-			return bool(value)
-		TYPE_INT:
-			return int(value) != 0
-		TYPE_FLOAT:
-			return not is_zero_approx(float(value))
-		TYPE_STRING:
-			return not String(value).is_empty()
-		TYPE_STRING_NAME:
-			return StringName(value) != StringName()
-		_:
-			return value != null
+	var default_value: Variant = _typed_extra_authoring_default(property)
+	if typeof(value) == TYPE_FLOAT and typeof(default_value) == TYPE_FLOAT:
+		return not is_equal_approx(float(value), float(default_value))
+	return value != default_value
 
 
 func invalidate_runtime_modifiers_cache() -> void:

@@ -3,6 +3,7 @@ extends RefCounted
 
 
 static func run_all(failures: Array[String]) -> void:
+	_assert_default_effect_knob_count(failures)
 	var schema: Script = load("res://ui/class_library_schema.gd") as Script
 	var source := AbilityModule.new()
 	source.strip_stealth = true
@@ -541,6 +542,25 @@ static func run_all(failures: Array[String]) -> void:
 		and copied.barbed_wire
 		and copied.adjacent_defense_bonus == 1,
 	)
+
+
+static func _assert_default_effect_knob_count(failures: Array[String]) -> void:
+	var fresh := AbilityModule.new()
+	if fresh.is_typed_extra_property_set("hazard_status"):
+		failures.append("hazard_status NONE must not count as an active effect knob")
+	if fresh.is_typed_extra_property_set("script"):
+		failures.append("script must not count as an active effect knob")
+	var weapon := WeaponData.new()
+	var knight: UnitData = KnightFactory.build(weapon)
+	for ability: AbilityData in knight.abilities:
+		for module_index: int in ability.modules.size():
+			var module: AbilityModule = ability.modules[module_index]
+			var active: int = ModuleAuthoringRules.typed_extra_active_count(module)
+			if active != 0:
+				failures.append(
+					"%s module %d reports %d active effect knobs at factory defaults"
+					% [String(ability.id), module_index, active]
+				)
 
 
 static func _assert(failures: Array[String], key: String, condition: bool) -> void:

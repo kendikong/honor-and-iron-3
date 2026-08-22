@@ -428,6 +428,10 @@ static func log_uncategorized_effect_types_once() -> Array[GameEnums.EffectType]
 
 static var _typed_extra_module_props: Array[String] = []
 
+const _RESOURCE_BUILTIN_PROPS: Array[String] = [
+	"script", "resource_name", "resource_path", "metadata",
+]
+
 
 static func _ensure_typed_extra_module_props() -> void:
 	if not _typed_extra_module_props.is_empty():
@@ -436,6 +440,8 @@ static func _ensure_typed_extra_module_props() -> void:
 	for info: Dictionary in probe.get_property_list():
 		var name: String = String(info.name)
 		if name.begins_with("_"):
+			continue
+		if name in _RESOURCE_BUILTIN_PROPS:
 			continue
 		if int(info.usage) & PROPERTY_USAGE_STORAGE == 0:
 			continue
