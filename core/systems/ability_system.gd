@@ -2251,11 +2251,95 @@ static func _plan_uses_movement_for_unit(plan: Timeline, unit: UnitState) -> boo
 	return false
 
 
+static func action_uses_extra_steady_aim_range(actor: UnitState, action: TimelineAction) -> bool:
+	if actor == null or action == null:
+		return false
+	if action.type != GameEnums.ActionType.ABILITY:
+		return false
+	if action.actor_id != actor.id:
+		return false
+	var ability: AbilityData = (
+		action.authored_ability if action.authored_ability != null else action.ability
+	)
+	if ability == null:
+		return false
+	if is_run_ability(ability) or is_wait_ability(ability):
+		return false
+	if (
+		not _passive_has_modifier(actor, &"steady_aim")
+		and not _passive_has_modifier(actor, &"steady_aim_range")
+	):
+		return false
+	if actor.movement_points_spent_this_turn != 0:
+		return false
+	var dist: int = GridSystem.manhattan(actor.position, action.target_coord)
+	var base_range: int = actor.get_ability_range(ability, true)
+	return dist > base_range
+
+
+static func stamp_steady_aim_on_action(board: BoardState, action: TimelineAction) -> void:
+	if board == null or action == null or action.type != GameEnums.ActionType.ABILITY:
+		return
+	var actor: UnitState = board.get_unit_by_id(action.actor_id)
+	if actor == null:
+		return
+	var extra_range: bool = action_uses_extra_steady_aim_range(actor, action)
+	action.uses_steady_aim = (
+		extra_range or bool(actor.passive_flags.get("steady_aim_triggered", false))
+	)
+	if action.uses_steady_aim and not extra_range:
+		var ability: AbilityData = (
+			action.authored_ability if action.authored_ability != null else action.ability
+		)
+		if ability == null or (
+			not ability.has_tag(AbilityModuleBridge.TAG_ATTACK)
+			and not DataLibrary.is_basic_ability(ability.id)
+		):
+			action.uses_steady_aim = false
+
+
+static func _commit_slots_marked_invalid(slots: Dictionary) -> bool:
+	if not slots.has("invalid"):
+		return false
+	var marked: Variant = slots["invalid"]
+	if typeof(marked) == TYPE_BOOL:
+		return marked
+	if typeof(marked) == TYPE_STRING:
+		return marked != ""
+	return false
+
+
+static func stamp_steady_aim_on_slots(board: BoardState, slots: Dictionary) -> void:
+	if board == null:
+		return
+	if _commit_slots_marked_invalid(slots):
+		return
+	var has_move: bool = false
+	var actor: UnitState = null
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var step: TimelineAction = raw as TimelineAction
+			if actor == null:
+				actor = board.get_unit_by_id(step.actor_id)
+			if step.type == GameEnums.ActionType.MOVE and (actor == null or step.actor_id == actor.id):
+				has_move = true
+	if has_move or actor == null:
+		return
+	for col: String in ["pre", "action"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			stamp_steady_aim_on_action(board, raw as TimelineAction)
+
+
 static func apply_standing_aim_passives_for_unit(
 	board: BoardState,
 	actor: UnitState,
 	events: Array[SimEvent],
 	plan: Timeline = null,
+	triggering_action: TimelineAction = null,
 ) -> void:
 	if actor == null or actor.passive_flags.get("steady_aim_triggered", false):
 		return
@@ -2277,14 +2361,11 @@ static func apply_standing_aim_passives_for_unit(
 	var requires_steady_aim: bool = false
 	if plan != null:
 		for action: TimelineAction in plan.entries:
-			if action == null or action.actor_id != actor.id:
-				continue
-			if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-				var dist: int = GridSystem.manhattan(actor.position, action.target_coord)
-				var base_range: int = actor.get_ability_range(action.ability, true)
-				if dist > base_range:
-					requires_steady_aim = true
-					break
+			if action_uses_extra_steady_aim_range(actor, action):
+				requires_steady_aim = true
+				break
+	elif triggering_action != null:
+		requires_steady_aim = action_uses_extra_steady_aim_range(actor, triggering_action)
 	if not requires_steady_aim:
 		return
 	var remaining: int = actor.movement.points_left
@@ -2756,14 +2837,11 @@ static func planning_display_ap_left(
 	return ap_left
 
 
-## Canonical available MP during planning — restores MP consumed tentatively by standing-only passives (e.g. Steady Aim).
+## Canonical available MP during planning. Steady Aim spend is real remaining MOV (no restore).
 static func planning_available_movement_points(unit: UnitState) -> int:
 	if unit == null:
 		return 0
-	var points: int = unit.movement.points_left
-	if points <= 0 and unit.passive_flags.get("steady_aim_triggered", false):
-		return unit.movement.max_points
-	return points
+	return unit.movement.points_left
 
 
 ## Canonical planning UI MP — projected economy; live sim only when non-negative.
@@ -3113,7 +3191,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		action.authored_ability if action.authored_ability != null else ability
 	)
 	if not ability_has_movement_effect(authored_ability, actor):
-		apply_standing_aim_passives_for_unit(board, actor, events)
+		apply_standing_aim_passives_for_unit(board, actor, events, null, action)
 
 	if target_coord != actor.position and not will_skill_walk:
 		if not _ability_has_modifier(actor, ability, &"preserve_facing"):
@@ -4067,6 +4145,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						and passive.modifiers.has("upgraded_zero_move_attack_strength")
 					):
 						base_amt += int(passive.modifiers["upgraded_zero_move_attack_strength"])
+				if actor.passive_flags.get("steady_aim_triggered", false):
 					var steady_aim_strength := int(
 						passive.modifiers.get("steady_aim_strength", 0)
 					)

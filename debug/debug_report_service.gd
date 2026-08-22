@@ -257,6 +257,7 @@ static func serialize_timeline(timeline: Timeline) -> Array[Dictionary]:
 			"waypoints": action.waypoints.map(_coord),
 			"irreversible": action.irreversible,
 			"uses_run": action.uses_run,
+			"uses_steady_aim": action.uses_steady_aim,
 			"awaiting_target": action.awaiting_target,
 			"is_free_reaction": action.is_free_reaction,
 		})

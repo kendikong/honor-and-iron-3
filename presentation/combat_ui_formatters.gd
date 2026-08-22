@@ -411,7 +411,7 @@ static func action_symbol_text(
 			return "%s %s %s — Awaiting Input" % [
 				PlanningIcons.awaiting_phase_glyph(action.ability), pending_name, chain,
 			]
-		var symbol: String = PlanningIcons.ability_glyph(action.ability)
+		var symbol: String = PlanningIcons.action_glyph(action)
 		if action.ability != null and AbilitySystem.is_run_ability(action.ability):
 			return "%s Run" % symbol
 		var locked_chain: String = ability_module_aim_chain(board, plan, action, unit)

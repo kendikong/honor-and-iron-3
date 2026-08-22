@@ -118,6 +118,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_range1_painted_route_enemy_hover_respects_waypoints,
 		_test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost,
 		_test_post_move_after_variety_of_skills_contract,
+		_test_steady_aim_auto_run_parity,
 	]
 	var names: PackedStringArray = [
 		"waypoint_paint",
@@ -215,6 +216,7 @@ static func run_all(failures: Array[String]) -> void:
 		"range1_painted_route_enemy_click",
 		"out_of_range_enemy_hover_exhausted",
 		"post_move_after_skills",
+		"steady_aim_auto_run_parity",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] %s" % names[i])
@@ -5023,6 +5025,156 @@ static func _test_post_move_after_variety_of_skills_contract(failures: Array[Str
 	if final_dummy_target == null or final_dummy_target.position != Vector2i(2, 6):
 		failures.append("%s: final simulated target dummy push %s != (2, 6)" % [label, str(final_dummy_target.position if final_dummy_target != null else null)])
 		return
+
+
+static func _archer_snap_shot_fixture(
+	archer_pos: Vector2i,
+	enemy_pos: Vector2i,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var basic: AbilityData = DataLibrary._make_class_basic_attack(&"archer")
+	var archer_def: UnitData = ArcherQaHarness.archer_unit_data()
+	var archer: UnitState = UnitState.create(
+		1, archer_def, GameEnums.Team.PLAYER, archer_pos,
+		{"active_abilities": [basic]},
+	)
+	archer.movement.points_left = archer.movement.max_points
+	archer.ability.points_left = maxi(1, archer.ability.max_points)
+	archer.ability.max_points = maxi(1, archer.ability.max_points)
+	var dummy_def: UnitData = DataLibrary.get_training_dummy()
+	var enemy: UnitState = UnitState.create(2, dummy_def, GameEnums.Team.ENEMY, enemy_pos)
+	var board: BoardState = _plain_board(Vector2i(12, 12), [archer, enemy])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = archer.id
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"archer": archer,
+		"knight": archer,
+		"enemy": enemy,
+		"basic": basic,
+	}
+	return PlanningDragE2EHarness.wire_fixture(fix)
+
+
+static func _test_steady_aim_auto_run_parity(failures: Array[String]) -> void:
+	var far: Dictionary = _archer_snap_shot_fixture(Vector2i(4, 5), Vector2i(7, 5))
+	var far_input: CombatPlanningInput = far.input
+	var far_director: CombatDirector = far.director
+	far_director.select_unit(1)
+	far_director.select_ability(0)
+	far_input.set_qa_pointer_grid_cell(Vector2i(7, 5))
+	far_input.on_hover_moved(Vector2i(7, 5))
+	far_input._flush_hover_heavy_sync()
+	var far_slots: Dictionary = far_input._intent_snapshot_slots.duplicate(true)
+	if not far_input._intent_snapshot_valid or _slots_invalid(far_slots):
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: extra-range hover slots invalid (%s)"
+			% str(far_slots.get("invalid", "")),
+		)
+		return
+	var far_action_steps: Array = far_slots.get("action", []) as Array
+	if far_action_steps.is_empty():
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: extra-range hover missing action slot")
+		return
+	var far_action: TimelineAction = far_action_steps[0] as TimelineAction
+	if far_action == null or not far_action.uses_steady_aim:
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: extra-range hover must stamp uses_steady_aim")
+		return
+	var far_hover_icon: String = far_input.compute_hover_action_icon(Vector2i(7, 5))
+	var far_slot_icon: String = far_input._cursor_icon_from_commit_slots(far_slots, far.archer)
+	if far_hover_icon != far_slot_icon or far_hover_icon.is_empty():
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: hover icon %s != slot icon %s"
+			% [far_hover_icon, far_slot_icon],
+		)
+		return
+	if far_hover_icon.find(PlanningIcons.GLYPH_RANGE) < 0:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: extra-range hover icon %s missing Steady Aim bow"
+			% far_hover_icon,
+		)
+		return
+	if far_input.planning_display_mp_left(1) != 0:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: extra-range hover MP %d expected 0"
+			% far_input.planning_display_mp_left(1),
+		)
+		return
+	var ghost: Dictionary = far_input.timeline_ghost_slots(1)
+	var ghost_actions: Array = ghost.get("action", []) as Array
+	if ghost_actions.is_empty() or not (ghost_actions[0] as TimelineAction).uses_steady_aim:
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: timeline ghost must show Steady Aim")
+		return
+	far_input.on_left_press(far.map_stub.grid_to_local(Vector2i(7, 5)))
+	if far_director.plan_action.entries.size() != 1:
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: extra-range Snap Shot did not commit")
+		return
+	var committed: TimelineAction = far_director.plan_action.entries[0] as TimelineAction
+	if committed == null or not committed.uses_steady_aim:
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: committed slot missing uses_steady_aim")
+		return
+	var proj: UnitState = far_director.projected_state.get_unit_by_id(1)
+	if proj == null or proj.movement.points_left != 0:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: committed projected MP %s expected 0"
+			% str(proj.movement.points_left if proj != null else null),
+		)
+		return
+	if far_input.planning_display_mp_left(1) != 0:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: committed display MP %d expected 0"
+			% far_input.planning_display_mp_left(1),
+		)
+		return
+
+	var near: Dictionary = _archer_snap_shot_fixture(Vector2i(4, 5), Vector2i(6, 5))
+	var near_input: CombatPlanningInput = near.input
+	var near_director: CombatDirector = near.director
+	near_director.select_unit(1)
+	near_director.select_ability(0)
+	near_input.set_qa_pointer_grid_cell(Vector2i(6, 5))
+	near_input.on_hover_moved(Vector2i(6, 5))
+	near_input._flush_hover_heavy_sync()
+	var near_slots: Dictionary = near_input._intent_snapshot_slots.duplicate(true)
+	if not near_input._intent_snapshot_valid or _slots_invalid(near_slots):
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: in-range hover slots invalid (%s)"
+			% str(near_slots.get("invalid", "")),
+		)
+		return
+	var near_action_steps: Array = near_slots.get("action", []) as Array
+	if near_action_steps.is_empty():
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: in-range hover missing action slot")
+		return
+	var near_action: TimelineAction = near_action_steps[0] as TimelineAction
+	if near_action != null and near_action.uses_steady_aim:
+		failures.append("PlanningQAGate steady_aim_auto_run_parity: in-range hover must not stamp uses_steady_aim")
+		return
+	var near_icon: String = near_input.compute_hover_action_icon(Vector2i(6, 5))
+	if near_icon.find(PlanningIcons.GLYPH_RANGE) >= 0:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: in-range hover icon %s must not show Steady Aim bow"
+			% near_icon,
+		)
+		return
+	var near_max_mp: int = (near.archer as UnitState).movement.max_points
+	if near_input.planning_display_mp_left(1) != near_max_mp:
+		failures.append(
+			"PlanningQAGate steady_aim_auto_run_parity: in-range hover MP %d expected %d"
+			% [near_input.planning_display_mp_left(1), near_max_mp],
+		)
 
 
 

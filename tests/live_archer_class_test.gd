@@ -775,8 +775,11 @@ func _ability_by_id(unit: UnitState, skill_id: StringName) -> AbilityData:
 
 
 func _ability_index(unit: UnitState, ability: AbilityData) -> int:
+	if unit == null or ability == null:
+		return -1
 	for index: int in range(unit.active_abilities.size()):
-		if unit.active_abilities[index] == ability:
+		var entry: AbilityData = unit.active_abilities[index]
+		if entry != null and (entry == ability or entry.id == ability.id):
 			return index
 	return -1
 
@@ -788,3 +791,148 @@ func _unit_id_at(board: BoardState, cell: Vector2i) -> int:
 		if unit != null and unit.position == cell:
 			return unit.id
 	return -1
+
+
+func test_live_archer_stationary_power_shot_then_direct_post_move(timeout := 240000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"archer"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"archer", false)
+	session.set_all_skills_enabled(&"archer", true)
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(7, 5)]
+	session.unkillable_dummies = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	var archer_id: int = _unit_id_at(_director.base_board, _ACTOR_CELL)
+	var dummy_id: int = _unit_id_at(_director.base_board, Vector2i(7, 5))
+	assert_int(archer_id).is_greater(0)
+	assert_int(dummy_id).is_greater(0)
+
+	var archer: UnitState = _director.board.get_unit_by_id(archer_id)
+	var power_shot: AbilityData = _ability_by_id(archer, &"archer_power_shot")
+	assert_object(power_shot).is_not_null()
+
+	# 1. Select Power Shot and shoot Dummy at (7, 5) from stand (4, 5) without moving
+	_director.select_unit(archer_id)
+	_director.select_ability(_ability_index(archer, power_shot))
+	await runner.simulate_frames(2, _DELTA_MS)
+	await _actual_click_cell(runner, Vector2i(7, 5))
+
+	assert_int(_director.plan_action.entries.size()).override_failure_message(
+		"Power Shot should be committed in action column",
+	).is_equal(1)
+	assert_int(_director.plan_pre_move.entries.size()).override_failure_message(
+		"Pre-move should be empty for stationary shot",
+	).is_equal(0)
+
+	# 2. Hover over (2, 5) (2 tiles west) and check live preview & MP display
+	_input.set_qa_pointer_grid_cell(Vector2i(2, 5))
+	_input.on_hover_moved(Vector2i(2, 5))
+	await runner.simulate_frames(4, _DELTA_MS)
+	var mp_left_hover: int = _input.planning_display_mp_left(archer_id)
+	assert_int(mp_left_hover).override_failure_message(
+		"Hovering 2 tiles away should deduct 2 MP (4 -> 2)",
+	).is_equal(2)
+
+	# 3. Direct click on empty ground tile (2, 5) for post-move
+	await _actual_click_cell(runner, Vector2i(2, 5))
+
+	assert_int(_director.plan_post_move.entries.size()).override_failure_message(
+		"Direct click on empty tile should commit post-move",
+	).is_equal(1)
+	var post_action: TimelineAction = _director.plan_post_move.entries[0]
+	assert_object(post_action).is_not_null()
+	assert_that(post_action.target_coord).is_equal(Vector2i(2, 5))
+	assert_int(post_action.move_timing).is_equal(GameEnums.MoveTiming.POST_ACTION)
+
+	# 4. Verify projected board state and simulate whole turn
+	await _assert_projection_matches_player_sim(runner, "archer_stationary_powershot_then_post_move")
+	var proj_archer: UnitState = _director.projected_state.get_unit_by_id(archer_id)
+	assert_that(proj_archer.position).is_equal(Vector2i(2, 5))
+	assert_int(proj_archer.movement.points_left).is_equal(2)
+
+
+func test_live_archer_steady_aim_auto_activates_on_extra_range(timeout := 240000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+	_scene = runner.scene() as TestBattleMapView
+	assert_object(_scene).is_not_null()
+	if _scene == null:
+		return
+	var session: TestBattleSession = _scene.get_session()
+	session.reset_defaults()
+	session.player_class_id = &"archer"
+	session.player_level = TestBattleSession.TRAINING_LEVEL
+	session.passive_enabled.clear()
+	session.skill_enabled.clear()
+	session.set_all_passives_enabled(&"archer", false)
+	session.passive_enabled[&"lightfoot"] = true
+	session.set_all_skills_enabled(&"archer", true)
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(7, 5)]
+	session.unkillable_dummies = true
+	_scene.apply_training_board()
+	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
+
+	_director = _scene.get_node("CombatDirector") as CombatDirector
+	var shell := _scene.get_node("CombatShell") as TacticalCombatShell
+	_input = shell.planning_input
+	_overlay = _scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	var archer_id: int = _unit_id_at(_director.base_board, _ACTOR_CELL)
+	assert_int(archer_id).is_greater(0)
+	var archer: UnitState = _director.board.get_unit_by_id(archer_id)
+	var snap: AbilityData = _ability_by_id(archer, &"archer_basic")
+	assert_object(snap).is_not_null()
+	_director.select_unit(archer_id)
+	_director.select_ability(_ability_index(archer, snap))
+	await runner.simulate_frames(2, _DELTA_MS)
+
+	_input.set_qa_pointer_grid_cell(Vector2i(7, 5))
+	_input.on_hover_moved(Vector2i(7, 5))
+	_input._flush_hover_heavy_sync()
+	await runner.simulate_frames(4, _DELTA_MS)
+	var hover_icon: String = _input.compute_hover_action_icon(Vector2i(7, 5))
+	assert_bool(hover_icon.find(PlanningIcons.GLYPH_RANGE) >= 0).override_failure_message(
+		"Steady Aim extra-range hover cursor %s must show bow" % hover_icon,
+	).is_true()
+	var hover_slots: Dictionary = _input._intent_snapshot_slots
+	var slot_icon: String = _input._cursor_icon_from_commit_slots(hover_slots, archer)
+	assert_that(hover_icon).override_failure_message(
+		"Steady Aim hover cursor %s != commit-slot cursor %s" % [hover_icon, slot_icon],
+	).is_equal(slot_icon)
+	assert_int(_input.planning_display_mp_left(archer_id)).override_failure_message(
+		"Steady Aim extra-range hover must spend displayed MOV",
+	).is_equal(0)
+
+	await _actual_click_cell(runner, Vector2i(7, 5))
+	assert_int(_director.plan_action.entries.size()).is_equal(1)
+	var committed: TimelineAction = _director.plan_action.entries[0]
+	assert_bool(committed.uses_steady_aim).override_failure_message(
+		"Committed Snap Shot slot must keep Steady Aim marker",
+	).is_true()
+	var proj: UnitState = _director.projected_state.get_unit_by_id(archer_id)
+	assert_int(proj.movement.points_left).override_failure_message(
+		"Committed Steady Aim must leave 0 MOV",
+	).is_equal(0)
+	assert_bool(bool(proj.passive_flags.get("steady_aim_triggered", false))).is_true()
+	assert_int(_input.planning_display_mp_left(archer_id)).is_equal(0)
+

@@ -220,7 +220,9 @@ func on_left_press(local: Vector2) -> void:
 	var sel_actor := _proj_unit(_director.selected_unit_id)
 	if unit != null and unit.is_enemy():
 		if sel_actor != null and not sel_actor.is_enemy():
-			if not _commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id):
+			if _click_inspects_committed_target(sel_actor.id, unit):
+				_director.select_unit(unit.id)
+			elif not _commit_at_interaction_cell(_director.selected_unit_id, cell, local, unit.id):
 				_director.select_unit(unit.id)
 		else:
 			_director.select_unit(unit.id)
@@ -1181,9 +1183,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 				or _director.unit_has_move_planned_at_timing(p_unit.id, current_timing)
 			)
 			## TARGET_PICK (Volley / TILE aim) is not a walk. Painted corridors would
-			## live-preview and commit a premove while the skill is still aiming.
+			## live-preview and commit a premove while the skill is still aiming —
+			## including before the first click arms awaiting_targeting.
 			var allow_hover_paint: bool = (
 				not _awaiting_target_pick_blocks_premove()
+				and not _is_armed_tile_skill_aim_cell(p_unit, cell, ability)
 				and (
 					is_awaiting_move
 					or dragging
@@ -1735,6 +1739,11 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 			return false
 	if _skill_interaction_active():
 		var selected_ability := _selected_ability_data(p_unit)
+		## TILE aim (Volley, traps): in-range hover is the blast cell, not a walk.
+		## Same rule as `_build_commit_slots_at_cell` / TILE preview — do not treat
+		## AWAITING_TARGET-but-unarmed as a pre-move when the cell is a legal tile target.
+		if _is_armed_tile_skill_aim_cell(p_unit, cell, selected_ability):
+			return false
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
 			return _can_move_to(p_unit, cell)
 		if (
@@ -2064,6 +2073,7 @@ func _commit_interaction_params(
 						and not AbilitySystem.is_movement_skill(ability)
 						and _director.selected_ability_index >= 0
 						and _director.find_awaiting_action(_director.selected_unit_id) == null
+						and not _in_ability_range(actor, target)
 					):
 						if not dragging:
 							_clear_hover_drag_route()
@@ -2097,6 +2107,7 @@ func _commit_interaction_params(
 					and not AbilitySystem.is_movement_skill(ability)
 					and _director.selected_ability_index >= 0
 					and _director.find_awaiting_action(_director.selected_unit_id) == null
+					and not _in_ability_range(actor, target)
 				):
 					var board: BoardState = _proj()
 					var approach: Vector2i = _director.preview_approach_tile(
@@ -3025,6 +3036,19 @@ func _committed_class_action(unit_id: int) -> TimelineAction:
 	return null
 
 
+## Clicking the unit already targeted by a locked class action inspects them
+## instead of re-committing the same shot.
+func _click_inspects_committed_target(actor_id: int, clicked: UnitState) -> bool:
+	if clicked == null:
+		return false
+	var action: TimelineAction = _committed_class_action(actor_id)
+	if action == null or action.awaiting_target:
+		return false
+	if action.target_unit_id == clicked.id:
+		return true
+	return action.target_coord == clicked.position
+
+
 func _ability_index_on_unit(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
 		return -1
@@ -3826,6 +3850,25 @@ func unit_move_requires_run(unit_id: int) -> bool:
 	return false
 
 
+## True when this unit's current planning intent (hover slots or committed plan) spends Steady Aim.
+func unit_intent_uses_steady_aim(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	if (
+		unit_id == _director.selected_unit_id
+		and _intent_snapshot_valid
+		and not _is_invalid_dict(_intent_snapshot_slots)
+	):
+		for col: String in ["pre", "action", "post"]:
+			for raw: Variant in _intent_snapshot_slots.get(col, []):
+				if raw is TimelineAction and (raw as TimelineAction).uses_steady_aim:
+					return true
+	for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
+		if step != null and step.uses_steady_aim:
+			return true
+	return false
+
+
 ## End tile for the current move intent (live path, drag route, or hover).
 func move_intent_destination(unit_id: int) -> Vector2i:
 	if _director == null or unit_id < 0:
@@ -3898,6 +3941,8 @@ func planning_display_mp_left(unit_id: int) -> int:
 		live_actor = preview_state.preview_board.get_unit_by_id(unit_id)
 		if live_actor != null:
 			live_valid = true
+	if unit_intent_uses_steady_aim(unit_id):
+		return 0
 	return AbilitySystem.planning_display_mp_left(committed, live_actor, live_valid)
 
 
@@ -3990,6 +4035,7 @@ func _plan_action_equal(a: TimelineAction, b: TimelineAction) -> bool:
 		return false
 	if (
 		a.uses_run != b.uses_run
+		or a.uses_steady_aim != b.uses_steady_aim
 		or a.awaiting_target != b.awaiting_target
 		or a.awaiting_module_index != b.awaiting_module_index
 		or a.irreversible != b.irreversible
@@ -4731,8 +4777,10 @@ func _build_commit_slots_at_cell(
 				return slots
 		else:
 			## Painted hover/drag route is pre-move intent while the class skill stays armed (K4 detour).
+			## TILE aim cells are the skill target, not a walk destination.
 			if (
 				not effective_waypoints.is_empty()
+				and not _is_armed_tile_skill_aim_cell(actor, cell, ability)
 				and _basic_move_allowed()
 				and _unit_move_slot_open(unit_id, cell)
 				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
@@ -4802,7 +4850,7 @@ func _build_commit_slots_at_cell(
 					)
 					return slots
 				slots[_ability_plan_column(ability)].append(
-					TimelineAction.make_ability(
+					_prepare_and_make_ability(
 						unit_id,
 						ability,
 						hover_unit.position,
@@ -5326,6 +5374,7 @@ func _prepare_and_make_ability(
 ) -> TimelineAction:
 	var act := TimelineAction.make_ability(unit_id, ability, target_coord, target_unit_id, timing, waypoints)
 	AbilitySystem.prepare_planning_action(_proj(), act)
+	AbilitySystem.stamp_steady_aim_on_action(_proj(), act)
 	return act
 
 
@@ -5406,6 +5455,7 @@ func _finalize_commit_slots(
 		return slots
 	for action: TimelineAction in actions:
 		AbilitySystem.prepare_planning_action(_proj(), action)
+	AbilitySystem.stamp_steady_aim_on_slots(_proj(), slots)
 	if not sim_validate:
 		return slots
 	var error_reason: String = _director.validate_commit_slots(unit_id, slots) if _director != null else ""
@@ -5799,6 +5849,25 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		):
 			return true
 	return false
+
+
+func _is_armed_tile_skill_aim_cell(
+	p_unit: UnitState,
+	cell: Vector2i,
+	ability: AbilityData,
+) -> bool:
+	if p_unit == null or ability == null:
+		return false
+	if _director != null and _director.unit_has_committed_class_action(p_unit.id):
+		return false
+	if AbilitySystem.ability_has_movement_effect(ability, p_unit):
+		return false
+	if (
+		AbilitySystem.active_targeting_flags(p_unit, ability)
+		& GameEnums.TargetingFlags.TILE
+	) == 0:
+		return false
+	return _in_ability_range_of_coord(p_unit, cell)
 
 
 func _skill_takes_priority_over_basic_move() -> bool:

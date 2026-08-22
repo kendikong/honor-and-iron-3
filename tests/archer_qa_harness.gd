@@ -390,7 +390,7 @@ static func run_passive_runtime_smoke(failures: Array[String]) -> void:
 		[factory_passive(&"lightfoot"), factory_passive(&"patient_hunter")],
 	)
 	var patient_target := _make_unit(
-		definition, 2, GameEnums.Team.ENEMY, Vector2i(3, 1), [], [],
+		definition, 2, GameEnums.Team.ENEMY, Vector2i(4, 1), [], [],
 	)
 	_add_units(patient_board, [patient, patient_target])
 	var patient_events: Array[SimEvent] = []

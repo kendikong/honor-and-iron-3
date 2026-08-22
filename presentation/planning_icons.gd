@@ -172,7 +172,10 @@ static func action_glyph(action: TimelineAction) -> String:
 				return GLYPH_WAIT
 			if action.awaiting_target and action.ability != null:
 				return awaiting_phase_glyph(action.ability)
-			return ability_glyph(action.ability)
+			var ability_icon: String = ability_glyph(action.ability)
+			if action.uses_steady_aim:
+				return join_glyphs([GLYPH_RANGE, ability_icon])
+			return ability_icon
 	return ""
 
 

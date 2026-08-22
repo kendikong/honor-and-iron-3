@@ -47,6 +47,9 @@ var irreversible: bool = false
 ## MOVE only: apply universal Run boost immediately before this step resolves.
 var uses_run: bool = false
 
+## ABILITY only: this shot auto-spent remaining MOV on Steady Aim (extra range).
+var uses_steady_aim: bool = false
+
 ## ABILITY only: armed for targeting (dash etc.) — shown in plan UI, not simulated until finalized.
 var awaiting_target: bool = false
 
@@ -186,6 +189,7 @@ func clone() -> TimelineAction:
 	copy.waypoints = waypoints.duplicate()
 	copy.irreversible = irreversible
 	copy.uses_run = uses_run
+	copy.uses_steady_aim = uses_steady_aim
 	copy.awaiting_target = awaiting_target
 	copy.is_free_reaction = is_free_reaction
 	return copy

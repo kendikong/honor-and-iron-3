@@ -564,23 +564,28 @@ func _add_stats_cells(row: HBoxContainer, unit: UnitState, col: Color) -> void:
 	var uses_run: bool = (
 		_planning_input != null and _planning_input.unit_move_requires_run(unit.id)
 	)
+	var uses_steady_aim: bool = (
+		_planning_input != null and _planning_input.unit_intent_uses_steady_aim(unit.id)
+	)
 	var mp_left: int = unit.movement.points_left
 	if _planning_input != null:
 		var display_mp: int = _planning_input.planning_display_mp_left(unit.id)
 		if display_mp >= 0:
 			mp_left = display_mp
+	var mov_glyph: String = PlanningIcons.GLYPH_RANGE if uses_steady_aim else PlanningIcons.move_glyph(uses_run)
+	var mov_tip: String = "Movement — remaining / maximum tiles this turn"
+	if uses_steady_aim:
+		mov_tip = "Steady Aim — remaining / maximum tiles this turn"
+	elif uses_run:
+		mov_tip = "Run — remaining / maximum tiles this turn"
 	_add_stat_chip(
 		chips,
 		"%s%d/%d" % [
-			PlanningIcons.move_glyph(uses_run),
+			mov_glyph,
 			mp_left,
 			unit.movement.max_points,
 		],
-		(
-			"Run — remaining / maximum tiles this turn"
-			if uses_run
-			else "Movement — remaining / maximum tiles this turn"
-		),
+		mov_tip,
 		col,
 	)
 	var ap_left: int = unit.ability.points_left

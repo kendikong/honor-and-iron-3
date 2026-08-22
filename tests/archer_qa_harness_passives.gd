@@ -111,6 +111,58 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 			steady_aim.get_ability_range(basic) == 2,
 		)
 
+		var far_board := H.make_plain_board(Vector2i(10, 6))
+		var far_archer := H.place_archer(
+			far_board, 1, Vector2i(1, 2),
+			{"active_abilities": [basic], "active_passives": [passive]},
+		)
+		var far_enemy := _place_enemy(far_board, 2, Vector2i(4, 2))
+		var far_mp: int = far_archer.movement.points_left
+		var far_plan := Timeline.new()
+		far_plan.add(
+			TimelineAction.make_ability(
+				far_archer.id, basic, far_enemy.position, far_enemy.id,
+			)
+		)
+		var far_events: Array[SimEvent] = []
+		Simulator.simulate_player_turn(far_board, far_plan, far_events)
+		H.assert_true(
+			failures, "lightfoot/steady_aim_extra_range_triggers",
+			bool(far_archer.passive_flags.get("steady_aim_triggered", false)),
+			"Snap Shot beyond base range must auto-trigger Steady Aim",
+		)
+		H.assert_true(
+			failures, "lightfoot/steady_aim_spends_mov",
+			far_archer.movement.points_left == 0
+			and far_archer.movement_points_spent_this_turn == far_mp,
+			"Steady Aim must spend remaining MOV",
+		)
+
+		var near_board := H.make_plain_board(Vector2i(10, 6))
+		var near_archer := H.place_archer(
+			near_board, 1, Vector2i(1, 2),
+			{"active_abilities": [basic], "active_passives": [passive]},
+		)
+		var near_enemy := _place_enemy(near_board, 2, Vector2i(3, 2))
+		var near_plan := Timeline.new()
+		near_plan.add(
+			TimelineAction.make_ability(
+				near_archer.id, basic, near_enemy.position, near_enemy.id,
+			)
+		)
+		var near_events: Array[SimEvent] = []
+		Simulator.simulate_player_turn(near_board, near_plan, near_events)
+		H.assert_true(
+			failures, "lightfoot/steady_aim_in_range_idle",
+			not bool(near_archer.passive_flags.get("steady_aim_triggered", false)),
+			"Snap Shot inside base range must not trigger Steady Aim",
+		)
+		H.assert_true(
+			failures, "lightfoot/steady_aim_in_range_keeps_mov",
+			near_archer.movement.points_left == near_archer.movement.max_points,
+			"In-range Snap Shot must not spend MOV on Steady Aim",
+		)
+
 	if _passive_should_run(only_id, &"overwatch"):
 		var board := H.make_plain_board(Vector2i(8, 4))
 		var basic := DataLibrary._make_class_basic_attack(&"archer")
@@ -224,7 +276,7 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 			board, 1, Vector2i(1, 1),
 			{"active_abilities": [basic], "active_passives": [H.factory_passive(&"lightfoot"), H.factory_passive(&"patient_hunter")]},
 		)
-		var patient_target := H.place_dummy(board, 2, Vector2i(3, 1))
+		var patient_target := H.place_dummy(board, 2, Vector2i(4, 1))
 		var events: Array[SimEvent] = []
 		AbilitySystem.execute(
 			board,
@@ -466,8 +518,9 @@ static func _run_passive_blocks(failures: Array[String], only_id: StringName = &
 		)
 		var primary := _place_enemy(board, 2, Vector2i(3, 2))
 		var secondary := _place_enemy(board, 3, Vector2i(4, 2))
-		primary.current_defense = 0
 		primary._recalculate_stats(board)
+		primary.current_defense = 0
+		primary.armor = 0
 		var lethal := CombatSystem.calculate_scaled_damage(
 			archer, 1, GameEnums.StatType.PHYSICAL, board,
 		)

@@ -63,6 +63,8 @@ static func key_from_emoji(emoji: String) -> String:
 			return "swap"
 		PlanningIcons.GLYPH_WAIT:
 			return "wait"
+		PlanningIcons.GLYPH_RANGE:
+			return "range"
 		PlanningIcons.GLYPH_SKILL, PlanningIcons.STAT_MAG:
 			return "skill"
 	return "skill"
