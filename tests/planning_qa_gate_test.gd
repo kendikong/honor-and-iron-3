@@ -110,6 +110,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_tile_targeting_forbids_premove,
 		_test_selected_tile_aoe_allows_premove,
 		_test_shaped_skill_red_range_yellow_blast,
+		_test_single_target_yellow_impact_tile,
 		_test_bash_hover_keeps_targeting_arrow,
 		_test_waypoint_premove_enemy_hover_full_truth,
 		_test_sidestep_enemy_click_ratifies_move_preview,
@@ -210,6 +211,7 @@ static func run_all(failures: Array[String]) -> void:
 		"tile_aim_forbids_premove",
 		"selected_tile_aoe_allows_premove",
 		"shaped_skill_red_range_yellow_blast",
+		"single_target_yellow_impact",
 		"bash_hover_targeting_arrow",
 		"waypoint_premove_enemy_hover_full_truth",
 		"sidestep_enemy_click_ratifies_move",
@@ -3988,6 +3990,80 @@ static func _test_shaped_skill_red_range_yellow_blast(failures: Array[String]) -
 	if overlay.get_hover_action_range_tiles().size() <= overlay.get_hover_blast_tiles().size():
 		failures.append(
 			"PlanningQAGate shaped_red_yellow: red must remain the range bubble, not collapse to yellow",
+		)
+	var live_range: int = AbilitySystem.active_range_tiles(archer, volley)
+	var authored_range: int = 0
+	if not volley.modules.is_empty() and volley.modules[0] is AbilityModule:
+		authored_range = (volley.modules[0] as AbilityModule).max_range
+	if live_range <= authored_range:
+		failures.append(
+			"PlanningQAGate shaped_red_yellow: armed Volley fixture must keep Steady Aim extra range (live %d module %d)"
+			% [live_range, authored_range],
+		)
+	else:
+		var extra_tile := Vector2i(archer_pos.x, archer_pos.y - live_range)
+		if extra_tile.y < 0:
+			extra_tile = Vector2i(archer_pos.x + live_range, archer_pos.y)
+		if not overlay.is_hover_action_range_tile(extra_tile):
+			failures.append(
+				"PlanningQAGate shaped_red_yellow: armed Volley red must include Steady Aim tile %s (range %d vs module %d)"
+				% [extra_tile, live_range, authored_range],
+			)
+
+
+static func _test_single_target_yellow_impact_tile(failures: Array[String]) -> void:
+	## Yellow is skill impact at aim, including SINGLE (the aimed tile).
+	var archer_pos := Vector2i(4, 5)
+	var enemy_pos := Vector2i(6, 5)
+	var fix: Dictionary = _archer_snap_shot_fixture(archer_pos, enemy_pos)
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var archer: UnitState = fix.archer
+	var snap: AbilityData = fix.basic
+	director.select_unit(1)
+	director.select_ability(0)
+	input.set_qa_pointer_grid_cell(enemy_pos)
+	input.on_hover_moved(enemy_pos)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		director, fix.board, 1,
+	)
+	var expected_yellow: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+		fix.board, archer, snap, stand, enemy_pos,
+	)
+	if expected_yellow.size() != 1 or expected_yellow[0] != enemy_pos:
+		failures.append(
+			"PlanningQAGate single_yellow: SINGLE impact must be the aimed tile %s, got %s"
+			% [enemy_pos, expected_yellow],
+		)
+		return
+	if not overlay.is_hover_blast_tile(enemy_pos):
+		failures.append(
+			"PlanningQAGate single_yellow: yellow must mark the aimed tile (got %s)"
+			% str(overlay.get_hover_blast_tiles()),
+		)
+	if overlay.get_hover_blast_tiles().size() != 1:
+		failures.append(
+			"PlanningQAGate single_yellow: SINGLE yellow must be exactly one tile, got %s"
+			% str(overlay.get_hover_blast_tiles()),
+		)
+	if not overlay.is_hover_action_range_tile(enemy_pos):
+		failures.append("PlanningQAGate single_yellow: red range must still include the aimed tile")
+	if overlay.get_hover_action_range_tiles().size() <= 1:
+		failures.append(
+			"PlanningQAGate single_yellow: red must remain the full range bubble, not collapse to yellow",
+		)
+	var empty_step := Vector2i(archer_pos.x, archer_pos.y + 1)
+	input.set_qa_pointer_grid_cell(empty_step)
+	input.on_hover_moved(empty_step)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if overlay.is_hover_blast_tile(empty_step) or not overlay.get_hover_blast_tiles().is_empty():
+		failures.append(
+			"PlanningQAGate single_yellow: walk hover must not paint yellow (got %s)"
+			% str(overlay.get_hover_blast_tiles()),
 		)
 
 

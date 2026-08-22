@@ -2549,11 +2549,13 @@ static func planning_module_range_tiles(
 				origin = actor.position
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return dash_line_threat_tiles(range_board, origin, module.max_range)
+	var max_range: int = active_range_tiles(actor, ability, module_index)
+	var min_range: int = active_min_range_tiles(actor, ability, module_index)
 	for y: int in range(range_board.grid_size.y):
 		for x: int in range(range_board.grid_size.x):
 			var cell := Vector2i(x, y)
 			var distance: int = GridSystem.manhattan(origin, cell)
-			if distance >= module.min_range and distance <= module.max_range:
+			if distance >= min_range and distance <= max_range:
 				out.append(cell)
 	return out
 
@@ -2621,7 +2623,8 @@ static func planning_threat_tiles(
 	return filtered
 
 
-## Blast footprint at hover for shaped skills (ARC/AOE). Empty when hover is not a legal target.
+## Skill impact tiles at hover/aim. SINGLE is the aimed tile; AOE/ARC/LINE is the footprint.
+## Empty when hover is out of range.
 static func planning_blast_tiles_at_target(
 	board: BoardState,
 	unit: UnitState,
@@ -2634,8 +2637,6 @@ static func planning_blast_tiles_at_target(
 		return empty
 	var shape: GameEnums.TargetShape = active_target_shape(unit, ability)
 	var shape_size: int = active_target_shape_size(unit, ability)
-	if shape == GameEnums.TargetShape.SINGLE:
-		return empty
 	var ability_range: int = active_range_tiles(unit, ability)
 	var min_range: int = active_min_range_tiles(unit, ability)
 	if ability_range <= 0:

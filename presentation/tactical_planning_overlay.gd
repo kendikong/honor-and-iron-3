@@ -6,9 +6,11 @@ extends Node2D
 ## Planning tint contract:
 ## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
 ## - RED (_hover_action_range_tiles): selected skill range from latest stand
-##   (`planning_action_range_tiles` / module range). Never replaced by blast.
-## - YELLOW (_hover_blast_tiles): shaped-skill footprint at the aim hover
+##   (`planning_action_range_tiles` / module range via `active_range_tiles`).
+##   Never replaced by impact tiles.
+## - YELLOW (_hover_blast_tiles): skill impact at the current aim
 ##   (`planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles`).
+##   SINGLE = that one aimed tile. AOE/ARC/LINE = the footprint.
 ##   Empty on walk-only hovers (commit would walk, not fire).
 
 const _COLOR_MOVE := Color(0.35, 0.58, 0.92, 0.22)
@@ -444,20 +446,14 @@ func _clear_hover_skill_tiles() -> void:
 
 func _hover_action_range_uses_blast_at_coord(
 	unit: UnitState,
-	p_unit: UnitState,
+	_p_unit: UnitState,
 	selected_ability: int,
 	cache_force: bool,
 ) -> bool:
+	## Yellow impact tiles follow the aim hover for every skill (SINGLE and shaped).
 	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
 		return false
-	if selected_ability < 0:
-		return false
-	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
-	if ability == null or not _board.is_in_bounds(_hover_coord):
-		return false
-	return AbilitySystem.active_target_shape(
-		p_unit if p_unit != null else unit, ability, _awaiting_module_index_for(unit),
-	) != GameEnums.TargetShape.SINGLE
+	return _board != null and _board.is_in_bounds(_hover_coord)
 
 
 func _compute_hover_blast_action_range_tiles(
@@ -475,10 +471,6 @@ func _compute_hover_blast_action_range_tiles(
 		if awaiting != null:
 			ability = awaiting.ability
 	if ability == null or not _board.is_in_bounds(_hover_coord):
-		return []
-	if AbilitySystem.active_target_shape(
-		p_unit if p_unit != null else unit, ability, _awaiting_module_index_for(unit),
-	) == GameEnums.TargetShape.SINGLE:
 		return []
 	var plan_board: BoardState = _board
 	if _director.projected_state != null:
