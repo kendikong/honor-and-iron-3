@@ -2550,6 +2550,8 @@ static func planning_module_range_tiles(
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return dash_line_threat_tiles(range_board, origin, module.max_range)
 	var max_range: int = active_range_tiles(actor, ability, module_index)
+	if max_range <= 0:
+		return _planning_red_range_at_zero_authored_range(actor, ability, origin, module)
 	var min_range: int = active_min_range_tiles(actor, ability, module_index)
 	for y: int in range(range_board.grid_size.y):
 		for x: int in range(range_board.grid_size.x):
@@ -2590,11 +2592,7 @@ static func planning_threat_tiles(
 		return motion_legal_landing_tiles(board, unit, ability)
 	var eff_range: int = active_range_tiles(unit, ability)
 	if eff_range <= 0:
-		var shape: GameEnums.TargetShape = active_target_shape(unit, ability)
-		var shape_size: int = active_target_shape_size(unit, ability)
-		if shape == GameEnums.TargetShape.SINGLE:
-			return _single_coord(origin)
-		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
+		return _planning_red_range_at_zero_authored_range(unit, ability, origin)
 	var sources: Array[Vector2i] = alternate_origins if not alternate_origins.is_empty() else _single_coord(origin)
 	var tiles: Array[Vector2i] = manhattan_threat_tiles(board, sources, eff_range)
 	var motion_module: AbilityModule = active_motion_module(unit, ability)
@@ -2624,7 +2622,8 @@ static func planning_threat_tiles(
 
 
 ## Skill impact tiles at hover/aim. SINGLE is the aimed tile; AOE/ARC/LINE is the footprint.
-## Empty when hover is out of range.
+## Zero authored range: footprint is always centered on `origin` (stand), not hover distance.
+## Empty when hover is out of range for positive-range skills.
 static func planning_blast_tiles_at_target(
 	board: BoardState,
 	unit: UnitState,
@@ -2651,6 +2650,22 @@ static func _single_coord(cell: Vector2i) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	out.append(cell)
 	return out
+
+
+## Red action-range bubbles only. Zero authored range never paints shaped footprints — yellow owns those.
+static func _planning_red_range_at_zero_authored_range(
+	unit: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	module: AbilityModule = null,
+) -> Array[Vector2i]:
+	if module != null:
+		if module.target_shape == GameEnums.TargetShape.SINGLE:
+			return _single_coord(origin)
+		return []
+	if active_target_shape(unit, ability) == GameEnums.TargetShape.SINGLE:
+		return _single_coord(origin)
+	return []
 
 
 static func dash_line_threat_tiles(board: BoardState, origin: Vector2i, steps: int) -> Array[Vector2i]:

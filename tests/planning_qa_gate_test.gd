@@ -111,6 +111,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_tile_targeting_forbids_premove,
 		_test_selected_tile_aoe_allows_premove,
 		_test_shaped_skill_red_range_yellow_blast,
+		_test_zero_range_self_aoe_red_yellow_contract,
 		_test_single_target_yellow_impact_tile,
 		_test_bash_hover_keeps_targeting_arrow,
 		_test_waypoint_premove_enemy_hover_full_truth,
@@ -213,6 +214,7 @@ static func run_all(failures: Array[String]) -> void:
 		"tile_aim_forbids_premove",
 		"selected_tile_aoe_allows_premove",
 		"shaped_skill_red_range_yellow_blast",
+		"zero_range_self_aoe_red_yellow",
 		"single_target_yellow_impact",
 		"bash_hover_targeting_arrow",
 		"waypoint_premove_enemy_hover_full_truth",
@@ -4058,6 +4060,56 @@ static func _test_shaped_skill_red_range_yellow_blast(failures: Array[String]) -
 				"PlanningQAGate shaped_red_yellow: armed Volley red must include Steady Aim tile %s (range %d vs module %d)"
 				% [extra_tile, live_range, authored_range],
 			)
+
+
+static func _test_zero_range_self_aoe_red_yellow_contract(failures: Array[String]) -> void:
+	## RANGE 0 shaped self-AOE (Crimson Whirlwind): red = no Manhattan bubble; yellow = stand footprint.
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	var bruiser_pos := Vector2i(4, 5)
+	var enemy_pos := Vector2i(6, 5)
+	var fix: Dictionary = BruiserFixture.wire_board(
+		bruiser_pos, enemy_pos, Vector2i(-1, -1), &"bruiser_crimson_whirlwind",
+	)
+	var idx: int = Checklist.select_ability(fix, &"bruiser_crimson_whirlwind")
+	if idx < 0:
+		failures.append("PlanningQAGate zero_range_self_aoe: Crimson Whirlwind missing on fixture")
+		return
+	var ability: AbilityData = fix.bruiser.active_abilities[idx]
+	if AbilitySystem.active_range_tiles(fix.bruiser, ability) != 0:
+		failures.append("PlanningQAGate zero_range_self_aoe: fixture must be authored RANGE 0")
+		return
+	var red: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		fix.board, fix.bruiser, ability, bruiser_pos, [],
+	)
+	if not red.is_empty():
+		failures.append(
+			"PlanningQAGate zero_range_self_aoe: red must be empty for RANGE 0 AOE (got %s)"
+			% str(red),
+		)
+	var yellow: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+		fix.board, fix.bruiser, ability, bruiser_pos, bruiser_pos,
+	)
+	if yellow.is_empty():
+		failures.append("PlanningQAGate zero_range_self_aoe: yellow blast at stand must be non-empty")
+		return
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	input.on_hover_moved(bruiser_pos)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if not overlay.get_hover_action_range_tiles().is_empty():
+		failures.append(
+			"PlanningQAGate zero_range_self_aoe: overlay red must be empty (got %s)"
+			% str(overlay.get_hover_action_range_tiles()),
+		)
+	for tile: Vector2i in yellow:
+		if not overlay.is_hover_blast_tile(tile):
+			failures.append(
+				"PlanningQAGate zero_range_self_aoe: overlay yellow missing %s (got %s)"
+				% [tile, overlay.get_hover_blast_tiles()],
+			)
+			break
 
 
 static func _test_single_target_yellow_impact_tile(failures: Array[String]) -> void:

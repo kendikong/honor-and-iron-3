@@ -5,13 +5,10 @@ extends Node2D
 ##
 ## Planning tint contract:
 ## - BLUE (_hover_move_tiles): legal pre-move OR post-move destinations (MP budget only).
-## - RED (_hover_action_range_tiles): selected skill range from latest stand
-##   (`planning_action_range_tiles` / module range via `active_range_tiles`).
-##   Never replaced by impact tiles.
-## - YELLOW (_hover_blast_tiles): skill impact at the current aim
-##   (`planning_blast_tiles_at_target` → `GridSystem.get_affected_tiles`).
-##   SINGLE = that one aimed tile. AOE/ARC/LINE = the footprint.
-##   Empty on walk-only hovers (commit would walk, not fire).
+## - RED (_hover_action_range_tiles): Manhattan aim reach from latest stand only (`planning_action_range_tiles`).
+##   Zero authored range: no red for shaped skills; SINGLE may show stand tile only.
+## - YELLOW (_hover_blast_tiles): skill impact footprint at aim (`planning_blast_tiles_at_target`).
+##   Zero authored range: footprint centered on stand (yellow), never duplicated on red.
 ## Floor tints are MapRoot children at Z_GROUND (0), below CharacterActor depth (min Z_UNDER_TREE = 1).
 ## Arrows/ghosts stay on this overlay node (z=11).
 
@@ -2926,10 +2923,10 @@ func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ab
 	if rng <= 0:
 		if unit.id == _director.selected_unit_id and selected_ability >= 0:
 			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-			if sel_ability != null and AbilitySystem.active_range_tiles(unit, sel_ability) == 0:
-				var self_tile: Array[Vector2i] = []
-				self_tile.append(origin)
-				_hover_action_range_tiles = self_tile
+			if sel_ability != null:
+				_hover_action_range_tiles = AbilitySystem.planning_action_range_tiles(
+					_board, unit, sel_ability, origin, [],
+				)
 		return
 	var threat_sources: Array[Vector2i] = []
 	threat_sources.append(origin)
