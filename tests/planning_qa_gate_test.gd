@@ -4968,5 +4968,61 @@ static func _test_post_move_after_variety_of_skills_contract(failures: Array[Str
 			failures.append("%s: final simulated dummy push %s != (4, 1)" % [label, str(final_dummy.position if final_dummy != null else null)])
 			return
 
+	# 3. Archer Power Shot (Stationary without pre-move) -> Post-move walk (2 tiles) & MP display check
+	var raw_archer_fix: Dictionary = _planning_fixture(Vector2i(2, 2), Vector2i(2, 5))
+	var archer_fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_archer_fix)
+	var archer_input: CombatPlanningInput = archer_fix.input
+	var archer_director: CombatDirector = archer_fix.director
+	var archer_unit: UnitState = archer_fix.knight
+	var power_shot: AbilityData = ArcherQaHarness.factory_ability(&"archer_power_shot")
+	archer_unit.active_abilities = [power_shot]
+	archer_director.board.get_unit_by_id(1).active_abilities = [power_shot]
+	archer_director.base_board.get_unit_by_id(1).active_abilities = [power_shot]
+	archer_director.projected_state.get_unit_by_id(1).active_abilities = [power_shot]
+	
+	# 3a. Select Power Shot and shoot Dummy at (2, 5) without moving
+	archer_director.select_ability(0)
+	archer_input.set_qa_pointer_grid_cell(Vector2i(2, 5))
+	archer_input.on_hover_moved(Vector2i(2, 5))
+	archer_input.on_left_press(archer_fix.map_stub.grid_to_local(Vector2i(2, 5)))
+	if archer_director.plan_action.entries.size() != 1:
+		failures.append("%s: archer power shot commit failed" % label)
+		return
+	if archer_director.plan_pre_move.entries.size() != 0:
+		failures.append("%s: archer should not have pre-move" % label)
+		return
+	
+	# 3b. Verify post-move hover & display MP before commit (hovering 2 tiles away from (2, 2) to (4, 2))
+	archer_input.set_qa_pointer_grid_cell(Vector2i(4, 2))
+	archer_input.on_hover_moved(Vector2i(4, 2))
+	var archer_mp_display: int = archer_input.planning_display_mp_left(1)
+	if archer_mp_display != 1:
+		failures.append("%s: archer hovering 2 tiles away displayed MP %d expected 1" % [label, archer_mp_display])
+		return
+	
+	# 3c. Commit post-move walk to (4, 2)
+	archer_input.on_left_press(archer_fix.map_stub.grid_to_local(Vector2i(4, 2)))
+	if archer_director.plan_post_move.entries.size() != 1:
+		failures.append("%s: archer post-move commit failed" % label)
+		return
+	var archer_post: TimelineAction = archer_director.plan_post_move.entries[0] as TimelineAction
+	if archer_post == null or archer_post.target_coord != Vector2i(4, 2):
+		failures.append("%s: archer post-move destination corrupted" % label)
+		return
+	
+	# 3d. Simulate Archer [Power Shot -> Post-Move Walk]
+	var archer_result: SimResult = _simulate_committed_plan(archer_director)
+	if archer_result == null or archer_result.final_state == null:
+		failures.append("%s: archer sim failed" % label)
+		return
+	var final_archer: UnitState = archer_result.final_state.get_unit_by_id(1)
+	if final_archer == null or final_archer.position != Vector2i(4, 2):
+		failures.append("%s: final simulated archer %s != (4, 2)" % [label, str(final_archer.position if final_archer != null else null)])
+		return
+	var final_dummy_target: UnitState = archer_result.final_state.get_unit_by_id(2)
+	if final_dummy_target == null or final_dummy_target.position != Vector2i(2, 6):
+		failures.append("%s: final simulated target dummy push %s != (2, 6)" % [label, str(final_dummy_target.position if final_dummy_target != null else null)])
+		return
+
 
 

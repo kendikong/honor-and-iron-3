@@ -2993,7 +2993,9 @@ func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if hover_unit != null and hover_unit.is_enemy():
 		return true
-	return _is_committed_action_approach_cell(unit_id, cell)
+	if _director.selected_ability_index >= 0:
+		return _is_committed_action_approach_cell(unit_id, cell)
+	return false
 
 
 func _committed_class_action(unit_id: int) -> TimelineAction:
