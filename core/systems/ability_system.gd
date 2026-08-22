@@ -4581,7 +4581,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			pierce = CombatSystem.apply_attack_passive_modifiers(
 				board, actor, target, pierce
 			)
-			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, {
+			var playback_hit_total: int = int(effect.modifiers.get("hit_count", 1))
+			if playback_hit_total > 1:
+				actor.passive_flags[GameEnums.RUNTIME_PLAYBACK_HIT_STEP] = 0
+			var damage_telemetry: Dictionary = {
 				"type": "damage",
 				"base": base_amt,
 				"wpn": wpn,
@@ -4597,8 +4600,10 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				),
 				"target_def": target_def, "fortitude": fort,
 				"vulnerable": vuln, "electrified": elec,
-				"pierce": pierce
-			}))
+				"pierce": pierce,
+			}
+			CombatSystem.stamp_playback_hit_step(damage_telemetry, actor)
+			events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, damage_telemetry))
 			var target_hp_before := target.health.current_hp if target != null else 0
 			var target_armor_before := target.armor if target != null else 0
 			if effect.modifiers.has("ignore_target_magic_pct"):
@@ -4699,6 +4704,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				_resolve_repeat_hits(
 					board, actor, target, effect, events, action.ability.display_name,
 				)
+			if playback_hit_total > 1:
+				actor.passive_flags.erase(GameEnums.RUNTIME_PLAYBACK_HIT_STEP)
 			if (
 				target != null
 				and target.is_alive()
@@ -6436,7 +6443,8 @@ static func _resolve_repeat_hits(
 	if stat == GameEnums.StatType.NONE:
 		stat = GameEnums.StatType.PHYSICAL
 	var label: String = source_label if source_label != "" else "Repeat Hit"
-	for _hit: int in range(1, hit_count):
+	for hit_i: int in range(1, hit_count):
+		actor.passive_flags[GameEnums.RUNTIME_PLAYBACK_HIT_STEP] = hit_i
 		var raw := CombatSystem.calculate_scaled_damage(
 			actor,
 			effect.amount,

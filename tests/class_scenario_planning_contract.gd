@@ -261,10 +261,28 @@ static func _assert_shaped_footprint(
 		"shaped ability must have blast footprint at hover",
 	)
 	if not blast.is_empty():
-		_Checklist.assert_red_includes_cell(
-			failures, "%s/planning/red_blast_tile" % factory_id,
-			fix, ability, origin, blast[0],
-		)
+		var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
+		if ability_range <= 0:
+			var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+			if overlay != null:
+				_Checklist.assert_true(
+					failures, "%s/planning/red_empty_zero_range" % factory_id,
+					overlay.get_hover_action_range_tiles().is_empty(),
+					"RANGE 0 shaped skill must not paint red tiles (got %s)"
+					% overlay.get_hover_action_range_tiles(),
+				)
+				for tile: Vector2i in blast:
+					_Checklist.assert_true(
+						failures, "%s/planning/yellow_blast_tile" % factory_id,
+						overlay.is_hover_blast_tile(tile),
+						"cell %s must be in yellow blast at stand for zero-range shaped skill"
+						% tile,
+					)
+		else:
+			_Checklist.assert_red_includes_cell(
+				failures, "%s/planning/red_blast_tile" % factory_id,
+				fix, ability, origin, blast[0],
+			)
 
 
 static func _apply_cleric_planning_setup(fix: Dictionary, factory_id: StringName) -> void:

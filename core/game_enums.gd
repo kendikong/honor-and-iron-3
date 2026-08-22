@@ -19,6 +19,7 @@ const RUNTIME_SPELL_AP_REFUNDED: StringName = &"spell_ap_refunded"
 const RUNTIME_WILD_MAGIC_REPEAT: StringName = &"wild_magic_repeat"
 const RUNTIME_WILD_MAGIC_PENDING: StringName = &"wild_magic_pending"
 const RUNTIME_ECHO_REPEAT: StringName = &"echo_repeat"
+const RUNTIME_PLAYBACK_HIT_STEP: StringName = &"playback_hit_step"
 const MAX_AP: int = 3
 const TURN_START_AP_GAIN: int = 1
 

@@ -770,6 +770,24 @@ static func run_frenzy(failures: Array[String]) -> void:
 		H.count_unit_hp_damage_events(result.events, 2),
 		3,
 	)
+	var frenzy_damage_events: Array[SimEvent] = []
+	for event: SimEvent in result.events:
+		if (
+			event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("unit", -1)) == 2
+		):
+			frenzy_damage_events.append(event)
+	for hit_step: int in range(3):
+		var tagged := false
+		for event: SimEvent in frenzy_damage_events:
+			if int(event.data.get("playback_hit_step", -1)) == hit_step:
+				tagged = true
+				break
+		H.assert_true(
+			failures,
+			"frenzy/playback_hit_step_%d" % hit_step,
+			tagged,
+		)
 	var total_dmg: int = H.sum_unit_hp_damage_events(result.events, 2)
 	H.assert_true(failures, "frenzy/damage", total_dmg > 0 and H.unit_hp(result.final_state, 2) < hp)
 	var dmg_math: Dictionary = H.first_damage_math(result.events)

@@ -394,6 +394,7 @@ static func append_damage_telemetry(
 	}
 	for key in extras:
 		data[key] = extras[key]
+	stamp_playback_hit_step(data, attacker)
 	events.append(SimEvent.make(GameEnums.SimEventType.MATH_TELEMETRY, data))
 
 static func append_flat_damage_telemetry(
@@ -452,6 +453,16 @@ static func _collision_source_label(pusher: UnitState) -> String:
 	if pusher != null and pusher.definition != null:
 		return "Collision (%s)" % pusher.definition.display_name
 	return "Collision"
+
+static func stamp_playback_hit_step(data: Dictionary, attacker: UnitState) -> void:
+	if attacker != null and attacker.passive_flags.has(GameEnums.RUNTIME_PLAYBACK_HIT_STEP):
+		data["playback_hit_step"] = int(attacker.passive_flags[GameEnums.RUNTIME_PLAYBACK_HIT_STEP])
+
+
+static func _stamped_unit_damaged_data(data: Dictionary, attacker: UnitState) -> Dictionary:
+	stamp_playback_hit_step(data, attacker)
+	return data
+
 
 static func deal_damage_raw(
 	board: BoardState,
@@ -959,7 +970,7 @@ static func deal_damage(
 			target.active_statuses = new_statuses
 			target._recalculate_stats()
 		
-	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, {
+	events.append(SimEvent.make(GameEnums.SimEventType.UNIT_DAMAGED, _stamped_unit_damaged_data({
 		"unit": target.id,
 		"amount": incoming,
 		"hp": target.health.current_hp,
@@ -968,7 +979,7 @@ static func deal_damage(
 		"armor_damaged": armor_dmg,
 		"damage_type": source_type,
 		"source_label": source_label,
-	}))
+	}, attacker)))
 	EngineerSystems.after_damage(board, target, old_armor, events)
 	_apply_cleric_damage_reactions(board, target, attacker, source_type, events)
 	_apply_generic_damage_passives(board, target, attacker, source_type, events)

@@ -53,6 +53,7 @@ var _pending_spellcast_damage: Dictionary = {}
 var _pending_spellcast_deaths: Dictionary = {}
 var _spellcast_released: bool = false
 var _last_attacker_pos: Dictionary = {}
+var _last_attacker_for_target: Dictionary = {}
 var _suppress_hurt_knockback: bool = false
 var _pending_death: Dictionary = {}
 var _drag_preview_id: int = -1
@@ -864,6 +865,8 @@ func apply_sim_event(event: SimEvent) -> void:
 				+ int(event.data.get("armor_damaged", 0))
 			)
 			if damage_taken > 0:
+				if int(event.data.get("playback_hit_step", 0)) > 0:
+					_play_followup_hit_swing(target_id)
 				if _spellcast_target_ids.has(target_id):
 					_pending_spellcast_damage[target_id] = {
 						"hp_damaged": int(event.data.get("hp_damaged", 0)),
@@ -993,6 +996,7 @@ func _record_attack_source(event: SimEvent) -> void:
 	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
 	if target_id >= 0 and attacker != null:
 		_last_attacker_pos[target_id] = attacker.position
+		_last_attacker_for_target[target_id] = actor_id
 	_suppress_hurt_knockback = _event_ability_has_pull(event)
 
 
@@ -1002,6 +1006,7 @@ func _record_counter_source(event: SimEvent) -> void:
 	var attacker := _board.get_unit_by_id(actor_id) if _board != null else null
 	if target_id >= 0 and attacker != null:
 		_last_attacker_pos[target_id] = attacker.position
+		_last_attacker_for_target[target_id] = actor_id
 	_suppress_hurt_knockback = false
 
 
@@ -1967,6 +1972,22 @@ func _play_attack_anim(event: SimEvent) -> void:
 		)
 		return
 	actor.play_attack_thrust(thrust_dir, anim)
+
+
+func _play_followup_hit_swing(target_id: int) -> void:
+	var attacker_id: int = int(_last_attacker_for_target.get(target_id, -1))
+	if attacker_id < 0:
+		return
+	var actor: CharacterActor = _actors.get(attacker_id)
+	var unit := _board.get_unit_by_id(attacker_id) if _board != null else null
+	var target := _board.get_unit_by_id(target_id) if _board != null else null
+	if actor == null or unit == null or target == null:
+		return
+	var facing: int = _facing_toward(unit.position, target.position)
+	var thrust_dir: Vector2 = _facing_vector(facing)
+	if target.position != unit.position:
+		thrust_dir = Vector2(target.position - unit.position).normalized()
+	actor.play_attack_thrust(thrust_dir, _attack_anim(facing))
 
 
 func _ability_affected_unit_ids_from_event(event: SimEvent, ability: AbilityData) -> Array[int]:

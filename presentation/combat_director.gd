@@ -32,6 +32,7 @@ const MOVE_STEP_TIME: float = 0.24   ## seconds per tile of movement
 const RUN_STEP_TIME: float = 0.14    ## seconds per tile when running (faster than walk)
 const DASH_STEP_TIME: float = 0.08   ## seconds per tile during dash abilities
 const ATTACK_ANIM_TIME: float = 0.35 ## how long attack animations take
+const MULTIHIT_STEP_DELAY: float = 0.28 ## delay between sequential multihit impacts
 const PUSH_ANIM_FALLBACK: float = 1.0 ## Safety timeout if push signal never arrives
 
 var base_board: BoardState
@@ -2195,6 +2196,8 @@ func _step_playback_sort_key(event: SimEvent) -> int:
 func _playback_step_index(event: SimEvent) -> int:
 	if event.data.has("dash_hit_step"):
 		return int(event.data.get("dash_hit_step", -1))
+	if event.data.has("playback_hit_step"):
+		return int(event.data.get("playback_hit_step", -1))
 	if event.data.has("trample_step"):
 		return int(event.data.get("trample_step", -1))
 	return -1
@@ -2410,10 +2413,14 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 			if run_id != _run_id:
 				return
 			attack_i += 1
+			var impact_events: Array = []
 			while attack_i < attack_events.size() \
 					and attack_events[attack_i].type != GameEnums.SimEventType.ABILITY_USED:
-				EventBus.sim_event.emit(attack_events[attack_i])
+				impact_events.append(attack_events[attack_i])
 				attack_i += 1
+			await _emit_ability_impact_events(impact_events, run_id)
+			if run_id != _run_id:
+				return
 			if _event_uses_spellcast_animation(e):
 				await get_tree().create_timer(LpcConstants.spellcast_flash_hold_sec()).timeout
 			else:
@@ -2461,6 +2468,40 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 	for e in meta_events:
 		if run_id != _run_id: return
 		EventBus.sim_event.emit(e)
+
+
+func _impact_events_use_playback_hit_steps(impact_events: Array) -> bool:
+	for event: SimEvent in impact_events:
+		if event.data.has("playback_hit_step"):
+			return true
+	return false
+
+
+func _emit_ability_impact_events(impact_events: Array, run_id: int) -> void:
+	if impact_events.is_empty() or run_id != _run_id:
+		return
+	if not _impact_events_use_playback_hit_steps(impact_events):
+		for event: SimEvent in impact_events:
+			EventBus.sim_event.emit(event)
+		return
+	var by_step: Dictionary = {}
+	for event: SimEvent in impact_events:
+		var step: int = int(event.data.get("playback_hit_step", 0))
+		if not by_step.has(step):
+			by_step[step] = []
+		(by_step[step] as Array).append(event)
+	var steps: Array = by_step.keys()
+	steps.sort()
+	for step_index: int in range(steps.size()):
+		var step: int = int(steps[step_index])
+		for event: SimEvent in by_step[step] as Array:
+			if run_id != _run_id:
+				return
+			EventBus.sim_event.emit(event)
+		if step_index < steps.size() - 1:
+			await get_tree().create_timer(MULTIHIT_STEP_DELAY).timeout
+			if run_id != _run_id:
+				return
 
 
 func _playback_delay_for_event(event: SimEvent) -> float:
