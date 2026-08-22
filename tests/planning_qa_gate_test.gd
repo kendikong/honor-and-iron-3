@@ -5277,6 +5277,49 @@ static func _test_post_move_after_variety_of_skills_contract(failures: Array[Str
 		failures.append("%s: final simulated target dummy push %s != (2, 6)" % [label, str(final_dummy_target.position if final_dummy_target != null else null)])
 		return
 
+	# 4. Training unlimited-actions: skill commit must still route walk to post-move (not live premove)
+	var raw_unlimited: Dictionary = _planning_fixture(Vector2i(2, 2), Vector2i(2, 5))
+	var unlimited_fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_unlimited)
+	var unlimited_input: CombatPlanningInput = unlimited_fix.input
+	var unlimited_director: CombatDirector = unlimited_fix.director
+	var unlimited_archer: UnitState = unlimited_fix.knight
+	var unlimited_power_shot: AbilityData = ArcherQaHarness.factory_ability(&"archer_power_shot")
+	unlimited_archer.active_abilities = [unlimited_power_shot]
+	for b: BoardState in [
+		unlimited_director.board,
+		unlimited_director.base_board,
+		unlimited_director.projected_state,
+	]:
+		if b == null:
+			continue
+		var u: UnitState = b.get_unit_by_id(1)
+		if u != null:
+			u.active_abilities = [unlimited_power_shot]
+			u.passive_flags["training_unlimited_actions"] = true
+	unlimited_director.select_ability(0)
+	unlimited_input.set_qa_pointer_grid_cell(Vector2i(2, 5))
+	unlimited_input.on_hover_moved(Vector2i(2, 5))
+	unlimited_input.on_left_press(unlimited_fix.map_stub.grid_to_local(Vector2i(2, 5)))
+	if unlimited_director.plan_action.entries.size() != 1:
+		failures.append("%s: unlimited training action commit failed" % label)
+		return
+	var stand_before_post: Vector2i = unlimited_director.board.get_unit_by_id(1).position
+	unlimited_input.set_qa_pointer_grid_cell(Vector2i(4, 2))
+	unlimited_input.on_hover_moved(Vector2i(4, 2))
+	unlimited_input.on_left_press(unlimited_fix.map_stub.grid_to_local(Vector2i(4, 2)))
+	if unlimited_director.plan_pre_move.entries.size() != 0:
+		failures.append("%s: unlimited training post-move must not land in pre-move column" % label)
+		return
+	if unlimited_director.plan_post_move.entries.size() != 1:
+		failures.append("%s: unlimited training post-move commit failed" % label)
+		return
+	var live_after: UnitState = unlimited_director.board.get_unit_by_id(1)
+	if live_after != null and live_after.position != stand_before_post:
+		failures.append(
+			"%s: unlimited training post-move must not walk live board (got %s expected %s)"
+			% [label, live_after.position, stand_before_post],
+		)
+
 
 static func _archer_snap_shot_fixture(
 	archer_pos: Vector2i,

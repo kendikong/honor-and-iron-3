@@ -781,12 +781,12 @@ static func execute_move(board: BoardState, action: TimelineAction, events: Arra
 		}))
 		return
 		
-	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and unit.has_used_turn_action():
+	if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and unit.action_column_spent():
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": action.actor_id, "reason": "cannot_move_after_action",
 		}))
 		return
-	if action.move_timing == GameEnums.MoveTiming.POST_ACTION and not unit.has_used_turn_action():
+	if action.move_timing == GameEnums.MoveTiming.POST_ACTION and not unit.action_column_spent():
 		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
 			"actor": action.actor_id, "reason": "cannot_move_before_action",
 		}))

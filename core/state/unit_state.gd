@@ -398,6 +398,12 @@ func has_used_turn_action() -> bool:
 	return turn_action_used and not has_unlimited_training_actions()
 
 
+## Raw action-column spend — used for pre-move vs post-move timing even when training
+## unlimited-actions keeps `has_used_turn_action()` false for multi-skill AP checks.
+func action_column_spent() -> bool:
+	return turn_action_used
+
+
 ## True when this unit may still commit a class skill, basic attack, or Wait (Action column).
 ## Run is PRE_MOVE only — it spends AP but never consumes this slot.
 func can_use_action_slot() -> bool:

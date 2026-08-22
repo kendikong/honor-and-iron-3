@@ -2998,7 +2998,7 @@ func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) ->
 		return false
 	if not (
 		_director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
-		and actor.has_used_turn_action()
+		and _director.unit_action_column_spent_for_movement(unit_id)
 	):
 		return false
 	if _should_replan_premove_approach(unit_id, cell):
@@ -4530,7 +4530,7 @@ func _maybe_append_premove_action_pair(
 		return
 	if _director != null and _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION:
 		return
-	if actor.has_used_turn_action():
+	if _director.unit_action_column_spent_for_movement(unit_id):
 		return
 	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
 		return

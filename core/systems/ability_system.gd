@@ -3160,7 +3160,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	if (
 		not wild_magic_repeat
 		and not shaman_echo_repeat
-		and not actor.has_unlimited_training_actions()
 		and ability.consumes_action_slot_for(ability_is_upgraded(actor, ability))
 		and not _ability_has_modifier(actor, ability, &"does_not_consume_action_slot")
 		and not _caltrop_expert_waives(actor, ability)

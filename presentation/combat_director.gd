@@ -532,6 +532,20 @@ func get_planning_move_timing(unit_id: int) -> int:
 	return _get_move_timing(unit_id)
 
 
+func unit_action_column_spent_for_movement(unit_id: int) -> bool:
+	var planning_board: BoardState = (
+		projected_state
+		if projected_state != null
+		else board if board != null else base_board
+	)
+	if planning_board == null:
+		return unit_has_committed_class_action(unit_id)
+	var p_unit := planning_board.get_unit_by_id(unit_id)
+	if p_unit != null and p_unit.action_column_spent():
+		return true
+	return unit_has_committed_class_action(unit_id)
+
+
 func _get_move_timing(unit_id: int) -> int:
 	if unit_has_wait_planned(unit_id):
 		return -1
@@ -545,7 +559,7 @@ func _get_move_timing(unit_id: int) -> int:
 	var p_unit := planning_board.get_unit_by_id(unit_id)
 	if p_unit == null:
 		return -1
-	if p_unit.has_used_turn_action():
+	if unit_action_column_spent_for_movement(unit_id):
 		return GameEnums.MoveTiming.POST_ACTION if _unit_can_post_move(unit_id, p_unit) else -1
 	return GameEnums.MoveTiming.PRE_ACTION
 
@@ -599,7 +613,7 @@ func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 		return false
 	if _unit_has_post_move_queued(unit_id):
 		return false
-	if not p_unit.has_used_turn_action():
+	if not unit_action_column_spent_for_movement(unit_id):
 		return false
 	if _unit_has_run_move_queued(unit_id):
 		return false
