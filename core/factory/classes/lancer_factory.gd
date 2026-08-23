@@ -500,10 +500,9 @@ static func _self_area_status(
 
 static func _flanking_maneuver() -> AbilityData:
 	var module := _module(
-		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+		GameEnums.EffectType.L_SHAPE_MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	module.l_shape_move = true
 	module.targeting_flags = GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY
 	var strike := DataLibrary._effect(GameEnums.EffectType.DAMAGE, 2)
 	var strike_layer := _layer(strike)
@@ -512,7 +511,7 @@ static func _flanking_maneuver() -> AbilityData:
 	strike_layer.target_after_move_adjacent = true
 	module.layers.append(strike_layer)
 	var upgraded := _clone_modules([module])
-	upgraded[0].l_shape_move = true
+	upgraded[0].primary_type = GameEnums.EffectType.L_SHAPE_MOVE
 	upgraded[0].layers.append(DataLibrary._during_ghost())
 	return _ability(
 		&"lancer_flanking_maneuver", "Wraparound", 1, [module],

@@ -455,13 +455,15 @@ static func execute_skill_walk(
 	)
 	if walk_steps < 0:
 		walk_steps = ability.range_tiles
+	var motion_primary: int = AbilitySystem._motion_primary_type(ability, unit)
+	var l_shape_path: bool = motion_primary == GameEnums.EffectType.L_SHAPE_MOVE
 	var path: Array[Vector2i] = (
 		_l_shape_path(board, unit.position, goal, walk_steps, unit, ability)
-		if _has_modifier(effects, &"l_shape_move")
+		if l_shape_path
 		else resolve_move_path(board, unit, goal, waypoints, walk_steps, ability)
 	)
 	if (
-		_has_modifier(effects, &"l_shape_move")
+		l_shape_path
 		and goal != unit.position
 		and path.is_empty()
 	):

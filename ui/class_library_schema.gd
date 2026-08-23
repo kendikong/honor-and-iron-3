@@ -1174,8 +1174,6 @@ static func module_to_dict(
 	if _ModuleAuthoringRules.module_uses_range(src):
 		out["min_range"] = src.min_range
 		out["max_range"] = src.max_range
-	if _ModuleAuthoringRules.module_uses_los(src):
-		out["requires_los"] = src.requires_los
 	if _ModuleAuthoringRules.module_uses_range_origin(src, module_index):
 		out["range_origin"] = src.range_origin
 	if _ModuleAuthoringRules.module_uses_shape(src):
@@ -1187,8 +1185,6 @@ static func module_to_dict(
 	if GameEnums.effect_type_applies_status(src.primary_type):
 		out["status_type"] = src.status_type
 		out["status_duration"] = src.status_duration
-	if src.l_shape_move:
-		out["l_shape_move"] = true
 	if src.primary_type == GameEnums.EffectType.DAMAGE:
 		if src.bonus_if_adjacent_at_cast != 0:
 			out["bonus_if_adjacent_at_cast"] = src.bonus_if_adjacent_at_cast
@@ -1246,10 +1242,12 @@ static func apply_module_dict(
 	dst.status_duration = int(data.get("status_duration", dst.status_duration))
 	dst.scaling_stat = int(data.get("scaling_stat", dst.scaling_stat))
 	dst.spawn_unit_id = StringName(String(data.get("spawn_unit_id", String(dst.spawn_unit_id))))
-	dst.l_shape_move = bool(data.get("l_shape_move", dst.l_shape_move))
+	var primary_type := int(data.get("primary_type", dst.primary_type))
+	if bool(data.get("l_shape_move", false)) and primary_type == GameEnums.EffectType.MOVE:
+		primary_type = GameEnums.EffectType.L_SHAPE_MOVE
+	dst.primary_type = primary_type
 	dst.min_range = int(data.get("min_range", dst.min_range))
 	dst.max_range = int(data.get("max_range", dst.max_range))
-	dst.requires_los = bool(data.get("requires_los", dst.requires_los))
 	dst.range_origin = int(data.get("range_origin", dst.range_origin))
 	dst.target_shape = int(data.get("target_shape", dst.target_shape))
 	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))

@@ -122,6 +122,10 @@ static func _motion_primary_type(ability: AbilityData, actor: UnitState = null) 
 	return module.primary_type
 
 
+static func ability_uses_l_shape_path(ability: AbilityData, actor: UnitState = null) -> bool:
+	return _motion_primary_type(ability, actor) == GameEnums.EffectType.L_SHAPE_MOVE
+
+
 static func _is_skill_path_walk(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null or ability_has_dash(ability, actor):
 		return false
@@ -987,7 +991,7 @@ static func _can_use_impl(board: BoardState, action: TimelineAction) -> bool:
 		and not motion_landing_legal(board, actor, ability, action.target_coord)
 	):
 		return false
-	var requires_l_shape: bool = _ability_has_modifier(actor, ability, &"l_shape_move")
+	var requires_l_shape: bool = ability_uses_l_shape_path(ability, actor)
 	if requires_l_shape and action.target_coord != actor.position:
 		var l_shape_budget: int = (
 			active_motion_max_range(actor, ability)
@@ -2162,10 +2166,6 @@ static func _ability_has_modifier(
 		actor, ability, GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE
 	):
 		return true
-	if key == &"l_shape_move":
-		for module: AbilityModule in active_modules_for(actor, ability):
-			if module != null and module.l_shape_move:
-				return true
 	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and (
 			effect.modifiers.has(key) or effect.modifiers.has(String(key))

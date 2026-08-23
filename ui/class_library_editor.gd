@@ -1773,17 +1773,9 @@ func _apply_module_field_greying(
 		or module.max_range != 1,
 	)
 	_set_row_visible(
-		rows.get("requires_los", []),
-		ModuleAuthoringRules.module_uses_los(module) or not module.requires_los,
-	)
-	_set_row_visible(
 		rows.get("range_origin", []),
 		ModuleAuthoringRules.module_uses_range_origin(module, module_index)
 		or module.range_origin != GameEnums.RangeOrigin.ACTOR,
-	)
-	_set_row_visible(
-		rows.get("l_shape_move", []),
-		ModuleAuthoringRules.module_uses_l_shape_move(module) or module.l_shape_move,
 	)
 	_set_row_visible(
 		rows.get("hit_count", []),
@@ -1974,10 +1966,6 @@ func _build_module_fields(
 		module.scaling_stat = v
 		changed.call()
 	)
-	grey_rows["l_shape_move"] = _bind_bool(grid, "L-Shape Move", module.l_shape_move, func(v: bool) -> void:
-		module.l_shape_move = v
-		changed.call()
-	)
 	var min_range_setter := func(v: int) -> void:
 		module.min_range = v
 		changed.call()
@@ -1986,10 +1974,6 @@ func _build_module_fields(
 	)
 	grey_rows["max_range"] = _bind_int(grid, "Max Range", module.max_range, func(v: int) -> void:
 		module.max_range = v
-		changed.call()
-	)
-	grey_rows["requires_los"] = _bind_bool(grid, "Requires LOS", module.requires_los, func(v: bool) -> void:
-		module.requires_los = v
 		changed.call()
 	)
 	grey_rows["range_origin"] = _bind_enum(grid, "Range Origin", GameEnums.RangeOrigin, module.range_origin, func(v: int) -> void:

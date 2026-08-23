@@ -10,6 +10,7 @@ static func _is_motion_type(effect_type: GameEnums.EffectType) -> bool:
 	return (
 		GameEnums.is_walk_motion(effect_type)
 		or GameEnums.is_jump_motion(effect_type)
+		or GameEnums.is_l_shape_motion(effect_type)
 		or GameEnums.is_teleport_motion(effect_type)
 		or effect_type == GameEnums.EffectType.DASH
 		or effect_type == GameEnums.EffectType.SWAP
@@ -47,16 +48,6 @@ static func module_uses_range(module: AbilityModule) -> bool:
 	return true
 
 
-static func module_uses_los(module: AbilityModule) -> bool:
-	if module == null or not module_uses_range(module):
-		return false
-	if _is_motion_type(module.primary_type):
-		return false
-	if module_has_only_self_targeting(module):
-		return false
-	return true
-
-
 static func module_uses_range_origin(module: AbilityModule, module_index: int) -> bool:
 	if module == null:
 		return false
@@ -81,15 +72,6 @@ static func module_uses_shape_size(module: AbilityModule) -> bool:
 
 static func module_uses_hit_count(module: AbilityModule) -> bool:
 	return module != null and module.primary_type == GameEnums.EffectType.DAMAGE
-
-
-static func module_uses_l_shape_move(module: AbilityModule) -> bool:
-	if module == null:
-		return false
-	return (
-		module.primary_type == GameEnums.EffectType.MOVE
-		or GameEnums.is_walk_motion(module.primary_type)
-	)
 
 
 static func module_uses_target_filter_hp(module: AbilityModule) -> bool:
@@ -233,11 +215,8 @@ static func normalize_module_context_fields(
 	if not module_uses_range(module):
 		module.min_range = 0
 		module.max_range = 0
-		module.requires_los = false
 		module.range_origin = GameEnums.RangeOrigin.ACTOR
-	elif not module_uses_los(module):
-		module.requires_los = false
-	if module_uses_range(module) and not module_uses_range_origin(module, module_index):
+	elif module_uses_range(module) and not module_uses_range_origin(module, module_index):
 		module.range_origin = GameEnums.RangeOrigin.ACTOR
 	normalize_module_targeting_flags(module)
 	migrate_keywords_to_layers(module)
@@ -515,6 +494,7 @@ static func effect_primary_families() -> Array[Dictionary]:
 			"label": "Movement (Self)",
 			"types": [
 				GameEnums.EffectType.MOVE,
+				GameEnums.EffectType.L_SHAPE_MOVE,
 				GameEnums.EffectType.MOVE_ADJACENT_TO,
 				GameEnums.EffectType.MOVE_TO_BEHIND,
 				GameEnums.EffectType.MOVE_TOWARD,
@@ -649,8 +629,8 @@ static func _ensure_typed_extra_module_props() -> void:
 			continue
 		if name in [
 			"execution_phase", "primary_type", "amount", "status_type", "status_duration",
-			"scaling_stat", "spawn_unit_id", "l_shape_move", "min_range", "max_range",
-			"requires_los", "range_origin", "target_shape", "target_shape_size",
+			"scaling_stat", "spawn_unit_id", "min_range", "max_range",
+			"range_origin", "target_shape", "target_shape_size",
 			"aim_binding", "aim_module_index", "targeting_flags", "keywords", "layers",
 			"gate", "target_filter", "target_filter_hp", "target_filter_hp_pct",
 			"target_filter_status_mode", "target_filter_status", "target_filter_status_or",

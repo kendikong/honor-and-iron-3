@@ -91,6 +91,7 @@ enum EffectType {
 	TRAMPLE, ## Pass-through move: ATK X on enemies moved through; no displacement; end on open tile.
 	BULLDOZE, ## Pass-through move: collision base X + PUSH X sideways; axial push when landing on target.
 	MOVE, ## Skill-driven non-instant movement. Walk physics; respects collision unless combined with TRAMPLE/BULLDOZE.
+	L_SHAPE_MOVE, ## Walk along an orthogonal L-shaped path (two legs, one turn).
 	PUSH_STAGGER_ON_COLLISION, ## Modifier: PUSH applies STAGGER if the target collides.
 	PULL_VULNERABLE_ON_ADJACENT, ## Modifier: PULL applies VULNERABLE if the target lands adjacent to caster.
 	PUSH_CHAIN_COLLISION, ## Modifier: PUSH causes chain collisions (Bowling Charge).
@@ -215,8 +216,12 @@ static func is_teleport_motion(effect_type: EffectType) -> bool:
 	]
 
 
+static func is_l_shape_motion(effect_type: EffectType) -> bool:
+	return effect_type == EffectType.L_SHAPE_MOVE
+
+
 static func is_path_motion(effect_type: EffectType) -> bool:
-	return is_walk_motion(effect_type) or is_jump_motion(effect_type)
+	return is_walk_motion(effect_type) or is_jump_motion(effect_type) or is_l_shape_motion(effect_type)
 
 
 static func is_adjacent_destination(effect_type: EffectType) -> bool:

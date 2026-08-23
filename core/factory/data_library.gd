@@ -804,7 +804,6 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.barbed_wire = from_module.barbed_wire
 	to_module.entry_root = from_module.entry_root
 	to_module.adjacent_defense_bonus = from_module.adjacent_defense_bonus
-	to_module.l_shape_move = from_module.l_shape_move
 	for keyword: AbilityKeyword in from_module.keywords:
 		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
 			_ensure_module_during_ghost(to_module)

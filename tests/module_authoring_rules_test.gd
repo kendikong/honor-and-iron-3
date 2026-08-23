@@ -14,7 +14,8 @@ static func _test_pre_move_forces_on_action_phase(failures: Array[String]) -> vo
 
 
 static func run_all(failures: Array[String]) -> void:
-	_test_move_clears_scaling_and_los(failures)
+	_test_move_clears_scaling(failures)
+	_test_l_shape_move_is_path_motion(failures)
 	_test_pre_move_excludes_phase_options(failures)
 	_test_pre_move_forces_on_action_phase(failures)
 	_test_self_status_clears_range(failures)
@@ -85,16 +86,18 @@ static func _test_violent_collision_recast_visibility(failures: Array[String]) -
 		failures.append("non-zero violent_collision_recast must stay visible on any module")
 
 
-static func _test_move_clears_scaling_and_los(failures: Array[String]) -> void:
+static func _test_move_clears_scaling(failures: Array[String]) -> void:
 	var module := AbilityModule.new()
 	module.primary_type = GameEnums.EffectType.MOVE
 	module.scaling_stat = GameEnums.StatType.PHYSICAL
-	module.requires_los = true
 	AbilityModuleBridge.normalize_module_authoring_fields(module)
 	if module.scaling_stat != GameEnums.StatType.NONE:
 		failures.append("MOVE should clear scaling_stat")
-	if module.requires_los:
-		failures.append("MOVE should clear requires_los")
+
+
+static func _test_l_shape_move_is_path_motion(failures: Array[String]) -> void:
+	if not GameEnums.is_path_motion(GameEnums.EffectType.L_SHAPE_MOVE):
+		failures.append("L_SHAPE_MOVE should count as path motion")
 
 
 static func _test_pre_move_excludes_phase_options(failures: Array[String]) -> void:

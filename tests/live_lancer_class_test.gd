@@ -125,7 +125,7 @@ const _CASES: Array[Dictionary] = [
 		"flags": GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,
 		"shape": GameEnums.TargetShape.SINGLE,
 		"shape_size": 1,
-		"primary_type": GameEnums.EffectType.MOVE,
+		"primary_type": GameEnums.EffectType.L_SHAPE_MOVE,
 		"primary_amount": 2,
 		"observation": &"movement_damage",
 		"target_kind": &"enemy",

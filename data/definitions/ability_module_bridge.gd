@@ -512,6 +512,7 @@ static func is_motion_type(t: GameEnums.EffectType) -> bool:
 	return (
 		GameEnums.is_walk_motion(t)
 		or GameEnums.is_jump_motion(t)
+		or GameEnums.is_l_shape_motion(t)
 		or GameEnums.is_teleport_motion(t)
 		or t == GameEnums.EffectType.DASH
 		or t == GameEnums.EffectType.SWAP

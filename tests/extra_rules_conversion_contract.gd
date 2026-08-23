@@ -278,7 +278,7 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"stagger_if_debuffed":
 			return module.stagger_if_debuffed
 		"push":
-			return module.push != 0
+			return module.push != 0 or layer.during_bulldoze_push != 0
 		"grant_ap":
 			return module.grant_ap != 0 or layer.grant_ap != 0
 		"grant_scrap":
@@ -459,7 +459,7 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"target_after_move_adjacent":
 			return layer.target_after_move_adjacent
 		"l_shape_move":
-			return module.l_shape_move
+			return module.primary_type == GameEnums.EffectType.L_SHAPE_MOVE
 		"create_trampled_terrain":
 			return module.create_trampled_terrain
 		"limit_once_per_turn":

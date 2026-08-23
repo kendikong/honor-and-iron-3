@@ -66,7 +66,7 @@ static func run_data_contract(failures: Array[String]) -> void:
 		&"lancer_vaulting_leap": [GameEnums.EffectType.DAMAGE, 2],
 		&"lancer_run_down": [GameEnums.EffectType.DAMAGE, 3],
 		&"lancer_rallying_cry": [GameEnums.EffectType.ADD_STATUS, 1],
-		&"lancer_flanking_maneuver": [GameEnums.EffectType.MOVE, 2],
+		&"lancer_flanking_maneuver": [GameEnums.EffectType.L_SHAPE_MOVE, 2],
 		&"lancer_brace": [GameEnums.EffectType.ADD_STATUS_SELF, 2],
 		&"lancer_harpoon_toss": [GameEnums.EffectType.DAMAGE, 1],
 		&"lancer_glorious_charge": [GameEnums.EffectType.DASH, 4],

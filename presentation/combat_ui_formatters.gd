@@ -824,6 +824,8 @@ static func _module_line_includes_range_prefix(module: AbilityModule) -> bool:
 		return false
 	if module.primary_type == GameEnums.EffectType.MOVE:
 		return false
+	if module.primary_type == GameEnums.EffectType.L_SHAPE_MOVE:
+		return false
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return false
 	return module.max_range > 0 or module.min_range > 0
@@ -875,6 +877,11 @@ static func _module_effect_bbcode_part(effect: EffectData) -> String:
 			return _kw_hint("SWAP", _glossary_def("SWAP"))
 		GameEnums.EffectType.MOVE:
 			return _kw_hint("MOVE %s" % _effect_amount_string(effect), _glossary_def("MOVE"))
+		GameEnums.EffectType.L_SHAPE_MOVE:
+			return _kw_hint(
+				"L-SHAPE MOVE %s" % _effect_amount_string(effect),
+				"Move along an orthogonal L-shaped path.",
+			)
 		GameEnums.EffectType.DASH:
 			return _kw_hint("DASH %s" % _effect_amount_string(effect), _glossary_def("DASH"))
 		GameEnums.EffectType.TRAMPLE:
@@ -1448,6 +1455,8 @@ static func ability_effect_string(ability: AbilityData, unit: UnitState = null) 
 				_append_status_effect_part(parts, effect, true, false)
 			GameEnums.EffectType.MOVE:
 				parts.append("MOVE %s" % _effect_amount_string(effect))
+			GameEnums.EffectType.L_SHAPE_MOVE:
+				parts.append("L-SHAPE MOVE %s" % _effect_amount_string(effect))
 			GameEnums.EffectType.JUMP, \
 			GameEnums.EffectType.MOVE_ADJACENT_TO, \
 			GameEnums.EffectType.JUMP_ADJACENT_TO, \
@@ -1520,6 +1529,11 @@ static func ability_effect_bbcode(ability: AbilityData, unit: UnitState = null) 
 				parts.append(_kw_hint("SWAP", _glossary_def("SWAP")))
 			GameEnums.EffectType.MOVE:
 				parts.append(_kw_hint("MOVE %s" % _effect_amount_string(effect), "Move up to the listed distance."))
+			GameEnums.EffectType.L_SHAPE_MOVE:
+				parts.append(_kw_hint(
+					"L-SHAPE MOVE %s" % _effect_amount_string(effect),
+					"Move along an orthogonal L-shaped path.",
+				))
 			GameEnums.EffectType.JUMP, \
 			GameEnums.EffectType.MOVE_ADJACENT_TO, \
 			GameEnums.EffectType.JUMP_ADJACENT_TO, \

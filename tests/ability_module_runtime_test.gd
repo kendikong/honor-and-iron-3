@@ -233,7 +233,10 @@ static func _test_shared_module_parity(failures: Array[String]) -> void:
 		module.max_range = 4
 		module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 		module.presentation_anim = GameEnums.PresentationAnim.SPELL
+		module.primary_type = GameEnums.EffectType.MOVE
 		module.ingest_runtime_key("l_shape_move", true)
+		if module.primary_type != GameEnums.EffectType.L_SHAPE_MOVE:
+			failures.append("l_shape_move runtime key should promote MOVE to L_SHAPE_MOVE")
 		ability.modules = [module]
 	var left_actor: UnitState = _unit(41, GameEnums.Team.PLAYER, Vector2i(1, 1), 20)
 	var right_actor: UnitState = _unit(42, GameEnums.Team.ENEMY, Vector2i(5, 1), 20)
@@ -648,7 +651,6 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		layer,
 	]
 	module.set_condition_hp_below_pct(50)
-	module.l_shape_move = true
 	authored.modules = [module]
 	var upgraded_module: AbilityModule = module.duplicate(true) as AbilityModule
 	upgraded_module.amount = 5
@@ -686,7 +688,6 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored_module.target_filter_hp != GameEnums.ModuleTargetFilterHp.BELOW_PCT
 		or restored_module.target_filter_hp_pct != 50
 		or not is_equal_approx(restored_module.bonus_dmg_pct_max_hp, 0.1)
-		or not restored_module.l_shape_move
 		or restored.upgraded_modules.size() != 1
 		or restored.upgraded_modules[0].amount != upgraded_module.amount
 		or restored.upgraded_primary_value != authored.upgraded_primary_value

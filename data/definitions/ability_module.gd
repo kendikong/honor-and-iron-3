@@ -16,12 +16,8 @@ extends Resource
 @export var scaling_stat: GameEnums.StatType = GameEnums.StatType.NONE
 @export var spawn_unit_id: StringName = &""
 
-## L-shaped movement path for the Flanking Maneuver family.
-@export var l_shape_move: bool = false
-
 @export var min_range: int = 0
 @export var max_range: int = 1
-@export var requires_los: bool = true
 @export var range_origin: GameEnums.RangeOrigin = GameEnums.RangeOrigin.ACTOR
 
 @export var target_shape: GameEnums.TargetShape = GameEnums.TargetShape.SINGLE
@@ -1027,8 +1023,6 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["entry_root"] = true
 	if adjacent_defense_bonus != 0:
 		bag["adjacent_defense_bonus"] = adjacent_defense_bonus
-	if l_shape_move:
-		bag["l_shape_move"] = true
 	for layer: AbilityLayer in layers:
 		if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
 			continue
@@ -1920,7 +1914,8 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			adjacent_defense_bonus = int(value)
 			return
 		"l_shape_move":
-			l_shape_move = bool(value)
+			if bool(value) and GameEnums.is_walk_motion(primary_type):
+				primary_type = GameEnums.EffectType.L_SHAPE_MOVE
 			return
 		"ghost_move":
 			_ensure_during_ghost()

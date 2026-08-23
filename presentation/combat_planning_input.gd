@@ -2252,7 +2252,7 @@ func _final_commit_slots_for_interaction(
 		var ability := _selected_ability_data(actor)
 		if (
 			ability != null
-			and AbilitySystem.ability_has_modifier(ability, &"l_shape_move", actor)
+			and AbilitySystem.ability_uses_l_shape_path(ability, actor)
 		):
 			return slots
 		var preferred: Vector2i = preferred_approach
