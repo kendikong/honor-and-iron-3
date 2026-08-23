@@ -12,28 +12,41 @@
 
 Extra Rules was a leftover-bag rename. That pass is **rejected**. Chat tables are not a substitute. Agents must execute the on-disk matrix.
 
+**Effect Knobs / typed extras are not a home (ABSOLUTE).** Moving a leftover into `AbilityModule` `@export` fields (Class Library “Effect Knobs”, “Typed Skill Fields”, or any similar UI bucket) is **the same cheat** as the Extra Rules bag — just a different drawer. **Forbidden:** new dump containers, renamed bags, editor-only hiding, or “we’ll wire it later” fields. Every leftover must land in a **real module primary**, **layer + condition**, **keyword**, **gate**, or **header** field that combat already reads — per the binding matrix **Solution** column. If the matrix says **layer**, you author a layer; you do **not** add a knob.
+
 ---
 
 ## What to do
 
 Convert every Extra Rule into the skill-module bible: header, module primary (including MOVE / JUMP / TELEPORT landing verbs), keyword, layer + condition, gate, targeting / Condition, or a **new EffectType / StatusType / LayerCondition**. Then **delete** that skill’s Extra Rules **and leftover `modifiers` keys** in the same change.
 
-**Cheat (forbidden):** empty Extra Rules while combat still runs the old leftover key. That is how the last pass failed.
+**Cheat (forbidden — instant FAIL):**
 
-Combat must read header / module / keyword / layer / gate / targeting / typed fields — not Extra Rules and not `effect.modifiers["harvested_key"]`.
+| Cheat | Why it fails |
+|-------|----------------|
+| Empty Extra Rules while combat still reads `effect.modifiers["harvested_key"]` | First failed pass |
+| Stuff leftovers into **Effect Knobs** / typed `@export` on `AbilityModule` | Second failed pass — **not conversion** |
+| New `@export` or UI bucket instead of module/layer/keyword | Third form of the same dump |
+| Matrix says **Existing layer** but you add a typed field | Bypasses the shape bar |
+| Mark IMPLEMENTATION_PLAN ☑ or add to `CONVERTED_SKILL_IDS` while shape gate fails for that skill | False completion |
+
+Combat must read **module primary / layer / keyword / gate / targeting / header** — not Extra Rules, not `effect.modifiers` harvest keys, and **not** bespoke typed-extra knobs unless the matrix explicitly says **New field** (ER-1 allowlist only).
 
 **Legacy cleanup:** `GameEnums.MotionMode`, the Class Editor dropdown, factory stamps, and combat reads of `module.motion_mode` are removed in ER-3. Landing is authored as a destination `EffectType` (`MOVE`, `JUMP`, `TELEPORT`, `JUMP_TO_BEHIND`, `MOVE_TOWARD`, `MOVE_INTO_AND_PUSH`, …).
 
 ### Done for one skill (all required)
 
 1. Changelog quotes the **skill bible** line + upgrade from `class_abilities.txt`.
-2. Names **family** + **home** (header / type / keyword / layer / gate / targeting / field).
+2. Names **family** + **home** (header / module primary / keyword / **layer + condition** / gate / targeting) — **not** Effect Knobs.
 3. That skill’s `extras` empty (base and upgrade). No `_add_extra` on that factory skill.
 4. No leftover Extra Rule keys on that skill’s `effect.modifiers`.
-5. `CONVERTED_SKILL_IDS` in `tests/extra_rules_conversion_contract.gd` includes that id.
-6. Class gate + live **PASS**.
+5. Factory is **Swap-shaped** (`knight_swap` gold standard): riders on **layers** or extra **modules**, not typed-extra dumps.
+6. `run_layer_shape_conversion_gate.gd` — **no failures** for this skill id (use `--audit` to list debt; enforce mode must clear this skill before ☑).
+7. `CONVERTED_SKILL_IDS` includes that id only after (5) and (6).
+8. Class gate + live **PASS**.
 
-No bible quote in the changelog → the conversion did not happen.
+No bible quote in the changelog → the conversion did not happen.  
+Effect Knobs still set on that skill → the conversion did not happen.
 
 ---
 
@@ -42,7 +55,7 @@ No bible quote in the changelog → the conversion did not happen.
 | Phase | Work | Exit |
 |-------|------|------|
 | **ER-1** | Shared punches: use existing `GRANT_AP` / `GRANT_SCRAP` / `PAIRED_MOVE` (**Pre-Move only** — not Glorious Charge on Action); finish CREATE_HAZARD / SPAWN knobs; header once-per-turn / spend-all-MP; add missing types only when the matrix says **new** | Types exist; Extra Rules not used for those punches |
-| **ER-2** | Convert class by class (Knight → … → Shaman). Rework any unsafe Action ally relocate into a legal Pre-Move ally swap or enemy-focused Action module, then convert it. One skill: bible quote → Solution → extras **and** leftover keys gone → add id to `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every active matrix row converted and gated |
+| **ER-2** | Convert class by class (Knight → … → Shaman). One skill: bible quote → binding matrix **Solution** → **real module/layer/keyword** (never Effect Knobs dump) → extras **and** leftover keys gone → shape gate clear → `CONVERTED_SKILL_IDS` → class gate + live **PASS** | Every matrix row **shape-complete** (gate green per skill) |
 | **ER-3** | **DELETE** Extra Rules (`AbilityExtraRule`, Extra Rules UI) **and Motion Mode** (`GameEnums.MotionMode`, editor dropdown, factory `motion_mode`, combat `module.motion_mode` reads) | Grep `_add_extra` / Extra Rules / `MotionMode` / `motion_mode` on class skills = 0 |
 
 ER-2 is authorized from Knight in the current owner directive; continue in the listed class order.
@@ -51,7 +64,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ## Rollout checklist — update this section, not memory
 
-**Status rule:** `[x]` means the implementation, conversion contract, and required QA evidence are complete. `[ ]` means the row is still open. A factory that merely loads is not a converted row.
+**Status rule:** `☑` in the matrix below means **ownership pass only** (extras empty, modifiers owned) — **not** “real modules/layers done.” A row is **truly complete** only when the shape gate passes for that skill and factory data matches the binding matrix **Solution** (no Effect Knobs for layer-mandate leftovers). `[ ]` means the row is still open.
 
 ### ER-1 — shared typed homes
 
@@ -67,11 +80,11 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 ### ER-2 — class-by-class conversion
 
-> **Shape gate (2026-08-22):** `docs/design/LAYER_SHAPE_CONVERSION_GATE.md` — ER-2 ☑ rows below are **frozen** until `run_layer_shape_conversion_gate.gd` passes per skill. Modifier-ownership PASS (`extra_rules_conversion_contract`) is **not** layer conversion.
+> **Shape gate (2026-08-22):** `docs/design/LAYER_SHAPE_CONVERSION_GATE.md` — ER-2 ☑ rows below are **frozen** until `run_layer_shape_conversion_gate.gd` passes per skill. **Effect Knobs / typed-extra dumps do not count as conversion.** Modifier-ownership PASS (`extra_rules_conversion_contract`) is **not** layer conversion.
 
-### ER-2 — authoritative skill quality matrix
+### ER-2 — skill quality matrix (ownership pass — not shape-complete)
 
-| Class | Skill | Real modules/layers | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
+| Class | Skill | Ownership pass | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
 |---|---|:---:|:---:|:---:|:---:|---|
 | Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
 | Bruiser | Push Through | ☑ | ☑ | ☑ | ☑ | Typed `buff_on_push`; Tier-1/live gates pass; independent audit pass |

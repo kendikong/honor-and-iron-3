@@ -11,6 +11,8 @@
 
 `extra_rules_conversion_contract.gd` proved **modifier ownership**, not **authoring shape**. Agents moved the legacy bag onto `AbilityModule` typed extras (Effect Knobs) and marked skills converted.
 
+**That is forbidden forever.** Effect Knobs, Typed Skill Fields, new `@export` buckets, or any “dump container with a nicer name” are **not** implementation. Leftovers belong in **modules** (primary `EffectType` + click), **layers** (`AbilityLayer` + `LayerCondition`), **keywords**, **gates**, or **header** — exactly as `EXTRA_RULES_TO_MODULES_PLAN.md` **Solution** states.
+
 ## Definition of converted (shape bar)
 
 A skill is **actually converted** when factory data is **Swap-shaped**:
@@ -20,8 +22,8 @@ A skill is **actually converted** when factory data is **Swap-shaped**:
 | **Module** | One player click per step |
 | **Layer** | Same-click riders (ON_KILL GRANT_AP, ON_COLLISION STAGGER, PER_TARGET_HIT HEAL, …) |
 | **Keyword** | Bible bundles (TRAMPLE, BULLDOZE, GHOST, PIERCE) |
-| **Typed extra** | **Only** ER-1 allowlist (hazard/spawn/motion-behavior knobs per matrix **New field**) |
-| **Effect Knobs UI** | **Absent** for that skill (nothing non-default to edit) |
+| **Typed extra** | **Only** when binding matrix says **New field** and ER-1 allowlist covers it (hazard/spawn/motion-behavior). **Never** for effects that belong on a layer. |
+| **Effect Knobs UI** | **Forbidden** as a conversion target. If the skill shows non-default Effect Knobs, conversion **failed**. |
 
 **Gold standard:** `knight_swap` — modules + layers, **zero** typed extras.
 
@@ -51,10 +53,11 @@ A skill is **actually converted** when factory data is **Swap-shaped**:
 
 ## Forbidden without owner approval
 
-- New `@export` on `AbilityModule`
-- Effect Knobs / editor UX work instead of factory shape fixes
+- **Any dump container:** Effect Knobs, typed extras, new `@export` on `AbilityModule`, LEGACY bags, or editor UX that hides knobs instead of fixing factory shape
+- New `@export` on `AbilityModule` when matrix says **Existing layer** or **module**
 - Marking IMPLEMENTATION_PLAN ☑ while shape gate fails for that skill
-- Adding typed field when matrix says **Existing layer**
+- Adding a typed field when matrix says **Existing layer**
+- Claiming PASS from `extra_rules_conversion_contract` alone
 
 ## QA commands
 

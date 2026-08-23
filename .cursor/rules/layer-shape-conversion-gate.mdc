@@ -5,7 +5,12 @@ When touching ER-2 conversion, skill factories, or `CONVERTED_SKILL_IDS`:
 1. Read `docs/design/LAYER_SHAPE_CONVERSION_GATE.md` — **shape bar** (Swap-shaped, not Effect Knobs).
 2. Binding matrix: `docs/design/EXTRA_RULES_TO_MODULES_PLAN.md` **Solution** column is law.
 3. Run `tests/run_layer_shape_conversion_gate.gd` (`--audit` for debt report).
-4. **Forbidden:** new `@export` on `AbilityModule`; marking IMPLEMENTATION_PLAN ☑ while shape gate fails for that skill.
-5. **Gold standard:** `knight_swap` — zero typed extras; riders are layers.
+4. **Forbidden (instant rule violation):**
+   - Effect Knobs / typed `@export` dumps on `AbilityModule` (Class Library “Typed Skill Fields”)
+   - Any new dump container or renamed bag instead of **real module or layer**
+   - New `@export` when matrix says **Existing layer**
+   - Marking IMPLEMENTATION_PLAN ☑ while shape gate fails for that skill
+   - Editor hiding/filtering knobs instead of factory conversion
+5. **Gold standard:** `knight_swap` — modules + layers; riders are layers, not knobs.
 
 `extra_rules_conversion_contract.gd` = modifier ownership only. **Does not** prove layer conversion.
