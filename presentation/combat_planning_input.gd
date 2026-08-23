@@ -624,6 +624,9 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 
 
 func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
+	## Cheap move-only hover: apply_result already built paths from projected stand.
+	if bool(preview.get("intent_preview", false)):
+		return
 	var actions_v: Variant = preview.get("actions", [])
 	if not actions_v is Array or (actions_v as Array).is_empty():
 		return

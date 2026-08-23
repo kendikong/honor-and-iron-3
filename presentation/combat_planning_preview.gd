@@ -37,16 +37,21 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		return
 	preview_board = temp_board
 	var base_board: BoardState = director.base_board if director.base_board != null else director.board
+	var intent_preview: bool = bool(res.get("intent_preview", false))
+	var path_init_board: BoardState = base_board
+	if intent_preview and director.projected_state != null:
+		path_init_board = director.projected_state
+	var forecast_baseline: BoardState = forecast_baseline_board(director, base_board)
+	if intent_preview and path_init_board != null:
+		## Post-move hover after committed swap: baseline must be projected stand, not live board.
+		forecast_baseline = path_init_board
 	forecast = CombatPlanningForecast.from_boards(
-		forecast_baseline_board(director, base_board),
+		forecast_baseline,
 		temp_board,
 		director.plan_revision if director != null else -1,
 	)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	var path_init_board: BoardState = base_board
-	if bool(res.get("intent_preview", false)) and director.projected_state != null:
-		path_init_board = director.projected_state
 	build_preview_paths(
 		events,
 		director,
@@ -60,9 +65,13 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
-		ensure_movement_intent_from_actions(actions_v as Array, base_board, {}, director)
+		ensure_movement_intent_from_actions(actions_v as Array, path_init_board, {}, director)
+		if intent_preview and director != null and director.selected_unit_id >= 0:
+			anchor_preview_paths_to_latest_stand(
+				director, self, director.selected_unit_id, path_init_board,
+			)
 		ensure_swap_approach_paths_from_actions(
-			actions_v as Array, base_board, preview_paths, preview_splits, action_splits, director,
+			actions_v as Array, path_init_board, preview_paths, preview_splits, action_splits, director,
 		)
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
