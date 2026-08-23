@@ -789,20 +789,15 @@ static func layer_typed_field_applies(
 		return false
 	if layer.is_typed_property_set(property):
 		return true
+	if layer.condition == GameEnums.LayerCondition.DURING:
+		return _during_layer_typed_field_applies(layer, property)
 	if parent == null:
 		return false
 	var effect_type: GameEnums.EffectType = _layer_effect_type(layer)
 	if _typed_extra_property_in_group(property, _LAYER_COLLISION_PROPS):
 		return _layer_collision_context(layer, parent)
 	if _typed_extra_property_in_group(property, _LAYER_MOTION_PROPS):
-		return (
-			layer.condition in [
-				GameEnums.LayerCondition.ON_LAND,
-				GameEnums.LayerCondition.PER_TILE_MOVED,
-			]
-			or _is_motion_type(parent.primary_type)
-			or parent.primary_type == GameEnums.EffectType.DASH
-		)
+		return _layer_motion_context(layer, parent)
 	if _typed_extra_property_in_group(property, _LAYER_HAZARD_PROPS):
 		return effect_type in [
 			GameEnums.EffectType.CREATE_HAZARD,
@@ -996,3 +991,144 @@ const _LAYER_SPAWN_PROPS: Array[String] = [
 const _LAYER_STATUS_PROPS: Array[String] = [
 	"status_requires_debuff", "cone_all_targets", "from_behind_only", "ally_damage_zero",
 ]
+
+
+static func layer_modifier_groups() -> Array[Dictionary]:
+	return [
+		{"title": "Collision", "props": _LAYER_COLLISION_PROPS},
+		{"title": "Motion & landing", "props": _LAYER_MOTION_PROPS},
+		{"title": "Hazards & terrain", "props": _LAYER_HAZARD_PROPS},
+		{"title": "Attack modifiers", "props": _LAYER_ATTACK_PROPS},
+		{"title": "Resources & buffs", "props": _LAYER_RESOURCE_PROPS},
+		{"title": "Counters", "props": _LAYER_COUNTER_PROPS},
+		{"title": "Spawn & constructs", "props": _LAYER_SPAWN_PROPS},
+		{"title": "Status rules", "props": _LAYER_STATUS_PROPS},
+	]
+
+
+static func layer_summary(layer: AbilityLayer) -> String:
+	if layer == null:
+		return "empty"
+	var condition_key: String = GameEnums.LayerCondition.keys()[layer.condition]
+	if layer.condition == GameEnums.LayerCondition.DURING:
+		return "during %s" % layer_during_preset_label(layer)
+	if layer.effect == null:
+		return condition_key.to_lower()
+	return "%s %s" % [
+		condition_key.to_lower(),
+		GameEnums.EffectType.keys()[layer.effect.type].to_lower(),
+	]
+
+
+static func layer_during_preset_label(layer: AbilityLayer) -> String:
+	if layer == null or layer.effect == null:
+		return "?"
+	match layer.effect.type:
+		GameEnums.EffectType.BULLDOZE:
+			return "bulldoze"
+		GameEnums.EffectType.TRAMPLE:
+			return "trample"
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			match layer.effect.status_type:
+				GameEnums.StatusType.GHOST:
+					return "ghost"
+				GameEnums.StatusType.PIERCE:
+					return "pierce"
+				_:
+					return "status_self"
+		_:
+			return GameEnums.EffectType.keys()[layer.effect.type].to_lower()
+
+
+static func layer_during_presets(module: AbilityModule) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	if module == null or not _is_motion_type(module.primary_type):
+		return out
+	out.append({"id": &"bulldoze", "label": "Bulldoze — push through obstacles"})
+	out.append({"id": &"trample", "label": "Trample — ignore difficult terrain"})
+	out.append({"id": &"ghost", "label": "Ghost — pass through units"})
+	if effect_type_can_deal_damage(module.primary_type) or _is_motion_type(module.primary_type):
+		out.append({"id": &"pierce", "label": "Pierce — ignore block on next hit"})
+	return out
+
+
+static func layer_during_preset_id(layer: AbilityLayer) -> StringName:
+	if layer == null or layer.effect == null:
+		return &""
+	match layer.effect.type:
+		GameEnums.EffectType.BULLDOZE:
+			return &"bulldoze"
+		GameEnums.EffectType.TRAMPLE:
+			return &"trample"
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			match layer.effect.status_type:
+				GameEnums.StatusType.GHOST:
+					return &"ghost"
+				GameEnums.StatusType.PIERCE:
+					return &"pierce"
+				_:
+					return &""
+		_:
+			return &""
+
+
+static func apply_layer_during_preset(layer: AbilityLayer, preset_id: StringName) -> void:
+	if layer == null:
+		return
+	if layer.effect == null:
+		layer.effect = EffectData.new()
+	layer.condition = GameEnums.LayerCondition.DURING
+	match preset_id:
+		&"bulldoze":
+			layer.effect.type = GameEnums.EffectType.BULLDOZE
+			layer.effect.amount = maxi(1, layer.effect.amount)
+			layer.during_emit_effect = true
+		&"trample":
+			layer.effect.type = GameEnums.EffectType.TRAMPLE
+			layer.effect.amount = maxi(1, layer.effect.amount)
+			layer.during_emit_effect = true
+		&"ghost":
+			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
+			layer.effect.status_type = GameEnums.StatusType.GHOST
+			layer.effect.amount = 1
+			layer.during_emit_effect = false
+		&"pierce":
+			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
+			layer.effect.status_type = GameEnums.StatusType.PIERCE
+			layer.effect.amount = 1
+			layer.during_emit_effect = false
+		_:
+			pass
+	AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+
+
+static func ensure_layer_during_compatible(module: AbilityModule, layer: AbilityLayer) -> void:
+	if layer == null or module == null:
+		return
+	if layer.condition != GameEnums.LayerCondition.DURING:
+		return
+	if during_layer_compatible(module, layer):
+		return
+	var presets: Array[Dictionary] = layer_during_presets(module)
+	if presets.is_empty():
+		layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+		return
+	apply_layer_during_preset(layer, presets[0]["id"])
+
+
+static func _during_layer_typed_field_applies(layer: AbilityLayer, property: String) -> bool:
+	if layer == null or layer.effect == null:
+		return false
+	if property == "during_bulldoze_push":
+		return layer.effect.type == GameEnums.EffectType.BULLDOZE
+	match layer.effect.type:
+		GameEnums.EffectType.BULLDOZE:
+			return property in _LAYER_COLLISION_PROPS
+		GameEnums.EffectType.TRAMPLE:
+			return property in ["weapon_scaled", "difficult_terrain_created"]
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			if layer.effect.status_type == GameEnums.StatusType.PIERCE:
+				return property == "pierce_if_first_zero"
+			return false
+		_:
+			return false

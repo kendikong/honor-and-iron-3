@@ -3057,71 +3057,102 @@ func _add_typed_layer_bindings(
 	)
 
 
-func _add_module_layers_editor(
+func _begin_collapsible_subsection(
 	parent: VBoxContainer,
-	ability: AbilityData,
+	title: String,
+	summary: String,
+	start_open: bool = false,
+	accent: Color = ClassLibraryTheme.ACCENT_DATA,
+) -> Dictionary:
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	parent.add_child(outer)
+	var header := Button.new()
+	header.flat = true
+	header.focus_mode = Control.FOCUS_NONE
+	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
+	header.add_theme_color_override("font_color", accent)
+	var arrow: String = "▾" if start_open else "▸"
+	header.text = "%s %s — %s" % [arrow, title, summary]
+	outer.add_child(header)
+	var body := VBoxContainer.new()
+	body.visible = start_open
+	body.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	outer.add_child(body)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	body.add_child(grid)
+	header.pressed.connect(func() -> void:
+		body.visible = not body.visible
+		var open: bool = body.visible
+		header.text = "%s %s — %s" % ["▾" if open else "▸", title, summary]
+	)
+	return {"outer": outer, "body": body, "grid": grid, "header": header}
+
+
+func _bind_layer_during_preset(
+	parent: GridContainer,
 	module: AbilityModule,
+	layer: AbilityLayer,
+	ability: AbilityData,
 ) -> void:
-	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
-	var during_row := HBoxContainer.new()
-	parent.add_child(during_row)
-	var during_label := Label.new()
-	during_label.text = "During (on primary):"
-	during_row.add_child(during_label)
-	for preset: Dictionary in [
-		{"text": "+ BULLDOZE", "layer": DataLibrary._during_bulldoze()},
-		{"text": "+ TRAMPLE", "layer": DataLibrary._during_trample()},
-		{"text": "+ GHOST", "layer": DataLibrary._during_ghost()},
-		{"text": "+ PIERCE", "layer": DataLibrary._during_pierce()},
-	]:
-		var btn := Button.new()
-		btn.text = preset.text
-		btn.pressed.connect(func() -> void:
-			module.layers.append((preset.layer as AbilityLayer).duplicate(true))
-			_on_module_field_edited(ability)
-			_rebuild_ability_detail_panes(ability)
-		)
-		during_row.add_child(btn)
-	var box := VBoxContainer.new()
-	parent.add_child(box)
-	for index: int in module.layers.size():
-		var layer: AbilityLayer = module.layers[index]
-		if layer.effect == null:
-			layer.effect = EffectData.new()
-		var grid := GridContainer.new()
-		grid.columns = 2
-		box.add_child(grid)
-		_bind_enum_excluding(
-			grid,
-			"Layer %d Condition" % index,
-			GameEnums.LayerCondition,
-			layer.condition,
-			func(v: int) -> void:
-				layer.condition = v
-				_on_module_field_edited(ability),
-			ModuleAuthoringRules.excluded_layer_conditions(module),
-		)
-		_bind_bool(
-			grid,
-			"Object Collision Stagger",
-			layer.object_collision_stagger,
-			func(v: bool) -> void:
-				layer.object_collision_stagger = v
-				_on_module_field_edited(ability),
-		)
-		_bind_bool(
-			grid,
-			"Enemy Collision Stagger Both",
+	var presets: Array[Dictionary] = ModuleAuthoringRules.layer_during_presets(module)
+	if presets.is_empty():
+		var lbl := _field_label("During effect")
+		parent.add_child(lbl)
+		var warn := Label.new()
+		warn.text = "Primary must be movement for DURING layers."
+		parent.add_child(warn)
+		return
+	var lbl := _field_label("During effect")
+	parent.add_child(lbl)
+	var opt := OptionButton.new()
+	var ids: Array[StringName] = []
+	for entry: Dictionary in presets:
+		ids.append(entry["id"] as StringName)
+		opt.add_item(String(entry["label"]), ids.size() - 1)
+	var current_id: StringName = ModuleAuthoringRules.layer_during_preset_id(layer)
+	var selected: int = ids.find(current_id)
+	if selected < 0:
+		ModuleAuthoringRules.apply_layer_during_preset(layer, ids[0])
+		selected = 0
+	opt.selected = selected
+	opt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	opt.item_selected.connect(func(idx: int) -> void:
+		ModuleAuthoringRules.apply_layer_during_preset(layer, ids[idx])
+		_on_module_field_edited(ability)
+		_rebuild_ability_detail_panes(ability)
+	)
+	parent.add_child(opt)
+
+
+func _populate_layer_all_modifier_binds(
+	grid: GridContainer,
+	ability: AbilityData,
+	layer: AbilityLayer,
+) -> void:
+	_bind_bool(
+		grid,
+		"Object Collision Stagger",
+		layer.object_collision_stagger,
+		func(v: bool) -> void:
+			layer.object_collision_stagger = v
+			_on_module_field_edited(ability),
+	)
+	_bind_bool(
+		grid,
+		"Enemy Collision Stagger Both",
 			layer.enemy_collision_stagger_both,
 			func(v: bool) -> void:
 				layer.enemy_collision_stagger_both = v
 				_on_module_field_edited(ability),
 		)
-		_bind_bool(grid, "Weapon Scaled", layer.weapon_scaled, func(v: bool) -> void:
+	_bind_bool(grid, "Weapon Scaled", layer.weapon_scaled, func(v: bool) -> void:
 			layer.weapon_scaled = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(
+	_bind_int(
 			grid,
 			"Buff Per Destroyed Object",
 			layer.buff_per_destroyed_object,
@@ -3129,11 +3160,11 @@ func _add_module_layers_editor(
 				layer.buff_per_destroyed_object = maxi(0, v)
 				_on_module_field_edited(ability),
 		)
-		_bind_bool(grid, "Stagger On Collision", layer.stagger_on_collision, func(v: bool) -> void:
+	_bind_bool(grid, "Stagger On Collision", layer.stagger_on_collision, func(v: bool) -> void:
 			layer.stagger_on_collision = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(
+	_bind_int(
 			grid,
 			"Intercept Grant STR",
 			layer.intercept_grant_str,
@@ -3141,47 +3172,47 @@ func _add_module_layers_editor(
 				layer.intercept_grant_str = maxi(0, v)
 				_on_module_field_edited(ability),
 		)
-		_bind_bool(grid, "Push Collision Pierce", layer.push_collision_pierce, func(v: bool) -> void:
+	_bind_bool(grid, "Push Collision Pierce", layer.push_collision_pierce, func(v: bool) -> void:
 			layer.push_collision_pierce = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Push Collision Damage", layer.push_collision_damage, func(v: int) -> void:
+	_bind_int(grid, "Push Collision Damage", layer.push_collision_damage, func(v: int) -> void:
 			layer.push_collision_damage = maxi(0, v)
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Difficult Terrain Created", layer.difficult_terrain_created, func(v: bool) -> void:
+	_bind_bool(grid, "Difficult Terrain Created", layer.difficult_terrain_created, func(v: bool) -> void:
 			layer.difficult_terrain_created = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Rooted Push BLEED WPN", layer.rooted_push_bleed_weapon, func(v: bool) -> void:
+	_bind_bool(grid, "Rooted Push BLEED WPN", layer.rooted_push_bleed_weapon, func(v: bool) -> void:
 			layer.rooted_push_bleed_weapon = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Grapple Pass Damage", layer.grapple_pass_through_damage, func(v: int) -> void:
+	_bind_int(grid, "Grapple Pass Damage", layer.grapple_pass_through_damage, func(v: int) -> void:
 			layer.grapple_pass_through_damage = maxi(0, v)
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Ignite Flammable Terrain", layer.ignite_flammable_terrain, func(v: bool) -> void:
+	_bind_bool(grid, "Ignite Flammable Terrain", layer.ignite_flammable_terrain, func(v: bool) -> void:
 			layer.ignite_flammable_terrain = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Ally Damage Zero", layer.ally_damage_zero, func(v: bool) -> void:
+	_bind_bool(grid, "Ally Damage Zero", layer.ally_damage_zero, func(v: bool) -> void:
 			layer.ally_damage_zero = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Trap Vulnerable", layer.trap_vulnerable, func(v: bool) -> void:
+	_bind_bool(grid, "Trap Vulnerable", layer.trap_vulnerable, func(v: bool) -> void:
 			layer.trap_vulnerable = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Crossing BLIND", layer.crossing_blind, func(v: bool) -> void:
+	_bind_bool(grid, "Crossing BLIND", layer.crossing_blind, func(v: bool) -> void:
 			layer.crossing_blind = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Trap DEF Debuff", layer.trap_def_debuff, func(v: int) -> void:
+	_bind_int(grid, "Trap DEF Debuff", layer.trap_def_debuff, func(v: int) -> void:
 			layer.trap_def_debuff = maxi(0, v)
 			_on_module_field_edited(ability)
 		)
-		_bind_string(
+	_bind_string(
 			grid,
 			"Range 1 Damage Multiplier",
 			str(layer.range_one_damage_multiplier),
@@ -3190,207 +3221,326 @@ func _add_module_layers_editor(
 					layer.range_one_damage_multiplier = maxf(0.0, float(v))
 					_on_module_field_edited(ability),
 		)
-		_bind_string(grid, "Damage Multiplier", str(layer.damage_multiplier), func(v: String) -> void:
+	_bind_string(grid, "Damage Multiplier", str(layer.damage_multiplier), func(v: String) -> void:
 			if v.strip_edges().is_valid_float():
 				layer.damage_multiplier = maxf(0.0, float(v))
 				_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Side Attack Only", layer.side_attack_only, func(v: bool) -> void:
+	_bind_bool(grid, "Side Attack Only", layer.side_attack_only, func(v: bool) -> void:
 			layer.side_attack_only = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Target After Move Adjacent", layer.target_after_move_adjacent, func(v: bool) -> void:
+	_bind_bool(grid, "Target After Move Adjacent", layer.target_after_move_adjacent, func(v: bool) -> void:
 			layer.target_after_move_adjacent = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Elemental Surface", layer.elemental_surface, func(v: bool) -> void:
+	_bind_bool(grid, "Elemental Surface", layer.elemental_surface, func(v: bool) -> void:
 			layer.elemental_surface = v
 			_on_module_field_edited(ability)
 		)
-		_bind_string(grid, "Reaction Terrain", str(layer.reaction_terrain), func(v: String) -> void:
+	_bind_string(grid, "Reaction Terrain", str(layer.reaction_terrain), func(v: String) -> void:
 			layer.reaction_terrain = StringName(v)
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Steam Splash", layer.reaction_steam_splash, func(v: bool) -> void:
+	_bind_bool(grid, "Steam Splash", layer.reaction_steam_splash, func(v: bool) -> void:
 			layer.reaction_steam_splash = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Steam Splash Size", layer.reaction_steam_splash_size, func(v: int) -> void:
+	_bind_int(grid, "Steam Splash Size", layer.reaction_steam_splash_size, func(v: int) -> void:
 			layer.reaction_steam_splash_size = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Steam Splash Damage", layer.reaction_steam_splash_damage, func(v: int) -> void:
+	_bind_int(grid, "Steam Splash Damage", layer.reaction_steam_splash_damage, func(v: int) -> void:
 			layer.reaction_steam_splash_damage = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Set Max MOV", layer.set_max_move, func(v: int) -> void:
+	_bind_int(grid, "Set Max MOV", layer.set_max_move, func(v: int) -> void:
 			layer.set_max_move = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Arcane Trail", layer.arcane_trail, func(v: bool) -> void:
+	_bind_bool(grid, "Arcane Trail", layer.arcane_trail, func(v: bool) -> void:
 			layer.arcane_trail = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Creation Adjacent Damage", layer.creation_adjacent_damage, func(v: int) -> void:
+	_bind_int(grid, "Creation Adjacent Damage", layer.creation_adjacent_damage, func(v: int) -> void:
 			layer.creation_adjacent_damage = v
 			_on_module_field_edited(ability)
 		)
-		_bind_string(grid, "Terrain ID", str(layer.terrain_id), func(v: String) -> void:
+	_bind_string(grid, "Terrain ID", str(layer.terrain_id), func(v: String) -> void:
 			layer.terrain_id = StringName(v)
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Hazard Duration", layer.hazard_duration, func(v: int) -> void:
+	_bind_int(grid, "Hazard Duration", layer.hazard_duration, func(v: int) -> void:
 			layer.hazard_duration = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Counterattack Melee", layer.counterattack_melee, func(v: bool) -> void:
+	_bind_bool(grid, "Counterattack Melee", layer.counterattack_melee, func(v: bool) -> void:
 			layer.counterattack_melee = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Counterattack On Intercept", layer.counterattack_on_intercept, func(v: bool) -> void:
+	_bind_bool(grid, "Counterattack On Intercept", layer.counterattack_on_intercept, func(v: bool) -> void:
 			layer.counterattack_on_intercept = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Bleed Weapon", layer.bleed_weapon, func(v: bool) -> void:
+	_bind_bool(grid, "Bleed Weapon", layer.bleed_weapon, func(v: bool) -> void:
 			layer.bleed_weapon = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Skip Terrain Status", layer.skip_terrain_entry_status, func(v: bool) -> void:
+	_bind_bool(grid, "Skip Terrain Status", layer.skip_terrain_entry_status, func(v: bool) -> void:
 			layer.skip_terrain_entry_status = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Skip Terrain Bleed", layer.skip_terrain_entry_bleed, func(v: bool) -> void:
+	_bind_bool(grid, "Skip Terrain Bleed", layer.skip_terrain_entry_bleed, func(v: bool) -> void:
 			layer.skip_terrain_entry_bleed = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Hazard Damage Bonus", layer.hazard_damage_bonus, func(v: int) -> void:
+	_bind_int(grid, "Hazard Damage Bonus", layer.hazard_damage_bonus, func(v: int) -> void:
 			layer.hazard_damage_bonus = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Trap Damage Bonus", layer.trap_damage_bonus, func(v: int) -> void:
+	_bind_int(grid, "Trap Damage Bonus", layer.trap_damage_bonus, func(v: int) -> void:
 			layer.trap_damage_bonus = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Grant AP", layer.grant_ap, func(v: int) -> void:
+	_bind_int(grid, "Grant AP", layer.grant_ap, func(v: int) -> void:
 			layer.grant_ap = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Grant Scrap", layer.grant_scrap, func(v: int) -> void:
+	_bind_int(grid, "Grant Scrap", layer.grant_scrap, func(v: int) -> void:
 			layer.grant_scrap = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:
+	_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:
 			layer.next_turn = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Burning Splash MAG", layer.burning_splash_magic, func(v: int) -> void:
+	_bind_int(grid, "Burning Splash MAG", layer.burning_splash_magic, func(v: int) -> void:
 			layer.burning_splash_magic = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Pierce If First Hit Zero", layer.pierce_if_first_zero, func(v: bool) -> void:
+	_bind_bool(grid, "Pierce If First Hit Zero", layer.pierce_if_first_zero, func(v: bool) -> void:
 			layer.pierce_if_first_zero = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Damage Adjacent On Landing", layer.damage_adjacent_on_landing, func(v: bool) -> void:
+	_bind_bool(grid, "Damage Adjacent On Landing", layer.damage_adjacent_on_landing, func(v: bool) -> void:
 			layer.damage_adjacent_on_landing = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Require Dash Line Enemy", layer.require_dash_line_enemy, func(v: bool) -> void:
+	_bind_bool(grid, "Require Dash Line Enemy", layer.require_dash_line_enemy, func(v: bool) -> void:
 			layer.require_dash_line_enemy = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Layer Dash Absorb Element", layer.dash_absorb_element, func(v: bool) -> void:
+	_bind_bool(grid, "Layer Dash Absorb Element", layer.dash_absorb_element, func(v: bool) -> void:
 			layer.dash_absorb_element = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Collision Splash Damage", layer.collision_splash_damage, func(v: int) -> void:
+	_bind_int(grid, "Collision Splash Damage", layer.collision_splash_damage, func(v: int) -> void:
 			layer.collision_splash_damage = v
 			_on_module_field_edited(ability)
 		)
-		_bind_bool(grid, "Collision Splash Weaken", layer.collision_splash_weaken, func(v: bool) -> void:
+	_bind_bool(grid, "Collision Splash Weaken", layer.collision_splash_weaken, func(v: bool) -> void:
 			layer.collision_splash_weaken = v
 			_on_module_field_edited(ability)
 		)
-		_bind_int(grid, "Push If Target On Water", layer.push_if_target_on_water, func(v: int) -> void:
+	_bind_int(grid, "Push If Target On Water", layer.push_if_target_on_water, func(v: int) -> void:
 			layer.push_if_target_on_water = v
 			_on_module_field_edited(ability)
 		)
-		_add_typed_layer_bindings(grid, ability, layer)
-		_bind_effect_type(grid, "Layer Type", layer.effect.type, func(v: int) -> void:
-			layer.effect.type = v
-			AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
-			_rebuild_ability_detail_panes(ability)
+	_add_typed_layer_bindings(grid, ability, layer)
+
+
+func _finalize_layer_modifier_group(
+	shell: Dictionary,
+	grid: GridContainer,
+	module: AbilityModule,
+	layer: AbilityLayer,
+	allowed_props: Array,
+) -> void:
+	_prune_irrelevant_grid_rows(
+		grid,
+		func(prop: String) -> bool:
+			if prop not in allowed_props:
+				return false
+			return ModuleAuthoringRules.layer_typed_field_applies(layer, module, prop),
+		func(_label: String) -> bool:
+			return false,
+		ModuleAuthoringRules.layer_property_from_label,
+	)
+	if grid.get_child_count() == 0:
+		var outer: VBoxContainer = shell["outer"] as VBoxContainer
+		if outer != null:
+			outer.queue_free()
+
+
+func _add_layer_effect_detail_fields(
+	core: GridContainer,
+	ability: AbilityData,
+	layer: AbilityLayer,
+) -> void:
+	if layer.condition == GameEnums.LayerCondition.DURING:
+		return
+	if GameEnums.effect_type_applies_status(layer.effect.type):
+		_bind_enum_excluding(
+			core,
+			"Layer Status",
+			GameEnums.StatusType,
+			layer.effect.status_type,
+			func(v: int) -> void:
+				layer.effect.status_type = v
+				_on_module_field_edited(ability),
+			PackedStringArray(["NONE"]),
 		)
-		_bind_int(grid, "Layer Amount", layer.effect.amount, func(v: int) -> void:
-			layer.effect.amount = v
+		_bind_int(
+			core,
+			"Layer Duration",
+			layer.effect.status_duration,
+			func(v: int) -> void:
+				layer.effect.status_duration = v
+				_on_module_field_edited(ability),
+		)
+	if GameEnums.effect_type_uses_spawn_unit(layer.effect.type):
+		_bind_string(core, "Layer Spawn Id", String(layer.effect.spawn_unit_id), func(v: String) -> void:
+			layer.effect.spawn_unit_id = StringName(v)
 			_on_module_field_edited(ability)
 		)
-		var layer_grey_rows: Dictionary = {}
-		if GameEnums.effect_type_applies_status(layer.effect.type):
-			layer_grey_rows["status"] = _bind_enum_excluding(
-				grid,
-				"Layer Status",
-				GameEnums.StatusType,
-				layer.effect.status_type,
-				func(v: int) -> void:
-					layer.effect.status_type = v
-					_on_module_field_edited(ability),
-				PackedStringArray(["NONE"]),
-			)
-			layer_grey_rows["duration"] = _bind_int(
-				grid,
-				"Layer Duration",
-				layer.effect.status_duration,
-				func(v: int) -> void:
-					layer.effect.status_duration = v
-					_on_module_field_edited(ability)
-			)
-		if GameEnums.effect_type_uses_spawn_unit(layer.effect.type):
-			_bind_string(grid, "Layer Spawn Id", String(layer.effect.spawn_unit_id), func(v: String) -> void:
-				layer.effect.spawn_unit_id = StringName(v)
-				_on_module_field_edited(ability)
-			)
-		layer_grey_rows["scaling"] = _bind_enum(
-			grid,
+	if GameEnums.effect_type_uses_module_scaling(layer.effect.type) or (
+		layer.effect.scaling_stat != GameEnums.StatType.NONE
+	):
+		_bind_enum(
+			core,
 			"Layer Scaling",
 			GameEnums.StatType,
 			layer.effect.scaling_stat,
 			func(v: int) -> void:
 				layer.effect.scaling_stat = v
-				_on_module_field_edited(ability)
+				_on_module_field_edited(ability),
 		)
-		if layer.effect.type == GameEnums.EffectType.DAMAGE:
-			layer_grey_rows["adjacent_bonus"] = _bind_int(
-				grid,
-				"Layer Adjacent Bonus",
-				layer.effect.bonus_if_adjacent_at_cast,
+	if layer.effect.type == GameEnums.EffectType.DAMAGE:
+		_bind_int(
+			core,
+			"Layer Adjacent Bonus",
+			layer.effect.bonus_if_adjacent_at_cast,
+			func(v: int) -> void:
+				layer.effect.bonus_if_adjacent_at_cast = v
+				_on_module_field_edited(ability),
+		)
+		_bind_int(
+			core,
+			"Layer DEF Debuff",
+			layer.effect.def_debuff_before_damage,
+			func(v: int) -> void:
+				layer.effect.def_debuff_before_damage = v
+				_on_module_field_edited(ability),
+		)
+
+
+func _add_module_layers_editor(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
+	var hint := Label.new()
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_CAPTION))
+	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	hint.text = (
+		"Pick when the layer runs (Condition), then what it does (Type). "
+		+ "DURING rides on the module primary while it moves — use Bulldoze / Trample / Ghost / Pierce there."
+	)
+	parent.add_child(hint)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
+	parent.add_child(box)
+	for index: int in module.layers.size():
+		var layer: AbilityLayer = module.layers[index]
+		if layer.effect == null:
+			layer.effect = EffectData.new()
+		ModuleAuthoringRules.ensure_layer_during_compatible(module, layer)
+		var summary: String = ModuleAuthoringRules.layer_summary(layer)
+		var card := _begin_collapsible_subsection(
+			box,
+			"Layer %d" % index,
+			summary,
+			index == 0,
+			ClassLibraryTheme.ACCENT_DATA,
+		)
+		var body: VBoxContainer = card["body"] as VBoxContainer
+		var core: GridContainer = card["grid"] as GridContainer
+		_bind_enum_excluding(
+			core,
+			"Condition",
+			GameEnums.LayerCondition,
+			layer.condition,
+			func(v: int) -> void:
+				layer.condition = v
+				ModuleAuthoringRules.ensure_layer_during_compatible(module, layer)
+				_on_module_field_edited(ability)
+				_rebuild_ability_detail_panes(ability),
+			ModuleAuthoringRules.excluded_layer_conditions(module),
+		)
+		if layer.condition == GameEnums.LayerCondition.DURING:
+			_bind_layer_during_preset(core, module, layer, ability)
+			_bind_int(
+				core,
+				"Amount",
+				layer.effect.amount,
 				func(v: int) -> void:
-					layer.effect.bonus_if_adjacent_at_cast = v
-					_on_module_field_edited(ability)
+					layer.effect.amount = maxi(1, v)
+					_on_module_field_edited(ability),
 			)
-			layer_grey_rows["def_debuff"] = _bind_int(
-				grid,
-				"Layer DEF Debuff",
-				layer.effect.def_debuff_before_damage,
-				func(v: int) -> void:
-					layer.effect.def_debuff_before_damage = v
-					_on_module_field_edited(ability)
+			_bind_bool(
+				core,
+				"Emit standalone row",
+				layer.during_emit_effect,
+				func(v: bool) -> void:
+					layer.during_emit_effect = v
+					_on_module_field_edited(ability),
 			)
-		var layer_grey_cb := func() -> void:
-			_set_row_visible(
-				layer_grey_rows.get("scaling", []),
-				GameEnums.effect_type_uses_module_scaling(layer.effect.type)
-				or layer.effect.scaling_stat != GameEnums.StatType.NONE,
+			if layer.effect.type == GameEnums.EffectType.BULLDOZE:
+				_bind_int(
+					core,
+					"Bulldoze push",
+					layer.during_bulldoze_push,
+					func(v: int) -> void:
+						layer.during_bulldoze_push = maxi(0, v)
+						_on_module_field_edited(ability),
+				)
+		else:
+			_bind_effect_type(core, "Layer Type", layer.effect.type, func(v: int) -> void:
+				layer.effect.type = v
+				AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+				_rebuild_ability_detail_panes(ability)
 			)
-		layer_grey_cb.call()
-		_finalize_layer_field_grid(grid, module, layer)
+			_bind_int(core, "Amount", layer.effect.amount, func(v: int) -> void:
+				layer.effect.amount = v
+				_on_module_field_edited(ability)
+			)
+			_add_layer_effect_detail_fields(core, ability, layer)
+		for group: Dictionary in ModuleAuthoringRules.layer_modifier_groups():
+			var group_shell := _begin_collapsible_subsection(
+				body,
+				String(group["title"]),
+				"optional",
+				false,
+				ClassLibraryTheme.ACCENT_IMPL,
+			)
+			var group_grid: GridContainer = group_shell["grid"] as GridContainer
+			_populate_layer_all_modifier_binds(group_grid, ability, layer)
+			_finalize_layer_modifier_group(
+				group_shell,
+				group_grid,
+				module,
+				layer,
+				group["props"] as Array,
+			)
 		var remove := Button.new()
-		remove.text = "Remove Layer"
+		remove.text = "Remove layer"
+		body.add_child(remove)
 		remove.pressed.connect(func() -> void:
 			module.layers.remove_at(index)
 			_rebuild_ability_detail_panes(ability)
 		)
-		box.add_child(remove)
 	var add := Button.new()
 	add.text = "+ Layer"
 	add.pressed.connect(func() -> void:
