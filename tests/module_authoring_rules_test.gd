@@ -16,6 +16,7 @@ static func _test_pre_move_forces_on_action_phase(failures: Array[String]) -> vo
 static func run_all(failures: Array[String]) -> void:
 	_test_move_clears_scaling(failures)
 	_test_l_shape_move_is_path_motion(failures)
+	_test_before_damage_layers_compile_first(failures)
 	_test_pre_move_excludes_phase_options(failures)
 	_test_pre_move_forces_on_action_phase(failures)
 	_test_self_status_clears_range(failures)
@@ -98,6 +99,28 @@ static func _test_move_clears_scaling(failures: Array[String]) -> void:
 static func _test_l_shape_move_is_path_motion(failures: Array[String]) -> void:
 	if not GameEnums.is_path_motion(GameEnums.EffectType.L_SHAPE_MOVE):
 		failures.append("L_SHAPE_MOVE should count as path motion")
+
+
+static func _test_before_damage_layers_compile_first(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	module.amount = 2
+	var def_layer := AbilityLayer.new()
+	def_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+	def_layer.effect = EffectData.new()
+	def_layer.effect.type = GameEnums.EffectType.ADD_STATUS
+	def_layer.effect.def_debuff_before_damage = 1
+	module.layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)),
+		def_layer,
+	]
+	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	if compiled.size() < 3:
+		failures.append("expected primary + pre/post layers in compile output")
+	elif compiled[0].def_debuff_before_damage <= 0:
+		failures.append("before-damage status layer must compile before DAMAGE primary")
+	elif compiled[1].type != GameEnums.EffectType.DAMAGE:
+		failures.append("DAMAGE primary must follow pre-primary layers")
 
 
 static func _test_pre_move_excludes_phase_options(failures: Array[String]) -> void:

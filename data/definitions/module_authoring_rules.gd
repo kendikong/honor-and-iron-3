@@ -221,6 +221,7 @@ static func normalize_module_context_fields(
 	normalize_module_targeting_flags(module)
 	migrate_keywords_to_layers(module)
 	migrate_legacy_layer_bundles(module)
+	migrate_status_riders_to_layers(module)
 	for layer: AbilityLayer in module.layers:
 		if layer == null:
 			continue
@@ -239,6 +240,54 @@ static func migrate_keywords_to_layers(module: AbilityModule) -> void:
 		if layer != null:
 			module.layers.append(layer)
 	module.keywords.clear()
+	module.invalidate_runtime_modifiers_cache()
+
+
+static func layer_resolves_before_primary(layer: AbilityLayer) -> bool:
+	if layer == null or layer.effect == null:
+		return false
+	if layer.condition != GameEnums.LayerCondition.AT_RESOLUTION:
+		return false
+	var eff: EffectData = layer.effect
+	if eff.def_debuff_before_damage > 0:
+		return true
+	if bool(eff.modifiers.get("halve_target_def_one_turn", false)):
+		return true
+	return false
+
+
+static func _module_has_before_primary_status_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer_resolves_before_primary(layer):
+			return true
+	return false
+
+
+static func migrate_status_riders_to_layers(module: AbilityModule) -> void:
+	if module == null or _module_has_before_primary_status_layer(module):
+		return
+	if module.def_debuff_before_damage > 0:
+		var amount: int = module.def_debuff_before_damage
+		var def_layer := AbilityLayer.new()
+		def_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+		def_layer.effect = EffectData.new()
+		def_layer.effect.type = GameEnums.EffectType.ADD_STATUS
+		def_layer.effect.status_type = GameEnums.StatusType.STAT_DEBUFF_DEF
+		def_layer.effect.status_duration = 1
+		def_layer.effect.amount = amount
+		def_layer.effect.def_debuff_before_damage = amount
+		module.layers.insert(0, def_layer)
+		module.def_debuff_before_damage = 0
+	if module.halve_target_def_one_turn:
+		var halve_layer := AbilityLayer.new()
+		halve_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+		halve_layer.effect = EffectData.new()
+		halve_layer.effect.type = GameEnums.EffectType.ADD_STATUS
+		halve_layer.effect.status_type = GameEnums.StatusType.STAT_DEBUFF_DEF
+		halve_layer.effect.status_duration = 1
+		halve_layer.effect.modifiers["halve_target_def_one_turn"] = true
+		module.layers.insert(0, halve_layer)
+		module.halve_target_def_one_turn = false
 	module.invalidate_runtime_modifiers_cache()
 
 
@@ -955,8 +1004,8 @@ const _ATTACK_TYPED_PROPS: Array[String] = [
 	"bonus_dmg_from_occupied", "bonus_dmg_per_10_hp", "bonus_dmg_pct_max_hp",
 	"bounce_count", "bounce_range", "bounce_walls_45", "skewer", "pierce",
 	"next_attack_strength", "next_attack_bleed_weapon", "next_attack_pierce",
-	"next_ranged_attack_strength", "root_break_on_damage", "spread_status_adjacent",
-	"halve_target_def_one_turn", "armor_explosion_atk", "bonus_atk_vs_fear_or_lower_movement",
+	"next_ranged_attack_strength", 	"root_break_on_damage", "spread_status_adjacent",
+	"armor_explosion_atk", "bonus_atk_vs_fear_or_lower_movement",
 	"range_one_damage_multiplier", "bleed_bonus_damage", "target_def_debuff",
 	"target_def_pct_debuff", "target_def_pct_duration", "bonus_if_target_adjacent_to_ally",
 	"if_target_attacked_caster_last_turn_bonus", "if_target_attacked_caster_last_turn_stagger",

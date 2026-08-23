@@ -1786,11 +1786,6 @@ func _apply_module_field_greying(
 		module.primary_type == GameEnums.EffectType.DAMAGE
 		or module.bonus_if_adjacent_at_cast != 0,
 	)
-	_set_row_visible(
-		rows.get("def_debuff", []),
-		module.primary_type == GameEnums.EffectType.DAMAGE
-		or module.def_debuff_before_damage != 0,
-	)
 	_set_row_visible(rows.get("shape", []), ModuleAuthoringRules.module_uses_shape(module))
 	_set_row_visible(rows.get("shape_size", []), ModuleAuthoringRules.module_uses_shape_size(module))
 	_set_row_visible(
@@ -2074,10 +2069,6 @@ func _build_module_fields(
 		module.bonus_if_adjacent_at_cast = v
 		changed.call()
 	)
-	grey_rows["def_debuff"] = _bind_int(grid, "DEF Debuff", module.def_debuff_before_damage, func(v: int) -> void:
-		module.def_debuff_before_damage = v
-		changed.call()
-	)
 	var module_grey_cb := func() -> void:
 		_apply_module_field_greying(module, grey_rows, ability, module_index)
 	_ability_ui[ability]["module_grey_cbs"].append(module_grey_cb)
@@ -2356,10 +2347,6 @@ func _add_module_typed_extras_editor(
 			if v.strip_edges().is_valid_float():
 				module.range_one_damage_multiplier = maxf(0.0, float(v))
 				_on_module_field_edited(ability),
-	)
-	_bind_bool(grid, "Halve Target DEF", module.halve_target_def_one_turn, func(v: bool) -> void:
-		module.halve_target_def_one_turn = v
-		_on_module_field_edited(ability)
 	)
 	_bind_int(grid, "Armor Explosion ATK", module.armor_explosion_atk, func(v: int) -> void:
 		module.armor_explosion_atk = maxi(0, v)

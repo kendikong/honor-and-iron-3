@@ -25,6 +25,8 @@ const LAYER_MANDATE_TYPED_PROPS: Array[String] = [
 	"on_kill_spread_silence_adjacent",
 	"target_damaged_ap",
 	"kill_grant_ap",
+	"def_debuff_before_damage",
+	"halve_target_def_one_turn",
 	"next_skill_zero_ap",
 	"grant_ap", ## ON_KILL / conditional grants belong on layers, not primary module fields.
 	"grant_scrap",
@@ -130,6 +132,26 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 	&"bruiser_guttural_roar": {},
 	&"bruiser_headbutt": {},
 	&"bruiser_blood_boil": {},
+	&"knight_shield_slam": {
+		"forbidden_typed": ["def_debuff_before_damage"],
+		"required_layers": [
+			{
+				"condition": "AT_RESOLUTION",
+				"effect_type": "ADD_STATUS",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"lancer_vaulting_leap": {
+		"forbidden_typed": ["halve_target_def_one_turn"],
+		"required_layers": [
+			{
+				"condition": "AT_RESOLUTION",
+				"effect_type": "ADD_STATUS",
+				"profile": "base",
+			},
+		],
+	},
 }
 
 const GOLD_STANDARD_SKILL_IDS: Array[StringName] = [&"knight_swap"]

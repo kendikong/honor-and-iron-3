@@ -465,7 +465,23 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"limit_once_per_turn":
 			return module.limit_once_per_turn
 		"halve_target_def_one_turn":
-			return module.halve_target_def_one_turn
+			if module.halve_target_def_one_turn:
+				return true
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.effect == null:
+					continue
+				if bool(layer.effect.modifiers.get("halve_target_def_one_turn", false)):
+					return true
+			return false
+		"def_debuff_before_damage":
+			if module.def_debuff_before_damage > 0:
+				return true
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.effect == null:
+					continue
+				if layer.effect.def_debuff_before_damage > 0:
+					return true
+			return false
 		"armor_explosion_atk":
 			return module.armor_explosion_atk != 0
 		"bonus_atk_vs_fear_or_lower_movement":

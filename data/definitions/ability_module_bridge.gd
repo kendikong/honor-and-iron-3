@@ -360,11 +360,13 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	if module == null:
 		return out
 	_ModuleAuthoringRules.migrate_keywords_to_layers(module)
+	_ModuleAuthoringRules.migrate_status_riders_to_layers(module)
 	var primary: EffectData = module.primary_as_effect()
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.condition == GameEnums.LayerCondition.DURING:
 			_apply_during_layer_to_primary(primary, layer)
-	out.append(primary)
+	var pre_primary: Array[EffectData] = []
+	var post_primary: Array[EffectData] = []
 	for layer: AbilityLayer in module.layers:
 		if layer == null or layer.effect == null:
 			continue
@@ -373,13 +375,19 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 				var during_eff: EffectData = _duplicate_effect(layer.effect)
 				_merge_runtime_modifiers(during_eff, module.compile_runtime_modifiers())
 				_merge_runtime_modifiers(during_eff, layer.compile_runtime_modifiers())
-				out.append(during_eff)
+				post_primary.append(during_eff)
 			continue
 		var layer_eff: EffectData = _duplicate_effect(layer.effect)
 		_merge_runtime_modifiers(layer_eff, module.compile_runtime_modifiers())
 		_merge_runtime_modifiers(layer_eff, layer.compile_runtime_modifiers())
 		_apply_layer_condition_to_effect(layer_eff, layer.condition)
-		out.append(layer_eff)
+		if _ModuleAuthoringRules.layer_resolves_before_primary(layer):
+			pre_primary.append(layer_eff)
+		else:
+			post_primary.append(layer_eff)
+	out.append_array(pre_primary)
+	out.append(primary)
+	out.append_array(post_primary)
 	return out
 
 

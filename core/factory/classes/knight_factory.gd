@@ -271,7 +271,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	shield_slam_module.bonus_if_adjacent_at_cast = 2
 	shield_slam_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
 	var shield_slam_upgraded := DataLibrary._duplicate_modules([shield_slam_module])
-	shield_slam_upgraded[0].def_debuff_before_damage = 1
+	var def_layer := AbilityLayer.new()
+	def_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+	def_layer.effect = DataLibrary._status_effect(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, 1)
+	def_layer.effect.def_debuff_before_damage = 1
+	shield_slam_upgraded[0].layers.insert(0, def_layer)
 	var shield_slam := DataLibrary._make_modular_ability(
 		&"knight_shield_slam", "Shield Slam", [shield_slam_module],
 		shield_slam_upgraded, 1, GameEnums.PlannerGroup.ACTION,

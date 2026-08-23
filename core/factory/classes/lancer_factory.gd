@@ -139,12 +139,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		GameEnums.StatusType.STAT_BUFF_STR,
 		{"stagger_on_collision": true},
 	))
-	def.abilities.append(_attack(
-		&"lancer_vaulting_leap", "Vaulting Leap", 2, 2,
-		"On hit, deal ATK 1 to enemies adjacent to the target.",
-		{"halve_target_def_one_turn": true},
-		{"halve_target_def_one_turn": true, "armor_explosion_atk": 1},
-	))
+	def.abilities.append(_vaulting_leap())
 	def.abilities.append(_attack(
 		&"lancer_run_down", "Impale", 2, 3,
 		"On Kill: gain MAX MOVEMENT +2.",
@@ -362,6 +357,31 @@ static func _is_layer_key(key: String) -> bool:
 		"trap_def_debuff",
 		"range_one_damage_multiplier",
 	]
+
+
+static func _halve_target_def_layer() -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.ADD_STATUS
+	layer.effect.status_type = GameEnums.StatusType.STAT_DEBUFF_DEF
+	layer.effect.status_duration = 1
+	layer.effect.modifiers["halve_target_def_one_turn"] = true
+	return layer
+
+
+static func _vaulting_leap() -> AbilityData:
+	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 2, GameEnums.TargetingFlags.ENEMY)
+	module.layers = [_halve_target_def_layer()]
+	var upgraded := _clone_modules([module])
+	upgraded[0].layers = [_halve_target_def_layer()]
+	_ingest_module_keys(upgraded[0], {"armor_explosion_atk": 1})
+	return _ability(
+		&"lancer_vaulting_leap", "Vaulting Leap", 1, [module], GameEnums.TargetingFlags.ENEMY,
+		[AbilityModuleBridge.TAG_ATTACK],
+		"On hit, deal ATK 1 to enemies adjacent to the target.",
+		upgraded,
+	)
 
 
 static func _attack(

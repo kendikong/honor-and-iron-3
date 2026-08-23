@@ -3091,6 +3091,82 @@ static func ability_is_offensive_dash(ability: AbilityData) -> bool:
 const BACKSTAB_BONUS: int = 2
 
 
+static func _apply_halve_target_def_before_damage(
+	board: BoardState,
+	target: UnitState,
+	events: Array[SimEvent],
+) -> void:
+	if target == null:
+		return
+	var current_def := CombatSystem.get_dynamic_defense(board, target)
+	var remaining_def := ceili(float(current_def) / 2.0)
+	var reduction := current_def - remaining_def
+	if reduction <= 0:
+		return
+	target.active_statuses.append(
+		DataLibrary.make_status(GameEnums.StatusType.STAT_DEBUFF_DEF, 1, reduction)
+	)
+	target._recalculate_stats(board)
+	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+		"unit": target.id,
+		"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
+		"duration": 1,
+		"amount": reduction,
+	}))
+
+
+static func _apply_temporary_def_debuff_before_damage(
+	target: UnitState,
+	amount: int,
+	events: Array[SimEvent],
+) -> void:
+	if target == null or amount <= 0:
+		return
+	var temp_status := DataLibrary.make_status(
+		GameEnums.StatusType.STAT_DEBUFF_DEF, 1, amount,
+	)
+	target.active_statuses.append(temp_status)
+	target.passive_flags["__before_damage_def_debuff"] = temp_status
+	target._recalculate_stats()
+	events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
+		"unit": target.id,
+		"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
+		"duration": 1,
+		"amount": amount,
+		"temporary": true,
+	}))
+
+
+static func _erase_temporary_before_damage_def_debuff(target: UnitState) -> void:
+	if target == null:
+		return
+	var temp_status: Variant = target.passive_flags.get("__before_damage_def_debuff")
+	if temp_status == null:
+		return
+	target.active_statuses.erase(temp_status)
+	target.passive_flags.erase("__before_damage_def_debuff")
+	target._recalculate_stats()
+
+
+static func _apply_before_damage_status_riders(
+	board: BoardState,
+	target: UnitState,
+	effect: EffectData,
+	events: Array[SimEvent],
+) -> bool:
+	if target == null or effect == null:
+		return false
+	if effect.def_debuff_before_damage > 0:
+		_apply_temporary_def_debuff_before_damage(
+			target, effect.def_debuff_before_damage, events,
+		)
+		return true
+	if bool(effect.modifiers.get("halve_target_def_one_turn", false)):
+		_apply_halve_target_def_before_damage(board, target, events)
+		return true
+	return false
+
+
 static func _append_module_effects(
 	module: AbilityModule,
 	effects: Array[EffectData],
@@ -4322,7 +4398,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			var target_def = 0
 			var fort = 0
 			
-			var temp_def_debuff = null
 			if target != null and effect.bonus_if_adjacent_at_cast > 0:
 				if GridSystem.manhattan(actor.position, target.position) == 1:
 					base_amt += effect.bonus_if_adjacent_at_cast
@@ -4330,29 +4405,11 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				target != null
 				and effect.modifiers.get("halve_target_def_one_turn", false)
 			):
-				var current_def := CombatSystem.get_dynamic_defense(board, target)
-				var remaining_def := ceili(float(current_def) / 2.0)
-				var reduction := current_def - remaining_def
-				if reduction > 0:
-					target.active_statuses.append(
-						DataLibrary.make_status(
-							GameEnums.StatusType.STAT_DEBUFF_DEF, 1, reduction
-						)
-					)
-					target._recalculate_stats()
+				_apply_halve_target_def_before_damage(board, target, events)
 			if target != null and effect.def_debuff_before_damage > 0:
-				temp_def_debuff = DataLibrary.make_status(
-					GameEnums.StatusType.STAT_DEBUFF_DEF, 1, effect.def_debuff_before_damage,
+				_apply_temporary_def_debuff_before_damage(
+					target, effect.def_debuff_before_damage, events,
 				)
-				target.active_statuses.append(temp_def_debuff)
-				target._recalculate_stats()
-				events.append(SimEvent.make(GameEnums.SimEventType.STATUS_APPLIED, {
-					"unit": target.id,
-					"status_type": GameEnums.StatusType.STAT_DEBUFF_DEF,
-					"duration": 1,
-					"amount": effect.def_debuff_before_damage,
-					"temporary": true,
-				}))
 			
 			if target != null:
 				if _is_backstab(actor, target):
@@ -4783,9 +4840,7 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			):
 				actor.passive_flags["plunging_attack_consumed"] = true
 			actor.passive_flags.erase("corpse_move_empowered")
-			if temp_def_debuff != null and target != null:
-				target.active_statuses.erase(temp_def_debuff)
-				target._recalculate_stats()
+			_erase_temporary_before_damage_def_debuff(target)
 		GameEnums.EffectType.PUSH:
 			if target == null and _can_push_destructible_target(
 				board,
@@ -5338,6 +5393,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				}))
 		GameEnums.EffectType.ADD_STATUS:
 			if target != null:
+				if _apply_before_damage_status_riders(board, target, effect, events):
+					return
 				if ability_has_modifier(action.ability, &"push_mitigation_zero", actor):
 					target.passive_flags["no_push_mitigation"] = true
 				if effect.modifiers.has("link_two_enemies"):
