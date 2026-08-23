@@ -3073,8 +3073,8 @@ func _begin_collapsible_subsection(
 	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	header.add_theme_color_override("font_color", accent)
-	var arrow: String = "â–¾" if start_open else "â–¸"
-	header.text = "%s %s â€” %s" % [arrow, title, summary]
+	var arrow: String = "▾" if start_open else "▸"
+	header.text = "%s %s — %s" % [arrow, title, summary]
 	outer.add_child(header)
 	var body := VBoxContainer.new()
 	body.visible = start_open
@@ -3086,7 +3086,7 @@ func _begin_collapsible_subsection(
 	header.pressed.connect(func() -> void:
 		body.visible = not body.visible
 		var open: bool = body.visible
-		header.text = "%s %s â€” %s" % ["â–¾" if open else "â–¸", title, summary]
+		header.text = "%s %s — %s" % ["▾" if open else "▸", title, summary]
 	)
 	return {"outer": outer, "body": body, "grid": grid, "header": header}
 
@@ -3442,11 +3442,11 @@ func _add_module_layers_editor(
 	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
 	var hint := Label.new()
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_CAPTION))
+	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	hint.text = (
 		"Pick when the layer runs (Condition), then what it does (Type). "
-		+ "DURING rides on the module primary while it moves â€” use Bulldoze / Trample / Ghost / Pierce there."
+		+ "DURING rides on the module primary while it moves — use Bulldoze / Trample / Ghost / Pierce there."
 	)
 	parent.add_child(hint)
 	var box := VBoxContainer.new()
