@@ -664,7 +664,12 @@ static func planning_module_target_valid(
 		if PhysicsSystem.straight_line_dir(origin, target_coord) == Vector2i.ZERO:
 			return false
 		distance = PhysicsSystem.straight_line_distance(origin, target_coord)
-	if distance < module.min_range or distance > module.max_range:
+	var max_allowed: int = module.max_range
+	if module.primary_type == GameEnums.EffectType.DASH:
+		max_allowed = dash_effective_max_range(
+			target_board, actor, module, origin, target_coord,
+		)
+	if distance < module.min_range or distance > max_allowed:
 		if not module.runtime_value("relocate_target", false):
 			return false
 	if module.runtime_value("relocate_target", false):
@@ -819,6 +824,10 @@ static func _can_use_impl(board: BoardState, action: TimelineAction) -> bool:
 		if (is_multi_module_dash and active_module_for_index(actor, ability, 1) != null and active_module_for_index(actor, ability, 1).max_range > 0)
 		else (active_motion_max_range(actor, ability) if motion_module != null else active_range_tiles(actor, ability))
 	)
+	if is_dash_action and motion_module != null:
+		max_range = dash_effective_max_range(
+			board, actor, motion_module, origin_pos, target_coord,
+		)
 	var actor_tile := board.get_tile(actor.position)
 	if (
 		actor_tile != null
@@ -1020,6 +1029,10 @@ static func _can_use_impl(board: BoardState, action: TimelineAction) -> bool:
 		var steps := PhysicsSystem.straight_line_distance(origin_pos, action.target_coord)
 		var dash_min: int = active_motion_min_range(actor, ability)
 		var dash_max: int = active_motion_max_range(actor, ability)
+		if motion_module != null:
+			dash_max = dash_effective_max_range(
+				board, actor, motion_module, origin_pos, action.target_coord,
+			)
 		if has_authored_modules and not active_motion_range_valid(actor, ability):
 			return false
 		if steps < (dash_min if has_authored_modules else 1) or (
@@ -2507,8 +2520,9 @@ static func planning_action_range_tiles(
 	ability: AbilityData,
 	origin: Vector2i,
 	alternate_origins: Array[Vector2i] = [],
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> Array[Vector2i]:
-	return planning_threat_tiles(board, unit, ability, origin, alternate_origins)
+	return planning_threat_tiles(board, unit, ability, origin, alternate_origins, hover_cell)
 
 
 static func planning_module_range_tiles(
@@ -2516,6 +2530,7 @@ static func planning_module_range_tiles(
 	action: TimelineAction,
 	module_index: int,
 	stand_origin: Vector2i = Vector2i(-999999, -999999),
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	if board == null or action == null or action.ability == null:
@@ -2546,7 +2561,9 @@ static func planning_module_range_tiles(
 		## post-prefix stand — never a stale turn-start or pre-prefix stand_origin.
 		origin = actor.position
 	if module.primary_type == GameEnums.EffectType.DASH:
-		return dash_line_threat_tiles(range_board, origin, module.max_range)
+		return dash_line_threat_tiles_for_module(
+			range_board, actor, module, origin, hover_cell,
+		)
 	var max_range: int = active_range_tiles(actor, ability, module_index)
 	if max_range <= 0:
 		return _planning_red_range_at_zero_authored_range(actor, ability, origin, module)
@@ -2566,15 +2583,26 @@ static func planning_threat_tiles(
 	ability: AbilityData,
 	origin: Vector2i,
 	alternate_origins: Array[Vector2i] = [],
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
 ) -> Array[Vector2i]:
 	if board == null or unit == null or ability == null:
 		var empty: Array[Vector2i] = []
 		return empty
 	if ability_has_dash(ability, unit):
+		var motion: AbilityModule = active_motion_module(unit, ability)
+		if motion != null and module_dash_collision_extended_range(motion) > motion.max_range:
+			var dash_tiles: Array[Vector2i] = dash_line_threat_tiles_for_module(
+				board, unit, motion, origin, hover_cell,
+			)
+			if motion.min_range > 1:
+				dash_tiles = dash_tiles.filter(
+					func(cell: Vector2i) -> bool:
+						return GridSystem.manhattan(origin, cell) >= motion.min_range
+				)
+			return dash_tiles
 		var dash_tiles: Array[Vector2i] = dash_line_threat_tiles(
 			board, origin, dash_steps(ability, unit),
 		)
-		var motion: AbilityModule = active_motion_module(unit, ability)
 		if motion != null and motion.min_range > 1:
 			dash_tiles = dash_tiles.filter(
 				func(cell: Vector2i) -> bool:
@@ -2671,6 +2699,85 @@ static func dash_line_threat_tiles(board: BoardState, origin: Vector2i, steps: i
 	if board == null or steps <= 0:
 		return tiles
 	for dir: Vector2i in GridSystem.DIRECTIONS:
+		for i: int in range(1, steps + 1):
+			var coord: Vector2i = origin + dir * i
+			if board.is_in_bounds(coord):
+				tiles.append(coord)
+	return tiles
+
+
+static func module_dash_collision_extended_range(module: AbilityModule) -> int:
+	if module == null:
+		return 0
+	for layer: AbilityLayer in module.layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE
+		):
+			return maxi(layer.primary_range_if_line_collision, 0)
+	return 0
+
+
+static func dash_line_has_enemy(
+	board: BoardState,
+	actor: UnitState,
+	origin: Vector2i,
+	direction: Vector2i,
+	scan_steps: int,
+) -> bool:
+	if board == null or actor == null or direction == Vector2i.ZERO or scan_steps <= 0:
+		return false
+	for step: int in range(1, scan_steps + 1):
+		var cell: Vector2i = origin + direction * step
+		if not board.is_in_bounds(cell):
+			break
+		var occupant: UnitState = board.get_unit_at(cell)
+		if occupant != null and occupant.is_alive() and occupant.team != actor.team:
+			return true
+	return false
+
+
+static func dash_effective_max_range(
+	board: BoardState,
+	actor: UnitState,
+	module: AbilityModule,
+	origin: Vector2i,
+	target_coord: Vector2i = Vector2i(-999999, -999999),
+) -> int:
+	if module == null:
+		return 0
+	var base_range: int = module.max_range
+	var extended: int = module_dash_collision_extended_range(module)
+	if extended <= base_range:
+		return base_range
+	if target_coord.x <= -900000:
+		return base_range
+	var dir: Vector2i = PhysicsSystem.straight_line_dir(origin, target_coord)
+	if dir == Vector2i.ZERO:
+		return base_range
+	if dash_line_has_enemy(board, actor, origin, dir, extended):
+		return extended
+	return base_range
+
+
+static func dash_line_threat_tiles_for_module(
+	board: BoardState,
+	actor: UnitState,
+	module: AbilityModule,
+	origin: Vector2i,
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
+) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	if board == null or module == null or module.max_range <= 0:
+		return tiles
+	var base_steps: int = module.max_range
+	var extended_steps: int = module_dash_collision_extended_range(module)
+	for dir: Vector2i in GridSystem.DIRECTIONS:
+		var steps: int = base_steps
+		if extended_steps > base_steps and hover_cell.x > -900000:
+			var hover_dir: Vector2i = PhysicsSystem.straight_line_dir(origin, hover_cell)
+			if hover_dir == dir and dash_line_has_enemy(board, actor, origin, dir, extended_steps):
+				steps = extended_steps
 		for i: int in range(1, steps + 1):
 			var coord: Vector2i = origin + dir * i
 			if board.is_in_bounds(coord):
@@ -3470,10 +3577,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				module_cursor += 1
 				if not _module_gate_passes(next_module, actor, events, module_event_start):
 					continue
-				if next_module.gate == GameEnums.ModuleGate.IF_COLLIDED:
-					actor.passive_flags["if_collided_recast_used"] = true
-					actor.ability.points_left += 1
-					actor.turn_action_used = false
 				_append_module_effects(next_module, effects_to_apply, effect_modules)
 				current_module_end = effects_to_apply.size()
 				queued_next_module = true
@@ -5690,23 +5793,29 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 			if target != null:
 				purge_unit(target, events)
 		GameEnums.EffectType.DASH:
-			var dir := PhysicsSystem.straight_line_dir(actor.position, action.target_coord)
-			var dash_steps := PhysicsSystem.straight_line_distance(actor.position, action.target_coord)
-			if dir != Vector2i.ZERO and dash_steps >= 1 and dash_steps <= effect.amount:
+			var dir := PhysicsSystem.straight_line_dir(actor.position, tile_coord)
+			var dash_distance := PhysicsSystem.straight_line_distance(actor.position, tile_coord)
+			var dash_cap: int = effect.amount
+			var motion_module: AbilityModule = active_motion_module(actor, action.ability)
+			if motion_module != null:
+				dash_cap = dash_effective_max_range(
+					board, actor, motion_module, actor.position, tile_coord,
+				)
+			if dir != Vector2i.ZERO and dash_distance >= 1 and dash_distance <= dash_cap:
 				if effect.modifiers.get("stop_adjacent_first_enemy", false):
 					actor.passive_flags.erase("monk_dash_enemy_id")
-					for step_index: int in range(1, dash_steps + 1):
+					for step_index: int in range(1, dash_distance + 1):
 						var cell := actor.position + dir * step_index
 						var occupant := board.get_unit_at(cell)
 						if occupant != null and occupant.team != actor.team and occupant.is_alive():
 							actor.passive_flags["monk_dash_enemy_id"] = occupant.id
-							dash_steps = step_index - 1
+							dash_distance = step_index - 1
 							break
 				var pending = {
 					"type": "dash",
 					"target_id": actor.id,
 					"dir": dir,
-					"amount": dash_steps,
+					"amount": dash_distance,
 					"actor_id": actor.id,
 					"ability_id": action.ability.id
 				}

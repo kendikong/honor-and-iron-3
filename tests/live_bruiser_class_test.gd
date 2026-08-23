@@ -891,22 +891,10 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			).is_true()
 			assert_bool(
 				ability != null
-				and ability.modules.size() >= 2
-				and ability.modules[1].gate == GameEnums.ModuleGate.IF_COLLIDED,
+				and ability.modules.size() == 1
+				and AbilitySystem.module_dash_collision_extended_range(ability.modules[0]) == 5,
 			).override_failure_message(
-				"violent_collision: live selected ability must include IF_COLLIDED recast module",
-			).is_true()
-			var projection_board: BoardState = _director.base_board.clone()
-			var projection_events: Array[SimEvent] = []
-			Simulator.simulate_player_turn(
-				projection_board, _director.get_player_plan(), projection_events,
-			)
-			var projected_actor: UnitState = projection_board.get_unit_by_id(actor_id)
-			assert_bool(
-				projected_actor != null
-				and projected_actor.passive_flags.get("if_collided_recast_used", false),
-			).override_failure_message(
-				"violent_collision: player-phase simulation must expose the recast before turn reset",
+				"violent_collision: live ability must be single-module with collision range extend to 5",
 			).is_true()
 		&"bruiser_belly_flop":
 			assert_that(final_actor.position).override_failure_message(

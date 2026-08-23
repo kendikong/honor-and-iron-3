@@ -670,6 +670,7 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 	return {
 		"condition": src.condition,
 		"during_bulldoze_push": src.during_bulldoze_push,
+		"primary_range_if_line_collision": src.primary_range_if_line_collision,
 		"object_collision_stagger": src.object_collision_stagger,
 		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
 		"weapon_scaled": src.weapon_scaled,
@@ -739,6 +740,9 @@ static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	layer.condition = int(data.get("condition", layer.condition))
 	layer.during_bulldoze_push = int(data.get("during_bulldoze_push", layer.during_bulldoze_push))
+	layer.primary_range_if_line_collision = int(
+		data.get("primary_range_if_line_collision", layer.primary_range_if_line_collision)
+	)
 	layer.object_collision_stagger = bool(
 		data.get("object_collision_stagger", layer.object_collision_stagger)
 	)

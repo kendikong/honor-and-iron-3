@@ -288,19 +288,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	collision_dash.layers = [
 		DataLibrary._during_bulldoze(1, 1),
+		DataLibrary._if_line_collision_extend_primary_range(5),
 	]
-	var collision_extend := DataLibrary._module(
-		GameEnums.EffectType.DASH, 2, 1, 2, GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
-	)
-	collision_extend.layers = [
-		DataLibrary._during_bulldoze(1, 1),
-	]
-	collision_extend.gate = GameEnums.ModuleGate.IF_COLLIDED
-	## Bible: on enemy hit, extend to DASH 5 | BULLDOZE on the same line (3 + gated 2).
-	collision_extend.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	collision_extend.aim_module_index = 0
-	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_extend])
+	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash])
 	var collision_stagger := DataLibrary._effect(GameEnums.EffectType.PUSH, 0)
 	var collision_layer := DataLibrary._layer(
 		collision_stagger, GameEnums.LayerCondition.ON_COLLISION,
@@ -309,7 +299,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	collision_upgraded[0].layers.append(collision_layer)
 	var violent_collision := DataLibrary._make_modular_ability(
 		&"bruiser_violent_collision", "Violent Collision",
-		[collision_dash, collision_extend], collision_upgraded, 1,
+		[collision_dash], collision_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
 		"On enemy collision, continue as DASH 5 | BULLDOZE along the same line. "
 		+ "[+] Collisions apply STAGGER (1 turn).",

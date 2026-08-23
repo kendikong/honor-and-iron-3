@@ -451,9 +451,11 @@ func _planning_action_range_tiles_for_unit(
 			## Latest stand (`origin` from `_intent_stand_origin`), projected board.
 			## Never `base_board` — that is turn start. See action-range-latest-stand.mdc.
 			return AbilitySystem.planning_module_range_tiles(
-				plan_board, awaiting, awaiting.awaiting_module_index, origin,
+				plan_board, awaiting, awaiting.awaiting_module_index, origin, _hover_coord,
 			)
-	return AbilitySystem.planning_action_range_tiles(plan_board, actor, ability, origin, [])
+	return AbilitySystem.planning_action_range_tiles(
+		plan_board, actor, ability, origin, [], _hover_coord,
+	)
 
 
 func _hover_is_walk_only_premove(unit: UnitState) -> bool:

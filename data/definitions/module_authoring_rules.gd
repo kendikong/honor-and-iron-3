@@ -1243,6 +1243,8 @@ static func layer_summary(layer: AbilityLayer) -> String:
 		if layer.collision_splash_damage > 0:
 			return "on_collision splash"
 		return "on_collision"
+	if layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE:
+		return "if_line_collision range=%d" % layer.primary_range_if_line_collision
 	if layer.vulnerable_on_adjacent and layer.effect != null and layer.effect.type == GameEnums.EffectType.PULL:
 		return "pull vulnerable if adjacent"
 	if layer.effect == null:

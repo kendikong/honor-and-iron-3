@@ -396,6 +396,8 @@ enum LayerCondition {
 	PER_TARGET_HIT,
 	IF_ALREADY_ADJACENT,
 	IF_FROM_BEHIND,
+	## Planning + execution: raise primary module max_range on dash lines with an enemy.
+	IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE,
 }
 
 ## Bundled keyword packages on a motion/damage module (ability-data.md §6).

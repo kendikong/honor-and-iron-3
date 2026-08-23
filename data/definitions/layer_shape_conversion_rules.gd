@@ -127,7 +127,14 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 	},
 	&"bruiser_violent_collision": {
 		"forbidden_typed": ["violent_collision_recast"],
-		"min_modules": 2,
+		"min_modules": 1,
+		"required_layers": [
+			{
+				"condition": "IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE",
+				"effect_type": "DASH",
+				"profile": "base",
+			},
+		],
 	},
 	## ER-1 allowlist skills (mandate_violations=0; typed extras documented per binding matrix)
 	&"bruiser_charge_strike": {},
@@ -440,6 +447,14 @@ static func _layer_condition_from_spec(value: Variant) -> GameEnums.LayerConditi
 			return GameEnums.LayerCondition.ON_COLLISION
 		"PER_TARGET_HIT":
 			return GameEnums.LayerCondition.PER_TARGET_HIT
+		"IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE":
+			return GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE
+		"IF_ALREADY_ADJACENT":
+			return GameEnums.LayerCondition.IF_ALREADY_ADJACENT
+		"ON_LAND":
+			return GameEnums.LayerCondition.ON_LAND
+		"DURING":
+			return GameEnums.LayerCondition.DURING
 		_:
 			return GameEnums.LayerCondition.AT_RESOLUTION
 
@@ -456,5 +471,7 @@ static func _effect_type_from_spec(value: Variant) -> GameEnums.EffectType:
 			return GameEnums.EffectType.ADD_STATUS_SELF
 		"DAMAGE":
 			return GameEnums.EffectType.DAMAGE
+		"DASH":
+			return GameEnums.EffectType.DASH
 		_:
 			return GameEnums.EffectType.DAMAGE

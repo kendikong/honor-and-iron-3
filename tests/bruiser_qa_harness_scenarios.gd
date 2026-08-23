@@ -1018,27 +1018,18 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
+	H.assert_eq_int(failures, "violent_collision/module_count", ab.modules.size(), 1)
 	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.modules[0].amount, 3)
-	H.assert_eq_int(failures, "violent_collision/extend_dash_amount", ab.modules[1].amount, 2)
 	H.assert_true(
 		failures,
-		"violent_collision/bulldoze_m1",
+		"violent_collision/bulldoze",
 		AbilityModuleBridge.module_has_modifier(ab.modules[0], &"bulldoze"),
 	)
-	H.assert_true(
-		failures,
-		"violent_collision/bulldoze_m2",
-		AbilityModuleBridge.module_has_modifier(ab.modules[1], &"bulldoze"),
-	)
-	H.assert_true(
-		failures, "violent_collision/extend_mod",
-		ab.modules.size() >= 2
-		and ab.modules[1].primary_type == GameEnums.EffectType.DASH
-		and ab.modules[1].gate == GameEnums.ModuleGate.IF_COLLIDED,
-	)
+	var extend_range: int = AbilitySystem.module_dash_collision_extended_range(ab.modules[0])
+	H.assert_eq_int(failures, "violent_collision/collision_extend_range", extend_range, 5)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}
-	var board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
+	var board: BoardState = H.make_plain_board(Vector2i(10, 6))
 	H.place_bruiser(board, 1, Vector2i(2, 3), cfg)
 	H.place_dummy(board, 2, Vector2i(4, 3))
 	var skill: AbilityData = H.ability_on_unit(H.unit_on_board(board, 1), &"bruiser_violent_collision")
@@ -1046,45 +1037,38 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	plan.add(H.plan_ability(1, skill, Vector2i(5, 3), -1))
 	var result: SimResult = H.simulate_plan(board, plan)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(1)
-	H.assert_true(
-		failures, "violent_collision/dash",
-		bruiser != null and bruiser.position.x >= 4,
-	)
-	var recast_board: BoardState = H.make_plain_board(Vector2i(8, 6), [Vector2i(5, 3)])
-	H.place_bruiser(recast_board, 10, Vector2i(2, 3), H.bruiser_with_ability(&"bruiser_violent_collision"))
-	H.place_dummy(recast_board, 11, Vector2i(4, 3))
-	var recast_bruiser: UnitState = H.unit_on_board(recast_board, 10)
-	var ap_before: int = recast_bruiser.ability.points_left
-	var recast_skill: AbilityData = H.ability_on_unit(recast_bruiser, &"bruiser_violent_collision")
-	var recast_plan := Timeline.new()
-	recast_plan.add(H.plan_ability(10, recast_skill, Vector2i(5, 3), -1))
-	var mid_result: SimResult = H.simulate_plan(recast_board, recast_plan)
-	var mid_bruiser: UnitState = mid_result.final_state.get_unit_by_id(10)
-	H.assert_true(
-		failures, "violent_collision/recast_used",
-		mid_bruiser != null and mid_bruiser.passive_flags.get("if_collided_recast_used", false),
-	)
-	H.assert_true(
-		failures, "violent_collision/recast_ap_refund",
-		mid_bruiser != null and mid_bruiser.ability.points_left >= ap_before,
-		"collision recast must refund AP for the Bible follow-up MOVE",
-	)
-	H.assert_true(
-		failures, "violent_collision/recast_action_slot",
-		mid_bruiser != null and not mid_bruiser.turn_action_used,
-		"collision recast must reopen the action slot for a second MOVE",
-	)
-	var follow_board: BoardState = H.make_plain_board(Vector2i(10, 6))
-	H.place_bruiser(follow_board, 10, mid_bruiser.position, H.bruiser_with_ability(&"bruiser_violent_collision"))
-	var follow_skill: AbilityData = H.ability_on_unit(H.unit_on_board(follow_board, 10), &"bruiser_violent_collision")
-	var follow_plan := Timeline.new()
-	follow_plan.add(H.plan_ability(10, follow_skill, Vector2i(6, 3), -1))
-	var recast_result: SimResult = H.simulate_plan(follow_board, follow_plan)
-	var after_recast: UnitState = recast_result.final_state.get_unit_by_id(10)
 	H.assert_eq_cell(
-		failures, "violent_collision/recast_followup_move",
-		after_recast.position if after_recast != null else Vector2i.ZERO,
-		Vector2i(6, 3),
+		failures, "violent_collision/dash_through_collision",
+		bruiser.position if bruiser != null else Vector2i.ZERO,
+		Vector2i(5, 3),
+	)
+	var extend_board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	H.place_bruiser(extend_board, 10, Vector2i(2, 3), cfg)
+	H.place_dummy(extend_board, 11, Vector2i(4, 3))
+	var extend_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(extend_board, 10), &"bruiser_violent_collision",
+	)
+	var extend_plan := Timeline.new()
+	extend_plan.add(H.plan_ability(10, extend_skill, Vector2i(7, 3), -1))
+	var extend_result: SimResult = H.simulate_plan(extend_board, extend_plan)
+	var extended_bruiser: UnitState = extend_result.final_state.get_unit_by_id(10)
+	H.assert_eq_cell(
+		failures, "violent_collision/extended_dash_on_line",
+		extended_bruiser.position if extended_bruiser != null else Vector2i.ZERO,
+		Vector2i(7, 3),
+	)
+	var no_extend_board: BoardState = H.make_plain_board(Vector2i(10, 6))
+	H.place_bruiser(no_extend_board, 20, Vector2i(2, 3), cfg)
+	var no_extend_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(no_extend_board, 20), &"bruiser_violent_collision",
+	)
+	var blocked_plan := Timeline.new()
+	blocked_plan.add(H.plan_ability(20, no_extend_skill, Vector2i(6, 3), -1))
+	var blocked_result: SimResult = H.simulate_plan(no_extend_board, blocked_plan)
+	var blocked_bruiser: UnitState = blocked_result.final_state.get_unit_by_id(20)
+	H.assert_true(
+		failures, "violent_collision/no_collision_caps_at_three",
+		blocked_bruiser != null and blocked_bruiser.position.x <= 5,
 	)
 
 
