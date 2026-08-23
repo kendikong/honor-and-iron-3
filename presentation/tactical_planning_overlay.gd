@@ -58,8 +58,8 @@ const _PUSH_INTENT_DASH_GAP: float = 4.0
 const _PUSH_INTENT_CHEVRON_LEN: float = 5.0
 const _PUSH_INTENT_CHEVRON_HALF_W: float = 3.5
 const _INTENT_DOT_FLOW_SPEED: float = _TARGETING_INTENT_FLOW_SPEED * 0.4
-## Intentional chevron-layer cap only — never applied to ghosts/routes/intents.
-const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 30.0
+## Hover tile/range throttle uses this interval (not chevron flow — flow redraws every frame).
+const _FLOW_ANIM_REDRAW_INTERVAL_SEC: float = 1.0 / 60.0
 const _DASH_LINE_W: float = 2.0
 const _DASH_WING_LEN: float = 5.0
 const _INTENT_ROUTE_ALPHA: float = 0.40
@@ -122,6 +122,7 @@ var _anim_redraw_accum: float = 0.0
 var _hover_visual_refresh_accum: float = 0.0
 var _hover_tile_redraw_pending: bool = false
 var _cursor_action_tiles_pending: bool = false
+var _hover_tile_redraw_deferred: bool = false
 
 
 func setup(
@@ -264,7 +265,19 @@ func _queue_hover_tile_redraw() -> void:
 
 
 func _request_hover_tile_redraw() -> void:
+	if _hover_tile_redraw_deferred:
+		return
 	_hover_tile_redraw_pending = true
+	_hover_tile_redraw_deferred = true
+	call_deferred("_flush_hover_tile_redraw")
+
+
+func _flush_hover_tile_redraw() -> void:
+	_hover_tile_redraw_deferred = false
+	if not _hover_tile_redraw_pending:
+		return
+	_hover_tile_redraw_pending = false
+	_queue_hover_tile_redraw()
 
 
 func _request_cursor_action_tiles_refresh() -> void:
@@ -275,33 +288,31 @@ func _request_cursor_action_tiles_refresh() -> void:
 func force_hover_visual_refresh() -> void:
 	_hover_visual_refresh_accum = 0.0
 	_hover_tile_redraw_pending = false
+	_hover_tile_redraw_deferred = false
 	_cursor_action_tiles_pending = false
 	if CombatDirector.is_planning_phase(_phase):
 		_recompute_hover_ranges_from_inputs()
 	_queue_hover_tile_redraw()
 
 
-func _hover_visual_refresh_interval_sec() -> float:
-	return _overlay_flow_interval_sec()
+func _hover_range_recompute_interval_sec() -> float:
+	if _game_settings != null:
+		return _game_settings.hover_sim_interval_sec()
+	return 0.045
 
 
 func _process_hover_visual_throttle(delta: float) -> void:
-	if not _hover_tile_redraw_pending and not _cursor_action_tiles_pending:
+	if not _cursor_action_tiles_pending:
 		return
 	if not CombatDirector.is_planning_phase(_phase):
-		_hover_tile_redraw_pending = false
 		_cursor_action_tiles_pending = false
 		return
 	_hover_visual_refresh_accum += delta
-	if _hover_visual_refresh_accum < _hover_visual_refresh_interval_sec():
+	if _hover_visual_refresh_accum < _hover_range_recompute_interval_sec():
 		return
 	_hover_visual_refresh_accum = 0.0
-	if _cursor_action_tiles_pending:
-		_cursor_action_tiles_pending = false
-		_recompute_hover_ranges_from_inputs()
-	if _hover_tile_redraw_pending:
-		_hover_tile_redraw_pending = false
-		_queue_hover_tile_redraw()
+	_cursor_action_tiles_pending = false
+	_recompute_hover_ranges_from_inputs()
 
 
 func _draw_hover_tile_layer() -> void:
@@ -1360,12 +1371,10 @@ func _process(delta: float) -> void:
 		_queue_overlay_redraw()
 		return
 	if not CombatDirector.is_planning_phase(_phase) or not _overlay_needs_flow_animation():
-		_anim_redraw_accum = 0.0
 		return
-	_anim_redraw_accum += delta
-	if _anim_redraw_accum >= _overlay_flow_interval_sec():
-		_anim_redraw_accum = 0.0
-		_queue_flow_arrows_redraw()
+	## Chevron motion only — redraw flow layer every frame (uncapped). Hover tiles/ranges
+	## stay on _process_hover_visual_throttle; route paint stays deferred in planning input.
+	_queue_flow_arrows_redraw()
 
 
 func _overlay_needs_flow_animation() -> bool:

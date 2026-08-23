@@ -2837,7 +2837,11 @@ func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i)
 	if _director == null or _director.board == null:
 		return false
 	if _director.selected_ability_index >= 0 and not force_basic_movement:
-		return false
+		var actor: UnitState = _proj_unit(_director.selected_unit_id)
+		## Post-swap/postmove: action column spent — walk hover matches premove cheap path
+		## even when a class skill stays highlighted (e.g. after Swap commit).
+		if actor == null or not _planning_post_move_only(actor, _director.selected_unit_id, cell):
+			return false
 	var occupant: UnitState = _director.board.get_unit_at(cell)
 	if occupant != null and occupant.id != _director.selected_unit_id:
 		return false
