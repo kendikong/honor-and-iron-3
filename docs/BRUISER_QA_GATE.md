@@ -71,7 +71,7 @@ Map Bible text to a global keyword **only when semantics match exactly**. **Auth
 |--------------|--------------|----------------|
 | **Suplex:** behind caster placement | `SWAP` | `THROW_BEHIND` (`bruiser_suplex`) |
 | **Meat Shield:** swap with ally | `TELEPORT` | `SWAP` + `INTERCEPT` |
-| **Violent Collision:** dash + recast on hit | single `MOVE` | `DASH` + `IF_COLLIDED` second `MOVE` module (no `violent_collision_recast` knob) |
+| **Violent Collision:** DASH 3 + BULLDOZE; on hit DASH 5 + BULLDOZE same line | single `MOVE` | `DASH` + BULLDOZE, then `IF_COLLIDED` + `DASH` 2 + BULLDOZE (no `violent_collision_recast` knob) |
 | **Push Through:** move into occupied tile | `SWAP` | `MOVE_INTO_AND_PUSH` |
 
 ---
@@ -115,7 +115,7 @@ Registry: `tests/bruiser_planning_smoke_registry.gd` via `bruiser_qa_runner.gd`.
 | `bruiser_guttural_roar` | Active | `tests/skills/bruiser_guttural_roar_scenario.gd` | PASS | AOE PUSH + DEF debuff; `[+]` item push/collision |
 | `bruiser_headbutt` | Active | `tests/skills/bruiser_headbutt_scenario.gd` | PASS | Mutual DAMAGE + STAGGER; `[+]` % Max HP bonus |
 | `bruiser_blood_boil` | Active | `tests/skills/bruiser_blood_boil_scenario.gd` | PASS | SELF HP; next-turn attacks gain ATK +2 + BLEED WPN; `[+]` ATK +4 |
-| `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH bulldoze + recast; `[+]` STAGGER on collision |
+| `bruiser_violent_collision` | Active | `tests/skills/bruiser_violent_collision_scenario.gd` | PASS | DASH 3 + BULLDOZE; on hit DASH 5 + BULLDOZE; `[+]` STAGGER on collision |
 | `bruiser_crimson_whirlwind` | Active | `tests/skills/bruiser_crimson_whirlwind_scenario.gd` | PASS | AOE DAMAGE; `[+]` heal per hit |
 | `bruiser_belly_flop` | Active | `tests/skills/bruiser_belly_flop_scenario.gd` | PASS | 1 AP; RANGE 2 JUMP + AOE_CROSS ATK 2 on landing; `[+]` PUSH 1 |
 | `bruiser_breaching_dash` | Active | `tests/skills/bruiser_breaching_dash_scenario.gd` | PASS | DASH + destroy cover; `[+]` next attack PIERCE |

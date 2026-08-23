@@ -322,7 +322,7 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 | Always | Always runs (if skill itself was legal) |
 | If killed enemy | Enemy reached 0 HP from earlier steps of this skill |
 | If damage dealt | Earlier step dealt damage |
-| If collided | Motion collided (Violent Collision → second MOVE) |
+| If collided | Motion collided (Violent Collision → extend DASH 2 + BULLDOZE on same line) |
 | If adjacent to enemy / ally | Actor adjacency at check time |
 | If isolated | No allies adjacent |
 | If no move this turn yet | Actor has not spent movement before this skill |
@@ -336,7 +336,7 @@ Checked at **this module’s resolution time**, using the board **after earlier 
 4. If the gate **would fail**, the follow-up aim is inactive (not part of commit intent).  
 5. On resolve: gate fails → module skipped; gate passes with missing/invalid aim → **fail loud** (do not invent a destination).
 
-This is the Violent Collision rule (DASH + BULLDOZE, then MOVE if collided).
+This is the Violent Collision rule (DASH 3 + BULLDOZE; on enemy hit, DASH 5 + BULLDOZE along the same line).
 
 **Typed metadata queries are not execution.** `AbilitySystem.ability_has_effect()`
 is an ungated presentation/metadata scan of the active typed module profile. It may
@@ -597,7 +597,7 @@ Module 1 — ON_ACTION
   Gate: Always
 ```
 
-### Example F — Violent Collision (gated follow-up)
+### Example F — Violent Collision (gated dash extension)
 
 ```
 Header:
@@ -609,17 +609,20 @@ Header:
 Module 1 — ON_ACTION
   Effect: DASH
   Range: 1–3 (min 1)
-  Shape: dash-line
-  Keywords: BULLDOZE (amounts per factory)
+  Shape: dash-line (DASH_LINE targeting — straight cardinal line endpoints only)
+  Bundles: BULLDOZE (amounts per factory)
   Gate: Always
 
 Module 2 — ON_ACTION
-  Effect: MOVE
+  Effect: DASH
   Range: 1–2 (min 1)
-  Shape: SINGLE, mode: TILE
-  Gate: If collided (from module 1)
+  Shape: dash-line
+  Bundles: BULLDOZE
+  Gate: If collided with enemy (from module 1)
+  Aim: same line as module 1 (player does not re-aim)
 ```
 
+Bible wording: **DASH 3 | BULLDOZE**; on enemy collision **DASH 5 | BULLDOZE** along the same line instead (3 + gated 2).
 Planning uses §2.7 gated-aim rules. Upgrade layer: STAGGER on collision.
 
 ---

@@ -207,7 +207,7 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Guttural Roar [+] | Push items; item collision damage / VULNERABLE | New field | PUSH-hits-items flags. |
 | Headbutt | True damage | New field | Unmitigated flag on DAMAGE. |
 | Headbutt [+] | Extra % of max HP | New field | % HP on DAMAGE. |
-| Violent Collision | Recast move if you collided | Existing gate | **IF_COLLIDED** + second MOVE module. |
+| Violent Collision | Extend to DASH 5 \| BULLDOZE on enemy hit | Existing gate | DASH 3 + BULLDOZE, then **IF_COLLIDED** + DASH 2 + BULLDOZE (same line). |
 | Violent Collision | STAGGER on collision | Existing layer | STAGGER on **ON_COLLISION**. |
 | Crimson Whirlwind [+] | HEAL 1 per target hit | Existing layer | HEAL on **PER_TARGET_HIT**. |
 | Breaching Dash [+] | Next attack PIERCE | Existing keyword | **PIERCE** on next attack. |

@@ -7,9 +7,9 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 
-## Bible: Violent Collision - DASH 3 | bulldoze + recast MOVE 2 on enemy hit.
+## Bible: Violent Collision — DASH 3 | BULLDOZE; on enemy hit DASH 5 | BULLDOZE same line.
 ## [+] collisions apply STAGGER (1 turn).
-## Globals: EffectType.DASH + bulldoze; IF_COLLIDED second MOVE module for recast.
+## Globals: DASH + BULLDOZE bundle; IF_COLLIDED second DASH module for line extension.
 
 
 static func run_all(failures: Array[String]) -> void:

@@ -173,16 +173,18 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("bruiser_violent_collision missing")
 		return
 	if vc.modules.size() < 2:
-		failures.append("violent_collision should have DASH + gated MOVE modules")
+		failures.append("violent_collision should have DASH + gated extension DASH modules")
 		return
 	if vc.modules[0].primary_type != GameEnums.EffectType.DASH:
 		failures.append("violent_collision module[0] should be DASH")
-	if vc.modules[1].primary_type != GameEnums.EffectType.MOVE:
-		failures.append("violent_collision module[1] should be MOVE")
+	if vc.modules[1].primary_type != GameEnums.EffectType.DASH:
+		failures.append("violent_collision module[1] should be DASH (gated extension)")
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
 	if not vc.modules[0].runtime_has("bulldoze"):
-		failures.append("violent_collision module lost bulldoze modifier")
+		failures.append("violent_collision module[0] lost bulldoze modifier")
+	if not vc.modules[1].runtime_has("bulldoze"):
+		failures.append("violent_collision module[1] lost bulldoze modifier")
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:
 		if ab2 != null and ab2.id == &"bruiser_charge_strike":

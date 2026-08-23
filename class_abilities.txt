@@ -244,7 +244,7 @@ Active Skills & Upgrades
 (The Behemoth / The Siegebreaker) Guttural Roar: RANGE 0 | AOE 2 | PUSH 1 | Target DEF -2. Upgrade: PUSH 1 all items/coins/scrap. Item/scrap collision deals Floor(STR / 2) damage and applies VULNERABLE.
 (The Behemoth) Headbutt: RANGE 1 | ATK 3 | SELF suffers 1 HP (flat cost) | Apply STAGGER to SELF and target. Upgrade: Deal bonus damage equal to Floor(10% of Max HP).
 (The Bloodrager) Blood Boil: SELF | Spend 5 HP. Your attacks next turn gain ATK +2 and apply BLEED X (X = WPN). Upgrade: Spend 10 HP: ATK +4 instead.
-(The Siegebreaker) Violent Collision: MOVE 3 | On enemy collision, perform second MOVE 2. Upgrade: Collisions apply STAGGER (1 turn).
+(The Siegebreaker) Violent Collision: DASH 3 | BULLDOZE. If you collide with an enemy along the line, continue as DASH 5 | BULLDOZE along the same line instead. Upgrade: Collisions apply STAGGER (1 turn).
 (The Bloodrager) Crimson Whirlwind: RANGE 0 | AOE 3x3 | ATK 1. Upgrade: HEAL 1. If 3+ targets hit, HEAL 2 instead.
 (The Behemoth) Belly Flop: RANGE 2 | Jump to empty tile | ATK 2 to adjacent enemies on landing. Upgrade: Landing applies PUSH 1 to adjacent enemies.
 (The Siegebreaker) Breaching Dash: DASH 3 | Instantly destroy all destructible cover passed through. Upgrade: Your next attack (next turn) gains PIERCE.

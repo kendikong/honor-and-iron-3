@@ -1012,17 +1012,20 @@ static func run_blood_boil(failures: Array[String]) -> void:
 
 
 static func run_violent_collision(failures: Array[String]) -> void:
-	## Bible: Violent Collision — MOVE 3 | bulldoze + recast MOVE 2; [+] collision STAGGER.
+	## Bible: Violent Collision — DASH 3 | BULLDOZE; on enemy hit DASH 5 | BULLDOZE same line; [+] STAGGER.
 	H.run_active_smoke(
-		failures, &"bruiser_violent_collision", "DASH 3 | bulldoze + recast",
+		failures, &"bruiser_violent_collision", "DASH 3 | BULLDOZE; extend to 5 on hit",
 		[GameEnums.EffectType.DASH],
 	)
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.modules[0].amount, 3)
-	H.assert_true(failures, "violent_collision/bulldoze", ab.modules[0].runtime_has("bulldoze"))
+	H.assert_eq_int(failures, "violent_collision/extend_dash_amount", ab.modules[1].amount, 2)
+	H.assert_true(failures, "violent_collision/bulldoze_m1", ab.modules[0].runtime_has("bulldoze"))
+	H.assert_true(failures, "violent_collision/bulldoze_m2", ab.modules[1].runtime_has("bulldoze"))
 	H.assert_true(
-		failures, "violent_collision/recast_mod",
+		failures, "violent_collision/extend_mod",
 		ab.modules.size() >= 2
+		and ab.modules[1].primary_type == GameEnums.EffectType.DASH
 		and ab.modules[1].gate == GameEnums.ModuleGate.IF_COLLIDED,
 	)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")

@@ -31,7 +31,7 @@ const LAYER_MANDATE_TYPED_PROPS: Array[String] = [
 	"buff_on_push", ## Matrix: STR buff on PUSH layer.
 	"heal_per_debuff",
 	"on_hit_scrap",
-	"violent_collision_recast", ## Matrix: IF_COLLIDED + second MOVE module, not a recast knob.
+	"violent_collision_recast", ## Matrix: IF_COLLIDED + second DASH module + BULLDOZE, not a recast knob.
 ]
 
 ## ER-1 allowlist: typed extras that may remain on modules after real conversion.

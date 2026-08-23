@@ -289,15 +289,18 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	collision_dash.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
 	]
-	var collision_recast := DataLibrary._module(
-		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
+	var collision_extend := DataLibrary._module(
+		GameEnums.EffectType.DASH, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	collision_recast.gate = GameEnums.ModuleGate.IF_COLLIDED
-	## Recast is IF_COLLIDED gate refund + reopen; second MOVE uses SAME_AS_MODULE_N aim.
-	collision_recast.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
-	collision_recast.aim_module_index = 0
-	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_recast])
+	collision_extend.keywords = [
+		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
+	]
+	collision_extend.gate = GameEnums.ModuleGate.IF_COLLIDED
+	## Bible: on enemy hit, extend to DASH 5 | BULLDOZE on the same line (3 + gated 2).
+	collision_extend.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
+	collision_extend.aim_module_index = 0
+	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_extend])
 	var collision_stagger := DataLibrary._effect(GameEnums.EffectType.PUSH, 0)
 	var collision_layer := DataLibrary._layer(
 		collision_stagger, GameEnums.LayerCondition.ON_COLLISION,
@@ -306,9 +309,11 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	collision_upgraded[0].layers = [collision_layer]
 	var violent_collision := DataLibrary._make_modular_ability(
 		&"bruiser_violent_collision", "Violent Collision",
-		[collision_dash, collision_recast], collision_upgraded, 1,
+		[collision_dash, collision_extend], collision_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
-		"Collisions apply STAGGER (1 turn).", GameEnums.TargetingFlags.DASH_LINE,
+		"On enemy collision, continue as DASH 5 | BULLDOZE along the same line. "
+		+ "[+] Collisions apply STAGGER (1 turn).",
+		GameEnums.TargetingFlags.DASH_LINE,
 	)
 	def.abilities.append(violent_collision)
 

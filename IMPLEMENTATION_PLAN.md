@@ -101,7 +101,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Bruiser | Guttural Roar | ☑ | ☑ | ☑ | ☐ | ER-1 item-push/collision fields on [+]; layer-mandate PASS; Tier-1/live PASS (2026-08-22). |
 | Bruiser | Headbutt | ☑ | ☑ | ☑ | ☐ | ER-1 `bonus_dmg_pct_max_hp` on [+]; self 1 HP via unmitigated `DAMAGE_SELF`; Tier-1/live PASS (2026-08-22). |
 | Bruiser | Blood Boil | ☑ | ☑ | ☑ | ☐ | ER-1 `next_attack_*` + `next_turn` profile; layer-mandate PASS; Tier-1/live PASS (2026-08-22). |
-| Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☐ | IF_COLLIDED + second MOVE module (no `violent_collision_recast` knob); Tier-1/live + layer-shape gate PASS (2026-08-22). |
+| Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☐ | DASH 3 + BULLDOZE, IF_COLLIDED DASH 2 + BULLDOZE (DASH 5 same line); Tier-1/live + layer-shape PASS (2026-08-22). |
 | Bruiser | Crimson Whirlwind | ☑ | ☑ | ☑ | ☐ | PER_TARGET_HIT HEAL layer on [+] (matrix); Tier-1/live + layer-shape gate PASS (2026-08-22). Bible “3+ targets HEAL 2” still deferred. |
 | Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
 | Bruiser | Breaching Dash | ☑ | ☑ | ☑ | ☑ | PIERCE keyword; gates pass; independent audit pass |
@@ -285,7 +285,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 - [x] `bruiser_guttural_roar` — ER-1 item collision fields; layer-mandate PASS.
 - [x] `bruiser_headbutt` — ER-1 `bonus_dmg_pct_max_hp`; layer-mandate PASS.
 - [x] `bruiser_blood_boil` — ER-1 next-attack profile; layer-mandate PASS.
-- [x] `bruiser_violent_collision` — IF_COLLIDED + second MOVE; layer-mandate PASS.
+- [x] `bruiser_violent_collision` — DASH 3 + BULLDOZE; on hit gated DASH 2 + BULLDOZE (5 same line); layer-mandate PASS.
 - [x] `bruiser_crimson_whirlwind` — PER_TARGET_HIT HEAL on [+]; layer-mandate PASS.
 - [x] `bruiser_belly_flop`
 - [x] `bruiser_breaching_dash`
