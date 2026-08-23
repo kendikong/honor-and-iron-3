@@ -31,6 +31,17 @@ static func run_all(failures: Array[String]) -> void:
 		failures.append(
 			"class library preview does not apply the training session (selected class / board refresh)"
 		)
+	var preview_source: String = FileAccess.get_file_as_string(
+		"res://presentation/test_battle_map_view.gd"
+	)
+	if preview_source.contains("set_all_passives_enabled(class_id, true)"):
+		failures.append(
+			"class editor preview must not force all passives on (respect TestBattle prefs)"
+		)
+	if preview_source.contains("set_all_skills_enabled(class_id, true)"):
+		failures.append(
+			"class editor preview must not force all skills on (respect TestBattle prefs)"
+		)
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_non_status_modules_clear_status_type(failures)
 	_assert_bible_text_lookup(failures)

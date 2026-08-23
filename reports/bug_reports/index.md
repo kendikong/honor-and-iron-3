@@ -8,6 +8,7 @@
 > You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.
 > All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).
 
+- `BUG-20260823T131817-165` **done** — Medium — Bug — class editor not respecting the autolaoded passive/skill list settings
 - `BUG-20260823T115554-835` **done** — Medium — Bug — Second knight unable to use shield bash on enemy
 - `BUG-20260823T113516-236` **done** — Medium — Bug — Autorun should be working as long as premove or postmove is active and ap resource is there
 - `BUG-20260822T143540-635` **done** — Medium — Bug — hit animation timing for multihit attacks
