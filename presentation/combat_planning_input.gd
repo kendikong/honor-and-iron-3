@@ -3756,7 +3756,12 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 		return false
 	var selected: AbilityData = _selected_ability_data(actor)
 	if selected != null and not selected.is_universal_run():
-		if selected.is_pre_move_planner():
+		## Swap and other paired pre-move skills still use the walk column. Auto Run
+		## stays on whenever that walk (or a later post-move) can spend AP.
+		if (
+			selected.is_pre_move_planner()
+			and not AbilitySystem.planning_allows_paired_premove(selected)
+		):
 			return false
 		var dest_motion: AbilityModule = AbilitySystem.active_motion_module(actor, selected)
 		if (

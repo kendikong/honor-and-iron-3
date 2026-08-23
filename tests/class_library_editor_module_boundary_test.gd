@@ -27,6 +27,10 @@ static func run_all(failures: Array[String]) -> void:
 		failures.append(
 			"class library In-Game Preview does not use CombatUiFormatters.ability_skill_module_lines_bbcode"
 		)
+	if not source.contains("apply_class_editor_preview"):
+		failures.append(
+			"class library preview does not apply the training session (infinite AP / selected class)"
+		)
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_non_status_modules_clear_status_type(failures)
 	_assert_bible_text_lookup(failures)

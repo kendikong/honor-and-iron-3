@@ -89,6 +89,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_timeline_ghost_clears_when_committed,
 		_test_action_range_centered_on_live_stand,
 		_test_action_range_hides_when_auto_run_blocks_skill_ap,
+		_test_auto_run_stays_on_when_swap_armed,
 		_test_action_range_hides_after_commit_run_icon,
 		_test_action_range_shows_while_awaiting_trample,
 		_test_action_range_shows_on_enemy_hover,
@@ -192,6 +193,7 @@ static func run_all(failures: Array[String]) -> void:
 		"timeline_ghost_commit",
 		"action_range_live_stand",
 		"action_range_auto_run_ap_gate",
+		"auto_run_stays_on_when_swap_armed",
 		"action_range_commit_run_icon_hide",
 		"action_range_awaiting_trample",
 		"action_range_enemy_hover",
@@ -3216,6 +3218,31 @@ static func _test_action_range_hides_when_auto_run_blocks_skill_ap(failures: Arr
 				% [tile, run_tile],
 			)
 			return
+
+
+static func _test_auto_run_stays_on_when_swap_armed(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_swap_board(PlanningChecklistHarness.SWAP_ALLY_CELL)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	director.auto_run = true
+	var k1_id: int = int(fix.k1_id)
+	var swap_idx: int = PlanningChecklistHarness.select_ability_for_unit(
+		fix, k1_id, PlanningChecklistHarness.KNIGHT_SWAP_ID
+	)
+	if swap_idx < 0:
+		failures.append("PlanningQAGate auto_run_swap: Swap missing")
+		return
+	var actor: UnitState = director.projected_state.get_unit_by_id(k1_id)
+	if actor == null:
+		failures.append("PlanningQAGate auto_run_swap: knight missing on projected board")
+		return
+	if not AbilitySystem.can_afford_run(actor):
+		failures.append("PlanningQAGate auto_run_swap: knight cannot afford Run")
+		return
+	if not input.auto_run_movement_active(actor):
+		failures.append(
+			"PlanningQAGate auto_run_swap: Auto Run must stay on for walk columns while Swap is armed"
+		)
 
 
 static func _test_action_range_hides_after_commit_run_icon(failures: Array[String]) -> void:

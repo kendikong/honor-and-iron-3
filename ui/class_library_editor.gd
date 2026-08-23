@@ -551,12 +551,9 @@ func _toggle_preview() -> void:
 func _refresh_preview() -> void:
 	if _preview_scene == null or _selected_unit == null:
 		return
-	var session := TestBattleSession.new()
-	session.player_class_id = _selected_unit.id
-	session.set_all_passives_enabled(_selected_unit.id, true)
-	session.unkillable_dummies = true
-	session.infinite_player_ap = true
-	if _preview_scene.has_method("apply_training_board"):
+	if _preview_scene.has_method("apply_class_editor_preview"):
+		_preview_scene.apply_class_editor_preview(_selected_unit.id)
+	elif _preview_scene.has_method("apply_training_board"):
 		_preview_scene.apply_training_board()
 
 

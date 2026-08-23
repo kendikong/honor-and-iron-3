@@ -8,7 +8,9 @@
 > You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.
 > All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).
 
-- `BUG-20260822T143540-635` **ongoing** — Medium — Bug — hit animation timing for multihit attacks
+- `BUG-20260823T115554-835` **done** — Medium — Bug — Second knight unable to use shield bash on enemy
+- `BUG-20260823T113516-236` **done** — Medium — Bug — Autorun should be working as long as premove or postmove is active and ap resource is there
+- `BUG-20260822T143540-635` **done** — Medium — Bug — hit animation timing for multihit attacks
 - `BUG-20260822T132813-574` **done** — High — Bug — parting shot bugs with postmove and action move
 - `BUG-20260822T131801-867` **done** — Medium — Bug — Lying/false damage indication when undoing actions.
 - `BUG-20260822T125232-308` **done** — Medium — Bug — premove and postmove bugs

@@ -1,0 +1,552 @@
+{
+	"actual": "",
+	"category": "Bug",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-23T18:55:54",
+	"description": "Showing that my attack target is unable to be attacked even though it should",
+	"diagnosis_hints": {
+		"latest_rejection": "cannot_use_ability"
+	},
+	"expected": "",
+	"latest_preview": {
+		"event_count": 8,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 34
+	},
+	"latest_rejection": "cannot_use_ability",
+	"latest_timeline": {
+		"action_count": 2,
+		"statuses": [
+			"",
+			""
+		]
+	},
+	"mandatory_agent_instructions": {
+		"architectural_sources_of_truth": {
+			"1_simulation": "Simulator.simulate_player_turn(state, timeline, events) is the pure RefCounted deterministic resolution for preview and commit.",
+			"2_commit_authority": "CombatDirector.validate_commit_slots(unit_id, slots) is the single authority on action legality and commit success.",
+			"3_move_preview": "CombatPlanningPreview and TacticalPlanningOverlay — preview is intent truth (what is previewed on hover is what gets committed).",
+			"4_action_range": "CombatPlanningPreview.committed_stand_tile(unit_id) — range tiles paint from committed stand on active timeline, never turn-start base_board.",
+			"5_abilities": "AbilitySystem and AbilityData Resources — data-driven resources, not hardcoded engine branches.",
+			"6_input_buffers": "Input buffers (_drag_route, waypoints) are transient staging and must never directly paint canvas routes without simulation validation."
+		},
+		"directive": "MANDATORY FOR ALL AGENTS: You are strictly forbidden from applying heuristic fixes. All fixes must use shared global systems and the canonical single sources of truth.",
+		"required_rules": [
+			".cursor/rules/global-systems-first.mdc",
+			".cursor/rules/no-bandaid-fixes.mdc",
+			".cursor/rules/move-preview-intent-truth.mdc",
+			".cursor/rules/action-range-latest-stand.mdc",
+			".cursor/rules/qa-after-gameplay-changes.mdc"
+		]
+	},
+	"recent_events": [
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {
+				"ability": "knight_shield_bash",
+				"ability_name": "Shield Bash",
+				"actor": 1,
+				"actor_id": 1,
+				"presentation_anim": 1,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": 3
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 1,
+				"electrified": false,
+				"final_raw": 10,
+				"floored": 10,
+				"fortitude": 0,
+				"multiplier_raw": 10.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 1,
+				"amount": 8,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 92,
+				"hp_damaged": 8,
+				"source_label": "Shield Bash",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"ability": "knight_shield_bash",
+				"ability_name": "Shield Bash",
+				"actor": 2,
+				"actor_id": 2,
+				"presentation_anim": 1,
+				"target_coord": [
+					7,
+					5
+				],
+				"target_unit": 3
+			},
+			"kind": "sim_event",
+			"type": 11,
+			"type_name": "ABILITY_USED"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"backstab": false,
+				"backstab_bonus": 0,
+				"base": 1,
+				"electrified": false,
+				"final_raw": 10,
+				"floored": 10,
+				"fortitude": 0,
+				"multiplier_raw": 10.0,
+				"pierce": false,
+				"range_one_damage_multiplier": 1.0,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"type": "damage",
+				"vulnerable": false,
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"actor_id": 2,
+				"amount": 8,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "physical",
+				"hp": 84,
+				"hp_damaged": 8,
+				"source_label": "Shield Bash",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"against": 4,
+				"against_unit": 4,
+				"coord": [
+					8,
+					5
+				],
+				"excess_push": 2,
+				"is_collision_side_effect": true,
+				"push_distance": 2,
+				"pusher_id": 1,
+				"tiles_moved": 0,
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 5,
+			"type_name": "COLLISION"
+		},
+		{
+			"data": {
+				"distance": 2,
+				"from": [
+					7,
+					5
+				],
+				"pusher": 2,
+				"to": [
+					7,
+					7
+				],
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 1,
+			"type_name": "UNIT_PUSHED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 2,
+				"final_raw": 7,
+				"floored": 7,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 7.5,
+				"push_distance": 2,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 5,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 79,
+				"hp_damaged": 5,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Knight)",
+				"unit": 3
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {
+				"base": 1,
+				"base_bonus": 0,
+				"excess_push": 0,
+				"final_raw": 7,
+				"floored": 7,
+				"fortitude": 0,
+				"is_collision_side_effect": true,
+				"multiplier_raw": 7.5,
+				"push_distance": 0,
+				"pusher_id": 1,
+				"stat_name": "STR",
+				"stat_val": 5,
+				"target_def": 2,
+				"tiles_moved": 0,
+				"type": "collision",
+				"wpn": 4
+			},
+			"kind": "sim_event",
+			"type": 17,
+			"type_name": "MATH_TELEMETRY"
+		},
+		{
+			"data": {
+				"amount": 5,
+				"armor": 0,
+				"armor_damaged": 0,
+				"damage_type": "collision",
+				"hp": 95,
+				"hp_damaged": 5,
+				"is_collision_side_effect": true,
+				"source_label": "Collision (Knight)",
+				"unit": 4
+			},
+			"kind": "sim_event",
+			"type": 2,
+			"type_name": "UNIT_DAMAGED"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 3
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 3,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 3
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 3
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 3
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 3,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 3
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 3
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 2
+		},
+		{
+			"index": 3,
+			"kind": "ability_selected"
+		}
+	],
+	"report_id": "BUG-20260823T115554-835",
+	"runtime": {
+		"command_line": [],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "b8cb20db302a5d73b54bdd020a56031e55277721",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			6502.0,
+			1800.0
+		]
+	},
+	"screenshot": "c:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260823T115554-835.png",
+	"severity": "Medium",
+	"status": "done",
+	"title": "Second knight unable to use shield bash on enemy"
+}
