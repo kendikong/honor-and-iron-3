@@ -24,6 +24,21 @@ static func run_all(failures: Array[String]) -> void:
 	_test_every_effect_type_has_a_primary_family(failures)
 	_test_typed_extra_label_mapping(failures)
 	_test_violent_collision_recast_visibility(failures)
+	_test_during_bulldoze_excludes_collision_modifiers(failures)
+
+
+static func _test_during_bulldoze_excludes_collision_modifiers(failures: Array[String]) -> void:
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.DURING
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.BULLDOZE
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DASH
+	if ModuleAuthoringRules.layer_typed_field_applies(layer, module, "stagger_on_collision"):
+		failures.append("DURING BULLDOZE must not expose stagger_on_collision on same layer")
+	var on_collision := ModuleAuthoringRules.new_on_collision_layer(&"stagger")
+	if not ModuleAuthoringRules.layer_typed_field_applies(on_collision, module, "stagger_on_collision"):
+		failures.append("ON_COLLISION layer must expose stagger_on_collision")
 
 
 static func _test_typed_extra_label_mapping(failures: Array[String]) -> void:
@@ -42,8 +57,7 @@ static func _test_violent_collision_recast_visibility(failures: Array[String]) -
 		failures.append("plain DASH should not show violent_collision_recast when unset")
 	var dash_bulldoze := AbilityModule.new()
 	dash_bulldoze.primary_type = GameEnums.EffectType.DASH
-	dash_bulldoze.keywords = [AbilityKeyword.new()]
-	dash_bulldoze.keywords[0].keyword_id = GameEnums.AbilityKeywordId.BULLDOZE
+	dash_bulldoze.layers = [DataLibrary._during_bulldoze()]
 	if not ModuleAuthoringRules.typed_extra_field_applies(dash_bulldoze, "violent_collision_recast"):
 		failures.append("DASH + BULLDOZE should show violent_collision_recast")
 	dash_bulldoze.violent_collision_recast = 0

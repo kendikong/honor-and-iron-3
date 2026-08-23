@@ -764,25 +764,27 @@ static func _ensure_typed_extra_layer_props() -> void:
 		_typed_extra_layer_props.append(name)
 
 
-static func _layer_collision_context(layer: AbilityLayer, parent: AbilityModule) -> bool:
-	if layer == null or parent == null:
+static func _layer_collision_context(layer: AbilityLayer, _parent: AbilityModule) -> bool:
+	if layer == null:
 		return false
 	return layer.condition in [
 		GameEnums.LayerCondition.ON_COLLISION,
 		GameEnums.LayerCondition.ON_CHAIN_COLLISION,
 		GameEnums.LayerCondition.WHEN_MOVED_THROUGH_ENEMY,
-	] or _is_motion_type(parent.primary_type)
+	]
 
 
-static func _layer_motion_context(layer: AbilityLayer, parent: AbilityModule) -> bool:
-	if layer == null or parent == null:
+static func _layer_motion_context(layer: AbilityLayer, _parent: AbilityModule) -> bool:
+	if layer == null:
 		return false
 	if layer.condition in [
 		GameEnums.LayerCondition.ON_LAND,
 		GameEnums.LayerCondition.PER_TILE_MOVED,
 	]:
 		return true
-	return _is_motion_type(parent.primary_type)
+	if layer.condition == GameEnums.LayerCondition.DURING and layer.effect != null:
+		return layer.effect.type == GameEnums.EffectType.TRAMPLE
+	return false
 
 
 static func _layer_effect_type(layer: AbilityLayer) -> GameEnums.EffectType:
@@ -1127,6 +1129,46 @@ static func ensure_layer_during_compatible(module: AbilityModule, layer: Ability
 	apply_layer_during_preset(layer, presets[0]["id"])
 
 
+static func on_collision_layer_presets() -> Array[Dictionary]:
+	return [
+		{"id": &"stagger", "label": "Stagger on collision"},
+		{"id": &"stagger_both", "label": "Stagger both units"},
+		{"id": &"object_stagger", "label": "Stagger on object"},
+		{"id": &"splash_damage", "label": "Splash damage"},
+		{"id": &"blank", "label": "Custom layer"},
+	]
+
+
+static func apply_on_collision_layer_preset(layer: AbilityLayer, preset_id: StringName) -> void:
+	if layer == null:
+		return
+	if layer.effect == null:
+		layer.effect = EffectData.new()
+	layer.condition = GameEnums.LayerCondition.ON_COLLISION
+	layer.effect.type = GameEnums.EffectType.PUSH
+	layer.effect.amount = 0
+	match preset_id:
+		&"stagger":
+			layer.stagger_on_collision = true
+		&"stagger_both":
+			layer.enemy_collision_stagger_both = true
+		&"object_stagger":
+			layer.object_collision_stagger = true
+		&"splash_damage":
+			layer.collision_splash_damage = 1
+		&"blank":
+			pass
+		_:
+			pass
+	AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+
+
+static func new_on_collision_layer(preset_id: StringName) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	apply_on_collision_layer_preset(layer, preset_id)
+	return layer
+
+
 static func _during_layer_typed_field_applies(layer: AbilityLayer, property: String) -> bool:
 	if layer == null or layer.effect == null:
 		return false
@@ -1134,7 +1176,7 @@ static func _during_layer_typed_field_applies(layer: AbilityLayer, property: Str
 		return layer.effect.type == GameEnums.EffectType.BULLDOZE
 	match layer.effect.type:
 		GameEnums.EffectType.BULLDOZE:
-			return property in _LAYER_COLLISION_PROPS
+			return false
 		GameEnums.EffectType.TRAMPLE:
 			return property in ["weapon_scaled", "difficult_terrain_created"]
 		GameEnums.EffectType.ADD_STATUS_SELF:

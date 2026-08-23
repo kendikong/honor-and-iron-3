@@ -3127,6 +3127,40 @@ func _bind_layer_during_preset(
 	parent.add_child(opt)
 
 
+func _add_on_collision_layer_shortcuts(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	if not ModuleAuthoringRules.module_has_during_pass_through(module):
+		return
+	var wrap := VBoxContainer.new()
+	wrap.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	parent.add_child(wrap)
+	var lbl := Label.new()
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+	lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	lbl.text = (
+		"Bulldoze / trample enables collisions — add ON COLLISION layers for stagger, splash, push damage, etc."
+	)
+	wrap.add_child(lbl)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	row.add_theme_constant_override("v_separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	wrap.add_child(row)
+	for entry: Dictionary in ModuleAuthoringRules.on_collision_layer_presets():
+		var preset_id: StringName = entry["id"] as StringName
+		var btn := Button.new()
+		btn.text = "+ %s" % String(entry["label"])
+		btn.pressed.connect(func() -> void:
+			module.layers.append(ModuleAuthoringRules.new_on_collision_layer(preset_id))
+			_on_module_field_edited(ability)
+			_rebuild_ability_detail_panes(ability)
+		)
+		row.add_child(btn)
+
+
 func _populate_layer_all_modifier_binds(
 	grid: GridContainer,
 	ability: AbilityData,
@@ -3445,8 +3479,8 @@ func _add_module_layers_editor(
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
 	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	hint.text = (
-		"Pick when the layer runs (Condition), then what it does (Type). "
-		+ "DURING rides on the module primary while it moves — use Bulldoze / Trample / Ghost / Pierce there."
+		"Condition first, then type. DURING = bulldoze/trample/ghost on the move. "
+		+ "Collision extras (stagger, splash, pierce push) are separate ON COLLISION layers — add them below."
 	)
 	parent.add_child(hint)
 	var box := VBoxContainer.new()
@@ -3517,23 +3551,24 @@ func _add_module_layers_editor(
 				_on_module_field_edited(ability)
 			)
 			_add_layer_effect_detail_fields(core, ability, layer)
-		for group: Dictionary in ModuleAuthoringRules.layer_modifier_groups():
-			var group_shell := _begin_collapsible_subsection(
-				body,
-				String(group["title"]),
-				"optional",
-				false,
-				ClassLibraryTheme.ACCENT_IMPL,
-			)
-			var group_grid: GridContainer = group_shell["grid"] as GridContainer
-			_populate_layer_all_modifier_binds(group_grid, ability, layer)
-			_finalize_layer_modifier_group(
-				group_shell,
-				group_grid,
-				module,
-				layer,
-				group["props"] as Array,
-			)
+		if layer.condition != GameEnums.LayerCondition.DURING:
+			for group: Dictionary in ModuleAuthoringRules.layer_modifier_groups():
+				var group_shell := _begin_collapsible_subsection(
+					body,
+					String(group["title"]),
+					"optional",
+					false,
+					ClassLibraryTheme.ACCENT_IMPL,
+				)
+				var group_grid: GridContainer = group_shell["grid"] as GridContainer
+				_populate_layer_all_modifier_binds(group_grid, ability, layer)
+				_finalize_layer_modifier_group(
+					group_shell,
+					group_grid,
+					module,
+					layer,
+					group["props"] as Array,
+				)
 		var remove := Button.new()
 		remove.text = "Remove layer"
 		body.add_child(remove)
@@ -3541,6 +3576,7 @@ func _add_module_layers_editor(
 			module.layers.remove_at(index)
 			_rebuild_ability_detail_panes(ability)
 		)
+	_add_on_collision_layer_shortcuts(box, ability, module)
 	var add := Button.new()
 	add.text = "+ Layer"
 	add.pressed.connect(func() -> void:
