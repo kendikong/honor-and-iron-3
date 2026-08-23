@@ -27,8 +27,7 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 ## Changelog
 
 ### Single source of truth
-- **Fix type:** `non-heuristic fix` (required every code-fix turn — if missing, mandate was forgotten)
-- **How this protects SSOT:** (required — prose on one canonical path; not a file label alone)
+- **How this protects SSOT:** (required — describe fix as non-heuristic: canonical owner, one path, obsolete path removed; not a file label alone)
 - **Heuristics added:** `none` OR each heuristic named (only after audit — never a default checkbox)
 - **Why (not) heuristic:** one brief sentence — why `none` is justified, or why each named item is heuristic
 
