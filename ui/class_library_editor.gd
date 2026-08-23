@@ -3479,14 +3479,6 @@ func _add_module_layers_editor(
 					layer.effect.amount = maxi(1, v)
 					_on_module_field_edited(ability),
 			)
-			_bind_bool(
-				core,
-				"Emit standalone row",
-				layer.during_emit_effect,
-				func(v: bool) -> void:
-					layer.during_emit_effect = v
-					_on_module_field_edited(ability),
-			)
 			if layer.effect.type == GameEnums.EffectType.BULLDOZE:
 				_bind_int(
 					core,

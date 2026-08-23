@@ -182,7 +182,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	bowling_module.layers = [
-		DataLibrary._during_bulldoze(1, 0, true),
+		DataLibrary._during_bulldoze(1, 0),
 	]
 	var bowling_upgraded := DataLibrary._duplicate_modules([bowling_module])
 	bowling_upgraded[0].layers.append(

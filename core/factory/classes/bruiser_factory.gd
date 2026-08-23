@@ -287,14 +287,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	collision_dash.layers = [
-		DataLibrary._during_bulldoze(1, 1, false),
+		DataLibrary._during_bulldoze(1, 1),
 	]
 	var collision_extend := DataLibrary._module(
 		GameEnums.EffectType.DASH, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	collision_extend.layers = [
-		DataLibrary._during_bulldoze(1, 1, false),
+		DataLibrary._during_bulldoze(1, 1),
 	]
 	collision_extend.gate = GameEnums.ModuleGate.IF_COLLIDED
 	## Bible: on enemy hit, extend to DASH 5 | BULLDOZE on the same line (3 + gated 2).

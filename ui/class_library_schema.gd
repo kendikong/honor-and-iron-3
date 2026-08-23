@@ -653,7 +653,6 @@ static func keyword_to_dict(src: AbilityKeyword) -> Dictionary:
 		"keyword_id": src.keyword_id,
 		"amount": src.amount,
 		"push_amount": src.push_amount,
-		"emit_as_effect": src.emit_as_effect,
 	}
 
 
@@ -662,7 +661,6 @@ static func keyword_from_dict(data: Dictionary) -> AbilityKeyword:
 	keyword.keyword_id = int(data.get("keyword_id", keyword.keyword_id))
 	keyword.amount = int(data.get("amount", keyword.amount))
 	keyword.push_amount = int(data.get("push_amount", keyword.push_amount))
-	keyword.emit_as_effect = bool(data.get("emit_as_effect", keyword.emit_as_effect))
 	return keyword
 
 
@@ -671,7 +669,6 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		return {}
 	return {
 		"condition": src.condition,
-		"during_emit_effect": src.during_emit_effect,
 		"during_bulldoze_push": src.during_bulldoze_push,
 		"object_collision_stagger": src.object_collision_stagger,
 		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
@@ -741,7 +738,6 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	layer.condition = int(data.get("condition", layer.condition))
-	layer.during_emit_effect = bool(data.get("during_emit_effect", layer.during_emit_effect))
 	layer.during_bulldoze_push = int(data.get("during_bulldoze_push", layer.during_bulldoze_push))
 	layer.object_collision_stagger = bool(
 		data.get("object_collision_stagger", layer.object_collision_stagger)

@@ -8,8 +8,6 @@ extends Resource
 
 @export var effect: EffectData = null
 @export var condition: GameEnums.LayerCondition = GameEnums.LayerCondition.AT_RESOLUTION
-## When condition is DURING and effect is BULLDOZE/TRAMPLE: also emit a standalone execution row.
-@export var during_emit_effect: bool = true
 ## BULLDOZE DURING layer: collision push distance (typed; not effect.modifiers).
 @export var during_bulldoze_push: int = 0
 

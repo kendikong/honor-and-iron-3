@@ -505,11 +505,9 @@ static func _layer(
 static func _during_bulldoze(
 	amount: int = 1,
 	push_amount: int = 0,
-	emit_as_effect: bool = true,
 ) -> AbilityLayer:
 	var effect: EffectData = _effect(GameEnums.EffectType.BULLDOZE, amount)
 	var layer: AbilityLayer = _layer(effect, GameEnums.LayerCondition.DURING)
-	layer.during_emit_effect = emit_as_effect
 	layer.during_bulldoze_push = push_amount
 	return layer
 
@@ -519,7 +517,6 @@ static func _during_trample(amount: int = 1) -> AbilityLayer:
 		_effect(GameEnums.EffectType.TRAMPLE, amount),
 		GameEnums.LayerCondition.DURING,
 	)
-	layer.during_emit_effect = true
 	return layer
 
 
@@ -528,7 +525,6 @@ static func _during_ghost() -> AbilityLayer:
 		_status_effect_self(GameEnums.StatusType.GHOST, 1),
 		GameEnums.LayerCondition.DURING,
 	)
-	layer.during_emit_effect = false
 	return layer
 
 
@@ -537,7 +533,6 @@ static func _during_pierce() -> AbilityLayer:
 		_status_effect_self(GameEnums.StatusType.PIERCE, 1),
 		GameEnums.LayerCondition.DURING,
 	)
-	layer.during_emit_effect = false
 	return layer
 
 
@@ -592,14 +587,12 @@ static func _keyword(
 	keyword_id: GameEnums.AbilityKeywordId,
 	amount: int = 0,
 	push_amount: int = 0,
-	emit_as_effect: bool = false,
 ) -> AbilityKeyword:
 	## Legacy import path — normalize migrates keywords to DURING layers.
 	var keyword := AbilityKeyword.new()
 	keyword.keyword_id = keyword_id
 	keyword.amount = amount
 	keyword.push_amount = push_amount
-	keyword.emit_as_effect = emit_as_effect
 	return keyword
 
 

@@ -135,13 +135,6 @@ static func keyword_uses_amount(keyword_id: GameEnums.AbilityKeywordId) -> bool:
 	return keyword_id != GameEnums.AbilityKeywordId.NONE
 
 
-static func keyword_uses_emit_as_effect(keyword_id: GameEnums.AbilityKeywordId) -> bool:
-	return (
-		keyword_id == GameEnums.AbilityKeywordId.TRAMPLE
-		or keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
-	)
-
-
 static func layer_condition_applies(
 	parent_module: AbilityModule,
 	condition: GameEnums.LayerCondition,
@@ -441,14 +434,10 @@ static func migrate_legacy_layer_bundles(module: AbilityModule) -> void:
 			continue
 		match layer.effect.type:
 			GameEnums.EffectType.BULLDOZE:
-				var preserve_emit: bool = layer.during_emit_effect
 				apply_layer_during_preset(layer, &"bulldoze")
-				layer.during_emit_effect = preserve_emit
 				layer.effect.amount = maxi(1, layer.effect.amount)
 			GameEnums.EffectType.TRAMPLE:
-				var preserve_trample_emit: bool = layer.during_emit_effect
 				apply_layer_during_preset(layer, &"trample")
-				layer.during_emit_effect = preserve_trample_emit
 				layer.effect.amount = maxi(1, layer.effect.amount)
 			GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION:
 				module.layers[index] = new_on_collision_layer(&"stagger")
@@ -465,7 +454,6 @@ static func during_layer_from_keyword(keyword: AbilityKeyword) -> AbilityLayer:
 		return null
 	var layer := AbilityLayer.new()
 	layer.condition = GameEnums.LayerCondition.DURING
-	layer.during_emit_effect = keyword.emit_as_effect
 	layer.effect = EffectData.new()
 	match keyword.keyword_id:
 		GameEnums.AbilityKeywordId.TRAMPLE:
@@ -479,17 +467,14 @@ static func during_layer_from_keyword(keyword: AbilityKeyword) -> AbilityLayer:
 			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
 			layer.effect.status_type = GameEnums.StatusType.GHOST
 			layer.effect.amount = 1
-			layer.during_emit_effect = false
 		GameEnums.AbilityKeywordId.PIERCE:
 			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
 			layer.effect.status_type = GameEnums.StatusType.PIERCE
 			layer.effect.amount = 1
-			layer.during_emit_effect = false
 		GameEnums.AbilityKeywordId.CANTO:
 			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
 			layer.effect.status_type = GameEnums.StatusType.CANTO
 			layer.effect.amount = 1
-			layer.during_emit_effect = false
 		_:
 			return null
 	return layer
@@ -542,19 +527,6 @@ static func apply_during_layer_to_modifiers(bag: Dictionary, layer: AbilityLayer
 					pass
 		_:
 			pass
-
-
-static func during_layer_emits_effect_row(layer: AbilityLayer) -> bool:
-	if layer == null or layer.effect == null:
-		return false
-	if layer.condition != GameEnums.LayerCondition.DURING:
-		return false
-	if not layer.during_emit_effect:
-		return false
-	return layer.effect.type in [
-		GameEnums.EffectType.TRAMPLE,
-		GameEnums.EffectType.BULLDOZE,
-	]
 
 
 static func module_has_during_pass_through(module: AbilityModule) -> bool:
@@ -1343,21 +1315,17 @@ static func apply_layer_during_preset(layer: AbilityLayer, preset_id: StringName
 		&"bulldoze":
 			layer.effect.type = GameEnums.EffectType.BULLDOZE
 			layer.effect.amount = maxi(1, layer.effect.amount)
-			layer.during_emit_effect = true
 		&"trample":
 			layer.effect.type = GameEnums.EffectType.TRAMPLE
 			layer.effect.amount = maxi(1, layer.effect.amount)
-			layer.during_emit_effect = true
 		&"ghost":
 			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
 			layer.effect.status_type = GameEnums.StatusType.GHOST
 			layer.effect.amount = 1
-			layer.during_emit_effect = false
 		&"pierce":
 			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
 			layer.effect.status_type = GameEnums.StatusType.PIERCE
 			layer.effect.amount = 1
-			layer.during_emit_effect = false
 		_:
 			pass
 	AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
