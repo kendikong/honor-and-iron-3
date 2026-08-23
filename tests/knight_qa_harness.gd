@@ -274,11 +274,9 @@ static func has_status(unit: UnitState, status_type: GameEnums.StatusType) -> bo
 static func ability_has_effect(ability: AbilityData, effect_type: GameEnums.EffectType, upgraded: bool = false) -> bool:
 	if ability == null:
 		return false
-	var effects: Array[EffectData] = AbilityModuleBridge.compile_modules_to_effects(
-		ability.get_active_modules(upgraded),
-	)
-	for eff: EffectData in effects:
-		if eff != null and eff.type == effect_type:
+	var modules: Array[AbilityModule] = ability.get_active_modules(upgraded)
+	for module: AbilityModule in modules:
+		if AbilityModuleBridge.module_has_effect(module, effect_type):
 			return true
 	return false
 

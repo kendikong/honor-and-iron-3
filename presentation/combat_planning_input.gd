@@ -3548,6 +3548,10 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if _is_awaiting_movement_endpoint(actor, ability):
 		return _movement_skill_commits_tile_endpoint(actor, ability, cell)
+	## auto_use_skill_after_move is the spend flag. With it off, hover is walk/run
+	## while the TILE movement skill stays armed (K4 detour). Awaiting aim still commits.
+	if not auto_use_skill_after_move:
+		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
 		## Painted move waypoints (selection/drag route) are pre-move intent — not dash pickup.
@@ -4077,6 +4081,24 @@ func planning_display_ap_left(unit_id: int) -> int:
 		live_actor = preview_state.preview_board.get_unit_by_id(unit_id)
 		if live_actor != null:
 			live_valid = true
+	var requires_run: bool = unit_move_requires_run(unit_id)
+	var dest: Vector2i = move_intent_destination(unit_id)
+	## auto_use_skill_after_move is the spend flag. A walk hover with it off is
+	## walk economy — do not subtract the armed skill on the fallback path.
+	## Skill-scroll / run-dest with no walk hover still subtracts (F5 stale AP).
+	## Live preview remains AP truth when live_valid.
+	var walk_hover: bool = (
+		dest.x > -900
+		and dest != committed.position
+		and not requires_run
+	)
+	if (
+		selected_ability != null
+		and not auto_use_skill_after_move
+		and walk_hover
+		and not selected_ability.is_universal_run()
+	):
+		selected_ability = null
 	var auto_run_scroll: bool = (
 		auto_run
 		and selected_ability != null
@@ -4091,7 +4113,7 @@ func planning_display_ap_left(unit_id: int) -> int:
 		selected_ability,
 		live_actor,
 		live_valid,
-		unit_move_requires_run(unit_id),
+		requires_run,
 		auto_run_scroll,
 		auto_run_move,
 		move_intent_destination(unit_id),

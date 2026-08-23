@@ -2161,6 +2161,11 @@ static func ability_has_effect(
 	for effect: EffectData in active_effects_for(actor, ability):
 		if effect != null and effect.type == effect_type:
 			return true
+	## DURING TRAMPLE/BULLDOZE compile onto the motion primary as modifiers, so the
+	## authored typed effect still lives on the module profile.
+	for module: AbilityModule in active_modules_for(actor, ability):
+		if AbilityModuleBridge.module_has_effect(module, effect_type):
+			return true
 	return false
 
 
@@ -2811,18 +2816,25 @@ static func pass_through_modifiers_from(effects: Array) -> Dictionary:
 	var trample_atk := 0
 	var bulldoze := 0
 	var push := 0
-	for eff: EffectData in effects:
+	for item: Variant in effects:
+		if item == null or not (item is EffectData):
+			continue
+		var eff: EffectData = item
 		if eff.type == GameEnums.EffectType.TRAMPLE:
-			trample_atk = eff.amount
+			trample_atk = maxi(trample_atk, eff.amount)
 		elif eff.type == GameEnums.EffectType.BULLDOZE:
-			bulldoze = eff.amount
+			bulldoze = maxi(bulldoze, eff.amount)
 		elif eff.type == GameEnums.EffectType.PUSH:
-			push = eff.amount
-		elif eff.type == GameEnums.EffectType.DASH:
-			if eff.modifiers.has("bulldoze"):
-				bulldoze = int(eff.modifiers["bulldoze"])
-			if eff.modifiers.has("push"):
-				push = int(eff.modifiers["push"])
+			push = maxi(push, eff.amount)
+		## DURING TRAMPLE/BULLDOZE merge into the motion primary (MOVE/DASH).
+		if eff.modifiers.has("trample"):
+			trample_atk = maxi(trample_atk, int(eff.modifiers["trample"]))
+		if eff.modifiers.has("trample_atk"):
+			trample_atk = maxi(trample_atk, int(eff.modifiers["trample_atk"]))
+		if eff.modifiers.has("bulldoze"):
+			bulldoze = maxi(bulldoze, int(eff.modifiers["bulldoze"]))
+		if eff.modifiers.has("push"):
+			push = maxi(push, int(eff.modifiers["push"]))
 	return {"trample_atk": trample_atk, "bulldoze": bulldoze, "push": push}
 
 
