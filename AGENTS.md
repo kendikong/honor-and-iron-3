@@ -139,7 +139,7 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ## Changelog
 
 ### Single source of truth
-- **How this protects SSOT:** (required every edit/plan/review turn with changes — how one path stays unified; not a file name alone)
+- **How this protects SSOT:** (required — describe fix as non-heuristic: canonical owner, one path, obsolete path removed; not a file name alone)
 - **Heuristics added:** `none` OR each heuristic named (only after audit passes)
 - **Why (not) heuristic:** one brief sentence — mandatory; explains `none` or why each named item is heuristic
 
@@ -210,7 +210,7 @@ Use this structure every time file changes are requested — **once per user mes
 - **Assumptions / open questions:** (anything unclear, or "(none)")
 
 ## Proposed solution
-- **How this protects SSOT:** Plain language — one canonical path, what stays aligned, parallel path avoided or removed (not a file name alone)
+- **How this protects SSOT:** Plain language — describe plan as non-heuristic fix: canonical owner, one path, parallel/obsolete path removed (not a file name alone)
 - **Heuristics added:** `none` or list (only after 6-row audit in `global-systems-first.mdc`)
 - **Why (not) heuristic:** one brief sentence — why `none` or why each named item is heuristic
 - **Root cause:** (if known from investigation, or "will confirm with grep/read before edit")
