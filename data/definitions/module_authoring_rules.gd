@@ -774,6 +774,17 @@ static func _layer_collision_context(layer: AbilityLayer, parent: AbilityModule)
 	] or _is_motion_type(parent.primary_type)
 
 
+static func _layer_motion_context(layer: AbilityLayer, parent: AbilityModule) -> bool:
+	if layer == null or parent == null:
+		return false
+	if layer.condition in [
+		GameEnums.LayerCondition.ON_LAND,
+		GameEnums.LayerCondition.PER_TILE_MOVED,
+	]:
+		return true
+	return _is_motion_type(parent.primary_type)
+
+
 static func _layer_effect_type(layer: AbilityLayer) -> GameEnums.EffectType:
 	if layer == null or layer.effect == null:
 		return GameEnums.EffectType.DAMAGE
