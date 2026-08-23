@@ -589,7 +589,8 @@ static func run_push_through_upgrade(failures: Array[String]) -> void:
 	var push: AbilityData = ability_on_unit(bruiser, &"bruiser_push_through")
 	assert_true(
 		failures, "push_through/upgrade_modifier",
-		push.upgraded_modules[0].buff_on_push > 0,
+		push.upgraded_modules[0].layers.size() > 0
+		and push.upgraded_modules[0].layers[0].buff_on_push > 0,
 	)
 	assert_eq_int(
 		failures, "push_through/upgrade_header_cost",

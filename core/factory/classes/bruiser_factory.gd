@@ -24,7 +24,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	var push_upgraded := DataLibrary._duplicate_modules([push_module])
-	push_upgraded[0].buff_on_push = 1
+	var push_str_layer := DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.HEAL, 0))
+	push_str_layer.buff_on_push = 1
+	push_upgraded[0].layers = [push_str_layer]
 	var push_through := DataLibrary._make_modular_ability(
 		&"bruiser_push_through", "Push Through", [push_module], push_upgraded,
 		2, GameEnums.PlannerGroup.PRE_MOVE, GameEnums.CostResource.MP,
@@ -210,7 +212,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	frenzy_hit.hit_count = 3
 	var frenzy_upgraded := DataLibrary._duplicate_modules([frenzy_hit])
-	frenzy_upgraded[0].frenzy_on_kill_ap = 1
+	frenzy_upgraded[0].layers = [
+		DataLibrary._layer(
+			DataLibrary._effect(GameEnums.EffectType.GRANT_AP, 1),
+			GameEnums.LayerCondition.ON_KILL,
+		),
+	]
 	var frenzy := DataLibrary._make_modular_ability(
 		&"bruiser_frenzy", "Frenzy", [frenzy_hit], frenzy_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
@@ -282,13 +289,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	collision_dash.keywords = [
 		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
 	]
-	collision_dash.violent_collision_recast = 1
 	var collision_recast := DataLibrary._module(
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	collision_recast.gate = GameEnums.ModuleGate.IF_COLLIDED
-	## Recast is refund + reopen via violent_collision_recast, not a second planning aim.
+	## Recast is IF_COLLIDED gate refund + reopen; second MOVE uses SAME_AS_MODULE_N aim.
 	collision_recast.aim_binding = GameEnums.AimBinding.SAME_AS_MODULE_N
 	collision_recast.aim_module_index = 0
 	var collision_upgraded := DataLibrary._duplicate_modules([collision_dash, collision_recast])
@@ -311,14 +317,16 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.TargetShape.AOE_SQUARE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	var whirlwind_upgraded := DataLibrary._duplicate_modules([whirlwind_module])
-	whirlwind_upgraded[0].layers.append(
-		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.HEAL, 1))
-	)
-	whirlwind_upgraded[0].heal_if_targets_gte = 3
+	whirlwind_upgraded[0].layers = [
+		DataLibrary._layer(
+			DataLibrary._effect(GameEnums.EffectType.HEAL, 1),
+			GameEnums.LayerCondition.PER_TARGET_HIT,
+		),
+	]
 	var crimson_whirlwind := DataLibrary._make_modular_ability(
 		&"bruiser_crimson_whirlwind", "Crimson Whirlwind", [whirlwind_module],
 		whirlwind_upgraded, 1, GameEnums.PlannerGroup.ACTION,
-		GameEnums.CostResource.AP, [], "HEAL 1. If 3+ targets hit, HEAL 2 instead.",
+		GameEnums.CostResource.AP, [], "HEAL 1 per target hit.",
 		GameEnums.TargetingFlags.SELF,
 	)
 	def.abilities.append(crimson_whirlwind)

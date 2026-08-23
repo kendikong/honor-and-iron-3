@@ -67,6 +67,7 @@ extends Resource
 @export var hazard_blind_on_entry: bool = false
 @export var poison_hazard: bool = false
 @export var landing_push: int = 0
+@export var buff_on_push: int = 0
 @export var status_requires_debuff: bool = false
 @export var cone_all_targets: bool = false
 @export var wall_collision_stagger: bool = false
@@ -189,6 +190,8 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["poison_hazard"] = true
 	if landing_push != 0:
 		modifiers["landing_push"] = landing_push
+	if buff_on_push != 0:
+		modifiers["buff_on_push"] = buff_on_push
 	if status_requires_debuff:
 		modifiers["status_requires_debuff"] = true
 	if cone_all_targets:
@@ -336,6 +339,8 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			poison_hazard = bool(value)
 		"landing_push":
 			landing_push = int(value)
+		"buff_on_push":
+			buff_on_push = int(value)
 		"status_requires_debuff":
 			status_requires_debuff = bool(value)
 		"cone_all_targets":

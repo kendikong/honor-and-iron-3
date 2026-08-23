@@ -181,8 +181,6 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("violent_collision module[1] should be MOVE")
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
-	if vc.modules[0].violent_collision_recast <= 0:
-		failures.append("violent_collision module lost violent_collision_recast")
 	if not vc.modules[0].runtime_has("bulldoze"):
 		failures.append("violent_collision module lost bulldoze modifier")
 	var charge: AbilityData = null

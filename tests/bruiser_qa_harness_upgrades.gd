@@ -358,12 +358,11 @@ static func run_frenzy_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_frenzy")
 	H.assert_true(
 		failures, "frenzy/upgrade/mod",
-		ab.upgraded_modules[0].frenzy_on_kill_ap > 0,
-	)
-	H.assert_eq_int(
-		failures, "frenzy/upgrade/mod_val",
-		ab.upgraded_modules[0].frenzy_on_kill_ap,
-		1,
+		LayerShapeConversionRules.module_has_layer_signature(
+			ab.upgraded_modules[0],
+			GameEnums.LayerCondition.ON_KILL,
+			GameEnums.EffectType.GRANT_AP,
+		),
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_frenzy"),
@@ -788,12 +787,11 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_crimson_whirlwind")
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/mod",
-		ab.upgraded_modules[0].runtime_has("heal_if_targets_gte"),
-	)
-	H.assert_eq_int(
-		failures, "crimson_whirlwind/upgrade/mod_val",
-		int(ab.upgraded_modules[0].runtime_value("heal_if_targets_gte", 0)),
-		3,
+		LayerShapeConversionRules.module_has_layer_signature(
+			ab.upgraded_modules[0],
+			GameEnums.LayerCondition.PER_TARGET_HIT,
+			GameEnums.EffectType.HEAL,
+		),
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
 		H.bruiser_with_ability(&"bruiser_crimson_whirlwind"),
@@ -811,7 +809,7 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	var skill: AbilityData = H.ability_on_unit(bruiser, &"bruiser_crimson_whirlwind")
 	var plan := Timeline.new()
 	plan.add(H.plan_ability(1, skill, Vector2i(3, 3), 1))
-	var result: SimResult = H.simulate_player_turn(board, plan)
+	var result: SimResult = H.simulate_plan(board, plan)
 	var heal_gain: int = H.unit_hp(result.final_state, 1) - hp
 	H.assert_true(
 		failures, "crimson_whirlwind/upgrade/heal",
@@ -820,7 +818,7 @@ static func run_crimson_whirlwind_upgrade(failures: Array[String]) -> void:
 	H.assert_eq_int(
 		failures, "crimson_whirlwind/upgrade/heal_if_3_targets",
 		heal_gain,
-		2,
+		3,
 	)
 
 

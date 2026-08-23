@@ -15,7 +15,14 @@ func _initialize() -> void:
 	var args: PackedStringArray = OS.get_cmdline_args()
 	args.append_array(OS.get_cmdline_user_args())
 	var audit_only: bool = "--audit" in args
-	print("LAYER_SHAPE_GATE: START mode=%s" % ("audit" if audit_only else "layer_mandate"))
+	var class_prefix: String = ""
+	var class_idx: int = args.find("--class")
+	if class_idx >= 0 and class_idx + 1 < args.size():
+		class_prefix = String(args[class_idx + 1]).to_lower()
+	print("LAYER_SHAPE_GATE: START mode=%s class=%s" % [
+		"audit" if audit_only else "layer_mandate",
+		class_prefix if not class_prefix.is_empty() else "all",
+	])
 	var failures: Array[String] = []
 	if audit_only:
 		_GateScript.call("run_audit_only", failures)
@@ -23,7 +30,7 @@ func _initialize() -> void:
 		quit(0)
 		return
 	else:
-		_GateScript.call("run_all", failures)
+		_GateScript.call("run_all", failures, -1, class_prefix)
 	print("LAYER_SHAPE_GATE: checks=%d" % failures.size())
 	for failure: String in failures:
 		print("[FAIL] %s" % failure)

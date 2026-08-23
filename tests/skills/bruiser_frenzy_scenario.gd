@@ -8,7 +8,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 ## Planning tier: B
 
 ## Bible: Frenzy - RANGE 1 | ATK 1 (3 times).
-## [+] frenzy_on_kill_ap - on kill gain 1 AP.
+## [+] ON_KILL GRANT_AP layer — on kill gain 1 AP via kill_grant_ap bridge.
 ## Globals: triple EffectType.DAMAGE amount 1.
 
 

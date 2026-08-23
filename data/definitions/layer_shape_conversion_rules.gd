@@ -110,11 +110,14 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 		"forbidden_typed": ["heal_if_targets_gte"],
 		"required_layers": [
 			{
-				"condition": "AT_RESOLUTION",
+				"condition": "PER_TARGET_HIT",
 				"effect_type": "HEAL",
 				"profile": "upgrade",
 			},
 		],
+	},
+	&"bruiser_push_through": {
+		"forbidden_typed": ["buff_on_push"],
 	},
 	&"bruiser_violent_collision": {
 		"forbidden_typed": ["violent_collision_recast"],
@@ -220,9 +223,12 @@ static func audit_ability_shape(ability: AbilityData) -> Array[String]:
 
 static func audit_converted_skills(
 	mode: EnforceMode = EnforceMode.LAYER_MANDATE,
+	class_prefix: String = "",
 ) -> Array[String]:
 	var failures: Array[String] = []
 	for skill_id: StringName in ExtraRulesConversionContract.CONVERTED_SKILL_IDS:
+		if not class_prefix.is_empty() and not String(skill_id).begins_with(class_prefix):
+			continue
 		var ability: AbilityData = find_factory_ability(skill_id)
 		if ability == null:
 			failures.append("layer_shape: missing ability %s" % String(skill_id))
@@ -318,6 +324,8 @@ static func _layer_condition_from_spec(value: Variant) -> GameEnums.LayerConditi
 			return GameEnums.LayerCondition.AT_RESOLUTION
 		"ON_COLLISION":
 			return GameEnums.LayerCondition.ON_COLLISION
+		"PER_TARGET_HIT":
+			return GameEnums.LayerCondition.PER_TARGET_HIT
 		_:
 			return GameEnums.LayerCondition.AT_RESOLUTION
 
@@ -330,6 +338,8 @@ static func _effect_type_from_spec(value: Variant) -> GameEnums.EffectType:
 			return GameEnums.EffectType.GRANT_AP
 		"HEAL":
 			return GameEnums.EffectType.HEAL
+		"ADD_STATUS_SELF":
+			return GameEnums.EffectType.ADD_STATUS_SELF
 		"DAMAGE":
 			return GameEnums.EffectType.DAMAGE
 		_:

@@ -363,16 +363,28 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 			return module.bonus_dmg_per_10_hp != 0
 		"bonus_dmg_pct_max_hp":
 			return not is_zero_approx(module.bonus_dmg_pct_max_hp)
-		"heal_if_targets_gte":
-			return module.heal_if_targets_gte != 0
 		"bounce_count":
 			return module.bounce_count != 0
 		"bounce_range":
 			return module.bounce_range != 0
 		"buff_on_push":
-			return module.buff_on_push != 0
-		"frenzy_on_kill_ap":
-			return module.frenzy_on_kill_ap != 0
+			return module.buff_on_push != 0 or layer.buff_on_push != 0
+		"frenzy_on_kill_ap", "kill_grant_ap":
+			if module.frenzy_on_kill_ap != 0 or module.kill_grant_ap != 0:
+				return true
+			return (
+				layer.condition == GameEnums.LayerCondition.ON_KILL
+				and layer.effect != null
+				and layer.effect.type == GameEnums.EffectType.GRANT_AP
+			) or layer.grant_ap > 0
+		"heal_per_target_hit", "heal_if_targets_gte":
+			if module.heal_if_targets_gte != 0:
+				return true
+			return (
+				layer.condition == GameEnums.LayerCondition.PER_TARGET_HIT
+				and layer.effect != null
+				and layer.effect.type == GameEnums.EffectType.HEAL
+			)
 		"push_board_items":
 			return module.push_board_items != 0
 		"item_collision_damage":

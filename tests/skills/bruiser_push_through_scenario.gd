@@ -8,7 +8,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 ## Planning tier: B
 
 ## Bible: Push Through - move into adjacent ally-occupied tile, PUSH ally 1 forward; [+] cost 1 MOV + STR on push.
-## Globals: EffectType.MOVE_INTO_AND_PUSH; upgraded_movement_point_cost; buff_on_push modifier in PhysicsSystem.
+## Globals: EffectType.MOVE_INTO_AND_PUSH; upgraded_movement_point_cost; buff_on_push on upgrade layer.
 
 
 static func run_all(failures: Array[String]) -> void:

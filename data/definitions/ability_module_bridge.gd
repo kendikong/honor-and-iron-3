@@ -202,6 +202,27 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 			)
 		):
 			return true
+	match key:
+		&"kill_grant_ap":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+					continue
+				if layer.grant_ap > 0:
+					return true
+				if layer.effect != null and layer.effect.type == GameEnums.EffectType.GRANT_AP:
+					return true
+		&"heal_per_target_hit":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.PER_TARGET_HIT:
+					continue
+				if layer.effect != null and layer.effect.type == GameEnums.EffectType.HEAL:
+					return true
+		&"buff_on_push":
+			for layer: AbilityLayer in module.layers:
+				if layer != null and layer.buff_on_push > 0:
+					return true
+		_:
+			pass
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
 			continue
@@ -238,6 +259,21 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 			return int(layer_runtime[key_text])
 		if layer.effect != null and layer.effect.modifiers.has(key_text):
 			return int(layer.effect.modifiers[key_text])
+	match key:
+		&"kill_grant_ap":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+					continue
+				if layer.grant_ap > 0:
+					return layer.grant_ap
+				if layer.effect != null and layer.effect.type == GameEnums.EffectType.GRANT_AP:
+					return maxi(1, layer.effect.amount)
+		&"buff_on_push":
+			for layer: AbilityLayer in module.layers:
+				if layer != null and layer.buff_on_push > 0:
+					return layer.buff_on_push
+		_:
+			pass
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
 			continue
@@ -625,7 +661,12 @@ static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnu
 		GameEnums.LayerCondition.PER_TARGET_HIT:
 			eff.modifiers["heal_per_target_hit"] = 1
 		GameEnums.LayerCondition.ON_KILL:
-			if not eff.modifiers.has("on_kill_heal_shield") and not eff.modifiers.has("frenzy_on_kill_ap"):
+			if eff.type == GameEnums.EffectType.GRANT_AP:
+				var ap_amt: int = int(eff.modifiers.get("grant_ap", eff.amount))
+				if ap_amt <= 0:
+					ap_amt = 1
+				eff.modifiers["kill_grant_ap"] = ap_amt
+			elif not eff.modifiers.has("on_kill_heal_shield") and not eff.modifiers.has("frenzy_on_kill_ap"):
 				eff.modifiers["on_kill_heal_shield"] = 1
 		GameEnums.LayerCondition.IF_FROM_BEHIND:
 			eff.modifiers["from_behind_only"] = true

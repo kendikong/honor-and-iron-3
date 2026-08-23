@@ -9,7 +9,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Bible: Violent Collision - DASH 3 | bulldoze + recast MOVE 2 on enemy hit.
 ## [+] collisions apply STAGGER (1 turn).
-## Globals: EffectType.DASH + bulldoze/violent_collision_recast modifiers.
+## Globals: EffectType.DASH + bulldoze; IF_COLLIDED second MOVE module for recast.
 
 
 static func run_all(failures: Array[String]) -> void:

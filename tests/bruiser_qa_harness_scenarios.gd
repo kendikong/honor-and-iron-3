@@ -1022,7 +1022,8 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	H.assert_true(failures, "violent_collision/bulldoze", ab.modules[0].runtime_has("bulldoze"))
 	H.assert_true(
 		failures, "violent_collision/recast_mod",
-		ab.modules[0].violent_collision_recast > 0,
+		ab.modules.size() >= 2
+		and ab.modules[1].gate == GameEnums.ModuleGate.IF_COLLIDED,
 	)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
 	cfg["passive_flags"] = {"training_unlimited_actions": true}

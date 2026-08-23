@@ -28,7 +28,7 @@ const _LIVE_EVENT_BARS: Dictionary = {
 }
 
 const _CASES: Array[Dictionary] = [
-	{"id": &"bruiser_push_through", "observation": &"displacement", "upgrade_keys": [&"buff_on_push"]},
+	{"id": &"bruiser_push_through", "observation": &"displacement", "upgrade_keys": [&"buff_on_push_layer"]},
 	{"id": &"bruiser_charge_strike", "observation": &"movement_damage", "upgrade_keys": [&"ghost_move", &"bonus_dmg_from_occupied"]},
 	{"id": &"bruiser_concussion_blow", "observation": &"damage_displacement", "upgrade_keys": [&"enemy_collision_stagger_both"]},
 	{"id": &"bruiser_cleave", "observation": &"damage", "upgrade_keys": [&"weapon_scaled"]},
@@ -36,7 +36,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_adrenaline_surge", "observation": &"self_buff", "upgrade_keys": [&"pre_move_timing"]},
 	{"id": &"bruiser_earthshatter", "observation": &"damage", "upgrade_keys": [&"buff_per_destroyed_object"]},
 	{"id": &"bruiser_meat_shield", "observation": &"swap", "upgrade_keys": [&"intercept_grant_str"]},
-	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"frenzy_on_kill_ap"]},
+	{"id": &"bruiser_frenzy", "observation": &"damage", "upgrade_keys": [&"on_kill_grant_ap_layer"]},
 	{"id": &"bruiser_guttural_roar", "observation": &"aoe_displacement", "upgrade_keys": [&"push_board_items", &"item_collision_damage"]},
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
 	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": [&"next_attack_strength"]},
@@ -891,10 +891,10 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			).is_true()
 			assert_bool(
 				ability != null
-				and not ability.modules.is_empty()
-				and ability.modules[0].violent_collision_recast > 0,
+				and ability.modules.size() >= 2
+				and ability.modules[1].gate == GameEnums.ModuleGate.IF_COLLIDED,
 			).override_failure_message(
-				"violent_collision: live selected module must carry the recast collision rule",
+				"violent_collision: live selected ability must include IF_COLLIDED recast module",
 			).is_true()
 			var projection_board: BoardState = _director.base_board.clone()
 			var projection_events: Array[SimEvent] = []
@@ -1396,11 +1396,23 @@ func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
 			&"bonus_dmg_pct_max_hp":
 				if module.bonus_dmg_pct_max_hp > 0.0:
 					return true
-			&"buff_on_push":
-				if module.buff_on_push > 0:
+			&"buff_on_push_layer":
+				for layer: AbilityLayer in module.layers:
+					if layer != null and layer.buff_on_push > 0:
+						return true
+			&"on_kill_grant_ap_layer":
+				if LayerShapeConversionRules.module_has_layer_signature(
+					module,
+					GameEnums.LayerCondition.ON_KILL,
+					GameEnums.EffectType.GRANT_AP,
+				):
 					return true
 			&"frenzy_on_kill_ap":
-				if module.frenzy_on_kill_ap > 0:
+				if LayerShapeConversionRules.module_has_layer_signature(
+					module,
+					GameEnums.LayerCondition.ON_KILL,
+					GameEnums.EffectType.GRANT_AP,
+				):
 					return true
 			&"next_attack_strength":
 				if module.next_attack_strength > 0:
@@ -1414,7 +1426,11 @@ func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
 					):
 						return true
 			&"heal_if_targets_gte":
-				if module.heal_if_targets_gte > 0:
+				if LayerShapeConversionRules.module_has_layer_signature(
+					module,
+					GameEnums.LayerCondition.PER_TARGET_HIT,
+					GameEnums.EffectType.HEAL,
+				):
 					return true
 			&"push_board_items":
 				if module.push_board_items > 0:

@@ -7,7 +7,7 @@ const _ShapeRules := preload("res://data/definitions/layer_shape_conversion_rule
 ## Headless CLI: godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd
 
 
-static func run_all(failures: Array[String], mode: int = -1) -> void:
+static func run_all(failures: Array[String], mode: int = -1, class_prefix: String = "") -> void:
 	var enforce_mode: LayerShapeConversionRules.EnforceMode = (
 		mode as LayerShapeConversionRules.EnforceMode
 		if mode >= 0
@@ -15,7 +15,7 @@ static func run_all(failures: Array[String], mode: int = -1) -> void:
 	)
 	DataLibrary.reset_cache()
 	_assert_gold_standards(failures)
-	failures.append_array(LayerShapeConversionRules.audit_converted_skills(enforce_mode))
+	failures.append_array(LayerShapeConversionRules.audit_converted_skills(enforce_mode, class_prefix))
 
 
 static func run_audit_only(failures: Array[String]) -> void:

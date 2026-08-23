@@ -189,6 +189,27 @@ foreach ($typedContract in @(
 Write-GateLine "--- Typed module conversion contracts: PASS ---"
 Write-GateLine ""
 
+Write-GateLine "=== Bruiser layer-shape gate (ER-2 anti-cheat) ==="
+$shapeStdout = Join-Path $env:TEMP "honor-and-iron-bruiser-shape.stdout.log"
+$shapeStderr = Join-Path $env:TEMP "honor-and-iron-bruiser-shape.stderr.log"
+$shapeProcess = Start-Process -FilePath $GodotPath `
+	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/run_layer_shape_conversion_gate.gd", "--", "--class", "bruiser") `
+	-RedirectStandardOutput $shapeStdout `
+	-RedirectStandardError $shapeStderr `
+	-Wait -PassThru
+if (Test-Path $shapeStdout) {
+	Get-Content -Path $shapeStdout | ForEach-Object { Write-GateLine ([string]$_) }
+}
+if (Test-Path $shapeStderr) {
+	Get-Content -Path $shapeStderr | ForEach-Object { Write-GateLine ([string]$_) }
+}
+if ($shapeProcess.ExitCode -ne 0) {
+	Write-GateLine "[FAIL] Bruiser layer-shape gate exit $($shapeProcess.ExitCode)"
+	Exit-Gate 5
+}
+Write-GateLine "--- Bruiser layer-shape gate: PASS ---"
+Write-GateLine ""
+
 Write-GateLine "=== AOE footprint contract (all classes) ==="
 $aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
 & $aoeGate -GodotPath $GodotPath

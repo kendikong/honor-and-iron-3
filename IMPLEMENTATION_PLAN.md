@@ -89,7 +89,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Class | Skill | Ownership pass | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
 |---|---|:---:|:---:|:---:|:---:|---|
 | Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
-| Bruiser | Push Through | ☐ | ☐ | ☐ | ☐ | Typed `buff_on_push`; Tier-1/live gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Push Through | ☑ | ☑ | ☑ | ☐ | Layer `buff_on_push` on upgrade (no module knob); Tier-1/live + Bruiser layer-shape gate PASS (2026-08-22). |
 | Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ | Typed occupied-tile bonus + GHOST keyword; Tier-1/live gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Concussion Blow | ☑ | ☑ | ☑ | ☑ | Typed collision layer flags; Tier-1/live gates pass; independent audit pass |
 | Bruiser | Cleave | ☑ | ☑ | ☑ | ☑ | Layered BLEED profile; Tier-1/live gates pass; independent audit pass |
@@ -97,12 +97,12 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Bruiser | Adrenaline Surge | ☐ | ☐ | ☐ | ☐ | Pre-Move self status; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Earthshatter | ☑ | ☑ | ☑ | ☑ | Destroy-object layer; gates pass; independent audit pass |
 | Bruiser | Meat Shield | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn INTERCEPT; scenario and class gates pass |
-| Bruiser | Frenzy | ☐ | ☐ | ☐ | ☐ | Typed kill AP field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Frenzy | ☑ | ☑ | ☑ | ☐ | ON_KILL GRANT_AP layer (no `frenzy_on_kill_ap` knob); Tier-1/live + layer-shape gate PASS (2026-08-22). |
 | Bruiser | Guttural Roar | ☐ | ☐ | ☐ | ☐ | Typed board-item/collision fields; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Headbutt | ☐ | ☐ | ☐ | ☐ | Typed max-HP damage field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Blood Boil | ☐ | ☐ | ☐ | ☐ | Fully module-authored HP/resource profile; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Bruiser | Violent Collision | ☐ | ☐ | ☐ | ☐ | Typed recast field + collision layer; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Bruiser | Crimson Whirlwind | ☐ | ☐ | ☐ | ☐ | Typed target-count heal field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☐ | IF_COLLIDED + second MOVE module (no `violent_collision_recast` knob); Tier-1/live + layer-shape gate PASS (2026-08-22). |
+| Bruiser | Crimson Whirlwind | ☑ | ☑ | ☑ | ☐ | PER_TARGET_HIT HEAL layer on [+] (matrix); Tier-1/live + layer-shape gate PASS (2026-08-22). Bible “3+ targets HEAL 2” still deferred. |
 | Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
 | Bruiser | Breaching Dash | ☑ | ☑ | ☑ | ☑ | PIERCE keyword; gates pass; independent audit pass |
 | Bruiser | Reactive Adrenaline | ☑ | ☑ | ☑ | ☑ | Dedicated passive scenario + upgrade proof; shared turn-start passive path; independent audit pass |

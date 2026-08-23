@@ -2542,11 +2542,12 @@ static func planning_module_range_tiles(
 			var prefix_timeline := Timeline.new()
 			prefix_timeline.add(prefix)
 			Simulator.simulate_player_turn(range_board, prefix_timeline, prefix_events)
-			actor = range_board.get_unit_by_id(action.actor_id)
-			if actor == null:
-				return out
-			if stand_origin.x <= -900000:
-				origin = actor.position
+		actor = range_board.get_unit_by_id(action.actor_id)
+		if actor == null:
+			return out
+		## Later NEW_AIM modules (Charge Strike strike, etc.) always range from the
+		## post-prefix stand — never a stale turn-start or pre-prefix stand_origin.
+		origin = actor.position
 	if module.primary_type == GameEnums.EffectType.DASH:
 		return dash_line_threat_tiles(range_board, origin, module.max_range)
 	var max_range: int = active_range_tiles(actor, ability, module_index)
@@ -5031,6 +5032,8 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"unit": target.id, "to": target.position
 					}))
 		GameEnums.EffectType.GRANT_AP:
+			if effect.modifiers.has("kill_grant_ap"):
+				return
 			var ap_target: UnitState = target if target != null else actor
 			if ap_target != null and ap_target.ability != null:
 				var ap_amount := int(effect.modifiers.get("grant_ap", effect.amount))
