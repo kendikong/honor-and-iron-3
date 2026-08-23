@@ -34,6 +34,11 @@ const LAYER_MANDATE_TYPED_PROPS: Array[String] = [
 	"heal_per_debuff",
 	"on_hit_scrap",
 	"violent_collision_recast", ## Matrix: IF_COLLIDED + second DASH module + BULLDOZE, not a recast knob.
+	"landing_adjacent_push",
+	"landing_adjacent_push_stagger",
+	"root_break_on_damage",
+	"spread_status_adjacent",
+	"armor_explosion_atk",
 ]
 
 ## ER-1 allowlist: typed extras that may remain on modules after real conversion.
@@ -55,7 +60,6 @@ const ER1_ALLOWLIST_TYPED_PROPS: Array[String] = [
 	"pull_self_if_rooted", "pull_until_adjacent", "next_turn", "next_turn_max_move",
 	"movement_mp_override", "cost_all_movement", "bonus_per_enemy_passed",
 	"create_trampled_terrain", "upgraded_trample", "line_breaker",
-	"landing_adjacent_push", "landing_adjacent_push_stagger",
 	"stop_adjacent_first_enemy", "dash_absorb_element", "leap_absorb_surface",
 	"enemy_pushed_mov", "blind_on_pass_over",
 	"item_collision_damage", "item_collision_str_div", "item_collision_vulnerable",
@@ -72,8 +76,7 @@ const ER1_ALLOWLIST_TYPED_PROPS: Array[String] = [
 	"bonus_dmg_from_occupied", "bonus_dmg_per_10_hp", "bonus_dmg_pct_max_hp",
 	"bounce_count", "bounce_range", "bounce_walls_45", "skewer", "pierce",
 	"next_attack_strength", "next_attack_bleed_weapon", "next_attack_pierce",
-	"next_ranged_attack_strength", "root_break_on_damage", "spread_status_adjacent",
-	"halve_target_def_one_turn", "armor_explosion_atk", "bonus_atk_vs_fear_or_lower_movement",
+	"next_ranged_attack_strength", "bonus_atk_vs_fear_or_lower_movement",
 	"range_one_damage_multiplier", "bleed_bonus_damage", "target_def_debuff",
 	"target_def_pct_debuff", "target_def_pct_duration", "bonus_if_target_adjacent_to_ally",
 	"if_target_attacked_caster_last_turn_bonus",
@@ -143,12 +146,42 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 		],
 	},
 	&"lancer_vaulting_leap": {
-		"forbidden_typed": ["halve_target_def_one_turn"],
+		"forbidden_typed": ["halve_target_def_one_turn", "armor_explosion_atk"],
 		"required_layers": [
 			{
 				"condition": "AT_RESOLUTION",
 				"effect_type": "ADD_STATUS",
 				"profile": "base",
+			},
+		],
+	},
+	&"lancer_glorious_charge": {
+		"forbidden_typed": ["kill_grant_ap", "frenzy_on_kill_ap"],
+		"required_layers": [
+			{
+				"condition": "ON_KILL",
+				"effect_type": "GRANT_AP",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"lancer_pole_vault": {
+		"forbidden_typed": ["landing_adjacent_push", "landing_adjacent_push_stagger"],
+		"required_layers": [
+			{
+				"condition": "ON_LAND",
+				"effect_type": "PUSH",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"lancer_run_down": {
+		"forbidden_typed": ["on_kill_max_move"],
+		"required_layers": [
+			{
+				"condition": "ON_KILL",
+				"effect_type": "ADD_STATUS",
+				"profile": "upgrade",
 			},
 		],
 	},

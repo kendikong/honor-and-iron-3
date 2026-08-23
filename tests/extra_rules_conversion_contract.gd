@@ -9,6 +9,7 @@ extends RefCounted
 
 const CONVERTED_SKILL_IDS: Array[StringName] = [
 	&"knight_defensive_formation",
+	&"knight_shield_slam",
 	&"bruiser_push_through",
 	&"bruiser_charge_strike",
 	&"bruiser_concussion_blow",

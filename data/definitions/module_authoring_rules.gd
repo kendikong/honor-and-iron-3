@@ -222,6 +222,7 @@ static func normalize_module_context_fields(
 	migrate_keywords_to_layers(module)
 	migrate_legacy_layer_bundles(module)
 	migrate_status_riders_to_layers(module)
+	migrate_kill_and_landing_riders_to_layers(module)
 	for layer: AbilityLayer in module.layers:
 		if layer == null:
 			continue
@@ -288,6 +289,110 @@ static func migrate_status_riders_to_layers(module: AbilityModule) -> void:
 		halve_layer.effect.modifiers["halve_target_def_one_turn"] = true
 		module.layers.insert(0, halve_layer)
 		module.halve_target_def_one_turn = false
+	module.invalidate_runtime_modifiers_cache()
+
+
+static func _module_has_on_kill_grant_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+			continue
+		if layer.grant_ap > 0:
+			return true
+		if layer.effect != null and layer.effect.type == GameEnums.EffectType.GRANT_AP:
+			return true
+	return false
+
+
+static func _module_has_on_kill_max_move_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+			continue
+		if layer.effect != null and int(layer.effect.modifiers.get("on_kill_max_move", 0)) > 0:
+			return true
+	return false
+
+
+static func _module_has_on_land_push_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.ON_LAND:
+			continue
+		if layer.landing_push > 0:
+			return true
+		if layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
+			return true
+	return false
+
+
+static func _module_has_armor_explosion_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.effect == null:
+			continue
+		if int(layer.effect.modifiers.get("armor_explosion_atk", 0)) > 0:
+			return true
+	return false
+
+
+static func _first_status_layer(module: AbilityModule) -> AbilityLayer:
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.effect == null:
+			continue
+		if layer.effect.type == GameEnums.EffectType.ADD_STATUS:
+			return layer
+	return null
+
+
+static func migrate_kill_and_landing_riders_to_layers(module: AbilityModule) -> void:
+	if module == null:
+		return
+	var grant_ap_amount: int = module.kill_grant_ap
+	if grant_ap_amount <= 0 and module.frenzy_on_kill_ap > 0:
+		grant_ap_amount = module.frenzy_on_kill_ap
+	if grant_ap_amount > 0 and not _module_has_on_kill_grant_layer(module):
+		var grant_layer := AbilityLayer.new()
+		grant_layer.condition = GameEnums.LayerCondition.ON_KILL
+		grant_layer.effect = EffectData.new()
+		grant_layer.effect.type = GameEnums.EffectType.GRANT_AP
+		grant_layer.effect.amount = grant_ap_amount
+		module.layers.append(grant_layer)
+		module.kill_grant_ap = 0
+		module.frenzy_on_kill_ap = 0
+	if module.on_kill_max_move > 0 and not _module_has_on_kill_max_move_layer(module):
+		var move_layer := AbilityLayer.new()
+		move_layer.condition = GameEnums.LayerCondition.ON_KILL
+		move_layer.effect = EffectData.new()
+		move_layer.effect.type = GameEnums.EffectType.ADD_STATUS
+		move_layer.effect.modifiers["on_kill_max_move"] = module.on_kill_max_move
+		module.layers.append(move_layer)
+		module.on_kill_max_move = 0
+	if module.landing_adjacent_push > 0 and not _module_has_on_land_push_layer(module):
+		var land_layer := AbilityLayer.new()
+		land_layer.condition = GameEnums.LayerCondition.ON_LAND
+		land_layer.effect = EffectData.new()
+		land_layer.effect.type = GameEnums.EffectType.PUSH
+		land_layer.effect.amount = module.landing_adjacent_push
+		if module.landing_adjacent_push_stagger:
+			land_layer.stagger_on_collision = true
+		module.layers.append(land_layer)
+		module.landing_adjacent_push = 0
+		module.landing_adjacent_push_stagger = false
+	if module.root_break_on_damage:
+		var status_layer: AbilityLayer = _first_status_layer(module)
+		if status_layer != null and status_layer.effect != null:
+			status_layer.effect.modifiers["root_break_on_damage"] = true
+		module.root_break_on_damage = false
+	if module.spread_status_adjacent:
+		var spread_layer: AbilityLayer = _first_status_layer(module)
+		if spread_layer != null and spread_layer.effect != null:
+			spread_layer.effect.modifiers["spread_status_adjacent"] = true
+		module.spread_status_adjacent = false
+	if module.armor_explosion_atk > 0 and not _module_has_armor_explosion_layer(module):
+		var explosion_layer := AbilityLayer.new()
+		explosion_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+		explosion_layer.effect = EffectData.new()
+		explosion_layer.effect.type = GameEnums.EffectType.ADD_STATUS
+		explosion_layer.effect.modifiers["armor_explosion_atk"] = module.armor_explosion_atk
+		module.layers.append(explosion_layer)
+		module.armor_explosion_atk = 0
 	module.invalidate_runtime_modifiers_cache()
 
 

@@ -450,7 +450,7 @@ static func _lethal_flourish() -> AbilityData:
 	var base := _module(GameEnums.EffectType.DAMAGE, 3, 1, 1, GameEnums.TargetingFlags.ENEMY, GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL)
 	base.bonus_if_target_debuffed = 2
 	var upgraded := _clone([base])
-	upgraded[0].kill_grant_ap = 1
+	upgraded[0].layers.append(DataLibrary._on_kill_grant_ap_layer(1))
 	return _ability(
 		&"rogue_lethal_flourish", "Lethal Flourish", [base], upgraded,
 		GameEnums.TargetingFlags.ENEMY, [AbilityModuleBridge.TAG_ATTACK],

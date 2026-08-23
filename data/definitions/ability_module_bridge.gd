@@ -194,6 +194,26 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 					return true
 		&"frenzy_on_kill_ap":
 			return module_has_modifier(module, &"kill_grant_ap")
+		&"on_kill_max_move":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+					continue
+				if layer.effect != null and int(layer.effect.modifiers.get("on_kill_max_move", 0)) > 0:
+					return true
+		&"landing_adjacent_push":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_LAND:
+					continue
+				if layer.landing_push > 0:
+					return true
+				if layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
+					return true
+		&"armor_explosion_atk":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.effect == null:
+					continue
+				if int(layer.effect.modifiers.get("armor_explosion_atk", 0)) > 0:
+					return true
 		&"bulldoze", &"push", &"ghost_move", &"next_attack_pierce", &"trample":
 			for layer: AbilityLayer in module.layers:
 				if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
@@ -237,6 +257,26 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 					return layer.buff_on_push
 		&"frenzy_on_kill_ap":
 			return module_modifier_value(module, &"kill_grant_ap", default_value)
+		&"on_kill_max_move":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_KILL:
+					continue
+				if layer.effect != null and layer.effect.modifiers.has("on_kill_max_move"):
+					return int(layer.effect.modifiers["on_kill_max_move"])
+		&"landing_adjacent_push":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.ON_LAND:
+					continue
+				if layer.landing_push > 0:
+					return layer.landing_push
+				if layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:
+					return maxi(1, layer.effect.amount)
+		&"armor_explosion_atk":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.effect == null:
+					continue
+				if layer.effect.modifiers.has("armor_explosion_atk"):
+					return int(layer.effect.modifiers["armor_explosion_atk"])
 		&"bulldoze", &"push", &"ghost_move", &"next_attack_pierce", &"trample":
 			for layer: AbilityLayer in module.layers:
 				if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
@@ -361,6 +401,7 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 		return out
 	_ModuleAuthoringRules.migrate_keywords_to_layers(module)
 	_ModuleAuthoringRules.migrate_status_riders_to_layers(module)
+	_ModuleAuthoringRules.migrate_kill_and_landing_riders_to_layers(module)
 	var primary: EffectData = module.primary_as_effect()
 	for layer: AbilityLayer in module.layers:
 		if layer != null and layer.condition == GameEnums.LayerCondition.DURING:
@@ -627,7 +668,10 @@ static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnu
 		GameEnums.LayerCondition.ON_CHAIN_COLLISION:
 			eff.modifiers["bowling_upgrade"] = true
 		GameEnums.LayerCondition.ON_LAND:
-			eff.modifiers["damage_adjacent_on_landing"] = 1
+			if eff.type == GameEnums.EffectType.PUSH:
+				eff.modifiers["landing_adjacent_push"] = maxi(1, eff.amount)
+			else:
+				eff.modifiers["damage_adjacent_on_landing"] = 1
 		GameEnums.LayerCondition.PER_TARGET_HIT:
 			eff.modifiers["heal_per_target_hit"] = 1
 		GameEnums.LayerCondition.ON_KILL:

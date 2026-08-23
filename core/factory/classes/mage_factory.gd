@@ -423,7 +423,7 @@ static func _disintegrate() -> AbilityData:
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.MAGICAL,
 	)
 	DataLibrary._copy_extras(base, upgraded)
-	upgraded.kill_grant_ap = 1
+	upgraded.layers.append(DataLibrary._on_kill_grant_ap_layer(1))
 	return _spell(
 		&"mage_disintegrate", "Disintegrate", [base], [upgraded],
 		GameEnums.TargetingFlags.ENEMY,

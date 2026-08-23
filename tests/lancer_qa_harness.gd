@@ -328,10 +328,17 @@ static func run_push_synergy_smoke(failures: Array[String]) -> void:
 	assert_true(
 		failures,
 		"push_synergy/vault_modifier",
-		vault != null and _has_modifier(
-			AbilityModuleBridge.compile_modules_to_effects(vault.upgraded_modules),
-			GameEnums.EffectType.JUMP_TO_BEHIND,
-			"landing_adjacent_push",
+		vault != null and (
+			_has_modifier(
+				AbilityModuleBridge.compile_modules_to_effects(vault.upgraded_modules),
+				GameEnums.EffectType.JUMP_TO_BEHIND,
+				"landing_adjacent_push",
+			)
+			or LayerShapeConversionRules.module_has_layer_signature(
+				vault.upgraded_modules[0],
+				GameEnums.LayerCondition.ON_LAND,
+				GameEnums.EffectType.PUSH,
+			)
 		),
 		"Pole Vault [+] must PUSH adjacent enemies on landing",
 	)

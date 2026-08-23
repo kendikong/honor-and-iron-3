@@ -17,6 +17,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_move_clears_scaling(failures)
 	_test_l_shape_move_is_path_motion(failures)
 	_test_before_damage_layers_compile_first(failures)
+	_test_migrate_kill_and_landing_riders(failures)
 	_test_pre_move_excludes_phase_options(failures)
 	_test_pre_move_forces_on_action_phase(failures)
 	_test_self_status_clears_range(failures)
@@ -121,6 +122,36 @@ static func _test_before_damage_layers_compile_first(failures: Array[String]) ->
 		failures.append("before-damage status layer must compile before DAMAGE primary")
 	elif compiled[1].type != GameEnums.EffectType.DAMAGE:
 		failures.append("DAMAGE primary must follow pre-primary layers")
+
+
+static func _test_migrate_kill_and_landing_riders(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.JUMP_TO_BEHIND
+	module.kill_grant_ap = 1
+	module.landing_adjacent_push = 2
+	module.landing_adjacent_push_stagger = true
+	ModuleAuthoringRules.migrate_kill_and_landing_riders_to_layers(module)
+	if module.kill_grant_ap != 0 or module.landing_adjacent_push != 0:
+		failures.append("migration should clear kill/landing module knobs")
+	var has_on_kill := false
+	var has_on_land := false
+	for layer: AbilityLayer in module.layers:
+		if layer == null:
+			continue
+		if (
+			layer.condition == GameEnums.LayerCondition.ON_KILL
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.GRANT_AP
+		):
+			has_on_kill = true
+		if (
+			layer.condition == GameEnums.LayerCondition.ON_LAND
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.PUSH
+		):
+			has_on_land = true
+	if not has_on_kill or not has_on_land:
+		failures.append("migration should author ON_KILL GRANT_AP and ON_LAND PUSH layers")
 
 
 static func _test_pre_move_excludes_phase_options(failures: Array[String]) -> void:

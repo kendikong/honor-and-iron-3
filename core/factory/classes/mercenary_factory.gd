@@ -564,9 +564,8 @@ static func _executioners_blade() -> AbilityData:
 		5,
 		1,
 		"Threshold becomes below 75% HP; on kill, gain 1 AP.",
-		{},
-		{"kill_grant_ap": 1},
 	)
+	ability.upgraded_modules[0].layers.append(DataLibrary._on_kill_grant_ap_layer(1))
 	ability.modules[0].set_condition_hp_below_pct(50)
 	ability.upgraded_modules[0].set_condition_hp_below_pct(75)
 	return ability

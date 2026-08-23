@@ -366,7 +366,7 @@ static func _pinning_arrow() -> AbilityData:
 		GameEnums.StatusType.ROOT, 1,
 		"ROOT breaks on damage. If target is PUSHED while Rooted, apply BLEED WPN.",
 	)
-	ability.modules[0].root_break_on_damage = true
+	ability.modules[0].layers[0].effect.modifiers["root_break_on_damage"] = true
 	ability.upgraded_modules[0].layers[0].rooted_push_bleed_weapon = true
 	return ability
 
@@ -395,7 +395,7 @@ static func _toxic_spore_arrow() -> AbilityData:
 		GameEnums.StatusType.POISON, 2,
 		"Apply POISON. Upgraded: spread POISON to adjacent enemies on hit.",
 	)
-	ability.upgraded_modules[0].spread_status_adjacent = true
+	ability.upgraded_modules[0].layers[0].effect.modifiers["spread_status_adjacent"] = true
 	return ability
 
 

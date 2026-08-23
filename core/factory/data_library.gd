@@ -541,6 +541,38 @@ static func _during_pierce() -> AbilityLayer:
 	return layer
 
 
+static func _on_kill_grant_ap_layer(amount: int = 1) -> AbilityLayer:
+	return _layer(_effect(GameEnums.EffectType.GRANT_AP, amount), GameEnums.LayerCondition.ON_KILL)
+
+
+static func _on_kill_max_move_layer(amount: int) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.ON_KILL
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.ADD_STATUS
+	layer.effect.modifiers["on_kill_max_move"] = amount
+	return layer
+
+
+static func _on_land_push_layer(amount: int = 1, stagger: bool = false) -> AbilityLayer:
+	var layer: AbilityLayer = _layer(
+		_effect(GameEnums.EffectType.PUSH, amount),
+		GameEnums.LayerCondition.ON_LAND,
+	)
+	if stagger:
+		layer.stagger_on_collision = true
+	return layer
+
+
+static func _armor_explosion_layer(amount: int = 1) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.ADD_STATUS
+	layer.effect.modifiers["armor_explosion_atk"] = amount
+	return layer
+
+
 static func _keyword(
 	keyword_id: GameEnums.AbilityKeywordId,
 	amount: int = 0,

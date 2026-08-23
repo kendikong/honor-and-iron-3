@@ -140,12 +140,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 		{"stagger_on_collision": true},
 	))
 	def.abilities.append(_vaulting_leap())
-	def.abilities.append(_attack(
-		&"lancer_run_down", "Impale", 2, 3,
-		"On Kill: gain MAX MOVEMENT +2.",
-		{"bonus_atk_vs_fear_or_lower_movement": 2},
-		{"on_kill_max_move": 2},
-	))
+	def.abilities.append(_run_down())
 	def.abilities.append(_self_area_status(
 		&"lancer_rallying_cry", "Rallying Cry", 2,
 		GameEnums.StatusType.STAT_BUFF_MOV, 1,
@@ -370,12 +365,24 @@ static func _halve_target_def_layer() -> AbilityLayer:
 	return layer
 
 
+static func _run_down() -> AbilityData:
+	var module := _module(GameEnums.EffectType.DAMAGE, 3, 1, 2, GameEnums.TargetingFlags.ENEMY)
+	_ingest_module_keys(module, {"bonus_atk_vs_fear_or_lower_movement": 2})
+	var upgraded := _clone_modules([module])
+	_ingest_module_keys(upgraded[0], {"bonus_atk_vs_fear_or_lower_movement": 2})
+	upgraded[0].layers.append(DataLibrary._on_kill_max_move_layer(2))
+	return _ability(
+		&"lancer_run_down", "Impale", 1, [module], GameEnums.TargetingFlags.ENEMY,
+		[AbilityModuleBridge.TAG_ATTACK],
+		"On Kill: gain MAX MOVEMENT +2.", upgraded,
+	)
+
+
 static func _vaulting_leap() -> AbilityData:
 	var module := _module(GameEnums.EffectType.DAMAGE, 2, 1, 2, GameEnums.TargetingFlags.ENEMY)
 	module.layers = [_halve_target_def_layer()]
 	var upgraded := _clone_modules([module])
-	upgraded[0].layers = [_halve_target_def_layer()]
-	_ingest_module_keys(upgraded[0], {"armor_explosion_atk": 1})
+	upgraded[0].layers = [_halve_target_def_layer(), DataLibrary._armor_explosion_layer(1)]
 	return _ability(
 		&"lancer_vaulting_leap", "Vaulting Leap", 1, [module], GameEnums.TargetingFlags.ENEMY,
 		[AbilityModuleBridge.TAG_ATTACK],
@@ -547,7 +554,7 @@ static func _glorious_charge() -> AbilityData:
 		"On Kill: gain 1 AP and leave TRAMPLED terrain on tiles you left.",
 		{"create_trampled_terrain": true},
 	)
-	ability.upgraded_modules[1].kill_grant_ap = 1
+	ability.upgraded_modules[1].layers.append(DataLibrary._on_kill_grant_ap_layer(1))
 	return ability
 
 
@@ -559,8 +566,7 @@ static func _pole_vault() -> AbilityData:
 	module.vault_obstacle_or_gap_only = true
 	var upgraded := _clone_modules([module])
 	upgraded[0].vault_obstacle_or_gap_only = true
-	upgraded[0].landing_adjacent_push = 1
-	upgraded[0].landing_adjacent_push_stagger = true
+	upgraded[0].layers.append(DataLibrary._on_land_push_layer(1, true))
 	return _ability(
 		&"lancer_pole_vault", "Pole Vault", 1, [module],
 		GameEnums.TargetingFlags.TILE,
