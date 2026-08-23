@@ -1051,3 +1051,7 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 		failures.append(
 			"ActionRangeRegression post_swap_post_move_stand_locked: director must preview from projected delta",
 		)
+	if not overlay._blast_tiles_on_hover_layer:
+		failures.append(
+			"ActionRangeRegression post_swap_post_move_stand_locked: blast must follow cursor on hover layer",
+		)

@@ -41,15 +41,25 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	var path_init_board: BoardState = base_board
 	if intent_preview and director.projected_state != null:
 		path_init_board = director.projected_state
-	var forecast_baseline: BoardState = forecast_baseline_board(director, base_board)
-	if intent_preview and path_init_board != null:
-		## Post-move hover after committed swap: baseline must be projected stand, not live board.
-		forecast_baseline = path_init_board
-	forecast = CombatPlanningForecast.from_boards(
-		forecast_baseline,
-		temp_board,
-		director.plan_revision if director != null else -1,
+	var actions_v: Variant = res.get("actions", [])
+	var move_only_intent: bool = (
+		intent_preview
+		and actions_v is Array
+		and preview_actions_are_move_only(actions_v as Array)
 	)
+	if move_only_intent:
+		## Walk-only hover never changes HP — skip live bar merge + unit-layer redraw churn.
+		forecast = null
+	else:
+		var forecast_baseline: BoardState = forecast_baseline_board(director, base_board)
+		if intent_preview and path_init_board != null:
+			## Post-move hover after committed swap: baseline must be projected stand, not live board.
+			forecast_baseline = path_init_board
+		forecast = CombatPlanningForecast.from_boards(
+			forecast_baseline,
+			temp_board,
+			director.plan_revision if director != null else -1,
+		)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
 	build_preview_paths(
@@ -63,7 +73,6 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		path_init_board,
 	)
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
-	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
 		ensure_movement_intent_from_actions(actions_v as Array, path_init_board, {}, director)
 		if intent_preview and director != null and director.selected_unit_id >= 0:
@@ -74,6 +83,21 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 			actions_v as Array, path_init_board, preview_paths, preview_splits, action_splits, director,
 		)
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
+
+
+static func preview_actions_are_move_only(actions: Array) -> bool:
+	if actions.is_empty():
+		return false
+	var has_move: bool = false
+	for raw: Variant in actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+		if action.type == GameEnums.ActionType.MOVE:
+			has_move = true
+	return has_move
 
 
 ## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.

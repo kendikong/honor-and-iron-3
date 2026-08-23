@@ -80,6 +80,8 @@ var _phase: int = CombatDirector.Phase.PLANNING
 var _hover_move_tiles: Array[Vector2i] = []
 var _hover_action_range_tiles: Array[Vector2i] = []
 var _hover_blast_tiles: Array[Vector2i] = []
+## Cursor-following blast only (post-move stand locked). Drawn on hover layer — not static flood.
+var _blast_tiles_on_hover_layer: bool = false
 ## Tier 3 QA: skip flow redraws from committed plan entries (drag-only pulse).
 var qa_static_overlay: bool = false
 var _cached_hover_unit_id: int = -1
@@ -472,6 +474,7 @@ func _hover_is_walk_only_premove(unit: UnitState) -> bool:
 
 
 func _clear_hover_skill_tiles() -> void:
+	_blast_tiles_on_hover_layer = false
 	_hover_action_range_tiles.clear()
 	_hover_blast_tiles.clear()
 
@@ -712,9 +715,13 @@ func apply_preview_state(
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
 	if _unit_layer != null:
-		_unit_layer.set_live_forecast(_live_preview.forecast)
+		if _live_preview.forecast != null:
+			_unit_layer.set_live_forecast(_live_preview.forecast)
+		else:
+			_unit_layer.clear_live_forecast()
 	live_preview_changed.emit()
-	_queue_overlay_redraw()
+	## Live route/ghost only — flow chevrons already redraw every frame; skip duplicate flow queue.
+	queue_redraw()
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
@@ -830,11 +837,13 @@ func _refresh_cursor_action_tiles() -> void:
 			_queue_static_tiles_redraw()
 		return
 	if stand_locked and _hover_is_walk_only_premove(unit):
+		_blast_tiles_on_hover_layer = true
 		_fill_hover_blast_tiles(
 			unit, p_unit, origin, selected_ability, force_basic, true,
 		)
-		_queue_static_tiles_redraw()
+		_queue_hover_tile_redraw()
 		return
+	_blast_tiles_on_hover_layer = false
 	_fill_hover_action_range_tiles(
 		unit, p_unit, origin, selected_ability, force_basic, true,
 	)
@@ -1485,8 +1494,9 @@ func _draw_hover_tiles(canvas: CanvasItem) -> void:
 		_draw_tile_tint(canvas, cell, _COLOR_MOVE, _COLOR_MOVE_FILL_ALPHA, false)
 	for cell: Vector2i in _hover_action_range_tiles:
 		_draw_tile_tint(canvas, cell, _COLOR_ACTION_RANGE, _COLOR_ACTION_RANGE_FILL_ALPHA, false)
-	for cell: Vector2i in _hover_blast_tiles:
-		_draw_tile_tint(canvas, cell, _COLOR_BLAST, _COLOR_BLAST_FILL_ALPHA, false)
+	if not _blast_tiles_on_hover_layer:
+		for cell: Vector2i in _hover_blast_tiles:
+			_draw_tile_tint(canvas, cell, _COLOR_BLAST, _COLOR_BLAST_FILL_ALPHA, false)
 	_ensure_hover_perimeter_cache()
 	for entry: Variant in _cached_hover_perimeter_segments:
 		if entry is Array and entry.size() >= 3:
@@ -1554,6 +1564,9 @@ func _draw_hover_tile_on(canvas: CanvasItem) -> void:
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
 	canvas.draw_rect(rect, Color(_COLOR_HOVER, 0.10), true)
 	canvas.draw_rect(rect, Color(_COLOR_HOVER.r, _COLOR_HOVER.g, _COLOR_HOVER.b, 0.45), false, 1.0)
+	if _blast_tiles_on_hover_layer:
+		for cell: Vector2i in _hover_blast_tiles:
+			_draw_tile_tint(canvas, cell, _COLOR_BLAST, _COLOR_BLAST_FILL_ALPHA, false)
 	_draw_hover_follow_route_on(canvas)
 
 
