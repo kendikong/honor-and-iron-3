@@ -7,6 +7,35 @@ alwaysApply: true
 
 All implementations, fixes, and refactors must **prefer the lowest-cost approach that still meets the requirement**. Performance is a first-class constraint — not an afterthought.
 
+## Priority (wins over convenience — read first)
+
+This rule is **subordinate** to:
+
+- `.cursor/rules/global-systems-first.mdc`
+- `.cursor/rules/no-bandaid-fixes.mdc`
+- `.cursor/rules/move-preview-intent-truth.mdc`
+- `.cursor/rules/action-range-latest-stand.mdc`
+
+If optimizing CPU/GPU would add a **second preview, hover, route, range, or commit path** → **do not throttle or defer presentation**. Redesign the **canonical owner** (cheaper work inside `CombatDirector`, commit slots, `Simulator` entry board, dirty flags on the same API).
+
+## Lag / feel fixes (mandatory order)
+
+1. **Parity:** Why is the fast case fast and the slow case slow? Same owner pipeline (slots → preview → overlay)?
+2. **Unify** the slow case onto the fast canonical path — premove and postmove must not diverge without owner-approved ⚠ exception.
+3. **Measure** after parity (or inside the owner).
+4. **Optimize inside the owner** — cache keys, dirty flags, cheaper sim start state, GPU shaders — not parallel UI staging.
+
+## Forbidden on planning / combat (unless owner-approved ⚠ exception in chat)
+
+Do **not** fix lag by adding or restoring:
+
+- Defer / throttle / batch of hover coord, drag route extend, action-range tiles, hover-tile redraw
+- Pending cells or flags flushed only on hover settle (`_pending_*`, `force_*_refresh`, interval-capped range recompute)
+- Presentation-only paths that `commit_from_slots` / sim / slots do not use
+- Blocking cheap preview because UI state (e.g. highlighted skill) disagrees with move-only slots
+
+Named incident (do not repeat): post-swap route defer + overlay hover throttle while full sim replayed every settle — fix owner preview depth instead.
+
 ## Before shipping a change, ask
 
 1. **Does this add per-frame work?** (`_process`, `_physics_process`, `process_frame`, signal storms)
@@ -14,7 +43,7 @@ All implementations, fixes, and refactors must **prefer the lowest-cost approach
 3. **Does this duplicate data or materials** that could stay shared?
 4. **Does this force GPU sync or shader recompile** every frame?
 
-If yes to any, **throttle, batch, cache, or move to GPU** — or document why the cost is unavoidable.
+If yes to any, optimize **at the owning system** when inputs are unchanged: dirty flags, cache stamps, batch inside one manager, or move to GPU — **not** a second hover/route/preview path (see Forbidden above). Document why cost is unavoidable if still hot.
 
 ## Hard rules
 
@@ -29,7 +58,7 @@ If yes to any, **throttle, batch, cache, or move to GPU** — or document why th
 - Sync when **position, map epoch, or settings** change — not every animation frame.
 - **Dirty flags**: skip work when inputs unchanged (`is_equal_approx`, cached stamp).
 - **One shared update** per frame (e.g. palette/shadow globals once in `EffectsController`) instead of N×M per-sprite calls.
-- **Defer** non-critical work (`call_deferred`, async bake queues already in `ShadowPlacer`).
+- **Defer** non-input work (`call_deferred`, async bake queues in `ShadowPlacer`) — **not** hover, route, range, or move-preview staging.
 
 ## Red flags (stop and redesign)
 

@@ -24,6 +24,9 @@ Use exactly these three sections (in order):
 - What you will **not** do (important when past mistakes are relevant)
 - Risks or assumptions, if any
 - If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
+- **Lag / feel / FPS / postmove vs premove** (when task mentions slowness, frame drop, circling mouse, or “feels different”):
+  - **Parity check (mandatory):** Name fast vs slow scenario; state whether they use the **same** owner API (slots builder, preview entry, board clone, overlay inputs). If not → investigate read-only or unify owner **before** any perf patch.
+  - **Will not add this turn:** defer/throttle/pending/interval caps on hover, drag route, action-range tiles, hover-tile redraw, or preview staging — unless ⚠ exception block approved.
 
 ### 3. Permission
 End with a direct question, e.g. **"Proceed with this plan? (yes / no / adjust)"**
@@ -63,3 +66,4 @@ Place them in **## Changelog → ### Global systems** (see `global-systems-first
 - Solving a different problem than the user described (e.g. placement vs draw order)
 - Assuming post-process vs pre-process without stating it and getting buy-in
 - Bundling surprise scope (extra refactors, commits, new files) without listing them in the plan
+- Lag plans that jump to throttle/defer on `presentation/combat_*` or `tactical_planning_*` without parity check and without **Will not add** defer/throttle line
