@@ -2487,7 +2487,7 @@ static func run_bowling_charge(failures: Array[String]) -> void:
 	)
 	assert_true(
 		failures, "bowling_charge/contract/bulldoze",
-		ability_has_effect(charge_data, GameEnums.EffectType.BULLDOZE, false),
+		AbilitySystem.effect_amount(charge_data, GameEnums.EffectType.BULLDOZE) >= 1,
 	)
 	assert_eq_int(
 		failures,

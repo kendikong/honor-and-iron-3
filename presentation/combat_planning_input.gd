@@ -1772,13 +1772,15 @@ func _refresh_selected_interaction_preview() -> void:
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			var hover_waypoints: Array[Vector2i] = []
+			var ability: AbilityData = _selected_ability_data(p_unit)
 			if _drag_route_commits_active():
 				var enemy: UnitState = _director.board.get_unit_by_id(target_id) if (target_id >= 0 and _director != null and _director.board != null) else null
-				var ability: AbilityData = _selected_ability_data(p_unit)
 				if enemy == null or _enemy_hover_respects_painted_route(p_unit, enemy, ability, _route_waypoints()):
 					hover_waypoints = _route_waypoints()
 				else:
 					_clear_hover_drag_route()
+			elif ability != null:
+				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return
@@ -2182,14 +2184,16 @@ func _commit_interaction_params(
 	else:
 		var actor: UnitState = _proj_unit(_director.selected_unit_id)
 		var ability: AbilityData = _selected_ability_data(actor)
-		if (
-			actor != null
-			and ability != null
-			and _movement_skill_commits_tile_endpoint(actor, ability, hover_cell)
-		):
-			waypoints = _director.preview_waypoints_for_hover(
-				_proj(), actor, hover_cell, [], ability,
+		if actor != null and ability != null:
+			var walk_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
+				actor, hover_cell, ability,
 			)
+			if not walk_wps.is_empty():
+				waypoints = walk_wps
+			elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
+				waypoints = _director.preview_waypoints_for_hover(
+					_proj(), actor, hover_cell, [], ability,
+				)
 	var face_dir: int = -1
 	if _map_view != null:
 		face_dir = _facing_from_drop(_mouse_local_for_facing(), hover_cell)
@@ -3535,8 +3539,6 @@ func _tile_target_movement_skill_commits_at_cell(
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	if _is_awaiting_movement_endpoint(actor, ability):
-		return false
 	if (
 		AbilitySystem.active_targeting_flags(actor, ability)
 		& GameEnums.TargetingFlags.TILE
@@ -3544,6 +3546,8 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
+	if _is_awaiting_movement_endpoint(actor, ability):
+		return _movement_skill_commits_tile_endpoint(actor, ability, cell)
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
 		## Painted move waypoints (selection/drag route) are pre-move intent — not dash pickup.
@@ -6048,14 +6052,43 @@ func _is_armed_tile_skill_aim_cell(
 		_director == null or _director.find_awaiting_action(p_unit.id) == null
 	):
 		return false
-	if AbilitySystem.ability_has_movement_effect(ability, p_unit):
-		return false
 	if (
 		AbilitySystem.active_targeting_flags(p_unit, ability)
 		& GameEnums.TargetingFlags.TILE
 	) == 0:
 		return false
+	if AbilitySystem.ability_has_movement_effect(ability, p_unit):
+		return _is_tile_dash_skill_aim_cell(p_unit, cell, ability)
 	return _in_ability_range_of_coord(p_unit, cell)
+
+
+func _is_tile_dash_skill_aim_cell(
+	p_unit: UnitState,
+	cell: Vector2i,
+	ability: AbilityData,
+) -> bool:
+	if p_unit == null or ability == null:
+		return false
+	if _is_awaiting_movement_endpoint(p_unit, ability):
+		return _movement_skill_commits_tile_endpoint(p_unit, ability, cell)
+	return _dash_tile_endpoint_one_click_commit(p_unit, ability, cell)
+
+
+func _hover_walk_waypoints_for_skill(
+	actor: UnitState,
+	cell: Vector2i,
+	ability: AbilityData,
+) -> Array[Vector2i]:
+	var empty: Array[Vector2i] = []
+	if actor == null or ability == null or _director == null:
+		return empty
+	if not _is_hover_move_cell(actor, cell):
+		return empty
+	if _is_tile_dash_skill_aim_cell(actor, cell, ability):
+		return empty
+	if _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
+		return empty
+	return _director.preview_waypoints_for_hover(_proj(), actor, cell, empty, ability)
 
 
 func _skill_takes_priority_over_basic_move() -> bool:
