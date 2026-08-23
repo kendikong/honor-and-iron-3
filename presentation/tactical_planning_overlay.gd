@@ -119,6 +119,9 @@ var _hover_tile_layer: Node2D
 var _flow_arrows_layer: Node2D
 var _draw_target: CanvasItem = null
 var _anim_redraw_accum: float = 0.0
+var _hover_visual_refresh_accum: float = 0.0
+var _hover_tile_redraw_pending: bool = false
+var _cursor_action_tiles_pending: bool = false
 
 
 func setup(
@@ -258,6 +261,47 @@ func _ensure_hover_tile_layer() -> void:
 func _queue_hover_tile_redraw() -> void:
 	if _hover_tile_layer != null:
 		_hover_tile_layer.queue_redraw()
+
+
+func _request_hover_tile_redraw() -> void:
+	_hover_tile_redraw_pending = true
+
+
+func _request_cursor_action_tiles_refresh() -> void:
+	_cursor_action_tiles_pending = true
+
+
+## Flush throttled hover route/cursor paints — call after hover settle or before commit.
+func force_hover_visual_refresh() -> void:
+	_hover_visual_refresh_accum = 0.0
+	_hover_tile_redraw_pending = false
+	_cursor_action_tiles_pending = false
+	if CombatDirector.is_planning_phase(_phase):
+		_recompute_hover_ranges_from_inputs()
+	_queue_hover_tile_redraw()
+
+
+func _hover_visual_refresh_interval_sec() -> float:
+	return _overlay_flow_interval_sec()
+
+
+func _process_hover_visual_throttle(delta: float) -> void:
+	if not _hover_tile_redraw_pending and not _cursor_action_tiles_pending:
+		return
+	if not CombatDirector.is_planning_phase(_phase):
+		_hover_tile_redraw_pending = false
+		_cursor_action_tiles_pending = false
+		return
+	_hover_visual_refresh_accum += delta
+	if _hover_visual_refresh_accum < _hover_visual_refresh_interval_sec():
+		return
+	_hover_visual_refresh_accum = 0.0
+	if _cursor_action_tiles_pending:
+		_cursor_action_tiles_pending = false
+		_recompute_hover_ranges_from_inputs()
+	if _hover_tile_redraw_pending:
+		_hover_tile_redraw_pending = false
+		_queue_hover_tile_redraw()
 
 
 func _draw_hover_tile_layer() -> void:
@@ -741,11 +785,17 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if _director != null and _director.selected_unit_id < 0:
 		_recompute_hover_ranges_from_inputs()
 	elif CombatDirector.is_planning_phase(_phase):
-		_refresh_cursor_action_tiles()
+		if qa_static_overlay:
+			_recompute_hover_ranges_from_inputs()
+		else:
+			_request_cursor_action_tiles_refresh()
 	if _planning_input == null:
 		_update_hover_action_icon()
 	if redraw:
-		_queue_hover_tile_redraw()
+		if qa_static_overlay:
+			_queue_hover_tile_redraw()
+		else:
+			_request_hover_tile_redraw()
 
 
 ## Cheap red range + yellow blast at the cursor. Range from latest stand
@@ -1298,6 +1348,7 @@ func _on_board_changed(board: BoardState) -> void:
 
 
 func _process(delta: float) -> void:
+	_process_hover_visual_throttle(delta)
 	var need_redraw := false
 	for i: int in range(_hit_markers.size() - 1, -1, -1):
 		var entry: Array = _hit_markers[i]
