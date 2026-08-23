@@ -762,6 +762,11 @@ func _refresh_cursor_action_tiles() -> void:
 		return
 	if _intent_tiles_blocked(unit, _director.selected_ability_index):
 		return
+	if _planning_input != null and not _planning_input.action_range_visible_for_hover():
+		if not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
+			_clear_hover_skill_tiles()
+			_queue_static_tiles_redraw()
+		return
 	var selected_ability: int = _director.selected_ability_index
 	var force_basic: bool = (
 		_planning_input.force_basic_movement if _planning_input != null else false
@@ -1173,10 +1178,14 @@ func recompute_hover_ranges(
 	_cached_hover_awaiting_module = cache_awaiting_module
 	_cached_hover_coord = _hover_coord
 	if move_cache_hit:
-		_fill_hover_action_range_tiles(
-			unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
-		)
-		_queue_static_tiles_redraw()
+		if _can_show_action_range_tiles(unit, selected_ability, cache_force):
+			_fill_hover_action_range_tiles(
+				unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
+			)
+			_queue_static_tiles_redraw()
+		elif not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
+			_clear_hover_skill_tiles()
+			_queue_static_tiles_redraw()
 		return
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()

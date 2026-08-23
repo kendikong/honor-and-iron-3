@@ -22,6 +22,7 @@ Use exactly these three sections (in order):
 - **Why (not) heuristic:** one brief sentence — why `none` is justified, or why each named item is heuristic
 - Concrete steps you will take (files, systems, tests)
 - What you will **not** do (important when past mistakes are relevant)
+- **Any edit type** (bug fix, feature, refactor, perf, rules): state canonical owner; defer/throttle/pending staging is forbidden unless ⚠ exception approved — not only lag tasks
 - Risks or assumptions, if any
 - If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
 - **Non-heuristic mandate (every file-changing plan — not only perf):**

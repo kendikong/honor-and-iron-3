@@ -568,7 +568,8 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
 		if dragging and pv_actor != null:
 			_planning.set_threat_origin(pv_actor.position)
-		_planning._recompute_hover_ranges_from_inputs()
+		if not bool(preview.get("intent_preview", false)):
+			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
@@ -1947,7 +1948,8 @@ func _apply_hover_preview_dict(res: Dictionary) -> void:
 	_ensure_live_movement_intent_from_preview_actions(res)
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
-		_planning._recompute_hover_ranges_from_inputs()
+		if not bool(res.get("intent_preview", false)):
+			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
@@ -3819,6 +3821,8 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		if _director.board.is_in_bounds(prior_stand):
 			return prior_stand
 	var projected: Vector2i = _proj_move_origin(actor)
+	if _action_range_locked_to_projected_stand(unit_id, actor, projected):
+		return projected
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
 		ability = _selected_ability_data(actor)
@@ -3848,6 +3852,24 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		if live_unit != null:
 			return live_unit.position
 	return projected
+
+
+## Post-move walk hover (action spent): red range stays on latest committed stand — not live ghost cell.
+func _action_range_locked_to_projected_stand(
+	unit_id: int,
+	actor: UnitState,
+	projected: Vector2i,
+) -> bool:
+	if _director == null or actor == null or unit_id < 0:
+		return false
+	var hover: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	)
+	if not _director.board.is_in_bounds(hover):
+		return false
+	if _planning_post_move_only(actor, unit_id, hover):
+		return true
+	return false
 
 
 ## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.
