@@ -90,17 +90,17 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 |---|---|:---:|:---:|:---:|:---:|---|
 | Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
 | Bruiser | Push Through | ☑ | ☑ | ☑ | ☐ | Layer `buff_on_push` on upgrade (no module knob); Tier-1/live + Bruiser layer-shape gate PASS (2026-08-22). |
-| Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ | Typed occupied-tile bonus + GHOST keyword; Tier-1/live gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Charge Strike | ☑ | ☑ | ☑ | ☐ | ER-1 `bonus_dmg_from_occupied` on [+] + GHOST keyword; layer-mandate PASS; Tier-1/live + Bruiser shape gate PASS (2026-08-22). |
 | Bruiser | Concussion Blow | ☑ | ☑ | ☑ | ☑ | Typed collision layer flags; Tier-1/live gates pass; independent audit pass |
 | Bruiser | Cleave | ☑ | ☑ | ☑ | ☑ | Layered BLEED profile; Tier-1/live gates pass; independent audit pass |
-| Bruiser | Suplex | ☐ | ☐ | ☐ | ☐ | Typed HP-scaling bonus; enemy throw on Action is legal; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Bruiser | Adrenaline Surge | ☐ | ☐ | ☐ | ☐ | Pre-Move self status; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Suplex | ☑ | ☑ | ☑ | ☐ | ER-1 `bonus_dmg_per_10_hp` on [+]; `THROW_BEHIND` on Action; layer-mandate PASS; Tier-1/live PASS (2026-08-22). |
+| Bruiser | Adrenaline Surge | ☑ | ☑ | ☑ | ☐ | ER-1 `next_turn` on base; PRE_MOVE header on [+]; 0 AP when 2+ adjacent on header; Tier-1/live PASS (2026-08-22). |
 | Bruiser | Earthshatter | ☑ | ☑ | ☑ | ☑ | Destroy-object layer; gates pass; independent audit pass |
 | Bruiser | Meat Shield | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn INTERCEPT; scenario and class gates pass |
 | Bruiser | Frenzy | ☑ | ☑ | ☑ | ☐ | ON_KILL GRANT_AP layer (no `frenzy_on_kill_ap` knob); Tier-1/live + layer-shape gate PASS (2026-08-22). |
-| Bruiser | Guttural Roar | ☐ | ☐ | ☐ | ☐ | Typed board-item/collision fields; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Bruiser | Headbutt | ☐ | ☐ | ☐ | ☐ | Typed max-HP damage field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Bruiser | Blood Boil | ☐ | ☐ | ☐ | ☐ | Fully module-authored HP/resource profile; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Guttural Roar | ☑ | ☑ | ☑ | ☐ | ER-1 item-push/collision fields on [+]; layer-mandate PASS; Tier-1/live PASS (2026-08-22). |
+| Bruiser | Headbutt | ☑ | ☑ | ☑ | ☐ | ER-1 `bonus_dmg_pct_max_hp` on [+]; self 1 HP via unmitigated `DAMAGE_SELF`; Tier-1/live PASS (2026-08-22). |
+| Bruiser | Blood Boil | ☑ | ☑ | ☑ | ☐ | ER-1 `next_attack_*` + `next_turn` profile; layer-mandate PASS; Tier-1/live PASS (2026-08-22). |
 | Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☐ | IF_COLLIDED + second MOVE module (no `violent_collision_recast` knob); Tier-1/live + layer-shape gate PASS (2026-08-22). |
 | Bruiser | Crimson Whirlwind | ☑ | ☑ | ☑ | ☐ | PER_TARGET_HIT HEAL layer on [+] (matrix); Tier-1/live + layer-shape gate PASS (2026-08-22). Bible “3+ targets HEAL 2” still deferred. |
 | Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
@@ -274,19 +274,19 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 2. Bruiser
 
-- [ ] `bruiser_push_through` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_charge_strike` — **UNCHECKED:** Effect Knobs active.
+- [x] `bruiser_push_through` — layer `buff_on_push` on [+]; layer-mandate PASS.
+- [x] `bruiser_charge_strike` — ER-1 `bonus_dmg_from_occupied` + GHOST; layer-mandate PASS.
 - [x] `bruiser_concussion_blow`
 - [x] `bruiser_cleave`
-- [ ] `bruiser_suplex` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_adrenaline_surge` — **UNCHECKED:** Effect Knobs active.
+- [x] `bruiser_suplex` — ER-1 `bonus_dmg_per_10_hp`; layer-mandate PASS.
+- [x] `bruiser_adrenaline_surge` — ER-1 `next_turn` + PRE_MOVE header; layer-mandate PASS.
 - [x] `bruiser_earthshatter`
-- [ ] `bruiser_frenzy` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_guttural_roar` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_headbutt` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_blood_boil` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_violent_collision` — **UNCHECKED:** Effect Knobs active.
-- [ ] `bruiser_crimson_whirlwind` — **UNCHECKED:** Effect Knobs active.
+- [x] `bruiser_frenzy` — ON_KILL GRANT_AP layer; layer-mandate PASS.
+- [x] `bruiser_guttural_roar` — ER-1 item collision fields; layer-mandate PASS.
+- [x] `bruiser_headbutt` — ER-1 `bonus_dmg_pct_max_hp`; layer-mandate PASS.
+- [x] `bruiser_blood_boil` — ER-1 next-attack profile; layer-mandate PASS.
+- [x] `bruiser_violent_collision` — IF_COLLIDED + second MOVE; layer-mandate PASS.
+- [x] `bruiser_crimson_whirlwind` — PER_TARGET_HIT HEAL on [+]; layer-mandate PASS.
 - [x] `bruiser_belly_flop`
 - [x] `bruiser_breaching_dash`
 - [x] `reactive_adrenaline`

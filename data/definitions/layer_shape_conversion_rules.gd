@@ -123,6 +123,13 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 		"forbidden_typed": ["violent_collision_recast"],
 		"min_modules": 2,
 	},
+	## ER-1 allowlist skills (mandate_violations=0; typed extras documented per binding matrix)
+	&"bruiser_charge_strike": {},
+	&"bruiser_suplex": {},
+	&"bruiser_adrenaline_surge": {},
+	&"bruiser_guttural_roar": {},
+	&"bruiser_headbutt": {},
+	&"bruiser_blood_boil": {},
 }
 
 const GOLD_STANDARD_SKILL_IDS: Array[StringName] = [&"knight_swap"]

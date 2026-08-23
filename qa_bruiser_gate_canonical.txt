@@ -22,6 +22,14 @@ SCHEMA_TYPED_FIELDS: checks=0
 [PASS] typed class-library schema roundtrip
 --- Typed module conversion contracts: PASS ---
 
+=== Bruiser layer-shape gate (ER-2 anti-cheat) ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+LAYER_SHAPE_GATE: START mode=layer_mandate class=bruiser
+LAYER_SHAPE_GATE: checks=0
+[PASS] layer shape conversion gate
+--- Bruiser layer-shape gate: PASS ---
+
 === AOE footprint contract (all classes) ===
 --- AOE footprint contract: PASS ---
 
@@ -34,7 +42,10 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [MOVEMENT_SMOKE] bruiser_push_through (bruiser)
 [BRUISER_QA] charge_strike (bruiser_charge_strike)
 [MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
 [MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
 [BRUISER_QA] concussion_blow (bruiser_concussion_blow)
 [BRUISER_QA] cleave (bruiser_cleave)
 [BRUISER_QA] suplex (bruiser_suplex)

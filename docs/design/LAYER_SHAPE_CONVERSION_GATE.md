@@ -67,7 +67,7 @@ godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.g
 godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --class bruiser
 ```
 
-**Expected today:** global default gate still **FAIL** until all classes clear mandate debt. **Bruiser** layer-mandate skills pass via `run_bruiser_qa_gate.ps1` (`--class bruiser`). Audit mode shows remaining debt.
+**Expected today:** global default gate still **FAIL** until all classes clear mandate debt. **Bruiser** — all factory actives pass `--class bruiser` (layer-mandate **0**; ER-1 allowlist typed extras only) via `run_bruiser_qa_gate.ps1`. Audit mode shows remaining debt on other classes.
 
 ## IMPLEMENTATION_PLAN matrix
 

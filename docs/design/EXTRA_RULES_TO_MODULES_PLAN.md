@@ -198,8 +198,8 @@ Type = **existing what** or **new what**. Solution = the only legal conversion.
 | Suplex | Throw target behind you | Existing effect | **THROW_BEHIND** / Forced Movement + ATK. Legal on Action (enemy). |
 | Suplex [+] | Extra damage per 10 HP | New field | Damage scales with current HP. |
 | Adrenaline Surge | 0 AP if 2+ adjacent enemies | Existing header | Cost header: 0 AP when 2+ adjacent. Not Extra Rules. |
-| Adrenaline Surge [+] | Pre-Move / does not consume Action | Existing header | Planner group **PRE_MOVE**. Not Extra Rules. |
-| Adrenaline Surge [+] | On kill, HEAL + SHIELD | Existing effect | HEAL and SHIELD on **ON_KILL**. |
+| Adrenaline Surge | +MOV/+STR next turn (base) | New field | `next_turn` on ADD_STATUS; STR + MOV layers. |
+| Adrenaline Surge [+] | Pre-Move / same-turn MOV+STR | Existing header | Planner group **PRE_MOVE** + `next_turn=false` on upgrade module. Not Extra Rules. |
 | Earthshatter [+] | Buff per object destroyed | Existing layer | Buff after **DESTROY_OBSTACLE**. |
 | Meat Shield | Swap with ally | Existing effect | Pre-Move ally SWAP; INTERCEPT 50% of damage this turn. |
 | Meat Shield [+] | +STR while intercepting | New field | RANGE 3 and +2 STR per interception on the INTERCEPT layer. |
