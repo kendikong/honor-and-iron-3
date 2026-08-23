@@ -29,7 +29,7 @@ static func run_all(failures: Array[String]) -> void:
 		)
 	if not source.contains("apply_class_editor_preview"):
 		failures.append(
-			"class library preview does not apply the training session (infinite AP / selected class)"
+			"class library preview does not apply the training session (selected class / board refresh)"
 		)
 	_assert_saved_abilities_are_module_first(failures)
 	_assert_non_status_modules_clear_status_type(failures)

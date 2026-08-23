@@ -69,14 +69,14 @@ func _active_board() -> BoardState:
 	return _director.board
 
 
-## Class Library Editor preview: keep extra allies from prefs, force the selected
-## class on, and keep infinite AP so walk+skill and Auto Run stay legal.
+## Class Library Editor preview: apply selected class/skills on the live session
+## without debug unlimited-AP cheat (real turn pools from unit data).
 func apply_class_editor_preview(class_id: StringName) -> void:
 	_session.player_class_id = class_id
 	_session.set_all_passives_enabled(class_id, true)
 	_session.set_all_skills_enabled(class_id, true)
 	_session.unkillable_dummies = true
-	_session.infinite_player_ap = true
+	_session.infinite_player_ap = false
 	apply_training_board()
 
 
