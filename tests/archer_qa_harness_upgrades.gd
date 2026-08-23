@@ -121,7 +121,7 @@ static func run_typed_upgrade_profile(row_name: String, failures: Array[String])
 	var authored: bool = false
 	for module: AbilityModule in ability.upgraded_modules:
 		authored = authored or not module.compile_runtime_modifiers().is_empty()
-		authored = authored or not module.keywords.is_empty()
 		for layer: AbilityLayer in module.layers:
+			authored = authored or layer.condition == GameEnums.LayerCondition.DURING
 			authored = authored or not layer.compile_runtime_modifiers().is_empty()
 	H.assert_true(failures, "%s/upgrade/typed_fields" % row_name, authored)

@@ -779,14 +779,13 @@ static func _ability_module_line_bbcode(module: AbilityModule) -> String:
 	var primary: String = _module_primary_bbcode(module)
 	if primary != "":
 		parts.append(primary)
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null or not keyword.emit_as_effect:
-			continue
-		var kw_label: String = _keyword_emit_label(keyword)
-		if kw_label != "":
-			parts.append(_kw_hint(kw_label, kw_label + "."))
 	for layer: AbilityLayer in module.layers:
 		if layer == null or layer.effect == null:
+			continue
+		if layer.condition == GameEnums.LayerCondition.DURING:
+			var during_label: String = _during_layer_label(layer)
+			if during_label != "":
+				parts.append(_kw_hint(during_label, during_label + "."))
 			continue
 		var layer_part: String = _module_effect_bbcode_part(layer.effect)
 		if layer_part != "":
@@ -944,6 +943,28 @@ static func _module_effect_bbcode_part(effect: EffectData) -> String:
 			)
 
 
+static func _during_layer_label(layer: AbilityLayer) -> String:
+	if layer == null or layer.effect == null:
+		return ""
+	match layer.effect.type:
+		GameEnums.EffectType.TRAMPLE:
+			return "TRAMPLE"
+		GameEnums.EffectType.BULLDOZE:
+			return "BULLDOZE"
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			match layer.effect.status_type:
+				GameEnums.StatusType.GHOST:
+					return "GHOST"
+				GameEnums.StatusType.PIERCE:
+					return "PIERCE"
+				GameEnums.StatusType.CANTO:
+					return "CANTO"
+				_:
+					return ""
+		_:
+			return ""
+
+
 static func _keyword_emit_label(keyword: AbilityKeyword) -> String:
 	if keyword == null:
 		return ""
@@ -983,8 +1004,6 @@ static func _targeting_flags_hint(ability: AbilityData, unit: UnitState = null) 
 		labels.append("Enemy")
 	if (flags & GameEnums.TargetingFlags.TILE) != 0:
 		labels.append("Tile")
-	if (flags & GameEnums.TargetingFlags.DASH_LINE) != 0:
-		labels.append("Dash line")
 	return "" if labels.is_empty() else " | %s" % ", ".join(labels)
 
 

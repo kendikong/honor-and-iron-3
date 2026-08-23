@@ -544,7 +544,7 @@ static func _tactical_retreat() -> AbilityData:
 	)
 	module.smoke_on_start = true
 	var upgraded := _clone_modules([module])
-	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
+	upgraded[0].layers.append(DataLibrary._during_ghost())
 	return _ability(
 		&"mercenary_tactical_retreat",
 		"Tactical Retreat",
@@ -598,7 +598,7 @@ static func _flank_and_run() -> AbilityData:
 	module.flank_run_adjacent_enemy_bonus = 2
 	module.next_turn = true
 	var upgraded := _clone_modules([module])
-	upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
+	upgraded[0].layers.append(DataLibrary._during_ghost())
 	return _ability(
 		&"mercenary_flank_and_run",
 		"Flank & Run",

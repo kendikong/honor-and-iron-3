@@ -47,11 +47,15 @@ static func run_charge_strike_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_charge_strike")
 	H.assert_true(
 		failures, "charge_strike/upgrade/ghost",
-		ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.GHOST,
+		ModuleAuthoringRules.module_has_during_status(
+			ab.upgraded_modules[0], GameEnums.StatusType.GHOST,
+		),
 	)
 	H.assert_eq_int(
 		failures, "charge_strike/upgrade/ghost_val",
-		int(ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.GHOST),
+		int(ModuleAuthoringRules.module_has_during_status(
+			ab.upgraded_modules[0], GameEnums.StatusType.GHOST,
+		)),
 		1,
 	)
 	H.assert_true(
@@ -556,13 +560,18 @@ static func run_blood_boil_upgrade(failures: Array[String]) -> void:
 
 static func run_violent_collision_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
+	var stagger_layer: AbilityLayer = null
+	for layer: AbilityLayer in ab.upgraded_modules[0].layers:
+		if layer != null and layer.stagger_on_collision:
+			stagger_layer = layer
+			break
 	H.assert_true(
 		failures, "violent_collision/upgrade/stagger_mod",
-		ab.upgraded_modules[0].layers[0].stagger_on_collision,
+		stagger_layer != null,
 	)
 	H.assert_eq_int(
 		failures, "violent_collision/upgrade/mod_val",
-		int(ab.upgraded_modules[0].layers[0].stagger_on_collision),
+		int(stagger_layer != null and stagger_layer.stagger_on_collision),
 		1,
 	)
 	var cfg: Dictionary = H.with_upgraded_ability(
@@ -589,11 +598,15 @@ static func run_breaching_dash_upgrade(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_breaching_dash")
 	H.assert_true(
 		failures, "breaching_dash/upgrade/pierce_mod",
-		ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.PIERCE,
+		ModuleAuthoringRules.module_has_during_status(
+			ab.upgraded_modules[0], GameEnums.StatusType.PIERCE,
+		),
 	)
 	H.assert_eq_int(
 		failures, "breaching_dash/upgrade/mod_val",
-		int(ab.upgraded_modules[0].keywords[0].keyword_id == GameEnums.AbilityKeywordId.PIERCE),
+		int(ModuleAuthoringRules.module_has_during_status(
+			ab.upgraded_modules[0], GameEnums.StatusType.PIERCE,
+		)),
 		1,
 	)
 	var base_cfg: Dictionary = {

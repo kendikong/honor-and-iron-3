@@ -137,8 +137,6 @@ static func excluded_module_gates(module: AbilityModule) -> PackedStringArray:
 static func targeting_flag_applies(module: AbilityModule, flag: int) -> bool:
 	if module == null:
 		return false
-	if flag == GameEnums.TargetingFlags.DASH_LINE:
-		return module.primary_type == GameEnums.EffectType.DASH
 	if flag == GameEnums.TargetingFlags.EXCLUDE_CASTER:
 		return (module.targeting_flags & (
 			GameEnums.TargetingFlags.SELF | GameEnums.TargetingFlags.ALLY
@@ -170,10 +168,14 @@ static func layer_condition_applies(
 		return true
 	var motion: bool = _is_motion_type(parent_module.primary_type)
 	match condition:
+		GameEnums.LayerCondition.DURING:
+			return _is_motion_type(parent_module.primary_type) or effect_type_can_deal_damage(
+				parent_module.primary_type
+			)
 		GameEnums.LayerCondition.ON_LAND, GameEnums.LayerCondition.PER_TILE_MOVED:
 			return motion
 		GameEnums.LayerCondition.WHEN_MOVED_THROUGH_ENEMY:
-			return motion or parent_module_has_pass_through_keyword(parent_module)
+			return motion or module_has_during_pass_through(parent_module)
 		GameEnums.LayerCondition.ON_COLLISION, GameEnums.LayerCondition.ON_CHAIN_COLLISION:
 			return motion or effect_type_can_deal_damage(parent_module.primary_type)
 		GameEnums.LayerCondition.IF_ALREADY_ADJACENT:
@@ -238,26 +240,189 @@ static func normalize_module_context_fields(
 	if module_uses_range(module) and not module_uses_range_origin(module, module_index):
 		module.range_origin = GameEnums.RangeOrigin.ACTOR
 	normalize_module_targeting_flags(module)
+	migrate_keywords_to_layers(module)
+	for layer: AbilityLayer in module.layers:
+		if layer == null:
+			continue
+		if layer.condition == GameEnums.LayerCondition.DURING:
+			if not during_layer_compatible(module, layer):
+				layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+
+
+static func migrate_keywords_to_layers(module: AbilityModule) -> void:
+	if module == null or module.keywords.is_empty():
+		return
 	for keyword: AbilityKeyword in module.keywords:
 		if keyword == null:
 			continue
-		if not keyword_uses_amount(keyword.keyword_id):
-			keyword.amount = 0
-		if not keyword_uses_push_amount(keyword.keyword_id):
-			keyword.push_amount = 0
-		if not keyword_uses_emit_as_effect(keyword.keyword_id):
-			keyword.emit_as_effect = false
+		var layer: AbilityLayer = during_layer_from_keyword(keyword)
+		if layer != null:
+			module.layers.append(layer)
+	module.keywords.clear()
+	module.invalidate_runtime_modifiers_cache()
+
+
+static func during_layer_from_keyword(keyword: AbilityKeyword) -> AbilityLayer:
+	if keyword == null or keyword.keyword_id == GameEnums.AbilityKeywordId.NONE:
+		return null
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.DURING
+	layer.during_emit_effect = keyword.emit_as_effect
+	layer.effect = EffectData.new()
+	match keyword.keyword_id:
+		GameEnums.AbilityKeywordId.TRAMPLE:
+			layer.effect.type = GameEnums.EffectType.TRAMPLE
+			layer.effect.amount = keyword.amount
+		GameEnums.AbilityKeywordId.BULLDOZE:
+			layer.effect.type = GameEnums.EffectType.BULLDOZE
+			layer.effect.amount = keyword.amount
+			layer.during_bulldoze_push = keyword.push_amount
+		GameEnums.AbilityKeywordId.GHOST:
+			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
+			layer.effect.status_type = GameEnums.StatusType.GHOST
+			layer.effect.amount = 1
+			layer.during_emit_effect = false
+		GameEnums.AbilityKeywordId.PIERCE:
+			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
+			layer.effect.status_type = GameEnums.StatusType.PIERCE
+			layer.effect.amount = 1
+			layer.during_emit_effect = false
+		GameEnums.AbilityKeywordId.CANTO:
+			layer.effect.type = GameEnums.EffectType.ADD_STATUS_SELF
+			layer.effect.status_type = GameEnums.StatusType.CANTO
+			layer.effect.amount = 1
+			layer.during_emit_effect = false
+		_:
+			return null
+	return layer
+
+
+static func during_layer_compatible(module: AbilityModule, layer: AbilityLayer) -> bool:
+	if module == null or layer == null or layer.effect == null:
+		return false
+	if layer.condition != GameEnums.LayerCondition.DURING:
+		return true
+	var effect_type: int = layer.effect.type
+	if effect_type in [GameEnums.EffectType.BULLDOZE, GameEnums.EffectType.TRAMPLE]:
+		return _is_motion_type(module.primary_type)
+	if (
+		layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+		and layer.effect.status_type == GameEnums.StatusType.GHOST
+	):
+		return _is_motion_type(module.primary_type)
+	if (
+		layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+		and layer.effect.status_type == GameEnums.StatusType.PIERCE
+	):
+		return effect_type_can_deal_damage(module.primary_type) or _is_motion_type(
+			module.primary_type
+		)
+	return true
+
+
+static func apply_during_layer_to_modifiers(bag: Dictionary, layer: AbilityLayer) -> void:
+	if layer == null or layer.effect == null:
+		return
+	match layer.effect.type:
+		GameEnums.EffectType.TRAMPLE:
+			if layer.effect.amount != 0:
+				bag["trample"] = layer.effect.amount
+		GameEnums.EffectType.BULLDOZE:
+			bag["bulldoze"] = layer.effect.amount
+			if layer.during_bulldoze_push != 0:
+				bag["push"] = layer.during_bulldoze_push
+			elif layer.effect.modifiers.has("push"):
+				bag["push"] = int(layer.effect.modifiers["push"])
+		GameEnums.EffectType.ADD_STATUS_SELF:
+			match layer.effect.status_type:
+				GameEnums.StatusType.GHOST:
+					bag["ghost_move"] = 1
+				GameEnums.StatusType.PIERCE:
+					if not bag.has("next_attack_pierce") and not bag.has("pierce"):
+						bag["next_attack_pierce"] = 1
+				_:
+					pass
+		_:
+			pass
+
+
+static func during_layer_emits_effect_row(layer: AbilityLayer) -> bool:
+	if layer == null or layer.effect == null:
+		return false
+	if layer.condition != GameEnums.LayerCondition.DURING:
+		return false
+	if not layer.during_emit_effect:
+		return false
+	return layer.effect.type in [
+		GameEnums.EffectType.TRAMPLE,
+		GameEnums.EffectType.BULLDOZE,
+	]
+
+
+static func module_has_during_pass_through(module: AbilityModule) -> bool:
+	if module == null:
+		return false
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
+			continue
+		if layer.effect == null:
+			continue
+		if layer.effect.type in [
+			GameEnums.EffectType.TRAMPLE,
+			GameEnums.EffectType.BULLDOZE,
+		]:
+			return true
+	return false
+
+
+static func module_has_during_status(
+	module: AbilityModule,
+	status_type: GameEnums.StatusType,
+) -> bool:
+	if module == null:
+		return false
+	for layer: AbilityLayer in module.layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
+			continue
+		if layer.effect == null:
+			continue
+		if (
+			layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			and layer.effect.status_type == status_type
+		):
+			return true
+	return false
+
+
+const LEGACY_TARGETING_FLAG_DASH_LINE: int = 16
+const LEGACY_TARGETING_MODE_DASH_LINE: int = 5
+const LEGACY_TARGETING_MODE_ALLY_OR_SELF: int = 6
+
+
+static func migrate_targeting_flags(flags: int) -> int:
+	var out: int = flags
+	if (out & LEGACY_TARGETING_FLAG_DASH_LINE) != 0:
+		out = (out & ~LEGACY_TARGETING_FLAG_DASH_LINE) | GameEnums.TargetingFlags.TILE
+	return out
+
+
+static func migrate_targeting_mode(mode: int) -> int:
+	if mode == LEGACY_TARGETING_MODE_DASH_LINE:
+		return GameEnums.TargetingMode.TILE
+	if mode == LEGACY_TARGETING_MODE_ALLY_OR_SELF:
+		return GameEnums.TargetingMode.ALLY_OR_SELF
+	return mode
 
 
 static func normalize_module_targeting_flags(module: AbilityModule) -> void:
 	if module == null:
 		return
+	module.targeting_flags = migrate_targeting_flags(module.targeting_flags)
 	for flag: int in [
 		GameEnums.TargetingFlags.SELF,
 		GameEnums.TargetingFlags.ALLY,
 		GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetingFlags.TILE,
-		GameEnums.TargetingFlags.DASH_LINE,
 		GameEnums.TargetingFlags.EXCLUDE_CASTER,
 	]:
 		if not targeting_flag_applies(module, flag):
@@ -277,17 +442,7 @@ static func module_has_only_self_targeting(module: AbilityModule) -> bool:
 
 
 static func parent_module_has_pass_through_keyword(module: AbilityModule) -> bool:
-	if module == null:
-		return false
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null:
-			continue
-		if keyword.keyword_id in [
-			GameEnums.AbilityKeywordId.TRAMPLE,
-			GameEnums.AbilityKeywordId.BULLDOZE,
-		]:
-			return true
-	return false
+	return module_has_during_pass_through(module)
 
 
 static func keyword_uses_push_amount(keyword_id: GameEnums.AbilityKeywordId) -> bool:
@@ -587,7 +742,7 @@ static func typed_extra_field_applies(module: AbilityModule, property: String) -
 	if _typed_extra_property_in_group(property, _SUMMON_TYPED_PROPS):
 		return primary == GameEnums.EffectType.SPAWN
 	if property == "violent_collision_recast":
-		return parent_module_has_pass_through_keyword(module)
+		return module_has_during_pass_through(module)
 	return false
 
 

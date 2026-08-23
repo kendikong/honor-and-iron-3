@@ -376,7 +376,7 @@ static func _phase_throw() -> AbilityData:
 static func _flying_crane_kick() -> AbilityData:
 	var module := _module(
 		GameEnums.EffectType.DASH, 3, 1, 3,
-		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	module.stop_adjacent_first_enemy = true
@@ -393,7 +393,7 @@ static func _flying_crane_kick() -> AbilityData:
 		upgraded[0].layers[0].dash_absorb_element = true
 	return _ability(
 		&"monk_flying_crane_kick", "Flying Crane Kick", [module], upgraded,
-		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Dash 3, stop adjacent to the first enemy in the line, and deal ATK 2. [+] Dashing over a hazard absorbs its element into the attack.",
 	)

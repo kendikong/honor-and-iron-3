@@ -445,7 +445,7 @@ static func _savage_bite() -> AbilityData:
 static func _run_down() -> AbilityData:
 	var dash := _module(
 		GameEnums.EffectType.DASH, 3, 1, 3,
-		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
 	dash.run_down_pass_adjacent_push = 1
@@ -454,7 +454,7 @@ static func _run_down() -> AbilityData:
 	upgraded[0].run_down_push_bleed_weapon = true
 	return _ability(
 		&"beast_run_down", "Run Down", [dash], upgraded,
-		GameEnums.TargetingFlags.DASH_LINE | GameEnums.TargetingFlags.TILE,
+		GameEnums.TargetingFlags.TILE,
 		[AbilityModuleBridge.TAG_ATTACK, AbilityModuleBridge.TAG_MOVEMENT],
 		"Pushing applies BLEED X, where X is WPN.",
 	)

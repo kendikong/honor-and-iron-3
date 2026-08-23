@@ -513,7 +513,7 @@ static func _flanking_maneuver() -> AbilityData:
 	module.layers.append(strike_layer)
 	var upgraded := _clone_modules([module])
 	upgraded[0].l_shape_move = true
-	upgraded[0].keywords.append(DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST))
+	upgraded[0].layers.append(DataLibrary._during_ghost())
 	return _ability(
 		&"lancer_flanking_maneuver", "Wraparound", 1, [module],
 		GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.ENEMY,

@@ -115,7 +115,7 @@ Assert factory/`AbilityData` matches what the class editor would show — **befo
 | `range_origin` | ACTOR / AIM / … |
 | `target_shape`, `target_shape_size` | SINGLE, AOE, ARC, LINE, … |
 | `aim_binding` | Engine-only. Modules always own their aim (`NEW_AIM`). Same-target extras are **layers**. Do not assert an author-facing Aim Binding dropdown. `SAME_AS_MODULE_N` exists only for internal gated recasts (Violent Collision). |
-| `targeting_flags` | Self / Ally / Enemy / Tile / Dash line — **each checked bit** |
+| `targeting_flags` | Self / Ally / Enemy / Tile / Exclude caster — **each checked bit** (DASH primary = straight-line tile legality) |
 | `gate` | ALWAYS, IF_KILL, IF_COLLIDED, … |
 | `keywords[]` | Each keyword id + amount |
 | `layers[]` | See Layer A2 |

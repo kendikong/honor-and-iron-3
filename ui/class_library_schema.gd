@@ -618,8 +618,6 @@ static func targeting_flags_dump(ability: AbilityData) -> String:
 		labels.append("Enemy")
 	if authored_flags & GameEnums.TargetingFlags.TILE:
 		labels.append("Tile")
-	if authored_flags & GameEnums.TargetingFlags.DASH_LINE:
-		labels.append("Dash line")
 	if authored_flags & GameEnums.TargetingFlags.EXCLUDE_CASTER:
 		labels.append("Exclude caster")
 	if labels.is_empty():
@@ -673,6 +671,8 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 		return {}
 	return {
 		"condition": src.condition,
+		"during_emit_effect": src.during_emit_effect,
+		"during_bulldoze_push": src.during_bulldoze_push,
 		"object_collision_stagger": src.object_collision_stagger,
 		"enemy_collision_stagger_both": src.enemy_collision_stagger_both,
 		"weapon_scaled": src.weapon_scaled,
@@ -741,6 +741,8 @@ static func layer_to_dict(src: AbilityLayer) -> Dictionary:
 static func layer_from_dict(data: Dictionary) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	layer.condition = int(data.get("condition", layer.condition))
+	layer.during_emit_effect = bool(data.get("during_emit_effect", layer.during_emit_effect))
+	layer.during_bulldoze_push = int(data.get("during_bulldoze_push", layer.during_bulldoze_push))
 	layer.object_collision_stagger = bool(
 		data.get("object_collision_stagger", layer.object_collision_stagger)
 	)
@@ -868,18 +870,17 @@ static func module_to_dict(
 ) -> Dictionary:
 	if src == null:
 		return {}
-	var keywords: Array = []
-	for keyword: AbilityKeyword in src.keywords:
-		keywords.append(keyword_to_dict(keyword))
+	var export_module: AbilityModule = src.duplicate(true) as AbilityModule
+	ModuleAuthoringRules.migrate_keywords_to_layers(export_module)
 	var layers: Array = []
-	for layer: AbilityLayer in src.layers:
+	for layer: AbilityLayer in export_module.layers:
 		layers.append(layer_to_dict(layer))
 	var out := {
 		"primary_type": src.primary_type,
 		"amount": src.amount,
 		"aim_binding": src.aim_binding,
 		"targeting_flags": src.targeting_flags,
-		"keywords": keywords,
+		"keywords": [],
 		"layers": layers,
 		"gate": src.gate,
 		"presentation_anim": src.presentation_anim,
@@ -1254,7 +1255,9 @@ static func apply_module_dict(
 	dst.target_shape_size = int(data.get("target_shape_size", dst.target_shape_size))
 	dst.aim_binding = int(data.get("aim_binding", dst.aim_binding))
 	dst.aim_module_index = int(data.get("aim_module_index", dst.aim_module_index))
-	dst.targeting_flags = int(data.get("targeting_flags", dst.targeting_flags))
+	dst.targeting_flags = ModuleAuthoringRules.migrate_targeting_flags(
+		int(data.get("targeting_flags", dst.targeting_flags))
+	)
 	dst.gate = int(data.get("gate", dst.gate))
 	dst.target_filter = int(data.get("target_filter", dst.target_filter))
 	dst.target_filter_hp = int(data.get("target_filter_hp", dst.target_filter_hp))
@@ -1741,17 +1744,18 @@ static func apply_module_dict(
 		data.get("adjacent_defense_bonus", dst.adjacent_defense_bonus)
 	)
 	dst.keywords.clear()
-	var keyword_data: Variant = data.get("keywords", [])
-	if keyword_data is Array:
-		for raw: Variant in keyword_data as Array:
-			if raw is Dictionary:
-				dst.keywords.append(keyword_from_dict(raw as Dictionary))
 	dst.layers.clear()
 	var layer_data: Variant = data.get("layers", [])
 	if layer_data is Array:
 		for raw: Variant in layer_data as Array:
 			if raw is Dictionary:
 				dst.layers.append(layer_from_dict(raw as Dictionary))
+	var keyword_data: Variant = data.get("keywords", [])
+	if keyword_data is Array:
+		for raw: Variant in keyword_data as Array:
+			if raw is Dictionary:
+				dst.keywords.append(keyword_from_dict(raw as Dictionary))
+	ModuleAuthoringRules.migrate_keywords_to_layers(dst)
 	AbilityModuleBridge.normalize_module_authoring_fields(dst, planner_group)
 
 
@@ -1918,10 +1922,14 @@ static func _module_dump_line(index: int, module: AbilityModule) -> String:
 		module.max_range,
 		GameEnums.TargetShape.keys()[module.target_shape],
 	]
-	if not module.keywords.is_empty():
-		line += " keywords=%d" % module.keywords.size()
 	if not module.layers.is_empty():
+		var during_count: int = 0
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.condition == GameEnums.LayerCondition.DURING:
+				during_count += 1
 		line += " layers=%d" % module.layers.size()
+		if during_count > 0:
+			line += " during=%d" % during_count
 	if module.hit_count > 1:
 		line += " hit_count=%d" % module.hit_count
 	if module.gate != GameEnums.ModuleGate.ALWAYS:
@@ -1936,10 +1944,14 @@ static func _module_impl_note(module: AbilityModule) -> String:
 		module.max_range,
 		GameEnums.ModulePhase.keys()[module.execution_phase],
 	]
-	if not module.keywords.is_empty():
-		note += " %d keyword(s)." % module.keywords.size()
 	if not module.layers.is_empty():
+		var during_count: int = 0
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.condition == GameEnums.LayerCondition.DURING:
+				during_count += 1
 		note += " %d layer(s)." % module.layers.size()
+		if during_count > 0:
+			note += " %d DURING." % during_count
 	if module.hit_count > 1:
 		note += " hit_count %d." % module.hit_count
 	return note
@@ -1959,8 +1971,6 @@ static func _targeting_mode_tooltip(k: String) -> String:
 			return "Any unit"
 		"TILE":
 			return "Empty or any tile"
-		"DASH_LINE":
-			return "Straight line dash target"
 		_:
 			return k
 
@@ -2283,14 +2293,31 @@ static func modules_summary_bbcode(ability: AbilityData) -> String:
 		var phase: String = GameEnums.ModulePhase.keys()[mod.execution_phase]
 		var ptype: String = GameEnums.EffectType.keys()[mod.primary_type]
 		var gate: String = GameEnums.ModuleGate.keys()[mod.gate]
-		var kw_parts: PackedStringArray = PackedStringArray()
-		for kw: AbilityKeyword in mod.keywords:
-			if kw != null:
-				kw_parts.append(GameEnums.AbilityKeywordId.keys()[kw.keyword_id])
-		var kw_s: String = (", ".join(kw_parts)) if not kw_parts.is_empty() else "—"
+		var during_parts: PackedStringArray = PackedStringArray()
+		for layer: AbilityLayer in mod.layers:
+			if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
+				continue
+			if layer.effect == null:
+				continue
+			match layer.effect.type:
+				GameEnums.EffectType.BULLDOZE:
+					during_parts.append("BULLDOZE")
+				GameEnums.EffectType.TRAMPLE:
+					during_parts.append("TRAMPLE")
+				GameEnums.EffectType.ADD_STATUS_SELF:
+					match layer.effect.status_type:
+						GameEnums.StatusType.GHOST:
+							during_parts.append("GHOST")
+						GameEnums.StatusType.PIERCE:
+							during_parts.append("PIERCE")
+						_:
+							pass
+				_:
+					pass
+		var during_s: String = (", ".join(during_parts)) if not during_parts.is_empty() else "—"
 		lines.append(
-			"[b]M%d[/b] %s · %s · range %d–%d · gate %s · keywords [%s] · layers %d"
-			% [i, phase, ptype, mod.min_range, mod.max_range, gate, kw_s, mod.layers.size()]
+			"[b]M%d[/b] %s · %s · range %d–%d · gate %s · during [%s] · layers %d"
+			% [i, phase, ptype, mod.min_range, mod.max_range, gate, during_s, mod.layers.size()]
 		)
 		i += 1
 	if not ability.upgraded_modules.is_empty():

@@ -563,13 +563,13 @@ static func _test_if_collided_follow_up(failures: Array[String]) -> void:
 	_place(board, actor)
 	_place(board, blocker)
 
-	var ability: AbilityData = _ability(&"runtime_if_collided", GameEnums.TargetingFlags.DASH_LINE)
+	var ability: AbilityData = _ability(&"runtime_if_collided", GameEnums.TargetingFlags.TILE)
 	var dash: AbilityModule = AbilityModule.new()
 	dash.primary_type = GameEnums.EffectType.DASH
 	dash.amount = 2
 	dash.min_range = 1
 	dash.max_range = 2
-	dash.targeting_flags = GameEnums.TargetingFlags.DASH_LINE
+	dash.targeting_flags = GameEnums.TargetingFlags.TILE
 	var follow_up: AbilityModule = AbilityModule.new()
 	follow_up.primary_type = GameEnums.EffectType.MOVE
 	follow_up.min_range = 1
@@ -639,16 +639,15 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 	module.targeting_flags = GameEnums.TargetingFlags.ENEMY
 	module.target_shape = GameEnums.TargetShape.SINGLE
 	module.bonus_dmg_pct_max_hp = 0.1
-	var keyword: AbilityKeyword = AbilityKeyword.new()
-	keyword.keyword_id = GameEnums.AbilityKeywordId.PIERCE
-	keyword.amount = 1
-	module.keywords = [keyword]
-	module.set_condition_hp_below_pct(50)
 	var layer: AbilityLayer = AbilityLayer.new()
 	layer.effect = EffectData.new()
 	layer.effect.type = GameEnums.EffectType.DAMAGE
 	layer.effect.amount = 1
-	module.layers = [layer]
+	module.layers = [
+		DataLibrary._during_pierce(),
+		layer,
+	]
+	module.set_condition_hp_below_pct(50)
 	module.l_shape_move = true
 	authored.modules = [module]
 	var upgraded_module: AbilityModule = module.duplicate(true) as AbilityModule
@@ -681,8 +680,8 @@ static func _test_schema_module_round_trip(failures: Array[String]) -> void:
 		or restored_module.min_range != module.min_range
 		or restored_module.max_range != module.max_range
 		or restored_module.targeting_flags != module.targeting_flags
-		or restored_module.keywords.size() != 1
-		or restored_module.layers.size() != 1
+		or restored_module.keywords.size() != 0
+		or restored_module.layers.size() != 2
 		or restored_module.target_filter != GameEnums.ModuleTargetFilter.HP
 		or restored_module.target_filter_hp != GameEnums.ModuleTargetFilterHp.BELOW_PCT
 		or restored_module.target_filter_hp_pct != 50
@@ -793,11 +792,7 @@ static func _ability(id: StringName, targeting_flags: int) -> AbilityData:
 	ability.primary_resource = GameEnums.CostResource.AP
 	ability.primary_value = 1
 	ability.targeting_flags = targeting_flags
-	ability.targeting_mode = (
-		GameEnums.TargetingMode.DASH_LINE
-		if targeting_flags == GameEnums.TargetingFlags.DASH_LINE
-		else GameEnums.TargetingMode.TILE
-	)
+	ability.targeting_mode = GameEnums.TargetingMode.TILE
 	return ability
 
 

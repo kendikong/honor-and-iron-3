@@ -1029,24 +1029,10 @@ func _ensure_runtime_modifiers_cache() -> void:
 		bag["adjacent_defense_bonus"] = adjacent_defense_bonus
 	if l_shape_move:
 		bag["l_shape_move"] = true
-	for keyword: AbilityKeyword in keywords:
-		if keyword == null:
+	for layer: AbilityLayer in layers:
+		if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
 			continue
-		match keyword.keyword_id:
-			GameEnums.AbilityKeywordId.GHOST:
-				bag["ghost_move"] = 1
-			GameEnums.AbilityKeywordId.PIERCE:
-				if not bag.has("next_attack_pierce") and not bag.has("pierce"):
-					bag["next_attack_pierce"] = 1
-			GameEnums.AbilityKeywordId.BULLDOZE:
-				bag["bulldoze"] = keyword.amount
-				if keyword.push_amount != 0:
-					bag["push"] = keyword.push_amount
-			GameEnums.AbilityKeywordId.TRAMPLE:
-				if primary_type != GameEnums.EffectType.TRAMPLE:
-					bag["trample"] = keyword.amount
-			_:
-				pass
+		ModuleAuthoringRules.apply_during_layer_to_modifiers(bag, layer)
 	if target_filter == GameEnums.ModuleTargetFilter.OCCUPANT:
 		match target_filter_occupant:
 			GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE:
@@ -1937,7 +1923,7 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			l_shape_move = bool(value)
 			return
 		"ghost_move":
-			_ensure_keyword(GameEnums.AbilityKeywordId.GHOST)
+			_ensure_during_ghost()
 			return
 		"hit_count", "repeat_hits":
 			if primary_type == GameEnums.EffectType.DAMAGE:
@@ -1998,14 +1984,17 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 	push_error("Unknown typed module runtime key: %s" % key)
 
 
-func _ensure_keyword(keyword_id: GameEnums.AbilityKeywordId) -> void:
-	for keyword: AbilityKeyword in keywords:
-		if keyword != null and keyword.keyword_id == keyword_id:
+func _ensure_during_ghost() -> void:
+	for layer: AbilityLayer in layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.DURING
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			and layer.effect.status_type == GameEnums.StatusType.GHOST
+		):
 			return
-	var keyword := AbilityKeyword.new()
-	keyword.keyword_id = keyword_id
-	keyword.amount = 1
-	keywords.append(keyword)
+	layers.append(DataLibrary._during_ghost())
 	invalidate_runtime_modifiers_cache()
 
 

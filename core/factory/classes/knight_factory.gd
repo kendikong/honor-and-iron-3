@@ -172,18 +172,18 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	def.abilities.append(fortify)
 
-	var bowling_flags: int = GameEnums.TargetingFlags.DASH_LINE
+	var bowling_flags: int = GameEnums.TargetingFlags.TILE
 	var bowling_module := DataLibrary._module(
 		GameEnums.EffectType.DASH, 3, 1, 3, bowling_flags,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	bowling_module.keywords = [
-		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 0, true),
+	bowling_module.layers = [
+		DataLibrary._during_bulldoze(1, 0, true),
 	]
 	var bowling_upgraded := DataLibrary._duplicate_modules([bowling_module])
-	bowling_upgraded[0].layers = [
+	bowling_upgraded[0].layers.append(
 		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1)),
-	]
+	)
 	var bowling_charge := DataLibrary._make_modular_ability(
 		&"knight_bowling_charge", "Bowling Charge", [bowling_module],
 		bowling_upgraded, 1, GameEnums.PlannerGroup.ACTION,
@@ -314,10 +314,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	trample_module.keywords = [
-		DataLibrary._keyword(GameEnums.AbilityKeywordId.TRAMPLE, 2, 0, true),
+	trample_module.layers = [
+		DataLibrary._during_trample(2),
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1)),
 	]
-	trample_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var trample_upgraded := DataLibrary._duplicate_modules([trample_module])
 	trample_upgraded[0].layers.append(
 		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.ARMOR_UP, 1), GameEnums.LayerCondition.PER_TILE_MOVED)

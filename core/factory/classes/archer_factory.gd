@@ -543,7 +543,7 @@ static func _parting_shot() -> AbilityData:
 	move.execution_phase = GameEnums.ModulePhase.ON_POST
 	var modules: Array[AbilityModule] = [strike, move]
 	var upgraded := _clone_modules(modules)
-	upgraded[1].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
+	upgraded[1].layers.append(DataLibrary._during_ghost())
 	return _ability(
 		&"archer_parting_shot", "Parting Shot", 1, modules,
 		GameEnums.TargetingFlags.ENEMY | GameEnums.TargetingFlags.TILE,

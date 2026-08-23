@@ -79,7 +79,7 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	charge_attack.execution_phase = GameEnums.ModulePhase.ON_ACTION
 	charge_attack.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_upgraded := DataLibrary._duplicate_modules([charge_move, charge_attack])
-	charge_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.GHOST)]
+	charge_upgraded[0].layers.append(DataLibrary._during_ghost())
 	charge_upgraded[1].bonus_dmg_from_occupied = 2
 	charge_upgraded[1].layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 1))]
 	var charge_strike := DataLibrary._make_modular_ability(
@@ -283,18 +283,18 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(blood_boil)
 
 	var collision_dash := DataLibrary._module(
-		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	collision_dash.keywords = [
-		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
+	collision_dash.layers = [
+		DataLibrary._during_bulldoze(1, 1, false),
 	]
 	var collision_extend := DataLibrary._module(
-		GameEnums.EffectType.DASH, 2, 1, 2, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.EffectType.DASH, 2, 1, 2, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.NONE,
 	)
-	collision_extend.keywords = [
-		DataLibrary._keyword(GameEnums.AbilityKeywordId.BULLDOZE, 1, 1, false),
+	collision_extend.layers = [
+		DataLibrary._during_bulldoze(1, 1, false),
 	]
 	collision_extend.gate = GameEnums.ModuleGate.IF_COLLIDED
 	## Bible: on enemy hit, extend to DASH 5 | BULLDOZE on the same line (3 + gated 2).
@@ -306,14 +306,14 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		collision_stagger, GameEnums.LayerCondition.ON_COLLISION,
 	)
 	collision_layer.stagger_on_collision = true
-	collision_upgraded[0].layers = [collision_layer]
+	collision_upgraded[0].layers.append(collision_layer)
 	var violent_collision := DataLibrary._make_modular_ability(
 		&"bruiser_violent_collision", "Violent Collision",
 		[collision_dash, collision_extend], collision_upgraded, 1,
 		GameEnums.PlannerGroup.ACTION, GameEnums.CostResource.AP, [],
 		"On enemy collision, continue as DASH 5 | BULLDOZE along the same line. "
 		+ "[+] Collisions apply STAGGER (1 turn).",
-		GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetingFlags.TILE,
 	)
 	def.abilities.append(violent_collision)
 
@@ -355,17 +355,17 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	def.abilities.append(belly_flop)
 
 	var breach_module := DataLibrary._module(
-		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.EffectType.DASH, 3, 1, 3, GameEnums.TargetingFlags.TILE,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
 	breach_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.DESTROY_OBSTACLE, 0))]
 	var breach_upgraded := DataLibrary._duplicate_modules([breach_module])
-	breach_upgraded[0].keywords = [DataLibrary._keyword(GameEnums.AbilityKeywordId.PIERCE)]
+	breach_upgraded[0].layers.append(DataLibrary._during_pierce())
 	var breaching_dash := DataLibrary._make_modular_ability(
 		&"bruiser_breaching_dash", "Breaching Dash", [breach_module],
 		breach_upgraded, 1, GameEnums.PlannerGroup.ACTION,
 		GameEnums.CostResource.AP, [], "Your next attack (next turn) gains PIERCE.",
-		GameEnums.TargetingFlags.DASH_LINE,
+		GameEnums.TargetingFlags.TILE,
 	)
 	def.abilities.append(breaching_dash)
 

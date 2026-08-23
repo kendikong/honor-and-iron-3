@@ -502,12 +502,52 @@ static func _layer(
 	return layer
 
 
+static func _during_bulldoze(
+	amount: int = 1,
+	push_amount: int = 0,
+	emit_as_effect: bool = true,
+) -> AbilityLayer:
+	var effect: EffectData = _effect(GameEnums.EffectType.BULLDOZE, amount)
+	var layer: AbilityLayer = _layer(effect, GameEnums.LayerCondition.DURING)
+	layer.during_emit_effect = emit_as_effect
+	layer.during_bulldoze_push = push_amount
+	return layer
+
+
+static func _during_trample(amount: int = 1) -> AbilityLayer:
+	var layer: AbilityLayer = _layer(
+		_effect(GameEnums.EffectType.TRAMPLE, amount),
+		GameEnums.LayerCondition.DURING,
+	)
+	layer.during_emit_effect = true
+	return layer
+
+
+static func _during_ghost() -> AbilityLayer:
+	var layer: AbilityLayer = _layer(
+		_status_effect_self(GameEnums.StatusType.GHOST, 1),
+		GameEnums.LayerCondition.DURING,
+	)
+	layer.during_emit_effect = false
+	return layer
+
+
+static func _during_pierce() -> AbilityLayer:
+	var layer: AbilityLayer = _layer(
+		_status_effect_self(GameEnums.StatusType.PIERCE, 1),
+		GameEnums.LayerCondition.DURING,
+	)
+	layer.during_emit_effect = false
+	return layer
+
+
 static func _keyword(
 	keyword_id: GameEnums.AbilityKeywordId,
 	amount: int = 0,
 	push_amount: int = 0,
 	emit_as_effect: bool = false,
 ) -> AbilityKeyword:
+	## Legacy import path — normalize migrates keywords to DURING layers.
 	var keyword := AbilityKeyword.new()
 	keyword.keyword_id = keyword_id
 	keyword.amount = amount
@@ -767,20 +807,76 @@ static func _copy_extras(from_module: AbilityModule, to_module: AbilityModule) -
 	to_module.l_shape_move = from_module.l_shape_move
 	for keyword: AbilityKeyword in from_module.keywords:
 		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
-			_ensure_module_keyword(to_module, GameEnums.AbilityKeywordId.GHOST)
+			_ensure_module_during_ghost(to_module)
+	for layer: AbilityLayer in from_module.layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.DURING
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			and layer.effect.status_type == GameEnums.StatusType.GHOST
+		):
+			_ensure_module_during_ghost(to_module)
 	to_module.invalidate_runtime_modifiers_cache()
 
 
-static func _ensure_module_keyword(
+static func _ensure_module_during_ghost(module: AbilityModule) -> void:
+	if module == null:
+		return
+	for layer: AbilityLayer in module.layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.DURING
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.ADD_STATUS_SELF
+			and layer.effect.status_type == GameEnums.StatusType.GHOST
+		):
+			return
+	module.layers.append(_during_ghost())
+	module.invalidate_runtime_modifiers_cache()
+
+
+static func _ensure_module_during_layer(
 	module: AbilityModule,
 	keyword_id: GameEnums.AbilityKeywordId,
 ) -> void:
 	if module == null:
 		return
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword != null and keyword.keyword_id == keyword_id:
-			return
-	module.keywords.append(_keyword(keyword_id, 1, 0, false))
+	match keyword_id:
+		GameEnums.AbilityKeywordId.GHOST:
+			_ensure_module_during_ghost(module)
+		GameEnums.AbilityKeywordId.BULLDOZE:
+			for layer: AbilityLayer in module.layers:
+				if (
+					layer != null
+					and layer.condition == GameEnums.LayerCondition.DURING
+					and layer.effect != null
+					and layer.effect.type == GameEnums.EffectType.BULLDOZE
+				):
+					return
+			module.layers.append(_during_bulldoze())
+		GameEnums.AbilityKeywordId.TRAMPLE:
+			for layer: AbilityLayer in module.layers:
+				if (
+					layer != null
+					and layer.condition == GameEnums.LayerCondition.DURING
+					and layer.effect != null
+					and layer.effect.type == GameEnums.EffectType.TRAMPLE
+				):
+					return
+			module.layers.append(_during_trample())
+		GameEnums.AbilityKeywordId.PIERCE:
+			for layer: AbilityLayer in module.layers:
+				if (
+					layer != null
+					and layer.condition == GameEnums.LayerCondition.DURING
+					and layer.effect != null
+					and layer.effect.status_type == GameEnums.StatusType.PIERCE
+				):
+					return
+			module.layers.append(_during_pierce())
+		_:
+			pass
 	module.invalidate_runtime_modifiers_cache()
 
 
@@ -792,8 +888,7 @@ static func _duplicate_modules(source: Array[AbilityModule]) -> Array[AbilityMod
 
 
 static func _flags_to_targeting_mode(flags: int) -> GameEnums.TargetingMode:
-	if (flags & GameEnums.TargetingFlags.DASH_LINE) != 0:
-		return GameEnums.TargetingMode.DASH_LINE
+	flags = ModuleAuthoringRules.migrate_targeting_flags(flags)
 	if (flags & GameEnums.TargetingFlags.TILE) != 0:
 		return GameEnums.TargetingMode.TILE
 	if (flags & GameEnums.TargetingFlags.SELF) != 0 and (

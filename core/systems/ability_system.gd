@@ -682,7 +682,6 @@ static func planning_module_target_valid(
 		return true
 	if (
 		module.has_targeting(GameEnums.TargetingFlags.TILE)
-		or module.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
 		or module.primary_type == GameEnums.EffectType.DASH
 	):
 		return true
@@ -693,8 +692,7 @@ static func planning_module_target_valid(
 		if target.team == actor.team:
 			return module.has_targeting(GameEnums.TargetingFlags.ALLY)
 		return module.has_targeting(GameEnums.TargetingFlags.ENEMY)
-	return module.has_targeting(GameEnums.TargetingFlags.TILE) \
-		or module.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
+	return module.has_targeting(GameEnums.TargetingFlags.TILE)
 
 
 static func active_profile_is_offensive(actor: UnitState, ability: AbilityData) -> bool:
@@ -1623,8 +1621,6 @@ static func _target_allowed(
 		return (targeting_flags & GameEnums.TargetingFlags.SELF) != 0
 	if (targeting_flags & GameEnums.TargetingFlags.TILE) != 0:
 		return true
-	if (targeting_flags & GameEnums.TargetingFlags.DASH_LINE) != 0:
-		return true
 	return false
 
 
@@ -1956,14 +1952,13 @@ static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> 
 
 
 ## Planning: one-click commit vs two-phase awaiting-target flow.
-## Tile / dash-line skills aim a cell. Unit-only skills (Swap, Reposition) commit on the unit.
+## Tile skills aim a cell. DASH primary constrains straight-line endpoints. Unit-only skills commit on the unit.
 static func planning_commit_flow(actor: UnitState, ability: AbilityData) -> int:
 	if actor == null or ability == null:
 		return GameEnums.PlanningCommitFlow.IMMEDIATE
 	var flags: int = active_targeting_flags(actor, ability)
 	var aims_cell: bool = (
 		(flags & GameEnums.TargetingFlags.TILE) != 0
-		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
 		or ability_has_dash(ability, actor)
 	)
 	if not aims_cell:
@@ -2027,8 +2022,7 @@ static func planning_awaiting_phase_for_module(
 			pass
 		else:
 			return GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
-	if module.has_targeting(GameEnums.TargetingFlags.TILE) \
-			or module.has_targeting(GameEnums.TargetingFlags.DASH_LINE):
+	if module.has_targeting(GameEnums.TargetingFlags.TILE):
 		return GameEnums.PlanningAwaitingPhase.TARGET_PICK
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
@@ -2092,15 +2086,12 @@ static func planning_is_valid_awaiting_endpoint(
 	return false
 
 
-## TILE / DASH_LINE abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
+## TILE abilities commit a cell; occupant id is incidental (sim resolves via target_coord).
 static func planning_commit_target_unit_id(ability: AbilityData, occupant_unit_id: int) -> int:
 	if ability == null:
 		return occupant_unit_id
 	var flags: int = ability.targeting_flags
-	if (
-		(flags & GameEnums.TargetingFlags.TILE) != 0
-		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
-	):
+	if (flags & GameEnums.TargetingFlags.TILE) != 0:
 		return -1
 	return occupant_unit_id
 
@@ -2113,7 +2104,7 @@ static func _module_aims_cell(module: AbilityModule, ability: AbilityData) -> bo
 		flags = ability.targeting_flags
 	return (
 		(flags & GameEnums.TargetingFlags.TILE) != 0
-		or (flags & GameEnums.TargetingFlags.DASH_LINE) != 0
+		or (module != null and module.primary_type == GameEnums.EffectType.DASH)
 	)
 
 
@@ -2132,6 +2123,12 @@ static func effect_amount(
 	for eff: EffectData in active_effects_for(actor, ability):
 		if eff.type == effect_type:
 			return eff.amount
+	if effect_type == GameEnums.EffectType.BULLDOZE:
+		var mods := pass_through_modifiers_from(active_effects_for(actor, ability))
+		return int(mods.get("bulldoze", 0))
+	if effect_type == GameEnums.EffectType.TRAMPLE:
+		var trample_mods := pass_through_modifiers_from(active_effects_for(actor, ability))
+		return int(trample_mods.get("trample_atk", 0))
 	return 0
 
 

@@ -1268,6 +1268,9 @@ func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 			return false
 		if force_basic_movement or _director.selected_ability_index < 0:
 			return _is_hover_move_cell(p_unit, cell)
+		if _selection_hover_corridor_paint_active():
+			return true
+		return false
 	return false
 
 
@@ -3501,6 +3504,26 @@ func _movement_skill_commits_tile_endpoint(
 	)
 
 
+func _cell_on_dash_line_from_stand(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	var module: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
+	if module == null:
+		return false
+	var origin: Vector2i = _proj_origin(actor)
+	if cell == origin:
+		return true
+	var delta: Vector2i = cell - origin
+	if delta.x != 0 and delta.y != 0:
+		return false
+	var dist: int = GridSystem.manhattan(origin, cell)
+	return dist >= module.min_range and dist <= module.max_range
+
+
 func _tile_target_movement_skill_commits_at_cell(
 	actor: UnitState,
 	ability: AbilityData,
@@ -3512,12 +3535,36 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if (
 		AbilitySystem.active_targeting_flags(actor, ability)
-		& (GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.DASH_LINE)
+		& GameEnums.TargetingFlags.TILE
 	) == 0:
 		return false
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
+	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
+		if (
+			_drag_route_commits_active()
+			and _drag_unit_id == actor.id
+			and _route_has_left_origin_ring(_proj_move_origin(actor))
+		):
+			return false
+		if (
+			_director != null
+			and _director.auto_run
+			and AbilitySystem.movement_requires_run(_proj(), actor, cell, [])
+		):
+			return false
+		if (
+			_drag_route_commits_active()
+			and _drag_unit_id == actor.id
+			and not _cell_on_dash_line_from_stand(actor, ability, cell)
+		):
+			return false
+		if not _cell_on_dash_line_from_stand(actor, ability, cell):
+			return false
+		if not _in_ability_range_of_coord(actor, cell):
+			return false
+		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
 	if (
 		motion != null
 		and (
@@ -3526,7 +3573,6 @@ func _tile_target_movement_skill_commits_at_cell(
 			or GameEnums.is_toward_destination(motion.primary_type)
 			or GameEnums.is_jump_motion(motion.primary_type)
 			or GameEnums.is_teleport_motion(motion.primary_type)
-			or (motion.primary_type == GameEnums.EffectType.DASH and not _can_move_to(actor, cell))
 		)
 	):
 		if not _in_ability_range_of_coord(actor, cell):
@@ -3536,7 +3582,44 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	if ability.is_pre_move_planner():
 		return true
-	return AbilitySystem.planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.IMMEDIATE
+	if AbilitySystem.planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.IMMEDIATE:
+		return true
+	## DASH primary + TILE: one-click dash endpoint (straight-line legality from DASH primary).
+	if _dash_tile_endpoint_one_click_commit(actor, ability, cell):
+		return true
+	return false
+
+
+func _dash_tile_endpoint_one_click_commit(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
+	if motion == null or motion.primary_type != GameEnums.EffectType.DASH:
+		return false
+	if (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) == 0:
+		return false
+	if not _cell_on_dash_line_from_stand(actor, ability, cell):
+		return false
+	if (
+		_drag_route_commits_active()
+		and _drag_unit_id == actor.id
+		and dragging
+	):
+		return false
+	if (
+		_director != null
+		and _director.auto_run
+		and AbilitySystem.movement_requires_run(_proj(), actor, cell, [])
+	):
+		return false
+	return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
 
 
 func _drag_had_movement() -> bool:
@@ -3686,12 +3769,19 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
 	if planned_move != null:
 		return planned_move.target_coord
+	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
+	if awaiting != null and awaiting.awaiting_module_index > 0:
+		var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+			awaiting, awaiting.awaiting_module_index - 1,
+		)
+		if _director.board.is_in_bounds(prior_stand):
+			return prior_stand
 	var projected: Vector2i = _proj_move_origin(actor)
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
 		ability = _selected_ability_data(actor)
 	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
-		if awaiting_targeting_active():
+		if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
 			return projected
 		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
 		if _director.board.is_in_bounds(hover):
@@ -4914,7 +5004,7 @@ func _build_commit_slots_at_cell(
 				hover_unit == null
 				and (
 					AbilitySystem.active_targeting_flags(actor, ability)
-					& (GameEnums.TargetingFlags.TILE | GameEnums.TargetingFlags.DASH_LINE)
+					& GameEnums.TargetingFlags.TILE
 				) != 0
 			):
 				if _in_ability_range_of_coord(actor, cell):

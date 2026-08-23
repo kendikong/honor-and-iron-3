@@ -8,6 +8,10 @@ extends Resource
 
 @export var effect: EffectData = null
 @export var condition: GameEnums.LayerCondition = GameEnums.LayerCondition.AT_RESOLUTION
+## When condition is DURING and effect is BULLDOZE/TRAMPLE: also emit a standalone execution row.
+@export var during_emit_effect: bool = true
+## BULLDOZE DURING layer: collision push distance (typed; not effect.modifiers).
+@export var during_bulldoze_push: int = 0
 
 ## Typed collision-layer behavior; compile into the transient EffectData payload.
 @export var object_collision_stagger: bool = false
@@ -200,6 +204,8 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["wall_collision_stagger"] = true
 	if oil_field:
 		modifiers["oil_field"] = true
+	if during_bulldoze_push != 0:
+		modifiers["push"] = during_bulldoze_push
 	return modifiers
 
 

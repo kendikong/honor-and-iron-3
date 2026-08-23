@@ -102,11 +102,6 @@ static func validate_modules(
 			errors.append("module %d MOVE/DASH min_range must be >= 1" % index)
 		if module.max_range < module.min_range:
 			errors.append("module %d max_range is below min_range" % index)
-		if (
-			module.targeting_flags & GameEnums.TargetingFlags.DASH_LINE
-			and module.primary_type != GameEnums.EffectType.DASH
-		):
-			errors.append("module %d DASH_LINE requires a DASH primary" % index)
 		if module.primary_type == GameEnums.EffectType.SWAP and module.target_shape != GameEnums.TargetShape.SINGLE:
 			errors.append("module %d SWAP requires SINGLE shape" % index)
 		if (
@@ -141,23 +136,10 @@ static func module_has_effect(module: AbilityModule, effect_type: GameEnums.Effe
 		return false
 	if module.primary_type == effect_type:
 		return true
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null:
-			continue
-		if (
-			keyword.emit_as_effect
-			and keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE
-			and effect_type == GameEnums.EffectType.TRAMPLE
-		):
-			return true
-		if (
-			keyword.emit_as_effect
-			and keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
-			and effect_type == GameEnums.EffectType.BULLDOZE
-		):
-			return true
 	for layer: AbilityLayer in module.layers:
-		if layer != null and layer.effect != null and layer.effect.type == effect_type:
+		if layer == null or layer.effect == null:
+			continue
+		if layer.effect.type == effect_type:
 			return true
 	return false
 
@@ -167,21 +149,10 @@ static func module_effect_amount(module: AbilityModule, effect_type: GameEnums.E
 		return 0
 	if module.primary_type == effect_type:
 		return module.amount
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null or not keyword.emit_as_effect:
-			continue
-		if (
-			keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE
-			and effect_type == GameEnums.EffectType.TRAMPLE
-		):
-			return keyword.amount
-		if (
-			keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE
-			and effect_type == GameEnums.EffectType.BULLDOZE
-		):
-			return keyword.amount
 	for layer: AbilityLayer in module.layers:
-		if layer != null and layer.effect != null and layer.effect.type == effect_type:
+		if layer == null or layer.effect == null:
+			continue
+		if layer.effect.type == effect_type:
 			return layer.effect.amount
 	return 0
 
@@ -223,26 +194,16 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 					return true
 		&"frenzy_on_kill_ap":
 			return module_has_modifier(module, &"kill_grant_ap")
+		&"bulldoze", &"push", &"ghost_move", &"next_attack_pierce", &"trample":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
+					continue
+				var probe: Dictionary = {}
+				_ModuleAuthoringRules.apply_during_layer_to_modifiers(probe, layer)
+				if probe.has(String(key)):
+					return true
 		_:
 			pass
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null:
-			continue
-		match key:
-			&"bulldoze":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-					return true
-			&"push":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE and keyword.push_amount != 0:
-					return true
-			&"ghost_move":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
-					return true
-			&"next_attack_pierce":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
-					return true
-			_:
-				pass
 	return false
 
 
@@ -276,26 +237,16 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 					return layer.buff_on_push
 		&"frenzy_on_kill_ap":
 			return module_modifier_value(module, &"kill_grant_ap", default_value)
+		&"bulldoze", &"push", &"ghost_move", &"next_attack_pierce", &"trample":
+			for layer: AbilityLayer in module.layers:
+				if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
+					continue
+				var probe: Dictionary = {}
+				_ModuleAuthoringRules.apply_during_layer_to_modifiers(probe, layer)
+				if probe.has(key_text):
+					return int(probe[key_text])
 		_:
 			pass
-	for keyword: AbilityKeyword in module.keywords:
-		if keyword == null:
-			continue
-		match key:
-			&"bulldoze":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-					return keyword.amount
-			&"push":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-					return keyword.push_amount
-			&"ghost_move":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
-					return 1
-			&"next_attack_pierce":
-				if keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
-					return 1
-			_:
-				pass
 	return default_value
 
 
@@ -338,14 +289,16 @@ static func pass_through_modifiers_from_modules(modules: Array[AbilityModule]) -
 			trample_atk = module.amount
 		elif module.primary_type == GameEnums.EffectType.BULLDOZE:
 			bulldoze = module.amount
-		for keyword: AbilityKeyword in module.keywords:
-			if keyword == null:
+		for layer: AbilityLayer in module.layers:
+			if layer == null or layer.condition != GameEnums.LayerCondition.DURING:
 				continue
-			if keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
-				trample_atk = keyword.amount
-			elif keyword.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-				bulldoze = keyword.amount
-				push = keyword.push_amount
+			if layer.effect == null:
+				continue
+			if layer.effect.type == GameEnums.EffectType.TRAMPLE:
+				trample_atk = layer.effect.amount
+			elif layer.effect.type == GameEnums.EffectType.BULLDOZE:
+				bulldoze = layer.effect.amount
+				push = maxi(push, layer.during_bulldoze_push)
 		bulldoze = maxi(bulldoze, module_modifier_value(module, &"bulldoze", 0))
 		push = maxi(push, module_modifier_value(module, &"push", 0))
 		trample_atk = maxi(trample_atk, module_modifier_value(module, &"trample_atk", 0))
@@ -406,24 +359,21 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 	var out: Array[EffectData] = []
 	if module == null:
 		return out
+	_ModuleAuthoringRules.migrate_keywords_to_layers(module)
 	var primary: EffectData = module.primary_as_effect()
-	_apply_keywords_to_effect(primary, module)
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.condition == GameEnums.LayerCondition.DURING:
+			_apply_during_layer_to_primary(primary, layer)
 	out.append(primary)
-	for kw: AbilityKeyword in module.keywords:
-		if kw == null or not kw.emit_as_effect:
-			continue
-		if kw.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
-			var trample_eff := EffectData.new()
-			trample_eff.type = GameEnums.EffectType.TRAMPLE
-			trample_eff.amount = kw.amount
-			out.append(trample_eff)
-		elif kw.keyword_id == GameEnums.AbilityKeywordId.BULLDOZE:
-			var bulldoze_eff := EffectData.new()
-			bulldoze_eff.type = GameEnums.EffectType.BULLDOZE
-			bulldoze_eff.amount = kw.amount
-			out.append(bulldoze_eff)
 	for layer: AbilityLayer in module.layers:
 		if layer == null or layer.effect == null:
+			continue
+		if layer.condition == GameEnums.LayerCondition.DURING:
+			if _ModuleAuthoringRules.during_layer_emits_effect_row(layer):
+				var during_eff: EffectData = _duplicate_effect(layer.effect)
+				_merge_runtime_modifiers(during_eff, module.compile_runtime_modifiers())
+				_merge_runtime_modifiers(during_eff, layer.compile_runtime_modifiers())
+				out.append(during_eff)
 			continue
 		var layer_eff: EffectData = _duplicate_effect(layer.effect)
 		_merge_runtime_modifiers(layer_eff, module.compile_runtime_modifiers())
@@ -431,6 +381,15 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 		_apply_layer_condition_to_effect(layer_eff, layer.condition)
 		out.append(layer_eff)
 	return out
+
+
+static func _apply_during_layer_to_primary(primary: EffectData, layer: AbilityLayer) -> void:
+	if primary == null or layer == null or layer.effect == null:
+		return
+	var bag: Dictionary = {}
+	_ModuleAuthoringRules.apply_during_layer_to_modifiers(bag, layer)
+	for key: Variant in bag:
+		primary.modifiers[key] = bag[key]
 
 
 static func compile_modules_to_effects(modules: Array[AbilityModule]) -> Array[EffectData]:
@@ -479,7 +438,7 @@ static func normalize_ability(ability: AbilityData) -> void:
 
 
 static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
-	## Only reconcile self-target authoring. TILE/DASH_LINE skills often set flags as
+	## Only reconcile self-target authoring. TILE skills often set flags as
 	## source of truth while mode is a legacy mirror — do not clobber those.
 	if (
 		ability.targeting_mode == GameEnums.TargetingMode.SELF
@@ -491,10 +450,7 @@ static func _prefer_authored_targeting_mode(ability: AbilityData) -> void:
 static func _sync_shaped_targeting_flags(ability: AbilityData) -> void:
 	if ability == null or ability.is_movement_kind():
 		return
-	if (
-		ability.has_targeting(GameEnums.TargetingFlags.TILE)
-		or ability.has_targeting(GameEnums.TargetingFlags.DASH_LINE)
-	):
+	if ability.has_targeting(GameEnums.TargetingFlags.TILE):
 		return
 	var base_shaped: bool = (
 		ability.range_tiles > 0
@@ -654,6 +610,8 @@ static func _apply_keywords_to_effect(eff: EffectData, mod: AbilityModule) -> vo
 
 static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnums.LayerCondition) -> void:
 	match condition:
+		GameEnums.LayerCondition.DURING:
+			pass
 		GameEnums.LayerCondition.ON_COLLISION:
 			if not eff.modifiers.has("object_collision_stagger") and not eff.modifiers.has("stagger_on_collision"):
 				eff.modifiers["stagger_on_collision"] = 1

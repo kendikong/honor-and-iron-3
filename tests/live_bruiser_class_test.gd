@@ -1466,13 +1466,13 @@ func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
 					if layer != null and layer.weapon_scaled:
 						return true
 			&"ghost_move":
-				for keyword: AbilityKeyword in module.keywords:
-					if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.GHOST:
-						return true
+				return ModuleAuthoringRules.module_has_during_status(
+					module, GameEnums.StatusType.GHOST,
+				)
 			&"next_attack_pierce":
-				for keyword: AbilityKeyword in module.keywords:
-					if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.PIERCE:
-						return true
+				return ModuleAuthoringRules.module_has_during_status(
+					module, GameEnums.StatusType.PIERCE,
+				)
 	return false
 
 

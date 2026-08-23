@@ -2838,7 +2838,11 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	if _planning_input != null and _planning_input.awaiting_targeting_active():
 		var sel_idx: int = _director.selected_ability_index if _director != null else -1
 		var ability: AbilityData = _selected_ability_data(unit, sel_idx)
-		if ability != null and AbilitySystem.is_movement_skill(ability):
+		if (
+			ability != null
+			and AbilitySystem.is_movement_skill(ability)
+			and _planning_input._is_awaiting_movement_endpoint(unit, ability)
+		):
 			return projected
 	if _planning_input != null and _planning_input.is_live_preview_active():
 		var live_board: BoardState = _live_preview.preview_board

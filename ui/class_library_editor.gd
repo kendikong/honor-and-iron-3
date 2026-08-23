@@ -2100,7 +2100,6 @@ func _build_module_fields(
 	module_grey_cb.call()
 	_add_module_targeting_flags(parent, ability, module)
 	_add_module_typed_extras_editor(parent, ability, module)
-	_add_module_keywords_editor(parent, ability, module)
 	_add_module_layers_editor(parent, ability, module)
 
 
@@ -2114,7 +2113,6 @@ func _add_module_targeting_flags(
 		[GameEnums.TargetingFlags.ALLY, "Ally"],
 		[GameEnums.TargetingFlags.ENEMY, "Enemy"],
 		[GameEnums.TargetingFlags.TILE, "Tile"],
-		[GameEnums.TargetingFlags.DASH_LINE, "Dash line"],
 	]
 	var any_click_targeting: bool = false
 	for spec: Array in targeting_specs:
@@ -3059,76 +3057,31 @@ func _add_typed_layer_bindings(
 	)
 
 
-func _add_module_keywords_editor(
-	parent: VBoxContainer,
-	ability: AbilityData,
-	module: AbilityModule,
-) -> void:
-	_add_subsection_label(parent, "Keywords", ClassLibraryTheme.ACCENT_DATA)
-	var box := VBoxContainer.new()
-	parent.add_child(box)
-	for index: int in module.keywords.size():
-		var keyword: AbilityKeyword = module.keywords[index]
-		var grid := GridContainer.new()
-		grid.columns = 2
-		box.add_child(grid)
-		_bind_enum(grid, "Keyword %d" % index, GameEnums.AbilityKeywordId, keyword.keyword_id, func(v: int) -> void:
-			keyword.keyword_id = v
-			_on_module_field_edited(ability)
-			_refresh_module_field_greying(ability)
-		)
-		var amount_row := _bind_int(grid, "Amount", keyword.amount, func(v: int) -> void:
-			keyword.amount = v
-			_on_module_field_edited(ability)
-		)
-		var push_row := _bind_int(grid, "Push Amount", keyword.push_amount, func(v: int) -> void:
-			keyword.push_amount = v
-			_on_module_field_edited(ability)
-		)
-		var emit_row := _bind_bool(grid, "Emit Legacy Effect", keyword.emit_as_effect, func(v: bool) -> void:
-			keyword.emit_as_effect = v
-			_on_module_field_edited(ability)
-		)
-		var remove := Button.new()
-		remove.text = "Remove Keyword"
-		remove.pressed.connect(func() -> void:
-			module.keywords.remove_at(index)
-			_rebuild_ability_detail_panes(ability)
-		)
-		box.add_child(remove)
-		var keyword_grey_cb := func() -> void:
-			_set_row_visible(
-				push_row,
-				ModuleAuthoringRules.keyword_uses_push_amount(keyword.keyword_id)
-				or keyword.push_amount != 0,
-			)
-			_set_row_visible(
-				amount_row,
-				ModuleAuthoringRules.keyword_uses_amount(keyword.keyword_id)
-				or keyword.amount != 0,
-			)
-			_set_row_visible(
-				emit_row,
-				ModuleAuthoringRules.keyword_uses_emit_as_effect(keyword.keyword_id)
-				or keyword.emit_as_effect,
-			)
-		_ability_ui[ability]["module_grey_cbs"].append(keyword_grey_cb)
-		keyword_grey_cb.call()
-	var add := Button.new()
-	add.text = "+ Keyword"
-	add.pressed.connect(func() -> void:
-		module.keywords.append(AbilityKeyword.new())
-		_rebuild_ability_detail_panes(ability)
-	)
-	box.add_child(add)
-
-
 func _add_module_layers_editor(
 	parent: VBoxContainer,
 	ability: AbilityData,
 	module: AbilityModule,
 ) -> void:
 	_add_subsection_label(parent, "Layers", ClassLibraryTheme.ACCENT_DATA)
+	var during_row := HBoxContainer.new()
+	parent.add_child(during_row)
+	var during_label := Label.new()
+	during_label.text = "During (on primary):"
+	during_row.add_child(during_label)
+	for preset: Dictionary in [
+		{"text": "+ BULLDOZE", "layer": DataLibrary._during_bulldoze()},
+		{"text": "+ TRAMPLE", "layer": DataLibrary._during_trample()},
+		{"text": "+ GHOST", "layer": DataLibrary._during_ghost()},
+		{"text": "+ PIERCE", "layer": DataLibrary._during_pierce()},
+	]:
+		var btn := Button.new()
+		btn.text = preset.text
+		btn.pressed.connect(func() -> void:
+			module.layers.append((preset.layer as AbilityLayer).duplicate(true))
+			_on_module_field_edited(ability)
+			_rebuild_ability_detail_panes(ability)
+		)
+		during_row.add_child(btn)
 	var box := VBoxContainer.new()
 	parent.add_child(box)
 	for index: int in module.layers.size():

@@ -40,8 +40,8 @@
 One skill card =
 
 1. **Header:** `planner_group` + **tags** + **cost once** + presentation + `modules` / `upgraded_modules`  
-2. **Each module:** primary effect + range + shape + tile/unit flags + optional **keywords** + **layers** + **gate**  
-3. **Same click extras** → layers (stack as many as the punch needs) · **New player click** → new module · **Path hits** → TRAMPLE/BULLDOZE keywords (not micro-checkboxes)
+2. **Each module:** primary effect + range + shape + tile/unit flags + **layers** + **gate**  
+3. **Same click extras** → layers (stack as many as the punch needs) · **New player click** → new module · **During motion** → DURING layers on the move primary (BULLDOZE, TRAMPLE, GHOST, …)
 
 | `planner_group` | Column | Cost | Action slot |
 |-----------------|--------|------|-------------|
@@ -76,8 +76,7 @@ SKILL
 ├── Header          → planner_group, tags, cost (once), presentation, modules + upgraded_modules
 └── Modules[]       → ordered steps (like mini-skills in a sequence)
     ├── Primary effect + aim (range, shape, tile/unit, values)
-    ├── Keywords[]  → bundled packages (TRAMPLE, BULLDOZE, …)
-    ├── Layers[]    → extra effects on THAT module’s targets (same aim)
+    ├── Layers[]    → extra effects on THAT module (DURING = on primary; other conditions = riders)
     └── Gate        → whether this module runs (Always / if kill / …)
 ```
 
@@ -87,8 +86,7 @@ SKILL
 |-------|--------|
 | **Header** | Planner column (`planner_group`), identity **tags**, cost once, presentation |
 | **Module** | One step with **its own player click** (aim). No new click → not a new module. |
-| **Keyword** | Bible package on a module (passthrough+hit, etc.) — prefer over micro-layers |
-| **Layer** | Extra effect on the **same targets** as its parent module (the click you already made) |
+| **Layer** | Extra effect on the **same module click**. `DURING` = superimposed on the primary while it runs (BULLDOZE, TRAMPLE, GHOST). Other conditions = riders at resolution (ON_KILL, ON_COLLISION, …). |
 | **Gate** | Condition that decides if this **module** activates at all |
 
 **Module vs layer (absolute)**
@@ -98,7 +96,7 @@ SKILL
 | Does the player **click again** (new unit, new tile, second pick)? | **New module.** Dual-pick = two modules. |
 | Same click, more punches (PUSH after the hit, STAGGER if they collide, GRANT AP on kill, a second hit on the **same** body)? | **Layers** on that module. Stack as many as you need. |
 | One click’s result is complicated? | Still **layers**, not a second module that secretly reuses the first aim. |
-| Path hits while **you** walk? | **Keyword** (TRAMPLE / BULLDOZE) on the move module — not extra clicks. |
+| Path hits while **you** walk? | **DURING layer** (BULLDOZE / TRAMPLE / GHOST) on the motion module — not extra clicks. |
 
 Do **not** author a second module whose only job is “also affect the first module’s target.” That is a layer. Authors never pick “same as module N” for that. (`SAME_AS_MODULE_N` is internal, gated recast only — Violent Collision.)
 
@@ -277,6 +275,7 @@ Authors never pick “same as module N”. If two effects share one aim, the sec
 **Tile mode**
 
 - Player aims a **tile** (empty or occupied per dest EffectType / checkboxes).
+- **DASH primary** restricts legal tiles to straight cardinal line endpoints (engine enforces; no separate targeting flag).
 - Invokes **two-phase awaiting** when destination confirm is required.
 - Checkboxes: **affect allies on tiles?** / **affect enemies on tiles?**
 - Optional: **allow occupied destination** (Push Through).
@@ -411,19 +410,19 @@ If a **single effect on a single target** is complicated, use **multiple layers*
 
 ---
 
-## 6. Keywords as bundled layers
+## 6. DURING layers (Bible bundles)
 
-Some Bible terms are **packages** so authors do not assemble five checkboxes every time.
+Bible terms like **TRAMPLE**, **BULLDOZE**, **GHOST**, and **PIERCE** are **layers** with condition **`DURING`** — superimposed on the module primary while it executes. They are not a separate keyword list.
 
-| Keyword | Intent (author-facing) | Expands to (engine) |
-|---------|------------------------|---------------------|
-| **TRAMPLE** | Passthrough + attack-on-move-through | Pass-through flag + ON_PASS damage (amount on keyword) |
-| **BULLDOZE** | Passthrough + collision package | Pass-through + ON_COLLISION damage/push (amounts on keyword) |
-| **GHOST** (during move) | Pass terrain/units per Bible | Movement flag for that module |
-| **PIERCE** | Ignore DEF/MAG on this hit | Damage flag |
-| **CANTO** (full refund) | Unit/passive full MOV refund after action | Status/passive; skill-granted partial canto = `ON_POST` MOVE module with fixed range |
+| DURING layer (effect) | Intent (author-facing) | Engine |
+|-----------------------|------------------------|--------|
+| **TRAMPLE** | Passthrough + attack-on-move-through | Pass-through + path damage (amount on layer) |
+| **BULLDOZE** | Passthrough + collision package | Pass-through + ON_COLLISION damage/push |
+| **GHOST** (status on self) | Pass terrain/units per Bible | `ghost_move` on motion primary |
+| **PIERCE** (status on self) | Ignore DEF/MAG on this hit | `next_attack_pierce` on primary |
+| **CANTO** | Full MOV refund after action | Status/passive hook; partial canto = `ON_POST` MOVE module |
 
-Do **not** split TRAMPLE/BULLDOZE into passthrough + damage micro-checkboxes. Extra Bible bits beyond the keyword (e.g. Trampling’s PUSH, Bowling [+] chain) are **separate layers**, not a dismantled keyword.
+Do **not** split TRAMPLE/BULLDOZE into passthrough + damage micro-checkboxes. Extra Bible bits beyond the DURING package (e.g. Trampling’s PUSH, Bowling [+] chain) are **separate layers** with other conditions (`AT_RESOLUTION`, `ON_CHAIN_COLLISION`, …).
 
 ---
 
@@ -576,7 +575,7 @@ Header:
 Module 1 — ON_ACTION
   Effect: DASH
   Range: 1–3 (min 1)
-  Shape: dash-line / TILE
+  Shape: TILE aim / TILE
   Keywords: BULLDOZE (ATK 3, PUSH 2 per Bible)
   Gate: Always
 ```
@@ -609,14 +608,14 @@ Header:
 Module 1 — ON_ACTION
   Effect: DASH
   Range: 1–3 (min 1)
-  Shape: dash-line (DASH_LINE targeting — straight cardinal line endpoints only)
+  Shape: TILE aim (straight-line legality from DASH primary)
   Bundles: BULLDOZE (amounts per factory)
   Gate: Always
 
 Module 2 — ON_ACTION
   Effect: DASH
   Range: 1–2 (min 1)
-  Shape: dash-line
+  Shape: TILE aim
   Bundles: BULLDOZE
   Gate: If collided with enemy (from module 1)
   Aim: same line as module 1 (player does not re-aim)

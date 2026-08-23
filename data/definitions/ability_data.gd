@@ -76,11 +76,13 @@ func ensure_targeting_flags_from_mode() -> void:
 
 
 func sync_legacy_targeting() -> void:
+	targeting_flags = ModuleAuthoringRules.migrate_targeting_flags(targeting_flags)
 	can_target_self = has_targeting(GameEnums.TargetingFlags.SELF)
 	targeting_mode = _targeting_flags_to_mode()
 
 
 static func _targeting_mode_to_flags(mode: int) -> int:
+	mode = ModuleAuthoringRules.migrate_targeting_mode(mode)
 	match mode:
 		GameEnums.TargetingMode.SELF:
 			return GameEnums.TargetingFlags.SELF
@@ -98,8 +100,6 @@ static func _targeting_mode_to_flags(mode: int) -> int:
 			)
 		GameEnums.TargetingMode.TILE:
 			return GameEnums.TargetingFlags.TILE
-		GameEnums.TargetingMode.DASH_LINE:
-			return GameEnums.TargetingFlags.DASH_LINE
 	return GameEnums.TargetingFlags.ENEMY
 
 
@@ -128,8 +128,6 @@ func _targeting_flags_to_mode() -> int:
 		return GameEnums.TargetingMode.ANY_UNIT
 	if (f & unit_mask) == unit_mask:
 		return GameEnums.TargetingMode.ANY_UNIT
-	if has_targeting(GameEnums.TargetingFlags.DASH_LINE):
-		return GameEnums.TargetingMode.DASH_LINE
 	return GameEnums.TargetingMode.ENEMY_UNIT
 
 ## The geometric shape of the affected area (legacy mirror of primary aim module).

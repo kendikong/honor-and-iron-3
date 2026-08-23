@@ -379,6 +379,8 @@ enum ModuleTargetFilterOccupant {
 ## Layer activation condition (ability-data.md §5).
 enum LayerCondition {
 	AT_RESOLUTION,
+	## Superimposed on the module primary while it executes (BULLDOZE, TRAMPLE, GHOST, …).
+	DURING,
 	WHEN_DAMAGE_DEALT,
 	WHEN_MOVED_THROUGH_ENEMY,
 	ON_COLLISION,
@@ -408,7 +410,6 @@ enum TargetingMode {
 	ENEMY_UNIT,
 	ANY_UNIT,
 	TILE,
-	DASH_LINE,
 	ALLY_OR_SELF,
 }
 
@@ -418,7 +419,6 @@ enum TargetingFlags {
 	ALLY = 2,
 	ENEMY = 4,
 	TILE = 8,
-	DASH_LINE = 16,
 	EXCLUDE_CASTER = 32,
 }
 
