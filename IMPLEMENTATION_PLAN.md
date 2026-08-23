@@ -81,186 +81,188 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 ### ER-2 — class-by-class conversion
 
 > **Shape gate (2026-08-22):** `docs/design/LAYER_SHAPE_CONVERSION_GATE.md` — ER-2 ☑ rows below are **frozen** until `run_layer_shape_conversion_gate.gd` passes per skill. **Effect Knobs / typed-extra dumps do not count as conversion.** Modifier-ownership PASS (`extra_rules_conversion_contract`) is **not** layer conversion.
+>
+> **Effect Knob audit (2026-08-22):** `run_layer_shape_conversion_gate.gd --audit` — **141** skills have active Effect Knobs → matrix **UNCHECKED** below. **31** rows still show ☑ (zero active knobs on factory probe — not “done” until shape gate + refactor). Class gate “PASS” lines in the index are **harness-only** until those skills re-pass shape bar.
 
 ### ER-2 — skill quality matrix (ownership pass — not shape-complete)
 
 | Class | Skill | Ownership pass | QA tested + confirmed working | Bible accuracy audit | Redundant quality audit | Notes |
 |---|---|:---:|:---:|:---:|:---:|---|
 | Knight | Defensive Formation | ☑ | ☑ | ☑ | ☑ | Independent audit cross-checks scenario contract, Tier-1 sim, and live [+] overlay/commit/sim; shared paths remain single-owner |
-| Bruiser | Push Through | ☑ | ☑ | ☑ | ☑ | Typed `buff_on_push`; Tier-1/live gates pass; independent audit pass |
-| Bruiser | Charge Strike | ☑ | ☑ | ☑ | ☑ | Typed occupied-tile bonus + GHOST keyword; Tier-1/live gates pass; independent audit pass |
+| Bruiser | Push Through | ☐ | ☐ | ☐ | ☐ | Typed `buff_on_push`; Tier-1/live gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Charge Strike | ☐ | ☐ | ☐ | ☐ | Typed occupied-tile bonus + GHOST keyword; Tier-1/live gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Concussion Blow | ☑ | ☑ | ☑ | ☑ | Typed collision layer flags; Tier-1/live gates pass; independent audit pass |
 | Bruiser | Cleave | ☑ | ☑ | ☑ | ☑ | Layered BLEED profile; Tier-1/live gates pass; independent audit pass |
-| Bruiser | Suplex | ☑ | ☑ | ☑ | ☑ | Typed HP-scaling bonus; enemy throw on Action is legal; gates pass; independent audit pass |
-| Bruiser | Adrenaline Surge | ☑ | ☑ | ☑ | ☑ | Pre-Move self status; gates pass; independent audit pass |
+| Bruiser | Suplex | ☐ | ☐ | ☐ | ☐ | Typed HP-scaling bonus; enemy throw on Action is legal; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Adrenaline Surge | ☐ | ☐ | ☐ | ☐ | Pre-Move self status; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Earthshatter | ☑ | ☑ | ☑ | ☑ | Destroy-object layer; gates pass; independent audit pass |
 | Bruiser | Meat Shield | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn INTERCEPT; scenario and class gates pass |
-| Bruiser | Frenzy | ☑ | ☑ | ☑ | ☑ | Typed kill AP field; gates pass; independent audit pass |
-| Bruiser | Guttural Roar | ☑ | ☑ | ☑ | ☑ | Typed board-item/collision fields; gates pass; independent audit pass |
-| Bruiser | Headbutt | ☑ | ☑ | ☑ | ☑ | Typed max-HP damage field; gates pass; independent audit pass |
-| Bruiser | Blood Boil | ☑ | ☑ | ☑ | ☑ | Fully module-authored HP/resource profile; gates pass; independent audit pass |
-| Bruiser | Violent Collision | ☑ | ☑ | ☑ | ☑ | Typed recast field + collision layer; gates pass; independent audit pass |
-| Bruiser | Crimson Whirlwind | ☑ | ☑ | ☑ | ☑ | Typed target-count heal field; gates pass; independent audit pass |
+| Bruiser | Frenzy | ☐ | ☐ | ☐ | ☐ | Typed kill AP field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Guttural Roar | ☐ | ☐ | ☐ | ☐ | Typed board-item/collision fields; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Headbutt | ☐ | ☐ | ☐ | ☐ | Typed max-HP damage field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Blood Boil | ☐ | ☐ | ☐ | ☐ | Fully module-authored HP/resource profile; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Violent Collision | ☐ | ☐ | ☐ | ☐ | Typed recast field + collision layer; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Bruiser | Crimson Whirlwind | ☐ | ☐ | ☐ | ☐ | Typed target-count heal field; gates pass; independent audit pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Bruiser | Belly Flop | ☑ | ☑ | ☑ | ☑ | Landing PUSH layer; gates pass; independent audit pass |
 | Bruiser | Breaching Dash | ☑ | ☑ | ☑ | ☑ | PIERCE keyword; gates pass; independent audit pass |
 | Bruiser | Reactive Adrenaline | ☑ | ☑ | ☑ | ☑ | Dedicated passive scenario + upgrade proof; shared turn-start passive path; independent audit pass |
-| Archer | Sidestep | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Volley | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Sidestep | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Volley | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Archer | Power Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Pinning Arrow | ☑ | ☑ | ☑ | ☑ | Typed module/layer conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Piercing Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Toxic Spore Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; upgraded adjacent POISON proof and direct conversion contract pass |
-| Archer | Grapple Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass; pull-self destination preserved |
-| Archer | Explosive Arrow | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Hunter’s Mark | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Repelling Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Bear Trap | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Caltrops | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Suppressing Fire | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
+| Archer | Pinning Arrow | ☐ | ☐ | ☐ | ☐ | Typed module/layer conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Piercing Shot | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Toxic Spore Arrow | ☐ | ☐ | ☐ | ☐ | Typed module conversion; upgraded adjacent POISON proof and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Grapple Arrow | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass; pull-self destination preserved **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Explosive Arrow | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Hunter’s Mark | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Repelling Shot | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Bear Trap | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Caltrops | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Archer | Suppressing Fire | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Archer | Parting Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Archer | Scout’s Eye | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
-| Lancer | Push | ☑ | ☑ | ☑ | ☑ | Typed ally-target and upgraded once-per-turn/buff fields; conversion contract pass |
-| Lancer | Piercing Charge | ☑ | ☑ | ☑ | ☑ | Typed trampled-terrain upgrade and polearm reach fields; conversion contract pass |
-| Lancer | Sweeping Halberd | ☑ | ☑ | ☑ | ☑ | Typed collision layer; conversion contract pass |
-| Lancer | Vaulting Leap | ☑ | ☑ | ☑ | ☑ | Typed DEF/armor upgrade fields; conversion contract pass |
-| Lancer | Impale / Run Down | ☑ | ☑ | ☑ | ☑ | Typed conditional damage and kill movement fields; conversion contract pass |
-| Lancer | Rallying Cry | ☑ | ☑ | ☑ | ☑ | Typed next-turn movement and TRAMPLE fields; conversion contract pass |
+| Archer | Scout’s Eye | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Push | ☐ | ☐ | ☐ | ☐ | Typed ally-target and upgraded once-per-turn/buff fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Piercing Charge | ☐ | ☐ | ☐ | ☐ | Typed trampled-terrain upgrade and polearm reach fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Sweeping Halberd | ☐ | ☐ | ☐ | ☐ | Typed collision layer; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Vaulting Leap | ☐ | ☐ | ☐ | ☐ | Typed DEF/armor upgrade fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Impale / Run Down | ☐ | ☐ | ☐ | ☐ | Typed conditional damage and kill movement fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Rallying Cry | ☐ | ☐ | ☐ | ☐ | Typed next-turn movement and TRAMPLE fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Lancer | Wraparound / Flanking Maneuver | ☑ | ☑ | ☑ | ☑ | L-path motion metadata + GHOST keyword; conversion contract pass |
-| Lancer | Brace | ☑ | ☑ | ☑ | ☑ | Typed attacker stagger field; conversion contract pass |
-| Lancer | Harpoon Toss | ☑ | ☑ | ☑ | ☑ | Typed pull-until-adjacent/rooted fields; conversion contract pass |
-| Lancer | Glorious Charge | ☑ | ☑ | ☑ | ☑ | Reworked as shared DASH + enemy Action attack; scenario and class gates pass |
-| Lancer | Pole Vault | ☑ | ☑ | ☑ | ☑ | Typed vault restriction and landing collision fields; conversion contract pass |
-| Lancer | Line Breaker | ☑ | ☑ | ☑ | ☑ | Typed line-break and passed-enemy fields; conversion contract pass |
-| Lancer | Spear Wall | ☑ | ☑ | ☑ | ☑ | Typed terrain/status/duration fields; conversion contract pass |
+| Lancer | Brace | ☐ | ☐ | ☐ | ☐ | Typed attacker stagger field; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Harpoon Toss | ☐ | ☐ | ☐ | ☐ | Typed pull-until-adjacent/rooted fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Glorious Charge | ☐ | ☐ | ☐ | ☐ | Reworked as shared DASH + enemy Action attack; scenario and class gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Pole Vault | ☐ | ☐ | ☐ | ☐ | Typed vault restriction and landing collision fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Line Breaker | ☐ | ☐ | ☐ | ☐ | Typed line-break and passed-enemy fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Spear Wall | ☐ | ☐ | ☐ | ☐ | Typed terrain/status/duration fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Lancer | Meteor Drop | ☑ | ☑ | ☑ | ☑ | Modular landing layer; conversion contract pass |
-| Mage | Blink | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
+| Mage | Blink | ☐ | ☐ | ☐ | ☐ | Typed module/layer fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Mage | Fireball | ☑ | ☑ | ☑ | ☑ | Typed terrain/reaction layer fields; conversion contract pass |
 | Mage | Ice Shard | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
-| Mage | Chain Lightning | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Chain Lightning | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Mage | Arcane Push | ☑ | ☑ | ☑ | ☑ | Typed layer fields; conversion contract pass |
-| Mage | Teleport | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Mage | Meteor | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Mage | Black Hole | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Teleport | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Meteor | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Black Hole | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Mage | Time Warp | ☑ | ☑ | ☑ | ☑ | Modular layer conversion; conversion contract pass |
-| Mage | Mana Shield | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Mage | Disintegrate | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
+| Mage | Mana Shield | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Disintegrate | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Mage | Gravity Well | ☑ | ☑ | ☑ | ☑ | Modular status layer conversion; conversion contract pass |
-| Mage | Elemental Surge | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Mage | Earth Spike | ☑ | ☑ | ☑ | ☑ | Typed module/layer fields; conversion contract pass |
-| Mage | Density Shift | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Mage | Arcane Barrage | ☑ | ☑ | ☑ | ☑ | Typed module fields; conversion contract pass |
-| Cleric | Guardian Step | ☑ | ☑ | ☑ | ☑ | Typed movement fields; Tier 1 + live gate + critic pass |
-| Cleric | Holy Light | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
-| Cleric | Smite | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
-| Cleric | Cleansing Aura | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
-| Cleric | Sanctuary | ☑ | ☑ | ☑ | ☑ | Start-turn STEALTH/STURDY/SHIELD 1; typed entry PUSH 1 proof |
+| Mage | Elemental Surge | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Earth Spike | ☐ | ☐ | ☐ | ☐ | Typed module/layer fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Density Shift | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mage | Arcane Barrage | ☐ | ☐ | ☐ | ☐ | Typed module fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Guardian Step | ☐ | ☐ | ☐ | ☐ | Typed movement fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Holy Light | ☐ | ☐ | ☐ | ☐ | Typed module fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Smite | ☐ | ☐ | ☐ | ☐ | Typed module fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Cleansing Aura | ☐ | ☐ | ☐ | ☐ | Typed module fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Sanctuary | ☐ | ☐ | ☐ | ☐ | Start-turn STEALTH/STURDY/SHIELD 1; typed entry PUSH 1 proof **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Cleric | Blinding Ray | ☑ | ☑ | ☑ | ☑ | Typed LINE module; Tier 1 + live gate + critic pass |
-| Cleric | Divine Hammer | ☑ | ☑ | ☑ | ☑ | Typed module fields; Tier 1 + live gate + critic pass |
-| Cleric | Life Link | ☑ | ☑ | ☑ | ☑ | Typed link fields; Tier 1 + live gate + critic pass |
+| Cleric | Divine Hammer | ☐ | ☐ | ☐ | ☐ | Typed module fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Life Link | ☐ | ☐ | ☐ | ☐ | Typed link fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Cleric | Prayer of Fortitude | ☑ | ☑ | ☑ | ☑ | Typed layer fields; Tier 1 + live gate + critic pass |
-| Cleric | Resurrection | ☑ | ☑ | ☑ | ☑ | Typed revive fields; Tier 1 + live gate + critic pass |
-| Cleric | Consecrate Ground | ☑ | ☑ | ☑ | ☑ | Typed terrain fields; Tier 1 + live gate + critic pass |
-| Cleric | Holy Wrath | ☑ | ☑ | ☑ | ☑ | Typed debuff/push fields; Tier 1 + live gate + critic pass |
-| Cleric | Divine Guidance | ☑ | ☑ | ☑ | ☑ | Typed AP/movement fields; Tier 1 + live gate + critic pass |
+| Cleric | Resurrection | ☐ | ☐ | ☐ | ☐ | Typed revive fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Consecrate Ground | ☐ | ☐ | ☐ | ☐ | Typed terrain fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Holy Wrath | ☐ | ☐ | ☐ | ☐ | Typed debuff/push fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Cleric | Divine Guidance | ☐ | ☐ | ☐ | ☐ | Typed AP/movement fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Cleric | Shield of Faith | ☑ | ☑ | ☑ | ☑ | Flat SHIELD 3 + INTERCEPT proof; Tier 1 + live gate + critic pass |
-| Cleric | Martyr’s Chains | ☑ | ☑ | ☑ | ☑ | Typed link/blind fields; Tier 1 + live gate + critic pass |
-| Mercenary | Pullback | ☑ | ☑ | ☑ | ☑ | Pre-Move paired movement; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Swift Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Defense Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Blade Storm | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
+| Cleric | Martyr’s Chains | ☐ | ☐ | ☐ | ☐ | Typed link/blind fields; Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Pullback | ☐ | ☐ | ☐ | ☐ | Pre-Move paired movement; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Swift Strike | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Defense Strike | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Blade Storm | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Mercenary | Caltrop Toss | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Feint | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Riposte | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Sever | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Second Wind | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Tactical Retreat | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Executioner’s Blade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Precision Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Flank & Run | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Hamstring | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Acrobatic Vault | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Mercenary | Duelist’s Challenge | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Monk | Leap | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Mercenary | Feint | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Riposte | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Sever | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Second Wind | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Tactical Retreat | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Executioner’s Blade | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Precision Strike | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Flank & Run | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Hamstring | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Acrobatic Vault | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Mercenary | Duelist’s Challenge | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Leap | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Monk | Scorching Kick | ☑ | ☑ | ☑ | ☑ | Typed conversion, AOE/live proof + critic pass |
-| Monk | Thunder Palm | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Monk | Yin-Yang Flurry | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Monk | Chakra Shift | ☑ | ☑ | ☑ | ☑ | Typed conversion, burst sim proof + critic pass |
+| Monk | Thunder Palm | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Yin-Yang Flurry | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Chakra Shift | ☐ | ☐ | ☐ | ☐ | Typed conversion, burst sim proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Monk | Phase Throw | ☑ | ☑ | ☑ | ☑ | Enemy swap on Action is legal; movement/live proof + critic pass |
-| Monk | Flying Crane Kick | ☑ | ☑ | ☑ | ☑ | Typed conversion, movement/live proof + critic pass |
+| Monk | Flying Crane Kick | ☐ | ☐ | ☐ | ☐ | Typed conversion, movement/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Monk | Spirit Palm | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Monk | Soul Punch | ☑ | ☑ | ☑ | ☑ | Typed conversion, MAG targeting + timed steal proof + critic pass |
-| Monk | Hundred Fists | ☑ | ☑ | ☑ | ☑ | Typed conversion, next-turn penalty proof + critic pass |
-| Monk | Mantra of Peace | ☑ | ☑ | ☑ | ☑ | Typed conversion, AOE/live proof + critic pass |
-| Monk | Inner Fire | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Monk | Void Step | ☑ | ☑ | ☑ | ☑ | Typed conversion, movement/live proof + critic pass |
-| Monk | Cyclone Sweep | ☑ | ☑ | ☑ | ☑ | Typed conversion, ARC footprint/live proof + critic pass |
-| Monk | Updraft | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Monk | Soul Punch | ☐ | ☐ | ☐ | ☐ | Typed conversion, MAG targeting + timed steal proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Hundred Fists | ☐ | ☐ | ☐ | ☐ | Typed conversion, next-turn penalty proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Mantra of Peace | ☐ | ☐ | ☐ | ☐ | Typed conversion, AOE/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Inner Fire | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Void Step | ☐ | ☐ | ☐ | ☐ | Typed conversion, movement/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Cyclone Sweep | ☐ | ☐ | ☐ | ☐ | Typed conversion, ARC footprint/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Monk | Updraft | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Monk | Geyser Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Slip Past | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Shadow Step | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Slip Past | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Shadow Step | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Rogue | Kidney Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Smoke Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
+| Rogue | Smoke Bomb | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Rogue | Evasive Strike | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Grappling Hook | ☑ | ☑ | ☑ | ☑ | OR choice; typed conversion and critic pass |
-| Rogue | Switcheroo | ☑ | ☑ | ☑ | ☑ | Enemy swap on Action is legal; typed conversion and critic pass |
+| Rogue | Grappling Hook | ☐ | ☐ | ☐ | ☐ | OR choice; typed conversion and critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Switcheroo | ☐ | ☐ | ☐ | ☐ | Enemy swap on Action is legal; typed conversion and critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Rogue | Shadow Swap | ☑ | ☑ | ☑ | ☑ | Reworked as Pre-Move ally SWAP with same-turn DEF layer; scenario and class gates pass |
-| Rogue | Blindside | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Throat Slit | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Amnesia Dust | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Death Mark | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Lethal Flourish | ☑ | ☑ | ☑ | ☑ | Typed conversion, Tier 1 + live gate + critic pass |
-| Rogue | Kidnap | ☑ | ☑ | ☑ | ☑ | Enemy swap + push on Action; typed conversion and critic pass |
-| Rogue | Shuriken Volley | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
-| Rogue | Poison Flask | ☑ | ☑ | ☑ | ☑ | Typed conversion, shaped/live proof + critic pass |
-| Beast Rider | Reposition | ☑ | ☑ | ☑ | ☑ | Ally-step destination; typed conversion |
-| Beast Rider | Pounce | ☑ | ☑ | ☑ | ☑ | Typed conversion and movement proof |
-| Beast Rider | Feral Drag | ☑ | ☑ | ☑ | ☑ | Enemy drag on Action is legal; typed conversion |
-| Beast Rider | Maul | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Rogue | Blindside | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Throat Slit | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Amnesia Dust | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Death Mark | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Lethal Flourish | ☐ | ☐ | ☐ | ☐ | Typed conversion, Tier 1 + live gate + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Kidnap | ☐ | ☐ | ☐ | ☐ | Enemy swap + push on Action; typed conversion and critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Shuriken Volley | ☐ | ☐ | ☐ | ☐ | Typed conversion, shaped/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Rogue | Poison Flask | ☐ | ☐ | ☐ | ☐ | Typed conversion, shaped/live proof + critic pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Reposition | ☐ | ☐ | ☐ | ☐ | Ally-step destination; typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Pounce | ☐ | ☐ | ☐ | ☐ | Typed conversion and movement proof **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Feral Drag | ☐ | ☐ | ☐ | ☐ | Enemy drag on Action is legal; typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Maul | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Beast Rider | Bestial Roar | ☑ | ☑ | ☑ | ☑ | Typed conversion and cone proof |
-| Beast Rider | Raking Claws | ☑ | ☑ | ☑ | ☑ | Typed conversion and ARC proof |
+| Beast Rider | Raking Claws | ☐ | ☐ | ☐ | ☐ | Typed conversion and ARC proof **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Beast Rider | Thrash | ☑ | ☑ | ☑ | ☑ | Typed conversion |
-| Beast Rider | Rest and Recover | ☑ | ☑ | ☑ | ☑ | Spend remaining MP; typed conversion |
-| Beast Rider | Intimidate | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Rest and Recover | ☐ | ☐ | ☐ | ☐ | Spend remaining MP; typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Intimidate | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Beast Rider | Fetch / Snatch | ☑ | ☑ | ☑ | ☑ | Condition: CON ≤ STR; typed conversion |
-| Beast Rider | Savage Bite | ☑ | ☑ | ☑ | ☑ | Typed conversion |
-| Beast Rider | Run Down | ☑ | ☑ | ☑ | ☑ | Typed conversion and movement proof |
-| Beast Rider | Defensive Posture | ☑ | ☑ | ☑ | ☑ | Typed conversion |
-| Beast Rider | Airlift | ☑ | ☑ | ☑ | ☑ | Typed conversion |
+| Beast Rider | Savage Bite | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Run Down | ☐ | ☐ | ☐ | ☐ | Typed conversion and movement proof **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Defensive Posture | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Beast Rider | Airlift | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Beast Rider | Tail Swipe | ☑ | ☑ | ☑ | ☑ | Typed conversion and collision proof |
-| Beast Rider | Gore | ☑ | ☑ | ☑ | ☑ | Typed conversion |
-| Engineer | Recall | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Dismantle | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Sludge Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Construct Turret | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Frag Bomb | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Magnetic Mine | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Tesla Barricade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Flak Cannon | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Wrench Smack | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | EMP Grenade | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Rocket Launcher | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Scrap Shield | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Manual Detonation | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Overdrive Injection | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Engineer | Barbed Wire | ☑ | ☑ | ☑ | ☑ | Typed conversion; conversion contract and Tier 1/2 gates pass |
-| Shaman | Usher | ☑ | ☑ | ☑ | ☑ | Ally-step destination |
-| Shaman | Curse of Weakness | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Healing Totem | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Flame Totem | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Earthbind Totem | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Bloodlust | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Hex | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Voodoo Link | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Terrify | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Miasma | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Bone Spear | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Ancestral Spirit | ☑ | ☑ | ☑ | ☑ | Typed corpse-spawn conversion; scenario and class gates pass |
-| Shaman | Totem Guard | ☑ | ☑ | ☑ | ☑ | Typed totem guard conversion; scenario and class gates pass |
-| Shaman | Sympathetic Bond | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Soul Siphon | ☑ | ☑ | ☑ | ☑ |  |
-| Shaman | Pain Spike | ☑ | ☑ | ☑ | ☑ |  |
+| Beast Rider | Gore | ☐ | ☐ | ☐ | ☐ | Typed conversion **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Recall | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Dismantle | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Sludge Bomb | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Construct Turret | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Frag Bomb | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Magnetic Mine | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Tesla Barricade | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Flak Cannon | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Wrench Smack | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | EMP Grenade | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Rocket Launcher | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Scrap Shield | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Manual Detonation | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Overdrive Injection | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Engineer | Barbed Wire | ☐ | ☐ | ☐ | ☐ | Typed conversion; conversion contract and Tier 1/2 gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Usher | ☐ | ☐ | ☐ | ☐ | Ally-step destination **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Curse of Weakness | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Healing Totem | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Flame Totem | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Earthbind Totem | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Bloodlust | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Hex | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Voodoo Link | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Terrify | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Miasma | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Bone Spear | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Ancestral Spirit | ☐ | ☐ | ☐ | ☐ | Typed corpse-spawn conversion; scenario and class gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Totem Guard | ☐ | ☐ | ☐ | ☐ | Typed totem guard conversion; scenario and class gates pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Sympathetic Bond | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Soul Siphon | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Shaman | Pain Spike | ☐ | ☐ | ☐ | ☐ |  **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 
-**Matrix completion rule:** check a skill’s four columns only after the skill-level conversion contract, class gate/live proof, Bible audit, and independent quality re-audit are all recorded. The former Action ally-relocate rows are now legal reworked forms and are included in the checked set.
+**Matrix completion rule (2026-08-22):** Check all four columns only after shape gate passes for that skill (**zero** active Effect Knobs unless matrix explicitly allows ER-1 **New field** only). Rows marked **UNCHECKED** had false PASS from ownership-only QA. Re-check after real module/layer refactor.
 
 ### ER-2 — class QA command index (secondary)
 
@@ -272,19 +274,19 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 2. Bruiser
 
-- [x] `bruiser_push_through`
-- [x] `bruiser_charge_strike`
+- [ ] `bruiser_push_through` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_charge_strike` — **UNCHECKED:** Effect Knobs active.
 - [x] `bruiser_concussion_blow`
 - [x] `bruiser_cleave`
-- [x] `bruiser_suplex`
-- [x] `bruiser_adrenaline_surge`
+- [ ] `bruiser_suplex` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_adrenaline_surge` — **UNCHECKED:** Effect Knobs active.
 - [x] `bruiser_earthshatter`
-- [x] `bruiser_frenzy`
-- [x] `bruiser_guttural_roar`
-- [x] `bruiser_headbutt`
-- [x] `bruiser_blood_boil`
-- [x] `bruiser_violent_collision`
-- [x] `bruiser_crimson_whirlwind`
+- [ ] `bruiser_frenzy` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_guttural_roar` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_headbutt` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_blood_boil` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_violent_collision` — **UNCHECKED:** Effect Knobs active.
+- [ ] `bruiser_crimson_whirlwind` — **UNCHECKED:** Effect Knobs active.
 - [x] `bruiser_belly_flop`
 - [x] `bruiser_breaching_dash`
 - [x] `reactive_adrenaline`
@@ -294,62 +296,62 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 3. Lancer
 
-- [x] `lancer_push`
-- [x] `lancer_piercing_charge` / Polearm range-band rule
-- [x] `lancer_sweeping_halberd`
-- [x] `lancer_vaulting_leap`
-- [x] `lancer_run_down`
-- [x] `lancer_rallying_cry` status timing row
+- [ ] `lancer_push` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_piercing_charge` / Polearm range-band rule — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_sweeping_halberd` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_vaulting_leap` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_run_down` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_rallying_cry` status timing row — **UNCHECKED:** Effect Knobs active.
 - [x] `lancer_flanking_maneuver` / Wraparound
-- [x] `lancer_brace`
-- [x] `lancer_harpoon_toss`
-- [x] `lancer_pole_vault`
-- [x] `lancer_line_breaker`
-- [x] `lancer_spear_wall`
+- [ ] `lancer_brace` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_harpoon_toss` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_pole_vault` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_line_breaker` — **UNCHECKED:** Effect Knobs active.
+- [ ] `lancer_spear_wall` — **UNCHECKED:** Effect Knobs active.
 - [x] `lancer_meteor_drop`
 - [x] Lancer class gate: `run_lancer_qa_gate.ps1` — PASS.
 - [x] Lancer live gate: `run_lancer_live_qa.ps1` — PASS.
-- [x] `lancer_glorious_charge` DASH + enemy Action rework scenario and conversion contract — PASS.
+- [ ] `lancer_glorious_charge` DASH + enemy Action rework scenario and conversion contract — PASS. — **UNCHECKED:** Effect Knobs active.
 
 #### 4. Archer
 
-- [x] `archer_sidestep`
-- [x] `archer_volley`
+- [ ] `archer_sidestep` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_volley` — **UNCHECKED:** Effect Knobs active.
 - [x] `archer_power_shot`
-- [x] `archer_pinning_arrow`
-- [x] `archer_piercing_shot`
-- [x] `archer_toxic_spore_arrow`
-- [x] `archer_grapple_arrow`
-- [x] `archer_explosive_arrow`
-- [x] `archer_hunters_mark`
-- [x] `archer_repelling_shot`
-- [x] `archer_bear_trap`
-- [x] `archer_caltrop_trap`
-- [x] `archer_suppressing_fire`
+- [ ] `archer_pinning_arrow` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_piercing_shot` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_toxic_spore_arrow` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_grapple_arrow` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_explosive_arrow` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_hunters_mark` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_repelling_shot` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_bear_trap` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_caltrop_trap` — **UNCHECKED:** Effect Knobs active.
+- [ ] `archer_suppressing_fire` — **UNCHECKED:** Effect Knobs active.
 - [x] `archer_parting_shot`
-- [x] `archer_scouts_eye`
+- [ ] `archer_scouts_eye` — **UNCHECKED:** Effect Knobs active.
 - [x] Archer class gate: `run_archer_qa_gate.ps1` — PASS.
 - [x] Archer live gate: `run_archer_live_qa.ps1` — PASS.
 - [x] Archer direct Extra Rules conversion contract — PASS.
 
 #### 5. Mercenary
 
-- [x] `mercenary_pullback`
-- [x] `mercenary_swift_strike`
-- [x] `mercenary_defense_strike`
-- [x] `mercenary_blade_storm`
+- [ ] `mercenary_pullback` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_swift_strike` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_defense_strike` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_blade_storm` — **UNCHECKED:** Effect Knobs active.
 - [x] `mercenary_caltrop_toss`
-- [x] `mercenary_feint`
-- [x] `mercenary_riposte_strike`
-- [x] `mercenary_sever`
-- [x] `mercenary_second_wind`
-- [x] `mercenary_tactical_retreat`
-- [x] `mercenary_executioners_blade`
-- [x] `mercenary_precision_strike`
-- [x] `mercenary_flank_and_run`
-- [x] `mercenary_hamstring`
-- [x] `mercenary_acrobatic_vault`
-- [x] `mercenary_duelists_challenge`
+- [ ] `mercenary_feint` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_riposte_strike` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_sever` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_second_wind` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_tactical_retreat` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_executioners_blade` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_precision_strike` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_flank_and_run` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_hamstring` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_acrobatic_vault` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mercenary_duelists_challenge` — **UNCHECKED:** Effect Knobs active.
 - [x] Mercenary class gate: `run_mercenary_qa_gate.ps1` — PASS.
 - [x] Mercenary live gate: `run_mercenary_live_qa.ps1` — PASS.
 - [x] Mercenary active upgrade proof and typed contracts — PASS.
@@ -357,125 +359,125 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 6. Monk
 
-- [x] `monk_leap`
+- [ ] `monk_leap` — **UNCHECKED:** Effect Knobs active.
 - [x] `monk_scorching_kick`
-- [x] `monk_thunder_palm`
-- [x] `monk_yin_yang_flurry`
-- [x] `monk_chakra_shift`
+- [ ] `monk_thunder_palm` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_yin_yang_flurry` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_chakra_shift` — **UNCHECKED:** Effect Knobs active.
 - [x] `monk_phase_throw`
-- [x] `monk_flying_crane_kick`
+- [ ] `monk_flying_crane_kick` — **UNCHECKED:** Effect Knobs active.
 - [x] `monk_spirit_palm`
-- [x] `monk_soul_punch`
-- [x] `monk_hundred_fists`
-- [x] `monk_mantra_of_peace`
-- [x] `monk_inner_fire`
-- [x] `monk_void_step`
-- [x] `monk_cyclone_sweep`
-- [x] `monk_updraft`
+- [ ] `monk_soul_punch` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_hundred_fists` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_mantra_of_peace` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_inner_fire` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_void_step` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_cyclone_sweep` — **UNCHECKED:** Effect Knobs active.
+- [ ] `monk_updraft` — **UNCHECKED:** Effect Knobs active.
 - [x] `monk_geyser_strike`
 - [x] Monk class gate: `run_monk_qa_gate.ps1` — PASS, including typed conversion/schema contracts.
 - [x] Monk live gate: `run_monk_live_qa.ps1` — PASS; harsh critic PASS (86/100).
 
 #### 7. Rogue
 
-- [x] `rogue_slip_past`
-- [x] `rogue_shadow_step`
+- [ ] `rogue_slip_past` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_shadow_step` — **UNCHECKED:** Effect Knobs active.
 - [x] `rogue_kidney_strike`
-- [x] `rogue_smoke_bomb`
+- [ ] `rogue_smoke_bomb` — **UNCHECKED:** Effect Knobs active.
 - [x] `rogue_evasive_strike`
-- [x] `rogue_grappling_hook`
-- [x] `rogue_switcheroo`
-- [x] `rogue_blindside`
-- [x] `rogue_throat_slit`
-- [x] `rogue_amnesia_dust`
-- [x] `rogue_death_mark`
-- [x] `rogue_lethal_flourish`
-- [x] `rogue_kidnap`
-- [x] `rogue_shuriken_volley`
-- [x] `rogue_poison_flask`
+- [ ] `rogue_grappling_hook` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_switcheroo` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_blindside` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_throat_slit` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_amnesia_dust` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_death_mark` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_lethal_flourish` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_kidnap` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_shuriken_volley` — **UNCHECKED:** Effect Knobs active.
+- [ ] `rogue_poison_flask` — **UNCHECKED:** Effect Knobs active.
 - [x] Rogue class gate: `run_rogue_qa_gate.ps1` — PASS with conversion contracts.
 - [x] Rogue live gate: `run_rogue_live_qa.ps1` — PASS; harsh critic PASS (89/100).
 - [x] `rogue_shadow_swap` Pre-Move rework scenario and conversion contract — PASS.
 
 #### 8. Beast Rider
 
-- [x] `beast_reposition`
-- [x] `beast_pounce`
-- [x] `beast_feral_drag`
-- [x] `beast_maul`
+- [ ] `beast_reposition` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_pounce` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_feral_drag` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_maul` — **UNCHECKED:** Effect Knobs active.
 - [x] `beast_bestial_roar`
-- [x] `beast_raking_claws`
-- [x] `beast_rest_recover`
-- [x] `beast_intimidate`
+- [ ] `beast_raking_claws` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_rest_recover` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_intimidate` — **UNCHECKED:** Effect Knobs active.
 - [x] `beast_fetch`
-- [x] `beast_savage_bite`
-- [x] `beast_run_down`
+- [ ] `beast_savage_bite` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_run_down` — **UNCHECKED:** Effect Knobs active.
 - [x] `beast_thrash`
-- [x] `beast_defensive_posture`
-- [x] `beast_airlift`
+- [ ] `beast_defensive_posture` — **UNCHECKED:** Effect Knobs active.
+- [ ] `beast_airlift` — **UNCHECKED:** Effect Knobs active.
 - [x] `beast_tail_swipe`
-- [x] `beast_gore`
+- [ ] `beast_gore` — **UNCHECKED:** Effect Knobs active.
 - [x] Beast Rider class gate: `run_beast_rider_qa_gate.ps1` — PASS (32/32 matrix; Tier 1 + AOE).
 - [x] Beast Rider live gate: `run_beast_rider_live_qa.ps1` — PASS.
 
 #### 9. Cleric
 
-- [x] `cleric_guardian_step`
-- [x] `cleric_holy_light`
-- [x] `cleric_smite`
-- [x] `cleric_cleansing_aura`
-- [x] `cleric_sanctuary`
+- [ ] `cleric_guardian_step` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_holy_light` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_smite` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_cleansing_aura` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_sanctuary` — **UNCHECKED:** Effect Knobs active.
 - [x] `cleric_blinding_ray`
-- [x] `cleric_divine_hammer`
-- [x] `cleric_life_link`
+- [ ] `cleric_divine_hammer` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_life_link` — **UNCHECKED:** Effect Knobs active.
 - [x] `cleric_prayer_of_fortitude`
-- [x] `cleric_resurrection`
-- [x] `cleric_consecrate_ground`
-- [x] `cleric_holy_wrath`
-- [x] `cleric_divine_guidance`
+- [ ] `cleric_resurrection` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_consecrate_ground` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_holy_wrath` — **UNCHECKED:** Effect Knobs active.
+- [ ] `cleric_divine_guidance` — **UNCHECKED:** Effect Knobs active.
 - [x] `cleric_shield_of_faith`
-- [x] `cleric_martyrs_chains`
+- [ ] `cleric_martyrs_chains` — **UNCHECKED:** Effect Knobs active.
 - [x] Cleric class gate: `run_cleric_qa_gate.ps1`.
 - [x] Cleric live gate: `run_cleric_live_qa.ps1`.
 
 #### 10. Mage
 
-- [x] `mage_blink`
+- [ ] `mage_blink` — **UNCHECKED:** Effect Knobs active.
 - [x] `mage_fireball`
 - [x] `mage_ice_shard`
-- [x] `mage_chain_lightning`
+- [ ] `mage_chain_lightning` — **UNCHECKED:** Effect Knobs active.
 - [x] `mage_arcane_push`
-- [x] `mage_teleport`
-- [x] `mage_meteor`
-- [x] `mage_black_hole`
+- [ ] `mage_teleport` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_meteor` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_black_hole` — **UNCHECKED:** Effect Knobs active.
 - [x] `mage_time_warp`
-- [x] `mage_mana_shield`
-- [x] `mage_disintegrate`
+- [ ] `mage_mana_shield` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_disintegrate` — **UNCHECKED:** Effect Knobs active.
 - [x] `mage_gravity_well`
-- [x] `mage_elemental_surge`
-- [x] `mage_earth_spike`
-- [x] `mage_density_shift`
-- [x] `mage_arcane_barrage`
+- [ ] `mage_elemental_surge` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_earth_spike` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_density_shift` — **UNCHECKED:** Effect Knobs active.
+- [ ] `mage_arcane_barrage` — **UNCHECKED:** Effect Knobs active.
 - [x] Mage class gate: `run_mage_qa_gate.ps1`.
 - [x] Mage live gate: `run_mage_live_qa.ps1`.
 
 #### 11. Engineer — converted; gauntlet PASS (87/100)
 
-- [x] `engineer_recall`
-- [x] `engineer_dismantle`
-- [x] `engineer_sludge_bomb`
-- [x] `engineer_construct_turret`
-- [x] `engineer_frag_bomb`
-- [x] `engineer_magnetic_mine`
-- [x] `engineer_tesla_barricade`
-- [x] `engineer_flak_cannon`
-- [x] `engineer_wrench_smack`
-- [x] `engineer_emp_grenade`
-- [x] `engineer_rocket_launcher`
-- [x] `engineer_scrap_shield`
-- [x] `engineer_manual_detonation`
-- [x] `engineer_overdrive_injection`
-- [x] `engineer_barbed_wire`
+- [ ] `engineer_recall` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_dismantle` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_sludge_bomb` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_construct_turret` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_frag_bomb` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_magnetic_mine` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_tesla_barricade` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_flak_cannon` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_wrench_smack` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_emp_grenade` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_rocket_launcher` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_scrap_shield` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_manual_detonation` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_overdrive_injection` — **UNCHECKED:** Effect Knobs active.
+- [ ] `engineer_barbed_wire` — **UNCHECKED:** Effect Knobs active.
 - [x] Engineer class gate: `run_engineer_qa_gate.ps1` — PASS.
 - [x] Engineer live gate: `run_engineer_live_qa.ps1` — PASS.
 - [x] Engineer typed schema contract and Extra Rules conversion contract — PASS.
@@ -483,22 +485,22 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 
 #### 12. Shaman
 
-- [x] `shaman_usher`
-- [x] `shaman_curse_of_weakness`
-- [x] `shaman_healing_totem`
-- [x] `shaman_flame_totem`
-- [x] `shaman_earthbind_totem`
-- [x] `shaman_bloodlust`
-- [x] `shaman_hex`
-- [x] `shaman_voodoo_link`
-- [x] `shaman_terrify`
-- [x] `shaman_miasma`
-- [x] `shaman_bone_spear`
-- [x] `shaman_ancestral_spirit`
-- [x] `shaman_totem_guard`
-- [x] `shaman_sympathetic_bond`
-- [x] `shaman_soul_siphon`
-- [x] `shaman_pain_spike`
+- [ ] `shaman_usher` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_curse_of_weakness` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_healing_totem` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_flame_totem` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_earthbind_totem` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_bloodlust` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_hex` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_voodoo_link` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_terrify` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_miasma` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_bone_spear` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_ancestral_spirit` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_totem_guard` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_sympathetic_bond` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_soul_siphon` — **UNCHECKED:** Effect Knobs active.
+- [ ] `shaman_pain_spike` — **UNCHECKED:** Effect Knobs active.
 - [x] Shaman class gate: `run_shaman_qa_gate.ps1` — PASS.
 - [x] Shaman live gate: `run_shaman_live_qa.ps1` — PASS.
 - [x] Shaman conversion contracts and schema roundtrip — PASS; final gauntlet critic 87/100 — PASS.
