@@ -268,8 +268,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 		GameEnums.EffectType.DAMAGE, 2, 1, 1, GameEnums.TargetingFlags.ENEMY,
 		GameEnums.TargetShape.SINGLE, 1, GameEnums.StatType.PHYSICAL,
 	)
-	shield_slam_module.bonus_if_adjacent_at_cast = 2
-	shield_slam_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
+	shield_slam_module.layers = [
+		DataLibrary._if_already_adjacent_bonus_layer(2),
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2)),
+	]
 	var shield_slam_upgraded := DataLibrary._duplicate_modules([shield_slam_module])
 	var def_layer := AbilityLayer.new()
 	def_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION

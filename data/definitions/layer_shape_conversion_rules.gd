@@ -39,6 +39,7 @@ const LAYER_MANDATE_TYPED_PROPS: Array[String] = [
 	"root_break_on_damage",
 	"spread_status_adjacent",
 	"armor_explosion_atk",
+	"bonus_if_adjacent_at_cast",
 ]
 
 ## ER-1 allowlist: typed extras that may remain on modules after real conversion.
@@ -136,11 +137,52 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 	&"bruiser_headbutt": {},
 	&"bruiser_blood_boil": {},
 	&"knight_shield_slam": {
-		"forbidden_typed": ["def_debuff_before_damage"],
+		"forbidden_typed": ["def_debuff_before_damage", "bonus_if_adjacent_at_cast"],
 		"required_layers": [
+			{
+				"condition": "IF_ALREADY_ADJACENT",
+				"effect_type": "DAMAGE",
+				"profile": "base",
+			},
 			{
 				"condition": "AT_RESOLUTION",
 				"effect_type": "ADD_STATUS",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"archer_pinning_arrow": {
+		"forbidden_typed": ["root_break_on_damage"],
+	},
+	&"archer_toxic_spore_arrow": {
+		"forbidden_typed": ["spread_status_adjacent"],
+	},
+	&"mage_disintegrate": {
+		"forbidden_typed": ["kill_grant_ap", "frenzy_on_kill_ap"],
+		"required_layers": [
+			{
+				"condition": "ON_KILL",
+				"effect_type": "GRANT_AP",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"rogue_lethal_flourish": {
+		"forbidden_typed": ["kill_grant_ap", "frenzy_on_kill_ap"],
+		"required_layers": [
+			{
+				"condition": "ON_KILL",
+				"effect_type": "GRANT_AP",
+				"profile": "upgrade",
+			},
+		],
+	},
+	&"mercenary_executioners_blade": {
+		"forbidden_typed": ["kill_grant_ap", "frenzy_on_kill_ap"],
+		"required_layers": [
+			{
+				"condition": "ON_KILL",
+				"effect_type": "GRANT_AP",
 				"profile": "upgrade",
 			},
 		],

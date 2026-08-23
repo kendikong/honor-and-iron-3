@@ -573,6 +573,15 @@ static func _armor_explosion_layer(amount: int = 1) -> AbilityLayer:
 	return layer
 
 
+static func _if_already_adjacent_bonus_layer(bonus: int) -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.condition = GameEnums.LayerCondition.IF_ALREADY_ADJACENT
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.DAMAGE
+	layer.effect.bonus_if_adjacent_at_cast = bonus
+	return layer
+
+
 static func _keyword(
 	keyword_id: GameEnums.AbilityKeywordId,
 	amount: int = 0,

@@ -257,6 +257,14 @@ static func layer_resolves_before_primary(layer: AbilityLayer) -> bool:
 	return false
 
 
+static func layer_merges_adjacent_bonus_into_primary(layer: AbilityLayer) -> bool:
+	if layer == null or layer.effect == null:
+		return false
+	if layer.condition != GameEnums.LayerCondition.IF_ALREADY_ADJACENT:
+		return false
+	return layer.effect.bonus_if_adjacent_at_cast > 0
+
+
 static func _module_has_before_primary_status_layer(module: AbilityModule) -> bool:
 	for layer: AbilityLayer in module.layers:
 		if layer_resolves_before_primary(layer):
@@ -341,6 +349,13 @@ static func _first_status_layer(module: AbilityModule) -> AbilityLayer:
 	return null
 
 
+static func _module_has_adjacent_bonus_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer_merges_adjacent_bonus_into_primary(layer):
+			return true
+	return false
+
+
 static func migrate_kill_and_landing_riders_to_layers(module: AbilityModule) -> void:
 	if module == null:
 		return
@@ -393,6 +408,14 @@ static func migrate_kill_and_landing_riders_to_layers(module: AbilityModule) -> 
 		explosion_layer.effect.modifiers["armor_explosion_atk"] = module.armor_explosion_atk
 		module.layers.append(explosion_layer)
 		module.armor_explosion_atk = 0
+	if module.bonus_if_adjacent_at_cast > 0 and not _module_has_adjacent_bonus_layer(module):
+		var adj_layer := AbilityLayer.new()
+		adj_layer.condition = GameEnums.LayerCondition.IF_ALREADY_ADJACENT
+		adj_layer.effect = EffectData.new()
+		adj_layer.effect.type = GameEnums.EffectType.DAMAGE
+		adj_layer.effect.bonus_if_adjacent_at_cast = module.bonus_if_adjacent_at_cast
+		module.layers.append(adj_layer)
+		module.bonus_if_adjacent_at_cast = 0
 	module.invalidate_runtime_modifiers_cache()
 
 

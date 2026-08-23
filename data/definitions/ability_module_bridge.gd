@@ -418,6 +418,9 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 				_merge_runtime_modifiers(during_eff, layer.compile_runtime_modifiers())
 				post_primary.append(during_eff)
 			continue
+		if _ModuleAuthoringRules.layer_merges_adjacent_bonus_into_primary(layer):
+			primary.bonus_if_adjacent_at_cast = layer.effect.bonus_if_adjacent_at_cast
+			continue
 		var layer_eff: EffectData = _duplicate_effect(layer.effect)
 		_merge_runtime_modifiers(layer_eff, module.compile_runtime_modifiers())
 		_merge_runtime_modifiers(layer_eff, layer.compile_runtime_modifiers())

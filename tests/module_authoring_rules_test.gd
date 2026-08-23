@@ -18,6 +18,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_l_shape_move_is_path_motion(failures)
 	_test_before_damage_layers_compile_first(failures)
 	_test_migrate_kill_and_landing_riders(failures)
+	_test_adjacent_bonus_layer_merges_into_primary(failures)
 	_test_pre_move_excludes_phase_options(failures)
 	_test_pre_move_forces_on_action_phase(failures)
 	_test_self_status_clears_range(failures)
@@ -152,6 +153,20 @@ static func _test_migrate_kill_and_landing_riders(failures: Array[String]) -> vo
 			has_on_land = true
 	if not has_on_kill or not has_on_land:
 		failures.append("migration should author ON_KILL GRANT_AP and ON_LAND PUSH layers")
+
+
+static func _test_adjacent_bonus_layer_merges_into_primary(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	module.amount = 2
+	module.layers = [DataLibrary._if_already_adjacent_bonus_layer(2)]
+	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	if compiled.is_empty():
+		failures.append("adjacent bonus layer compile produced no effects")
+	elif compiled[0].bonus_if_adjacent_at_cast != 2:
+		failures.append("IF_ALREADY_ADJACENT layer must merge bonus_if_adjacent_at_cast onto DAMAGE primary")
+	elif compiled.size() != 1:
+		failures.append("IF_ALREADY_ADJACENT bonus layer must not emit a separate effect row")
 
 
 static func _test_pre_move_excludes_phase_options(failures: Array[String]) -> void:
