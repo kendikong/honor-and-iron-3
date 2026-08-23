@@ -2,6 +2,11 @@ class_name ClassLibraryEditorScreen
 extends Control
 
 const PREVIEW_VIEWPORT_SIZE: Vector2i = Vector2i(1280, 720)
+const QA_MARKS_PATH := "user://class_editor_qa_marks.cfg"
+const _QA_MONTHS: PackedStringArray = [
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+]
 const CANONICAL_ABILITY_TAGS: Array[StringName] = [
 	AbilityModuleBridge.TAG_ATTACK,
 	AbilityModuleBridge.TAG_MOVEMENT,
@@ -86,6 +91,7 @@ var _column_panels: Dictionary = {
 	"impl": [],
 }
 var _column_toggle_btns: Dictionary = {}
+var _qa_marks: Dictionary = {}
 
 
 func _ready() -> void:
@@ -99,6 +105,7 @@ func _ready() -> void:
 	if MenuNavigation:
 		MenuNavigation.register(self, _on_back_pressed, _preview_allows_back)
 	_load_overrides()
+	_load_qa_marks()
 	_build_layout()
 	DataLibrary.get_all_player_units()
 	_factory_abilities = ClassLibrarySchema.snapshot_factory_abilities()
@@ -414,6 +421,80 @@ func _load_layout_config() -> void:
 		_column_visible["data"] = bool(cfg.get_value("columns", "data", true))
 		_column_visible["impl"] = bool(cfg.get_value("columns", "impl", true))
 	_apply_column_visibility()
+
+
+func _load_qa_marks() -> void:
+	_qa_marks.clear()
+	var cfg := ConfigFile.new()
+	if cfg.load(QA_MARKS_PATH) != OK:
+		return
+	if not cfg.has_section("marks"):
+		return
+	for mark_key: String in cfg.get_section_keys("marks"):
+		_qa_marks[mark_key] = String(cfg.get_value("marks", mark_key, ""))
+
+
+func _save_qa_marks() -> void:
+	var cfg := ConfigFile.new()
+	for mark_key: Variant in _qa_marks.keys():
+		var iso: String = String(_qa_marks[mark_key])
+		if iso.is_empty():
+			continue
+		cfg.set_value("marks", String(mark_key), iso)
+	cfg.save(QA_MARKS_PATH)
+
+
+func _qa_local_date_iso() -> String:
+	var d: Dictionary = Time.get_datetime_dict_from_system()
+	return "%04d-%02d-%02d" % [int(d.year), int(d.month), int(d.day)]
+
+
+func _qa_pretty_date(iso: String) -> String:
+	var parts: PackedStringArray = iso.split("-")
+	if parts.size() != 3:
+		return iso
+	var month: int = int(parts[1])
+	if month < 1 or month > _QA_MONTHS.size():
+		return iso
+	return "%s %d, %d" % [_QA_MONTHS[month - 1], int(parts[2]), int(parts[0])]
+
+
+func _qa_mark_tooltip(key: String) -> String:
+	var iso: String = String(_qa_marks.get(key, ""))
+	if iso.is_empty():
+		return "Mark as pass after testing"
+	return "Passed %s" % _qa_pretty_date(iso)
+
+
+func _set_qa_mark(key: String, passed: bool) -> void:
+	if key.is_empty():
+		return
+	if passed:
+		_qa_marks[key] = _qa_local_date_iso()
+	else:
+		_qa_marks.erase(key)
+	_save_qa_marks()
+
+
+func _attach_qa_pass_mark(head: HBoxContainer, key: String) -> void:
+	if key.is_empty():
+		return
+	var mark := CheckBox.new()
+	mark.text = ""
+	mark.focus_mode = Control.FOCUS_NONE
+	mark.mouse_filter = Control.MOUSE_FILTER_STOP
+	mark.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	var box_px: int = ClassLibraryTheme.px(18)
+	mark.custom_minimum_size = Vector2(box_px, box_px)
+	mark.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	mark.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mark.button_pressed = not String(_qa_marks.get(key, "")).is_empty()
+	mark.tooltip_text = _qa_mark_tooltip(key)
+	mark.toggled.connect(func(on: bool) -> void:
+		_set_qa_mark(key, on)
+		mark.tooltip_text = _qa_mark_tooltip(key)
+	)
+	head.add_child(mark)
 
 
 func _build_preview_panel(parent: HSplitContainer) -> void:
@@ -956,7 +1037,9 @@ func _add_selectable_preview_card(
 	card.add_child(box)
 	var head := HBoxContainer.new()
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
 	box.add_child(head)
+	_attach_qa_pass_mark(head, key)
 	var name_lbl := Label.new()
 	name_lbl.text = title_text
 	name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
