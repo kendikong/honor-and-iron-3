@@ -29,6 +29,7 @@ static func run_all(failures: Array[String]) -> void:
 	_test_typed_extra_label_mapping(failures)
 	_test_violent_collision_recast_visibility(failures)
 	_test_during_bulldoze_excludes_collision_modifiers(failures)
+	_test_during_bulldoze_preserves_emit_flag(failures)
 	_test_migrate_legacy_layer_bundles(failures)
 
 
@@ -163,6 +164,28 @@ static func _test_migrate_kill_and_landing_riders(failures: Array[String]) -> vo
 			has_buff_layer = true
 	if not has_buff_layer:
 		failures.append("migration should author buff_on_push layer")
+
+
+static func _test_during_bulldoze_preserves_emit_flag(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DASH
+	module.amount = 3
+	module.layers = [DataLibrary._during_bulldoze(1, 1, false)]
+	var compiled: Array[EffectData] = AbilityModuleBridge.compile_module_to_effects(module)
+	var dash_rows: int = 0
+	var bulldoze_rows: int = 0
+	for eff: EffectData in compiled:
+		if eff.type == GameEnums.EffectType.DASH:
+			dash_rows += 1
+			if int(eff.modifiers.get("bulldoze", 0)) <= 0:
+				failures.append("DASH primary must carry bulldoze modifiers when during_emit_effect is false")
+		elif eff.type == GameEnums.EffectType.BULLDOZE:
+			bulldoze_rows += 1
+	if dash_rows != 1 or bulldoze_rows != 0:
+		failures.append(
+			"during_emit_effect=false must not emit a standalone BULLDOZE row (got dash=%d bulldoze=%d)"
+			% [dash_rows, bulldoze_rows]
+		)
 
 
 static func _test_adjacent_bonus_layer_merges_into_primary(failures: Array[String]) -> void:

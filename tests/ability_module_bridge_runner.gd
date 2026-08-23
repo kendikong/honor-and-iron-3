@@ -181,9 +181,9 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("violent_collision module[1] should be DASH (gated extension)")
 	if vc.modules[1].gate != GameEnums.ModuleGate.IF_COLLIDED:
 		failures.append("violent_collision module[1] gate not IF_COLLIDED")
-	if not vc.modules[0].runtime_has("bulldoze"):
+	if not AbilityModuleBridge.module_has_modifier(vc.modules[0], &"bulldoze"):
 		failures.append("violent_collision module[0] lost bulldoze modifier")
-	if not vc.modules[1].runtime_has("bulldoze"):
+	if not AbilityModuleBridge.module_has_modifier(vc.modules[1], &"bulldoze"):
 		failures.append("violent_collision module[1] lost bulldoze modifier")
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:
@@ -223,12 +223,17 @@ static func _check_trampling_advance_modules(failures: Array[String]) -> void:
 	var motion: AbilityModule = trample.modules[0]
 	if motion.primary_type != GameEnums.EffectType.MOVE:
 		failures.append("trampling_advance module[0] should be MOVE primary")
-	var has_trample_kw: bool = false
-	for keyword: AbilityKeyword in motion.keywords:
-		if keyword != null and keyword.keyword_id == GameEnums.AbilityKeywordId.TRAMPLE:
-			has_trample_kw = true
-	if not has_trample_kw:
-		failures.append("trampling_advance missing TRAMPLE keyword on motion module")
+	var has_trample_during: bool = false
+	for layer: AbilityLayer in motion.layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.DURING
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.TRAMPLE
+		):
+			has_trample_during = true
+	if not has_trample_during:
+		failures.append("trampling_advance missing TRAMPLE DURING layer on motion module")
 	var has_push_layer: bool = false
 	for layer: AbilityLayer in motion.layers:
 		if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.PUSH:

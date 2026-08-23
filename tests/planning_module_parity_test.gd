@@ -163,11 +163,7 @@ static func _ability(id: StringName, targeting_flags: int) -> AbilityData:
 	ability.primary_resource = GameEnums.CostResource.AP
 	ability.primary_value = 1
 	ability.targeting_flags = targeting_flags
-	ability.targeting_mode = (
-		GameEnums.TargetingMode.DASH_LINE
-		if targeting_flags == GameEnums.TargetingFlags.DASH_LINE
-		else GameEnums.TargetingMode.TILE
-	)
+	ability.targeting_mode = GameEnums.TargetingMode.TILE
 	return ability
 
 

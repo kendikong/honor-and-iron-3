@@ -9,7 +9,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Bible: Breaching Dash - DASH 3 | destroy destructible cover on path.
 ## [+] next attack this turn gains PIERCE.
-## Globals: EffectType.DASH + DESTROY_OBSTACLE; DASH_LINE targeting.
+## Globals: EffectType.DASH + DESTROY_OBSTACLE; TILE targeting (DASH primary = straight line).
 
 
 static func run_all(failures: Array[String]) -> void:

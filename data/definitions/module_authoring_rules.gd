@@ -441,10 +441,14 @@ static func migrate_legacy_layer_bundles(module: AbilityModule) -> void:
 			continue
 		match layer.effect.type:
 			GameEnums.EffectType.BULLDOZE:
+				var preserve_emit: bool = layer.during_emit_effect
 				apply_layer_during_preset(layer, &"bulldoze")
+				layer.during_emit_effect = preserve_emit
 				layer.effect.amount = maxi(1, layer.effect.amount)
 			GameEnums.EffectType.TRAMPLE:
+				var preserve_trample_emit: bool = layer.during_emit_effect
 				apply_layer_during_preset(layer, &"trample")
+				layer.during_emit_effect = preserve_trample_emit
 				layer.effect.amount = maxi(1, layer.effect.amount)
 			GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION:
 				module.layers[index] = new_on_collision_layer(&"stagger")

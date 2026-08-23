@@ -3542,6 +3542,8 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
+		if _dash_tile_endpoint_one_click_commit(actor, ability, cell):
+			return true
 		if (
 			_drag_route_commits_active()
 			and _drag_unit_id == actor.id

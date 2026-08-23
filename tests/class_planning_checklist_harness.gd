@@ -68,7 +68,7 @@ static func _actor_with_ability(
 	if ability_id != &"":
 		for ab: AbilityData in def.abilities:
 			if ab != null and ab.id == ability_id:
-				abilities.append(ab)
+				abilities.append(ab.duplicate(true) as AbilityData)
 				break
 	else:
 		for ab: AbilityData in def.abilities:

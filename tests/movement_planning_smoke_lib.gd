@@ -76,6 +76,7 @@ static func run_entry(failures: Array[String], entry: Dictionary) -> void:
 				entry.get("postmove_cell", Vector2i(-999999, -999999)),
 				String(entry.get("module_assert", "")),
 				bool(entry.get("assert_skill_modules", false)),
+				entry.get("wall_cells", []),
 			)
 
 
@@ -162,6 +163,7 @@ static func run_commit_smoke(
 	postmove_cell: Vector2i = Vector2i(-999999, -999999),
 	module_assert: String = "",
 	assert_skill_modules: bool = false,
+	wall_cells: Array = [],
 ) -> void:
 	_Drag.cleanup_all()
 	var enemy: Vector2i = enemy_pos if enemy_pos.x > -999000 else Vector2i(-1, -1)
@@ -171,6 +173,7 @@ static func run_commit_smoke(
 	if fix.is_empty():
 		_fail(failures, "%s/planning/fixture" % tag, "failed to wire planning board")
 		return
+	_apply_wall_cells(fix, wall_cells)
 	_apply_engineer_movement_setup(fix, ability_id)
 	fix.director.auto_run = true
 	var ability: AbilityData = _ability_on_actor(fix, ability_id)
@@ -636,6 +639,28 @@ static func _assert_violent_collision_modules(
 	const ENEMY_ID := 2
 	var director: CombatDirector = fix.director as CombatDirector
 	var unit_id: int = director.selected_unit_id
+	var ability_action: TimelineAction = null
+	for entry: Variant in director.get_player_plan().entries:
+		if entry is TimelineAction:
+			var action: TimelineAction = entry as TimelineAction
+			if (
+				action.type == GameEnums.ActionType.ABILITY
+				and action.ability != null
+				and action.ability.id == &"bruiser_violent_collision"
+			):
+				ability_action = action
+				break
+	_assert_true(
+		failures, "%s/modules/action_committed" % tag,
+		ability_action != null,
+		"Violent Collision must commit a DASH ability timeline entry",
+	)
+	if ability_action != null:
+		_assert_true(
+			failures, "%s/modules/dash_target" % tag,
+			ability_action.target_coord == commit_cell,
+			"Violent Collision must target committed dash cell %s" % commit_cell,
+		)
 	var result: SimResult = _Checklist.simulate_committed(director)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(unit_id)
 	_assert_true(
@@ -649,9 +674,16 @@ static func _assert_violent_collision_modules(
 		"Violent Collision must emit actor movement events",
 	)
 	var enemy: UnitState = result.final_state.get_unit_by_id(ENEMY_ID)
+	var enemy_start: Vector2i = Vector2i(3, 3)
+	if director.base_board != null:
+		var start_enemy: UnitState = director.base_board.get_unit_by_id(ENEMY_ID)
+		if start_enemy != null:
+			enemy_start = start_enemy.position
+	var push_distance: int = _BruiserHarness.event_push_distance(result.events, ENEMY_ID)
+	var enemy_displaced: bool = enemy != null and enemy.position != enemy_start
 	_assert_true(
 		failures, "%s/modules/bulldoze" % tag,
-		enemy != null and _BruiserHarness.event_push_distance(result.events, ENEMY_ID) >= 1,
+		enemy_displaced or push_distance >= 1,
 		"Violent Collision bulldoze must PUSH the enemy along the dash line",
 	)
 

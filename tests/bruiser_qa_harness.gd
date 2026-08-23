@@ -164,7 +164,7 @@ static func factory_ability(ability_id: StringName) -> AbilityData:
 		return null
 	for ab: AbilityData in def.abilities:
 		if ab != null and ab.id == ability_id:
-			return ab
+			return ab.duplicate(true) as AbilityData
 	return null
 
 

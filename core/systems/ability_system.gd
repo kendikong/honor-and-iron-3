@@ -6691,6 +6691,7 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 				String(push.get("source_label", "")),
 				int(push.get("bulldoze", 0)),
 				push.get("caster_collision_immune", false),
+				int(push.get("trample_push", 0)),
 			)
 		else:
 			PhysicsSystem.push(board, target, push.dir, push.amount, events, actor, ability_id)

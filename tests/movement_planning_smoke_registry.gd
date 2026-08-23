@@ -67,11 +67,10 @@ static func _entries() -> Dictionary:
 			"factory_id": &"bruiser_violent_collision",
 			"tag": "violent_collision",
 			"mode": "click",
-			"actor_pos": Vector2i(1, 3),
+			"actor_pos": Vector2i(2, 3),
 			"enemy_pos": Vector2i(3, 3),
 			"commit_cell": Vector2i(4, 3),
 			"verify_no_jump": false,
-			"premove_cell": Vector2i(2, 3),
 			"module_assert": "violent_collision",
 		},
 		&"bruiser_belly_flop": {
