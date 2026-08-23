@@ -17,18 +17,15 @@ Use exactly these three sections (in order):
 - What is **in scope** vs **out of scope** for this turn
 
 ### 2. Planned approach
-- **Global system used:** (canonical owner — e.g. commit slots, `AbilitySystem`, `Simulator`; see `global-systems-first.mdc`)
+- **How this protects SSOT:** Plain-language explanation of how the plan respects single source of truth — one canonical path, no parallel preview/commit/hover/sim owner; what obsolete path gets deleted in the same change. **Not** a file name alone.
 - **Heuristics added:** `none` or list each (**only** after walking the 6-row audit in `global-systems-first.mdc`)
 - **Why (not) heuristic:** one brief sentence — why `none` is justified, or why each named item is heuristic
 - Concrete steps you will take (files, systems, tests)
 - What you will **not** do (important when past mistakes are relevant)
-- **Any edit type** (bug fix, feature, refactor, perf, rules): state canonical owner; defer/throttle/pending staging is forbidden unless ⚠ exception approved — not only lag tasks
+- **Any edit type** (bug fix, feature, refactor, perf, rules): defer/throttle/pending staging is forbidden unless ⚠ exception approved — not only lag tasks
 - Risks or assumptions, if any
 - If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
-- **Non-heuristic mandate (every file-changing plan — not only perf):**
-  - **Canonical owner:** Name the one system/API that owns this behavior end-to-end (see `global-systems-first.mdc` table).
-  - **Will not add this turn:** parallel preview/commit/sim path; UI-only flag/meta sim ignores; `if ability.id` / `if node ==` / scene/tab branch when data or shared pipeline could express it; duplicate logic without deleting the obsolete path in the **same** change — unless ⚠ exception block approved.
-  - **Heuristics audit:** `Heuristics added` / `Why (not) heuristic` must reflect a real walk of the 6-row table — not a default `none`.
+- **Will not add this turn:** parallel preview/commit/sim path; UI-only flag/meta sim ignores; `if ability.id` / `if node ==` / scene/tab branch when data or shared pipeline could express it; duplicate logic without deleting the obsolete path in the **same** change — unless ⚠ exception block approved.
 - **Lag / feel / parity** (when slowness or “feels different” — e.g. premove vs postmove): before any perf tweak, state fast vs slow scenario and whether they use the **same** owner API; unify first. Perf-specific bans: `.cursor/rules/minimal-performance-impact.mdc` § Forbidden on planning / combat.
 
 ### 3. Permission
@@ -40,11 +37,11 @@ Wait for the user's reply before making changes or running implementation work.
 
 Responses that **completed** file changes must **repeat** all three lines (not only in the gate):
 
-- **Global system used:** …
+- **How this protects SSOT:** …
 - **Heuristics added:** `none` or list each
 - **Why (not) heuristic:** …
 
-Place them in **## Changelog → ### Global systems** (see `global-systems-first.mdc`). **`none` without a substantive Why line is invalid.**
+Place them in **## Changelog → ### Single source of truth** (see `global-systems-first.mdc`). **`none` without a substantive Why line is invalid.** **SSOT line that only names a file is invalid.**
 
 ## When the gate is required
 
@@ -71,3 +68,4 @@ Place them in **## Changelog → ### Global systems** (see `global-systems-first
 - Bundling surprise scope (extra refactors, commits, new files) without listing them in the plan
 - Any add/edit/refactor plan that skips **Will not add** parallel paths or ships `Heuristics added: none` without walking the 6-row audit
 - Refactor/cleanup that adds a helper or file but leaves the old path live “for safety” without owner-approved deferral
+- **How this protects SSOT** that only names a file/API with no explanation of what stays one path or what parallel path was avoided

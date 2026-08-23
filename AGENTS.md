@@ -138,8 +138,8 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ```
 ## Changelog
 
-### Global systems
-- **Global system used:** (canonical owner — required every edit/plan/review turn with changes)
+### Single source of truth
+- **How this protects SSOT:** (required every edit/plan/review turn with changes — how one path stays unified; not a file name alone)
 - **Heuristics added:** `none` OR each heuristic named (only after audit passes)
 - **Why (not) heuristic:** one brief sentence — mandatory; explains `none` or why each named item is heuristic
 
@@ -160,7 +160,7 @@ Every entry must show **what changed to what**. Use **exact before → after** f
 ```
 
 **Rules:**
-- **### Global systems** is mandatory — never omit **Heuristics added** or **Why (not) heuristic**.
+- **### Single source of truth** is mandatory — never omit **How this protects SSOT**, **Heuristics added**, or **Why (not) heuristic**.
 - **`none` without a substantive Why line is invalid** — vacuous one-liners count as missing.
 - Use empty sections as `- (none)`.
 - **Never** write vague or over-paraphrased entries ("updated file", "fixed bug", "tweaked rules") — always state the concrete delta with enough length to understand without opening the diff.
@@ -210,7 +210,7 @@ Use this structure every time file changes are requested — **once per user mes
 - **Assumptions / open questions:** (anything unclear, or "(none)")
 
 ## Proposed solution
-- **Global system used:** (canonical owner)
+- **How this protects SSOT:** Plain language — one canonical path, what stays aligned, parallel path avoided or removed (not a file name alone)
 - **Heuristics added:** `none` or list (only after 6-row audit in `global-systems-first.mdc`)
 - **Why (not) heuristic:** one brief sentence — why `none` or why each named item is heuristic
 - **Root cause:** (if known from investigation, or "will confirm with grep/read before edit")

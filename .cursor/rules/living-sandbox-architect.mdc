@@ -26,8 +26,8 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 ```
 ## Changelog
 
-### Global systems
-- **Global system used:** (canonical owner — required every edit turn)
+### Single source of truth
+- **How this protects SSOT:** (required every edit turn — prose on one canonical path, alignment, avoided/removed duplicates; **not** a file label alone)
 - **Heuristics added:** `none` OR each heuristic named (only after audit — never a default checkbox)
 - **Why (not) heuristic:** one brief sentence — why `none` is justified, or why each named item is heuristic
 
@@ -42,7 +42,7 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 ```
 
 **Rules:**
-- **### Global systems** is mandatory on every edit turn — never omit **Heuristics added** or **Why (not) heuristic**.
+- **### Single source of truth** is mandatory on every edit turn — never omit **How this protects SSOT**, **Heuristics added**, or **Why (not) heuristic**.
 - **`Heuristics added: none` without a substantive Why line is invalid** — vacuous lines like “no heuristics” count as missing.
 - Each **Changed** entry must state old state, new state, and location (file, function, line range, or key name).
 - Multi-line logic: quote the longest useful fragment, then paraphrase the rest — do not replace the whole entry with one vague sentence.

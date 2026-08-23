@@ -1,9 +1,12 @@
 ---
-description: ABSOLUTE — every edit uses global systems first; warn before any exception; always on
-alwaysApply: true
+description: ABSOLUTE — every edit uses global systems first; warn before any exception
+alwaysApply: false
+globs: "**/*.gd,**/*.tscn,**/*.tres,core/**,presentation/**,data/**,tests/**"
 ---
 
 # Global Systems First (ABSOLUTE — ALWAYS ON)
+
+**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc` — if chat was summarized, read that first, then this file for detail.
 
 **Highest-priority engineering rule for this repo.** Applies to **every** change type — **new code, bug fixes, refactors, cleanups, perf work, data edits, tests that touch production** — not only skills, not only when the user repeats it.
 
@@ -57,7 +60,7 @@ A **heuristic** here means: behavior driven by a local shortcut that is **not** 
 
 **Process (every plan, edit, or fix turn with code changes):**
 
-1. Name **Global system used** (canonical owner file/API).
+1. State **how this protects SSOT** — plain language: which single canonical path stays unified, what parallel path was avoided or removed, how preview/commit/sim/UI stay aligned. **Naming a file or symbol alone is insufficient.**
 2. Walk **every row** of the audit table below.
 3. If **any row fails** → list each failure under **Heuristics added** (short name + one line), or **redesign** before merge.
 4. If **all rows pass** → write `none` under **Heuristics added**, then **Why (not) heuristic:** — one brief sentence stating why the change is not heuristic (single owner, one path, what you avoided).
@@ -100,18 +103,18 @@ If the **correct** fix requires **breaking, bypassing, or adding an exception to
 
 Any response that **proposes, implements, or summarizes** a code or rule change MUST include **all** lines below, visibly (not buried in prose):
 
-- **Global system used:** (canonical owner — file/API; e.g. `_build_commit_slots_at_cell` → `commit_from_slots`)
+- **How this protects SSOT:** **Mandatory prose** — how the change respects and protects single source of truth / global architecture (one owner path; preview/commit/sim alignment; parallel path avoided or obsolete path removed). Citing only `CombatDirector` or “commit slots” **without** this explanation is a rule violation.
 - **Heuristics added:** `none` OR each heuristic named (only after walking the audit table)
-- **Why (not) heuristic:** **one brief sentence** (mandatory — this is what the owner reads)
-  - If `none`: why you believe the change is **not** heuristic — cite the single owner/path and what you did **not** do (e.g. no tab-only apply, no `node ==`, no parallel preview path).
+- **Why (not) heuristic:** **one brief sentence** (mandatory — ties to the SSOT line above)
+  - If `none`: what you did **not** add (e.g. no tab-only apply, no `node ==`, no parallel preview path, no UI-only defer flag).
   - If named: why each listed item **is** heuristic under the definition above.
 
-**Forbidden:** `Heuristics added: none` with no **Why (not) heuristic:** line, or a vacuous why (e.g. “no heuristics”, “follows global systems”, “audit passed”). **Both are rule violations.**
+**Forbidden:** `Heuristics added: none` with no **Why (not) heuristic:** line, a vacuous why (e.g. “no heuristics”, “follows global systems”, “audit passed”), or an **How this protects SSOT** line that only names a file/API with no protection story. **All are rule violations.**
 
 **Required in:**
 - Permission gate / plans (`interpret-plan-permission.mdc`)
 - Post-implementation summaries and fix explanations (including bug-fix replies)
-- **## Changelog** on every edit turn (`living-sandbox-architect.mdc`, `AGENTS.md`) — dedicated `### Global systems` subsection
+- **## Changelog** on every edit turn (`living-sandbox-architect.mdc`, `AGENTS.md`) — dedicated `### Single source of truth` subsection
 
 **Omit only** on pure read-only Q&A with **no** proposed or completed changes.
 
