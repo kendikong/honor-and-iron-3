@@ -152,7 +152,7 @@ func _build_layout() -> void:
 	_save_status.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_SUCCESS)
 	top_bar.add_child(_save_status)
 	var hint := Label.new()
-	hint.text = "Factory skills only · Save is off · Reset Factories = code defaults"
+	hint.text = "Factory skills only Â· Save is off Â· Reset Factories = code defaults"
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
@@ -501,7 +501,7 @@ func _add_scale_controls(parent: HBoxContainer) -> void:
 	scale_lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	scale_box.add_child(scale_lbl)
 	var minus := Button.new()
-	minus.text = "−"
+	minus.text = "âˆ’"
 	_style_toolbar_button(minus)
 	minus.custom_minimum_size = Vector2(ClassLibraryTheme.px(28), ClassLibraryTheme.px(28))
 	minus.pressed.connect(func() -> void: _bump_ui_scale(-ClassLibraryTheme.USER_SCALE_STEP))
@@ -585,9 +585,9 @@ func _add_color_key(parent: VBoxContainer) -> void:
 	key_hdr.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_DIM)
 	parent.add_child(key_hdr)
 	for spec: Array in [
-		[ClassLibraryTheme.ACCENT_INGAME, "Yellow — in-game preview"],
-		[ClassLibraryTheme.ACCENT_DATA, "Blue — data column"],
-		[ClassLibraryTheme.ACCENT_IMPL, "Teal — implementation"],
+		[ClassLibraryTheme.ACCENT_INGAME, "Yellow â€” in-game preview"],
+		[ClassLibraryTheme.ACCENT_DATA, "Blue â€” data column"],
+		[ClassLibraryTheme.ACCENT_IMPL, "Teal â€” implementation"],
 	]:
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_XS))
@@ -2010,7 +2010,7 @@ func _build_module_fields(
 		module.target_shape_size = v
 		changed.call()
 	var shape_size_row := _bind_int(
-		grid, "Radius (1 = 3×3)", module.target_shape_size, shape_size_setter, 1
+		grid, "Radius (1 = 3Ã—3)", module.target_shape_size, shape_size_setter, 1
 	)
 	grey_rows["shape_size"] = shape_size_row
 	grey_rows["gate"] = _bind_enum_excluding(
@@ -2120,7 +2120,7 @@ func _add_module_targeting_flags(
 			any_click_targeting = true
 			break
 	if any_click_targeting:
-		_add_subsection_label(parent, "Module Targeting — who you click", ClassLibraryTheme.ACCENT_DATA)
+		_add_subsection_label(parent, "Module Targeting â€” who you click", ClassLibraryTheme.ACCENT_DATA)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 		parent.add_child(row)
@@ -2142,7 +2142,7 @@ func _add_module_targeting_flags(
 	if ModuleAuthoringRules.targeting_flag_applies(
 		module, GameEnums.TargetingFlags.EXCLUDE_CASTER
 	):
-		_add_subsection_label(parent, "Module Targeting — blast", ClassLibraryTheme.ACCENT_DATA)
+		_add_subsection_label(parent, "Module Targeting â€” blast", ClassLibraryTheme.ACCENT_DATA)
 		var blast_row := HBoxContainer.new()
 		blast_row.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_MD))
 		parent.add_child(blast_row)
@@ -2825,7 +2825,7 @@ func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -
 	header.add_theme_color_override("font_color", ClassLibraryTheme.ACCENT_DATA)
 	var active_count: int = ModuleAuthoringRules.typed_extra_active_count(module)
 	var summary: String = "none set" if active_count == 0 else "%d active" % active_count
-	header.text = "▸ EFFECT KNOBS — %s" % summary
+	header.text = "â–¸ EFFECT KNOBS â€” %s" % summary
 	outer.add_child(header)
 	var body := VBoxContainer.new()
 	body.visible = false
@@ -2838,7 +2838,7 @@ func _begin_effect_knobs_section(parent: VBoxContainer, module: AbilityModule) -
 		body.visible = not body.visible
 		var open: bool = body.visible
 		header.text = (
-			("▾ EFFECT KNOBS — %s" if open else "▸ EFFECT KNOBS — %s") % summary
+			("â–¾ EFFECT KNOBS â€” %s" if open else "â–¸ EFFECT KNOBS â€” %s") % summary
 		)
 	)
 	return {
@@ -3073,8 +3073,8 @@ func _begin_collapsible_subsection(
 	header.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	header.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_BODY))
 	header.add_theme_color_override("font_color", accent)
-	var arrow: String = "▾" if start_open else "▸"
-	header.text = "%s %s — %s" % [arrow, title, summary]
+	var arrow: String = "â–¾" if start_open else "â–¸"
+	header.text = "%s %s â€” %s" % [arrow, title, summary]
 	outer.add_child(header)
 	var body := VBoxContainer.new()
 	body.visible = start_open
@@ -3086,7 +3086,7 @@ func _begin_collapsible_subsection(
 	header.pressed.connect(func() -> void:
 		body.visible = not body.visible
 		var open: bool = body.visible
-		header.text = "%s %s — %s" % ["▾" if open else "▸", title, summary]
+		header.text = "%s %s â€” %s" % ["â–¾" if open else "â–¸", title, summary]
 	)
 	return {"outer": outer, "body": body, "grid": grid, "header": header}
 
@@ -3143,209 +3143,209 @@ func _populate_layer_all_modifier_binds(
 	_bind_bool(
 		grid,
 		"Enemy Collision Stagger Both",
-			layer.enemy_collision_stagger_both,
-			func(v: bool) -> void:
-				layer.enemy_collision_stagger_both = v
-				_on_module_field_edited(ability),
-		)
+		layer.enemy_collision_stagger_both,
+		func(v: bool) -> void:
+			layer.enemy_collision_stagger_both = v
+			_on_module_field_edited(ability),
+	)
 	_bind_bool(grid, "Weapon Scaled", layer.weapon_scaled, func(v: bool) -> void:
-			layer.weapon_scaled = v
-			_on_module_field_edited(ability)
-		)
+		layer.weapon_scaled = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(
-			grid,
-			"Buff Per Destroyed Object",
-			layer.buff_per_destroyed_object,
-			func(v: int) -> void:
-				layer.buff_per_destroyed_object = maxi(0, v)
-				_on_module_field_edited(ability),
-		)
+		grid,
+		"Buff Per Destroyed Object",
+		layer.buff_per_destroyed_object,
+		func(v: int) -> void:
+			layer.buff_per_destroyed_object = maxi(0, v)
+			_on_module_field_edited(ability),
+	)
 	_bind_bool(grid, "Stagger On Collision", layer.stagger_on_collision, func(v: bool) -> void:
-			layer.stagger_on_collision = v
-			_on_module_field_edited(ability)
-		)
+		layer.stagger_on_collision = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(
-			grid,
-			"Intercept Grant STR",
-			layer.intercept_grant_str,
-			func(v: int) -> void:
-				layer.intercept_grant_str = maxi(0, v)
-				_on_module_field_edited(ability),
-		)
+		grid,
+		"Intercept Grant STR",
+		layer.intercept_grant_str,
+		func(v: int) -> void:
+			layer.intercept_grant_str = maxi(0, v)
+			_on_module_field_edited(ability),
+	)
 	_bind_bool(grid, "Push Collision Pierce", layer.push_collision_pierce, func(v: bool) -> void:
-			layer.push_collision_pierce = v
-			_on_module_field_edited(ability)
-		)
+		layer.push_collision_pierce = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Push Collision Damage", layer.push_collision_damage, func(v: int) -> void:
-			layer.push_collision_damage = maxi(0, v)
-			_on_module_field_edited(ability)
-		)
+		layer.push_collision_damage = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Difficult Terrain Created", layer.difficult_terrain_created, func(v: bool) -> void:
-			layer.difficult_terrain_created = v
-			_on_module_field_edited(ability)
-		)
+		layer.difficult_terrain_created = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Rooted Push BLEED WPN", layer.rooted_push_bleed_weapon, func(v: bool) -> void:
-			layer.rooted_push_bleed_weapon = v
-			_on_module_field_edited(ability)
-		)
+		layer.rooted_push_bleed_weapon = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Grapple Pass Damage", layer.grapple_pass_through_damage, func(v: int) -> void:
-			layer.grapple_pass_through_damage = maxi(0, v)
-			_on_module_field_edited(ability)
-		)
+		layer.grapple_pass_through_damage = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Ignite Flammable Terrain", layer.ignite_flammable_terrain, func(v: bool) -> void:
-			layer.ignite_flammable_terrain = v
-			_on_module_field_edited(ability)
-		)
+		layer.ignite_flammable_terrain = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Ally Damage Zero", layer.ally_damage_zero, func(v: bool) -> void:
-			layer.ally_damage_zero = v
-			_on_module_field_edited(ability)
-		)
+		layer.ally_damage_zero = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Trap Vulnerable", layer.trap_vulnerable, func(v: bool) -> void:
-			layer.trap_vulnerable = v
-			_on_module_field_edited(ability)
-		)
+		layer.trap_vulnerable = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Crossing BLIND", layer.crossing_blind, func(v: bool) -> void:
-			layer.crossing_blind = v
-			_on_module_field_edited(ability)
-		)
+		layer.crossing_blind = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Trap DEF Debuff", layer.trap_def_debuff, func(v: int) -> void:
-			layer.trap_def_debuff = maxi(0, v)
-			_on_module_field_edited(ability)
-		)
+		layer.trap_def_debuff = maxi(0, v)
+		_on_module_field_edited(ability)
+	)
 	_bind_string(
-			grid,
-			"Range 1 Damage Multiplier",
-			str(layer.range_one_damage_multiplier),
-			func(v: String) -> void:
-				if v.strip_edges().is_valid_float():
-					layer.range_one_damage_multiplier = maxf(0.0, float(v))
-					_on_module_field_edited(ability),
-		)
-	_bind_string(grid, "Damage Multiplier", str(layer.damage_multiplier), func(v: String) -> void:
+		grid,
+		"Range 1 Damage Multiplier",
+		str(layer.range_one_damage_multiplier),
+		func(v: String) -> void:
 			if v.strip_edges().is_valid_float():
-				layer.damage_multiplier = maxf(0.0, float(v))
-				_on_module_field_edited(ability)
-		)
+				layer.range_one_damage_multiplier = maxf(0.0, float(v))
+				_on_module_field_edited(ability),
+	)
+	_bind_string(grid, "Damage Multiplier", str(layer.damage_multiplier), func(v: String) -> void:
+		if v.strip_edges().is_valid_float():
+			layer.damage_multiplier = maxf(0.0, float(v))
+			_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Side Attack Only", layer.side_attack_only, func(v: bool) -> void:
-			layer.side_attack_only = v
-			_on_module_field_edited(ability)
-		)
+		layer.side_attack_only = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Target After Move Adjacent", layer.target_after_move_adjacent, func(v: bool) -> void:
-			layer.target_after_move_adjacent = v
-			_on_module_field_edited(ability)
-		)
+		layer.target_after_move_adjacent = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Elemental Surface", layer.elemental_surface, func(v: bool) -> void:
-			layer.elemental_surface = v
-			_on_module_field_edited(ability)
-		)
+		layer.elemental_surface = v
+		_on_module_field_edited(ability)
+	)
 	_bind_string(grid, "Reaction Terrain", str(layer.reaction_terrain), func(v: String) -> void:
-			layer.reaction_terrain = StringName(v)
-			_on_module_field_edited(ability)
-		)
+		layer.reaction_terrain = StringName(v)
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Steam Splash", layer.reaction_steam_splash, func(v: bool) -> void:
-			layer.reaction_steam_splash = v
-			_on_module_field_edited(ability)
-		)
+		layer.reaction_steam_splash = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Steam Splash Size", layer.reaction_steam_splash_size, func(v: int) -> void:
-			layer.reaction_steam_splash_size = v
-			_on_module_field_edited(ability)
-		)
+		layer.reaction_steam_splash_size = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Steam Splash Damage", layer.reaction_steam_splash_damage, func(v: int) -> void:
-			layer.reaction_steam_splash_damage = v
-			_on_module_field_edited(ability)
-		)
+		layer.reaction_steam_splash_damage = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Set Max MOV", layer.set_max_move, func(v: int) -> void:
-			layer.set_max_move = v
-			_on_module_field_edited(ability)
-		)
+		layer.set_max_move = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Arcane Trail", layer.arcane_trail, func(v: bool) -> void:
-			layer.arcane_trail = v
-			_on_module_field_edited(ability)
-		)
+		layer.arcane_trail = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Creation Adjacent Damage", layer.creation_adjacent_damage, func(v: int) -> void:
-			layer.creation_adjacent_damage = v
-			_on_module_field_edited(ability)
-		)
+		layer.creation_adjacent_damage = v
+		_on_module_field_edited(ability)
+	)
 	_bind_string(grid, "Terrain ID", str(layer.terrain_id), func(v: String) -> void:
-			layer.terrain_id = StringName(v)
-			_on_module_field_edited(ability)
-		)
+		layer.terrain_id = StringName(v)
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Hazard Duration", layer.hazard_duration, func(v: int) -> void:
-			layer.hazard_duration = v
-			_on_module_field_edited(ability)
-		)
+		layer.hazard_duration = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Counterattack Melee", layer.counterattack_melee, func(v: bool) -> void:
-			layer.counterattack_melee = v
-			_on_module_field_edited(ability)
-		)
+		layer.counterattack_melee = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Counterattack On Intercept", layer.counterattack_on_intercept, func(v: bool) -> void:
-			layer.counterattack_on_intercept = v
-			_on_module_field_edited(ability)
-		)
+		layer.counterattack_on_intercept = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Bleed Weapon", layer.bleed_weapon, func(v: bool) -> void:
-			layer.bleed_weapon = v
-			_on_module_field_edited(ability)
-		)
+		layer.bleed_weapon = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Skip Terrain Status", layer.skip_terrain_entry_status, func(v: bool) -> void:
-			layer.skip_terrain_entry_status = v
-			_on_module_field_edited(ability)
-		)
+		layer.skip_terrain_entry_status = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Skip Terrain Bleed", layer.skip_terrain_entry_bleed, func(v: bool) -> void:
-			layer.skip_terrain_entry_bleed = v
-			_on_module_field_edited(ability)
-		)
+		layer.skip_terrain_entry_bleed = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Hazard Damage Bonus", layer.hazard_damage_bonus, func(v: int) -> void:
-			layer.hazard_damage_bonus = v
-			_on_module_field_edited(ability)
-		)
+		layer.hazard_damage_bonus = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Trap Damage Bonus", layer.trap_damage_bonus, func(v: int) -> void:
-			layer.trap_damage_bonus = v
-			_on_module_field_edited(ability)
-		)
+		layer.trap_damage_bonus = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Grant AP", layer.grant_ap, func(v: int) -> void:
-			layer.grant_ap = v
-			_on_module_field_edited(ability)
-		)
+		layer.grant_ap = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Grant Scrap", layer.grant_scrap, func(v: int) -> void:
-			layer.grant_scrap = v
-			_on_module_field_edited(ability)
-		)
+		layer.grant_scrap = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Next Turn", layer.next_turn, func(v: bool) -> void:
-			layer.next_turn = v
-			_on_module_field_edited(ability)
-		)
+		layer.next_turn = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Burning Splash MAG", layer.burning_splash_magic, func(v: int) -> void:
-			layer.burning_splash_magic = v
-			_on_module_field_edited(ability)
-		)
+		layer.burning_splash_magic = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Pierce If First Hit Zero", layer.pierce_if_first_zero, func(v: bool) -> void:
-			layer.pierce_if_first_zero = v
-			_on_module_field_edited(ability)
-		)
+		layer.pierce_if_first_zero = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Damage Adjacent On Landing", layer.damage_adjacent_on_landing, func(v: bool) -> void:
-			layer.damage_adjacent_on_landing = v
-			_on_module_field_edited(ability)
-		)
+		layer.damage_adjacent_on_landing = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Require Dash Line Enemy", layer.require_dash_line_enemy, func(v: bool) -> void:
-			layer.require_dash_line_enemy = v
-			_on_module_field_edited(ability)
-		)
+		layer.require_dash_line_enemy = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Layer Dash Absorb Element", layer.dash_absorb_element, func(v: bool) -> void:
-			layer.dash_absorb_element = v
-			_on_module_field_edited(ability)
-		)
+		layer.dash_absorb_element = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Collision Splash Damage", layer.collision_splash_damage, func(v: int) -> void:
-			layer.collision_splash_damage = v
-			_on_module_field_edited(ability)
-		)
+		layer.collision_splash_damage = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Collision Splash Weaken", layer.collision_splash_weaken, func(v: bool) -> void:
-			layer.collision_splash_weaken = v
-			_on_module_field_edited(ability)
-		)
+		layer.collision_splash_weaken = v
+		_on_module_field_edited(ability)
+	)
 	_bind_int(grid, "Push If Target On Water", layer.push_if_target_on_water, func(v: int) -> void:
-			layer.push_if_target_on_water = v
-			_on_module_field_edited(ability)
-		)
+		layer.push_if_target_on_water = v
+		_on_module_field_edited(ability)
+	)
 	_add_typed_layer_bindings(grid, ability, layer)
 
 
@@ -3446,7 +3446,7 @@ func _add_module_layers_editor(
 	hint.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 	hint.text = (
 		"Pick when the layer runs (Condition), then what it does (Type). "
-		+ "DURING rides on the module primary while it moves — use Bulldoze / Trample / Ghost / Pierce there."
+		+ "DURING rides on the module primary while it moves â€” use Bulldoze / Trample / Ghost / Pierce there."
 	)
 	parent.add_child(hint)
 	var box := VBoxContainer.new()
@@ -4125,7 +4125,7 @@ func _set_row_visible(row: Variant, visible: bool) -> void:
 
 func _save_overrides() -> void:
 	if _save_status != null:
-		_save_status.text = "Save is off — factory skills only"
+		_save_status.text = "Save is off â€” factory skills only"
 		_save_status.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
 
 
