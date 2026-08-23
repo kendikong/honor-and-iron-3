@@ -1781,11 +1781,6 @@ func _apply_module_field_greying(
 		rows.get("hit_count", []),
 		ModuleAuthoringRules.module_uses_hit_count(module) or module.hit_count > 1,
 	)
-	_set_row_visible(
-		rows.get("adjacent_bonus", []),
-		module.primary_type == GameEnums.EffectType.DAMAGE
-		or module.bonus_if_adjacent_at_cast != 0,
-	)
 	_set_row_visible(rows.get("shape", []), ModuleAuthoringRules.module_uses_shape(module))
 	_set_row_visible(rows.get("shape_size", []), ModuleAuthoringRules.module_uses_shape_size(module))
 	_set_row_visible(
@@ -2065,10 +2060,6 @@ func _build_module_fields(
 		module.presentation_anim = v
 		changed.call()
 	)
-	grey_rows["adjacent_bonus"] = _bind_int(grid, "Adjacent Bonus", module.bonus_if_adjacent_at_cast, func(v: int) -> void:
-		module.bonus_if_adjacent_at_cast = v
-		changed.call()
-	)
 	var module_grey_cb := func() -> void:
 		_apply_module_field_greying(module, grey_rows, ability, module_index)
 	_ability_ui[ability]["module_grey_cbs"].append(module_grey_cb)
@@ -2183,14 +2174,6 @@ func _add_module_typed_extras_editor(
 		module.bounce_range = maxi(0, v)
 		_on_module_field_edited(ability)
 	)
-	_bind_int(grid, "Buff On Push", module.buff_on_push, func(v: int) -> void:
-		module.buff_on_push = v
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "Frenzy On Kill AP", module.frenzy_on_kill_ap, func(v: int) -> void:
-		module.frenzy_on_kill_ap = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
 	_bind_int(grid, "Push Board Items", module.push_board_items, func(v: int) -> void:
 		module.push_board_items = maxi(0, v)
 		_on_module_field_edited(ability)
@@ -2247,20 +2230,12 @@ func _add_module_typed_extras_editor(
 		module.next_ranged_attack_strength = maxi(0, v)
 		_on_module_field_edited(ability)
 	)
-	_bind_bool(grid, "Root Break On Damage", module.root_break_on_damage, func(v: bool) -> void:
-		module.root_break_on_damage = v
-		_on_module_field_edited(ability)
-	)
 	_bind_int(grid, "Skewer", module.skewer, func(v: int) -> void:
 		module.skewer = maxi(0, v)
 		_on_module_field_edited(ability)
 	)
 	_bind_bool(grid, "Bounce Walls 45", module.bounce_walls_45, func(v: bool) -> void:
 		module.bounce_walls_45 = v
-		_on_module_field_edited(ability)
-	)
-	_bind_bool(grid, "Spread Status Adjacent", module.spread_status_adjacent, func(v: bool) -> void:
-		module.spread_status_adjacent = v
 		_on_module_field_edited(ability)
 	)
 	_bind_bool(grid, "Grapple Wall Pull Self", module.grapple_wall_pull_self, func(v: bool) -> void:
@@ -2348,16 +2323,8 @@ func _add_module_typed_extras_editor(
 				module.range_one_damage_multiplier = maxf(0.0, float(v))
 				_on_module_field_edited(ability),
 	)
-	_bind_int(grid, "Armor Explosion ATK", module.armor_explosion_atk, func(v: int) -> void:
-		module.armor_explosion_atk = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
 	_bind_int(grid, "Bonus ATK Fear/Low MOV", module.bonus_atk_vs_fear_or_lower_movement, func(v: int) -> void:
 		module.bonus_atk_vs_fear_or_lower_movement = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "On Kill MAX MOV", module.on_kill_max_move, func(v: int) -> void:
-		module.on_kill_max_move = maxi(0, v)
 		_on_module_field_edited(ability)
 	)
 	_bind_int(grid, "Next Turn MAX MOV", module.next_turn_max_move, func(v: int) -> void:
@@ -2382,14 +2349,6 @@ func _add_module_typed_extras_editor(
 	)
 	_bind_bool(grid, "Vault Obstacle/Gap Only", module.vault_obstacle_or_gap_only, func(v: bool) -> void:
 		module.vault_obstacle_or_gap_only = v
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "Landing Adjacent PUSH", module.landing_adjacent_push, func(v: int) -> void:
-		module.landing_adjacent_push = maxi(0, v)
-		_on_module_field_edited(ability)
-	)
-	_bind_bool(grid, "Landing Adjacent STAGGER", module.landing_adjacent_push_stagger, func(v: bool) -> void:
-		module.landing_adjacent_push_stagger = v
 		_on_module_field_edited(ability)
 	)
 	_bind_bool(grid, "Line Breaker", module.line_breaker, func(v: bool) -> void:
@@ -2462,10 +2421,6 @@ func _add_module_typed_extras_editor(
 	)
 	_bind_bool(grid, "Destroy Corpse On Kill", module.destroy_corpse_on_kill, func(v: bool) -> void:
 		module.destroy_corpse_on_kill = v
-		_on_module_field_edited(ability)
-	)
-	_bind_int(grid, "Kill Grant AP", module.kill_grant_ap, func(v: int) -> void:
-		module.kill_grant_ap = v
 		_on_module_field_edited(ability)
 	)
 	_bind_bool(grid, "Utility Only", module.utility_only, func(v: bool) -> void:

@@ -573,6 +573,12 @@ static func _armor_explosion_layer(amount: int = 1) -> AbilityLayer:
 	return layer
 
 
+static func _buff_on_push_layer(amount: int = 1) -> AbilityLayer:
+	var layer: AbilityLayer = _layer(_effect(GameEnums.EffectType.HEAL, 0))
+	layer.buff_on_push = amount
+	return layer
+
+
 static func _if_already_adjacent_bonus_layer(bonus: int) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	layer.condition = GameEnums.LayerCondition.IF_ALREADY_ADJACENT

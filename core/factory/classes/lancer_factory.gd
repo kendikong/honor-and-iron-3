@@ -47,7 +47,7 @@ static func build(basic_lance: WeaponData) -> UnitData:
 	push.upgrade_description = "Limit once per turn. Pushing a unit grants +1 STR for your next attack this turn."
 	var push_up := _clone_modules(push.modules)
 	push_up[0].limit_once_per_turn = true
-	push_up[0].buff_on_push = 1
+	push_up[0].layers = [DataLibrary._buff_on_push_layer(1)]
 	push.upgraded_modules = push_up
 	def.abilities.append(push)
 

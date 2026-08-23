@@ -1020,8 +1020,16 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var ab: AbilityData = H.factory_ability(&"bruiser_violent_collision")
 	H.assert_eq_int(failures, "violent_collision/dash_amount", ab.modules[0].amount, 3)
 	H.assert_eq_int(failures, "violent_collision/extend_dash_amount", ab.modules[1].amount, 2)
-	H.assert_true(failures, "violent_collision/bulldoze_m1", ab.modules[0].runtime_has("bulldoze"))
-	H.assert_true(failures, "violent_collision/bulldoze_m2", ab.modules[1].runtime_has("bulldoze"))
+	H.assert_true(
+		failures,
+		"violent_collision/bulldoze_m1",
+		AbilityModuleBridge.module_has_modifier(ab.modules[0], &"bulldoze"),
+	)
+	H.assert_true(
+		failures,
+		"violent_collision/bulldoze_m2",
+		AbilityModuleBridge.module_has_modifier(ab.modules[1], &"bulldoze"),
+	)
 	H.assert_true(
 		failures, "violent_collision/extend_mod",
 		ab.modules.size() >= 2

@@ -153,6 +153,16 @@ static func _test_migrate_kill_and_landing_riders(failures: Array[String]) -> vo
 			has_on_land = true
 	if not has_on_kill or not has_on_land:
 		failures.append("migration should author ON_KILL GRANT_AP and ON_LAND PUSH layers")
+	module.buff_on_push = 1
+	ModuleAuthoringRules.migrate_kill_and_landing_riders_to_layers(module)
+	if module.buff_on_push != 0:
+		failures.append("migration should clear buff_on_push module knob")
+	var has_buff_layer := false
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.buff_on_push > 0:
+			has_buff_layer = true
+	if not has_buff_layer:
+		failures.append("migration should author buff_on_push layer")
 
 
 static func _test_adjacent_bonus_layer_merges_into_primary(failures: Array[String]) -> void:

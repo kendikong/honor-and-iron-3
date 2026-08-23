@@ -187,6 +187,16 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 			},
 		],
 	},
+	&"lancer_push": {
+		"forbidden_typed": ["buff_on_push"],
+		"required_layers": [
+			{
+				"condition": "AT_RESOLUTION",
+				"effect_type": "HEAL",
+				"profile": "upgrade",
+			},
+		],
+	},
 	&"lancer_vaulting_leap": {
 		"forbidden_typed": ["halve_target_def_one_turn", "armor_explosion_atk"],
 		"required_layers": [

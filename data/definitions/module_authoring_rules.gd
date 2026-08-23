@@ -416,7 +416,18 @@ static func migrate_kill_and_landing_riders_to_layers(module: AbilityModule) -> 
 		adj_layer.effect.bonus_if_adjacent_at_cast = module.bonus_if_adjacent_at_cast
 		module.layers.append(adj_layer)
 		module.bonus_if_adjacent_at_cast = 0
+	if module.buff_on_push > 0 and not _module_has_buff_on_push_layer(module):
+		var buff_layer: AbilityLayer = DataLibrary._buff_on_push_layer(module.buff_on_push)
+		module.layers.append(buff_layer)
+		module.buff_on_push = 0
 	module.invalidate_runtime_modifiers_cache()
+
+
+static func _module_has_buff_on_push_layer(module: AbilityModule) -> bool:
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.buff_on_push > 0:
+			return true
+	return false
 
 
 static func migrate_legacy_layer_bundles(module: AbilityModule) -> void:

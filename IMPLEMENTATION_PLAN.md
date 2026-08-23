@@ -121,7 +121,7 @@ ER-2 is authorized from Knight in the current owner directive; continue in the l
 | Archer | Suppressing Fire | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Archer | Parting Shot | ☑ | ☑ | ☑ | ☑ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass |
 | Archer | Scout’s Eye | ☐ | ☐ | ☐ | ☐ | Typed module conversion; Tier 1/2 gates and direct conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
-| Lancer | Push | ☐ | ☐ | ☐ | ☐ | Typed ally-target and upgraded once-per-turn/buff fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
+| Lancer | Push | ☑ | ☑ | ☐ | ☐ | Upgrade `buff_on_push` on AT_RESOLUTION HEAL layer (no module knob); migration + shape gate; Lancer Tier-1 PASS (2026-08-22). |
 | Lancer | Piercing Charge | ☐ | ☐ | ☐ | ☐ | Typed trampled-terrain upgrade and polearm reach fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Lancer | Sweeping Halberd | ☐ | ☐ | ☐ | ☐ | Typed collision layer; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
 | Lancer | Vaulting Leap | ☐ | ☐ | ☐ | ☐ | Typed DEF/armor upgrade fields; conversion contract pass **UNCHECKED (2026-08-22):** Effect Knobs active — not shape-complete. |
