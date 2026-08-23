@@ -340,7 +340,7 @@ static func audit_converted_skills(
 	class_prefix: String = "",
 ) -> Array[String]:
 	var failures: Array[String] = []
-	for skill_id: StringName in ExtraRulesConversionContract.CONVERTED_SKILL_IDS:
+	for skill_id: StringName in ConvertedSkillRegistry.CONVERTED_SKILL_IDS:
 		if not class_prefix.is_empty() and not String(skill_id).begins_with(class_prefix):
 			continue
 		var ability: AbilityData = find_factory_ability(skill_id)
@@ -373,8 +373,8 @@ static func audit_converted_skills(
 
 
 static func print_audit_report() -> void:
-	print("LAYER_SHAPE_AUDIT: converted_skills=%d" % ExtraRulesConversionContract.CONVERTED_SKILL_IDS.size())
-	for skill_id: StringName in ExtraRulesConversionContract.CONVERTED_SKILL_IDS:
+	print("LAYER_SHAPE_AUDIT: converted_skills=%d" % ConvertedSkillRegistry.CONVERTED_SKILL_IDS.size())
+	for skill_id: StringName in ConvertedSkillRegistry.CONVERTED_SKILL_IDS:
 		var ability: AbilityData = find_factory_ability(skill_id)
 		if ability == null:
 			print("  %s: MISSING" % String(skill_id))
@@ -418,7 +418,7 @@ static func _modules_set_prop(modules: Array[AbilityModule], prop: String) -> bo
 
 
 static func find_factory_ability(skill_id: StringName) -> AbilityData:
-	for class_id: StringName in ExtraRulesConversionContract.CLASS_IDS:
+	for class_id: StringName in ConvertedSkillRegistry.CLASS_IDS:
 		var unit: UnitData = DataLibrary.get_unit(class_id)
 		if unit == null:
 			continue

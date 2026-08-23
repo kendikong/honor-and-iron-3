@@ -3524,6 +3524,47 @@ func _cell_on_dash_line_from_stand(
 	return dist >= module.min_range and dist <= module.max_range
 
 
+## Paired pre-move (K4 walk detour): when walk reaches the hover in <= dash tiles, paint walk — not dash.
+func _paired_premove_walk_beats_dash_tile(
+	actor: UnitState,
+	ability: AbilityData,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or ability == null:
+		return false
+	if not AbilitySystem.ability_has_movement_effect(ability, actor):
+		return false
+	if AbilitySystem.movement_requires_run(_proj(), actor, cell, []):
+		return false
+	if not _cell_on_dash_line_from_stand(actor, ability, cell):
+		return false
+	var move_origin: Vector2i = _proj_move_origin(actor)
+	if cell == move_origin:
+		return false
+	var board: BoardState = _proj()
+	var mt: int = (
+		actor.definition.movement_type
+		if actor.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	var walk_path: Array[Vector2i] = MovementSystem.find_path(
+		board,
+		move_origin,
+		cell,
+		_move_budget(actor),
+		mt,
+		1,
+		_walk_pathfinding_ability(actor),
+	)
+	if walk_path.is_empty():
+		return false
+	if not MovementSystem.can_end_movement_on(board, cell, actor):
+		return false
+	var walk_steps: int = walk_path.size() - 1
+	var dash_steps: int = GridSystem.manhattan(move_origin, cell)
+	return walk_steps <= dash_steps
+
+
 func _tile_target_movement_skill_commits_at_cell(
 	actor: UnitState,
 	ability: AbilityData,
@@ -3542,6 +3583,8 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
+		if _paired_premove_walk_beats_dash_tile(actor, ability, cell):
+			return false
 		if _dash_tile_endpoint_one_click_commit(actor, ability, cell):
 			return true
 		if (
@@ -3608,6 +3651,8 @@ func _dash_tile_endpoint_one_click_commit(
 	) == 0:
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
+		return false
+	if _paired_premove_walk_beats_dash_tile(actor, ability, cell):
 		return false
 	if (
 		_drag_route_commits_active()
