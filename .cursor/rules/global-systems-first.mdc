@@ -5,7 +5,9 @@ alwaysApply: true
 
 # Global Systems First (ABSOLUTE — ALWAYS ON)
 
-**Highest-priority engineering rule for this repo.** Applies to **every** file change, fix proposal, and refactor — not only skills, not only when the user repeats it.
+**Highest-priority engineering rule for this repo.** Applies to **every** change type — **new code, bug fixes, refactors, cleanups, perf work, data edits, tests that touch production** — not only skills, not only when the user repeats it.
+
+**Refactor, cleanup, or “small fix” is not a waiver.** Same mandate as a new feature: one owner, one path, delete the wrong path in the same change.
 
 The project owner must **not** have to re-explain this. Agents enforce it on **every turn** without being asked.
 

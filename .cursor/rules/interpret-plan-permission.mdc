@@ -24,9 +24,11 @@ Use exactly these three sections (in order):
 - What you will **not** do (important when past mistakes are relevant)
 - Risks or assumptions, if any
 - If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
-- **Lag / feel / FPS / postmove vs premove** (when task mentions slowness, frame drop, circling mouse, or “feels different”):
-  - **Parity check (mandatory):** Name fast vs slow scenario; state whether they use the **same** owner API (slots builder, preview entry, board clone, overlay inputs). If not → investigate read-only or unify owner **before** any perf patch.
-  - **Will not add this turn:** defer/throttle/pending/interval caps on hover, drag route, action-range tiles, hover-tile redraw, or preview staging — unless ⚠ exception block approved.
+- **Non-heuristic mandate (every file-changing plan — not only perf):**
+  - **Canonical owner:** Name the one system/API that owns this behavior end-to-end (see `global-systems-first.mdc` table).
+  - **Will not add this turn:** parallel preview/commit/sim path; UI-only flag/meta sim ignores; `if ability.id` / `if node ==` / scene/tab branch when data or shared pipeline could express it; duplicate logic without deleting the obsolete path in the **same** change — unless ⚠ exception block approved.
+  - **Heuristics audit:** `Heuristics added` / `Why (not) heuristic` must reflect a real walk of the 6-row table — not a default `none`.
+- **Lag / feel / parity** (when slowness or “feels different” — e.g. premove vs postmove): before any perf tweak, state fast vs slow scenario and whether they use the **same** owner API; unify first. Perf-specific bans: `.cursor/rules/minimal-performance-impact.mdc` § Forbidden on planning / combat.
 
 ### 3. Permission
 End with a direct question, e.g. **"Proceed with this plan? (yes / no / adjust)"**
@@ -66,4 +68,5 @@ Place them in **## Changelog → ### Global systems** (see `global-systems-first
 - Solving a different problem than the user described (e.g. placement vs draw order)
 - Assuming post-process vs pre-process without stating it and getting buy-in
 - Bundling surprise scope (extra refactors, commits, new files) without listing them in the plan
-- Lag plans that jump to throttle/defer on `presentation/combat_*` or `tactical_planning_*` without parity check and without **Will not add** defer/throttle line
+- Any add/edit/refactor plan that skips **Will not add** parallel paths or ships `Heuristics added: none` without walking the 6-row audit
+- Refactor/cleanup that adds a helper or file but leaves the old path live “for safety” without owner-approved deferral

@@ -8,6 +8,8 @@ alwaysApply: true
 **This rule is always active.** It overrides convenience, speed, and “just make it work for this case.”
 If a fix adds a parallel code path, UI flag, or special-case branch instead of fixing the owning system, **stop and redesign**.
 
+**Same for refactors and features.** “I'm refactoring” / “I'm adding X while here” does not allow a second truth path or a flag only one layer reads.
+
 ## Definition: bandaid
 
 A change is a **bandaid** if it:
@@ -18,6 +20,8 @@ A change is a **bandaid** if it:
 - Introduces a second source of truth (e.g. cursor heuristics that disagree with commit slots)
 - Disables validation, asserts, or tests “for now”
 - Leaves dead or overlapping paths (old + new) instead of deleting the wrong one
+- **Refactor or cleanup** that copies logic into a new function/file while the old path still runs
+- **New feature** wired through presentation-only state instead of the domain owner (`AbilitySystem`, commit slots, `Simulator`, data)
 
 ## Required approach
 

@@ -25,7 +25,9 @@ If optimizing CPU/GPU would add a **second preview, hover, route, range, or comm
 3. **Measure** after parity (or inside the owner).
 4. **Optimize inside the owner** — cache keys, dirty flags, cheaper sim start state, GPU shaders — not parallel UI staging.
 
-## Forbidden on planning / combat (unless owner-approved ⚠ exception in chat)
+## Forbidden on planning / combat (perf slice of repo-wide mandate)
+
+Repo-wide: **no parallel truth paths** for any change type — see `global-systems-first.mdc` + `no-bandaid-fixes.mdc`. This section is the **lag/perf** slice only (examples from incidents):
 
 Do **not** fix lag by adding or restoring:
 
@@ -35,6 +37,8 @@ Do **not** fix lag by adding or restoring:
 - Blocking cheap preview because UI state (e.g. highlighted skill) disagrees with move-only slots
 
 Named incident (do not repeat): post-swap route defer + overlay hover throttle while full sim replayed every settle — fix owner preview depth instead.
+
+Unless owner approved ⚠ exception in chat, the above are forbidden for **any** change type that touches these paths — not only perf turns.
 
 ## Before shipping a change, ask
 
