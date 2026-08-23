@@ -37,7 +37,6 @@ const _HOVER_SIM_STILL_PX: float = 3.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
-var _pending_hover_route_cell: Vector2i = Vector2i(-9999, -9999)
 var _drag_last_free: Vector2i = Vector2i(-1, -1)
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
@@ -1374,12 +1373,9 @@ func _hover_sim_pointer_is_still() -> bool:
 func _flush_hover_heavy_sync() -> void:
 	_hover_heavy_throttle_gen += 1
 	_hover_sim_throttle_gen += 1
-	_flush_pending_hover_route_extend()
 	_flush_drag_preview_refresh()
 	_run_hover_sim_refresh()
 	_run_hover_overlay_refresh()
-	if _planning != null:
-		_planning.force_hover_visual_refresh()
 
 
 func _run_hover_overlay_refresh() -> void:
@@ -1408,7 +1404,6 @@ func _run_hover_overlay_refresh() -> void:
 func _run_hover_sim_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning() or dragging:
 		return
-	_flush_pending_hover_route_extend()
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_sim_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
@@ -1886,7 +1881,6 @@ func _restore_hover_preview() -> void:
 func _clear_hover_drag_route() -> void:
 	if _drag_route.is_empty() and _drag_unit_id < 0:
 		return
-	_pending_hover_route_cell = Vector2i(-9999, -9999)
 	_drag_route.clear()
 	_drag_unit_id = -1
 	if _planning != null:
@@ -2836,12 +2830,6 @@ func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i)
 		return false
 	if _director == null or _director.board == null:
 		return false
-	if _director.selected_ability_index >= 0 and not force_basic_movement:
-		var actor: UnitState = _proj_unit(_director.selected_unit_id)
-		## Post-swap/postmove: action column spent — walk hover matches premove cheap path
-		## even when a class skill stays highlighted (e.g. after Swap commit).
-		if actor == null or not _planning_post_move_only(actor, _director.selected_unit_id, cell):
-			return false
 	var occupant: UnitState = _director.board.get_unit_at(cell)
 	if occupant != null and occupant.id != _director.selected_unit_id:
 		return false
@@ -3195,32 +3183,11 @@ func _route_has_left_origin_ring(move_origin: Vector2i) -> bool:
 	return false
 
 
-func _defer_expensive_hover_route_extend(cell: Vector2i, last: Vector2i) -> bool:
-	## Selection-hover corridor/repath is expensive on projected boards (e.g. after swap).
-	## Defer until hover settles or commit flushes — adjacent hops still paint immediately.
-	if dragging:
-		return false
-	if _planning == null:
-		return false
-	if _planning.qa_static_overlay:
-		return false
-	return GridSystem.manhattan(last, cell) != 1
-
-
-func _flush_pending_hover_route_extend() -> void:
-	if _pending_hover_route_cell.x < -900000:
-		return
-	var cell: Vector2i = _pending_hover_route_cell
-	_pending_hover_route_cell = Vector2i(-9999, -9999)
-	_extend_drag_route(cell)
-
-
 func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.is_empty():
 		return
 	var idx := _drag_route.find(cell)
 	if idx >= 0:
-		_pending_hover_route_cell = Vector2i(-9999, -9999)
 		if idx < _drag_route.size() - 1:
 			_drag_route = _drag_route.slice(0, idx + 1)
 			_sanitize_drag_route_context()
@@ -3241,7 +3208,6 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		and GridSystem.manhattan(move_origin, cell) == 1
 		and not _route_has_left_origin_ring(move_origin)
 	):
-		_pending_hover_route_cell = Vector2i(-9999, -9999)
 		_drag_route = [move_origin]
 		_append_route_tile(cell)
 		_sanitize_drag_route_context()
@@ -3252,10 +3218,6 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var budget: int = _drag_max_steps(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
 	if GridSystem.manhattan(last, cell) != 1:
-		if _defer_expensive_hover_route_extend(cell, last):
-			_pending_hover_route_cell = cell
-			return
-		_pending_hover_route_cell = Vector2i(-9999, -9999)
 		var corridor: Array[Vector2i] = MovementSystem.drag_corridor_path(
 			board, last, cell, budget, mt, move_cost, unit, ability,
 		)
@@ -3269,10 +3231,6 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	_append_route_tile(cell)
 	if _drag_route.back() != cell:
 		## Adjacent past budget: repath within budget instead of silently ignoring.
-		if _defer_expensive_hover_route_extend(cell, last):
-			_pending_hover_route_cell = cell
-			return
-		_pending_hover_route_cell = Vector2i(-9999, -9999)
 		_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
 	_sanitize_drag_route_context()
 	_sync_drag_route_stand()
