@@ -32,7 +32,7 @@ static func _sim_contract(failures: Array[String]) -> void:
 	)
 	_KnightQaHarness.assert_true(
 		failures, "bash/contract/upgrade_stagger",
-		_KnightQaHarness.ability_has_effect(bash, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, true),
+		_KnightQaHarness.ability_has_push_stagger_on_collision(bash, true),
 	)
 	_KnightQaHarness.run_bash_wall_stagger_upgrade(failures)
 	_KnightQaHarness.run_bash_base_sim(failures)

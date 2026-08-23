@@ -241,6 +241,7 @@ static func normalize_module_context_fields(
 		module.range_origin = GameEnums.RangeOrigin.ACTOR
 	normalize_module_targeting_flags(module)
 	migrate_keywords_to_layers(module)
+	migrate_legacy_layer_bundles(module)
 	for layer: AbilityLayer in module.layers:
 		if layer == null:
 			continue
@@ -259,6 +260,32 @@ static func migrate_keywords_to_layers(module: AbilityModule) -> void:
 		if layer != null:
 			module.layers.append(layer)
 	module.keywords.clear()
+	module.invalidate_runtime_modifiers_cache()
+
+
+static func migrate_legacy_layer_bundles(module: AbilityModule) -> void:
+	if module == null:
+		return
+	var index: int = module.layers.size() - 1
+	while index >= 0:
+		var layer: AbilityLayer = module.layers[index]
+		if layer == null or layer.effect == null:
+			index -= 1
+			continue
+		match layer.effect.type:
+			GameEnums.EffectType.BULLDOZE:
+				apply_layer_during_preset(layer, &"bulldoze")
+				layer.effect.amount = maxi(1, layer.effect.amount)
+			GameEnums.EffectType.TRAMPLE:
+				apply_layer_during_preset(layer, &"trample")
+				layer.effect.amount = maxi(1, layer.effect.amount)
+			GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION:
+				module.layers[index] = new_on_collision_layer(&"stagger")
+			GameEnums.EffectType.PUSH_CHAIN_COLLISION:
+				module.layers[index] = new_on_chain_collision_layer()
+			GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT:
+				module.layers[index] = new_pull_vulnerable_adjacent_layer()
+		index -= 1
 	module.invalidate_runtime_modifiers_cache()
 
 
@@ -540,17 +567,38 @@ static func effect_primary_families() -> Array[Dictionary]:
 				GameEnums.EffectType.REFUND_AP_ON_CC,
 			],
 		},
-		{
-			"label": "Legacy — convert off",
-			"types": [
-				GameEnums.EffectType.TRAMPLE,
-				GameEnums.EffectType.BULLDOZE,
-				GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION,
-				GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT,
-				GameEnums.EffectType.PUSH_CHAIN_COLLISION,
-			],
-		},
 	]
+
+
+static func internal_authoring_effect_types() -> Array[GameEnums.EffectType]:
+	## Runtime / legacy bundles — never pick in Class Editor; use DURING presets or extra layers.
+	return [
+		GameEnums.EffectType.TRAMPLE,
+		GameEnums.EffectType.BULLDOZE,
+		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION,
+		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT,
+		GameEnums.EffectType.PUSH_CHAIN_COLLISION,
+	]
+
+
+static func effect_families_for_authoring(for_layer: bool = false) -> Array[Dictionary]:
+	var internal: Dictionary = {}
+	for effect_type: GameEnums.EffectType in internal_authoring_effect_types():
+		internal[effect_type] = true
+	var out: Array[Dictionary] = []
+	for family: Dictionary in effect_primary_families():
+		var label: String = String(family["label"])
+		if label.begins_with("Legacy"):
+			continue
+		var kept: Array[GameEnums.EffectType] = []
+		for effect_type: GameEnums.EffectType in family["types"]:
+			if internal.has(effect_type):
+				continue
+			kept.append(effect_type)
+		if kept.is_empty():
+			continue
+		out.append({"label": label, "types": kept})
+	return out
 
 
 static func uncategorized_effect_types() -> Array[GameEnums.EffectType]:
@@ -558,6 +606,8 @@ static func uncategorized_effect_types() -> Array[GameEnums.EffectType]:
 	for family: Dictionary in effect_primary_families():
 		for effect_type: GameEnums.EffectType in family["types"]:
 			seen[effect_type] = true
+	for effect_type: GameEnums.EffectType in internal_authoring_effect_types():
+		seen[effect_type] = true
 	var missing: Array[GameEnums.EffectType] = []
 	for key: String in GameEnums.EffectType.keys():
 		var effect_type: GameEnums.EffectType = GameEnums.EffectType[key]
@@ -787,6 +837,14 @@ static func _layer_motion_context(layer: AbilityLayer, _parent: AbilityModule) -
 	return false
 
 
+static func _layer_pull_rider_context(layer: AbilityLayer, parent: AbilityModule) -> bool:
+	if layer == null or parent == null:
+		return false
+	if not module_has_pull_effect(parent):
+		return false
+	return layer.effect != null and layer.effect.type == GameEnums.EffectType.PULL
+
+
 static func _layer_effect_type(layer: AbilityLayer) -> GameEnums.EffectType:
 	if layer == null or layer.effect == null:
 		return GameEnums.EffectType.DAMAGE
@@ -809,6 +867,8 @@ static func layer_typed_field_applies(
 	var effect_type: GameEnums.EffectType = _layer_effect_type(layer)
 	if _typed_extra_property_in_group(property, _LAYER_COLLISION_PROPS):
 		return _layer_collision_context(layer, parent)
+	if property == "vulnerable_on_adjacent":
+		return _layer_pull_rider_context(layer, parent)
 	if _typed_extra_property_in_group(property, _LAYER_MOTION_PROPS):
 		return _layer_motion_context(layer, parent)
 	if _typed_extra_property_in_group(property, _LAYER_HAZARD_PROPS):
@@ -1006,6 +1066,11 @@ const _LAYER_STATUS_PROPS: Array[String] = [
 ]
 
 
+const _LAYER_PULL_RIDER_PROPS: Array[String] = [
+	"vulnerable_on_adjacent",
+]
+
+
 static func layer_modifier_groups() -> Array[Dictionary]:
 	return [
 		{"title": "Collision", "props": _LAYER_COLLISION_PROPS},
@@ -1016,6 +1081,7 @@ static func layer_modifier_groups() -> Array[Dictionary]:
 		{"title": "Counters", "props": _LAYER_COUNTER_PROPS},
 		{"title": "Spawn & constructs", "props": _LAYER_SPAWN_PROPS},
 		{"title": "Status rules", "props": _LAYER_STATUS_PROPS},
+		{"title": "Pull riders", "props": _LAYER_PULL_RIDER_PROPS},
 	]
 
 
@@ -1025,6 +1091,16 @@ static func layer_summary(layer: AbilityLayer) -> String:
 	var condition_key: String = GameEnums.LayerCondition.keys()[layer.condition]
 	if layer.condition == GameEnums.LayerCondition.DURING:
 		return "during %s" % layer_during_preset_label(layer)
+	if layer.condition == GameEnums.LayerCondition.ON_CHAIN_COLLISION:
+		return "on_chain_collision"
+	if layer.condition == GameEnums.LayerCondition.ON_COLLISION:
+		if layer.stagger_on_collision:
+			return "on_collision stagger"
+		if layer.collision_splash_damage > 0:
+			return "on_collision splash"
+		return "on_collision"
+	if layer.vulnerable_on_adjacent and layer.effect != null and layer.effect.type == GameEnums.EffectType.PULL:
+		return "pull vulnerable if adjacent"
 	if layer.effect == null:
 		return condition_key.to_lower()
 	return "%s %s" % [
@@ -1135,6 +1211,7 @@ static func on_collision_layer_presets() -> Array[Dictionary]:
 		{"id": &"stagger_both", "label": "Stagger both units"},
 		{"id": &"object_stagger", "label": "Stagger on object"},
 		{"id": &"splash_damage", "label": "Splash damage"},
+		{"id": &"chain_collision", "label": "Chain collision (bowling)"},
 		{"id": &"blank", "label": "Custom layer"},
 	]
 
@@ -1156,6 +1233,10 @@ static func apply_on_collision_layer_preset(layer: AbilityLayer, preset_id: Stri
 			layer.object_collision_stagger = true
 		&"splash_damage":
 			layer.collision_splash_damage = 1
+		&"chain_collision":
+			layer.condition = GameEnums.LayerCondition.ON_CHAIN_COLLISION
+			layer.effect.type = GameEnums.EffectType.PUSH
+			layer.effect.amount = 0
 		&"blank":
 			pass
 		_:
@@ -1167,6 +1248,39 @@ static func new_on_collision_layer(preset_id: StringName) -> AbilityLayer:
 	var layer := AbilityLayer.new()
 	apply_on_collision_layer_preset(layer, preset_id)
 	return layer
+
+
+static func new_on_chain_collision_layer() -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.effect = EffectData.new()
+	layer.condition = GameEnums.LayerCondition.ON_CHAIN_COLLISION
+	layer.effect.type = GameEnums.EffectType.PUSH
+	layer.effect.amount = 0
+	AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+	return layer
+
+
+static func new_pull_vulnerable_adjacent_layer() -> AbilityLayer:
+	var layer := AbilityLayer.new()
+	layer.effect = EffectData.new()
+	layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+	layer.effect.type = GameEnums.EffectType.PULL
+	layer.effect.amount = 0
+	layer.vulnerable_on_adjacent = true
+	AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
+	return layer
+
+
+static func module_has_pull_effect(module: AbilityModule) -> bool:
+	if module == null:
+		return false
+	if module.primary_type == GameEnums.EffectType.PULL:
+		return true
+	for layer: AbilityLayer in module.layers:
+		if layer != null and layer.effect != null and layer.effect.type == GameEnums.EffectType.PULL:
+			if layer.effect.amount > 0:
+				return true
+	return false
 
 
 static func _during_layer_typed_field_applies(layer: AbilityLayer, property: String) -> bool:

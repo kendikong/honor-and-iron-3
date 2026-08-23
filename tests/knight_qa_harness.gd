@@ -330,6 +330,64 @@ static func plan_ability(
 	return TimelineAction.make_ability(actor_id, ability, target, target_unit_id, timing)
 
 
+static func ability_has_push_stagger_on_collision(
+	ability: AbilityData,
+	upgraded: bool = false,
+) -> bool:
+	if ability_has_effect(ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, upgraded):
+		return true
+	for module: AbilityModule in ability.get_active_modules(upgraded):
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if (
+				layer != null
+				and layer.condition == GameEnums.LayerCondition.ON_COLLISION
+				and layer.stagger_on_collision
+			):
+				return true
+	for eff: EffectData in compiled_effects(ability, upgraded):
+		if eff != null and bool(eff.modifiers.get("stagger_on_collision", false)):
+			return true
+	return false
+
+
+static func ability_has_pull_vulnerable_on_adjacent(
+	ability: AbilityData,
+	upgraded: bool = false,
+) -> bool:
+	if ability_has_effect(ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, upgraded):
+		return true
+	for module: AbilityModule in ability.get_active_modules(upgraded):
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.vulnerable_on_adjacent:
+				return true
+	for eff: EffectData in compiled_effects(ability, upgraded):
+		if eff != null and bool(eff.modifiers.get("vulnerable_on_adjacent", false)):
+			return true
+	return false
+
+
+static func ability_has_push_chain_collision(
+	ability: AbilityData,
+	upgraded: bool = false,
+) -> bool:
+	if ability_has_effect(ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, upgraded):
+		return true
+	for module: AbilityModule in ability.get_active_modules(upgraded):
+		if module == null:
+			continue
+		for layer: AbilityLayer in module.layers:
+			if layer != null and layer.condition == GameEnums.LayerCondition.ON_CHAIN_COLLISION:
+				return true
+	for eff: EffectData in compiled_effects(ability, upgraded):
+		if eff != null and bool(eff.modifiers.get("bowling_upgrade", false)):
+			return true
+	return false
+
+
 static func run_bash_wall_stagger_upgrade(failures: Array[String]) -> void:
 	## Shield Bash [+]: PUSH_STAGGER_ON_COLLISION applies STAGGER when push hits wall/enemy.
 	var walls: Array[Vector2i] = [Vector2i(7, 2)]
@@ -339,7 +397,7 @@ static func run_bash_wall_stagger_upgrade(failures: Array[String]) -> void:
 	place_dummy(board, 2, Vector2i(6, 2))
 	var knight: UnitState = unit_on_board(board, 1)
 	var bash: AbilityData = ability_on_unit(knight, &"knight_shield_bash")
-	assert_true(failures, "bash/upgrade/effect", ability_has_effect(bash, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, true))
+	assert_true(failures, "bash/upgrade/effect", ability_has_push_stagger_on_collision(bash, true))
 	var plan := Timeline.new()
 	plan.add(TimelineAction.make_move(1, Vector2i(5, 2)))
 	plan.add(plan_ability(1, bash, Vector2i(6, 2), 2))
@@ -508,7 +566,7 @@ static func run_hook_vulnerable_upgrade(failures: Array[String]) -> void:
 	var hook: AbilityData = ability_on_unit(knight, &"knight_chain_hook")
 	assert_true(
 		failures, "chain_hook/upgrade/effect",
-		ability_has_effect(hook, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, true),
+		ability_has_pull_vulnerable_on_adjacent(hook, true),
 	)
 	var plan := Timeline.new()
 	plan.add(plan_ability(1, hook, Vector2i(4, 3), 2))
@@ -2502,8 +2560,8 @@ static func run_bowling_charge(failures: Array[String]) -> void:
 	var charge_up: AbilityData = ability_on_unit(unit_on_board(board2, 10), &"knight_bowling_charge")
 	assert_true(
 		failures, "bowling_charge/upgrade/effect",
-		ability_has_effect(charge_up, GameEnums.EffectType.PUSH_CHAIN_COLLISION, true),
-		"upgraded bowling charge must include PUSH_CHAIN_COLLISION",
+		ability_has_push_chain_collision(charge_up, true),
+		"upgraded bowling charge must include chain collision layer",
 	)
 	var plan2 := Timeline.new()
 	plan2.add(plan_ability(10, charge_up, Vector2i(4, 3), -1))

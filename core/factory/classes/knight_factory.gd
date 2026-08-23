@@ -90,8 +90,12 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	shield_bash_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH, 2))]
 	var shield_bash_upgraded := DataLibrary._duplicate_modules([shield_bash_module])
 	shield_bash_upgraded[0].layers.append(
-		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, 1))
+		DataLibrary._layer(
+			DataLibrary._effect(GameEnums.EffectType.PUSH, 0),
+			GameEnums.LayerCondition.ON_COLLISION,
+		),
 	)
+	shield_bash_upgraded[0].layers[1].stagger_on_collision = true
 	var shield_bash := DataLibrary._make_modular_ability(
 		&"knight_shield_bash", "Shield Bash", [shield_bash_module],
 		shield_bash_upgraded, 1, GameEnums.PlannerGroup.ACTION,
@@ -182,7 +186,10 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	]
 	var bowling_upgraded := DataLibrary._duplicate_modules([bowling_module])
 	bowling_upgraded[0].layers.append(
-		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_CHAIN_COLLISION, 1)),
+		DataLibrary._layer(
+			DataLibrary._effect(GameEnums.EffectType.PUSH, 0),
+			GameEnums.LayerCondition.ON_CHAIN_COLLISION,
+		),
 	)
 	var bowling_charge := DataLibrary._make_modular_ability(
 		&"knight_bowling_charge", "Bowling Charge", [bowling_module],
@@ -299,9 +306,9 @@ static func build(basic_axe: WeaponData) -> UnitData:
 	)
 	chain_hook_module.layers = [DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL, 2))]
 	var chain_hook_upgraded := DataLibrary._duplicate_modules([chain_hook_module])
-	chain_hook_upgraded[0].layers.append(
-		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, 1))
-	)
+	var hook_vuln := DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PULL, 0))
+	hook_vuln.vulnerable_on_adjacent = true
+	chain_hook_upgraded[0].layers.append(hook_vuln)
 	var chain_hook := DataLibrary._make_modular_ability(
 		&"knight_chain_hook", "Chain Hook", [chain_hook_module],
 		chain_hook_upgraded, 1, GameEnums.PlannerGroup.ACTION,

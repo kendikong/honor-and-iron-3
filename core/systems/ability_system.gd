@@ -4868,10 +4868,20 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, actor) > 0:
+					if (
+						effect.modifiers.get("stagger_on_collision", false)
+						or AbilitySystem.effect_amount(
+							action.ability, GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, actor
+						) > 0
+					):
 						pending["stagger_on_collision"] = true
-						
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor) > 0:
+
+					if (
+						effect.modifiers.get("bowling_upgrade", false)
+						or AbilitySystem.effect_amount(
+							action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor
+						) > 0
+					):
 						pending["bowling_upgrade"] = true
 					
 					board.pending_pushes.append(pending)
@@ -4987,7 +4997,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 						"ability_id": action.ability.id
 					}
 					
-					if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, actor) > 0:
+					if (
+						effect.modifiers.get("vulnerable_on_adjacent", false)
+						or AbilitySystem.effect_amount(
+							action.ability, GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT, actor
+						) > 0
+					):
 						pending["vulnerable_on_adjacent"] = true
 					if effect.modifiers.has("stagger_on_collision"):
 						pending["stagger_on_collision"] = true
@@ -5665,7 +5680,12 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				if bulldoze > 0:
 					pending["bulldoze"] = bulldoze
 					pending["caster_collision_immune"] = true
-				if AbilitySystem.effect_amount(action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor) > 0:
+				if (
+					effect.modifiers.get("bowling_upgrade", false)
+					or AbilitySystem.effect_amount(
+						action.ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION, actor
+					) > 0
+				):
 					pending["bowling_upgrade"] = true
 				board.pending_pushes.append(pending)
 		GameEnums.EffectType.TRAMPLE, GameEnums.EffectType.BULLDOZE:
@@ -6658,7 +6678,14 @@ static func resolve_pending_pushes(board: BoardState, events: Array[SimEvent]) -
 					
 		elif push_type == "dash":
 			var ability := actor.get_ability_by_id(ability_id) if actor != null and ability_id != &"" else null
-			if ability != null and AbilitySystem.effect_amount(ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0 and push.get("bowling_upgrade", false):
+			if (
+				ability != null
+				and push.get("bowling_upgrade", false)
+				and (
+					AbilitySystem.effect_amount(ability, GameEnums.EffectType.PUSH_CHAIN_COLLISION) > 0
+					or AbilitySystem._ability_has_modifier(actor, ability, &"bowling_upgrade")
+				)
+			):
 				for i in range(push_ev_start, events.size()):
 					var ev = events[i]
 					if ev.type != GameEnums.SimEventType.COLLISION:

@@ -616,8 +616,7 @@ static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnu
 			if not eff.modifiers.has("object_collision_stagger") and not eff.modifiers.has("stagger_on_collision"):
 				eff.modifiers["stagger_on_collision"] = 1
 		GameEnums.LayerCondition.ON_CHAIN_COLLISION:
-			## Represented by PUSH_CHAIN_COLLISION effect type historically.
-			pass
+			eff.modifiers["bowling_upgrade"] = true
 		GameEnums.LayerCondition.ON_LAND:
 			eff.modifiers["damage_adjacent_on_landing"] = 1
 		GameEnums.LayerCondition.PER_TARGET_HIT:

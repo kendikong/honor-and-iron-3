@@ -25,6 +25,23 @@ static func run_all(failures: Array[String]) -> void:
 	_test_typed_extra_label_mapping(failures)
 	_test_violent_collision_recast_visibility(failures)
 	_test_during_bulldoze_excludes_collision_modifiers(failures)
+	_test_migrate_legacy_layer_bundles(failures)
+
+
+static func _test_migrate_legacy_layer_bundles(failures: Array[String]) -> void:
+	var module := AbilityModule.new()
+	module.primary_type = GameEnums.EffectType.DAMAGE
+	module.layers = [
+		DataLibrary._layer(DataLibrary._effect(GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION, 1)),
+	]
+	ModuleAuthoringRules.migrate_legacy_layer_bundles(module)
+	if module.layers.size() != 1:
+		failures.append("bundle migration should keep one layer")
+	elif (
+		module.layers[0].condition != GameEnums.LayerCondition.ON_COLLISION
+		or not module.layers[0].stagger_on_collision
+	):
+		failures.append("PUSH_STAGGER bundle should become ON_COLLISION stagger layer")
 
 
 static func _test_during_bulldoze_excludes_collision_modifiers(failures: Array[String]) -> void:

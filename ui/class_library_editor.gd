@@ -3161,6 +3161,32 @@ func _add_on_collision_layer_shortcuts(
 		row.add_child(btn)
 
 
+func _add_pull_rider_layer_shortcuts(
+	parent: VBoxContainer,
+	ability: AbilityData,
+	module: AbilityModule,
+) -> void:
+	if not ModuleAuthoringRules.module_has_pull_effect(module):
+		return
+	var wrap := VBoxContainer.new()
+	wrap.add_theme_constant_override("separation", ClassLibraryTheme.px(ClassLibraryTheme.SPACE_SM))
+	parent.add_child(wrap)
+	var lbl := Label.new()
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lbl.add_theme_font_size_override("font_size", ClassLibraryTheme.font(ClassLibraryTheme.FONT_SMALL))
+	lbl.add_theme_color_override("font_color", ClassLibraryTheme.TEXT_MUTED)
+	lbl.text = "PULL modules: add a separate layer for pull riders (not bundled effect types)."
+	wrap.add_child(lbl)
+	var btn := Button.new()
+	btn.text = "+ VULNERABLE if pulled adjacent"
+	btn.pressed.connect(func() -> void:
+		module.layers.append(ModuleAuthoringRules.new_pull_vulnerable_adjacent_layer())
+		_on_module_field_edited(ability)
+		_rebuild_ability_detail_panes(ability)
+	)
+	wrap.add_child(btn)
+
+
 func _populate_layer_all_modifier_binds(
 	grid: GridContainer,
 	ability: AbilityData,
@@ -3356,6 +3382,10 @@ func _populate_layer_all_modifier_binds(
 		layer.pierce_if_first_zero = v
 		_on_module_field_edited(ability)
 	)
+	_bind_bool(grid, "Vulnerable If Adjacent", layer.vulnerable_on_adjacent, func(v: bool) -> void:
+		layer.vulnerable_on_adjacent = v
+		_on_module_field_edited(ability)
+	)
 	_bind_bool(grid, "Damage Adjacent On Landing", layer.damage_adjacent_on_landing, func(v: bool) -> void:
 		layer.damage_adjacent_on_landing = v
 		_on_module_field_edited(ability)
@@ -3545,7 +3575,7 @@ func _add_module_layers_editor(
 				layer.effect.type = v
 				AbilityModuleBridge.normalize_effect_authoring_fields(layer.effect)
 				_rebuild_ability_detail_panes(ability)
-			)
+			, true)
 			_bind_int(core, "Amount", layer.effect.amount, func(v: int) -> void:
 				layer.effect.amount = v
 				_on_module_field_edited(ability)
@@ -3577,6 +3607,7 @@ func _add_module_layers_editor(
 			_rebuild_ability_detail_panes(ability)
 		)
 	_add_on_collision_layer_shortcuts(box, ability, module)
+	_add_pull_rider_layer_shortcuts(box, ability, module)
 	var add := Button.new()
 	add.text = "+ Layer"
 	add.pressed.connect(func() -> void:
@@ -4064,13 +4095,19 @@ func _bind_enum(parent: GridContainer, label: String, enum_obj: Variant, current
 	return _bind_enum_excluding(parent, label, enum_obj, current, setter, PackedStringArray())
 
 
-func _bind_effect_type(parent: GridContainer, label: String, current: int, setter: Callable) -> Array[Control]:
+func _bind_effect_type(
+	parent: GridContainer,
+	label: String,
+	current: int,
+	setter: Callable,
+	for_layer: bool = false,
+) -> Array[Control]:
 	var lbl := _field_label(label)
 	parent.add_child(lbl)
 	var opt := OptionButton.new()
 	var missing: Array[GameEnums.EffectType] = ModuleAuthoringRules.log_uncategorized_effect_types_once()
 	var item_types: Array[int] = []
-	for family: Dictionary in ModuleAuthoringRules.effect_primary_families():
+	for family: Dictionary in ModuleAuthoringRules.effect_families_for_authoring(for_layer):
 		opt.add_separator(String(family["label"]))
 		for effect_type: GameEnums.EffectType in family["types"]:
 			var type_id: int = int(effect_type)

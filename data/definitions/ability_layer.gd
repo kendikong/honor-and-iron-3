@@ -19,6 +19,7 @@ extends Resource
 @export var weapon_scaled: bool = false
 @export var buff_per_destroyed_object: int = 0
 @export var stagger_on_collision: bool = false
+@export var vulnerable_on_adjacent: bool = false
 @export var intercept_grant_str: int = 0
 @export var push_collision_pierce: bool = false
 @export var push_collision_damage: int = 0
@@ -90,6 +91,8 @@ func compile_runtime_modifiers() -> Dictionary:
 		modifiers["buff_per_destroyed_object"] = buff_per_destroyed_object
 	if stagger_on_collision:
 		modifiers["stagger_on_collision"] = 1
+	if vulnerable_on_adjacent:
+		modifiers["vulnerable_on_adjacent"] = true
 	if intercept_grant_str != 0:
 		modifiers["intercept_grant_str"] = intercept_grant_str
 	if push_collision_pierce:
@@ -241,6 +244,8 @@ func ingest_runtime_key(key: String, value: Variant) -> void:
 			buff_per_destroyed_object = int(value)
 		"stagger_on_collision":
 			stagger_on_collision = bool(value)
+		"vulnerable_on_adjacent":
+			vulnerable_on_adjacent = bool(value)
 		"intercept_grant_str":
 			intercept_grant_str = int(value)
 		"push_collision_pierce":
