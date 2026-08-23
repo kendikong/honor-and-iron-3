@@ -103,13 +103,14 @@ If the **correct** fix requires **breaking, bypassing, or adding an exception to
 
 Any response that **proposes, implements, or summarizes** a code or rule change MUST include **all** lines below, visibly (not buried in prose):
 
+- **Fix type:** `non-heuristic fix` (mandatory on every bugfix/feature/refactor/perf turn — if this line is missing, the mandate was forgotten) OR `heuristic` only with approved ⚠ exception block in the same turn
 - **How this protects SSOT:** **Mandatory prose** — how the change respects and protects single source of truth / global architecture (one owner path; preview/commit/sim alignment; parallel path avoided or obsolete path removed). Citing only `CombatDirector` or “commit slots” **without** this explanation is a rule violation.
 - **Heuristics added:** `none` OR each heuristic named (only after walking the audit table)
 - **Why (not) heuristic:** **one brief sentence** (mandatory — ties to the SSOT line above)
   - If `none`: what you did **not** add (e.g. no tab-only apply, no `node ==`, no parallel preview path, no UI-only defer flag).
   - If named: why each listed item **is** heuristic under the definition above.
 
-**Forbidden:** `Heuristics added: none` with no **Why (not) heuristic:** line, a vacuous why (e.g. “no heuristics”, “follows global systems”, “audit passed”), or an **How this protects SSOT** line that only names a file/API with no protection story. **All are rule violations.**
+**Forbidden:** Missing **Fix type:** line, `Heuristics added: none` with no **Why (not) heuristic:** line, a vacuous why, or **How this protects SSOT** that only names a file/API. **All are rule violations.**
 
 **Required in:**
 - Permission gate / plans (`interpret-plan-permission.mdc`)

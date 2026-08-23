@@ -1,9 +1,12 @@
 ---
 description: Every change must weigh and minimize runtime CPU/GPU cost
-alwaysApply: true
+alwaysApply: false
+globs: "effects/**,shaders/**,scenes/**,presentation/**,core/**"
 ---
 
 # Minimal Performance Impact (Mandatory)
+
+**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc` — perf never overrides non-heuristic rules.
 
 All implementations, fixes, and refactors must **prefer the lowest-cost approach that still meets the requirement**. Performance is a first-class constraint — not an afterthought.
 

@@ -41,6 +41,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_awaiting_module_range_after_committed_premove,
 		_test_visibility_gate_parity_show,
 		_test_visibility_gate_parity_hide,
+		_test_post_swap_post_move_stand_locked_on_orbit,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -61,6 +62,7 @@ static func run_all(failures: Array[String]) -> void:
 		"awaiting_module_range_after_premove",
 		"parity_gate_show",
 		"parity_gate_hide",
+		"post_swap_post_move_stand_locked",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
@@ -1002,3 +1004,50 @@ static func _find_run_hover_tile(board: BoardState, unit: UnitState) -> Vector2i
 			if AbilitySystem.movement_requires_run(board, unit, coord, []):
 				return coord
 	return Vector2i(-999999, -999999)
+
+
+static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[String]) -> void:
+	var Checklist := PlanningChecklistHarness
+	var fix: Dictionary = Checklist.wire_swap_board(Checklist.SWAP_ALLY_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	fix["overlay"] = overlay
+	var swap_idx: int = Checklist.select_ability(fix, Checklist.KNIGHT_SWAP_ID)
+	if swap_idx < 0:
+		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: knight_swap missing")
+		return
+	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.SWAP_ALLY_CELL)
+	if bool(swap_slots.get("invalid", false)):
+		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: swap commit invalid")
+		return
+	Checklist.flush_planning(fix)
+	var stand_after_swap: Vector2i = Checklist.SWAP_ALLY_CELL
+	var orbit: Vector2i = Vector2i(stand_after_swap.x + 1, stand_after_swap.y)
+	if not fix.board.is_in_bounds(orbit):
+		orbit = Vector2i(stand_after_swap.x, stand_after_swap.y + 1)
+	Checklist.hover(fix, orbit)
+	var stand: Vector2i = input.action_range_intent_stand_cell(fix.k1_id)
+	if stand != stand_after_swap:
+		failures.append(
+			"ActionRangeRegression post_swap_post_move_stand_locked: stand expected %s got %s on orbit %s"
+			% [stand_after_swap, stand, orbit],
+		)
+	var overlay_stand: Vector2i = overlay._intent_stand_origin(fix.knight)
+	if overlay_stand != stand_after_swap:
+		failures.append(
+			"ActionRangeRegression post_swap_post_move_stand_locked: overlay stand expected %s got %s"
+			% [stand_after_swap, overlay_stand],
+		)
+	var preview: Dictionary = input._preview_from_commit_slots_at_cell(fix.k1_id, orbit)
+	if not bool(preview.get("intent_preview", false)):
+		failures.append(
+			"ActionRangeRegression post_swap_post_move_stand_locked: orbit hover must use cheap intent_preview",
+		)
+	var orbit_slots: Dictionary = input._final_commit_slots_for_click_at_cell(fix.k1_id, orbit, Vector2.ZERO)
+	var orbit_actions: Array[TimelineAction] = input._actions_from_slots(orbit_slots)
+	var director_preview: Dictionary = director.preview_actions(fix.k1_id, orbit_actions)
+	if not bool(director_preview.get("intent_preview", false)):
+		failures.append(
+			"ActionRangeRegression post_swap_post_move_stand_locked: director must preview from projected delta",
+		)

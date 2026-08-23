@@ -1,11 +1,14 @@
 ---
-description: ABSOLUTE — no bandaid fixes; fix root cause via shared systems; always on
-alwaysApply: true
+description: ABSOLUTE — no bandaid fixes; fix root cause via shared systems
+alwaysApply: false
+globs: "**/*.gd,**/*.tscn,**/*.tres,core/**,presentation/**,data/**,tests/**"
 ---
 
 # No Bandaid Fixes (ABSOLUTE — ALWAYS ON)
 
-**This rule is always active.** It overrides convenience, speed, and “just make it work for this case.”
+**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc`
+
+**This rule is always active when editing code.** It overrides convenience, speed, and “just make it work for this case.”
 If a fix adds a parallel code path, UI flag, or special-case branch instead of fixing the owning system, **stop and redesign**.
 
 **Same for refactors and features.** “I'm refactoring” / “I'm adding X while here” does not allow a second truth path or a flag only one layer reads.

@@ -1,9 +1,12 @@
 ---
 description: ABSOLUTE — red action-range tiles always paint from the latest committed stand, never turn-start
-alwaysApply: true
+alwaysApply: false
+globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_director.gd,tests/**action_range*"
 ---
 
 # Action Range = Latest Stand (ABSOLUTE — ALWAYS ON)
+
+**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc`
 
 **Read the failure log first:** `docs/design/ACTION_RANGE_LATEST_STAND.md`
 

@@ -17,6 +17,7 @@ Use exactly these three sections (in order):
 - What is **in scope** vs **out of scope** for this turn
 
 ### 2. Planned approach
+- **Fix type:** `non-heuristic fix` (mandatory — owner uses missing line to spot forgotten mandate) OR `heuristic` only with approved ⚠ exception
 - **How this protects SSOT:** Plain-language explanation of how the plan respects single source of truth — one canonical path, no parallel preview/commit/hover/sim owner; what obsolete path gets deleted in the same change. **Not** a file name alone.
 - **Heuristics added:** `none` or list each (**only** after walking the 6-row audit in `global-systems-first.mdc`)
 - **Why (not) heuristic:** one brief sentence — why `none` is justified, or why each named item is heuristic
@@ -37,6 +38,7 @@ Wait for the user's reply before making changes or running implementation work.
 
 Responses that **completed** file changes must **repeat** all three lines (not only in the gate):
 
+- **Fix type:** `non-heuristic fix` OR `heuristic` (with approved ⚠ exception only)
 - **How this protects SSOT:** …
 - **Heuristics added:** `none` or list each
 - **Why (not) heuristic:** …

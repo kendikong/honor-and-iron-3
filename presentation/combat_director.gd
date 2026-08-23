@@ -538,6 +538,13 @@ func unit_action_column_spent_for_movement(unit_id: int) -> bool:
 	## Modular skills (Parting Shot retreat, Charge Strike move leg, …) stay
 	## awaiting_target until every NEW_AIM module is locked — never treat preview
 	## sim turn_action_used as spent while that gate is open.
+	if unit_has_committed_class_action(unit_id):
+		return true
+	for action: TimelineAction in plan_action.entries:
+		if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.awaiting_target and action.target_unit_id >= 0:
+			return true
 	if find_awaiting_action(unit_id) != null:
 		return false
 	var planning_board: BoardState = (
@@ -1364,6 +1371,8 @@ func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions
 
 
 func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictionary:
+	if _preview_use_projected_delta(new_actions):
+		return _preview_from_projected_delta(new_actions)
 	var ev: Array[SimEvent] = []
 	var temp: BoardState = base_board.clone()
 	Simulator.simulate_player_turn(temp, combined, ev)
@@ -1383,6 +1392,49 @@ func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictiona
 			ResolutionPipeline.apply_action(temp, action, ev)
 	ResolutionPipeline.resolve_pending_pushes(temp, ev)
 	return {"intents": intents, "events": ev, "temp_board": temp}
+
+
+func _preview_use_projected_delta(new_actions: Array) -> bool:
+	## After committed plan (e.g. swap), move-only hover must not replay turn-start → swap every settle.
+	if projected_state == null or base_board == null or new_actions.is_empty():
+		return false
+	for raw: Variant in new_actions:
+		if not raw is TimelineAction:
+			return false
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+	return true
+
+
+func _preview_from_projected_delta(new_actions: Array) -> Dictionary:
+	var temp: BoardState = projected_state.clone()
+	var ev: Array[SimEvent] = []
+	for raw: Variant in new_actions:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.MOVE:
+			MovementSystem.execute_move(temp, action, ev)
+		else:
+			ResolutionPipeline.apply_action(temp, action, ev)
+	ResolutionPipeline.resolve_pending_pushes(temp, ev)
+	var res: Dictionary = {
+		"intents": [],
+		"events": ev,
+		"temp_board": temp,
+		"intent_preview": true,
+	}
+	if not _preview_skip_enemy_resolution(new_actions):
+		var intents: Array = EnemyPlanner.plan(temp)
+		for intent: Variant in intents:
+			if not intent is Intent:
+				continue
+			for enemy_action: TimelineAction in (intent as Intent).actions:
+				ResolutionPipeline.apply_action(temp, enemy_action, ev)
+		ResolutionPipeline.resolve_pending_pushes(temp, ev)
+		res["intents"] = intents
+	return res
 
 
 func _preview_skip_enemy_resolution(new_actions: Array) -> bool:

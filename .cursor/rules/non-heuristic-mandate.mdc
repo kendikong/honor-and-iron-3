@@ -13,7 +13,7 @@ Applies to **bugs, features, refactors, perf, and cleanup** — not only lag or 
 
 1. **Canonical owner** — one system/API owns this behavior end-to-end.
 2. **6-row audit** (below) — all rows; any fail → redesign or owner-approved ⚠ exception in chat.
-3. **Changelog:** `How this protects SSOT` (prose, not file name alone) + `Heuristics added:` + `Why (not) heuristic:` — vacuous lines = violation.
+3. **Changelog:** `Fix type: non-heuristic fix` (every code fix — owner uses this to spot forgotten mandate) + `How this protects SSOT` + `Heuristics added:` + `Why (not) heuristic:` — vacuous lines = violation.
 
 ## 6-row audit
 

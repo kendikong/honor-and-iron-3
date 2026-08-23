@@ -2828,9 +2828,74 @@ func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i)
 	## still runs on commit (`_commit_at_cell` flushes) and in QA fixtures.
 	if _planning == null or _planning.qa_static_overlay:
 		return false
+	return _slots_are_move_only_hover(slots, cell)
+
+
+## Committed class skill on timeline (action column or modular target locked).
+func _unit_has_resolved_ability_on_plan(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	for action: TimelineAction in _director.get_player_plan().entries:
+		if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
+			continue
+		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+			continue
+		if action.awaiting_target and action.target_unit_id < 0:
+			continue
+		return true
+	return false
+
+
+func _hover_intent_actions_are_move_only(unit_id: int, hover: Vector2i) -> bool:
+	if not _intent_snapshot_valid or _intent_snapshot_unit_id != unit_id:
+		return false
+	if _intent_snapshot_hover_cell != hover:
+		return false
+	if _is_invalid_dict(_intent_snapshot_slots):
+		return false
+	var actions: Array[TimelineAction] = _actions_from_slots(_intent_snapshot_slots)
+	if actions.is_empty():
+		return false
+	var has_move: bool = false
+	for action: TimelineAction in actions:
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+		if action.type == GameEnums.ActionType.MOVE:
+			has_move = true
+	return has_move
+
+
+func _hover_slots_are_move_only(unit_id: int, cell: Vector2i) -> bool:
 	if awaiting_targeting_active() or dragging:
 		return false
+	if _director == null or _director.board == null or unit_id < 0:
+		return false
+	var occupant: UnitState = _director.board.get_unit_at(cell)
+	if occupant != null and occupant.id != unit_id:
+		return false
+	var slots: Dictionary = _final_commit_slots_for_click_at_cell(
+		unit_id, cell, Vector2.ZERO,
+	)
+	if _is_invalid_dict(slots):
+		return false
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	if actions.is_empty():
+		return false
+	var has_move: bool = false
+	for action: TimelineAction in actions:
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+		if action.type == GameEnums.ActionType.MOVE:
+			has_move = true
+	return has_move
+
+
+func _slots_are_move_only_hover(slots: Dictionary, cell: Vector2i) -> bool:
+	if _is_invalid_dict(slots):
+		return false
 	if _director == null or _director.board == null:
+		return false
+	if awaiting_targeting_active() or dragging:
 		return false
 	var occupant: UnitState = _director.board.get_unit_at(cell)
 	if occupant != null and occupant.id != _director.selected_unit_id:
@@ -3822,6 +3887,10 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 			return prior_stand
 	var projected: Vector2i = _proj_move_origin(actor)
 	if _action_range_locked_to_projected_stand(unit_id, actor, projected):
+		if _director.projected_state != null:
+			var projected_unit: UnitState = _director.projected_state.get_unit_by_id(unit_id)
+			if projected_unit != null:
+				return projected_unit.position
 		return projected
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
@@ -3869,7 +3938,35 @@ func _action_range_locked_to_projected_stand(
 		return false
 	if _planning_post_move_only(actor, unit_id, hover):
 		return true
+	if (
+		_unit_has_resolved_ability_on_plan(unit_id)
+		and _hover_intent_actions_are_move_only(unit_id, hover)
+		and not _should_replan_premove_approach(unit_id, hover)
+	):
+		return true
+	if (
+		_director.unit_action_column_spent_for_movement(unit_id)
+		and _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
+	):
+		var hover_unit: UnitState = _director.board.get_unit_at(hover)
+		if hover_unit == null or hover_unit.id == unit_id:
+			return true
 	return false
+
+
+func action_range_stand_locked_to_projection(unit_id: int = -1) -> bool:
+	if _director == null or _director.board == null:
+		return false
+	if unit_id < 0:
+		unit_id = _director.selected_unit_id
+	if unit_id < 0:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return false
+	return _action_range_locked_to_projected_stand(unit_id, actor, _proj_move_origin(actor))
 
 
 ## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.

@@ -44,7 +44,19 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	build_preview_paths(events, director, preview_paths, preview_splits, preview_pushes, preview_post_splits, action_splits)
+	var path_init_board: BoardState = base_board
+	if bool(res.get("intent_preview", false)) and director.projected_state != null:
+		path_init_board = director.projected_state
+	build_preview_paths(
+		events,
+		director,
+		preview_paths,
+		preview_splits,
+		preview_pushes,
+		preview_post_splits,
+		action_splits,
+		path_init_board,
+	)
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	var actions_v: Variant = res.get("actions", [])
 	if actions_v is Array:
@@ -392,7 +404,18 @@ func ensure_movement_intent_from_actions(
 			var existing: Array = preview_paths.get(action.actor_id, [])
 			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			var path_board: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
-			if existing.size() < 2:
+			var existing_end: Vector2i = (
+				existing.back() as Vector2i if existing.size() > 0 else Vector2i(-999999, -999999)
+			)
+			var existing_start: Vector2i = (
+				existing[0] as Vector2i if existing.size() > 0 else Vector2i(-999999, -999999)
+			)
+			var needs_route: bool = (
+				existing.size() < 2
+				or existing_end != action.target_coord
+				or existing_start != move_origin
+			)
+			if needs_route:
 				var route_cells: Array = movement_intent_cells(move_origin, action)
 				if route_cells.size() < 2 and path_board != null:
 					var actor: UnitState = path_board.get_unit_by_id(action.actor_id)
@@ -404,8 +427,18 @@ func ensure_movement_intent_from_actions(
 						route_cells = [move_origin]
 						route_cells.append_array(found)
 				if route_cells.size() >= 2:
-					preview_paths[action.actor_id] = route_cells
-					preview_splits[action.actor_id] = route_cells.size()
+					var anchor_idx: int = _last_route_index(existing, move_origin)
+					if anchor_idx >= 0:
+						var merged: Array = existing.slice(0, anchor_idx + 1)
+						if route_cells.size() >= 2 and (route_cells[0] as Vector2i) == move_origin:
+							merged.append_array(route_cells.slice(1))
+						else:
+							merged.append_array(route_cells)
+						preview_paths[action.actor_id] = merged
+						preview_splits[action.actor_id] = merged.size()
+					else:
+						preview_paths[action.actor_id] = route_cells
+						preview_splits[action.actor_id] = route_cells.size()
 					if not action_splits.has(action.actor_id):
 						action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
@@ -619,14 +652,15 @@ static func build_preview_paths(
 	pushes: Dictionary,
 	post_splits: Dictionary = {},
 	action_splits: Dictionary = {},
+	init_board: BoardState = null,
 ) -> void:
 	paths.clear()
 	splits.clear()
 	pushes.clear()
 	post_splits.clear()
 	action_splits.clear()
-	var start_board: BoardState = null
-	if director != null:
+	var start_board: BoardState = init_board
+	if start_board == null and director != null:
 		start_board = director.base_board if director.base_board != null else director.board
 	var current_positions: Dictionary = {}
 	var post_move_marked: Dictionary = {}
@@ -1151,6 +1185,10 @@ static func anchor_preview_paths_to_latest_stand(
 	if director == null or preview == null or unit_id < 0:
 		return
 	var stand: Vector2i = planning_latest_stand_cell(director, fallback_board, unit_id)
+	if director.projected_state != null:
+		var projected_unit: UnitState = director.projected_state.get_unit_by_id(unit_id)
+		if projected_unit != null:
+			stand = projected_unit.position
 	if stand.x <= -900000:
 		return
 	var route: Array = preview.preview_paths.get(unit_id, [])

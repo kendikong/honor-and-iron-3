@@ -741,7 +741,12 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if _director != null and _director.selected_unit_id < 0:
 		_recompute_hover_ranges_from_inputs()
 	elif CombatDirector.is_planning_phase(_phase):
-		_refresh_cursor_action_tiles()
+		if _planning_input != null:
+			if _planning_input.action_range_visible_for_hover():
+				_refresh_cursor_action_tiles()
+			elif not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
+				_clear_hover_skill_tiles()
+				_queue_static_tiles_redraw()
 	if _planning_input == null:
 		_update_hover_action_icon()
 	if redraw:
@@ -801,7 +806,11 @@ func _refresh_cursor_action_tiles() -> void:
 		plan_board = _director.projected_state
 	var origin: Vector2i = _proj_origin(unit)
 	if _hover_is_walk_only_premove(unit):
-		origin = _hover_coord
+		if (
+			_planning_input == null
+			or not _planning_input.action_range_stand_locked_to_projection(unit.id)
+		):
+			origin = _hover_coord
 	var auto_run_move: bool = false
 	if _planning_input != null:
 		auto_run_move = _planning_input.auto_run_movement_active(actor)

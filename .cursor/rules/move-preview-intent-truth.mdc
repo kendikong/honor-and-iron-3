@@ -1,9 +1,12 @@
 ---
 description: ABSOLUTE — move preview is the intent system and single source of truth; commit must not change it
-alwaysApply: true
+alwaysApply: false
+globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_director.gd,tests/**planning*,tests/**intent*"
 ---
 
 # Move Preview = Intent Truth (ABSOLUTE — ALWAYS ON)
+
+**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc`
 
 **Owner philosophy (do not make the project owner re-explain this).**
 
