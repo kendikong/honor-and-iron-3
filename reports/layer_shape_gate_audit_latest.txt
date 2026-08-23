@@ -1,0 +1,194 @@
+﻿Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+LAYER_SHAPE_GATE: START mode=audit class=all
+LAYER_SHAPE_AUDIT: converted_skills=172
+  knight_defensive_formation: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_push_through: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_charge_strike: typed_extras=1 mandate_violations=0 non_allowlist=0
+  bruiser_concussion_blow: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_cleave: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_suplex: typed_extras=1 mandate_violations=0 non_allowlist=0
+  bruiser_adrenaline_surge: typed_extras=1 mandate_violations=0 non_allowlist=0
+  bruiser_earthshatter: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_meat_shield: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_frenzy: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_guttural_roar: typed_extras=4 mandate_violations=0 non_allowlist=0
+  bruiser_headbutt: typed_extras=1 mandate_violations=0 non_allowlist=0
+  bruiser_blood_boil: typed_extras=6 mandate_violations=0 non_allowlist=0
+  bruiser_violent_collision: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_crimson_whirlwind: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_belly_flop: typed_extras=0 mandate_violations=0 non_allowlist=0
+  bruiser_breaching_dash: typed_extras=0 mandate_violations=0 non_allowlist=0
+  archer_sidestep: typed_extras=5 mandate_violations=0 non_allowlist=0
+  archer_power_shot: typed_extras=0 mandate_violations=0 non_allowlist=0
+  archer_volley: typed_extras=2 mandate_violations=0 non_allowlist=0
+  archer_pinning_arrow: typed_extras=1 mandate_violations=0 non_allowlist=0
+  archer_piercing_shot: typed_extras=3 mandate_violations=0 non_allowlist=0
+  archer_toxic_spore_arrow: typed_extras=1 mandate_violations=0 non_allowlist=0
+  archer_grapple_arrow: typed_extras=3 mandate_violations=0 non_allowlist=0
+  archer_explosive_arrow: typed_extras=3 mandate_violations=0 non_allowlist=0
+  archer_hunters_mark: typed_extras=5 mandate_violations=0 non_allowlist=5
+  archer_repelling_shot: typed_extras=3 mandate_violations=0 non_allowlist=3
+  archer_bear_trap: typed_extras=9 mandate_violations=0 non_allowlist=0
+  archer_suppressing_fire: typed_extras=9 mandate_violations=0 non_allowlist=0
+  archer_caltrop_trap: typed_extras=9 mandate_violations=0 non_allowlist=0
+  archer_parting_shot: typed_extras=0 mandate_violations=0 non_allowlist=0
+  archer_scouts_eye: typed_extras=2 mandate_violations=0 non_allowlist=0
+  lancer_push: typed_extras=4 mandate_violations=1 non_allowlist=4
+  lancer_piercing_charge: typed_extras=3 mandate_violations=0 non_allowlist=0
+  lancer_sweeping_halberd: typed_extras=2 mandate_violations=0 non_allowlist=0
+  lancer_vaulting_leap: typed_extras=5 mandate_violations=0 non_allowlist=0
+  lancer_run_down: typed_extras=5 mandate_violations=1 non_allowlist=1
+  lancer_rallying_cry: typed_extras=4 mandate_violations=0 non_allowlist=0
+  lancer_flanking_maneuver: typed_extras=0 mandate_violations=0 non_allowlist=0
+  lancer_brace: typed_extras=1 mandate_violations=0 non_allowlist=1
+  lancer_harpoon_toss: typed_extras=5 mandate_violations=0 non_allowlist=0
+  lancer_glorious_charge: typed_extras=4 mandate_violations=1 non_allowlist=1
+  lancer_pole_vault: typed_extras=4 mandate_violations=0 non_allowlist=0
+  lancer_line_breaker: typed_extras=3 mandate_violations=0 non_allowlist=0
+  lancer_spear_wall: typed_extras=6 mandate_violations=0 non_allowlist=0
+  lancer_meteor_drop: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_blink: typed_extras=3 mandate_violations=0 non_allowlist=0
+  mage_fireball: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_ice_shard: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_chain_lightning: typed_extras=9 mandate_violations=0 non_allowlist=0
+  mage_arcane_push: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_teleport: typed_extras=2 mandate_violations=0 non_allowlist=0
+  mage_meteor: typed_extras=3 mandate_violations=0 non_allowlist=0
+  mage_black_hole: typed_extras=3 mandate_violations=0 non_allowlist=0
+  mage_time_warp: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_mana_shield: typed_extras=3 mandate_violations=0 non_allowlist=1
+  mage_disintegrate: typed_extras=3 mandate_violations=1 non_allowlist=3
+  mage_gravity_well: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mage_elemental_surge: typed_extras=5 mandate_violations=0 non_allowlist=5
+  mage_earth_spike: typed_extras=3 mandate_violations=0 non_allowlist=1
+  mage_density_shift: typed_extras=5 mandate_violations=0 non_allowlist=5
+  mage_arcane_barrage: typed_extras=1 mandate_violations=0 non_allowlist=1
+  cleric_guardian_step: typed_extras=3 mandate_violations=0 non_allowlist=0
+  cleric_holy_light: typed_extras=4 mandate_violations=0 non_allowlist=2
+  cleric_smite: typed_extras=1 mandate_violations=0 non_allowlist=1
+  cleric_cleansing_aura: typed_extras=1 mandate_violations=0 non_allowlist=1
+  cleric_sanctuary: typed_extras=7 mandate_violations=0 non_allowlist=1
+  cleric_divine_hammer: typed_extras=7 mandate_violations=0 non_allowlist=4
+  cleric_life_link: typed_extras=4 mandate_violations=0 non_allowlist=0
+  cleric_blinding_ray: typed_extras=0 mandate_violations=0 non_allowlist=0
+  cleric_prayer_of_fortitude: typed_extras=0 mandate_violations=0 non_allowlist=0
+  cleric_resurrection: typed_extras=5 mandate_violations=0 non_allowlist=3
+  cleric_consecrate_ground: typed_extras=9 mandate_violations=0 non_allowlist=0
+  cleric_holy_wrath: typed_extras=3 mandate_violations=0 non_allowlist=2
+  cleric_divine_guidance: typed_extras=3 mandate_violations=2 non_allowlist=2
+  cleric_shield_of_faith: typed_extras=0 mandate_violations=0 non_allowlist=0
+  cleric_martyrs_chains: typed_extras=7 mandate_violations=0 non_allowlist=2
+  mercenary_pullback: typed_extras=4 mandate_violations=0 non_allowlist=1
+  mercenary_swift_strike: typed_extras=3 mandate_violations=1 non_allowlist=3
+  mercenary_defense_strike: typed_extras=2 mandate_violations=0 non_allowlist=2
+  mercenary_blade_storm: typed_extras=2 mandate_violations=0 non_allowlist=0
+  mercenary_caltrop_toss: typed_extras=0 mandate_violations=0 non_allowlist=0
+  mercenary_feint: typed_extras=8 mandate_violations=0 non_allowlist=0
+  mercenary_riposte_strike: typed_extras=5 mandate_violations=0 non_allowlist=0
+  mercenary_sever: typed_extras=3 mandate_violations=3 non_allowlist=3
+  mercenary_second_wind: typed_extras=1 mandate_violations=1 non_allowlist=1
+  mercenary_tactical_retreat: typed_extras=2 mandate_violations=0 non_allowlist=0
+  mercenary_executioners_blade: typed_extras=1 mandate_violations=1 non_allowlist=1
+  mercenary_precision_strike: typed_extras=2 mandate_violations=0 non_allowlist=0
+  mercenary_flank_and_run: typed_extras=4 mandate_violations=0 non_allowlist=0
+  mercenary_hamstring: typed_extras=1 mandate_violations=0 non_allowlist=0
+  mercenary_acrobatic_vault: typed_extras=1 mandate_violations=0 non_allowlist=0
+  mercenary_duelists_challenge: typed_extras=3 mandate_violations=0 non_allowlist=0
+  monk_leap: typed_extras=1 mandate_violations=0 non_allowlist=0
+  monk_scorching_kick: typed_extras=0 mandate_violations=0 non_allowlist=0
+  monk_thunder_palm: typed_extras=2 mandate_violations=0 non_allowlist=0
+  monk_yin_yang_flurry: typed_extras=2 mandate_violations=0 non_allowlist=2
+  monk_chakra_shift: typed_extras=5 mandate_violations=0 non_allowlist=3
+  monk_phase_throw: typed_extras=0 mandate_violations=0 non_allowlist=0
+  monk_flying_crane_kick: typed_extras=3 mandate_violations=0 non_allowlist=0
+  monk_spirit_palm: typed_extras=0 mandate_violations=0 non_allowlist=0
+  monk_soul_punch: typed_extras=3 mandate_violations=0 non_allowlist=3
+  monk_hundred_fists: typed_extras=3 mandate_violations=0 non_allowlist=2
+  monk_mantra_of_peace: typed_extras=2 mandate_violations=0 non_allowlist=2
+  monk_inner_fire: typed_extras=3 mandate_violations=0 non_allowlist=2
+  monk_void_step: typed_extras=1 mandate_violations=0 non_allowlist=1
+  monk_cyclone_sweep: typed_extras=1 mandate_violations=0 non_allowlist=0
+  monk_updraft: typed_extras=1 mandate_violations=0 non_allowlist=0
+  monk_geyser_strike: typed_extras=0 mandate_violations=0 non_allowlist=0
+  rogue_slip_past: typed_extras=7 mandate_violations=0 non_allowlist=1
+  rogue_shadow_step: typed_extras=3 mandate_violations=0 non_allowlist=1
+  rogue_kidney_strike: typed_extras=0 mandate_violations=0 non_allowlist=0
+  rogue_smoke_bomb: typed_extras=9 mandate_violations=0 non_allowlist=1
+  rogue_evasive_strike: typed_extras=0 mandate_violations=0 non_allowlist=0
+  rogue_grappling_hook: typed_extras=5 mandate_violations=0 non_allowlist=5
+  rogue_switcheroo: typed_extras=3 mandate_violations=0 non_allowlist=3
+  rogue_shadow_swap: typed_extras=0 mandate_violations=0 non_allowlist=0
+  rogue_blindside: typed_extras=3 mandate_violations=0 non_allowlist=3
+  rogue_throat_slit: typed_extras=1 mandate_violations=1 non_allowlist=1
+  rogue_amnesia_dust: typed_extras=2 mandate_violations=0 non_allowlist=2
+  rogue_death_mark: typed_extras=1 mandate_violations=1 non_allowlist=1
+  rogue_lethal_flourish: typed_extras=3 mandate_violations=1 non_allowlist=3
+  rogue_kidnap: typed_extras=4 mandate_violations=0 non_allowlist=2
+  rogue_shuriken_volley: typed_extras=1 mandate_violations=0 non_allowlist=1
+  rogue_poison_flask: typed_extras=1 mandate_violations=0 non_allowlist=0
+  beast_reposition: typed_extras=5 mandate_violations=0 non_allowlist=0
+  beast_pounce: typed_extras=2 mandate_violations=0 non_allowlist=0
+  beast_feral_drag: typed_extras=5 mandate_violations=0 non_allowlist=1
+  beast_maul: typed_extras=7 mandate_violations=0 non_allowlist=5
+  beast_bestial_roar: typed_extras=0 mandate_violations=0 non_allowlist=0
+  beast_raking_claws: typed_extras=1 mandate_violations=0 non_allowlist=1
+  beast_rest_recover: typed_extras=2 mandate_violations=0 non_allowlist=0
+  beast_intimidate: typed_extras=1 mandate_violations=0 non_allowlist=1
+  beast_fetch: typed_extras=0 mandate_violations=0 non_allowlist=0
+  beast_savage_bite: typed_extras=1 mandate_violations=1 non_allowlist=1
+  beast_run_down: typed_extras=5 mandate_violations=0 non_allowlist=2
+  beast_thrash: typed_extras=0 mandate_violations=0 non_allowlist=0
+  beast_defensive_posture: typed_extras=1 mandate_violations=0 non_allowlist=1
+  beast_airlift: typed_extras=7 mandate_violations=0 non_allowlist=1
+  beast_tail_swipe: typed_extras=0 mandate_violations=0 non_allowlist=0
+  beast_gore: typed_extras=2 mandate_violations=0 non_allowlist=0
+  engineer_recall: typed_extras=1 mandate_violations=0 non_allowlist=1
+  engineer_dismantle: typed_extras=3 mandate_violations=1 non_allowlist=3
+  engineer_sludge_bomb: typed_extras=1 mandate_violations=0 non_allowlist=0
+  engineer_construct_turret: typed_extras=5 mandate_violations=0 non_allowlist=1
+  engineer_frag_bomb: typed_extras=3 mandate_violations=0 non_allowlist=1
+  engineer_magnetic_mine: typed_extras=9 mandate_violations=0 non_allowlist=1
+  engineer_tesla_barricade: typed_extras=5 mandate_violations=0 non_allowlist=0
+  engineer_flak_cannon: typed_extras=2 mandate_violations=0 non_allowlist=2
+  engineer_wrench_smack: typed_extras=3 mandate_violations=0 non_allowlist=3
+  engineer_emp_grenade: typed_extras=6 mandate_violations=0 non_allowlist=6
+  engineer_rocket_launcher: typed_extras=10 mandate_violations=0 non_allowlist=6
+  engineer_scrap_shield: typed_extras=5 mandate_violations=0 non_allowlist=3
+  engineer_manual_detonation: typed_extras=7 mandate_violations=0 non_allowlist=4
+  engineer_overdrive_injection: typed_extras=5 mandate_violations=0 non_allowlist=5
+  engineer_barbed_wire: typed_extras=11 mandate_violations=0 non_allowlist=1
+  shaman_usher: typed_extras=5 mandate_violations=0 non_allowlist=0
+  shaman_curse_of_weakness: typed_extras=7 mandate_violations=0 non_allowlist=5
+  shaman_healing_totem: typed_extras=7 mandate_violations=0 non_allowlist=5
+  shaman_flame_totem: typed_extras=7 mandate_violations=0 non_allowlist=5
+  shaman_bloodlust: typed_extras=9 mandate_violations=0 non_allowlist=7
+  shaman_hex: typed_extras=7 mandate_violations=0 non_allowlist=3
+  shaman_voodoo_link: typed_extras=9 mandate_violations=0 non_allowlist=3
+  shaman_terrify: typed_extras=4 mandate_violations=0 non_allowlist=4
+  shaman_miasma: typed_extras=1 mandate_violations=0 non_allowlist=1
+  shaman_bone_spear: typed_extras=2 mandate_violations=0 non_allowlist=2
+  shaman_ancestral_spirit: typed_extras=7 mandate_violations=0 non_allowlist=7
+  shaman_totem_guard: typed_extras=3 mandate_violations=0 non_allowlist=1
+  shaman_sympathetic_bond: typed_extras=9 mandate_violations=0 non_allowlist=5
+  shaman_earthbind_totem: typed_extras=7 mandate_violations=0 non_allowlist=5
+  shaman_soul_siphon: typed_extras=3 mandate_violations=1 non_allowlist=3
+  shaman_pain_spike: typed_extras=5 mandate_violations=0 non_allowlist=5
+[DEBT] lancer_push upgrade module 0 layer-mandate typed extras: buff_on_push
+[DEBT] lancer_run_down upgrade module 0 layer-mandate typed extras: on_kill_max_move
+[DEBT] lancer_glorious_charge upgrade module 1 layer-mandate typed extras: kill_grant_ap
+[DEBT] mage_disintegrate upgrade module 0 layer-mandate typed extras: kill_grant_ap
+[DEBT] cleric_divine_guidance base module 0 layer-mandate typed extras: grant_ap
+[DEBT] cleric_divine_guidance upgrade module 0 layer-mandate typed extras: grant_ap
+[DEBT] mercenary_swift_strike upgrade module 0 layer-mandate typed extras: target_damaged_ap
+[DEBT] mercenary_sever base module 0 layer-mandate typed extras: on_kill_all_allies_heal
+[DEBT] mercenary_sever upgrade module 0 layer-mandate typed extras: on_kill_all_allies_heal, on_kill_all_allies_shield
+[DEBT] mercenary_second_wind upgrade module 0 layer-mandate typed extras: next_skill_zero_ap
+[DEBT] mercenary_executioners_blade upgrade module 0 layer-mandate typed extras: kill_grant_ap
+[DEBT] rogue_throat_slit upgrade module 0 layer-mandate typed extras: on_kill_spread_silence_adjacent
+[DEBT] rogue_death_mark upgrade module 0 layer-mandate typed extras: on_kill_refresh_mark_zero_ap
+[DEBT] rogue_lethal_flourish upgrade module 0 layer-mandate typed extras: kill_grant_ap
+[DEBT] beast_savage_bite upgrade module 0 layer-mandate typed extras: on_kill_shield
+[DEBT] engineer_dismantle upgrade module 0 layer-mandate typed extras: on_hit_scrap
+[DEBT] shaman_soul_siphon upgrade module 0 layer-mandate typed extras: heal_per_debuff
+[PASS] layer shape audit report

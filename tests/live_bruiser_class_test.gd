@@ -41,7 +41,7 @@ const _CASES: Array[Dictionary] = [
 	{"id": &"bruiser_headbutt", "observation": &"damage_status", "upgrade_keys": [&"bonus_dmg_pct_max_hp"]},
 	{"id": &"bruiser_blood_boil", "observation": &"self_buff", "upgrade_keys": [&"next_attack_strength"]},
 	{"id": &"bruiser_violent_collision", "observation": &"movement", "upgrade_keys": [&"stagger_on_collision"]},
-	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_if_targets_gte"]},
+	{"id": &"bruiser_crimson_whirlwind", "observation": &"aoe_damage", "upgrade_keys": [&"heal_per_target_hit_layer"]},
 	{"id": &"bruiser_belly_flop", "observation": &"movement", "upgrade_keys": [&"landing_push"]},
 	{"id": &"bruiser_breaching_dash", "observation": &"movement", "upgrade_keys": [&"next_attack_pierce"]},
 ]
@@ -904,7 +904,7 @@ func _assert_skill_specific_outcome(result: SimResult, skill_id: StringName, act
 			var projected_actor: UnitState = projection_board.get_unit_by_id(actor_id)
 			assert_bool(
 				projected_actor != null
-				and projected_actor.passive_flags.get("violent_collision_recast_used", false),
+				and projected_actor.passive_flags.get("if_collided_recast_used", false),
 			).override_failure_message(
 				"violent_collision: player-phase simulation must expose the recast before turn reset",
 			).is_true()
@@ -1425,6 +1425,13 @@ func _modules_have_key(ability: AbilityData, key: StringName) -> bool:
 						and layer.effect.type == GameEnums.EffectType.PUSH
 					):
 						return true
+			&"heal_per_target_hit_layer":
+				if LayerShapeConversionRules.module_has_layer_signature(
+					module,
+					GameEnums.LayerCondition.PER_TARGET_HIT,
+					GameEnums.EffectType.HEAL,
+				):
+					return true
 			&"heal_if_targets_gte":
 				if LayerShapeConversionRules.module_has_layer_signature(
 					module,

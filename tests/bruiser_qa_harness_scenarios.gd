@@ -1051,7 +1051,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var mid_bruiser: UnitState = mid_result.final_state.get_unit_by_id(10)
 	H.assert_true(
 		failures, "violent_collision/recast_used",
-		mid_bruiser != null and mid_bruiser.passive_flags.get("violent_collision_recast_used", false),
+		mid_bruiser != null and mid_bruiser.passive_flags.get("if_collided_recast_used", false),
 	)
 	H.assert_true(
 		failures, "violent_collision/recast_ap_refund",

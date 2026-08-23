@@ -469,6 +469,7 @@ func reset_for_turn() -> void:
 	passive_flags.erase("adrenaline_surge_active")
 	passive_flags.erase("frenzy_on_kill_ap")
 	passive_flags.erase("meat_shield_intercept_str")
+	passive_flags.erase("if_collided_recast_used")
 	passive_flags.erase("violent_collision_recast_used")
 	passive_flags.erase("push_used_this_turn")
 	passive_flags.erase("jumped_or_teleported_this_turn")

@@ -3357,10 +3357,17 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 	)
 	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"destroy_corpse_on_kill"):
 		actor.passive_flags["destroy_corpse_on_kill"] = true
+	var kill_grant_ap_amount: int = 0
 	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"kill_grant_ap"):
-		actor.passive_flags["kill_grant_ap"] = AbilityModuleBridge.modules_modifier_value(
+		kill_grant_ap_amount = AbilityModuleBridge.modules_modifier_value(
 			runtime_modules, &"kill_grant_ap",
 		)
+	elif AbilityModuleBridge.modules_have_modifier(runtime_modules, &"frenzy_on_kill_ap"):
+		kill_grant_ap_amount = AbilityModuleBridge.modules_modifier_value(
+			runtime_modules, &"frenzy_on_kill_ap", 1,
+		)
+	if kill_grant_ap_amount > 0:
+		actor.passive_flags["kill_grant_ap"] = kill_grant_ap_amount
 	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"next_attack_pierce"):
 		actor.passive_flags["breaching_dash_pierce"] = true
 	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_heal_shield"):
@@ -3369,8 +3376,6 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 		actor.passive_flags["meat_shield_intercept_str"] = AbilityModuleBridge.modules_modifier_value(
 			runtime_modules, &"intercept_grant_str",
 		)
-	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"frenzy_on_kill_ap"):
-		actor.passive_flags["frenzy_on_kill_ap"] = true
 	if AbilityModuleBridge.modules_have_modifier(runtime_modules, &"on_kill_max_move"):
 		actor.passive_flags["on_kill_max_move"] = AbilityModuleBridge.modules_modifier_value(
 			runtime_modules, &"on_kill_max_move",
@@ -3393,7 +3398,7 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 				if not _module_gate_passes(next_module, actor, events, module_event_start):
 					continue
 				if next_module.gate == GameEnums.ModuleGate.IF_COLLIDED:
-					actor.passive_flags["violent_collision_recast_used"] = true
+					actor.passive_flags["if_collided_recast_used"] = true
 					actor.ability.points_left += 1
 					actor.turn_action_used = false
 				_append_module_effects(next_module, effects_to_apply, effect_modules)

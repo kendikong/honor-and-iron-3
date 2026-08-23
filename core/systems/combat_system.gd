@@ -1245,8 +1245,6 @@ static func deal_damage(
 					attacker.ability.points_left += 1
 				attacker.passive_flags.erase("paired_ally_id")
 				attacker.passive_flags.erase("paired_strength_bonus")
-			if attacker.passive_flags.get("frenzy_on_kill_ap", false) and source_label == "Frenzy":
-				attacker.ability.points_left += 1
 
 ## Bible Unstoppable Force: immune to STAGGER/ROOT; resisting grants SHIELD 1 ([+] 2).
 ## Returns true if status was prevented (caller must not apply it).

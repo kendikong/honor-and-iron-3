@@ -32,7 +32,7 @@ A skill is **actually converted** when factory data is **Swap-shaped**:
 | Mode | Behavior |
 |------|----------|
 | `--audit` | Print per-skill debt report; never fail |
-| Default (`LAYER_MANDATE`) | **FAIL** if any `CONVERTED_SKILL_IDS` skill sets a **layer-mandate** typed extra (`frenzy_on_kill_ap`, `heal_if_targets_gte`, `violent_collision_recast`, …) |
+| Default (`LAYER_MANDATE`) | **FAIL** if any `CONVERTED_SKILL_IDS` skill sets a **layer-mandate** typed extra (`frenzy_on_kill_ap`, `heal_if_targets_gte`, `violent_collision_recast`, …). **Class gates** use `--class <id>` (e.g. `bruiser`) so one class can pass while others still owe mandate work. |
 | `STRICT_ALLOWLIST` (future CI) | **FAIL** on any typed extra not in ER-1 allowlist |
 
 ## Per-skill expectations
@@ -64,9 +64,10 @@ A skill is **actually converted** when factory data is **Swap-shaped**:
 ```text
 godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --audit
 godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd
+godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --class bruiser
 ```
 
-**Expected today:** default gate **FAIL** until skills are re-converted. Audit mode shows debt.
+**Expected today:** global default gate still **FAIL** until all classes clear mandate debt. **Bruiser** layer-mandate skills pass via `run_bruiser_qa_gate.ps1` (`--class bruiser`). Audit mode shows remaining debt.
 
 ## IMPLEMENTATION_PLAN matrix
 

@@ -221,6 +221,8 @@ static func module_has_modifier(module: AbilityModule, key: StringName) -> bool:
 			for layer: AbilityLayer in module.layers:
 				if layer != null and layer.buff_on_push > 0:
 					return true
+		&"frenzy_on_kill_ap":
+			return module_has_modifier(module, &"kill_grant_ap")
 		_:
 			pass
 	for keyword: AbilityKeyword in module.keywords:
@@ -272,6 +274,8 @@ static func module_modifier_value(module: AbilityModule, key: StringName, defaul
 			for layer: AbilityLayer in module.layers:
 				if layer != null and layer.buff_on_push > 0:
 					return layer.buff_on_push
+		&"frenzy_on_kill_ap":
+			return module_modifier_value(module, &"kill_grant_ap", default_value)
 		_:
 			pass
 	for keyword: AbilityKeyword in module.keywords:
@@ -666,7 +670,7 @@ static func _apply_layer_condition_to_effect(eff: EffectData, condition: GameEnu
 				if ap_amt <= 0:
 					ap_amt = 1
 				eff.modifiers["kill_grant_ap"] = ap_amt
-			elif not eff.modifiers.has("on_kill_heal_shield") and not eff.modifiers.has("frenzy_on_kill_ap"):
+			elif not eff.modifiers.has("on_kill_heal_shield") and not eff.modifiers.has("kill_grant_ap"):
 				eff.modifiers["on_kill_heal_shield"] = 1
 		GameEnums.LayerCondition.IF_FROM_BEHIND:
 			eff.modifiers["from_behind_only"] = true
