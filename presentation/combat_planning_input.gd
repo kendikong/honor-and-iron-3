@@ -79,6 +79,8 @@ var _intent_snapshot_valid: bool = false
 var _intent_snapshot_unit_id: int = -1
 var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _suppress_post_commit_hover_refresh: bool = false
+## Settled hover used projected-delta move-only preview — overlay range already correct at stand.
+var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
 var _hover_preview_lru: Dictionary = {}
 var _hover_preview_lru_order: Array[String] = []
@@ -531,6 +533,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			return
 		drag_preview_failed = true
 		_hover_preview_cache_key = ""
+		_last_hover_move_intent_preview = false
 		preview_state.clear_interaction()
 		## Drop stale spent-AP boards so UI does not keep a previous skill's preview.
 		preview_state.preview_board = null
@@ -544,6 +547,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		return
 	preview_state.apply_result(preview, _director)
 	drag_preview_failed = false
+	_last_hover_move_intent_preview = _preview_dict_is_move_only_intent(preview)
 	var actor_id: int = _drag_unit_id if dragging else _director.selected_unit_id
 	for event: Variant in preview.get("events", []):
 		if event is SimEvent:
@@ -1398,7 +1402,8 @@ func _run_hover_overlay_refresh() -> void:
 	if _director.selected_unit_id >= 0 and planning_cell_changed:
 		_sync_threat_origin_from_cell(cell)
 	if _planning != null and planning_cell_changed:
-		_planning._recompute_hover_ranges_from_inputs()
+		if not _last_hover_move_intent_preview:
+			_planning._recompute_hover_ranges_from_inputs()
 	_last_heavy_hover_refresh_cell = cell
 
 
@@ -1607,6 +1612,7 @@ func _clear_hover_preview() -> void:
 	preview_state.preview_post_splits.clear()
 	preview_state.preview_pushes.clear()
 	drag_preview_failed = false
+	_last_hover_move_intent_preview = false
 	_clear_intent_snapshot()
 	if _planning != null:
 		_planning.restore_committed_display()
@@ -3967,6 +3973,24 @@ func action_range_stand_locked_to_projection(unit_id: int = -1) -> bool:
 	if actor == null:
 		return false
 	return _action_range_locked_to_projected_stand(unit_id, actor, _proj_move_origin(actor))
+
+
+func _preview_dict_is_move_only_intent(preview: Dictionary) -> bool:
+	if not bool(preview.get("intent_preview", false)):
+		return false
+	var actions_v: Variant = preview.get("actions", [])
+	if not actions_v is Array:
+		return false
+	var has_move: bool = false
+	for raw: Variant in actions_v as Array:
+		if not raw is TimelineAction:
+			continue
+		var action: TimelineAction = raw as TimelineAction
+		if action.type == GameEnums.ActionType.ABILITY:
+			return false
+		if action.type == GameEnums.ActionType.MOVE:
+			has_move = true
+	return has_move
 
 
 ## Locked move intent (timeline or painted drag) used for action-range economy — not hover stand.

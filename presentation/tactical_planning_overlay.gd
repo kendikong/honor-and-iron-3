@@ -790,6 +790,10 @@ func _refresh_cursor_action_tiles() -> void:
 		return
 	var p_unit: UnitState = _proj_unit(unit.id)
 	var actor: UnitState = p_unit if p_unit != null else unit
+	var stand_locked: bool = (
+		_planning_input != null
+		and _planning_input.action_range_stand_locked_to_projection(unit.id)
+	)
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 	if _director != null:
 		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
@@ -804,13 +808,9 @@ func _refresh_cursor_action_tiles() -> void:
 	var plan_board: BoardState = _board
 	if _director.projected_state != null:
 		plan_board = _director.projected_state
-	var origin: Vector2i = _proj_origin(unit)
-	if _hover_is_walk_only_premove(unit):
-		if (
-			_planning_input == null
-			or not _planning_input.action_range_stand_locked_to_projection(unit.id)
-		):
-			origin = _hover_coord
+	var origin: Vector2i = _intent_stand_origin(unit)
+	if _hover_is_walk_only_premove(unit) and not stand_locked:
+		origin = _hover_coord
 	var auto_run_move: bool = false
 	if _planning_input != null:
 		auto_run_move = _planning_input.auto_run_movement_active(actor)
@@ -828,6 +828,12 @@ func _refresh_cursor_action_tiles() -> void:
 		if not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
 			_clear_hover_skill_tiles()
 			_queue_static_tiles_redraw()
+		return
+	if stand_locked and _hover_is_walk_only_premove(unit):
+		_fill_hover_blast_tiles(
+			unit, p_unit, origin, selected_ability, force_basic, true,
+		)
+		_queue_static_tiles_redraw()
 		return
 	_fill_hover_action_range_tiles(
 		unit, p_unit, origin, selected_ability, force_basic, true,
