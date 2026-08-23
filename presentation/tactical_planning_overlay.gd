@@ -2826,7 +2826,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 
 
 ## Action-range anchor: committed projection plus live move-preview stand (intent truth).
-## Phase-2 armed movement skills keep projected stand — dash endpoints come from there.
+## Armed TILE aim locks projected stand — hover only drives yellow blast / endpoint ghosts.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
@@ -2835,15 +2835,11 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 		var intent_stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
 		if intent_stand.x > -900000:
 			return intent_stand
-	if _planning_input != null and _planning_input.awaiting_targeting_active():
-		var sel_idx: int = _director.selected_ability_index if _director != null else -1
-		var ability: AbilityData = _selected_ability_data(unit, sel_idx)
-		if (
-			ability != null
-			and AbilitySystem.is_movement_skill(ability)
-			and _planning_input._is_awaiting_movement_endpoint(unit, ability)
-		):
-			return projected
+	if (
+		_planning_input != null
+		and _planning_input._armed_tile_target_locks_action_range(unit)
+	):
+		return projected
 	if _planning_input != null and _planning_input.is_live_preview_active():
 		var live_board: BoardState = _live_preview.preview_board
 		if live_board != null:

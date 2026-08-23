@@ -63,3 +63,15 @@ If you are about to add **another** range origin, you are probably about to writ
 - [ ] Overlay awaiting path uses the same `origin` as `_intent_stand_origin`.
 - [ ] I added or extended a test that fails the last broken hash if that shortcut returns.
 - [ ] If this attempt also fails in F5, I will **append** a new dated entry with the new hash instead of rewriting history.
+
+---
+
+### 2026-08-23 — armed TILE aim must lock red (not dash-only)
+
+**Symptom:** After arming a TILE skill (Bowling, Violent Collision, Volley), red range sometimes re-anchored to the dash/aim ghost landing while hovering endpoints — same class of bug as latest-stand drift, but **forward** along live preview instead of stuck on turn start.
+
+**Wrong approach:** Per-skill branches (`is_movement_skill`, `_is_awaiting_movement_endpoint`, dash one-click heuristics).
+
+**Fix:** `_armed_tile_target_locks_action_range` — when `awaiting_targeting_active()` and armed ability has `TargetingFlags.TILE`, `action_range_intent_stand_cell` returns projected stand only; overlay `_intent_stand_origin` follows. Hover updates yellow blast only (existing cache).
+
+**Tests:** `ActionRangeRegressionTest` armed cases (`bowling_awaiting_occupied_end`, `shaped_red_yellow` Volley) + full action_range suite in planning gate.

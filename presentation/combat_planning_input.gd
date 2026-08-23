@@ -1733,7 +1733,10 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_click_target_highlight()
 		return
 	if target_enemy_id < 0 and _basic_move_allowed() and _is_hover_move_cell(p_unit, cell):
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
+		var move_waypoints: Array[Vector2i] = _director.preview_waypoints_for_hover(
+			_proj(), p_unit, cell, [], null,
+		)
+		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, move_waypoints)
 		_refresh_click_target_highlight()
 		return
 	if (
@@ -3524,51 +3527,11 @@ func _cell_on_dash_line_from_stand(
 	return dist >= module.min_range and dist <= module.max_range
 
 
-## Paired pre-move (K4 walk detour): when walk reaches the hover in <= dash tiles, paint walk — not dash.
-func _paired_premove_walk_beats_dash_tile(
-	actor: UnitState,
-	ability: AbilityData,
-	cell: Vector2i,
-) -> bool:
-	if actor == null or ability == null:
-		return false
-	if not AbilitySystem.ability_has_movement_effect(ability, actor):
-		return false
-	if AbilitySystem.movement_requires_run(_proj(), actor, cell, []):
-		return false
-	if not _cell_on_dash_line_from_stand(actor, ability, cell):
-		return false
-	var move_origin: Vector2i = _proj_move_origin(actor)
-	if cell == move_origin:
-		return false
-	var board: BoardState = _proj()
-	var mt: int = (
-		actor.definition.movement_type
-		if actor.definition != null
-		else GameEnums.MovementType.WALK
-	)
-	var walk_path: Array[Vector2i] = MovementSystem.find_path(
-		board,
-		move_origin,
-		cell,
-		_move_budget(actor),
-		mt,
-		1,
-		_walk_pathfinding_ability(actor),
-	)
-	if walk_path.is_empty():
-		return false
-	if not MovementSystem.can_end_movement_on(board, cell, actor):
-		return false
-	var walk_steps: int = walk_path.size() - 1
-	var dash_steps: int = GridSystem.manhattan(move_origin, cell)
-	return walk_steps <= dash_steps
-
-
 func _tile_target_movement_skill_commits_at_cell(
 	actor: UnitState,
 	ability: AbilityData,
 	cell: Vector2i,
+	painted_waypoints: Array[Vector2i] = [],
 ) -> bool:
 	if actor == null or ability == null:
 		return false
@@ -3583,7 +3546,12 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
-		if _paired_premove_walk_beats_dash_tile(actor, ability, cell):
+		## Painted move waypoints (selection/drag route) are pre-move intent — not dash pickup.
+		if (
+			not painted_waypoints.is_empty()
+			and not _is_awaiting_movement_endpoint(actor, ability)
+			and not _drag_route_commits_active()
+		):
 			return false
 		if _dash_tile_endpoint_one_click_commit(actor, ability, cell):
 			return true
@@ -3651,8 +3619,6 @@ func _dash_tile_endpoint_one_click_commit(
 	) == 0:
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
-		return false
-	if _paired_premove_walk_beats_dash_tile(actor, ability, cell):
 		return false
 	if (
 		_drag_route_commits_active()
@@ -3800,6 +3766,24 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	return AbilitySystem.can_afford_run(actor)
 
 
+## Armed TILE skills: red range stays on projected stand until commit/clear (not hover ghost).
+func _armed_tile_target_locks_action_range(actor: UnitState) -> bool:
+	if not awaiting_targeting_active() or actor == null or _director == null:
+		return false
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	var ability: AbilityData = null
+	if awaiting != null and awaiting.ability != null:
+		ability = awaiting.ability
+	elif actor.id == _director.selected_unit_id:
+		ability = _selected_ability_data(actor)
+	if ability == null:
+		return false
+	return (
+		AbilitySystem.active_targeting_flags(actor, ability)
+		& GameEnums.TargetingFlags.TILE
+	) != 0
+
+
 ## Where red action-range tiles anchor — projected stand plus live move-preview stand (intent truth).
 func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if _director == null:
@@ -3827,9 +3811,9 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
 		ability = _selected_ability_data(actor)
+	if _armed_tile_target_locks_action_range(actor):
+		return projected
 	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
-		if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
-			return projected
 		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
 		if _director.board.is_in_bounds(hover):
 			var hover_unit: UnitState = _director.board.get_unit_at(hover)
@@ -4974,7 +4958,7 @@ func _build_commit_slots_at_cell(
 				and move_timing >= 0
 				and not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 				and not _movement_skill_commits_tile_endpoint(actor, ability, cell)
-				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell)
+				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, effective_waypoints)
 			):
 				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
 				if not AbilitySystem.ability_has_movement_effect(ability):
@@ -4990,7 +4974,6 @@ func _build_commit_slots_at_cell(
 				hover_unit == null
 				and AbilitySystem.ability_has_movement_effect(ability, actor)
 				and not _is_awaiting_movement_endpoint(actor, ability)
-				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell)
 				and _basic_move_allowed()
 				and _unit_move_slot_open(unit_id, cell)
 				and _drop_allows_move_tile(cell, legal_move_tiles, actor)
@@ -5000,13 +4983,14 @@ func _build_commit_slots_at_cell(
 					walk_waypoints = _director.preview_waypoints_for_hover(
 						_proj(), actor, cell, walk_waypoints, null,
 					)
-				if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-					_append_move_to_commit_slots(slots, unit_id, cell, walk_waypoints, actor)
-				_maybe_append_premove_action_pair(
-					slots, unit_id, actor, cell, ability, walk_waypoints,
-				)
-				return slots
-			if AbilitySystem.can_target_self(actor, ability) and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
+				if not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, walk_waypoints):
+					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+						_append_move_to_commit_slots(slots, unit_id, cell, walk_waypoints, actor)
+					_maybe_append_premove_action_pair(
+						slots, unit_id, actor, cell, ability, walk_waypoints,
+					)
+					return slots
+			if AbilitySystem.can_target_self(actor, ability) and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, effective_waypoints):
 				if AbilitySystem.is_run_ability(ability):
 					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 						if effective_waypoints.is_empty():
@@ -5058,7 +5042,9 @@ func _build_commit_slots_at_cell(
 					if AbilitySystem.ability_has_movement_effect(ability, actor):
 						if (
 							_is_awaiting_movement_endpoint(actor, ability)
-							or _tile_target_movement_skill_commits_at_cell(actor, ability, cell)
+							or _tile_target_movement_skill_commits_at_cell(
+								actor, ability, cell, effective_waypoints,
+							)
 						):
 							var board: BoardState = _proj()
 							if (
