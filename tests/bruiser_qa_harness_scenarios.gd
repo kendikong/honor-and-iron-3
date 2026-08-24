@@ -1118,6 +1118,25 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		failures, "violent_collision/line_collision_registered",
 		H.events_have_type(line_result.events, GameEnums.SimEventType.COLLISION),
 	)
+	var terminal_collision_seen := false
+	var line_damage_ids: Dictionary = {}
+	for event: SimEvent in line_result.events:
+		if (
+			event.type == GameEnums.SimEventType.COLLISION
+			and int(event.data.get("unit", -1)) == 31
+			and int(event.data.get("dash_hit_step", -1)) == 2
+		):
+			terminal_collision_seen = true
+		if event.type == GameEnums.SimEventType.UNIT_DAMAGED:
+			line_damage_ids[int(event.data.get("unit", -1))] = true
+	H.assert_true(
+		failures, "violent_collision/line_terminal_collision_event",
+		terminal_collision_seen,
+	)
+	H.assert_true(
+		failures, "violent_collision/line_collision_damage_events",
+		line_damage_ids.has(31) and line_damage_ids.has(32),
+	)
 	H.assert_true(
 		failures, "violent_collision/line_does_not_force_extended_distance",
 		not H.events_have_unit_pushed(line_result.events, 32),

@@ -2374,6 +2374,20 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 		if step_events.has(step_i):
 			await _emit_step_playback_events(step_events[step_i] as Array, run_id)
 	
+	## A collision can occur on the attempted step after the last tile entered.
+	## Replay those terminal event buckets after the mover reaches its final valid
+	## tile; otherwise the simulation event never reaches presentation.
+	var terminal_steps: Array[int] = []
+	for raw_step: Variant in step_events.keys():
+		var step: int = int(raw_step)
+		if step >= path.size():
+			terminal_steps.append(step)
+	terminal_steps.sort()
+	for step: int in terminal_steps:
+		if run_id != _run_id:
+			return
+		await _emit_step_playback_events(step_events[step] as Array, run_id)
+
 	await get_tree().create_timer(0.05).timeout
 	if run_id != _run_id:
 		return
