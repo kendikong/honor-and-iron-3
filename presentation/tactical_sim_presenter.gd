@@ -96,17 +96,24 @@ func _on_planning_commit_events(events: Array) -> void:
 			var event: SimEvent = raw as SimEvent
 			if _is_push_event(event):
 				had_push = true
-			if _defer_planning_player_move_to_unit_layer(event):
+			if _defer_planning_presentation_to_unit_layer(event):
 				continue
 			_on_sim_event(event)
 	if had_push:
 		_schedule_push_flush()
 
 
-func _defer_planning_player_move_to_unit_layer(event: SimEvent) -> bool:
-	if event.type != GameEnums.SimEventType.UNIT_MOVED or _director == null:
+func _defer_planning_presentation_to_unit_layer(event: SimEvent) -> bool:
+	if _director == null or not CombatDirector.is_planning_phase(_director.phase):
 		return false
-	if not CombatDirector.is_planning_phase(_director.phase):
+	if event.type == GameEnums.SimEventType.ABILITY_USED:
+		return bool(
+			event.data.get("planning_swap_presentation", false)
+			or event.data.get("planning_displacement_presentation", false)
+		)
+	if event.type == GameEnums.SimEventType.UNIT_PUSHED:
+		return bool(event.data.get("planning_commit_push", false))
+	if event.type != GameEnums.SimEventType.UNIT_MOVED:
 		return false
 	var unit_id: int = int(event.data.get("actor", -1))
 	if _director.is_planning_move_instant(unit_id):

@@ -288,6 +288,8 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	assert_int(pre_moves.size()).override_failure_message(
 		"walk_swap/click_ally: expected walk + swap pre-moves",
 	).is_equal(2)
+	if pre_moves.size() < 2:
+		return
 	assert_that(pre_moves[0].type).override_failure_message(
 		"walk_swap/click_ally: first pre-move must be walk",
 	).is_equal(GameEnums.ActionType.MOVE)
@@ -297,6 +299,7 @@ func _journey_swap_ally_out_of_range_parity(ctx: Dictionary) -> void:
 	await _wait_for_planning_commit_stage(ctx, &"swap")
 	_assert_actor_on_cell(ctx, k1_id, _WALK_SWAP_APPROACH, "walk_swap/after_walk/k1")
 	_assert_actor_on_cell(ctx, ctx.ally_id, _WALK_SWAP_ALLY_CELL, "walk_swap/after_walk/ally")
+	await ctx.runner.simulate_frames(2, _settle_delta_ms())
 	await _wait_planning_move_tween(ctx, ctx.ally_id)
 	_assert_swap_premove_state_layers(ctx, "walk_swap/click_ally/after_anim", {
 		"k1_pos": _WALK_SWAP_ALLY_CELL,
@@ -319,14 +322,13 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 		[_K1_CELL, Vector2i(3, 5), _WALK_SWAP_APPROACH],
 		_WALK_SWAP_APPROACH,
 		"walk_swap/walk",
+		true,
+		true,
 	)
 	await _wait_planning_move_tween(ctx, k1_id)
 	await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
 	await _reposition_mouse_to_unit(ctx, k1_id, _WALK_SWAP_ALLY_CELL)
 	await _commit_via_slots_at_cell(ctx, k1_id, _WALK_SWAP_ALLY_CELL, "walk_swap/swap")
-	_assert_premove_is_visibly_in_progress(
-		ctx, k1_id, _K1_CELL, _WALK_SWAP_APPROACH, "walk_swap",
-	)
 	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(director, k1_id)
 	if pre_moves.size() != 2:
 		assert_int(pre_moves.size()).override_failure_message(
@@ -1170,11 +1172,14 @@ func _drag_release_at(
 	release_cell: Vector2i,
 	label: String = "drag",
 	assert_commit_ratify: bool = true,
+	assert_visible_premove: bool = false,
 ) -> void:
 	var cells: Array[Vector2i] = route.duplicate()
 	if cells.is_empty() or cells[cells.size() - 1] != release_cell:
 		cells.append(release_cell)
-	await _drag_through_cells(ctx, cells, false, label, assert_commit_ratify)
+	await _drag_through_cells(
+		ctx, cells, false, label, assert_commit_ratify, assert_visible_premove,
+	)
 
 
 func _assert_k1_bash_committed(ctx: Dictionary, k1_id: int, label: String) -> void:
@@ -1769,6 +1774,7 @@ func _drag_through_cells(
 	assert_hover_steps: bool = true,
 	label: String = "drag",
 	assert_commit_ratify: bool = true,
+	assert_visible_premove: bool = false,
 ) -> void:
 	if cells.is_empty():
 		return
@@ -1792,7 +1798,14 @@ func _drag_through_cells(
 		input._intent_state.set_hover_coord(release_cell)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, ctx.director.selected_unit_id, release_cell, true)
 	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
-	await runner.simulate_frames(_ability_settle_frames(), _settle_delta_ms())
+	if assert_visible_premove:
+		await runner.simulate_frames(3, _settle_delta_ms())
+		_assert_premove_is_visibly_in_progress(
+			ctx, ctx.director.selected_unit_id, cells[0], release_cell, label,
+		)
+	var settle_frames: int = _ability_settle_frames() - (3 if assert_visible_premove else 0)
+	if settle_frames > 0:
+		await runner.simulate_frames(settle_frames, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/release" % label)
 	if assert_commit_ratify:
 		await _assert_commit_ratifies_preview(ctx, ctx.director.selected_unit_id, pre_intent, "%s/release" % label)
