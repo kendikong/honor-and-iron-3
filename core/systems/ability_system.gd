@@ -2748,6 +2748,14 @@ static func dash_line_has_enemy(
 	return false
 
 
+static func dash_collision_scan_steps(
+	base_range: int,
+	origin: Vector2i,
+	target_coord: Vector2i,
+) -> int:
+	return mini(base_range, PhysicsSystem.straight_line_distance(origin, target_coord))
+
+
 static func dash_effective_max_range(
 	board: BoardState,
 	actor: UnitState,
@@ -2766,7 +2774,8 @@ static func dash_effective_max_range(
 	var dir: Vector2i = PhysicsSystem.straight_line_dir(origin, target_coord)
 	if dir == Vector2i.ZERO:
 		return base_range
-	if dash_line_has_enemy(board, actor, origin, dir, extended):
+	var collision_scan_steps: int = dash_collision_scan_steps(base_range, origin, target_coord)
+	if dash_line_has_enemy(board, actor, origin, dir, collision_scan_steps):
 		return extended
 	return base_range
 
@@ -2787,7 +2796,13 @@ static func dash_line_threat_tiles_for_module(
 		var steps: int = base_steps
 		if extended_steps > base_steps and hover_cell.x > -900000:
 			var hover_dir: Vector2i = PhysicsSystem.straight_line_dir(origin, hover_cell)
-			if hover_dir == dir and dash_line_has_enemy(board, actor, origin, dir, extended_steps):
+			var collision_scan_steps: int = dash_collision_scan_steps(
+				base_steps, origin, hover_cell,
+			)
+			if (
+				hover_dir == dir
+				and dash_line_has_enemy(board, actor, origin, dir, collision_scan_steps)
+			):
 				steps = extended_steps
 		for i: int in range(1, steps + 1):
 			var coord: Vector2i = origin + dir * i

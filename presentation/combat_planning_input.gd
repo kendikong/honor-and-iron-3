@@ -2190,7 +2190,7 @@ func _commit_interaction_params(
 				waypoints = walk_wps
 			elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
 				waypoints = _director.preview_waypoints_for_hover(
-					_proj(), actor, hover_cell, [], ability,
+					_proj(), actor, hover_cell, [], ability, true,
 				)
 	var face_dir: int = -1
 	if _map_view != null:
@@ -5102,7 +5102,7 @@ func _build_commit_slots_at_cell(
 			and _is_awaiting_movement_endpoint(actor, ability)
 		):
 			effective_waypoints = _director.preview_waypoints_for_hover(
-				_proj(), actor, cell, effective_waypoints, ability,
+				_proj(), actor, cell, effective_waypoints, ability, true,
 			)
 
 		if (
@@ -5845,7 +5845,9 @@ func _append_module_awaiting_target(
 		committed.target_unit_id = target_unit_id
 		var wps: Array[Vector2i] = waypoints.duplicate()
 		if wps.is_empty() and _director != null and AbilitySystem.ability_has_movement_effect(committed.ability):
-			wps = _director.preview_waypoints_for_hover(_proj(), actor, cell, [], committed.ability)
+			wps = _director.preview_waypoints_for_hover(
+				_proj(), actor, cell, [], committed.ability, true,
+			)
 		committed.waypoints = wps
 	AbilitySystem.prepare_planning_action(_proj(), committed)
 	slots[_ability_plan_column(awaiting_action.ability)].append(committed)

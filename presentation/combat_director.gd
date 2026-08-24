@@ -1502,9 +1502,16 @@ func preview_waypoints_for_hover(
 	target: Vector2i,
 	waypoints: Array[Vector2i],
 	ability: AbilityData,
+	direct_dash_endpoint: bool = false,
 ) -> Array[Vector2i]:
 	if actor == null or not waypoints.is_empty() or target == actor.position:
 		return waypoints.duplicate()
+	if (
+		direct_dash_endpoint
+		and ability != null
+		and AbilitySystem.ability_has_dash(ability, actor)
+	):
+		return PhysicsSystem.cardinal_straight_line_path(actor.position, target)
 	var movement_type: GameEnums.MovementType = (
 		actor.definition.movement_type
 		if actor.definition != null

@@ -35,6 +35,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_ability_scroll_clears_hover_preview_cache,
 		_test_unarmed_later_new_aim_does_not_steal_premove,
 		_test_unarmed_violent_collision_empty_tile_is_premove,
+		_test_violent_collision_range_and_preview_follow_candidate_line,
 		_test_committed_move_prefix_while_later_aim_awaits,
 	]
 	for test: Callable in tests:
@@ -1942,6 +1943,10 @@ static func _violent_collision_premove_fixture() -> Dictionary:
 	dash.min_range = 1
 	dash.max_range = 3
 	dash.targeting_flags = GameEnums.TargetingFlags.TILE
+	dash.layers = [
+		DataLibrary._during_bulldoze(1, 1),
+		DataLibrary._if_line_collision_extend_primary_range(5),
+	]
 	ability.modules = [dash]
 	var unit := UnitState.new()
 	unit.id = 1
@@ -1953,8 +1958,16 @@ static func _violent_collision_premove_fixture() -> Dictionary:
 	unit.definition = UnitData.new()
 	unit.definition.display_name = "Bruiser"
 	unit.active_abilities = [ability]
-	board.units = [unit]
+	var dummy := UnitState.new()
+	dummy.id = 2
+	dummy.team = GameEnums.Team.ENEMY
+	dummy.position = Vector2i(3, 5)
+	dummy.definition = UnitData.new()
+	dummy.definition.display_name = "Training Dummy"
+	dummy.health = HealthComponent.new(20)
+	board.units = [unit, dummy]
 	GridSystem.set_occupant(board, unit.position, unit.id)
+	GridSystem.set_occupant(board, dummy.position, dummy.id)
 	director.board = board
 	director.base_board = board
 	director.projected_state = board.clone()
@@ -1998,6 +2011,70 @@ static func _test_unarmed_violent_collision_empty_tile_is_premove(
 			failures.append(
 				"PlanningInputTest: empty hover must not consume Violent Collision as a direct dash",
 			)
+
+
+static func _test_violent_collision_range_and_preview_follow_candidate_line(
+	failures: Array[String],
+) -> void:
+	var fixture: Dictionary = _violent_collision_premove_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var director: CombatDirector = input._director
+	var ability: AbilityData = fixture["ability"] as AbilityData
+	var actor: UnitState = input._proj_unit(1)
+	var module: AbilityModule = ability.modules[0]
+	var short_target := Vector2i(4, 5)
+	var extended_target := Vector2i(2, 5)
+	var short_range: int = AbilitySystem.dash_effective_max_range(
+		input._proj(), actor, module, actor.position, short_target,
+	)
+	var extended_range: int = AbilitySystem.dash_effective_max_range(
+		input._proj(), actor, module, actor.position, extended_target,
+	)
+	if short_range != 3:
+		failures.append(
+			"PlanningInputTest: collision beyond hovered endpoint must keep DASH range 3, got %d"
+			% short_range,
+		)
+	if extended_range != 5:
+		failures.append(
+			"PlanningInputTest: collision on candidate line must extend DASH range to 5, got %d"
+			% extended_range,
+		)
+	var short_threats: Array[Vector2i] = AbilitySystem.dash_line_threat_tiles_for_module(
+		input._proj(), actor, module, actor.position, short_target,
+	)
+	if short_threats.has(Vector2i(2, 5)):
+		failures.append(
+			"PlanningInputTest: red dash range must not include post-collision tiles before candidate reaches collision",
+		)
+	var direct_path: Array[Vector2i] = director.preview_waypoints_for_hover(
+		input._proj(), actor, extended_target, [], ability, true,
+	)
+	var expected_path: Array[Vector2i] = [
+		Vector2i(5, 5), Vector2i(4, 5), Vector2i(3, 5), Vector2i(2, 5),
+	]
+	if direct_path != expected_path:
+		failures.append(
+			"PlanningInputTest: armed Violent Collision preview must use direct dash path, got %s"
+			% direct_path,
+		)
+	var arm_slots: Dictionary = input._final_commit_slots_for_interaction(1, actor.position)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("PlanningInputTest: Violent Collision self-arm should commit")
+		return
+	var target_slots: Dictionary = input._final_commit_slots_for_interaction(1, extended_target)
+	var action: TimelineAction = null
+	for raw: Variant in target_slots.get("action", []):
+		if raw is TimelineAction:
+			action = raw as TimelineAction
+			break
+	if action == null:
+		failures.append("PlanningInputTest: armed Violent Collision should build a dash action")
+	elif action.waypoints != expected_path:
+		failures.append(
+			"PlanningInputTest: committed Violent Collision path must match preview, got %s"
+			% action.waypoints,
+		)
 
 
 static func _test_committed_move_prefix_while_later_aim_awaits(failures: Array[String]) -> void:

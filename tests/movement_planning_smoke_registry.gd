@@ -69,7 +69,7 @@ static func _entries() -> Dictionary:
 			"mode": "click",
 			"actor_pos": Vector2i(2, 3),
 			"enemy_pos": Vector2i(3, 3),
-			"commit_cell": Vector2i(4, 3),
+			"commit_cell": Vector2i(3, 3),
 			"verify_no_jump": false,
 			"module_assert": "violent_collision",
 		},
