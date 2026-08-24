@@ -3449,7 +3449,16 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 	if action.type == GameEnums.ActionType.MOVE:
 		return true
 	if action.type == GameEnums.ActionType.ABILITY and action.ability != null:
-		if AbilitySystem.ability_has_swap_effect(action.ability):
+		var actor: UnitState = (
+			base_board.get_unit_by_id(action.actor_id)
+			if base_board != null
+			else null
+		)
+		## Reposition uses one synthesized before/after presentation. Its simulation
+		## movement events must not become a second commit animation path.
+		if AbilitySystem.ability_needs_planning_reposition_presentation(
+			action.ability, actor,
+		):
 			return false
 		return (
 			TimelineAction.timeline_column_for_ability(action.ability)

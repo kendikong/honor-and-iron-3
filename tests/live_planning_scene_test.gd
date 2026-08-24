@@ -10,6 +10,7 @@ const _CHAIN_HOOK_ID: StringName = &"knight_chain_hook"
 const _TRAMPLE_ID: StringName = &"knight_trampling_advance"
 const _BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 const _SWAP_ID: StringName = &"knight_swap"
+const _PUSH_THROUGH_ID: StringName = &"bruiser_push_through"
 
 const _K1_CELL := Vector2i(4, 5)
 const _K1_BASH_PAINT_ROUTE: Array[Vector2i] = [_K1_CELL, _HOVER_WALK, _BASH_APPROACH]
@@ -21,6 +22,9 @@ const _SWAP_PREMOVE_DEST := Vector2i(3, 5)
 ## Walk-then-swap: knight starts at _K1_CELL; ally not adjacent until knight walks.
 const _WALK_SWAP_ALLY_CELL := Vector2i(2, 4)
 const _WALK_SWAP_APPROACH := Vector2i(3, 4)
+const _PUSH_THROUGH_ALLY_CELL := Vector2i(3, 5)
+const _PUSH_THROUGH_APPROACH := Vector2i(3, 4)
+const _PUSH_THROUGH_ROUTE: Array[Vector2i] = [Vector2i(4, 4), _PUSH_THROUGH_APPROACH]
 const _K2_CELL := Vector2i(1, 3)
 const _K3_CELL := Vector2i(5, 4)
 const _K4_CELL := Vector2i(4, 1)
@@ -122,13 +126,63 @@ func test_live_swap_session(timeout := 120000) -> void:
 	await _journey_walk_then_swap(ctx)
 
 
+func test_live_push_through_premove_session(timeout := 120000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_swap_session(
+		runner, scene, _PUSH_THROUGH_ALLY_CELL, &"bruiser",
+	)
+	var bruiser_id: int = ctx.k1_id
+	var push: AbilityData = await _select_ability_for_unit(
+		ctx, bruiser_id, _PUSH_THROUGH_ID,
+	)
+	assert_object(push).is_not_null()
+	await _enter_basic_movement_mode(ctx, bruiser_id)
+	await _drag_release_at(
+		ctx,
+		[_K1_CELL, _PUSH_THROUGH_ROUTE[0], _PUSH_THROUGH_APPROACH],
+		_PUSH_THROUGH_APPROACH,
+		"push_through/premove",
+	)
+	await _wait_planning_move_tween(ctx, bruiser_id)
+	await _select_ability_for_unit(ctx, bruiser_id, _PUSH_THROUGH_ID)
+	await _reposition_mouse_to_unit(ctx, bruiser_id, _PUSH_THROUGH_ALLY_CELL)
+	await _commit_via_slots_at_cell(
+		ctx, bruiser_id, _PUSH_THROUGH_ALLY_CELL, "push_through/commit",
+	)
+	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(
+		ctx.director, bruiser_id,
+	)
+	assert_int(pre_moves.size()).is_equal(2)
+	assert_that(pre_moves[0].type).is_equal(GameEnums.ActionType.MOVE)
+	assert_that(pre_moves[0].waypoints).is_equal(_PUSH_THROUGH_ROUTE)
+	assert_that(pre_moves[1].ability.id).is_equal(_PUSH_THROUGH_ID)
+	await _wait_ability_settle(ctx)
+	await _wait_planning_move_tween(ctx, bruiser_id)
+	await _wait_planning_move_tween(ctx, ctx.ally_id)
+	_assert_reposition_animation_order(
+		ctx, bruiser_id, _K1_CELL, _PUSH_THROUGH_APPROACH, "push_through",
+	)
+	_assert_actor_on_cell(ctx, bruiser_id, _PUSH_THROUGH_ALLY_CELL, "push_through/actor")
+	_assert_actor_on_cell(
+		ctx, ctx.ally_id, Vector2i(3, 6), "push_through/ally",
+	)
+
+
 func _boot_swap_session(
 	runner: GdUnitSceneRunner,
 	scene: TestBattleMapView,
 	ally_cell: Vector2i,
+	class_id: StringName = &"knight",
 ) -> Dictionary:
 	var session: TestBattleSession = scene.get_session()
 	session.reset_defaults()
+	session.player_class_id = class_id
+	session.set_all_passives_enabled(class_id, false)
+	session.set_all_skills_enabled(class_id, true)
 	session.extra_player_coords = [ally_cell]
 	session.dummy_coords = []
 	scene.apply_training_board()

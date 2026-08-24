@@ -3576,6 +3576,6 @@
 	},
 	"screenshot": "",
 	"severity": "Medium",
-	"status": "ongoing",
+	"status": "done",
 	"title": "reposition animation order still off"
 }
