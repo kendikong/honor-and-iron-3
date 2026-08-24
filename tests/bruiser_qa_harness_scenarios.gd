@@ -1025,6 +1025,25 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		"violent_collision/bulldoze",
 		AbilityModuleBridge.module_has_modifier(ab.modules[0], &"bulldoze"),
 	)
+	var collision_range_layer: AbilityLayer = ab.modules[0].layers[1]
+	H.assert_eq_int(
+		failures,
+		"violent_collision/collision_range_condition",
+		collision_range_layer.condition,
+		GameEnums.LayerCondition.IF_LINE_COLLISION,
+	)
+	H.assert_eq_int(
+		failures,
+		"violent_collision/collision_range_effect",
+		collision_range_layer.effect.type,
+		GameEnums.EffectType.MODIFY_PRIMARY_RANGE,
+	)
+	H.assert_eq_int(
+		failures,
+		"violent_collision/collision_range_amount",
+		collision_range_layer.effect.amount,
+		5,
+	)
 	var extend_range: int = AbilitySystem.module_dash_collision_extended_range(ab.modules[0])
 	H.assert_eq_int(failures, "violent_collision/collision_extend_range", extend_range, 5)
 	var cfg: Dictionary = H.bruiser_with_ability(&"bruiser_violent_collision")
@@ -1041,6 +1060,16 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		failures, "violent_collision/dash_through_collision",
 		bruiser.position if bruiser != null else Vector2i.ZERO,
 		Vector2i(5, 3),
+	)
+	H.assert_true(
+		failures,
+		"violent_collision/collision_registered",
+		H.events_have_type(result.events, GameEnums.SimEventType.COLLISION),
+	)
+	H.assert_true(
+		failures,
+		"violent_collision/enemy_pushed",
+		H.events_have_unit_pushed(result.events, 2),
 	)
 	var extend_board: BoardState = H.make_plain_board(Vector2i(12, 6))
 	H.place_bruiser(extend_board, 10, Vector2i(2, 3), cfg)

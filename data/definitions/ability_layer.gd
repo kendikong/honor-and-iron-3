@@ -39,8 +39,6 @@ extends Resource
 @export var reaction_steam_splash_size: int = 0
 @export var reaction_steam_splash_damage: int = 0
 @export var set_max_move: int = 0
-## IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE: primary DASH max_range while line has an enemy.
-@export var primary_range_if_line_collision: int = 0
 @export var arcane_trail: bool = false
 @export var creation_adjacent_damage: int = 0
 @export var terrain_id: StringName = &""

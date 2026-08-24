@@ -111,6 +111,7 @@ enum EffectType {
 	GRANT_AP, ## Add AP to the target's pool, capped at Max AP (3).
 	PAIRED_MOVE, ## Pre-Move ally paired walk; Action ally relocates remain rework-only.
 	GRANT_SCRAP, ## Add Scrap to the caster (Engineer).
+	MODIFY_PRIMARY_RANGE, ## Layer-only modifier that changes a module's primary range.
 }
 
 ## Types of temporary statuses that can be applied to units.
@@ -396,8 +397,8 @@ enum LayerCondition {
 	PER_TARGET_HIT,
 	IF_ALREADY_ADJACENT,
 	IF_FROM_BEHIND,
-	## Planning + execution: raise primary module max_range on dash lines with an enemy.
-	IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE,
+	## Planning + execution: activate a layer when a dash registers an enemy collision.
+	IF_LINE_COLLISION,
 }
 
 ## Bundled keyword packages on a motion/damage module (ability-data.md §6).

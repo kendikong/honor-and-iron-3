@@ -9,7 +9,7 @@ const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
 
 ## Bible: Violent Collision — DASH 3 | BULLDOZE; on enemy hit DASH 5 | BULLDOZE same line.
 ## [+] collisions apply STAGGER (1 turn).
-## Globals: DASH + BULLDOZE; IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE layer (3→5 on line hit).
+## Globals: DASH + BULLDOZE; IF_LINE_COLLISION → MODIFY_PRIMARY_RANGE 5 layer (3→5 on line hit).
 
 
 static func run_all(failures: Array[String]) -> void:

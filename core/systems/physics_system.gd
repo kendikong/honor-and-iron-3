@@ -116,6 +116,47 @@ static func cardinal_straight_line_path(from: Vector2i, to: Vector2i) -> Array[V
 		path.append(from + direction * step)
 	return path
 
+## Probe the real dash resolver on a cloned board and report enemy collisions.
+static func dash_line_registers_enemy_collision(
+	board: BoardState,
+	actor: UnitState,
+	direction: Vector2i,
+	scan_steps: int,
+	bulldoze: int = 0,
+) -> bool:
+	if board == null or actor == null or direction == Vector2i.ZERO or scan_steps <= 0:
+		return false
+	var probe_board: BoardState = board.clone()
+	var probe_actor: UnitState = probe_board.get_unit_by_id(actor.id)
+	if probe_actor == null:
+		return false
+	var events: Array[SimEvent] = []
+	dash(
+		probe_board,
+		probe_actor,
+		direction,
+		scan_steps,
+		events,
+		probe_actor,
+		&"",
+		0,
+		"",
+		bulldoze,
+	)
+	for event: SimEvent in events:
+		if event.type != GameEnums.SimEventType.COLLISION:
+			continue
+		if int(event.data.get("pusher_id", -1)) != actor.id:
+			continue
+		for collision_id: int in [
+			int(event.data.get("unit", -1)),
+			int(event.data.get("against_unit", -1)),
+		]:
+			var target: UnitState = board.get_unit_by_id(collision_id)
+			if target != null and target.is_alive() and target.team != actor.team:
+				return true
+	return false
+
 ## True when the dasher will not take another step after entering `tile`.
 static func _dash_ends_on_tile(board: BoardState, tile: Vector2i, direction: Vector2i, step_index: int, total_steps: int) -> bool:
 	if step_index >= total_steps - 1:

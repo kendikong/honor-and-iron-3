@@ -130,8 +130,8 @@ const CONVERSION_SHAPE_EXPECTATIONS: Dictionary = {
 		"min_modules": 1,
 		"required_layers": [
 			{
-				"condition": "IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE",
-				"effect_type": "DASH",
+				"condition": "IF_LINE_COLLISION",
+				"effect_type": "MODIFY_PRIMARY_RANGE",
 				"profile": "base",
 			},
 		],
@@ -447,8 +447,8 @@ static func _layer_condition_from_spec(value: Variant) -> GameEnums.LayerConditi
 			return GameEnums.LayerCondition.ON_COLLISION
 		"PER_TARGET_HIT":
 			return GameEnums.LayerCondition.PER_TARGET_HIT
-		"IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE":
-			return GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE
+		"IF_LINE_COLLISION":
+			return GameEnums.LayerCondition.IF_LINE_COLLISION
 		"IF_ALREADY_ADJACENT":
 			return GameEnums.LayerCondition.IF_ALREADY_ADJACENT
 		"ON_LAND":
@@ -473,5 +473,7 @@ static func _effect_type_from_spec(value: Variant) -> GameEnums.EffectType:
 			return GameEnums.EffectType.DAMAGE
 		"DASH":
 			return GameEnums.EffectType.DASH
+		"MODIFY_PRIMARY_RANGE":
+			return GameEnums.EffectType.MODIFY_PRIMARY_RANGE
 		_:
 			return GameEnums.EffectType.DAMAGE

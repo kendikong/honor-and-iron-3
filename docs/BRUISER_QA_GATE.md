@@ -71,7 +71,7 @@ Map Bible text to a global keyword **only when semantics match exactly**. **Auth
 |--------------|--------------|----------------|
 | **Suplex:** behind caster placement | `SWAP` | `THROW_BEHIND` (`bruiser_suplex`) |
 | **Meat Shield:** swap with ally | `TELEPORT` | `SWAP` + `INTERCEPT` |
-| **Violent Collision:** DASH 3 + BULLDOZE; on hit DASH 5 + BULLDOZE same line | single `MOVE` | single `DASH` + BULLDOZE + `IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE` layer (no second module, no `violent_collision_recast` knob) |
+| **Violent Collision:** DASH 3 + BULLDOZE; on hit DASH 5 + BULLDOZE same line | single `MOVE` | single `DASH` + BULLDOZE + `IF_LINE_COLLISION` → `MODIFY_PRIMARY_RANGE 5` layer (no second module, no `violent_collision_recast` knob) |
 | **Push Through:** move into occupied tile | `SWAP` | `MOVE_INTO_AND_PUSH` |
 
 ---

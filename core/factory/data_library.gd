@@ -504,10 +504,9 @@ static func _layer(
 
 static func _if_line_collision_extend_primary_range(extended_range: int) -> AbilityLayer:
 	var layer: AbilityLayer = _layer(
-		_effect(GameEnums.EffectType.DASH, 0),
-		GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE,
+		_effect(GameEnums.EffectType.MODIFY_PRIMARY_RANGE, extended_range),
+		GameEnums.LayerCondition.IF_LINE_COLLISION,
 	)
-	layer.primary_range_if_line_collision = extended_range
 	return layer
 
 

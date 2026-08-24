@@ -155,6 +155,8 @@ static func layer_condition_applies(
 			return motion or effect_type_can_deal_damage(parent_module.primary_type)
 		GameEnums.LayerCondition.IF_ALREADY_ADJACENT:
 			return effect_type_can_deal_damage(parent_module.primary_type)
+		GameEnums.LayerCondition.IF_LINE_COLLISION:
+			return parent_module.primary_type == GameEnums.EffectType.DASH
 		_:
 			return true
 
@@ -221,6 +223,12 @@ static func normalize_module_context_fields(
 			continue
 		if layer.condition == GameEnums.LayerCondition.DURING:
 			if not during_layer_compatible(module, layer):
+				layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
+		elif layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION:
+			if (
+				layer.effect == null
+				or layer.effect.type != GameEnums.EffectType.MODIFY_PRIMARY_RANGE
+			):
 				layer.condition = GameEnums.LayerCondition.AT_RESOLUTION
 
 
@@ -722,6 +730,7 @@ static func internal_authoring_effect_types() -> Array[GameEnums.EffectType]:
 		GameEnums.EffectType.PUSH_STAGGER_ON_COLLISION,
 		GameEnums.EffectType.PULL_VULNERABLE_ON_ADJACENT,
 		GameEnums.EffectType.PUSH_CHAIN_COLLISION,
+		GameEnums.EffectType.MODIFY_PRIMARY_RANGE,
 	]
 
 
@@ -1243,8 +1252,12 @@ static func layer_summary(layer: AbilityLayer) -> String:
 		if layer.collision_splash_damage > 0:
 			return "on_collision splash"
 		return "on_collision"
-	if layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE:
-		return "if_line_collision range=%d" % layer.primary_range_if_line_collision
+	if layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION:
+		return "if_line_collision %s amount=%d" % [
+			GameEnums.EffectType.keys()[layer.effect.type].to_lower()
+			if layer.effect != null else "empty",
+			layer.effect.amount if layer.effect != null else 0,
+		]
 	if layer.vulnerable_on_adjacent and layer.effect != null and layer.effect.type == GameEnums.EffectType.PULL:
 		return "pull vulnerable if adjacent"
 	if layer.effect == null:

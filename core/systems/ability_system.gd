@@ -2723,29 +2723,12 @@ static func module_dash_collision_extended_range(module: AbilityModule) -> int:
 	for layer: AbilityLayer in module.layers:
 		if (
 			layer != null
-			and layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE
+			and layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.MODIFY_PRIMARY_RANGE
 		):
-			return maxi(layer.primary_range_if_line_collision, 0)
+			return maxi(layer.effect.amount, 0)
 	return 0
-
-
-static func dash_line_has_enemy(
-	board: BoardState,
-	actor: UnitState,
-	origin: Vector2i,
-	direction: Vector2i,
-	scan_steps: int,
-) -> bool:
-	if board == null or actor == null or direction == Vector2i.ZERO or scan_steps <= 0:
-		return false
-	for step: int in range(1, scan_steps + 1):
-		var cell: Vector2i = origin + direction * step
-		if not board.is_in_bounds(cell):
-			break
-		var occupant: UnitState = board.get_unit_at(cell)
-		if occupant != null and occupant.is_alive() and occupant.team != actor.team:
-			return true
-	return false
 
 
 static func dash_collision_scan_steps(
@@ -2775,7 +2758,10 @@ static func dash_effective_max_range(
 	if dir == Vector2i.ZERO:
 		return base_range
 	var collision_scan_steps: int = dash_collision_scan_steps(base_range, origin, target_coord)
-	if dash_line_has_enemy(board, actor, origin, dir, collision_scan_steps):
+	var bulldoze: int = int(module.runtime_value("bulldoze", 0))
+	if PhysicsSystem.dash_line_registers_enemy_collision(
+		board, actor, dir, collision_scan_steps, bulldoze,
+	):
 		return extended
 	return base_range
 
@@ -2801,7 +2787,10 @@ static func dash_line_threat_tiles_for_module(
 			)
 			if (
 				hover_dir == dir
-				and dash_line_has_enemy(board, actor, origin, dir, collision_scan_steps)
+				and PhysicsSystem.dash_line_registers_enemy_collision(
+					board, actor, dir, collision_scan_steps,
+					int(module.runtime_value("bulldoze", 0)),
+				)
 			):
 				steps = extended_steps
 		for i: int in range(1, steps + 1):

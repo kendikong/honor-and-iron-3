@@ -413,7 +413,7 @@ static func compile_module_to_effects(module: AbilityModule) -> Array[EffectData
 			continue
 		if layer.condition == GameEnums.LayerCondition.DURING:
 			continue
-		if layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION_MODIFY_PRIMARY_RANGE:
+		if layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION:
 			continue
 		if _ModuleAuthoringRules.layer_merges_adjacent_bonus_into_primary(layer):
 			primary.bonus_if_adjacent_at_cast = layer.effect.bonus_if_adjacent_at_cast

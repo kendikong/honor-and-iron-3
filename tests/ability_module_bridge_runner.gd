@@ -181,6 +181,21 @@ static func _check_violent_collision_modules(failures: Array[String]) -> void:
 		failures.append("violent_collision should extend primary range to 5 on line collision")
 	if not AbilityModuleBridge.module_has_modifier(vc.modules[0], &"bulldoze"):
 		failures.append("violent_collision module[0] lost bulldoze modifier")
+	var has_collision_range_layer: bool = false
+	for layer: AbilityLayer in vc.modules[0].layers:
+		if (
+			layer != null
+			and layer.condition == GameEnums.LayerCondition.IF_LINE_COLLISION
+			and layer.effect != null
+			and layer.effect.type == GameEnums.EffectType.MODIFY_PRIMARY_RANGE
+			and layer.effect.amount == 5
+		):
+			has_collision_range_layer = true
+			break
+	if not has_collision_range_layer:
+		failures.append(
+			"violent_collision missing IF_LINE_COLLISION -> MODIFY_PRIMARY_RANGE 5 layer"
+		)
 	var charge: AbilityData = null
 	for ab2: AbilityData in bruiser.abilities:
 		if ab2 != null and ab2.id == &"bruiser_charge_strike":
