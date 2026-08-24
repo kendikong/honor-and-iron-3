@@ -1,0 +1,1395 @@
+﻿=== Knight ===
+=== Knight QA gate (class validation - NOT planning QA) ===
+Spec: docs/CLASS_QA_BIBLE.md (instance: docs/KNIGHT_QA_GATE.md)
+
+=== Matrix summary (from docs/KNIGHT_QA_GATE.md) ===
+PASS:          30/30
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (30 approved, threshold 88) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Knight Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] knight_qa_tier1
+[KNIGHT_QA] knight_swap (knight_swap)
+[KNIGHT_QA] shield_bash (knight_shield_bash)
+[KNIGHT_QA] phalanx_stance (knight_phalanx_stance)
+[KNIGHT_QA] taunting_strike (knight_taunting_strike)
+[KNIGHT_QA] seismic_stomp (knight_seismic_stomp)
+[KNIGHT_QA] fortify (knight_fortify)
+[KNIGHT_QA] bowling_charge (knight_bowling_charge)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[KNIGHT_QA] iron_grip (knight_iron_grip)
+[KNIGHT_QA] redirect_strike (knight_redirect_strike)
+[KNIGHT_QA] indomitable_will (knight_indomitable_will)
+[KNIGHT_QA] retaliation_protocol (knight_retaliation_protocol)
+[KNIGHT_QA] shield_slam (knight_shield_slam)
+[KNIGHT_QA] defensive_formation (knight_defensive_formation)
+[KNIGHT_QA] chain_hook (knight_chain_hook)
+[KNIGHT_QA] trampling_advance (knight_trampling_advance)
+[KNIGHT_QA] collision_retaliator (collision_retaliator)
+[KNIGHT_QA] thorny_carapace (thorny_carapace)
+[KNIGHT_QA] concussive_shatter (concussive_shatter)
+[KNIGHT_QA] kinetic_momentum (kinetic_momentum)
+[KNIGHT_QA] stand_ground (stand_ground)
+[KNIGHT_QA] indestructible_bastion (indestructible_bastion)
+[KNIGHT_QA] shield_mastery (shield_mastery)
+[KNIGHT_QA] kinetic_armor (kinetic_armor)
+[KNIGHT_QA] kinetic_converter (kinetic_converter)
+[KNIGHT_QA] kinetic_redirection (kinetic_redirection)
+[KNIGHT_QA] bulwark (bulwark)
+[KNIGHT_QA] living_barricade (living_barricade)
+[KNIGHT_QA] shield_wall (shield_wall)
+[KNIGHT_QA] rallying_presence (rallying_presence)
+[KNIGHT_QA] intercept_tactics (intercept_tactics)
+[KNIGHT_QA] run_economy (economy slice)
+[PASS] Knight QA Tier 1 scenarios
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Knight acceptance ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_knight_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_factory_loads_every_active[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_factory_loads_every_active[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 3s 448ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_seismic_stomp_overlay_uses_shared_geometry[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_seismic_stomp_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 1s 520ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_defensive_formation_overlay_uses_shared_geometry[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_defensive_formation_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 2s 244ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 7s 238ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (3/3)[0m
+[38;2;233;150;122mTotal execution time: 7s 238ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1383/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1383/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Knight live QA: all active rows loaded; Defensive Formation [+] overlay/commit/sim parity; Seismic Stomp overlay parity
+--- Tier 2 live: PASS ---
+
+=== Knight QA gate summary ===
+[PASS] Knight QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+EXIT Knight=0
+
+=== Bruiser ===
+=== Bruiser QA gate (class validation - NOT planning QA) ===
+Spec: docs/BRUISER_QA_GATE.md
+
+=== Matrix summary (from docs/BRUISER_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+N/A (deferred): 0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 88) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Bruiser Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] bruiser_qa_tier1
+[BRUISER_QA] push_through (bruiser_push_through)
+[MOVEMENT_SMOKE] bruiser_push_through (bruiser)
+[MOVEMENT_SMOKE] bruiser_push_through (bruiser)
+[BRUISER_QA] charge_strike (bruiser_charge_strike)
+[MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+[MOVEMENT_SMOKE] bruiser_charge_strike (bruiser)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=bruiser_charge_strike tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+[BRUISER_QA] concussion_blow (bruiser_concussion_blow)
+[BRUISER_QA] cleave (bruiser_cleave)
+[BRUISER_QA] suplex (bruiser_suplex)
+[BRUISER_QA] adrenaline_surge (bruiser_adrenaline_surge)
+[BRUISER_QA] earthshatter (bruiser_earthshatter)
+[BRUISER_QA] meat_shield (bruiser_meat_shield)
+[BRUISER_QA] frenzy (bruiser_frenzy)
+[BRUISER_QA] guttural_roar (bruiser_guttural_roar)
+[BRUISER_QA] headbutt (bruiser_headbutt)
+[BRUISER_QA] blood_boil (bruiser_blood_boil)
+[BRUISER_QA] violent_collision (bruiser_violent_collision)
+[MOVEMENT_SMOKE] bruiser_violent_collision (bruiser)
+[MOVEMENT_SMOKE] bruiser_violent_collision (bruiser)
+[BRUISER_QA] crimson_whirlwind (bruiser_crimson_whirlwind)
+[BRUISER_QA] belly_flop (bruiser_belly_flop)
+[MOVEMENT_SMOKE] bruiser_belly_flop (bruiser)
+[MOVEMENT_SMOKE] bruiser_belly_flop (bruiser)
+[BRUISER_QA] breaching_dash (bruiser_breaching_dash)
+[MOVEMENT_SMOKE] bruiser_breaching_dash (bruiser)
+[MOVEMENT_SMOKE] bruiser_breaching_dash (bruiser)
+[BRUISER_QA] cellular_regeneration (cellular_regeneration)
+[BRUISER_QA] blood_for_blood (blood_for_blood)
+[BRUISER_QA] adrenaline_junkie (adrenaline_junkie)
+[BRUISER_QA] enraged (enraged)
+[BRUISER_QA] last_stand (last_stand)
+[BRUISER_QA] colossal_mass (colossal_mass)
+[BRUISER_QA] overwhelming_bulk (overwhelming_bulk)
+[BRUISER_QA] thrill_of_pain (thrill_of_pain)
+[BRUISER_QA] momentum_of_titan (momentum_of_titan)
+[BRUISER_QA] scar_tissue (scar_tissue)
+[BRUISER_QA] momentum_transfer (momentum_transfer)
+[BRUISER_QA] crowd_breaker (crowd_breaker)
+[BRUISER_QA] juggernaut (juggernaut)
+[BRUISER_QA] battering_ram (battering_ram)
+[BRUISER_QA] unstoppable_force (unstoppable_force)
+[BRUISER_QA] reactive_adrenaline (reactive_adrenaline)
+--- Tier 1 harness: FAIL ---
+[FAIL] violent_collision/modules/bulldoze: Violent Collision bulldoze must PUSH the enemy along the dash line
+[FAIL] violent_collision/modules/bulldoze: Violent Collision bulldoze must PUSH the enemy along the dash line
+EXIT Bruiser=1
+
+=== Lancer ===
+=== Lancer QA gate (class validation - NOT planning QA) ===
+Spec: docs/LANCER_QA_GATE.md
+
+=== Matrix summary (from docs/LANCER_QA_GATE.md) ===
+PASS:          29/29
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (29 approved) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Lancer Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] lancer_qa_tier1
+[LANCER_QA] push (lancer_push)
+[MOVEMENT_SMOKE] lancer_push (lancer)
+[LANCER_QA] piercing_charge (lancer_piercing_charge)
+[MOVEMENT_SMOKE] lancer_piercing_charge (lancer)
+[LANCER_QA] sweeping_halberd (lancer_sweeping_halberd)
+[LANCER_QA] vaulting_leap (lancer_vaulting_leap)
+[LANCER_QA] run_down (lancer_run_down)
+[LANCER_QA] rallying_cry (lancer_rallying_cry)
+[LANCER_QA] flanking_maneuver (lancer_flanking_maneuver)
+[MOVEMENT_SMOKE] lancer_flanking_maneuver (lancer)
+[LANCER_QA] brace (lancer_brace)
+[LANCER_QA] harpoon_toss (lancer_harpoon_toss)
+[LANCER_QA] glorious_charge (lancer_glorious_charge)
+[MOVEMENT_SMOKE] lancer_glorious_charge (lancer)
+[LANCER_QA] pole_vault (lancer_pole_vault)
+[MOVEMENT_SMOKE] lancer_pole_vault (lancer)
+[LANCER_QA] line_breaker (lancer_line_breaker)
+[MOVEMENT_SMOKE] lancer_line_breaker (lancer)
+[LANCER_QA] spear_wall (lancer_spear_wall)
+[LANCER_QA] meteor_drop (lancer_meteor_drop)
+[MOVEMENT_SMOKE] lancer_meteor_drop (lancer)
+[LANCER_QA] kinetic_charge (kinetic_charge)
+[LANCER_QA] unstoppable_mass (unstoppable_mass)
+[LANCER_QA] canto (canto)
+[LANCER_QA] frontline_defense (frontline_defense)
+[LANCER_QA] flanking_strike (flanking_strike)
+[LANCER_QA] plunging_attack (plunging_attack)
+[LANCER_QA] crashing_impact (crashing_impact)
+[LANCER_QA] pole_plant (pole_plant)
+[LANCER_QA] spear_drop (spear_drop)
+[LANCER_QA] springboard (springboard)
+[LANCER_QA] sweet_spot (sweet_spot)
+[LANCER_QA] reach_advantage (reach_advantage)
+[LANCER_QA] disengage (disengage)
+[LANCER_QA] zone_of_control (zone_of_control)
+[LANCER_QA] leverage (leverage)
+[MOVEMENT_SMOKE] lancer_push (lancer)
+[MOVEMENT_SMOKE] lancer_piercing_charge (lancer)
+[MOVEMENT_SMOKE] lancer_pole_vault (lancer)
+[MOVEMENT_SMOKE] lancer_line_breaker (lancer)
+[MOVEMENT_SMOKE] lancer_meteor_drop (lancer)
+[MOVEMENT_SMOKE] lancer_flanking_maneuver (lancer)
+[MOVEMENT_SMOKE] lancer_glorious_charge (lancer)
+[PASS] Lancer QA Tier 1 scenarios
+--- Tier 1 harness: PASS ---
+
+=== Lancer QA gate summary ===
+
+=== Tier 2: live Lancer acceptance ===
+[QA] Lancer live QA running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_lancer_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_lancer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_lancer_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 4, "reason": "cannot_use_ability", "actor_id": 4 } actions: ["act=lancer_piercing_charge tgt=(8, 2) mod_tgts=[(8, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 4, "reason": "cannot_use_ability", "actor_id": 4 } actions: ["act=lancer_sweeping_halberd tgt=(8, 7) mod_tgts=[(8, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 4, "reason": "cannot_use_ability", "actor_id": 4 } actions: ["act=lancer_sweeping_halberd tgt=(8, 7) mod_tgts=[(8, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=lancer_glorious_charge tgt=(9, 5) mod_tgts=[(9, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 3, "reason": "cannot_use_ability", "actor_id": 3 } actions: ["act=nil tgt=(3, 2) mod_tgts=[] await=false await_idx=-1", "act=lancer_rallying_cry tgt=(3, 2) mod_tgts=[(3, 2)] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_lancer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_lancer_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 28s 162ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 28s 179ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (1/1)[0m
+[38;2;233;150;122mTotal execution time: 28s 179ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1384/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1384/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Lancer live QA
+--- Tier 2 live: PASS ---
+[PASS] Lancer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+EXIT Lancer=0
+
+=== Archer ===
+=== Archer QA gate (class validation - NOT planning QA) ===
+Spec: docs/ARCHER_QA_GATE.md
+
+=== Matrix summary (from docs/ARCHER_QA_GATE.md) ===
+PASS:          31/31
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (31 approved) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Archer Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] archer_qa_tier1
+[ARCHER_QA] sidestep (archer_sidestep)
+[MOVEMENT_SMOKE] archer_sidestep (archer)
+[MOVEMENT_SMOKE] archer_sidestep (archer)
+[ARCHER_QA] power_shot (archer_power_shot)
+[ARCHER_QA] volley (archer_volley)
+[ARCHER_QA] pinning_arrow (archer_pinning_arrow)
+[ARCHER_QA] piercing_shot (archer_piercing_shot)
+[ARCHER_QA] toxic_spore_arrow (archer_toxic_spore_arrow)
+[ARCHER_QA] grapple_arrow (archer_grapple_arrow)
+[ARCHER_QA] explosive_arrow (archer_explosive_arrow)
+[ARCHER_QA] hunters_mark (archer_hunters_mark)
+[ARCHER_QA] repelling_shot (archer_repelling_shot)
+[ARCHER_QA] bear_trap (archer_bear_trap)
+[ARCHER_QA] suppressing_fire (archer_suppressing_fire)
+[ARCHER_QA] caltrop_trap (archer_caltrop_trap)
+[ARCHER_QA] parting_shot (archer_parting_shot)
+[MOVEMENT_SMOKE] archer_parting_shot (archer)
+[MOVEMENT_SMOKE] archer_parting_shot (archer)
+[ARCHER_QA] scouts_eye (archer_scouts_eye)
+[ARCHER_QA] lightfoot (lightfoot)
+[ARCHER_QA] overwatch (overwatch)
+[ARCHER_QA] high_ground (high_ground)
+[ARCHER_QA] patient_hunter (patient_hunter)
+[ARCHER_QA] true_sight (true_sight)
+[ARCHER_QA] piercing_momentum (piercing_momentum)
+[ARCHER_QA] camouflage (camouflage)
+[ARCHER_QA] area_denial (area_denial)
+[ARCHER_QA] caltrop_expert (caltrop_expert)
+[ARCHER_QA] zone_control (zone_control)
+[ARCHER_QA] sticky_mud (sticky_mud)
+[ARCHER_QA] fletching_hoarder (fletching_hoarder)
+[ARCHER_QA] prey_sighted (prey_sighted)
+[ARCHER_QA] barrage (barrage)
+[ARCHER_QA] target_painter (target_painter)
+[ARCHER_QA] rapid_fire (rapid_fire)
+[PASS] Archer QA Tier 1 scenarios
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Archer acceptance ===
+[QA] Archer live QA running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_archer_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_archer_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 3, "reason": "no_path", "actor_id": 3 } actions: ["act=nil tgt=(2, 2) mod_tgts=[] await=false await_idx=-1", "act=archer_bear_trap tgt=(2, 2) mod_tgts=[] await=true await_idx=0"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 2, "reason": "no_path", "actor_id": 2 } actions: ["act=nil tgt=(8, 5) mod_tgts=[] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_archer_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 15s 955ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_second_archer_complex_turn_after_volley[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 2, "reason": "no_path", "actor_id": 2 } actions: ["act=nil tgt=(6, 8) mod_tgts=[] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_second_archer_complex_turn_after_volley[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 3s 980ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_selection_after_committed_archer_actions[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_archer_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_selection_after_committed_archer_actions[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 2s 630ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 22s 591ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (3/3)[0m
+[38;2;233;150;122mTotal execution time: 22s 591ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1385/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1385/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Archer live QA: 15 actives + Sidestep through preview/commit
+--- Tier 2 live: PASS ---
+[PASS] Archer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+EXIT Archer=0
+
+=== Mage ===
+=== Mage QA gate (class validation - NOT planning QA) ===
+Spec: docs/MAGE_QA_GATE.md
+
+=== Matrix summary (from docs/MAGE_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Mage Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] mage_qa_tier1
+[MAGE_QA] arcane_overchannel (arcane_overchannel)
+[MAGE_QA] blink (mage_blink)
+[MOVEMENT_SMOKE] mage_blink (mage)
+[MAGE_QA] fireball (mage_fireball)
+[MAGE_QA] ice_shard (mage_ice_shard)
+[MAGE_QA] chain_lightning (mage_chain_lightning)
+[MAGE_QA] arcane_push (mage_arcane_push)
+[MAGE_QA] teleport (mage_teleport)
+[MOVEMENT_SMOKE] mage_teleport (mage)
+[MAGE_QA] meteor (mage_meteor)
+[MAGE_QA] black_hole (mage_black_hole)
+[MAGE_QA] time_warp (mage_time_warp)
+[MAGE_QA] mana_shield (mage_mana_shield)
+[MAGE_QA] disintegrate (mage_disintegrate)
+[MAGE_QA] gravity_well (mage_gravity_well)
+[MAGE_QA] elemental_surge (mage_elemental_surge)
+[MAGE_QA] earth_spike (mage_earth_spike)
+[MAGE_QA] density_shift (mage_density_shift)
+[MAGE_QA] arcane_barrage (mage_arcane_barrage)
+[MAGE_QA] elementalist (elementalist)
+[MAGE_QA] feedback (feedback)
+[MAGE_QA] elemental_master (elemental_master)
+[MAGE_QA] lasting_terrain (lasting_terrain)
+[MAGE_QA] surface_syphoner (surface_syphoner)
+[MAGE_QA] mana_leak (mana_leak)
+[MAGE_QA] arcane_overdrive (arcane_overdrive)
+[MAGE_QA] mana_well (mana_well)
+[MAGE_QA] mana_siphon (mana_siphon)
+[MAGE_QA] overload (overload)
+[MAGE_QA] wild_magic (wild_magic)
+[MAGE_QA] arcane_tether (arcane_tether)
+[MAGE_QA] arcane_mastery (arcane_mastery)
+[MAGE_QA] arcane_attunement (arcane_attunement)
+[MAGE_QA] gravity_anchor (gravity_anchor)
+[MOVEMENT_SMOKE] mage_blink (mage)
+[MOVEMENT_SMOKE] mage_teleport (mage)
+[PASS] Mage QA gate: factory matrix, all active skills, and passive triggers
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Mage acceptance ===
+[QA] Mage live QA running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_mage_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_mage_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mage_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_mage_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mage_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 546ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 34s 557ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (1/1)[0m
+[38;2;233;150;122mTotal execution time: 34s 557ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1386/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1386/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Mage live QA: all 16 base and [+] abilities through preview/commit
+--- Tier 2 live: PASS ---
+[PASS] Mage QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+EXIT Mage=0
+
+=== Cleric ===
+=== Cleric QA gate (class validation - NOT planning QA) ===
+Spec: docs/CLERIC_QA_GATE.md
+
+=== Matrix summary (from docs/CLERIC_QA_GATE.md) ===
+PASS:          31/31
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (31 approved) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== AOE footprint contract (all classes) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 1: headless skill scenarios (harness) ===
+[QA] Cleric Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] cleric_qa_tier1
+[CLERIC_QA] selfless_siphon (selfless_siphon)
+[CLERIC_QA] guardian_step (cleric_guardian_step)
+[MOVEMENT_SMOKE] cleric_guardian_step (cleric)
+[CLERIC_QA] holy_light (cleric_holy_light)
+[CLERIC_QA] smite (cleric_smite)
+[CLERIC_QA] cleansing_aura (cleric_cleansing_aura)
+[CLERIC_QA] sanctuary (cleric_sanctuary)
+[CLERIC_QA] blinding_ray (cleric_blinding_ray)
+[CLERIC_QA] divine_hammer (cleric_divine_hammer)
+[CLERIC_QA] life_link (cleric_life_link)
+[CLERIC_QA] prayer_of_fortitude (cleric_prayer_of_fortitude)
+[CLERIC_QA] resurrection (cleric_resurrection)
+[CLERIC_QA] consecrate_ground (cleric_consecrate_ground)
+[CLERIC_QA] holy_wrath (cleric_holy_wrath)
+[CLERIC_QA] divine_guidance (cleric_divine_guidance)
+[CLERIC_QA] shield_of_faith (cleric_shield_of_faith)
+[CLERIC_QA] martyrs_chains (cleric_martyrs_chains)
+[CLERIC_QA] blood_donation (blood_donation)
+[CLERIC_QA] sacred_shield (sacred_shield)
+[CLERIC_QA] divine_blessing (divine_blessing)
+[CLERIC_QA] frontline_medic (frontline_medic)
+[CLERIC_QA] armor_of_faith (armor_of_faith)
+[CLERIC_QA] divine_overflow (divine_overflow)
+[CLERIC_QA] divine_intervention (divine_intervention)
+[CLERIC_QA] holy_ground (holy_ground)
+[CLERIC_QA] prayer (prayer)
+[CLERIC_QA] purity (purity)
+[CLERIC_QA] martyrs_blood (martyrs_blood)
+[CLERIC_QA] divine_retribution (divine_retribution)
+[CLERIC_QA] holy_radiance (holy_radiance)
+[CLERIC_QA] retribution (retribution)
+[CLERIC_QA] zealous_protection (zealous_protection)
+[MOVEMENT_SMOKE] cleric_guardian_step (cleric)
+[PASS] Cleric QA Tier 1 scenarios
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Cleric acceptance ===
+[QA] Cleric live QA running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_cleric_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_cleric_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_cleric_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 2, "reason": "no_path", "actor_id": 2 } actions: ["act=nil tgt=(7, 2) mod_tgts=[] await=false await_idx=-1", "act=cleric_sanctuary tgt=(7, 2) mod_tgts=[] await=true await_idx=0"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 2, "reason": "no_path", "actor_id": 2 } actions: ["act=nil tgt=(6, 8) mod_tgts=[] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_cleric_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_cleric_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 711ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 724ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 1 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (1/1)[0m
+[38;2;233;150;122mTotal execution time: 16s 724ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1387/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1387/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Cleric live QA: 15 Bible abilities through preview/commit
+--- Tier 2 live: PASS ---
+[PASS] Cleric QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+EXIT Cleric=0
+
+=== Mercenary ===
+=== Mercenary QA gate (class validation - NOT planning QA) ===
+Spec: docs/MERCENARY_QA_GATE.md
+
+=== Matrix summary (from docs/MERCENARY_QA_GATE.md) ===
+PASS:          32/32
+HARNESS_ONLY:  0
+PLANNED/other: 0
+
+=== Meta-critic manifest (32 approved, threshold 85) ===
+
+=== Typed module conversion contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+--- Typed module conversion contracts: PASS ---
+
+=== Tier 1: headless Mercenary scenarios (harness) ===
+[QA] Mercenary Tier 1 harness running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] mercenary_qa_tier1
+[MERCENARY_QA] predatory_momentum
+[MERCENARY_QA] mercenary_pullback
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[MERCENARY_QA] mercenary_swift_strike
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
+[MERCENARY_QA] mercenary_defense_strike
+[MERCENARY_QA] mercenary_blade_storm
+[MERCENARY_QA] mercenary_caltrop_toss
+[MERCENARY_QA] mercenary_feint
+[MERCENARY_QA] mercenary_riposte_strike
+[MERCENARY_QA] mercenary_sever
+[MERCENARY_QA] mercenary_second_wind
+[MERCENARY_QA] mercenary_tactical_retreat
+[MERCENARY_QA] mercenary_executioners_blade
+[MERCENARY_QA] mercenary_precision_strike
+[MERCENARY_QA] mercenary_flank_and_run
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
+[MERCENARY_QA] mercenary_hamstring
+[MERCENARY_QA] mercenary_acrobatic_vault
+[MERCENARY_QA] mercenary_duelists_challenge
+[MERCENARY_QA] calculated_strike
+[MERCENARY_QA] weapon_master
+[MERCENARY_QA] dual_wield_momentum
+[MERCENARY_QA] precision_edge
+[MERCENARY_QA] duelists_focus
+[MERCENARY_QA] tactical_versatility
+[MERCENARY_QA] swift_feet
+[MERCENARY_QA] hit_and_run
+[MERCENARY_QA] evasive
+[MERCENARY_QA] flanking_maneuver
+[MERCENARY_QA] dirty_fighting
+[MERCENARY_QA] executioner
+[MERCENARY_QA] blood_scent
+[MERCENARY_QA] ruthless
+[MERCENARY_QA] coup_de_grace
+[MOVEMENT_SMOKE] mercenary_pullback (mercenary)
+[MOVEMENT_SMOKE] mercenary_swift_strike (mercenary)
+[MOVEMENT_SMOKE] mercenary_flank_and_run (mercenary)
+[PASS] Mercenary QA gate: factory matrix, all active skills, and passive contracts
+--- Tier 1 harness: PASS ---
+
+=== Tier 2: live Mercenary acceptance ===
+[QA] Mercenary live QA running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[2J[H[38;2;233;150;122m
+--------------------------------------------------------------------------------------------------
+GdUnit4 Comandline Tool
+--------------------------------------------------------------------------------------------------[0m
+[38;2;218;165;32m
+Headless mode is ignored by option '--ignoreHeadlessMode'"
+
+Please note that tests that use UI interaction do not work correctly in headless mode.
+Godot 'InputEvents' are not transported by the Godot engine in headless mode and therefore
+have no effect in the test!
+[0m
+[38;2;100;149;237mInstalling GdUnit4 session system hooks.[0m
+[38;2;100;149;237mSession hook 'GdUnitHtmlTestReporter' installed.[0m
+[38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
+[38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_passive_overlay[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_passive_overlay[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 13s 621ms[0m
+[38;2;128;128;128m[0m
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_acrobatic_vault tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_acrobatic_vault tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 212ms[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 29s 851ms[0m
+[38;2;128;128;128m[0m
+[38;2;128;128;128m[0m
+[38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
+[38;2;233;150;122mExecuted test suites: (1/1)[0m
+[38;2;233;150;122mExecuted test cases : (2/2)[0m
+[38;2;233;150;122mTotal execution time: 29s 851ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1388/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1388/index.html[0m
+[38;2;233;150;122mExit code: 0[0m
+Run dispose test resources
+[PASS] Mercenary live QA: all active skills through preview/commit
+[PASS] Mercenary live QA: all active skills through preview/commit
+--- Tier 2 live: PASS ---
+
+=== Mercenary QA gate summary ===
+[PASS] Mercenary QA gate: matrix + typed contracts + Tier 1 harness + Tier 2 live PASS
+EXIT Mercenary=0
+
+=== PlanningHeadless ===
+=== Tier 1/2: DISABLED (legacy headless fixture contracts) ===
+Use -IncludeLegacyTier12 to run locally for archaeology only; failures do not block the gate.
+
+=== AOE footprint contract (geometry + scenario/live audits) ===
+=== AOE footprint QA gate (geometry + scenario/live audits) ===
+[QA] AOE footprint gate running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] aoe_footprint_contract
+[PASS] AOE footprint contract
+--- AOE footprint gate: PASS ---
+--- AOE footprint contract: PASS ---
+
+=== Tier 3: headless fixture suites (PlanningQaGate + T3 mimic) ===
+Use -LiveTier3 for GdUnit TestBattle acceptance (owner F5 parity).
+=== Planning headless contracts (fixture harness - NOT live TestBattle) ===
+Suite: PlanningQaGate.tscn (planning_qa_gate_test, intent contracts, drag E2E, etc.)
+This is the headless mirror of planning rules; Tier 3 LIVE is live_planning_scene_test.gd.
+[QA] Planning headless contracts running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] planning_forecast
+[SUITE] skill_scenarios
+[KNIGHT_QA] knight_swap (knight_swap)
+[KNIGHT_QA] shield_bash (knight_shield_bash)
+[KNIGHT_QA] phalanx_stance (knight_phalanx_stance)
+[KNIGHT_QA] taunting_strike (knight_taunting_strike)
+[KNIGHT_QA] seismic_stomp (knight_seismic_stomp)
+[KNIGHT_QA] fortify (knight_fortify)
+[KNIGHT_QA] bowling_charge (knight_bowling_charge)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[KNIGHT_QA] iron_grip (knight_iron_grip)
+[KNIGHT_QA] redirect_strike (knight_redirect_strike)
+[KNIGHT_QA] indomitable_will (knight_indomitable_will)
+[KNIGHT_QA] retaliation_protocol (knight_retaliation_protocol)
+[KNIGHT_QA] shield_slam (knight_shield_slam)
+[KNIGHT_QA] defensive_formation (knight_defensive_formation)
+[KNIGHT_QA] chain_hook (knight_chain_hook)
+[KNIGHT_QA] trampling_advance (knight_trampling_advance)
+[KNIGHT_QA] collision_retaliator (collision_retaliator)
+[KNIGHT_QA] thorny_carapace (thorny_carapace)
+[KNIGHT_QA] concussive_shatter (concussive_shatter)
+[KNIGHT_QA] kinetic_momentum (kinetic_momentum)
+[KNIGHT_QA] stand_ground (stand_ground)
+[KNIGHT_QA] indestructible_bastion (indestructible_bastion)
+[KNIGHT_QA] shield_mastery (shield_mastery)
+[KNIGHT_QA] kinetic_armor (kinetic_armor)
+[KNIGHT_QA] kinetic_converter (kinetic_converter)
+[KNIGHT_QA] kinetic_redirection (kinetic_redirection)
+[KNIGHT_QA] bulwark (bulwark)
+[KNIGHT_QA] living_barricade (living_barricade)
+[KNIGHT_QA] shield_wall (shield_wall)
+[KNIGHT_QA] rallying_presence (rallying_presence)
+[KNIGHT_QA] intercept_tactics (intercept_tactics)
+[KNIGHT_QA] run_economy (economy slice)
+[SUITE] drag_e2e
+[RUN drag-e2e] release_walk_undo
+[RUN drag-e2e] release_click_parity
+[RUN drag-e2e] press_drag_unselected_unit
+[RUN drag-e2e] press_drag_without_any_selection
+[RUN drag-e2e] right_click_undo
+[RUN drag-e2e] board_changed_stale_stash
+[RUN drag-e2e] board_changed_active_drag
+[RUN drag-e2e] oob_cancel
+[RUN drag-e2e] second_walk_after_undo
+[RUN drag-e2e] release_bash_enemy
+[RUN drag-e2e] stash_cleared_on_release
+[RUN drag-e2e] director_undo_after_release
+[SUITE] planning_input
+[SUITE] trample_e2e
+[SUITE] action_range_regression
+[RUN] action_range/show_move_hover_no_action_slot
+[RUN] action_range/show_enemy_bash_committed_premove
+[RUN] action_range/show_red_anchor_on_stand
+[RUN] action_range/bowling_enemy_hover_red
+[RUN] action_range/bowling_enemy_hover_not_bash
+[RUN] action_range/bowling_dash_only_not_blue
+[RUN] action_range/bowling_dash_only_no_premove_click
+[RUN] action_range/bowling_awaiting_occupied_end
+[RUN] action_range/hide_after_commit_run_icon_bash
+[RUN] action_range/hide_after_commit_run_icon_bowling
+[RUN] action_range/hide_committed_run_timeline_bowling
+[RUN] action_range/hide_committed_run_interior_hover_bowling
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+[RUN] action_range/hide_no_ability
+[RUN] action_range/show_awaiting_trample
+[RUN] action_range/hover_step_updates_stand
+[RUN] action_range/awaiting_module_range_after_premove
+[RUN] action_range/parity_gate_show
+[RUN] action_range/parity_gate_hide
+[SUITE] qa_checklist
+[RUN] waypoint_paint
+[RUN] jump_autocorrect
+[RUN] stale_hover
+[RUN] cursor-glyphs
+[RUN] blue_move_tiles
+[RUN] mp_display_contract
+[RUN] walk_sim
+[RUN] bash_slots
+[RUN] bash_push
+[RUN] bash_threat
+[RUN] bash_cursor
+[RUN] bash_adjacent_painted
+[RUN] bash_stale
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[RUN] hook_segment
+[RUN] hook_pull
+[RUN] trample_flow
+[RUN] trample_unarmed_hover
+[RUN] trample_unarmed_hover_paint
+[RUN] hover_deterministic
+[RUN] commit_matches_hover
+[RUN] undo_keeps_premove
+[RUN] premove_live_board
+[RUN] beast_reposition_live_board
+[RUN] push_through_live_both
+[RUN] push_through_repath
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(3, 4) mod_tgts=[] await=false await_idx=-1", "act=bruiser_push_through tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+[RUN] move_preview_origin
+[RUN] bash_full_approach_push
+[RUN] hook_committed_premove
+[RUN] out_of_range_invalid
+[RUN] trample_paint_preview
+[RUN] trample_commit_wps
+[RUN] trample_sim_order
+[RUN] trample_repath_preserves_painted_order
+[RUN] trample_post_move_truth
+[RUN] trample_full_preview_truth_click
+[RUN] teleport_full_preview_truth_click
+[RUN] bash_preview_board_parity
+[RUN] hover_click_drop_parity
+[RUN] click_drop_bash
+[RUN] click_drop_walk
+[RUN] click_drop_approach
+[RUN] click_drop_hook
+[RUN] click_drop_oob
+[RUN] click_drop_cursor_bash
+[RUN] click_drop_cursor_walk
+[RUN] click_drop_sim_bash
+[RUN] click_drop_sim_walk
+[RUN] click_drop_drag_walk_sim
+[RUN] click_drop_drag_bash
+[RUN] k1_painted_click_waypoints
+[RUN] drag_drop_undo
+[RUN] cursor_equals_slots
+[RUN] bash_commit_sim
+[RUN] hook_commit_sim
+[RUN] invalid_blocks_commit
+[RUN] full_slot_signature
+[RUN] ability_cache_clear
+[RUN] ability_scroll_hover_path
+[RUN] trample_full_chain
+[RUN] bash_sim_determinism
+[RUN] hover_order_invariant
+[RUN] drag_cleared_intent
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[RUN] approach_bash_push_preview
+[RUN] timeline_ghost_commit
+[RUN] action_range_live_stand
+[RUN] action_range_auto_run_ap_gate
+[RUN] action_range_commit_run_icon_hide
+[RUN] action_range_awaiting_trample
+[RUN] action_range_enemy_hover
+[RUN] action_range_move_hover_follows_cursor
+[RUN] enemy_hover_not_move_route
+[RUN] self_skill_move_no_target_arrow
+[RUN] bash_enemy_approach_leg
+[RUN] bash_target_pre_push_cell
+[RUN] hook_pull_attack_target
+[RUN] class_skill_execute_ap
+[RUN] class_skill_player_turn_ap
+[RUN] bash_promote_ghost
+[RUN] hook_in_range_approach
+[RUN] hook_in_range_no_stale_drag
+[RUN] hook_out_of_range_null
+[RUN] volley_hover_damage_arrow
+[RUN] volley_hover_board_changed
+[RUN] selection_is_mp_read_only
+[RUN] tile_aim_forbids_premove
+[RUN] bash_hover_targeting_arrow
+[RUN] waypoint_premove_enemy_hover_full_truth
+[RUN] sidestep_enemy_click_ratifies_move
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 4) mod_tgts=[(5, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 4) mod_tgts=[(5, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=archer_sidestep tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+[RUN] sidestep_valid_tile_after_waypoint_premove
+[RUN] waypoint_tile_aoe_enemy_hover
+[RUN] committed_premove_enemy_click
+[RUN] painted_route_enemy_click
+[RUN] range1_painted_route_enemy_click
+[RUN] out_of_range_enemy_hover_exhausted
+[SUITE] intent_contract_e2e
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 5) mod_tgts=[(4, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 4) mod_tgts=[(5, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 7) mod_tgts=[(4, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 6) mod_tgts=[(3, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 5) mod_tgts=[(2, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 8) mod_tgts=[(4, 8)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 7) mod_tgts=[(3, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 6) mod_tgts=[(2, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(1, 5) mod_tgts=[(1, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 5) mod_tgts=[(4, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(-1, -1) mod_tgts=[] await=false await_idx=-1"]
+[SUITE] intent_source_of_truth
+[SOT-SIG] WALK-01 slot=(5, 5)|[(5, 5)]|-1||[]|0|false timeline=(5, 5)|[(5, 5)]|-1||[]|0|false sim=units=1@5,5:ap1:mp3;2@7,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (5, 5), "steps": 1, "path": [(5, 5)], "movement_points_before": 3, "movement_points_left": 2, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 1, "unit": 1, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5)] stand=(4, 5) pos=(5, 5)
+[SOT-SIG] MOVE-SKILL-01 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=units=1@6,5:ap1:mp3;2@9,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (6, 5), "steps": 2, "path": [(5, 5), (6, 5)], "movement_points_before": 3, "movement_points_left": 1, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 2, "unit": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_shield_bash", "ability_name": "Shield Bash", "target_coord": (7, 5), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Shield Bash", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (7, 5), "to": (9, 5), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5), (6, 5)] stand=(4, 5) pos=(6, 5)
+[SOT-SIG] PUSH-PULL-01/bash slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=units=1@6,5:ap1:mp3;2@9,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (6, 5), "steps": 2, "path": [(5, 5), (6, 5)], "movement_points_before": 3, "movement_points_left": 1, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 2, "unit": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_shield_bash", "ability_name": "Shield Bash", "target_coord": (7, 5), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Shield Bash", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (7, 5), "to": (9, 5), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5), (6, 5)] stand=(4, 5) pos=(6, 5)
+[SOT-SIG] PUSH-PULL-01/hook slot=(-999, -999)|[]|2|knight_chain_hook|[]|0|false timeline=(-999, -999)|[]|2|knight_chain_hook|[]|0|false sim=units=1@1,3:ap1:mp3;2@2,3:ap0:mp0||events=UNIT_FACED { "unit": 1, "facing": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_chain_hook", "ability_name": "Chain Hook", "target_coord": (4, 3), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Chain Hook", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 3), "to": (2, 3), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(1, 3)] stand=(1, 3) pos=(1, 3)
+[SOT-SIG] SWAP-01 slot=(4, 4)|[]|-1|knight_swap|[]|0|false timeline=(4, 4)|[]|-1|knight_swap|[]|0|false sim=units=1@4,4:ap1:mp3;2@4,5:ap1:mp3||events=UNIT_FACED { "unit": 1, "facing": 0, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_swap", "ability_name": "Swap", "target_coord": (4, 4), "target_unit": 2, "presentation_anim": 3, "actor_id": 1 };UNIT_PUSHED { "unit": 1, "from": (4, 5), "to": (4, 4), "distance": 1, "swap_displacement": true, "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 4), "to": (4, 5), "distance": 1, "swap_displacement": true, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (4, 4)] stand=(4, 5) pos=(4, 5)
+[SOT-SIG] AWAIT-01 slot=(-999, -999)|[]|2|knight_chain_hook|[]|0|false timeline=(-999, -999)|[]|2|knight_chain_hook|[]|0|false sim=units=1@1,3:ap1:mp3;2@2,3:ap0:mp0||events=UNIT_FACED { "unit": 1, "facing": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_chain_hook", "ability_name": "Chain Hook", "target_coord": (4, 3), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Chain Hook", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 3), "to": (2, 3), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } 
+[SOT-SIG] TRAMPLE-01 slot=(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false timeline=(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false sim=units=1@6,3:ap1:mp3||events=ABILITY_USED { "actor": 1, "ability": &"knight_trampling_advance", "ability_name": "Trampling Advance", "target_coord": (6, 3), "target_unit": -1, "presentation_anim": 4, "actor_id": 1 };UNIT_MOVED { "actor": 1, "from": (5, 4), "to": (6, 3), "steps": 2, "path": [(6, 4), (6, 3)], "is_pass_through_walk": true, "ability_id": &"knight_trampling_advance", "presentation_anim": 4, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } 
+[SOT-SIG] STALE-01 slot=(-999, -999)|[]|-1||[]|0|true timeline=(uncommitted) sim=n/a invalid=true commit=false
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[SOT-SIG] CM-08 slot=(stale identity bundle) timeline=(reject/refresh) sim=n/a new_fails=0 hover/drag/snapshot/undo/ability-switch/timeline-reorder/enemy-intent
+[SOT-SIG] CM-09 slot=(intent mechanics bundle) timeline=(pre/post/stand/push/swap/trample/replan) sim=ENEMY_PHASE_BEGAN via four-way new_fails=0
+[SOT-PERF] hover_usec=7316 slot_usec=6555 sim_usec=2618 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=7316 slot_usec=6555 sim_usec=2618 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] wrote C:/Users/Kendy/AppData/Roaming/Godot/app_userdata/Honor and Iron 3/intent_sot_signatures.txt (11 rows)
+[PASS] Tier 1/2 planning contracts: skill scenarios, drag E2E, planning input, trample, action-range regression, checklist, and intent contracts.
+WARNING: 4 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 2455 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 28 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+[PASS] Planning headless contracts
+--- Tier 3 headless contracts: PASS ---
+
+=== Fixture Parity Suite (headless - NOT Tier 3 LIVE) ===
+[QA] T3 mimic headless running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[SUITE] action_range_regression
+[RUN] action_range/show_move_hover_no_action_slot
+[RUN] action_range/show_enemy_bash_committed_premove
+[RUN] action_range/show_red_anchor_on_stand
+[RUN] action_range/bowling_enemy_hover_red
+[RUN] action_range/bowling_enemy_hover_not_bash
+[RUN] action_range/bowling_dash_only_not_blue
+[RUN] action_range/bowling_dash_only_no_premove_click
+[RUN] action_range/bowling_awaiting_occupied_end
+[RUN] action_range/hide_after_commit_run_icon_bash
+[RUN] action_range/hide_after_commit_run_icon_bowling
+[RUN] action_range/hide_committed_run_timeline_bowling
+[RUN] action_range/hide_committed_run_interior_hover_bowling
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+[RUN] action_range/hide_no_ability
+[RUN] action_range/show_awaiting_trample
+[RUN] action_range/hover_step_updates_stand
+[RUN] action_range/awaiting_module_range_after_premove
+[RUN] action_range/parity_gate_show
+[RUN] action_range/parity_gate_hide
+[SUITE] intent_contract_e2e
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 5) mod_tgts=[(4, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 4) mod_tgts=[(5, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 7) mod_tgts=[(4, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 6) mod_tgts=[(3, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 5) mod_tgts=[(2, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 8) mod_tgts=[(4, 8)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 7) mod_tgts=[(3, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 6) mod_tgts=[(2, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(1, 5) mod_tgts=[(1, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 5) mod_tgts=[(4, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 5) mod_tgts=[(5, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 6) mod_tgts=[(4, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 3) mod_tgts=[(4, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 4) mod_tgts=[(3, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 6) mod_tgts=[(5, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 2) mod_tgts=[(4, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 3) mod_tgts=[(5, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(3, 3) mod_tgts=[(3, 3)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 4) mod_tgts=[(6, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(2, 4) mod_tgts=[(2, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(6, 6) mod_tgts=[(6, 6)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(5, 7) mod_tgts=[(5, 7)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(-1, -1) mod_tgts=[] await=false await_idx=-1"]
+[SUITE] intent_source_of_truth
+[SOT-SIG] WALK-01 slot=(5, 5)|[(5, 5)]|-1||[]|0|false timeline=(5, 5)|[(5, 5)]|-1||[]|0|false sim=units=1@5,5:ap1:mp3;2@7,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (5, 5), "steps": 1, "path": [(5, 5)], "movement_points_before": 3, "movement_points_left": 2, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 1, "unit": 1, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5)] stand=(4, 5) pos=(5, 5)
+[SOT-SIG] MOVE-SKILL-01 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=units=1@6,5:ap1:mp3;2@9,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (6, 5), "steps": 2, "path": [(5, 5), (6, 5)], "movement_points_before": 3, "movement_points_left": 1, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 2, "unit": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_shield_bash", "ability_name": "Shield Bash", "target_coord": (7, 5), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Shield Bash", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (7, 5), "to": (9, 5), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5), (6, 5)] stand=(4, 5) pos=(6, 5)
+[SOT-SIG] PUSH-PULL-01/bash slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=units=1@6,5:ap1:mp3;2@9,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (6, 5), "steps": 2, "path": [(5, 5), (6, 5)], "movement_points_before": 3, "movement_points_left": 1, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 2, "unit": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_shield_bash", "ability_name": "Shield Bash", "target_coord": (7, 5), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Shield Bash", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (7, 5), "to": (9, 5), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5), (6, 5)] stand=(4, 5) pos=(6, 5)
+[SOT-SIG] PUSH-PULL-01/hook slot=(-999, -999)|[]|2|knight_chain_hook|[]|0|false timeline=(-999, -999)|[]|2|knight_chain_hook|[]|0|false sim=units=1@1,3:ap1:mp3;2@2,3:ap0:mp0||events=UNIT_FACED { "unit": 1, "facing": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_chain_hook", "ability_name": "Chain Hook", "target_coord": (4, 3), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Chain Hook", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 3), "to": (2, 3), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(1, 3)] stand=(1, 3) pos=(1, 3)
+[SOT-SIG] SWAP-01 slot=(4, 4)|[]|-1|knight_swap|[]|0|false timeline=(4, 4)|[]|-1|knight_swap|[]|0|false sim=units=1@4,4:ap1:mp3;2@4,5:ap1:mp3||events=UNIT_FACED { "unit": 1, "facing": 0, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_swap", "ability_name": "Swap", "target_coord": (4, 4), "target_unit": 2, "presentation_anim": 3, "actor_id": 1 };UNIT_PUSHED { "unit": 1, "from": (4, 5), "to": (4, 4), "distance": 1, "swap_displacement": true, "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 4), "to": (4, 5), "distance": 1, "swap_displacement": true, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (4, 4)] stand=(4, 5) pos=(4, 5)
+[SOT-SIG] AWAIT-01 slot=(-999, -999)|[]|2|knight_chain_hook|[]|0|false timeline=(-999, -999)|[]|2|knight_chain_hook|[]|0|false sim=units=1@1,3:ap1:mp3;2@2,3:ap0:mp0||events=UNIT_FACED { "unit": 1, "facing": 1, "actor_id": 1 };ABILITY_USED { "actor": 1, "ability": &"knight_chain_hook", "ability_name": "Chain Hook", "target_coord": (4, 3), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 };MATH_TELEMETRY { "type": "damage", "base": 1, "wpn": 4, "stat_name": "STR", "stat_val": 4, "multiplier_raw": 9.0, "floored": 9, "backstab": false, "backstab_bonus": 0, "final_raw": 9, "range_one_damage_multiplier": 1.0, "target_def": 2, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 };UNIT_DAMAGED { "unit": 2, "amount": 7, "hp": 93, "armor": 0, "hp_damaged": 7, "armor_damaged": 0, "damage_type": &"physical", "source_label": "Chain Hook", "actor_id": 1 };UNIT_PUSHED { "unit": 2, "from": (4, 3), "to": (2, 3), "distance": 2, "pusher": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } 
+[SOT-SIG] TRAMPLE-01 slot=(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false timeline=(-999, -999)|[]|-1|knight_trampling_advance|[(6, 4), (6, 3)]|0|false sim=units=1@6,3:ap1:mp3||events=ABILITY_USED { "actor": 1, "ability": &"knight_trampling_advance", "ability_name": "Trampling Advance", "target_coord": (6, 3), "target_unit": -1, "presentation_anim": 4, "actor_id": 1 };UNIT_MOVED { "actor": 1, "from": (5, 4), "to": (6, 3), "steps": 2, "path": [(6, 4), (6, 3)], "is_pass_through_walk": true, "ability_id": &"knight_trampling_advance", "presentation_anim": 4, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } 
+[SOT-SIG] STALE-01 slot=(-999, -999)|[]|-1||[]|0|true timeline=(uncommitted) sim=n/a invalid=true commit=false
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(6, 5) mod_tgts=[] await=false await_idx=-1", "act=knight_shield_bash tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
+[SOT-SIG] CM-08 slot=(stale identity bundle) timeline=(reject/refresh) sim=n/a new_fails=0 hover/drag/snapshot/undo/ability-switch/timeline-reorder/enemy-intent
+[SOT-SIG] CM-09 slot=(intent mechanics bundle) timeline=(pre/post/stand/push/swap/trample/replan) sim=ENEMY_PHASE_BEGAN via four-way new_fails=0
+[SOT-PERF] hover_usec=8066 slot_usec=6674 sim_usec=2629 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=8066 slot_usec=6674 sim_usec=2629 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] wrote C:/Users/Kendy/AppData/Roaming/Godot/app_userdata/Honor and Iron 3/intent_sot_signatures.txt (11 rows)
+[SUITE] t3_live_headless_checklist
+[SUITE] t3_live_headless_checklist
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 2, "reason": "cannot_use_ability", "actor_id": 2 } actions: ["act=universal_run tgt=(2, 3) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 4, "reason": "cannot_use_ability", "actor_id": 4 } actions: ["act=nil tgt=(5, 3) mod_tgts=[] await=false await_idx=-1", "act=knight_swap tgt=(8, 2) mod_tgts=[(8, 2)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 4, "reason": "cannot_use_ability", "actor_id": 4 } actions: ["act=nil tgt=(5, 3) mod_tgts=[] await=false await_idx=-1", "act=knight_swap tgt=(8, 2) mod_tgts=[(8, 2)] await=false await_idx=-1"]
+[PASS] Fixture Parity Suite (action_range + intent + journeys + bible)
+WARNING: 514 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 22 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+[PASS] Fixture Parity Suite
+--- Tier 3 fixture parity: PASS ---
+
+=== Planning QA gate summary ===
+Tier 1/2: DISABLED (legacy - not gate-blocking)
+Tier 3:   PASS (headless fixtures)
+[PASS] Planning QA gate.
+EXIT PlanningHeadless=0
+
+=== Regression ===
+=== Sim/bridge regression (headless) ===
+[QA] Regression suite running - press ESC to force-stop.
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+[START] Deterministic regression suite
+[ok] preview matches execution
+[ok] input board is never mutated
+[ok] push into wall deals collision damage
+[ok] battle reaches a conclusion
+[ok] bomber self-destructs and damages adjacent
+[ok] summoner spawns minion and respects cap
+[ok] teleporter warps behind farthest player
+[ok] engineer grenade damages target and adjacent without self-damage
+[ok] movement skill spends MP not AP
+[ok] movement skill resolves in pre-move bucket
+[ok] run clears next turn and can be used again
+[ok] run leaves action slot for 0 AP basic attack
+[ok] run uses global AbilityKind economy paths
+
+--- DEMO: one simulated turn (plain-English event log) ---
+Start: Knight at (1,1), Dummy (6 hp) at (3,1), Wall at (4,1).
+Player plan: step to (2,1), then slash the dummy east.
+What happens, in order:
+  - unit 1 walks from (1, 1) to (2, 1) (1 steps)
+  - MATH_TELEMETRY { "beast_tiles_moved": 1, "unit": 1, "actor_id": 1 }
+  - ABILITY_USED { "actor": 1, "ability": &"slash", "ability_name": "slash", "target_coord": (3, 1), "target_unit": 2, "presentation_anim": 1, "actor_id": 1 }
+  - MATH_TELEMETRY { "type": "damage", "base": 4, "wpn": 0, "stat_name": "STR", "stat_val": 0, "multiplier_raw": 4.0, "floored": 4, "backstab": false, "backstab_bonus": 0, "final_raw": 4, "range_one_damage_multiplier": 1.0, "target_def": 0, "fortitude": 0, "vulnerable": false, "electrified": false, "pierce": false, "actor_id": 1 }
+  - unit 2 takes 4 damage (hp now 6)
+  - unit 2 collides with wall at (4, 1)
+  - MATH_TELEMETRY { "type": &"collision", "base": 1, "base_bonus": 0, "excess_push": 1, "push_distance": 1, "tiles_moved": 0, "wpn": 0, "stat_name": "STR", "stat_val": 0, "multiplier_raw": 0.75, "floored": 0, "final_raw": 0, "target_def": 0, "fortitude": 0, "pusher_id": 1, "is_collision_side_effect": true }
+  - unit 2 takes 0 damage (hp now 6)
+  - ENEMY_PHASE_BEGAN {  }
+  - turn 1 ends
+Result: Dummy at (3, 1) with 6 hp (4 from slash, +1 from hitting the wall).
+--- end demo ---
+
+[PASS] All Milestone 1 simulation tests passed.
+[PASS] Deterministic regression suite passed.
+[QA] Regression diagnostics saved to reports/regression_latest.stderr.txt
+STARTED
+BRIDGE_START
+BRIDGE_FINISHED
+PASS
+
+=== ER-3 exit contracts ===
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ABILITY_MODULE_CHECK: bruiser_module_fingerprints START
+ABILITY_MODULE_CHECK: bruiser_module_fingerprints PASS
+ABILITY_MODULE_CHECK: knight_module_fingerprints START
+ABILITY_MODULE_CHECK: knight_module_fingerprints PASS
+ABILITY_MODULE_CHECK: violent_collision_module_shape START
+ABILITY_MODULE_CHECK: violent_collision_module_shape PASS
+ABILITY_MODULE_CHECK: trampling_advance_module_shape START
+ABILITY_MODULE_CHECK: trampling_advance_module_shape PASS
+ABILITY_MODULE_CHECK: er1_shared_homes START
+ABILITY_MODULE_CHECK: er1_shared_homes PASS
+ABILITY_MODULE_CHECK: infer_motion_push_layer START
+ABILITY_MODULE_CHECK: infer_motion_push_layer PASS
+ABILITY_MODULE_CHECK: ability_module_runtime START
+ABILITY_MODULE_SCENARIO: module_only_execution START
+ABILITY_MODULE_SCENARIO: module_only_execution PASS
+ABILITY_MODULE_SCENARIO: base_multi_module_compile_order START
+ABILITY_MODULE_SCENARIO: base_multi_module_compile_order PASS
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START
+ABILITY_MODULE_SCENARIO: native_multi_module_execute_order PASS
+ABILITY_MODULE_SCENARIO: upgraded_module_profile START
+ABILITY_MODULE_SCENARIO: upgraded_module_profile PASS
+ABILITY_MODULE_SCENARIO: shared_module_parity START
+ABILITY_MODULE_SCENARIO: shared_module_parity PASS
+ABILITY_MODULE_SCENARIO: grant_scrap_runtime START
+ABILITY_MODULE_SCENARIO: grant_scrap_runtime PASS
+ABILITY_MODULE_SCENARIO: grant_ap_runtime START
+ABILITY_MODULE_SCENARIO: grant_ap_runtime PASS
+ABILITY_MODULE_SCENARIO: hazard_spawn_runtime START
+ABILITY_MODULE_SCENARIO: hazard_spawn_runtime PASS
+ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START
+ABILITY_MODULE_SCENARIO: reposition_skills_ally_only PASS
+ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START
+ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim PASS
+ABILITY_MODULE_SCENARIO: module_targeting START
+ABILITY_MODULE_SCENARIO: module_targeting PASS
+ABILITY_MODULE_SCENARIO: motion_range_legality START
+ABILITY_MODULE_SCENARIO: motion_range_legality PASS
+ABILITY_MODULE_SCENARIO: if_collided_follow_up START
+ABILITY_MODULE_SCENARIO: if_collided_follow_up PASS
+ABILITY_MODULE_SCENARIO: schema_module_round_trip START
+ABILITY_MODULE_SCENARIO: schema_module_round_trip PASS
+ABILITY_MODULE_SCENARIO: skill_card_shows_condition START
+ABILITY_MODULE_SCENARIO: skill_card_shows_condition PASS
+ABILITY_MODULE_SCENARIO: module_json_requires_modules START
+ABILITY_MODULE_SCENARIO: module_json_requires_modules PASS
+ABILITY_MODULE_SCENARIO: module_json_requires_upgrade_modules START
+ABILITY_MODULE_SCENARIO: module_json_requires_upgrade_modules PASS
+ABILITY_MODULE_SCENARIO: module_profile_clear_projection START
+ABILITY_MODULE_SCENARIO: module_profile_clear_projection PASS
+ABILITY_MODULE_CHECK: ability_module_runtime PASS
+ABILITY_MODULE_CHECK: extra_rules_conversion_contract START
+ABILITY_MODULE_CHECK: extra_rules_conversion_contract PASS
+ABILITY_MODULE_CHECK: module_authoring_rules START
+ABILITY_MODULE_CHECK: module_authoring_rules PASS
+ABILITY_MODULE_CHECK: class_editor_module_boundary START
+ABILITY_MODULE_CHECK: class_editor_module_boundary PASS
+ABILITY_MODULE_CHECK: module_reader_boundary START
+ABILITY_MODULE_CHECK: module_reader_boundary PASS
+ABILITY_MODULE_CHECK: ability_formatter_audit START
+ABILITY_MODULE_CHECK: ability_formatter_audit PASS
+ABILITY_MODULE_BRIDGE_TEST: PASS
+ERROR: Ability JSON rejected: missing modules array
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] apply_ability_dict (res://ui/class_library_schema.gd:2324)
+       [1] _test_module_json_requires_modules (res://tests/ability_module_runtime_test.gd:748)
+       [2] run_all (res://tests/ability_module_runtime_test.gd:70)
+       [3] _run_script_check (res://tests/ability_module_bridge_runner.gd:100)
+       [4] run_all (res://tests/ability_module_bridge_runner.gd:33)
+       [5] _initialize (res://tests/run_ability_module_bridge_test.gd:10)
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCHEMA_TYPED_FIELDS: START
+SCHEMA_TYPED_FIELDS: checks=0
+[PASS] typed class-library schema roundtrip
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+EXTRA_RULES_CONTRACT: START
+EXTRA_RULES_CONTRACT: checks=0
+[PASS] Extra Rules conversion contract
+[PASS] ER-3 exit gate
+
+=== Regression summary ===
+Regression: PASS
+EXIT Regression=0
+
+=== SUMMARY ===
+Knight=0
+Bruiser=1
+Lancer=0
+Archer=0
+Mage=0
+Cleric=0
+Mercenary=0
+PlanningHeadless=0
+Regression=0
+OVERALL=FAIL

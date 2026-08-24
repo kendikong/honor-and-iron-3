@@ -1,4 +1,4 @@
-=== Knight QA gate (class validation - NOT planning QA) ===
+﻿=== Knight QA gate (class validation - NOT planning QA) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/KNIGHT_QA_GATE.md)
 
 === Matrix summary (from docs/KNIGHT_QA_GATE.md) ===
@@ -31,6 +31,7 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [KNIGHT_QA] seismic_stomp (knight_seismic_stomp)
 [KNIGHT_QA] fortify (knight_fortify)
 [KNIGHT_QA] bowling_charge (knight_bowling_charge)
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
 [KNIGHT_QA] iron_grip (knight_iron_grip)
 [KNIGHT_QA] redirect_strike (knight_redirect_strike)
 [KNIGHT_QA] indomitable_will (knight_indomitable_will)
@@ -77,23 +78,23 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_knight_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_factory_loads_every_active[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_factory_loads_every_active[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 3s 360ms[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_factory_loads_every_active[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 3s 583ms[0m
 [38;2;128;128;128m[0m
   [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_seismic_stomp_overlay_uses_shared_geometry[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_seismic_stomp_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 1s 467ms[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_seismic_stomp_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 1s 543ms[0m
 [38;2;128;128;128m[0m
   [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_defensive_formation_overlay_uses_shared_geometry[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_defensive_formation_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 2s 194ms[0m
+  [38;2;250;235;215mres://tests/live_knight_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_knight_defensive_formation_overlay_uses_shared_geometry[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 2s 237ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 7s 47ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 7s 391ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (3/3)[0m
-[38;2;233;150;122mTotal execution time: 7s 47ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1243/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1243/index.html[0m
+[38;2;233;150;122mTotal execution time: 7s 391ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1438/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1438/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 [PASS] Knight live QA: all active rows loaded; Defensive Formation [+] overlay/commit/sim parity; Seismic Stomp overlay parity

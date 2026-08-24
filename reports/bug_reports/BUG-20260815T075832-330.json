@@ -6,814 +6,814 @@
 		"board": {
 			"delayed_effects": [],
 			"grid_size": [
-				10,
-				10
+				10.0,
+				10.0
 			],
 			"intents": [],
 			"pending_pushes": [],
 			"tiles": [
 				{
 					"coord": [
-						0,
-						0
+						0.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						0
+						1.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						0
+						2.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						0
+						3.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						0
+						4.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						0
+						5.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						0
+						6.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						0
+						7.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						0
+						8.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						0
+						9.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						1
+						0.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						1
+						1.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						1
+						2.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						1
+						3.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						1
+						4.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						1
+						5.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						1
+						6.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						1
+						7.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						1
+						8.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						1
+						9.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						2
+						0.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						2
+						1.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						2
+						2.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						2
+						3.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						2
+						4.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						2
+						5.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						2
+						6.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						2
+						7.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						2
+						8.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						2
+						9.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						3
+						0.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						3
+						1.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						3
+						2.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						3
+						3.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						3
+						4.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						3
+						5.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						3
+						6.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						3
+						7.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						3
+						8.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						3
+						9.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						4
+						0.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						4
+						1.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						4
+						2.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						4
+						3.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						4
+						4.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						4
+						5.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						4
+						6.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						4
+						7.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						4
+						8.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						4
+						9.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						5
+						0.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						5
+						1.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						5
+						2.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						5
+						3.0,
+						5.0
 					],
-					"occupant_id": 1,
+					"occupant_id": 1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						5
+						4.0,
+						5.0
 					],
-					"occupant_id": 2,
+					"occupant_id": 2.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						5
+						5.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						5
+						6.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						5
+						7.0,
+						5.0
 					],
-					"occupant_id": 3,
+					"occupant_id": 3.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						5
+						8.0,
+						5.0
 					],
-					"occupant_id": 4,
+					"occupant_id": 4.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						5
+						9.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						6
+						0.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						6
+						1.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						6
+						2.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						6
+						3.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						6
+						4.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						6
+						5.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						6
+						6.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						6
+						7.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						6
+						8.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						6
+						9.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						7
+						0.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						7
+						1.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						7
+						2.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						7
+						3.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						7
+						4.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						7
+						5.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						7
+						6.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						7
+						7.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						7
+						8.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						7
+						9.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						8
+						0.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						8
+						1.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						8
+						2.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						8
+						3.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						8
+						4.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						8
+						5.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						8
+						6.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						8
+						7.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						8
+						8.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						8
+						9.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						9
+						0.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						9
+						1.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						9
+						2.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						9
+						3.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						9
+						4.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						9
+						5.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						9
+						6.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						9
+						7.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						9
+						8.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						9
+						9.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				}
 			],
-			"turn_index": 0,
+			"turn_index": 0.0,
 			"units": [
 				{
 					"abilities": [
@@ -836,28 +836,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 35,
-					"id": 1,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 2,
+					"hp": 35.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 2.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						3,
-						5
+						3.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -883,28 +883,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 1,
+					"facing": 1.0,
 					"facing_name": "EAST",
-					"hp": 35,
-					"id": 2,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 1,
+					"hp": 35.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 1.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						4,
-						5
+						4.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -912,26 +912,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 3,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						7,
-						5
+						7.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -939,26 +939,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 4,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						8,
-						5
+						8.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -966,27 +966,27 @@
 			]
 		},
 		"mode": "tactical_combat",
-		"phase": 0,
+		"phase": 0.0,
 		"phase_name": "PLANNING",
 		"planning_input": {
 			"drag_preview_failed": false,
 			"hover_tile": [
-				2,
-				8
+				2.0,
+				8.0
 			]
 		},
 		"planning_overlay": {
 			"action_range_origin": [
-				-999,
-				-999
+				-999.0,
+				-999.0
 			],
 			"aiming": false,
-			"attack_target_id": -1,
+			"attack_target_id": -1.0,
 			"hover_action_icon": "",
 			"hover_action_range_tiles": [],
 			"hover_coord": [
-				2,
-				8
+				2.0,
+				8.0
 			],
 			"hover_move_tiles": [],
 			"route": []
@@ -994,814 +994,814 @@
 		"projected_board": {
 			"delayed_effects": [],
 			"grid_size": [
-				10,
-				10
+				10.0,
+				10.0
 			],
 			"intents": [],
 			"pending_pushes": [],
 			"tiles": [
 				{
 					"coord": [
-						0,
-						0
+						0.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						0
+						1.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						0
+						2.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						0
+						3.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						0
+						4.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						0
+						5.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						0
+						6.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						0
+						7.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						0
+						8.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						0
+						9.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						1
+						0.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						1
+						1.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						1
+						2.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						1
+						3.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						1
+						4.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						1
+						5.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						1
+						6.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						1
+						7.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						1
+						8.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						1
+						9.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						2
+						0.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						2
+						1.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						2
+						2.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						2
+						3.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						2
+						4.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						2
+						5.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						2
+						6.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						2
+						7.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						2
+						8.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						2
+						9.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						3
+						0.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						3
+						1.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						3
+						2.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						3
+						3.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						3
+						4.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						3
+						5.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						3
+						6.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						3
+						7.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						3
+						8.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						3
+						9.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						4
+						0.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						4
+						1.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						4
+						2.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						4
+						3.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						4
+						4.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						4
+						5.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						4
+						6.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						4
+						7.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						4
+						8.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						4
+						9.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						5
+						0.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						5
+						1.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						5
+						2.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						5
+						3.0,
+						5.0
 					],
-					"occupant_id": 1,
+					"occupant_id": 1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						5
+						4.0,
+						5.0
 					],
-					"occupant_id": 2,
+					"occupant_id": 2.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						5
+						5.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						5
+						6.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						5
+						7.0,
+						5.0
 					],
-					"occupant_id": 3,
+					"occupant_id": 3.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						5
+						8.0,
+						5.0
 					],
-					"occupant_id": 4,
+					"occupant_id": 4.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						5
+						9.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						6
+						0.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						6
+						1.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						6
+						2.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						6
+						3.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						6
+						4.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						6
+						5.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						6
+						6.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						6
+						7.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						6
+						8.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						6
+						9.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						7
+						0.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						7
+						1.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						7
+						2.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						7
+						3.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						7
+						4.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						7
+						5.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						7
+						6.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						7
+						7.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						7
+						8.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						7
+						9.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						8
+						0.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						8
+						1.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						8
+						2.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						8
+						3.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						8
+						4.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						8
+						5.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						8
+						6.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						8
+						7.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						8
+						8.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						8
+						9.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						9
+						0.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						9
+						1.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						9
+						2.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						9
+						3.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						9
+						4.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						9
+						5.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						9
+						6.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						9
+						7.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						9
+						8.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						9
+						9.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				}
 			],
-			"turn_index": 0,
+			"turn_index": 0.0,
 			"units": [
 				{
 					"abilities": [
@@ -1824,28 +1824,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 35,
-					"id": 1,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 2,
+					"hp": 35.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 2.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						3,
-						5
+						3.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -1871,28 +1871,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 1,
+					"facing": 1.0,
 					"facing_name": "EAST",
-					"hp": 35,
-					"id": 2,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 1,
+					"hp": 35.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 1.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						4,
-						5
+						4.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -1900,26 +1900,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 3,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						7,
-						5
+						7.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -1927,26 +1927,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 4,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						8,
-						5
+						8.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -1956,92 +1956,92 @@
 		"scene_name": "TestBattle",
 		"scene_path": "res://scenes/TestBattle.tscn",
 		"selected_ability_id": "",
-		"selected_ability_index": 0,
-		"selected_unit_id": -1,
+		"selected_ability_index": 0.0,
+		"selected_unit_id": -1.0,
 		"timelines": {
 			"action": [],
 			"post_move": [],
 			"pre_move": [
 				{
 					"ability": "knight_swap",
-					"actor_id": 1,
+					"actor_id": 1.0,
 					"awaiting_target": false,
-					"face_dir": -1,
+					"face_dir": -1.0,
 					"irreversible": true,
 					"is_free_reaction": false,
 					"module_target_coords": [
 						[
-							3,
-							5
+							3.0,
+							5.0
 						]
 					],
 					"module_target_unit_ids": [
-						2
+						2.0
 					],
-					"move_timing": 1,
+					"move_timing": 1.0,
 					"move_timing_name": "POST_ACTION",
 					"target_coord": [
-						3,
-						5
+						3.0,
+						5.0
 					],
-					"target_unit_id": 2,
-					"type": 1,
+					"target_unit_id": 2.0,
+					"type": 1.0,
 					"type_name": "ABILITY",
 					"uses_run": false,
 					"waypoints": []
 				},
 				{
 					"ability": "knight_swap",
-					"actor_id": 2,
+					"actor_id": 2.0,
 					"awaiting_target": false,
-					"face_dir": -1,
+					"face_dir": -1.0,
 					"irreversible": true,
 					"is_free_reaction": false,
 					"module_target_coords": [
 						[
-							3,
-							5
+							3.0,
+							5.0
 						]
 					],
 					"module_target_unit_ids": [
-						1
+						1.0
 					],
-					"move_timing": 1,
+					"move_timing": 1.0,
 					"move_timing_name": "POST_ACTION",
 					"target_coord": [
-						3,
-						5
+						3.0,
+						5.0
 					],
-					"target_unit_id": 1,
-					"type": 1,
+					"target_unit_id": 1.0,
+					"type": 1.0,
 					"type_name": "ABILITY",
 					"uses_run": false,
 					"waypoints": []
 				},
 				{
 					"ability": "knight_swap",
-					"actor_id": 2,
+					"actor_id": 2.0,
 					"awaiting_target": false,
-					"face_dir": -1,
+					"face_dir": -1.0,
 					"irreversible": true,
 					"is_free_reaction": false,
 					"module_target_coords": [
 						[
-							4,
-							5
+							4.0,
+							5.0
 						]
 					],
 					"module_target_unit_ids": [
-						1
+						1.0
 					],
-					"move_timing": 1,
+					"move_timing": 1.0,
 					"move_timing_name": "POST_ACTION",
 					"target_coord": [
-						4,
-						5
+						4.0,
+						5.0
 					],
-					"target_unit_id": 1,
-					"type": 1,
+					"target_unit_id": 1.0,
+					"type": 1.0,
 					"type_name": "ABILITY",
 					"uses_run": false,
 					"waypoints": []
@@ -2051,814 +2051,814 @@
 		"turn_start_board": {
 			"delayed_effects": [],
 			"grid_size": [
-				10,
-				10
+				10.0,
+				10.0
 			],
 			"intents": [],
 			"pending_pushes": [],
 			"tiles": [
 				{
 					"coord": [
-						0,
-						0
+						0.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						0
+						1.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						0
+						2.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						0
+						3.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						0
+						4.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						0
+						5.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						0
+						6.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						0
+						7.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						0
+						8.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						0
+						9.0,
+						0.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						1
+						0.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						1
+						1.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						1
+						2.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						1
+						3.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						1
+						4.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						1
+						5.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						1
+						6.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						1
+						7.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						1
+						8.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						1
+						9.0,
+						1.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						2
+						0.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						2
+						1.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						2
+						2.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						2
+						3.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						2
+						4.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						2
+						5.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						2
+						6.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						2
+						7.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						2
+						8.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						2
+						9.0,
+						2.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						3
+						0.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						3
+						1.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						3
+						2.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						3
+						3.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						3
+						4.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						3
+						5.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						3
+						6.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						3
+						7.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						3
+						8.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						3
+						9.0,
+						3.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						4
+						0.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						4
+						1.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						4
+						2.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						4
+						3.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						4
+						4.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						4
+						5.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						4
+						6.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						4
+						7.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						4
+						8.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						4
+						9.0,
+						4.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						5
+						0.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						5
+						1.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						5
+						2.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						5
+						3.0,
+						5.0
 					],
-					"occupant_id": 2,
+					"occupant_id": 2.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						5
+						4.0,
+						5.0
 					],
-					"occupant_id": 1,
+					"occupant_id": 1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						5
+						5.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						5
+						6.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						5
+						7.0,
+						5.0
 					],
-					"occupant_id": 3,
+					"occupant_id": 3.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						5
+						8.0,
+						5.0
 					],
-					"occupant_id": 4,
+					"occupant_id": 4.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						5
+						9.0,
+						5.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						6
+						0.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						6
+						1.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						6
+						2.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						6
+						3.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						6
+						4.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						6
+						5.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						6
+						6.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						6
+						7.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						6
+						8.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						6
+						9.0,
+						6.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						7
+						0.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						7
+						1.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						7
+						2.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						7
+						3.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						7
+						4.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						7
+						5.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						7
+						6.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						7
+						7.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						7
+						8.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						7
+						9.0,
+						7.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						8
+						0.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						8
+						1.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						8
+						2.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						8
+						3.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						8
+						4.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						8
+						5.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						8
+						6.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						8
+						7.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						8
+						8.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						8
+						9.0,
+						8.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						0,
-						9
+						0.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						1,
-						9
+						1.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						2,
-						9
+						2.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						3,
-						9
+						3.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						4,
-						9
+						4.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						5,
-						9
+						5.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						6,
-						9
+						6.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						7,
-						9
+						7.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						8,
-						9
+						8.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				},
 				{
 					"coord": [
-						9,
-						9
+						9.0,
+						9.0
 					],
-					"occupant_id": -1,
+					"occupant_id": -1.0,
 					"terrain": "plain"
 				}
 			],
-			"turn_index": 0,
+			"turn_index": 0.0,
 			"units": [
 				{
 					"abilities": [
@@ -2881,28 +2881,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 1,
+					"facing": 1.0,
 					"facing_name": "EAST",
-					"hp": 35,
-					"id": 1,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 3,
+					"hp": 35.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 3.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						4,
-						5
+						4.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -2928,28 +2928,28 @@
 						"knight_trampling_advance"
 					],
 					"alive": true,
-					"ap": 1,
-					"armor": 0,
+					"ap": 1.0,
+					"armor": 0.0,
 					"definition": "knight",
-					"facing": 1,
+					"facing": 1.0,
 					"facing_name": "EAST",
-					"hp": 35,
-					"id": 2,
-					"level": 5,
-					"max_ap": 1,
-					"max_hp": 35,
-					"max_mp": 3,
-					"mp": 3,
+					"hp": 35.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 1.0,
+					"max_hp": 35.0,
+					"max_mp": 3.0,
+					"mp": 3.0,
 					"passives": [
 						"collision_retaliator"
 					],
 					"position": [
-						3,
-						5
+						3.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 0,
+					"team": 0.0,
 					"team_name": "PLAYER",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -2957,26 +2957,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 3,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						7,
-						5
+						7.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -2984,26 +2984,26 @@
 				{
 					"abilities": [],
 					"alive": true,
-					"ap": 0,
-					"armor": 0,
+					"ap": 0.0,
+					"armor": 0.0,
 					"definition": "training_dummy",
-					"facing": 3,
+					"facing": 3.0,
 					"facing_name": "WEST",
-					"hp": 100,
-					"id": 4,
-					"level": 1,
-					"max_ap": 0,
-					"max_hp": 100,
-					"max_mp": 0,
-					"mp": 0,
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
 					"passives": [],
 					"position": [
-						8,
-						5
+						8.0,
+						5.0
 					],
 					"promotion": "",
 					"statuses": [],
-					"team": 1,
+					"team": 1.0,
 					"team_name": "ENEMY",
 					"upgraded_abilities": [],
 					"upgraded_passives": []
@@ -3015,14 +3015,14 @@
 	"description": "undo on premove skills broke",
 	"expected": "should be able to undo anything",
 	"latest_preview": {
-		"event_count": 13,
-		"last_event_type": 7,
+		"event_count": 13.0,
+		"last_event_type": 7.0,
 		"last_event_type_name": "ENEMY_PHASE_BEGAN",
-		"update_count": 7
+		"update_count": 7.0
 	},
 	"latest_rejection": "",
 	"latest_timeline": {
-		"action_count": 3,
+		"action_count": 3.0,
 		"statuses": [
 			"",
 			"",
@@ -3035,7 +3035,7 @@
 			"scene_path": "res://scenes/TestBattle.tscn"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -3043,143 +3043,143 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
-			"kind": "ability_selected"
-		},
-		{
-			"kind": "selection_changed",
-			"unit_id": 1
-		},
-		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": 1.0
 		},
 		{
-			"index": 0,
-			"kind": "ability_selected"
-		},
-		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": -1.0
 		},
 		{
-			"index": 1,
+			"index": 0.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": 1.0
 		},
 		{
-			"index": 0,
-			"kind": "ability_selected"
-		},
-		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": -1.0
 		},
 		{
-			"index": 1,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 17,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 16,
+			"kind": "selection_changed",
+			"unit_id": 1.0
+		},
+		{
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 15,
+			"index": 17.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 14,
+			"index": 16.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 13,
+			"index": 15.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 12,
+			"index": 14.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 11,
+			"index": 13.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 10,
+			"index": 12.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 9,
+			"index": 11.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 8,
+			"index": 10.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 7,
+			"index": 9.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 6,
+			"index": 8.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 5,
+			"index": 7.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 4,
+			"index": 6.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 3,
+			"index": 5.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 2,
+			"index": 4.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 3.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 2.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -3187,18 +3187,18 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 2,
+			"index": 2.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -3206,26 +3206,26 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 2
+			"unit_id": 2.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -3234,61 +3234,26 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
-			"kind": "ability_selected"
-		},
-		{
-			"kind": "selection_changed",
-			"unit_id": 2
-		},
-		{
-			"index": 1,
-			"kind": "ability_selected"
-		},
-		{
-			"action_count": 3,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				"",
-				""
-			]
-		},
-		{
-			"kind": "selection_changed",
-			"unit_id": -1
-		},
-		{
-			"index": 0,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 2.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 4,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				"",
-				"",
-				""
-			]
-		},
-		{
-			"action_count": 3,
+			"action_count": 3.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -3298,10 +3263,45 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1.0
+		},
+		{
+			"index": 1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 4.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 3.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1.0
+		},
+		{
+			"index": 0.0,
 			"kind": "ability_selected"
 		}
 	],
@@ -3314,13 +3314,13 @@
 		"engine": {
 			"build": "official",
 			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
-			"hex": 263936,
-			"major": 4,
-			"minor": 7,
-			"patch": 0,
+			"hex": 263936.0,
+			"major": 4.0,
+			"minor": 7.0,
+			"patch": 0.0,
 			"status": "stable",
 			"string": "4.7-stable (official)",
-			"timestamp": 0
+			"timestamp": 0.0
 		},
 		"fps_at_capture": 120.0,
 		"git_commit": "bc508a5cf3659c29a031edbcf4b4fef2e55f8b0c",
@@ -3335,6 +3335,7 @@
 	},
 	"screenshot": "",
 	"severity": "Medium",
-	"status": "open",
+	"status": "done",
+	"status_updated_at": "2026-08-22T21:34:10",
 	"title": "undo not  working"
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites id="2026-08-22" name="report_1422" tests="6" failures="0" skipped="0" flaky="0" time="0.000">
+	<testsuite id="0" name="live_archer_class_test" package="tests" timestamp="2026-08-22T20:32:54" hostname="localhost" tests="6" failures="0" errors="0" skipped="0" flaky="0" time="31.306">
+		<testcase name="test_live_archer_every_skill" classname="live_archer_class_test" time="18.075">
+		</testcase>
+		<testcase name="test_live_second_archer_complex_turn_after_volley" classname="live_archer_class_test" time="4.199">
+		</testcase>
+		<testcase name="test_live_selection_after_committed_archer_actions" classname="live_archer_class_test" time="2.681">
+		</testcase>
+		<testcase name="test_live_volley_selected_allows_empty_tile_premove" classname="live_archer_class_test" time="2.056">
+		</testcase>
+		<testcase name="test_live_archer_stationary_power_shot_then_direct_post_move" classname="live_archer_class_test" time="2.329">
+		</testcase>
+		<testcase name="test_live_archer_steady_aim_auto_activates_on_extra_range" classname="live_archer_class_test" time="1.919">
+		</testcase>
+	</testsuite>
+</testsuites>

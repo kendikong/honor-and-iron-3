@@ -1,0 +1,3157 @@
+{
+	"actual": "",
+	"category": "Bug",
+	"context": {
+		"battle_log_tail": "",
+		"board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10.0,
+				10.0
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						3.0
+					],
+					"occupant_id": 1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						5.0
+					],
+					"occupant_id": 2.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						5.0
+					],
+					"occupant_id": 3.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						5.0
+					],
+					"occupant_id": 4.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 0.0,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 0.0,
+					"facing_name": "NORTH",
+					"hp": 20.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 1.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						5.0,
+						3.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 1.0,
+					"facing_name": "EAST",
+					"hp": 20.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 4.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						3.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						7.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						8.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		},
+		"mode": "tactical_combat",
+		"phase": 0.0,
+		"phase_name": "PLANNING",
+		"planning_input": {
+			"drag_preview_failed": false,
+			"hover_tile": [
+				7.0,
+				5.0
+			]
+		},
+		"planning_overlay": {
+			"action_range_origin": [
+				-999.0,
+				-999.0
+			],
+			"aiming": false,
+			"attack_target_id": -1.0,
+			"hover_action_icon": "🎯",
+			"hover_action_range_tiles": [
+				[
+					6.0,
+					4.0
+				],
+				[
+					6.0,
+					5.0
+				],
+				[
+					6.0,
+					6.0
+				],
+				[
+					7.0,
+					4.0
+				],
+				[
+					7.0,
+					5.0
+				],
+				[
+					7.0,
+					6.0
+				],
+				[
+					8.0,
+					4.0
+				],
+				[
+					8.0,
+					5.0
+				],
+				[
+					8.0,
+					6.0
+				]
+			],
+			"hover_coord": [
+				7.0,
+				5.0
+			],
+			"hover_move_tiles": [],
+			"route": []
+		},
+		"projected_board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10.0,
+				10.0
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						3.0
+					],
+					"occupant_id": 1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						5.0
+					],
+					"occupant_id": 2.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						5.0
+					],
+					"occupant_id": 3.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						5.0
+					],
+					"occupant_id": 4.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 0.0,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 0.0,
+					"facing_name": "NORTH",
+					"hp": 20.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 1.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						5.0,
+						3.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 1.0,
+					"facing_name": "EAST",
+					"hp": 20.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 0.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						3.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						7.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						8.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		},
+		"scene_name": "TestBattle",
+		"scene_path": "res://scenes/TestBattle.tscn",
+		"selected_ability_id": "archer_volley",
+		"selected_ability_index": 4.0,
+		"selected_unit_id": 1.0,
+		"timelines": {
+			"action": [],
+			"post_move": [],
+			"pre_move": [
+				{
+					"ability": "",
+					"actor_id": 1.0,
+					"awaiting_target": false,
+					"face_dir": -1.0,
+					"irreversible": false,
+					"is_free_reaction": false,
+					"module_target_coords": [],
+					"module_target_unit_ids": [],
+					"move_timing": 1.0,
+					"move_timing_name": "POST_ACTION",
+					"target_coord": [
+						5.0,
+						3.0
+					],
+					"target_unit_id": -1.0,
+					"type": 0.0,
+					"type_name": "MOVE",
+					"uses_run": false,
+					"waypoints": [
+						[
+							4.0,
+							4.0
+						],
+						[
+							5.0,
+							4.0
+						],
+						[
+							5.0,
+							3.0
+						]
+					]
+				}
+			]
+		},
+		"turn_start_board": {
+			"delayed_effects": [],
+			"grid_size": [
+				10.0,
+				10.0
+			],
+			"intents": [],
+			"pending_pushes": [],
+			"tiles": [
+				{
+					"coord": [
+						0.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						0.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						1.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						2.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						3.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						4.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						5.0
+					],
+					"occupant_id": 2.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						5.0
+					],
+					"occupant_id": 1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						5.0
+					],
+					"occupant_id": 3.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						5.0
+					],
+					"occupant_id": 4.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						5.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						6.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						7.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						8.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						0.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						1.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						2.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						3.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						4.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						5.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						6.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						7.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						8.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				},
+				{
+					"coord": [
+						9.0,
+						9.0
+					],
+					"occupant_id": -1.0,
+					"terrain": "plain"
+				}
+			],
+			"turn_index": 0.0,
+			"units": [
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 1.0,
+					"facing_name": "EAST",
+					"hp": 20.0,
+					"id": 1.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 4.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						4.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [
+						"universal_run",
+						"archer_sidestep",
+						"archer_basic",
+						"archer_power_shot",
+						"archer_volley",
+						"archer_pinning_arrow",
+						"archer_piercing_shot",
+						"archer_toxic_spore_arrow",
+						"archer_grapple_arrow",
+						"archer_explosive_arrow",
+						"archer_hunters_mark",
+						"archer_repelling_shot",
+						"archer_bear_trap",
+						"archer_suppressing_fire",
+						"archer_caltrop_trap",
+						"archer_parting_shot",
+						"archer_scouts_eye"
+					],
+					"alive": true,
+					"ap": 1.0,
+					"armor": 0.0,
+					"definition": "archer",
+					"facing": 1.0,
+					"facing_name": "EAST",
+					"hp": 20.0,
+					"id": 2.0,
+					"level": 5.0,
+					"max_ap": 3.0,
+					"max_hp": 20.0,
+					"max_mp": 4.0,
+					"mp": 4.0,
+					"passives": [
+						"lightfoot"
+					],
+					"position": [
+						3.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 0.0,
+					"team_name": "PLAYER",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 3.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						7.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				},
+				{
+					"abilities": [],
+					"alive": true,
+					"ap": 0.0,
+					"armor": 0.0,
+					"definition": "training_dummy",
+					"facing": 3.0,
+					"facing_name": "WEST",
+					"hp": 100.0,
+					"id": 4.0,
+					"level": 1.0,
+					"max_ap": 0.0,
+					"max_hp": 100.0,
+					"max_mp": 0.0,
+					"mp": 0.0,
+					"passives": [],
+					"position": [
+						8.0,
+						5.0
+					],
+					"promotion": "",
+					"statuses": [],
+					"team": 1.0,
+					"team_name": "ENEMY",
+					"upgraded_abilities": [],
+					"upgraded_passives": []
+				}
+			]
+		}
+	},
+	"created_at": "2026-08-20T03:20:15",
+	"description": "when moving the mouse in slow circles the commitpreviewghost is not updating until i completely stop. fix this without adding performance impact",
+	"expected": "",
+	"latest_preview": {
+		"event_count": 3.0,
+		"last_event_type": 7.0,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 6.0
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 1.0,
+		"statuses": [
+			""
+		]
+	},
+	"mandatory_agent_instructions": {
+		"architectural_sources_of_truth": {
+			"1_simulation": "Simulator.simulate_player_turn(state, timeline, events) is the pure RefCounted deterministic resolution for preview and commit.",
+			"2_commit_authority": "CombatDirector.validate_commit_slots(unit_id, slots) is the single authority on action legality and commit success.",
+			"3_move_preview": "CombatPlanningPreview and TacticalPlanningOverlay — preview is intent truth (what is previewed on hover is what gets committed).",
+			"4_action_range": "CombatPlanningPreview.committed_stand_tile(unit_id) — range tiles paint from committed stand on active timeline, never turn-start base_board.",
+			"5_abilities": "AbilitySystem and AbilityData Resources — data-driven resources, not hardcoded engine branches.",
+			"6_input_buffers": "Input buffers (_drag_route, waypoints) are transient staging and must never directly paint canvas routes without simulation validation."
+		},
+		"directive": "MANDATORY FOR ALL AGENTS: You are strictly forbidden from applying heuristic fixes. All fixes must use shared global systems and the canonical single sources of truth.",
+		"required_rules": [
+			".cursor/rules/global-systems-first.mdc",
+			".cursor/rules/no-bandaid-fixes.mdc",
+			".cursor/rules/move-preview-intent-truth.mdc",
+			".cursor/rules/action-range-latest-stand.mdc",
+			".cursor/rules/qa-after-gameplay-changes.mdc"
+		]
+	},
+	"recent_events": [
+		{
+			"kind": "scene_changed",
+			"scene_path": "res://scenes/TestBattle.tscn"
+		},
+		{
+			"index": 2.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 3.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 3.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": -1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 3.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 4.0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 4.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		}
+	],
+	"report_id": "BUG-20260819T202015-902",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936.0,
+			"major": 4.0,
+			"minor": 7.0,
+			"patch": 0.0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0.0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "b1ee2c013a224f108781776e31cb05c1ec6755fa",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/TestBattle.tscn",
+		"window_size": [
+			3840.0,
+			2126.0
+		]
+	},
+	"screenshot": "",
+	"severity": "Medium",
+	"status": "done",
+	"status_updated_at": "2026-08-22T21:34:07",
+	"title": "commitpreviewghost is slow to update"
+}

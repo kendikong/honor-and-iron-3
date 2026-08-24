@@ -10,14 +10,14 @@
 	"description": "wrong\t modules",
 	"expected": "should be damage with a push modifier",
 	"latest_preview": {
-		"event_count": 1,
-		"last_event_type": 7,
+		"event_count": 1.0,
+		"last_event_type": 7.0,
 		"last_event_type_name": "ENEMY_PHASE_BEGAN",
-		"update_count": 5
+		"update_count": 5.0
 	},
 	"latest_rejection": "",
 	"latest_timeline": {
-		"action_count": 0,
+		"action_count": 0.0,
 		"statuses": [
 			""
 		]
@@ -29,170 +29,170 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 17,
+			"index": 17.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 16,
+			"index": 16.0,
 			"kind": "ability_selected"
 		}
 	],
@@ -205,13 +205,13 @@
 		"engine": {
 			"build": "official",
 			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
-			"hex": 263936,
-			"major": 4,
-			"minor": 7,
-			"patch": 0,
+			"hex": 263936.0,
+			"major": 4.0,
+			"minor": 7.0,
+			"patch": 0.0,
 			"status": "stable",
 			"string": "4.7-stable (official)",
-			"timestamp": 0
+			"timestamp": 0.0
 		},
 		"fps_at_capture": 120.0,
 		"git_commit": "94461f5b8ea98db6f3ba22b8cd3fe13aac4db794",
@@ -226,6 +226,7 @@
 	},
 	"screenshot": "",
 	"severity": "Medium",
-	"status": "open",
+	"status": "done",
+	"status_updated_at": "2026-08-22T21:34:11",
 	"title": "tail swipe"
 }

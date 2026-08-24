@@ -10,21 +10,21 @@
 	"description": "ALL PREMOVES EXECUTE IMMEDIATELY. THIS ONE IS NOT DOING THAT.",
 	"expected": "",
 	"latest_preview": {
-		"event_count": 1,
-		"last_event_type": 7,
+		"event_count": 1.0,
+		"last_event_type": 7.0,
 		"last_event_type_name": "ENEMY_PHASE_BEGAN",
-		"update_count": 47
+		"update_count": 47.0
 	},
 	"latest_rejection": "",
 	"latest_timeline": {
-		"action_count": 0,
+		"action_count": 0.0,
 		"statuses": [
 			""
 		]
 	},
 	"recent_events": [
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -32,83 +32,29 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"action_count": 3,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				"",
-				""
-			]
-		},
-		{
-			"action_count": 2,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				""
-			]
-		},
-		{
-			"action_count": 1,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"action_count": 0,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"kind": "selection_changed",
-			"unit_id": -1
-		},
-		{
-			"index": 0,
-			"kind": "ability_selected"
-		},
-		{
-			"kind": "selection_changed",
-			"unit_id": 1
-		},
-		{
-			"index": 1,
-			"kind": "ability_selected"
-		},
-		{
-			"action_count": 1,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"action_count": 3,
+			"action_count": 3.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -117,7 +63,7 @@
 			]
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -125,14 +71,14 @@
 			]
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -140,67 +86,29 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"action_count": 3,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				"",
-				""
-			]
-		},
-		{
-			"action_count": 2,
-			"kind": "timeline_changed",
-			"statuses": [
-				"",
-				""
-			]
-		},
-		{
-			"action_count": 1,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"action_count": 0,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"action_count": 1,
-			"kind": "timeline_changed",
-			"statuses": [
-				""
-			]
-		},
-		{
-			"action_count": 3,
+			"action_count": 3.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -209,7 +117,7 @@
 			]
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -217,14 +125,14 @@
 			]
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -232,29 +140,121 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"action_count": 3,
+			"action_count": 3.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 2.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 0.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 3.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 2.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 0.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1.0
+		},
+		{
+			"index": 0.0,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1.0
+		},
+		{
+			"index": 1.0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1.0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"action_count": 3.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -264,124 +264,124 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 1,
+			"phase": 1.0,
 			"phase_name": "EXECUTING"
 		},
 		{
 			"data": {
-				"actor_id": 1,
+				"actor_id": 1.0,
 				"to": [
-					4,
-					5
+					4.0,
+					5.0
 				],
-				"unit": 1
+				"unit": 1.0
 			},
 			"kind": "sim_event",
-			"type": 0,
+			"type": 0.0,
 			"type_name": "UNIT_MOVED"
 		},
 		{
 			"data": {
-				"actor_id": 1,
+				"actor_id": 1.0,
 				"reposition": true,
 				"to": [
-					3,
-					5
+					3.0,
+					5.0
 				],
-				"unit": 2
+				"unit": 2.0
 			},
 			"kind": "sim_event",
-			"type": 0,
+			"type": 0.0,
 			"type_name": "UNIT_MOVED"
 		},
 		{
 			"data": {
-				"actor": 1,
-				"actor_id": 1,
+				"actor": 1.0,
+				"actor_id": 1.0,
 				"from": [
-					4,
-					5
+					4.0,
+					5.0
 				],
-				"move_timing": 1,
-				"movement_cost_per_tile": 1,
-				"movement_points_before": 5,
-				"movement_points_left": 0,
+				"move_timing": 1.0,
+				"movement_cost_per_tile": 1.0,
+				"movement_points_before": 5.0,
+				"movement_points_left": 0.0,
 				"path": [
 					[
-						5,
-						5
+						5.0,
+						5.0
 					],
 					[
-						5,
-						6
+						5.0,
+						6.0
 					],
 					[
-						4,
-						6
+						4.0,
+						6.0
 					],
 					[
-						4,
-						7
+						4.0,
+						7.0
 					],
 					[
-						3,
-						7
+						3.0,
+						7.0
 					]
 				],
-				"steps": 5,
+				"steps": 5.0,
 				"to": [
-					3,
-					7
+					3.0,
+					7.0
 				]
 			},
 			"kind": "sim_event",
-			"type": 0,
+			"type": 0.0,
 			"type_name": "UNIT_MOVED"
 		},
 		{
 			"data": {
-				"actor_id": 1,
-				"facing": 1,
-				"unit": 1
+				"actor_id": 1.0,
+				"facing": 1.0,
+				"unit": 1.0
 			},
 			"kind": "sim_event",
-			"type": 4,
+			"type": 4.0,
 			"type_name": "UNIT_FACED"
 		},
 		{
 			"data": {
-				"actor_id": 1,
-				"beast_tiles_moved": 3,
-				"unit": 1
+				"actor_id": 1.0,
+				"beast_tiles_moved": 3.0,
+				"unit": 1.0
 			},
 			"kind": "sim_event",
-			"type": 17,
+			"type": 17.0,
 			"type_name": "MATH_TELEMETRY"
 		},
 		{
 			"data": {},
 			"kind": "sim_event",
-			"type": 7,
+			"type": 7.0,
 			"type_name": "ENEMY_PHASE_BEGAN"
 		},
 		{
 			"data": {
-				"turn": 3
+				"turn": 3.0
 			},
 			"kind": "sim_event",
-			"type": 8,
+			"type": 8.0,
 			"type_name": "TURN_ENDED"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -389,19 +389,19 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -410,70 +410,70 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 1,
+			"phase": 1.0,
 			"phase_name": "EXECUTING"
 		},
 		{
 			"data": {
-				"actor_id": 1,
+				"actor_id": 1.0,
 				"to": [
-					3,
-					7
+					3.0,
+					7.0
 				],
-				"unit": 1
+				"unit": 1.0
 			},
 			"kind": "sim_event",
-			"type": 0,
+			"type": 0.0,
 			"type_name": "UNIT_MOVED"
 		},
 		{
 			"data": {
-				"actor_id": 1,
+				"actor_id": 1.0,
 				"reposition": true,
 				"to": [
-					3,
-					8
+					3.0,
+					8.0
 				],
-				"unit": 2
+				"unit": 2.0
 			},
 			"kind": "sim_event",
-			"type": 0,
+			"type": 0.0,
 			"type_name": "UNIT_MOVED"
 		},
 		{
 			"data": {
-				"actor_id": 1,
-				"beast_tiles_moved": 1,
-				"unit": 1
+				"actor_id": 1.0,
+				"beast_tiles_moved": 1.0,
+				"unit": 1.0
 			},
 			"kind": "sim_event",
-			"type": 17,
+			"type": 17.0,
 			"type_name": "MATH_TELEMETRY"
 		},
 		{
 			"data": {},
 			"kind": "sim_event",
-			"type": 7,
+			"type": 7.0,
 			"type_name": "ENEMY_PHASE_BEGAN"
 		},
 		{
 			"data": {
-				"turn": 4
+				"turn": 4.0
 			},
 			"kind": "sim_event",
-			"type": 8,
+			"type": 8.0,
 			"type_name": "TURN_ENDED"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -481,7 +481,7 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		}
 	],
@@ -494,13 +494,13 @@
 		"engine": {
 			"build": "official",
 			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
-			"hex": 263936,
-			"major": 4,
-			"minor": 7,
-			"patch": 0,
+			"hex": 263936.0,
+			"major": 4.0,
+			"minor": 7.0,
+			"patch": 0.0,
 			"status": "stable",
 			"string": "4.7-stable (official)",
-			"timestamp": 0
+			"timestamp": 0.0
 		},
 		"fps_at_capture": 120.0,
 		"git_commit": "94461f5b8ea98db6f3ba22b8cd3fe13aac4db794",
@@ -515,6 +515,7 @@
 	},
 	"screenshot": "",
 	"severity": "Medium",
-	"status": "open",
+	"status": "done",
+	"status_updated_at": "2026-08-22T21:34:10",
 	"title": "reposition (beast rider)"
 }

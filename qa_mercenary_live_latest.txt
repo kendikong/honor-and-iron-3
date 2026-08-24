@@ -16,20 +16,47 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_passive_overlay[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_passive_overlay[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 13s 106ms[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_tactical_retreat tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_passive_overlay[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 13s 621ms[0m
 [38;2;128;128;128m[0m
   [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 626ms[0m
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_pullback tgt=(3, 5) mod_tgts=[(3, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=nil tgt=(5, 5) mod_tgts=[] await=false await_idx=-1", "act=mercenary_executioners_blade tgt=(6, 5) mod_tgts=[] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_acrobatic_vault tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=mercenary_acrobatic_vault tgt=(6, 5) mod_tgts=[(6, 5)] await=false await_idx=-1"]
+  [38;2;250;235;215mres://tests/live_mercenary_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_mercenary_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 16s 212ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 29s 751ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 29s 851ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 2 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (2/2)[0m
-[38;2;233;150;122mTotal execution time: 29s 751ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1234/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1234/index.html[0m
+[38;2;233;150;122mTotal execution time: 29s 851ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1388/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1388/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 [PASS] Mercenary live QA: all active skills through preview/commit

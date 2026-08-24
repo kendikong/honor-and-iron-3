@@ -77,5 +77,4 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 === Lancer QA gate summary ===
 
 === Tier 2: live Lancer acceptance ===
---- Tier 2 live: PASS ---
-[PASS] Lancer QA gate: matrix 100% PASS + Tier 1 harness PASS + Tier 2 live PASS.
+[FAIL] Tier 2 live Lancer QA exit 1

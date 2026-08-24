@@ -42,7 +42,7 @@ const HOVER_SETTLE_MS_DEFAULT: float = 45.0
 const HOVER_SETTLE_MS_MAX: float = 100.0
 const HOVER_SETTLE_STILL_PX_DEFAULT: float = 3.0
 const HOVER_SETTLE_STILL_PX_MAX: float = 64.0
-const OVERLAY_FLOW_FPS_DEFAULT: float = 30.0
+const OVERLAY_FLOW_FPS_DEFAULT: float = 60.0
 
 var resolution: Vector2i = Vector2i(3840, 1800)
 var window_mode: DisplayServer.WindowMode = DisplayServer.WINDOW_MODE_WINDOWED

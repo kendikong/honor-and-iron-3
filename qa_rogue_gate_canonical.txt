@@ -1,4 +1,4 @@
-=== Rogue QA gate (class validation - NOT planning QA) ===
+﻿=== Rogue QA gate (class validation - NOT planning QA) ===
 Spec: docs/CLASS_QA_BIBLE.md (instance: docs/ROGUE_QA_GATE.md)
 
 === Matrix summary (from docs/ROGUE_QA_GATE.md) ===
@@ -39,8 +39,8 @@ ABILITY_MODULE_CHECK: infer_motion_push_layer PASS
 ABILITY_MODULE_CHECK: ability_module_runtime START
 ABILITY_MODULE_SCENARIO: module_only_execution START
 ABILITY_MODULE_SCENARIO: module_only_execution PASS
-ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order START
-ABILITY_MODULE_SCENARIO: base_multi_module_compatibility_order PASS
+ABILITY_MODULE_SCENARIO: base_multi_module_compile_order START
+ABILITY_MODULE_SCENARIO: base_multi_module_compile_order PASS
 ABILITY_MODULE_SCENARIO: native_multi_module_execute_order START
 ABILITY_MODULE_SCENARIO: native_multi_module_execute_order PASS
 ABILITY_MODULE_SCENARIO: upgraded_module_profile START
@@ -57,8 +57,8 @@ ABILITY_MODULE_SCENARIO: reposition_skills_ally_only START
 ABILITY_MODULE_SCENARIO: reposition_skills_ally_only PASS
 ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim START
 ABILITY_MODULE_SCENARIO: planned_postmove_standing_aim PASS
-ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility START
-ABILITY_MODULE_SCENARIO: legacy_flat_targeting_compatibility PASS
+ABILITY_MODULE_SCENARIO: module_targeting START
+ABILITY_MODULE_SCENARIO: module_targeting PASS
 ABILITY_MODULE_SCENARIO: motion_range_legality START
 ABILITY_MODULE_SCENARIO: motion_range_legality PASS
 ABILITY_MODULE_SCENARIO: if_collided_follow_up START
@@ -67,10 +67,10 @@ ABILITY_MODULE_SCENARIO: schema_module_round_trip START
 ABILITY_MODULE_SCENARIO: schema_module_round_trip PASS
 ABILITY_MODULE_SCENARIO: skill_card_shows_condition START
 ABILITY_MODULE_SCENARIO: skill_card_shows_condition PASS
-ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip START
-ABILITY_MODULE_SCENARIO: legacy_json_import_round_trip PASS
-ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import START
-ABILITY_MODULE_SCENARIO: modular_base_legacy_upgrade_import PASS
+ABILITY_MODULE_SCENARIO: module_json_requires_modules START
+ABILITY_MODULE_SCENARIO: module_json_requires_modules PASS
+ABILITY_MODULE_SCENARIO: module_json_requires_upgrade_modules START
+ABILITY_MODULE_SCENARIO: module_json_requires_upgrade_modules PASS
 ABILITY_MODULE_SCENARIO: module_profile_clear_projection START
 ABILITY_MODULE_SCENARIO: module_profile_clear_projection PASS
 ABILITY_MODULE_CHECK: ability_module_runtime PASS
@@ -80,8 +80,8 @@ ABILITY_MODULE_CHECK: module_authoring_rules START
 ABILITY_MODULE_CHECK: module_authoring_rules PASS
 ABILITY_MODULE_CHECK: class_editor_module_boundary START
 ABILITY_MODULE_CHECK: class_editor_module_boundary PASS
-ABILITY_MODULE_CHECK: compatibility_reader_boundary START
-ABILITY_MODULE_CHECK: compatibility_reader_boundary PASS
+ABILITY_MODULE_CHECK: module_reader_boundary START
+ABILITY_MODULE_CHECK: module_reader_boundary PASS
 ABILITY_MODULE_CHECK: ability_formatter_audit START
 ABILITY_MODULE_CHECK: ability_formatter_audit PASS
 ABILITY_MODULE_BRIDGE_TEST: PASS
@@ -154,23 +154,23 @@ have no effect in the test!
 [38;2;100;149;237mSession hook 'GdUnitXMLTestReporter' installed.[0m
 [38;2;0;206;209mRun Test Suite: [0m[38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m
   [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_passive_overlay[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_passive_overlay[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 13s 465ms[0m
+  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_passive_overlay[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 14s 350ms[0m
 [38;2;128;128;128m[0m
   [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_factory_loads_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_factory_loads_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 1s 694ms[0m
+  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_factory_loads_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 1s 713ms[0m
 [38;2;128;128;128m[0m
   [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_every_skill[0m[38;2;34;139;34m STARTED[0m[38;2;128;128;128m[0m
-  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 35s 723ms[0m
+  [38;2;250;235;215mres://tests/live_rogue_class_test.gd[0m[38;2;128;128;128m > [0m[38;2;250;235;215mtest_live_rogue_every_skill[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 37s 275ms[0m
 [38;2;128;128;128m[0m
-[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 50s 906ms[0m
+[38;2;30;144;255mStatistics:[0m[38;2;128;128;128m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m[38;2;34;139;34m PASSED[0m[38;2;100;149;237m 53s 362ms[0m
 [38;2;128;128;128m[0m
 [38;2;128;128;128m[0m
 [38;2;30;144;255mOverall Summary:[0m[38;2;255;255;255m 3 test cases | 0 errors | 0 failures | 0 flaky | 0 skipped | 0 orphans |[0m
 [38;2;233;150;122mExecuted test suites: (1/1)[0m
 [38;2;233;150;122mExecuted test cases : (3/3)[0m
-[38;2;233;150;122mTotal execution time: 50s 906ms[0m
-[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1245/results.xml[0m
-[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1245/index.html[0m
+[38;2;233;150;122mTotal execution time: 53s 362ms[0m
+[38;2;255;255;255m [0m[38;2;100;149;237mOpen XML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1280/results.xml[0m
+[38;2;100;149;237mOpen HTML Report at: file://C:/Users/Kendy/Downloads/honor-and-iron-3/reports/report_1280/index.html[0m
 [38;2;233;150;122mExit code: 0[0m
 Run dispose test resources
 [PASS] Rogue live QA: factory loaded in TestBattle
