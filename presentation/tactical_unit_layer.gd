@@ -396,6 +396,12 @@ func _on_board_changed(board: BoardState) -> void:
 	## plan refresh would erase uncommitted hover damage while aiming.
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
+	if is_planning_commit_sequence_active():
+		## The commit queue owns player actor positions until its event tween settles.
+		## Applying the new live board here would snap over the queued premove.
+		_refresh_planning_visuals()
+		queue_redraw()
+		return
 	if _director != null and _director.plan_refresh_snap_units:
 		_sync_snap_plan_refresh_units()
 		return
@@ -1454,10 +1460,8 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 		visual_from if visual_from.x > -900 else logical_from
 	)
 	if bool(event.data.get("planning_commit_move", false)):
-		## The queued commit event owns the presentation origin. The board signal may
-		## already contain the projected landing cell, but that must not suppress the
-		## walk tween or turn the premove into a snap.
-		if from_cell != logical_from:
+		var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
+		if unit != null and unit.position == logical_from and from_cell != logical_from:
 			_position_actor(unit_id, logical_from)
 			from_cell = logical_from
 	var to_cell: Vector2i = event.data["to"]
