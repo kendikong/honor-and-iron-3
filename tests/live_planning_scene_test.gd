@@ -324,6 +324,9 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 	await _select_ability_for_unit(ctx, k1_id, _SWAP_ID)
 	await _reposition_mouse_to_unit(ctx, k1_id, _WALK_SWAP_ALLY_CELL)
 	await _commit_via_slots_at_cell(ctx, k1_id, _WALK_SWAP_ALLY_CELL, "walk_swap/swap")
+	_assert_premove_is_visibly_in_progress(
+		ctx, k1_id, _K1_CELL, _WALK_SWAP_APPROACH, "walk_swap",
+	)
 	var pre_moves: Array[TimelineAction] = _pre_moves_for_unit(director, k1_id)
 	if pre_moves.size() != 2:
 		assert_int(pre_moves.size()).override_failure_message(
@@ -358,6 +361,32 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 		"pre_move_count": 2,
 		"require_swap_first": false,
 	})
+
+
+func _assert_premove_is_visibly_in_progress(
+	ctx: Dictionary,
+	unit_id: int,
+	from_cell: Vector2i,
+	to_cell: Vector2i,
+	label: String,
+) -> void:
+	var layer: TacticalUnitLayer = _unit_layer(ctx)
+	var actor: CharacterActor = layer.get_actor(unit_id)
+	assert_bool(layer.has_move_tween(unit_id)).override_failure_message(
+		"%s: premove must own an active walk tween" % label,
+	).is_true()
+	if actor == null:
+		return
+	var from_position: Vector2 = ctx.scene.grid_to_foot_local(from_cell)
+	var to_position: Vector2 = ctx.scene.grid_to_foot_local(to_cell)
+	assert_bool(
+		actor.position.distance_to(from_position) > 0.5
+		and actor.position.distance_to(to_position) > 0.5
+	).override_failure_message(
+		"%s: premove actor must be between origin and destination, got %s" % [
+			label, str(actor.position),
+		],
+	).is_true()
 
 
 func _assert_reposition_animation_order(

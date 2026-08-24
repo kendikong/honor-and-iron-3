@@ -394,14 +394,14 @@ func _on_board_changed(board: BoardState) -> void:
 	_board = board
 	## Live hover forecast is owned by overlay apply/restore. Do not wipe it here —
 	## plan refresh would erase uncommitted hover damage while aiming.
-	if _is_fresh_planning_session():
-		_abort_planning_commit_sequence()
 	if is_planning_commit_sequence_active():
 		## The commit queue owns player actor positions until its event tween settles.
 		## Applying the new live board here would snap over the queued premove.
 		_refresh_planning_visuals()
 		queue_redraw()
 		return
+	if _is_fresh_planning_session():
+		_abort_planning_commit_sequence()
 	if _director != null and _director.plan_refresh_snap_units:
 		_sync_snap_plan_refresh_units()
 		return
@@ -444,7 +444,12 @@ func _sync_snap_plan_refresh_units() -> void:
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		if not _director.plan_refresh_defer_overlay:
+		if (
+			not _director.plan_refresh_defer_overlay
+			and not is_planning_commit_sequence_active()
+		):
+			## The commit queue owns actor positions until its queued tween settles.
+			## The preview board may already be final, but must not snap over it.
 			_sync_planning_actor_positions()
 			queue_redraw()
 		return
@@ -1460,10 +1465,11 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 		visual_from if visual_from.x > -900 else logical_from
 	)
 	if bool(event.data.get("planning_commit_move", false)):
-		var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-		if unit != null and unit.position == logical_from and from_cell != logical_from:
-			_position_actor(unit_id, logical_from)
-			from_cell = logical_from
+		## The serialized commit event owns the presentation origin. The live board
+		## may already contain the projected landing cell, but it must not suppress
+		## the walk tween or make a premove appear as a teleport.
+		from_cell = logical_from
+		_position_actor(unit_id, logical_from)
 	var to_cell: Vector2i = event.data["to"]
 	if from_cell == to_cell:
 		return
