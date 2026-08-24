@@ -170,6 +170,9 @@ static func run_all(failures: Array[String]) -> void:
 	source.entry_root = true
 	source.adjacent_defense_bonus = 1
 	var layer := AbilityLayer.new()
+	layer.effect = EffectData.new()
+	layer.effect.type = GameEnums.EffectType.ADD_STATUS
+	layer.effect.status_type = GameEnums.StatusType.POISON
 	layer.push_collision_pierce = true
 	layer.crossing_blind = true
 	layer.range_one_damage_multiplier = 0.7
@@ -229,7 +232,10 @@ static func run_all(failures: Array[String]) -> void:
 		"apply_module_dict", restored, encoded, GameEnums.PlannerGroup.PRE_MOVE,
 	)
 	_assert(failures, "strip_stealth", restored.strip_stealth)
-	_assert(failures, "spread_status_adjacent", restored.spread_status_adjacent)
+	_assert(
+		failures, "spread_status_adjacent",
+		AbilityModuleBridge.module_has_modifier(restored, &"spread_status_adjacent"),
+	)
 	_assert(failures, "next_ranged_attack_strength", restored.next_ranged_attack_strength == 2)
 	_assert(failures, "allies_pierce", restored.allies_pierce)
 	_assert(failures, "trap_def_debuff", restored.trap_def_debuff == 2)
@@ -243,7 +249,10 @@ static func run_all(failures: Array[String]) -> void:
 	_assert(failures, "bounce_surface_chain", restored.bounce_surface_chain)
 	_assert(failures, "teleport_visible", restored.teleport_visible)
 	_assert(failures, "mana_shield", restored.mana_shield)
-	_assert(failures, "kill_grant_ap", restored.kill_grant_ap == 1)
+	_assert(
+		failures, "kill_grant_ap",
+		AbilityModuleBridge.module_modifier_value(restored, &"kill_grant_ap") == 1,
+	)
 	_assert(failures, "construct_hp_pct", is_equal_approx(restored.construct_hp_pct, 0.5))
 	_assert(failures, "ignore_target_magic_pct", is_equal_approx(restored.ignore_target_magic_pct, 0.25))
 	_assert(failures, "mag_heal", restored.mag_heal)

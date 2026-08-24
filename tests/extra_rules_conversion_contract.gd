@@ -216,13 +216,17 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"next_ranged_attack_strength":
 			return module.next_ranged_attack_strength != 0
 		"root_break_on_damage":
-			return module.root_break_on_damage
+			return module.root_break_on_damage or bool(
+				layer.effect.modifiers.get("root_break_on_damage", false)
+			)
 		"skewer":
 			return module.skewer != 0
 		"bounce_walls_45":
 			return module.bounce_walls_45
 		"spread_status_adjacent":
-			return module.spread_status_adjacent
+			return module.spread_status_adjacent or bool(
+				layer.effect.modifiers.get("spread_status_adjacent", false)
+			)
 		"grapple_wall_pull_self":
 			return module.grapple_wall_pull_self
 		"grapple_pass_through_damage":
@@ -277,27 +281,31 @@ static func _has_typed_owner(module: AbilityModule, layer: AbilityLayer, key: St
 		"halve_target_def_one_turn":
 			if module.halve_target_def_one_turn:
 				return true
-			for layer: AbilityLayer in module.layers:
-				if layer == null or layer.effect == null:
+			for candidate_layer: AbilityLayer in module.layers:
+				if candidate_layer == null or candidate_layer.effect == null:
 					continue
-				if bool(layer.effect.modifiers.get("halve_target_def_one_turn", false)):
+				if bool(candidate_layer.effect.modifiers.get("halve_target_def_one_turn", false)):
 					return true
 			return false
 		"def_debuff_before_damage":
 			if module.def_debuff_before_damage > 0:
 				return true
-			for layer: AbilityLayer in module.layers:
-				if layer == null or layer.effect == null:
+			for candidate_layer: AbilityLayer in module.layers:
+				if candidate_layer == null or candidate_layer.effect == null:
 					continue
-				if layer.effect.def_debuff_before_damage > 0:
+				if candidate_layer.effect.def_debuff_before_damage > 0:
 					return true
 			return false
 		"armor_explosion_atk":
-			return module.armor_explosion_atk != 0
+			return module.armor_explosion_atk != 0 or int(
+				layer.effect.modifiers.get("armor_explosion_atk", 0)
+			) != 0
 		"bonus_atk_vs_fear_or_lower_movement":
 			return module.bonus_atk_vs_fear_or_lower_movement != 0
 		"on_kill_max_move":
-			return module.on_kill_max_move != 0
+			return module.on_kill_max_move != 0 or int(
+				layer.effect.modifiers.get("on_kill_max_move", 0)
+			) != 0
 		"next_turn_max_move":
 			return module.next_turn_max_move != 0
 		"upgraded_trample":

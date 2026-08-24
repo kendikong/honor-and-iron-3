@@ -392,7 +392,7 @@ static func migrate_kill_and_landing_riders_to_layers(module: AbilityModule) -> 
 		var spread_layer: AbilityLayer = _first_status_layer(module)
 		if spread_layer != null and spread_layer.effect != null:
 			spread_layer.effect.modifiers["spread_status_adjacent"] = true
-		module.spread_status_adjacent = false
+			module.spread_status_adjacent = false
 	if module.armor_explosion_atk > 0 and not _module_has_armor_explosion_layer(module):
 		var explosion_layer := AbilityLayer.new()
 		explosion_layer.condition = GameEnums.LayerCondition.AT_RESOLUTION

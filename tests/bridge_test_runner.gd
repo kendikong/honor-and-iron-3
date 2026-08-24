@@ -672,6 +672,8 @@ static func _test_combat_planning_preview(failures: Array[String]) -> void:
 	)
 	pre_plus_action_plan.entries.append(trample_after_pre)
 	var intent_with_pre := CombatPlanningPreview.new()
+	plan_unit.position = Vector2i(0, 0)
+	board_stub.units = [plan_unit]
 	intent_with_pre.preview_paths[1] = l_path.duplicate()
 	intent_with_pre.ensure_movement_intent_from_plan(pre_plus_action_plan, board_stub)
 	var kept_with_pre: Array = intent_with_pre.preview_paths.get(1, [])

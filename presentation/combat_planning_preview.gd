@@ -443,6 +443,13 @@ func ensure_movement_intent_from_actions(
 			var existing_start: Vector2i = (
 				existing[0] as Vector2i if existing.size() > 0 else Vector2i(-999999, -999999)
 			)
+			if (
+				actors_with_committed_move.get(action.actor_id, false)
+				and existing.size() > 2
+				and existing_start == move_origin
+			):
+				origins[action.actor_id] = action.target_coord
+				continue
 			var needs_route: bool = (
 				existing.size() < 2
 				or existing_end != action.target_coord
