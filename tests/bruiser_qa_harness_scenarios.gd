@@ -1059,7 +1059,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	H.assert_eq_cell(
 		failures, "violent_collision/dash_through_collision",
 		bruiser.position if bruiser != null else Vector2i.ZERO,
-		Vector2i(5, 3),
+		Vector2i(7, 3),
 	)
 	H.assert_true(
 		failures,
@@ -1085,6 +1085,42 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		failures, "violent_collision/extended_dash_on_line",
 		extended_bruiser.position if extended_bruiser != null else Vector2i.ZERO,
 		Vector2i(7, 3),
+	)
+	var line_board: BoardState = H.make_plain_board(Vector2i(12, 6))
+	H.place_bruiser(line_board, 30, Vector2i(2, 3), cfg)
+	H.place_dummy(line_board, 31, Vector2i(5, 3))
+	H.place_dummy(line_board, 32, Vector2i(6, 3))
+	var line_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(line_board, 30), &"bruiser_violent_collision",
+	)
+	var line_plan := Timeline.new()
+	line_plan.add(H.plan_ability(30, line_skill, Vector2i(5, 3), -1))
+	var line_result: SimResult = H.simulate_plan(line_board, line_plan)
+	var line_bruiser: UnitState = line_result.final_state.get_unit_by_id(30)
+	var first_line_enemy: UnitState = line_result.final_state.get_unit_by_id(31)
+	var second_line_enemy: UnitState = line_result.final_state.get_unit_by_id(32)
+	H.assert_eq_cell(
+		failures, "violent_collision/line_endpoint_continues_dash",
+		line_bruiser.position if line_bruiser != null else Vector2i.ZERO,
+		Vector2i(7, 3),
+	)
+	H.assert_eq_cell(
+		failures, "violent_collision/line_first_enemy_bulldozed",
+		first_line_enemy.position if first_line_enemy != null else Vector2i.ZERO,
+		Vector2i(5, 4),
+	)
+	H.assert_eq_cell(
+		failures, "violent_collision/line_second_enemy_bulldozed",
+		second_line_enemy.position if second_line_enemy != null else Vector2i.ZERO,
+		Vector2i(6, 4),
+	)
+	H.assert_true(
+		failures, "violent_collision/line_first_collision",
+		H.events_have_unit_pushed(line_result.events, 31),
+	)
+	H.assert_true(
+		failures, "violent_collision/line_second_collision",
+		H.events_have_unit_pushed(line_result.events, 32),
 	)
 	var no_extend_board: BoardState = H.make_plain_board(Vector2i(10, 6))
 	H.place_bruiser(no_extend_board, 20, Vector2i(2, 3), cfg)

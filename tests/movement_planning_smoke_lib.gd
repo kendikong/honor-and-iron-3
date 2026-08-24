@@ -663,10 +663,34 @@ static func _assert_violent_collision_modules(
 		)
 	var result: SimResult = _Checklist.simulate_committed(director)
 	var bruiser: UnitState = result.final_state.get_unit_by_id(unit_id)
+	var expected_dash_position: Vector2i = commit_cell
+	var start_actor: UnitState = (
+		director.base_board.get_unit_by_id(unit_id)
+		if director.base_board != null else null
+	)
+	var dash_module: AbilityModule = (
+		AbilitySystem.active_motion_module(start_actor, ability_action.ability)
+		if start_actor != null and ability_action != null else null
+	)
+	if dash_module != null and start_actor != null and ability_action != null:
+		var dash_distance := PhysicsSystem.straight_line_distance(
+			start_actor.position, ability_action.target_coord,
+		)
+		var dash_cap := AbilitySystem.dash_effective_max_range(
+			director.base_board,
+			start_actor,
+			dash_module,
+			start_actor.position,
+			ability_action.target_coord,
+		)
+		if dash_cap > dash_distance:
+			expected_dash_position = start_actor.position + PhysicsSystem.straight_line_dir(
+				start_actor.position, ability_action.target_coord,
+			) * dash_cap
 	_assert_true(
 		failures, "%s/modules/dash" % tag,
-		bruiser != null and bruiser.position == commit_cell,
-		"Violent Collision DASH must end at committed tile %s" % commit_cell,
+		bruiser != null and bruiser.position == expected_dash_position,
+		"Violent Collision DASH must end at expected tile %s" % expected_dash_position,
 	)
 	_assert_true(
 		failures, "%s/modules/moved" % tag,
