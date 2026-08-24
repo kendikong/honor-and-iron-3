@@ -45,6 +45,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_undo_action_keeps_premove,
 		_test_premove_reposition_applies_live_board,
 		_test_premove_beast_reposition_applies_live_board,
+		_test_reposition_commit_clears_move_preview,
 		_test_push_through_premove_moves_both_units,
 		_test_push_through_hover_uses_shared_refresh_path,
 		_test_push_through_repaths_off_expensive_walk,
@@ -151,6 +152,7 @@ static func run_all(failures: Array[String]) -> void:
 		"undo_keeps_premove",
 		"premove_live_board",
 		"beast_reposition_live_board",
+		"reposition_commit_clears_move_preview",
 		"push_through_live_both",
 		"push_through_hover_refresh",
 		"push_through_repath",
@@ -1645,6 +1647,36 @@ static func _test_premove_beast_reposition_applies_live_board(failures: Array[St
 		failures.append(
 			"PlanningQAGate beast reposition: dummy must slide opposite during planning (got %s)"
 			% str(live_dummy.position if live_dummy != null else Vector2i(-1, -1)),
+		)
+
+
+static func _test_reposition_commit_clears_move_preview(failures: Array[String]) -> void:
+	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	var fix: Dictionary = Checklist.wire_swap_board(Checklist.SWAP_ALLY_CELL)
+	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
+	if overlay == null:
+		failures.append("PlanningQAGate reposition_preview_clear: overlay fixture missing")
+		return
+	var unit_id: int = fix.k1_id as int
+	if Checklist.select_ability_for_unit(fix, unit_id, Checklist.KNIGHT_SWAP_ID) < 0:
+		failures.append("PlanningQAGate reposition_preview_clear: Swap missing")
+		return
+	Checklist.hover(fix, Checklist.SWAP_ALLY_CELL)
+	var slots: Dictionary = Checklist.commit_production(fix, Checklist.SWAP_ALLY_CELL)
+	if Checklist._slots_invalid(slots):
+		failures.append("PlanningQAGate reposition_preview_clear: commit rejected")
+		return
+	var committed: CombatPlanningPreview = overlay.get_committed_preview()
+	if committed.preview_board != null or not committed.preview_paths.is_empty():
+		failures.append(
+			"PlanningQAGate reposition_preview_clear: route must clear when premove execution starts",
+		)
+	var stale_result := SimResult.new()
+	stale_result.final_state = fix.director.projected_state.clone()
+	overlay._on_preview_updated(stale_result)
+	if overlay.get_committed_preview().preview_board != null:
+		failures.append(
+			"PlanningQAGate reposition_preview_clear: deferred refresh restored stale route",
 		)
 
 

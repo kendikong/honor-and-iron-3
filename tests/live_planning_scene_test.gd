@@ -650,7 +650,7 @@ func _journey_knight1_shield_bash(ctx: Dictionary) -> void:
 	await _capture_commit_state(ctx, k1_id, "k1/waypoint/committed")
 	_remember_mode_commit(ctx, "k1/waypoint", k1_id)
 	_assert_mode_commit_parity(ctx, "k1/selection", "k1/waypoint")
-	await _assert_committed_display_ratifies_pre_commit(
+	await _assert_execution_preview_cleared_after_commit(
 		ctx, k1_id, waypoint_pre_intent, "k1/waypoint",
 	)
 	await _probe_cell(ctx, k1_id, _BASH_APPROACH, {
@@ -1238,7 +1238,7 @@ func _drag_k1_bash_via_waypoints(ctx: Dictionary, label_prefix: String) -> Dicti
 	return pre_intent
 
 
-func _assert_committed_display_ratifies_pre_commit(
+func _assert_execution_preview_cleared_after_commit(
 	ctx: Dictionary,
 	unit_id: int,
 	pre_intent: Dictionary,
@@ -1248,14 +1248,14 @@ func _assert_committed_display_ratifies_pre_commit(
 	var pre_preview_path: Array = pre_intent.get("preview_path", [])
 	var committed: CombatPlanningPreview = overlay.get_committed_preview()
 	var committed_path: Array = committed.preview_paths.get(unit_id, [])
-	if not pre_preview_path.is_empty():
+	if not pre_preview_path.is_empty() and not committed_path.is_empty():
 		assert_that(committed_path).override_failure_message(
-			"%s: committed display path must ratify pre-commit move preview (%s vs %s)" % [
+			"%s: execution must clear committed move preview (%s; pre-commit was %s)" % [
 				label,
 				str(committed_path),
 				str(pre_preview_path),
 			],
-		).is_equal(pre_preview_path)
+		).is_empty()
 	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary
 	var pre_target: Vector2i = _pre_target_from_slots(pre_slots)
 	var projected: UnitState = ctx.director.projected_state.get_unit_by_id(unit_id)

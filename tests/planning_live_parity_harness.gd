@@ -91,7 +91,7 @@ static func run_k1_bash_live_parity(
 	PlanningChecklistHarness.assert_mode_commit_parity(
 		failures, "k1/selection", selection_surface, "k1/waypoint", drag_surface,
 	)
-	assert_committed_display_ratifies_pre_commit(
+	assert_execution_preview_cleared_after_commit(
 		fix, failures, k1_id, waypoint_pre, "%s/waypoint" % label_prefix,
 	)
 
@@ -412,7 +412,7 @@ static func assert_commit_ratifies_preview(
 			)
 
 
-static func assert_committed_display_ratifies_pre_commit(
+static func assert_execution_preview_cleared_after_commit(
 	fix: Dictionary,
 	failures: Array[String],
 	unit_id: int,
@@ -425,11 +425,11 @@ static func assert_committed_display_ratifies_pre_commit(
 		return
 	var pre_preview_path: Array = pre_intent.get("preview_path", [])
 	var committed_path: Array = overlay.get_committed_preview().preview_paths.get(unit_id, [])
-	if not pre_preview_path.is_empty() and committed_path != pre_preview_path:
+	if not pre_preview_path.is_empty() and not committed_path.is_empty():
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			label,
-			"committed display path must ratify pre-commit move preview (%s vs %s)"
+			"execution must clear the committed move preview (%s; pre-commit was %s)"
 			% [str(committed_path), str(pre_preview_path)],
 		)
 	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary

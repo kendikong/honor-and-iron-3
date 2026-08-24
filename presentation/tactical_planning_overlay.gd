@@ -102,6 +102,9 @@ var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _stashed_committed: CombatPlanningPreview = CombatPlanningPreview.new()
 var _has_stashed_committed: bool = false
 var _lock_committed_from_intent: bool = false
+## Execution owns the board while its commit events are presenting; stale preview
+## refreshes must not repaint the route that was just executed.
+var _execution_preview_suppressed: bool = false
 var _unit_layer: TacticalUnitLayer
 var _planning_input: CombatPlanningInput
 var _planning_cursor: TacticalPlanningCursor
@@ -135,6 +138,7 @@ func setup(
 	z_index = 11
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
+	EventBus.planning_commit_events.connect(_on_planning_commit_events)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
 		if _director != null and (
 			_director.plan_refresh_snap_units or _director.plan_refresh_defer_overlay
@@ -155,6 +159,8 @@ func setup(
 		var planning: bool = CombatDirector.is_planning_phase(phase)
 		if was_planning and not planning:
 			_clear_execution_preview_state()
+		elif planning and not was_planning:
+			_execution_preview_suppressed = false
 		if not planning and _planning_input != null:
 			_planning_input.clear_interaction_preview()
 		_invalidate_hover_cache()
@@ -685,6 +691,7 @@ func _push_committed_forecast_to_unit_layer() -> void:
 
 ## No planning preview survives the transition into execution, including pre-move execution.
 func _clear_execution_preview_state() -> void:
+	_execution_preview_suppressed = true
 	_live_preview.clear_all()
 	_committed_preview.clear_all()
 	_stashed_committed.clear_all()
@@ -700,6 +707,14 @@ func _clear_execution_preview_state() -> void:
 	_deferred_preview_result = null
 	_invalidate_hover_cache()
 	_queue_overlay_redraw()
+
+
+## A planning commit starts execution before the phase enum changes. Clear the
+## display at that boundary so premove execution cannot show its old route.
+func _on_planning_commit_events(events: Array) -> void:
+	if events.is_empty() or not CombatDirector.is_planning_phase(_phase):
+		return
+	_clear_execution_preview_state()
 
 
 ## Promote the painted live intent to committed display (move-preview intent truth).
@@ -722,6 +737,7 @@ func apply_preview_state(
 	selected_id: int,
 	attack_target_id: int,
 ) -> void:
+	_execution_preview_suppressed = false
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
 	if _unit_layer != null:
@@ -735,6 +751,7 @@ func apply_preview_state(
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
+	_execution_preview_suppressed = false
 	_live_preview = state
 	if _unit_layer != null:
 		_unit_layer.set_live_forecast(_live_preview.forecast)
@@ -1401,6 +1418,13 @@ func _flush_hover_recompute() -> void:
 
 
 func _on_preview_updated(result: SimResult) -> void:
+	if _execution_preview_suppressed:
+		_deferred_preview_pending = false
+		_deferred_preview_result = null
+		if _director != null:
+			_director.plan_refresh_light_overlay = false
+			_director.plan_refresh_defer_overlay = false
+		return
 	## Intent truth: after promote_live_preview_to_committed, do not rebuild ghosts from a
 	## second sim — keep the ratified picture (including preview_board pointer).
 	if _lock_committed_from_intent:
@@ -1427,6 +1451,8 @@ func _flush_deferred_preview_updated() -> void:
 		_director.plan_refresh_light_overlay = false
 		_director.plan_refresh_defer_overlay = false
 	if result == null:
+		return
+	if _execution_preview_suppressed:
 		return
 	_apply_committed_preview_update(result, light_refresh)
 
