@@ -154,7 +154,7 @@ func setup(
 		_phase = phase
 		var planning: bool = CombatDirector.is_planning_phase(phase)
 		if was_planning and not planning:
-			_clear_forced_movement_intent_cache()
+			_clear_execution_preview_state()
 		if not planning and _planning_input != null:
 			_planning_input.clear_interaction_preview()
 		_invalidate_hover_cache()
@@ -683,12 +683,22 @@ func _push_committed_forecast_to_unit_layer() -> void:
 	_unit_layer.set_committed_forecast(_committed_preview.forecast)
 
 
-## Executed plan displacement hints must not survive into execute / next planning turn.
-func _clear_forced_movement_intent_cache() -> void:
-	_committed_preview.preview_pushes.clear()
-	_live_preview.preview_pushes.clear()
+## No planning preview survives the transition into execution, including pre-move execution.
+func _clear_execution_preview_state() -> void:
+	_live_preview.clear_all()
+	_committed_preview.clear_all()
+	_stashed_committed.clear_all()
+	_has_stashed_committed = false
+	_lock_committed_from_intent = false
+	_preview_board = null
+	_route.clear()
+	_hover_move_tiles.clear()
+	_clear_hover_skill_tiles()
+	_hit_markers.clear()
+	_attack_target_id = -1
 	_deferred_preview_pending = false
 	_deferred_preview_result = null
+	_invalidate_hover_cache()
 	_queue_overlay_redraw()
 
 
