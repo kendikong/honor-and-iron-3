@@ -42,8 +42,8 @@ PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability"
 PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(4, 5) mod_tgts=[] await=false await_idx=-1"]
 PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(4, 5) mod_tgts=[] await=false await_idx=-1"]
 [SOT-SIG] CM-09 slot=(intent mechanics bundle) timeline=(pre/post/stand/push/swap/trample/replan) sim=ENEMY_PHASE_BEGAN via four-way new_fails=0
-[SOT-PERF] hover_usec=9037 slot_usec=8685 sim_usec=3374 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
-[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=9037 slot_usec=8685 sim_usec=3374 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-PERF] hover_usec=8460 slot_usec=8528 sim_usec=3451 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=8460 slot_usec=8528 sim_usec=3451 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
 [SOT-SIG] wrote C:/Users/Kendy/AppData/Roaming/Godot/app_userdata/Honor and Iron 3/intent_sot_signatures.txt (11 rows)
 [SUITE] t3_live_headless_checklist
 [SUITE] t3_live_headless_checklist

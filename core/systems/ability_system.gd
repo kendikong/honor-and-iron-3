@@ -1949,6 +1949,18 @@ static func ability_uses_direct_relocation(
 	)
 
 
+## Shared planning presentation capability for reposition effects.
+static func ability_needs_planning_reposition_presentation(
+	ability: AbilityData,
+	actor: UnitState = null,
+) -> bool:
+	return (
+		ability_has_swap_effect(ability, actor)
+		or ability_has_into_occupied_push_effect(ability, actor)
+		or ability_uses_direct_relocation(ability, actor)
+	)
+
+
 static func is_movement_skill(ability: AbilityData, actor: UnitState = null) -> bool:
 	if ability == null:
 		return false

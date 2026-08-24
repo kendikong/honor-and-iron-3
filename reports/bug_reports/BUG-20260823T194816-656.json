@@ -392,6 +392,6 @@
 	},
 	"screenshot": "C:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260823T194816-656.png",
 	"severity": "Medium",
-	"status": "ongoing",
+	"status": "done",
 	"title": "reposition animations skip the premove animations"
 }

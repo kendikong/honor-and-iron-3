@@ -1168,9 +1168,9 @@ func mark_planning_move_instant(unit_id: int) -> void:
 func _register_planning_swap_presentation(action: TimelineAction) -> void:
 	if action == null or action.ability == null:
 		return
-	if not (
-		AbilitySystem.ability_has_swap_effect(action.ability)
-		or AbilitySystem.ability_has_into_occupied_push_effect(action.ability)
+	var actor: UnitState = board.get_unit_by_id(action.actor_id) if board != null else null
+	if not AbilitySystem.ability_needs_planning_reposition_presentation(
+		action.ability, actor,
 	):
 		return
 	var resolved: TimelineAction = _find_plan_swap_action(action.actor_id, action.ability)
@@ -2855,11 +2855,13 @@ func _refresh_plan_core() -> void:
 
 	if not _swap_planning_presentations.is_empty():
 		for swap_action: TimelineAction in _swap_planning_presentations:
-			if (
-				swap_action.ability != null
-				and AbilitySystem.ability_has_swap_effect(swap_action.ability)
-			):
-				_prepend_swap_walk_commit_anims(swap_action, plan_to_run, anim_events)
+			if swap_action.ability != null:
+				if AbilitySystem.ability_needs_planning_reposition_presentation(
+					swap_action.ability, base_board.get_unit_by_id(swap_action.actor_id),
+				):
+					_prepend_reposition_walk_commit_anims(
+						swap_action, plan_to_run, anim_events,
+					)
 	if not anim_events.is_empty():
 		for event: SimEvent in anim_events:
 			_pending_planning_commit_events.append(event)
@@ -3170,7 +3172,7 @@ func _player_positions_match_turn_start(candidate: BoardState) -> bool:
 	return true
 
 
-func _prepend_swap_walk_commit_anims(
+func _prepend_reposition_walk_commit_anims(
 	swap_action: TimelineAction,
 	plan: Timeline,
 	anim_events: Array[SimEvent],
@@ -3178,12 +3180,6 @@ func _prepend_swap_walk_commit_anims(
 	if swap_action == null or plan == null or base_board == null:
 		return
 	var swap_entry: TimelineAction = _plan_swap_entry(swap_action, plan)
-	for existing: SimEvent in anim_events:
-		if (
-			existing.type == GameEnums.SimEventType.UNIT_MOVED
-			and int(existing.data.get("actor", -1)) == swap_entry.actor_id
-		):
-			return
 	var move_action: TimelineAction = null
 	for entry: TimelineAction in plan.entries:
 		if _timeline_actions_same_commit(entry, swap_entry):
@@ -3194,6 +3190,14 @@ func _prepend_swap_walk_commit_anims(
 			move_action = entry
 	if move_action == null:
 		return
+	for existing: SimEvent in anim_events:
+		if (
+			existing.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(existing.data.get("actor", -1)) == swap_entry.actor_id
+			and bool(existing.data.get("planning_commit_move", false))
+			and existing.data.get("to", null) == move_action.target_coord
+		):
+			return
 	var before_move: BoardState = _board_before_planning_action(move_action, plan)
 	var actor_before: UnitState = before_move.get_unit_by_id(swap_entry.actor_id)
 	if actor_before == null:

@@ -294,6 +294,9 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 	await _wait_ability_settle(ctx)
 	await _wait_planning_move_tween(ctx, k1_id)
 	await _wait_planning_move_tween(ctx, ally_id)
+	_assert_reposition_animation_order(
+		ctx, k1_id, _K1_CELL, _WALK_SWAP_APPROACH, "walk_swap",
+	)
 	_assert_swap_premove_state_layers(ctx, "walk_swap/after_commit", {
 		"k1_pos": _WALK_SWAP_ALLY_CELL,
 		"ally_pos": _WALK_SWAP_APPROACH,
@@ -301,6 +304,38 @@ func _journey_walk_then_swap(ctx: Dictionary) -> void:
 		"pre_move_count": 2,
 		"require_swap_first": false,
 	})
+
+
+func _assert_reposition_animation_order(
+	ctx: Dictionary,
+	unit_id: int,
+	walk_start: Vector2i,
+	walk_end: Vector2i,
+	label: String,
+) -> void:
+	var walk_index: int = -1
+	var reposition_index: int = -1
+	var traces: Array[Dictionary] = _unit_layer(ctx).planning_route_trace()
+	for i: int in range(traces.size()):
+		var trace: Dictionary = traces[i]
+		if trace.get("kind") != &"animation" or int(trace.get("unit_id", -1)) != unit_id:
+			continue
+		var stage: StringName = trace.get("stage", &"")
+		if stage == &"walk" and trace.get("start", null) == walk_start:
+			var cells: Array = trace.get("actual_cells", [])
+			if not cells.is_empty() and cells.back() == walk_end:
+				walk_index = i
+		elif stage == &"swap":
+			reposition_index = i
+	assert_int(walk_index).override_failure_message(
+		"%s: committed premove walk trace missing" % label,
+	).is_greater_equal(0)
+	assert_int(reposition_index).override_failure_message(
+		"%s: reposition presentation trace missing" % label,
+	).is_greater_equal(0)
+	assert_int(reposition_index).override_failure_message(
+		"%s: reposition must animate after premove walk" % label,
+	).is_greater(walk_index)
 
 
 func _ensure_live_test_window(runner: GdUnitSceneRunner) -> void:
