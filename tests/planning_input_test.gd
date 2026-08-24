@@ -34,6 +34,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_swap_ally_out_of_range_click_parity,
 		_test_ability_scroll_clears_hover_preview_cache,
 		_test_unarmed_later_new_aim_does_not_steal_premove,
+		_test_unarmed_violent_collision_empty_tile_is_premove,
 		_test_committed_move_prefix_while_later_aim_awaits,
 	]
 	for test: Callable in tests:
@@ -1913,6 +1914,90 @@ static func _test_unarmed_later_new_aim_does_not_steal_premove(failures: Array[S
 		failures.append(
 			"PlanningInputTest: unarmed tile inside a later MOVE module range must still pre-move",
 		)
+
+
+static func _violent_collision_premove_fixture() -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := _new_director()
+	var board := BoardState.new()
+	board.grid_size = Vector2i(10, 10)
+	var plain := TerrainData.new()
+	plain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, plain)
+	var ability := AbilityData.new()
+	ability.id = &"bruiser_violent_collision"
+	ability.kind = GameEnums.AbilityKind.CLASS_SKILL
+	ability.display_name = "Violent Collision"
+	ability.targeting_mode = GameEnums.TargetingMode.TILE
+	ability.targeting_flags = GameEnums.TargetingFlags.TILE
+	ability.action_point_cost = 1
+	ability.primary_resource = GameEnums.CostResource.AP
+	ability.primary_value = 1
+	var dash := AbilityModule.new()
+	dash.primary_type = GameEnums.EffectType.DASH
+	dash.amount = 3
+	dash.min_range = 1
+	dash.max_range = 3
+	dash.targeting_flags = GameEnums.TargetingFlags.TILE
+	ability.modules = [dash]
+	var unit := UnitState.new()
+	unit.id = 1
+	unit.team = GameEnums.Team.PLAYER
+	unit.position = Vector2i(6, 5)
+	unit.movement.points_left = 4
+	unit.ability.points_left = 1
+	unit.health = HealthComponent.new(20)
+	unit.definition = UnitData.new()
+	unit.definition.display_name = "Bruiser"
+	unit.active_abilities = [ability]
+	board.units = [unit]
+	GridSystem.set_occupant(board, unit.position, unit.id)
+	director.board = board
+	director.base_board = board
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = unit.id
+	director.selected_ability_index = 0
+	input._director = director
+	input.auto_use_skill_after_move = true
+	_register_fixture(input, director)
+	return {"input": input, "ability": ability}
+
+
+static func _test_unarmed_violent_collision_empty_tile_is_premove(
+	failures: Array[String],
+) -> void:
+	var fixture: Dictionary = _violent_collision_premove_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var ability: AbilityData = fixture["ability"] as AbilityData
+	var empty_tile := Vector2i(4, 5)
+	if input._tile_target_movement_skill_commits_at_cell(
+		input._proj_unit(1), ability, empty_tile,
+	):
+		failures.append(
+			"PlanningInputTest: unarmed Violent Collision must not dest-commit an empty tile",
+		)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(1, empty_tile)
+	var has_premove := false
+	for raw: Variant in slots.get("pre", []):
+		if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+			has_premove = true
+	if not has_premove:
+		failures.append(
+			"PlanningInputTest: unarmed Violent Collision empty hover must produce a premove",
+		)
+	for raw_action: Variant in slots.get("action", []):
+		if (
+			raw_action is TimelineAction
+			and (raw_action as TimelineAction).ability == ability
+			and not (raw_action as TimelineAction).awaiting_target
+		):
+			failures.append(
+				"PlanningInputTest: empty hover must not consume Violent Collision as a direct dash",
+			)
 
 
 static func _test_committed_move_prefix_while_later_aim_awaits(failures: Array[String]) -> void:

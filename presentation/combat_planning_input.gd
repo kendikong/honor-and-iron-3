@@ -3677,8 +3677,6 @@ func _tile_target_movement_skill_commits_at_cell(
 			and not _drag_route_commits_active()
 		):
 			return false
-		if _dash_tile_endpoint_one_click_commit(actor, ability, cell):
-			return true
 		if (
 			_drag_route_commits_active()
 			and _drag_unit_id == actor.id
@@ -3697,11 +3695,7 @@ func _tile_target_movement_skill_commits_at_cell(
 			and not _cell_on_dash_line_from_stand(actor, ability, cell)
 		):
 			return false
-		if not _cell_on_dash_line_from_stand(actor, ability, cell):
-			return false
-		if not _in_ability_range_of_coord(actor, cell):
-			return false
-		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
+		return _dash_tile_endpoint_one_click_commit(actor, ability, cell)
 	if (
 		motion != null
 		and (
@@ -3743,6 +3737,12 @@ func _dash_tile_endpoint_one_click_commit(
 		AbilitySystem.active_targeting_flags(actor, ability)
 		& GameEnums.TargetingFlags.TILE
 	) == 0:
+		return false
+	var board: BoardState = _proj()
+	if board == null:
+		return false
+	var hover_unit: UnitState = board.get_unit_at(cell)
+	if hover_unit == null or not hover_unit.is_alive() or not hover_unit.is_enemy():
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
 		return false

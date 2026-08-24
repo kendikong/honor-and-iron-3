@@ -28,7 +28,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_show_red_anchor_follows_stand_not_knight_start,
 		_test_bowling_enemy_hover_red_at_origin,
 		_test_bowling_enemy_hover_not_bash_route,
-		_test_bowling_dash_only_tiles_not_blue,
+		_test_bowling_empty_dash_line_remains_premove,
 		_test_bowling_dash_only_click_no_premove,
 		_test_bowling_awaiting_occupied_end,
 		_test_hide_red_after_commit_run_icon_shield_bash,
@@ -50,7 +50,7 @@ static func run_all(failures: Array[String]) -> void:
 		"show_red_anchor_on_stand",
 		"bowling_enemy_hover_red",
 		"bowling_enemy_hover_not_bash",
-		"bowling_dash_only_not_blue",
+		"bowling_empty_dash_line",
 		"bowling_dash_only_no_premove_click",
 		"bowling_awaiting_occupied_end",
 		"hide_after_commit_run_icon_bash",
@@ -374,49 +374,41 @@ static func _test_bowling_enemy_hover_not_bash_route(failures: Array[String]) ->
 		)
 
 
-static func _test_bowling_dash_only_tiles_not_blue(failures: Array[String]) -> void:
+static func _test_bowling_empty_dash_line_remains_premove(failures: Array[String]) -> void:
 	const KNIGHT := Vector2i(5, 5)
-	const ENEMY := Vector2i(6, 5)
-	const DASH_ONLY_A := Vector2i(7, 5)
-	const DASH_ONLY_B := Vector2i(8, 5)
+	const ENEMY := Vector2i(7, 5)
+	const EMPTY_WALK_TILE := Vector2i(6, 5)
+	const EMPTY_DASH_ONLY := Vector2i(8, 5)
 	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT, ENEMY)
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
 	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
-	# Dash-line tiles beyond 1 MP walk are dash-only (full MP made them falsely blue).
+	# An empty dash-line tile is still a walk when it fits the normal MP budget.
 	_sync_knight_ap(fix, 1, 1)
 	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
 	if bowling_idx < 0:
-		failures.append("ActionRangeRegression bowling_dash_only_not_blue: Bowling Charge missing")
+		failures.append("ActionRangeRegression bowling_empty_dash_line: Bowling Charge missing")
 		return
 	director.selected_ability_index = bowling_idx
 	_hover_sync(input, overlay, KNIGHT)
-	for dash_tile: Vector2i in [DASH_ONLY_A, DASH_ONLY_B]:
-		if overlay.is_hover_move_tile(dash_tile):
-			failures.append(
-				"ActionRangeRegression bowling_dash_only_not_blue: dash-only tile %s must not be blue move"
-				% dash_tile,
-			)
-	_hover_sync(input, overlay, DASH_ONLY_A)
-	var dash_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, DASH_ONLY_A)
-	if not (dash_slots.get("pre", []) as Array).is_empty():
+	if not overlay.is_hover_move_tile(EMPTY_WALK_TILE):
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_not_blue: dash-only hover must not commit a walk premove",
+			"ActionRangeRegression bowling_empty_dash_line: empty dash-line tile must remain a blue move",
 		)
-	if (dash_slots.get("action", []) as Array).is_empty():
+	_hover_sync(input, overlay, EMPTY_WALK_TILE)
+	var walk_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, 1, EMPTY_WALK_TILE)
+	var pre_moves: Array = walk_slots.get("pre", []) as Array
+	if pre_moves.is_empty() or not pre_moves[0] is TimelineAction:
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_not_blue: valid dash endpoint must build Bowling Charge, not ∅",
+			"ActionRangeRegression bowling_empty_dash_line: empty hover must build a MOVE premove",
 		)
-	var icon: String = input.compute_hover_action_icon(DASH_ONLY_A)
-	if icon == PlanningIcons.GLYPH_NULL:
+	elif (pre_moves[0] as TimelineAction).type != GameEnums.ActionType.MOVE:
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_not_blue: dash endpoint cursor must show the charge, got ∅",
+			"ActionRangeRegression bowling_empty_dash_line: premove slot must be MOVE",
 		)
-	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(KNIGHT, DASH_ONLY_A, ability):
+	if overlay.is_hover_move_tile(EMPTY_DASH_ONLY):
 		failures.append(
-			"ActionRangeRegression bowling_dash_only_not_blue: fixture tile %s must be valid dash endpoint"
-			% DASH_ONLY_A,
+			"ActionRangeRegression bowling_empty_dash_line: over-budget empty dash tile must not be blue",
 		)
 
 
