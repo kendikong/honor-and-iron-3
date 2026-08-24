@@ -1,4 +1,4 @@
-=== res://tests/run_ability_module_bridge_test.gd ===
+=== res://tests/run_ability_module_bridge_runner.gd ===
 Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 
 ABILITY_MODULE_CHECK: bruiser_module_fingerprints START
@@ -65,12 +65,12 @@ ABILITY_MODULE_BRIDGE_TEST: PASS
 ERROR: Ability JSON rejected: missing modules array
    at: push_error (core/variant/variant_utility.cpp:1023)
    GDScript backtrace (most recent call first):
-       [0] apply_ability_dict (res://ui/class_library_schema.gd:2324)
+       [0] apply_ability_dict (res://ui/class_library_schema.gd:2357)
        [1] _test_module_json_requires_modules (res://tests/ability_module_runtime_test.gd:748)
        [2] run_all (res://tests/ability_module_runtime_test.gd:70)
-       [3] _run_script_check (res://tests/ability_module_bridge_runner.gd:100)
-       [4] run_all (res://tests/ability_module_bridge_runner.gd:33)
-       [5] _initialize (res://tests/run_ability_module_bridge_test.gd:10)
+       [3] _run_script_check (res://tests/ability_module_bridge_runner.gd:102)
+       [4] run_all (res://tests/ability_module_bridge_runner.gd:35)
+       [5] _initialize (res://tests/run_ability_module_bridge_runner.gd:10)
 === res://tests/run_class_library_schema_typed_fields_test.gd ===
 Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 

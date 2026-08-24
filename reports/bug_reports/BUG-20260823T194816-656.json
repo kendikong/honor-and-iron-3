@@ -1,0 +1,397 @@
+{
+	"actual": "",
+	"category": "Bug",
+	"context": {
+		"mode": "Control",
+		"scene_name": "ClassLibraryEditor",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+	},
+	"created_at": "2026-08-24T02:48:16",
+	"description": "reposition skills are incorrectly instantly teleporting and skipping the premove animations. it should be animate premove, then animate reposition",
+	"diagnosis_hints": {},
+	"expected": "",
+	"latest_preview": {
+		"event_count": 7,
+		"last_event_type": 7,
+		"last_event_type_name": "ENEMY_PHASE_BEGAN",
+		"update_count": 14
+	},
+	"latest_rejection": "",
+	"latest_timeline": {
+		"action_count": 2,
+		"statuses": [
+			"",
+			""
+		]
+	},
+	"mandatory_agent_instructions": {
+		"architectural_sources_of_truth": {
+			"1_simulation": "Simulator.simulate_player_turn(state, timeline, events) is the pure RefCounted deterministic resolution for preview and commit.",
+			"2_commit_authority": "CombatDirector.validate_commit_slots(unit_id, slots) is the single authority on action legality and commit success.",
+			"3_move_preview": "CombatPlanningPreview and TacticalPlanningOverlay — preview is intent truth (what is previewed on hover is what gets committed).",
+			"4_action_range": "CombatPlanningPreview.committed_stand_tile(unit_id) — range tiles paint from committed stand on active timeline, never turn-start base_board.",
+			"5_abilities": "AbilitySystem and AbilityData Resources — data-driven resources, not hardcoded engine branches.",
+			"6_input_buffers": "Input buffers (_drag_route, waypoints) are transient staging and must never directly paint canvas routes without simulation validation."
+		},
+		"directive": "MANDATORY FOR ALL AGENTS: You are strictly forbidden from applying heuristic fixes. All fixes must use shared global systems and the canonical single sources of truth.",
+		"required_rules": [
+			".cursor/rules/global-systems-first.mdc",
+			".cursor/rules/no-bandaid-fixes.mdc",
+			".cursor/rules/move-preview-intent-truth.mdc",
+			".cursor/rules/action-range-latest-stand.mdc",
+			".cursor/rules/qa-after-gameplay-changes.mdc"
+		]
+	},
+	"recent_events": [
+		{
+			"kind": "scene_changed",
+			"scene_path": "res://scenes/ClassLibraryEditor.tscn"
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 1
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 1,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 1,
+			"phase_name": "EXECUTING"
+		},
+		{
+			"data": {},
+			"kind": "sim_event",
+			"type": 7,
+			"type_name": "ENEMY_PHASE_BEGAN"
+		},
+		{
+			"data": {
+				"turn": 2
+			},
+			"kind": "sim_event",
+			"type": 8,
+			"type_name": "TURN_ENDED"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": -1
+		},
+		{
+			"index": 0,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 0,
+			"kind": "timeline_changed",
+			"statuses": [
+				""
+			]
+		},
+		{
+			"kind": "phase_changed",
+			"phase": 0,
+			"phase_name": "PLANNING"
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"kind": "selection_changed",
+			"unit_id": 1
+		},
+		{
+			"index": 1,
+			"kind": "ability_selected"
+		},
+		{
+			"index": -1,
+			"kind": "ability_selected"
+		},
+		{
+			"action_count": 2,
+			"kind": "timeline_changed",
+			"statuses": [
+				"",
+				""
+			]
+		}
+	],
+	"report_id": "BUG-20260823T194816-656",
+	"runtime": {
+		"command_line": [
+			"--scene",
+			"res://scenes/MainMenu.tscn"
+		],
+		"engine": {
+			"build": "official",
+			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+			"hex": 263936,
+			"major": 4,
+			"minor": 7,
+			"patch": 0,
+			"status": "stable",
+			"string": "4.7-stable (official)",
+			"timestamp": 0
+		},
+		"fps_at_capture": 120.0,
+		"git_commit": "4eeb1ff5df5b3807bf9881247a0dc34d8647cff8",
+		"paused_at_capture": true,
+		"project": "Honor and Iron 3",
+		"project_version": "",
+		"scene_path": "res://scenes/ClassLibraryEditor.tscn",
+		"window_size": [
+			3840.0,
+			2126.0
+		]
+	},
+	"screenshot": "C:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260823T194816-656.png",
+	"severity": "Medium",
+	"status": "ongoing",
+	"title": "reposition animations skip the premove animations"
+}
