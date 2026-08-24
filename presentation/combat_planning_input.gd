@@ -1693,6 +1693,8 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 		or not _director.board.is_in_bounds(cell)
 	):
 		return {}
+	if _reposition_skill_committed_for_unit(p_unit.id):
+		return {}
 	var hover_unit: UnitState = _director.board.get_unit_at(cell)
 	if hover_unit == null or hover_unit.is_enemy() or hover_unit.id == p_unit.id:
 		return {}
@@ -3131,6 +3133,8 @@ func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -9999
 func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) -> bool:
 	if _director == null or actor == null or unit_id < 0:
 		return false
+	if _hover_commit_slots_are_post_reposition_walk_only(actor, unit_id, cell):
+		return true
 	if not (
 		_director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
 		and _director.unit_action_column_spent_for_movement(unit_id)
@@ -3141,6 +3145,50 @@ func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) ->
 	return true
 
 
+## Reposition already locked on timeline — armed icon is cosmetic; walk hover is move-only.
+func _hover_commit_slots_are_post_reposition_walk_only(
+	actor: UnitState,
+	unit_id: int,
+	cell: Vector2i,
+) -> bool:
+	if actor == null or unit_id < 0 or not _reposition_skill_committed_for_unit(unit_id):
+		return false
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	if hover_unit != null and hover_unit.id != unit_id:
+		return false
+	return _is_hover_move_cell(actor, cell)
+
+
+func _reposition_skill_committed_for_unit(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var committed: TimelineAction = _committed_class_action(unit_id)
+	if (
+		committed != null
+		and committed.ability != null
+		and _ability_is_reposition_kind(committed.ability)
+	):
+		return true
+	for action: TimelineAction in _director.plan_pre_move.entries:
+		if action.actor_id != unit_id:
+			continue
+		if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+			continue
+		if action.awaiting_target:
+			continue
+		if _ability_is_reposition_kind(action.ability):
+			return true
+	return false
+
+
+func _ability_is_reposition_kind(ability: AbilityData) -> bool:
+	if ability == null:
+		return false
+	if AbilitySystem.ability_has_swap_effect(ability):
+		return true
+	return ability.is_movement_kind() and ability.is_pre_move_planner()
+
+
 func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
 	if _director == null or _director.board == null or unit_id < 0:
 		return false
@@ -3148,6 +3196,14 @@ func _should_replan_premove_approach(unit_id: int, cell: Vector2i) -> bool:
 		return false
 	if not _director.unit_has_committed_class_action(unit_id):
 		return false
+	if _director.unit_action_column_spent_for_movement(unit_id):
+		var spent_committed: TimelineAction = _committed_class_action(unit_id)
+		if (
+			spent_committed != null
+			and spent_committed.ability != null
+			and _ability_is_reposition_kind(spent_committed.ability)
+		):
+			return false
 	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if hover_unit != null and hover_unit.is_enemy():
 		return true
@@ -3675,6 +3731,8 @@ func _tile_target_movement_skill_commits_at_cell(
 		return AbilitySystem.motion_landing_legal(_proj(), actor, ability, cell)
 	if not _in_ability_range_of_coord(actor, cell):
 		return false
+	if _reposition_skill_committed_for_unit(actor.id) and not awaiting_targeting_active():
+		return false
 	if ability.is_pre_move_planner():
 		return true
 	if AbilitySystem.planning_commit_flow(actor, ability) == GameEnums.PlanningCommitFlow.IMMEDIATE:
@@ -3945,6 +4003,8 @@ func _action_range_locked_to_projected_stand(
 	)
 	if not _director.board.is_in_bounds(hover):
 		return false
+	if _hover_commit_slots_are_post_reposition_walk_only(actor, unit_id, hover):
+		return true
 	if _planning_post_move_only(actor, unit_id, hover):
 		return true
 	if (
@@ -4879,6 +4939,8 @@ func _maybe_append_premove_action_pair(
 		return
 	if _director.unit_action_column_spent_for_movement(unit_id):
 		return
+	if _reposition_skill_committed_for_unit(unit_id):
+		return
 	if (slots.get("pre", []) as Array).is_empty() and (slots.get("post", []) as Array).is_empty():
 		return
 	if not (slots.get("action", []) as Array).is_empty():
@@ -5027,6 +5089,7 @@ func _build_commit_slots_at_cell(
 		and not hover_unit.is_enemy()
 		and not awaiting_tile_endpoint
 		and not target_pick_skill
+		and not _reposition_skill_committed_for_unit(unit_id)
 	):
 		if (
 			ability_index >= 0
@@ -5186,6 +5249,16 @@ func _build_commit_slots_at_cell(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
 					)
 					return slots
+
+			if (
+				hover_unit != null
+				and hover_unit.id != actor.id
+				and not hover_unit.is_enemy()
+				and _reposition_skill_committed_for_unit(unit_id)
+			):
+				if _skill_interaction_active() and _invalid_hover_target(actor, cell, hover_unit):
+					slots["invalid"] = "Invalid target."
+				return slots
 
 			if hover_unit != null and _in_ability_range(actor, hover_unit):
 				if target_pick_skill and not has_awaiting_action:

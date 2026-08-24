@@ -42,6 +42,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_visibility_gate_parity_show,
 		_test_visibility_gate_parity_hide,
 		_test_post_swap_post_move_stand_locked_on_orbit,
+		_test_premove_swap_committed_orbit_walk_intent,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -63,6 +64,7 @@ static func run_all(failures: Array[String]) -> void:
 		"parity_gate_show",
 		"parity_gate_hide",
 		"post_swap_post_move_stand_locked",
+		"premove_swap_committed_orbit_walk",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
@@ -1055,3 +1057,37 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 		failures.append(
 			"ActionRangeRegression post_swap_post_move_stand_locked: blast must follow cursor on hover layer",
 		)
+
+
+static func _test_premove_swap_committed_orbit_walk_intent(failures: Array[String]) -> void:
+	var Checklist := PlanningChecklistHarness
+	var fix: Dictionary = Checklist.wire_swap_board(Checklist.WALK_SWAP_ALLY_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var swap_idx: int = Checklist.select_ability(fix, Checklist.KNIGHT_SWAP_ID)
+	if swap_idx < 0:
+		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: knight_swap missing")
+		return
+	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.WALK_SWAP_ALLY_CELL)
+	if bool(swap_slots.get("invalid", false)):
+		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: swap commit invalid")
+		return
+	var pre_moves: Array[TimelineAction] = Checklist.pre_moves_for_unit(director, fix.k1_id)
+	if pre_moves.size() < 2 or pre_moves[1].type != GameEnums.ActionType.ABILITY:
+		failures.append(
+			"ActionRangeRegression premove_swap_committed_orbit_walk: expected walk+swap pre-move pair",
+		)
+		return
+	Checklist.flush_planning(fix)
+	if not input._ally_skill_preview_slots(fix.knight, Checklist.WALK_SWAP_APPROACH).is_empty():
+		failures.append(
+			"ActionRangeRegression premove_swap_committed_orbit_walk: ally hover must not rebuild swap slots",
+		)
+	var ally_slots: Dictionary = input._build_commit_slots_at_cell(fix.k1_id, Checklist.WALK_SWAP_APPROACH)
+	var ally_actions: Array[TimelineAction] = input._actions_from_slots(ally_slots)
+	for action: TimelineAction in ally_actions:
+		if action.type == GameEnums.ActionType.ABILITY:
+			failures.append(
+				"ActionRangeRegression premove_swap_committed_orbit_walk: ally cell must not re-pair swap",
+			)
+			break
