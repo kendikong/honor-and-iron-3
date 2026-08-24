@@ -11,14 +11,14 @@
 	"diagnosis_hints": {},
 	"expected": "",
 	"latest_preview": {
-		"event_count": 7,
-		"last_event_type": 7,
+		"event_count": 7.0,
+		"last_event_type": 7.0,
 		"last_event_type_name": "ENEMY_PHASE_BEGAN",
-		"update_count": 14
+		"update_count": 14.0
 	},
 	"latest_rejection": "",
 	"latest_timeline": {
-		"action_count": 2,
+		"action_count": 2.0,
 		"statuses": [
 			"",
 			""
@@ -49,88 +49,88 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": -1,
+			"index": -1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": -1,
+			"index": -1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -138,22 +138,22 @@
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -161,30 +161,30 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": -1,
+			"index": -1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -192,22 +192,22 @@
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
 			]
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -215,26 +215,26 @@
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -242,33 +242,33 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 1,
+			"phase": 1.0,
 			"phase_name": "EXECUTING"
 		},
 		{
 			"data": {},
 			"kind": "sim_event",
-			"type": 7,
+			"type": 7.0,
 			"type_name": "ENEMY_PHASE_BEGAN"
 		},
 		{
 			"data": {
-				"turn": 1
+				"turn": 1.0
 			},
 			"kind": "sim_event",
-			"type": 8,
+			"type": 8.0,
 			"type_name": "TURN_ENDED"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -276,23 +276,23 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 1,
+			"action_count": 1.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -300,33 +300,33 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 1,
+			"phase": 1.0,
 			"phase_name": "EXECUTING"
 		},
 		{
 			"data": {},
 			"kind": "sim_event",
-			"type": 7,
+			"type": 7.0,
 			"type_name": "ENEMY_PHASE_BEGAN"
 		},
 		{
 			"data": {
-				"turn": 2
+				"turn": 2.0
 			},
 			"kind": "sim_event",
-			"type": 8,
+			"type": 8.0,
 			"type_name": "TURN_ENDED"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": -1
+			"unit_id": -1.0
 		},
 		{
-			"index": 0,
+			"index": 0.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 0,
+			"action_count": 0.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				""
@@ -334,27 +334,27 @@
 		},
 		{
 			"kind": "phase_changed",
-			"phase": 0,
+			"phase": 0.0,
 			"phase_name": "PLANNING"
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
 			"kind": "selection_changed",
-			"unit_id": 1
+			"unit_id": 1.0
 		},
 		{
-			"index": 1,
+			"index": 1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"index": -1,
+			"index": -1.0,
 			"kind": "ability_selected"
 		},
 		{
-			"action_count": 2,
+			"action_count": 2.0,
 			"kind": "timeline_changed",
 			"statuses": [
 				"",
@@ -371,13 +371,13 @@
 		"engine": {
 			"build": "official",
 			"hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
-			"hex": 263936,
-			"major": 4,
-			"minor": 7,
-			"patch": 0,
+			"hex": 263936.0,
+			"major": 4.0,
+			"minor": 7.0,
+			"patch": 0.0,
 			"status": "stable",
 			"string": "4.7-stable (official)",
-			"timestamp": 0
+			"timestamp": 0.0
 		},
 		"fps_at_capture": 120.0,
 		"git_commit": "4eeb1ff5df5b3807bf9881247a0dc34d8647cff8",
@@ -393,5 +393,6 @@
 	"screenshot": "C:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260823T194816-656.png",
 	"severity": "Medium",
 	"status": "done",
+	"status_updated_at": "2026-08-24T04:19:34",
 	"title": "reposition animations skip the premove animations"
 }

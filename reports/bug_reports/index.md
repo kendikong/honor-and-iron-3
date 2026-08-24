@@ -8,6 +8,8 @@
 > You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.
 > All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).
 
+- `BUG-20260823T212028-287` **ongoing** — Medium — Bug — premove to push through not despecting move waypoint movepreview
+- `BUG-20260823T211923-081` **ongoing** — Medium — Bug — reposition animation order still off
 - `BUG-20260823T194816-656` **done** — Medium — Bug — reposition animations skip the premove animations
 - `BUG-20260823T131817-165` **done** — Medium — Bug — class editor not respecting the autolaoded passive/skill list settings
 - `BUG-20260823T115554-835` **done** — Medium — Bug — Second knight unable to use shield bash on enemy
@@ -17,12 +19,12 @@
 - `BUG-20260822T131801-867` **done** — Medium — Bug — Lying/false damage indication when undoing actions.
 - `BUG-20260822T125232-308` **done** — Medium — Bug — premove and postmove bugs
 - `BUG-20260822T123715-788` **done** — Medium — Bug — explosive arrow not dealing damage
-- `BUG-TEST-STATUS-11443` **done** — Low — Bug — status workflow probe
-- `BUG-TEST-STATUS-11292` **done** — Low — Bug — status workflow probe
-- `BUG-TEST-STATUS-11232` **done** — Low — Bug — status workflow probe
-- `BUG-TEST-STATUS-11154` **done** — Low — Bug — status workflow probe
-- `BUG-TEST-STATUS-11124` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11015` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11124` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11154` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11232` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11292` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11443` **done** — Low — Bug — status workflow probe
 - `BUG-20260819T202015-902` **done** — Medium — Bug — commitpreviewghost is slow to update
 - `BUG-20260819T195651-656` **done** — Medium — Bug — mouse cursor showing move/atk and commit ghost not showing sometimes
 - `BUG-20260819T080458-775` **done** — Medium — Bug — power shot to enemy hover
