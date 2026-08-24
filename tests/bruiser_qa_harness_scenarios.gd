@@ -1100,23 +1100,29 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var first_line_enemy: UnitState = line_result.final_state.get_unit_by_id(31)
 	var second_line_enemy: UnitState = line_result.final_state.get_unit_by_id(32)
 	H.assert_eq_cell(
-		failures, "violent_collision/line_endpoint_keeps_selected_distance",
+		failures, "violent_collision/line_endpoint_occupies_vacated_tile",
 		line_bruiser.position if line_bruiser != null else Vector2i.ZERO,
-		Vector2i(4, 3),
-	)
-	H.assert_eq_cell(
-		failures, "violent_collision/line_first_enemy_stays_at_endpoint",
-		first_line_enemy.position if first_line_enemy != null else Vector2i.ZERO,
 		Vector2i(5, 3),
 	)
 	H.assert_eq_cell(
-		failures, "violent_collision/line_second_enemy_stays_behind",
-		second_line_enemy.position if second_line_enemy != null else Vector2i.ZERO,
+		failures, "violent_collision/line_first_enemy_moves_forward",
+		first_line_enemy.position if first_line_enemy != null else Vector2i.ZERO,
 		Vector2i(6, 3),
+	)
+	H.assert_eq_cell(
+		failures, "violent_collision/line_second_enemy_receives_final_displacement",
+		second_line_enemy.position if second_line_enemy != null else Vector2i.ZERO,
+		Vector2i(7, 3),
 	)
 	H.assert_true(
 		failures, "violent_collision/line_collision_registered",
 		H.events_have_type(line_result.events, GameEnums.SimEventType.COLLISION),
+	)
+	H.assert_true(
+		failures, "violent_collision/line_newtons_cradle_push",
+		H.events_have_unit_pushed(line_result.events, 31)
+			and H.events_have_unit_pushed(line_result.events, 32),
+		"endpoint bulldoze must push the full enemy line forward",
 	)
 	var terminal_collision_seen := false
 	var line_damage_ids: Dictionary = {}
@@ -1137,9 +1143,50 @@ static func run_violent_collision(failures: Array[String]) -> void:
 		failures, "violent_collision/line_collision_damage_events",
 		line_damage_ids.has(31) and line_damage_ids.has(32),
 	)
+	var blocked_line_board: BoardState = H.make_plain_board(
+		Vector2i(10, 6), [Vector2i(7, 3)],
+	)
+	H.place_bruiser(blocked_line_board, 40, Vector2i(2, 3), cfg)
+	H.place_dummy(blocked_line_board, 41, Vector2i(5, 3))
+	H.place_dummy(blocked_line_board, 42, Vector2i(6, 3))
+	var blocked_line_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(blocked_line_board, 40), &"bruiser_violent_collision",
+	)
+	var blocked_line_plan := Timeline.new()
+	blocked_line_plan.add(H.plan_ability(40, blocked_line_skill, Vector2i(5, 3), -1))
+	var blocked_line_result: SimResult = H.simulate_plan(blocked_line_board, blocked_line_plan)
+	var blocked_first: UnitState = blocked_line_result.final_state.get_unit_by_id(41)
+	var blocked_last: UnitState = blocked_line_result.final_state.get_unit_by_id(42)
+	var blocked_last_collision := false
+	for event: SimEvent in blocked_line_result.events:
+		if (
+			event.type == GameEnums.SimEventType.COLLISION
+			and (
+				int(event.data.get("unit", -1)) == 42
+				or int(event.data.get("against_unit", -1)) == 42
+			)
+		):
+			blocked_last_collision = true
+	H.assert_eq_cell(
+		failures, "violent_collision/blocked_line_first_stays",
+		blocked_first.position if blocked_first != null else Vector2i.ZERO,
+		Vector2i(5, 3),
+	)
+	H.assert_eq_cell(
+		failures, "violent_collision/blocked_line_last_stays",
+		blocked_last.position if blocked_last != null else Vector2i.ZERO,
+		Vector2i(6, 3),
+	)
 	H.assert_true(
-		failures, "violent_collision/line_does_not_force_extended_distance",
-		not H.events_have_unit_pushed(line_result.events, 32),
+		failures, "violent_collision/blocked_line_collision_registered",
+		blocked_last_collision,
+		"blocked terminal enemy must still receive collision",
+	)
+	H.assert_true(
+		failures, "violent_collision/blocked_line_no_displacement",
+		not H.events_have_unit_pushed(blocked_line_result.events, 41)
+			and not H.events_have_unit_pushed(blocked_line_result.events, 42),
+		"blocked terminal enemy must not allow packed enemies to overlap",
 	)
 	var no_extend_board: BoardState = H.make_plain_board(Vector2i(10, 6))
 	H.place_bruiser(no_extend_board, 20, Vector2i(2, 3), cfg)

@@ -2583,13 +2583,19 @@ static func run_bowling_charge(failures: Array[String]) -> void:
 	assert_eq_cell(
 		failures, "bowling_charge/upgrade/knight_stop",
 		knight_up.position if knight_up != null else Vector2i(-1, -1),
-		Vector2i(3, 3),
+		Vector2i(4, 3),
 	)
 	var e1_after: UnitState = result2.final_state.get_unit_by_id(11)
 	assert_eq_cell(
 		failures, "bowling_charge/upgrade/front_pos",
 		e1_after.position if e1_after != null else Vector2i(-1, -1),
-		Vector2i(4, 3),
+		Vector2i(5, 3),
+	)
+	var e2_after: UnitState = result2.final_state.get_unit_by_id(12)
+	assert_eq_cell(
+		failures, "bowling_charge/upgrade/rear_pos",
+		e2_after.position if e2_after != null else Vector2i(-1, -1),
+		Vector2i(6, 3),
 	)
 
 

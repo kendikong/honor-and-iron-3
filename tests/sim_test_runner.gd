@@ -17,6 +17,7 @@ func run_all() -> int:
 	failures += _check("preview matches execution", _test_preview_matches_execution())
 	failures += _check("input board is never mutated", _test_input_not_mutated())
 	failures += _check("push into wall deals collision damage", _test_push_into_wall())
+	failures += _check("push chains through enemy lines", _test_push_chain())
 	failures += _check("battle reaches a conclusion", _test_battle_completes())
 	failures += _check("bomber self-destructs and damages adjacent", _test_bomber_explodes())
 	failures += _check("summoner spawns minion and respects cap", _test_summoner_spawns())
@@ -225,6 +226,53 @@ func _test_push_into_wall() -> bool:
 			enemy.health.max_hp - expected_dmg, enemy_after.health.current_hp, expected_dmg,
 		])
 	return ok
+
+func _test_push_chain() -> bool:
+	var ability := _make_attack(&"chain_shove", 0, 1, 1)
+	var board := _empty_board(Vector2i(8, 3), [])
+	var player_def := _make_unit_data(&"player", 20, 3, 1, null)
+	var enemy_def := _make_unit_data(&"dummy", 20, 0, 0, null)
+	_place(board, 1, player_def, GameEnums.Team.PLAYER, Vector2i(0, 1))
+	_place(board, 2, enemy_def, GameEnums.Team.ENEMY, Vector2i(1, 1))
+	_place(board, 3, enemy_def, GameEnums.Team.ENEMY, Vector2i(2, 1))
+	_place(board, 4, enemy_def, GameEnums.Team.ENEMY, Vector2i(3, 1))
+	var plan := Timeline.new()
+	plan.add(TimelineAction.make_ability(1, ability, Vector2i(1, 1), 2))
+	var result := Simulator.simulate(board, plan)
+	var free_tail_ok := (
+		result.final_state.get_unit_by_id(2).position == Vector2i(2, 1)
+		and result.final_state.get_unit_by_id(3).position == Vector2i(3, 1)
+		and result.final_state.get_unit_by_id(4).position == Vector2i(4, 1)
+	)
+	if not free_tail_ok:
+		printerr("  free-tail positions: %s, %s, %s" % [
+			result.final_state.get_unit_by_id(2).position,
+			result.final_state.get_unit_by_id(3).position,
+			result.final_state.get_unit_by_id(4).position,
+		])
+		return false
+
+	var blocked_board := _empty_board(Vector2i(5, 3), [Vector2i(4, 1)])
+	_place(blocked_board, 1, player_def, GameEnums.Team.PLAYER, Vector2i(0, 1))
+	_place(blocked_board, 2, enemy_def, GameEnums.Team.ENEMY, Vector2i(1, 1))
+	_place(blocked_board, 3, enemy_def, GameEnums.Team.ENEMY, Vector2i(2, 1))
+	_place(blocked_board, 4, enemy_def, GameEnums.Team.ENEMY, Vector2i(3, 1))
+	var blocked_plan := Timeline.new()
+	blocked_plan.add(TimelineAction.make_ability(1, ability, Vector2i(1, 1), 2))
+	var blocked_result := Simulator.simulate(blocked_board, blocked_plan)
+	var collision_count := 0
+	for event: SimEvent in blocked_result.events:
+		if event.type == GameEnums.SimEventType.COLLISION:
+			collision_count += 1
+	var blocked_tail_ok := (
+		blocked_result.final_state.get_unit_by_id(2).position == Vector2i(1, 1)
+		and blocked_result.final_state.get_unit_by_id(3).position == Vector2i(2, 1)
+		and blocked_result.final_state.get_unit_by_id(4).position == Vector2i(3, 1)
+		and collision_count >= 3
+	)
+	if not blocked_tail_ok:
+		printerr("  blocked-tail push displaced a packed line or missed collisions")
+	return blocked_tail_ok
 
 func _test_battle_completes() -> bool:
 	var board := _build_skirmish()

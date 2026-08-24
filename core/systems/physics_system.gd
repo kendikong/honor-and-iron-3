@@ -470,76 +470,116 @@ static func tag_dash_hit_step(events: Array, from_index: int, step_index: int) -
 		if ev != null and not ev.data.has("dash_hit_step"):
 			ev.data["dash_hit_step"] = step_index
 
-static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:
-	if target == null or not target.is_alive() or direction == Vector2i.ZERO or distance <= 0:
+
+static func _push_collision_key(target: UnitState, blocker: UnitState, coord: Vector2i) -> String:
+	if blocker != null:
+		return "%d:%d" % [target.id, blocker.id]
+	return "%d:wall:%s" % [target.id, coord]
+
+
+static func _emit_push_collision_once(
+	board: BoardState,
+	target: UnitState,
+	blocker: UnitState,
+	coord: Vector2i,
+	push_distance: int,
+	tiles_moved: int,
+	events: Array[SimEvent],
+	pusher: UnitState,
+	ability_id: StringName,
+	collision_immune_id: int,
+	collision_pairs: Dictionary,
+) -> void:
+	var key: String = _push_collision_key(target, blocker, coord)
+	if collision_pairs.has(key):
 		return
+	collision_pairs[key] = true
+	_emit_collision(
+		board, target, blocker, coord, push_distance, tiles_moved, events,
+		pusher, ability_id, collision_immune_id,
+	)
+	if (
+		blocker == null
+		and pusher != null
+		and pusher.has_passive(&"battering_ram")
+		and pusher.is_passive_upgraded(&"battering_ram")
+	):
+		if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
+			target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
+			target._recalculate_stats()
 
-	var effective_distance: int = distance
-	if pusher != null and pusher.has_passive(&"battering_ram"):
-		effective_distance += 1
-	if not target.passive_flags.get("no_push_mitigation", false):
-		var mitigation_tiles := int(target.passive_flags.get("push_mitigation_tiles", 0))
-		if mitigation_tiles > 0:
-			effective_distance = maxi(0, effective_distance - mitigation_tiles)
-		
-	var is_vulnerable = target.has_status(GameEnums.StatusType.VULNERABLE)
-	var has_stand_ground = target.has_passive(&"stand_ground")
-	
-	if target.has_status(GameEnums.StatusType.INVULNERABLE) or (not is_vulnerable and (target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STURDY) or has_stand_ground)):
-		if target.has_status(GameEnums.StatusType.ROOT):
-			_apply_rooted_push_bleed(pusher, target)
-		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-			"actor": target.id, "reason": "push_prevented_by_status",
-		}))
-		if has_stand_ground and pusher != null and pusher.team != target.team:
-			var atk_val := 2 if target.is_passive_upgraded(&"stand_ground") else 1
-			CombatSystem.counter_attack(board, target, pusher, atk_val, events, "Stand Ground")
-			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
-				"actor": pusher.id, "reason": "blocked_by_stand_ground", "target": target.id
-			}))
-		return
 
-	var from := target.position
-	var traveled := 0
-	for _i in range(effective_distance):
-		var next := target.position + direction
+static func _push_chain_step(
+	board: BoardState,
+	target: UnitState,
+	direction: Vector2i,
+	push_distance: int,
+	events: Array[SimEvent],
+	pusher: UnitState,
+	ability_id: StringName,
+	collision_immune_id: int,
+	collision_pairs: Dictionary,
+	moved_counts: Dictionary,
+	moved_records: Array[Dictionary],
+) -> bool:
+	if target == null or not target.is_alive():
+		return false
+	var next: Vector2i = target.position + direction
+	var tiles_moved: int = int(moved_counts.get(target.id, 0))
+	if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
+		_emit_push_collision_once(
+			board, target, null, next, push_distance, tiles_moved, events,
+			pusher, ability_id, collision_immune_id, collision_pairs,
+		)
+		return false
 
-		# Wall or board edge: stop and take collision damage.
-		if GridSystem.stops_displacement(board, next) or not GridSystem.is_in_bounds(board, next):
-			_emit_collision(board, target, null, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
-			if (
-				pusher != null
-				and pusher.has_passive(&"battering_ram")
-				and pusher.is_passive_upgraded(&"battering_ram")
-			):
-				if not CombatSystem.try_resist_crowd_control(target, GameEnums.StatusType.STAGGER, events, board, pusher):
-					target.active_statuses.append(DataLibrary.make_status(GameEnums.StatusType.STAGGER, 1))
-					target._recalculate_stats()
-			break
+	var blocker: UnitState = board.get_unit_at(next)
+	if blocker != null:
+		_emit_push_collision_once(
+			board, target, blocker, next, push_distance, tiles_moved, events,
+			pusher, ability_id, collision_immune_id, collision_pairs,
+		)
+		if pusher == null or blocker.team == pusher.team or _cannot_be_displaced(blocker):
+			return false
+		if not _push_chain_step(
+			board, blocker, direction, push_distance, events, pusher, ability_id,
+			collision_immune_id, collision_pairs, moved_counts, moved_records,
+		):
+			return false
+		if not target.is_alive() or board.get_unit_at(next) != null:
+			return false
 
-		# Another unit: both take collision damage; neither moves further.
-		var blocker := board.get_unit_at(next)
-		if blocker != null:
-			_emit_collision(board, target, blocker, next, effective_distance, traveled, events, pusher, ability_id, collision_immune_id)
-			break
+	var from: Vector2i = target.position
+	GridSystem.set_occupant(board, from, -1)
+	target.position = next
+	GridSystem.set_occupant(board, next, target.id)
+	moved_counts[target.id] = tiles_moved + 1
+	moved_records.append({"unit": target, "from": from, "to": next})
+	return true
 
-		# Clear tile: advance one step.
-		GridSystem.set_occupant(board, target.position, -1)
-		target.position = next
-		GridSystem.set_occupant(board, target.position, target.id)
-		traveled += 1
 
-		# A hazard tile catches displaced units: stop here so the shove "lands"
-		# in the pit instead of sliding past it.
-		if GridSystem.is_hazard(board, target.position):
-			break
-
-	if traveled > 0:
+static func _complete_push_chain(
+	board: BoardState,
+	pusher: UnitState,
+	ability_id: StringName,
+	events: Array[SimEvent],
+	pushed_order: Array[int],
+	pushed: Dictionary,
+) -> void:
+	for pushed_id: int in pushed_order:
+		var summary: Dictionary = pushed[pushed_id]
+		var pushed_unit: UnitState = summary["unit"] as UnitState
+		var traveled: int = int(summary["distance"])
+		if pushed_unit == null or traveled <= 0:
+			continue
 		if pusher != null:
 			pusher.passive_flags["push_used_this_turn"] = true
-		for status in target.active_statuses:
+		for status in pushed_unit.active_statuses:
 			if status.type == GameEnums.StatusType.BLEED:
-				CombatSystem.deal_damage(board, target, 3 * traveled, events, &"bleed", false, false, null, "Bleed (push)", 3 * traveled)
+				CombatSystem.deal_damage(
+					board, pushed_unit, 3 * traveled, events, &"bleed",
+					false, false, null, "Bleed (push)", 3 * traveled,
+				)
 		if pusher != null and ability_id != &"":
 			var ability: AbilityData = pusher.get_ability_by_id(ability_id)
 			if ability != null:
@@ -566,18 +606,80 @@ static func push(board: BoardState, target: UnitState, direction: Vector2i, dist
 								int(passive.modifiers["upgraded_push_shield"]),
 								events,
 							)
-				
-		var pushed_data: Dictionary = {
-			"unit": target.id,
-			"from": from,
-			"to": target.position,
+		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+			"unit": pushed_unit.id,
+			"from": summary["from"],
+			"to": summary["to"],
 			"distance": traveled,
-		}
+		}))
 		if pusher != null:
-			pushed_data["pusher"] = pusher.id
-		events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, pushed_data))
-		# Terrain stage: resolve any hazard on the tile we ended up on.
-		TerrainSystem.apply_landing(board, target, events)
+			events[events.size() - 1].data["pusher"] = pusher.id
+		TerrainSystem.apply_landing(board, pushed_unit, events)
+
+
+static func push(board: BoardState, target: UnitState, direction: Vector2i, distance: int, events: Array[SimEvent], pusher: UnitState = null, ability_id: StringName = &"", collision_immune_id: int = -1) -> void:
+	if target == null or not target.is_alive() or direction == Vector2i.ZERO or distance <= 0:
+		return
+
+	var effective_distance: int = distance
+	if pusher != null and pusher.has_passive(&"battering_ram"):
+		effective_distance += 1
+	if not target.passive_flags.get("no_push_mitigation", false):
+		var mitigation_tiles := int(target.passive_flags.get("push_mitigation_tiles", 0))
+		if mitigation_tiles > 0:
+			effective_distance = maxi(0, effective_distance - mitigation_tiles)
+
+	var is_vulnerable = target.has_status(GameEnums.StatusType.VULNERABLE)
+	var has_stand_ground = target.has_passive(&"stand_ground")
+
+	if target.has_status(GameEnums.StatusType.INVULNERABLE) or (not is_vulnerable and (target.has_status(GameEnums.StatusType.ROOT) or target.has_status(GameEnums.StatusType.STURDY) or has_stand_ground)):
+		if target.has_status(GameEnums.StatusType.ROOT):
+			_apply_rooted_push_bleed(pusher, target)
+		events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+			"actor": target.id, "reason": "push_prevented_by_status",
+		}))
+		if has_stand_ground and pusher != null and pusher.team != target.team:
+			var atk_val := 2 if target.is_passive_upgraded(&"stand_ground") else 1
+			CombatSystem.counter_attack(board, target, pusher, atk_val, events, "Stand Ground")
+			events.append(SimEvent.make(GameEnums.SimEventType.ACTION_FAILED, {
+				"actor": pusher.id, "reason": "blocked_by_stand_ground", "target": target.id
+			}))
+		return
+
+	var collision_pairs: Dictionary = {}
+	var moved_counts: Dictionary = {}
+	var moved_records: Array[Dictionary] = []
+	for _i in range(effective_distance):
+		if not _push_chain_step(
+			board, target, direction, effective_distance, events, pusher, ability_id,
+			collision_immune_id, collision_pairs, moved_counts, moved_records,
+		):
+			break
+		if GridSystem.is_hazard(board, target.position):
+			break
+
+	if moved_records.is_empty():
+		return
+	var pushed_order: Array[int] = []
+	var pushed: Dictionary = {}
+	for record: Dictionary in moved_records:
+		var moved_unit: UnitState = record["unit"] as UnitState
+		if moved_unit == null:
+			continue
+		if not pushed.has(moved_unit.id):
+			pushed_order.append(moved_unit.id)
+			pushed[moved_unit.id] = {
+				"unit": moved_unit,
+				"from": record["from"],
+				"to": record["to"],
+				"distance": 1,
+			}
+		else:
+			var summary: Dictionary = pushed[moved_unit.id]
+			summary["to"] = record["to"]
+			summary["distance"] = int(summary["distance"]) + 1
+			pushed[moved_unit.id] = summary
+	_complete_push_chain(board, pusher, ability_id, events, pushed_order, pushed)
 
 static func _emit_collision(
 	board: BoardState,
