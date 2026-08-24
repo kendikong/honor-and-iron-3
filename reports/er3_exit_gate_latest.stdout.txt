@@ -65,7 +65,7 @@ ABILITY_MODULE_BRIDGE_TEST: PASS
 ERROR: Ability JSON rejected: missing modules array
    at: push_error (core/variant/variant_utility.cpp:1023)
    GDScript backtrace (most recent call first):
-       [0] apply_ability_dict (res://ui/class_library_schema.gd:2357)
+       [0] apply_ability_dict (res://ui/class_library_schema.gd:2353)
        [1] _test_module_json_requires_modules (res://tests/ability_module_runtime_test.gd:748)
        [2] run_all (res://tests/ability_module_runtime_test.gd:70)
        [3] _run_script_check (res://tests/ability_module_bridge_runner.gd:102)

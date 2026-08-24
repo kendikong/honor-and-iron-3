@@ -455,6 +455,29 @@ static func planning_max_target_distance(actor: UnitState, ability: AbilityData)
 	return max_range
 
 
+## Shared candidate check for planning target IDs and impact previews.
+## DASH uses the same event-backed collision gate as commit validation.
+static func planning_target_is_in_range(
+	board: BoardState,
+	actor: UnitState,
+	ability: AbilityData,
+	origin: Vector2i,
+	target: Vector2i,
+) -> bool:
+	if board == null or actor == null or ability == null or not board.is_in_bounds(target):
+		return false
+	var distance: int = GridSystem.manhattan(origin, target)
+	var min_range: int = active_min_range_tiles(actor, ability)
+	var max_range: int = planning_max_target_distance(actor, ability)
+	var motion: AbilityModule = active_motion_module(actor, ability)
+	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
+		if PhysicsSystem.straight_line_dir(origin, target) == Vector2i.ZERO:
+			return false
+		distance = PhysicsSystem.straight_line_distance(origin, target)
+		max_range = dash_effective_max_range(board, actor, motion, origin, target)
+	return distance >= min_range and distance <= max_range
+
+
 static func planning_new_aim_indices(
 	actor: UnitState,
 	ability: AbilityData,
@@ -2079,6 +2102,7 @@ static func planning_is_valid_awaiting_endpoint(
 	coord: Vector2i,
 	ability: AbilityData,
 	actor: UnitState = null,
+	board: BoardState = null,
 ) -> bool:
 	if ability == null:
 		return false
@@ -2093,6 +2117,8 @@ static func planning_is_valid_awaiting_endpoint(
 			var delta: Vector2i = coord - origin
 			if delta.x != 0 and delta.y != 0:
 				return false
+			if actor != null and board != null:
+				return planning_target_is_in_range(board, actor, ability, origin, coord)
 		var dist: int = GridSystem.manhattan(origin, coord)
 		return dist >= module.min_range and dist <= module.max_range
 	elif phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
@@ -2674,11 +2700,9 @@ static func planning_blast_tiles_at_target(
 	var shape: GameEnums.TargetShape = active_target_shape(unit, ability)
 	var shape_size: int = active_target_shape_size(unit, ability)
 	var ability_range: int = active_range_tiles(unit, ability)
-	var min_range: int = active_min_range_tiles(unit, ability)
 	if ability_range <= 0:
 		return GridSystem.get_affected_tiles(board, origin, origin, shape, shape_size)
-	var dist: int = GridSystem.manhattan(origin, target)
-	if dist < min_range or dist > ability_range:
+	if not planning_target_is_in_range(board, unit, ability, origin, target):
 		return empty
 	return GridSystem.get_affected_tiles(board, origin, target, shape, shape_size)
 

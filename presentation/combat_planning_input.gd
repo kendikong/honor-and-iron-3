@@ -598,7 +598,9 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 	if not _director.board.is_in_bounds(cell):
 		return false
 	var origin: Vector2i = _awaiting_endpoint_origin(actor)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, cell, ability):
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(
+		origin, cell, ability, actor, _proj(),
+	):
 		return false
 	var route_wps: Array[Vector2i] = _route_waypoints()
 	var action: TimelineAction = TimelineAction.make_ability(
@@ -1646,7 +1648,7 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 			dash_ab != null
 			and _awaiting_flow_selected(p_unit, dash_ab)
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(p_unit), cell, dash_ab,
+				_proj_origin(p_unit), cell, dash_ab, p_unit, _proj(),
 			)
 		):
 			return false
@@ -1746,7 +1748,7 @@ func _refresh_selected_interaction_preview() -> void:
 			dash_ab != null
 			and _awaiting_flow_selected(p_unit, dash_ab)
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(p_unit), cell, dash_ab,
+				_proj_origin(p_unit), cell, dash_ab, p_unit, _proj(),
 			)
 		):
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, [])
@@ -1902,8 +1904,11 @@ func _update_hover_attack_preview() -> void:
 	if p_unit.active_abilities.is_empty() or _director.selected_ability_index < 0:
 		return
 	var endpoint_ability := _selected_ability_data(p_unit)
-	if _should_use_awaiting_endpoint_on_input(endpoint_ability) and AbilitySystem.planning_is_valid_awaiting_endpoint(
-		_proj_origin(p_unit), cell, endpoint_ability,
+	if (
+		_should_use_awaiting_endpoint_on_input(endpoint_ability)
+		and AbilitySystem.planning_is_valid_awaiting_endpoint(
+			_proj_origin(p_unit), cell, endpoint_ability, p_unit, _proj(),
+		)
 	):
 		var dash_res: Dictionary = _preview_from_commit_slots_at_cell(_director.selected_unit_id, cell)
 		_apply_hover_preview_dict(dash_res)
@@ -3405,7 +3410,9 @@ func _sanitize_drag_route_context() -> void:
 	var basic_fallback: bool = false
 	if ability != null:
 		var origin := _proj_origin(unit)
-		if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, final_cell, ability):
+		if not AbilitySystem.planning_is_valid_awaiting_endpoint(
+			origin, final_cell, ability, unit, board,
+		):
 			basic_fallback = true
 	else:
 		basic_fallback = true
@@ -3480,7 +3487,7 @@ func is_skill_aim_hover_at(cell: Vector2i) -> bool:
 		return false
 	if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
 		return AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(actor), cell, ability, actor,
+			_proj_origin(actor), cell, ability, actor, _proj(),
 		)
 	return _is_in_range_tile_skill_aim(actor, cell)
 
@@ -3623,7 +3630,7 @@ func _movement_skill_commits_tile_endpoint(
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
 	return AbilitySystem.planning_is_valid_awaiting_endpoint(
-		_awaiting_endpoint_origin(actor), cell, ability, actor,
+		_awaiting_endpoint_origin(actor), cell, ability, actor, _proj(),
 	)
 
 
@@ -3634,17 +3641,15 @@ func _cell_on_dash_line_from_stand(
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	var module: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
-	if module == null:
-		return false
 	var origin: Vector2i = _proj_origin(actor)
 	if cell == origin:
 		return true
 	var delta: Vector2i = cell - origin
 	if delta.x != 0 and delta.y != 0:
 		return false
-	var dist: int = GridSystem.manhattan(origin, cell)
-	return dist >= module.min_range and dist <= module.max_range
+	return AbilitySystem.planning_target_is_in_range(
+		_proj(), actor, ability, origin, cell,
+	)
 
 
 func _tile_target_movement_skill_commits_at_cell(
@@ -3738,10 +3743,9 @@ func _dash_tile_endpoint_one_click_commit(
 		& GameEnums.TargetingFlags.TILE
 	) == 0:
 		return false
-	var board: BoardState = _proj()
-	if board == null:
+	if _proj() == null:
 		return false
-	var hover_unit: UnitState = board.get_unit_at(cell)
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
 	if hover_unit == null or not hover_unit.is_alive() or not hover_unit.is_enemy():
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
@@ -3957,7 +3961,9 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 			if (
 				hover_unit != null
 				and hover_unit.is_enemy()
-				and AbilitySystem.planning_is_valid_awaiting_endpoint(projected, hover, ability)
+				and AbilitySystem.planning_is_valid_awaiting_endpoint(
+					projected, hover, ability, actor, _proj(),
+				)
 			):
 				return projected
 	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
@@ -4481,6 +4487,12 @@ func _in_ability_range_from(actor: UnitState, coord: Vector2i, target: UnitState
 	var target_pos: Vector2i = coord
 	if target != null and aiming and target.is_enemy():
 		target_pos = _aim_enemy_pos(target.id)
+	var ability: AbilityData = _selected_ability_data(actor)
+	var plan_board: BoardState = _proj()
+	if ability != null and plan_board != null:
+		return AbilitySystem.planning_target_is_in_range(
+			plan_board, actor, ability, actor_pos, target_pos,
+		)
 	return GridSystem.manhattan(actor_pos, target_pos) <= rng
 
 
@@ -4521,7 +4533,14 @@ func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState)
 		return false
 	if target.id == actor.id:
 		return AbilitySystem.can_target_self(actor, ability)
-	if not AbilitySystem.target_passes_mode(actor, ability, target):
+	var dash_tile_target: bool = (
+		AbilitySystem.ability_has_dash(ability, actor)
+		and (
+			AbilitySystem.active_targeting_flags(actor, ability)
+			& GameEnums.TargetingFlags.TILE
+		) != 0
+	)
+	if not dash_tile_target and not AbilitySystem.target_passes_mode(actor, ability, target):
 		return false
 	return _in_ability_range_from(actor, target.position, target)
 
@@ -5104,6 +5123,13 @@ func _build_commit_slots_at_cell(
 			effective_waypoints = _director.preview_waypoints_for_hover(
 				_proj(), actor, cell, effective_waypoints, ability, true,
 			)
+		if (
+			effective_waypoints.is_empty()
+			and _dash_tile_endpoint_one_click_commit(actor, ability, cell)
+		):
+			effective_waypoints = _director.preview_waypoints_for_hover(
+				_proj(), actor, cell, effective_waypoints, ability, true,
+			)
 
 		if (
 			not has_awaiting_action
@@ -5142,7 +5168,7 @@ func _build_commit_slots_at_cell(
 			if awaiting_targeting_active() or has_awaiting_action:
 				var awaiting_origin := _awaiting_endpoint_origin(actor)
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
-					awaiting_origin, cell, ability, actor,
+					awaiting_origin, cell, ability, actor, _proj(),
 				):
 					var occupant_id := hover_unit.id if hover_unit != null else -1
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
@@ -5607,7 +5633,7 @@ func _build_enemy_commit_slots(
 		return slots
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(actor), enemy.position, ability,
+			_proj_origin(actor), enemy.position, ability, actor, _proj(),
 		):
 			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 				ability, enemy.id,
@@ -6262,7 +6288,7 @@ func _invalid_hover_target(p_unit: UnitState, cell: Vector2i, hover_unit: UnitSt
 		if awaiting_targeting_active() and (
 			_planning.is_hover_action_range_tile(cell)
 			and not AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_proj_origin(p_unit), cell, ability,
+				_proj_origin(p_unit), cell, ability, p_unit, _proj(),
 			)
 		):
 			return true
@@ -6528,7 +6554,7 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			and _awaiting_flow_selected(actor, endpoint_ability)
 			and awaiting_targeting_active()
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_awaiting_endpoint_origin(actor), cell, endpoint_ability,
+				_awaiting_endpoint_origin(actor), cell, endpoint_ability, actor, _proj(),
 			)
 		):
 			var dash_face: int = _facing_toward(_awaiting_endpoint_origin(actor), cell)

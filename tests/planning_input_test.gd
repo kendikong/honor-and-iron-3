@@ -36,6 +36,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_unarmed_later_new_aim_does_not_steal_premove,
 		_test_unarmed_violent_collision_empty_tile_is_premove,
 		_test_violent_collision_range_and_preview_follow_candidate_line,
+		_test_violent_collision_extended_enemy_preview,
 		_test_committed_move_prefix_while_later_aim_awaits,
 	]
 	for test: Callable in tests:
@@ -1965,9 +1966,17 @@ static func _violent_collision_premove_fixture() -> Dictionary:
 	dummy.definition = UnitData.new()
 	dummy.definition.display_name = "Training Dummy"
 	dummy.health = HealthComponent.new(20)
-	board.units = [unit, dummy]
+	var rear_dummy := UnitState.new()
+	rear_dummy.id = 3
+	rear_dummy.team = GameEnums.Team.ENEMY
+	rear_dummy.position = Vector2i(1, 5)
+	rear_dummy.definition = UnitData.new()
+	rear_dummy.definition.display_name = "Rear Training Dummy"
+	rear_dummy.health = HealthComponent.new(20)
+	board.units = [unit, dummy, rear_dummy]
 	GridSystem.set_occupant(board, unit.position, unit.id)
 	GridSystem.set_occupant(board, dummy.position, dummy.id)
+	GridSystem.set_occupant(board, rear_dummy.position, rear_dummy.id)
 	director.board = board
 	director.base_board = board
 	director.projected_state = board.clone()
@@ -2073,6 +2082,53 @@ static func _test_violent_collision_range_and_preview_follow_candidate_line(
 	elif action.waypoints != expected_path:
 		failures.append(
 			"PlanningInputTest: committed Violent Collision path must match preview, got %s"
+			% action.waypoints,
+		)
+
+
+static func _test_violent_collision_extended_enemy_preview(
+	failures: Array[String],
+) -> void:
+	## Regression: first enemy is the base-range endpoint; second enemy is on tile 5.
+	var fixture: Dictionary = _violent_collision_premove_fixture()
+	var input: CombatPlanningInput = fixture["input"] as CombatPlanningInput
+	var actor: UnitState = input._proj_unit(1)
+	var ability: AbilityData = fixture["ability"] as AbilityData
+	var origin: Vector2i = actor.position
+	var extended_enemy := Vector2i(1, 5)
+	var module: AbilityModule = ability.modules[0]
+	var red_tiles: Array[Vector2i] = AbilitySystem.dash_line_threat_tiles_for_module(
+		input._proj(), actor, module, origin, extended_enemy,
+	)
+	if not red_tiles.has(extended_enemy):
+		failures.append(
+			"PlanningInputTest: extended enemy endpoint must remain in red dash range",
+		)
+	var yellow_tiles: Array[Vector2i] = AbilitySystem.planning_blast_tiles_at_target(
+		input._proj(), actor, ability, origin, extended_enemy,
+	)
+	if not yellow_tiles.has(extended_enemy):
+		failures.append(
+			"PlanningInputTest: extended enemy endpoint must show yellow damage preview",
+		)
+	var slots: Dictionary = input._final_commit_slots_for_interaction(1, extended_enemy)
+	var action: TimelineAction = null
+	for raw: Variant in slots.get("action", []):
+		if raw is TimelineAction:
+			action = raw as TimelineAction
+			break
+	if action == null:
+		failures.append(
+			"PlanningInputTest: extended enemy hover must build a Violent Collision action, "
+			+ "slots=%s" % slots,
+		)
+		return
+	var expected_path: Array[Vector2i] = [
+		Vector2i(5, 5), Vector2i(4, 5), Vector2i(3, 5), Vector2i(2, 5), Vector2i(1, 5),
+	]
+	if action.waypoints != expected_path:
+		failures.append(
+			"PlanningInputTest: extended enemy commit must keep direct dash path, got %s"
 			% action.waypoints,
 		)
 

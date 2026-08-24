@@ -6,14 +6,13 @@ Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
 [RUN] action_range/show_red_anchor_on_stand
 [RUN] action_range/bowling_enemy_hover_red
 [RUN] action_range/bowling_enemy_hover_not_bash
-[RUN] action_range/bowling_dash_only_not_blue
+[RUN] action_range/bowling_empty_dash_line
 [RUN] action_range/bowling_dash_only_no_premove_click
 [RUN] action_range/bowling_awaiting_occupied_end
 [RUN] action_range/hide_after_commit_run_icon_bash
 [RUN] action_range/hide_after_commit_run_icon_bowling
 [RUN] action_range/hide_committed_run_timeline_bowling
 [RUN] action_range/hide_committed_run_interior_hover_bowling
-PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(4, 4) mod_tgts=[(4, 4)] await=false await_idx=-1"]
 [RUN] action_range/hide_no_ability
 [RUN] action_range/show_awaiting_trample
 [RUN] action_range/hover_step_updates_stand
@@ -23,7 +22,6 @@ PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability"
 [RUN] action_range/post_swap_post_move_stand_locked
 [RUN] action_range/premove_swap_committed_orbit_walk
 [SUITE] intent_contract_e2e
-PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability", "actor_id": 1 } actions: ["act=knight_bowling_charge tgt=(7, 5) mod_tgts=[(7, 5)] await=false await_idx=-1"]
 PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(-1, -1) mod_tgts=[] await=false await_idx=-1"]
 [SUITE] intent_source_of_truth
 [SOT-SIG] WALK-01 slot=(5, 5)|[(5, 5)]|-1||[]|0|false timeline=(5, 5)|[(5, 5)]|-1||[]|0|false sim=units=1@5,5:ap1:mp3;2@7,5:ap0:mp0||events=UNIT_MOVED { "actor": 1, "from": (4, 5), "to": (5, 5), "steps": 1, "path": [(5, 5)], "movement_points_before": 3, "movement_points_left": 2, "movement_cost_per_tile": 1, "move_timing": 1, "actor_id": 1 };MATH_TELEMETRY { "beast_tiles_moved": 1, "unit": 1, "actor_id": 1 };ENEMY_PHASE_BEGAN {  };TURN_ENDED { "turn": 1 } path=[(4, 5), (5, 5)] stand=(4, 5) pos=(5, 5)
@@ -42,8 +40,8 @@ PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "cannot_use_ability"
 PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(4, 5) mod_tgts=[] await=false await_idx=-1"]
 PREVIEW_COMMIT_VALID ACTION_FAILED: { "actor": 1, "reason": "no_path", "actor_id": 1 } actions: ["act=nil tgt=(4, 5) mod_tgts=[] await=false await_idx=-1"]
 [SOT-SIG] CM-09 slot=(intent mechanics bundle) timeline=(pre/post/stand/push/swap/trample/replan) sim=ENEMY_PHASE_BEGAN via four-way new_fails=0
-[SOT-PERF] hover_usec=8434 slot_usec=8368 sim_usec=3269 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
-[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=8434 slot_usec=8368 sim_usec=3269 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-PERF] hover_usec=8729 slot_usec=8492 sim_usec=3287 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
+[SOT-SIG] CM-11 slot=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false timeline=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false sim=(timing only; no optimize) hover_usec=8729 slot_usec=8492 sim_usec=3287 sig=(6, 5)|[(5, 5), (6, 5)]|2|knight_shield_bash|[(5, 5), (6, 5)]|0|false
 [SOT-SIG] wrote C:/Users/Kendy/AppData/Roaming/Godot/app_userdata/Honor and Iron 3/intent_sot_signatures.txt (11 rows)
 [SUITE] t3_live_headless_checklist
 [SUITE] t3_live_headless_checklist

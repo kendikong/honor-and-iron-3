@@ -623,7 +623,7 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 		AbilitySystem.planning_commit_flow(unit, ability)
 		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		or not AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(unit), _hover_coord, ability,
+			_proj_origin(unit), _hover_coord, ability, unit, _planning_board(),
 		)
 		or not AbilitySystem.ability_has_movement_effect(ability)
 	):
@@ -2813,7 +2813,9 @@ func _draw_move_ghosts() -> void:
 	):
 		return
 	var origin: Vector2i = _intent_stand_origin(unit)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(origin, _hover_coord, ability):
+	if not AbilitySystem.planning_is_valid_awaiting_endpoint(
+		origin, _hover_coord, ability, unit, _planning_board(),
+	):
 		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var p_col: Color = _player_color_for_unit(unit)
@@ -2870,6 +2872,12 @@ func _proj_unit(unit_id: int) -> UnitState:
 	if _board != null:
 		return _board.get_unit_by_id(unit_id)
 	return null
+
+
+func _planning_board() -> BoardState:
+	if _director != null and _director.projected_state != null:
+		return _director.projected_state
+	return _board
 
 
 func _player_color_for_unit(unit: UnitState) -> Color:
