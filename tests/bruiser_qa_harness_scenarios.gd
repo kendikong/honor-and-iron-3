@@ -1059,7 +1059,7 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	H.assert_eq_cell(
 		failures, "violent_collision/dash_through_collision",
 		bruiser.position if bruiser != null else Vector2i.ZERO,
-		Vector2i(7, 3),
+		Vector2i(5, 3),
 	)
 	H.assert_true(
 		failures,
@@ -1100,27 +1100,27 @@ static func run_violent_collision(failures: Array[String]) -> void:
 	var first_line_enemy: UnitState = line_result.final_state.get_unit_by_id(31)
 	var second_line_enemy: UnitState = line_result.final_state.get_unit_by_id(32)
 	H.assert_eq_cell(
-		failures, "violent_collision/line_endpoint_continues_dash",
+		failures, "violent_collision/line_endpoint_keeps_selected_distance",
 		line_bruiser.position if line_bruiser != null else Vector2i.ZERO,
-		Vector2i(7, 3),
+		Vector2i(4, 3),
 	)
 	H.assert_eq_cell(
-		failures, "violent_collision/line_first_enemy_bulldozed",
+		failures, "violent_collision/line_first_enemy_stays_at_endpoint",
 		first_line_enemy.position if first_line_enemy != null else Vector2i.ZERO,
-		Vector2i(5, 4),
+		Vector2i(5, 3),
 	)
 	H.assert_eq_cell(
-		failures, "violent_collision/line_second_enemy_bulldozed",
+		failures, "violent_collision/line_second_enemy_stays_behind",
 		second_line_enemy.position if second_line_enemy != null else Vector2i.ZERO,
-		Vector2i(6, 4),
+		Vector2i(6, 3),
 	)
 	H.assert_true(
-		failures, "violent_collision/line_first_collision",
-		H.events_have_unit_pushed(line_result.events, 31),
+		failures, "violent_collision/line_collision_registered",
+		H.events_have_type(line_result.events, GameEnums.SimEventType.COLLISION),
 	)
 	H.assert_true(
-		failures, "violent_collision/line_second_collision",
-		H.events_have_unit_pushed(line_result.events, 32),
+		failures, "violent_collision/line_does_not_force_extended_distance",
+		not H.events_have_unit_pushed(line_result.events, 32),
 	)
 	var no_extend_board: BoardState = H.make_plain_board(Vector2i(10, 6))
 	H.place_bruiser(no_extend_board, 20, Vector2i(2, 3), cfg)

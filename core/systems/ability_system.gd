@@ -5847,16 +5847,6 @@ static func _apply_effect_to_tile(board: BoardState, actor: UnitState, action: T
 				dash_cap = dash_effective_max_range(
 					board, actor, motion_module, actor.position, tile_coord,
 				)
-				## A collision-backed range extension changes the executed dash length,
-				## not only the legality cap. This makes an enemy at the base endpoint
-				## an interior hit of the extended DASH, so BULLDOZE can continue.
-				var collision_extension: int = module_dash_collision_extended_range(motion_module)
-				if (
-					collision_extension > motion_module.max_range
-					and dash_cap > motion_module.max_range
-					and dash_cap > dash_distance
-				):
-					dash_distance = dash_cap
 			if dir != Vector2i.ZERO and dash_distance >= 1 and dash_distance <= dash_cap:
 				if effect.modifiers.get("stop_adjacent_first_enemy", false):
 					actor.passive_flags.erase("monk_dash_enemy_id")
