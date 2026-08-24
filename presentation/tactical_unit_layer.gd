@@ -1454,8 +1454,10 @@ func _animate_planning_commit_move(event: SimEvent) -> void:
 		visual_from if visual_from.x > -900 else logical_from
 	)
 	if bool(event.data.get("planning_commit_move", false)):
-		var unit: UnitState = _board.get_unit_by_id(unit_id) if _board != null else null
-		if unit != null and unit.position == logical_from and from_cell != logical_from:
+		## The queued commit event owns the presentation origin. The board signal may
+		## already contain the projected landing cell, but that must not suppress the
+		## walk tween or turn the premove into a snap.
+		if from_cell != logical_from:
 			_position_actor(unit_id, logical_from)
 			from_cell = logical_from
 	var to_cell: Vector2i = event.data["to"]
