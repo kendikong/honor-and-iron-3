@@ -1244,19 +1244,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 		_schedule_hover_sim_refresh()
 
 
-func _occupy_push_hover_tracks_immediately() -> bool:
-	## Occupy-push hover is a cheap clone (no Simulator). Do not wait for the
-	## pointer-still settle used to skip expensive dash/attack replay.
-	if _planning != null and _planning.qa_static_overlay:
-		return false
-	if _director == null or _director.selected_unit_id < 0:
-		return false
-	var unit: UnitState = _proj_unit(_director.selected_unit_id)
-	if unit == null:
-		return false
-	return AbilitySystem.motion_requires_occupied_target(unit, _selected_ability_data(unit))
-
-
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 	## QA fixtures keep immediate sim. Live F5 uses the throttle so circling
 	## a unit does not resim every blue tile. Commit still flushes first.
@@ -1264,8 +1251,6 @@ func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 		return false
 	if not _director.board.is_in_bounds(cell):
 		return false
-	if _occupy_push_hover_tracks_immediately():
-		return true
 	if _planning != null and _planning.qa_static_overlay:
 		if _director.selected_unit_id < 0:
 			return false
@@ -2703,41 +2688,42 @@ func _play_commit_sfx(slots: Dictionary) -> void:
 func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 	if _director == null:
 		return
-	for raw: Variant in slots.get("action", []):
-		if raw is TimelineAction:
-			var action: TimelineAction = raw as TimelineAction
-			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
-				continue
-			if action.ability.is_universal_wait():
-				if _planning != null:
-					_planning.clear_threat_origin()
-				_director.select_ability(-1)
+	for column: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(column, []):
+			if raw is TimelineAction:
+				var action: TimelineAction = raw as TimelineAction
+				if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+					continue
+				if action.ability.is_universal_wait():
+					if _planning != null:
+						_planning.clear_threat_origin()
+					_director.select_ability(-1)
+					return
+				if action.awaiting_target:
+					_preserve_ability_selection_for_action(unit_id, action)
+					if _planning != null:
+						_planning.clear_threat_origin()
+					_request_planning_selection_refresh()
+					return
+				var actor := _proj_unit(unit_id)
+				if actor == null and _director.board != null:
+					actor = _director.board.get_unit_by_id(unit_id)
+				if (
+					actor != null
+					and AbilitySystem.planning_commit_flow(actor, action.ability)
+					== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+				):
+					var saved_paths: Dictionary = preview_state.preview_paths.duplicate()
+					clear_awaiting_targeting()
+					_preserve_ability_selection_for_action(unit_id, action)
+					if not saved_paths.is_empty():
+						preview_state.preview_paths = saved_paths
+				elif (
+					not AbilitySystem.is_run_ability(action.ability)
+					and not AbilitySystem.is_wait_ability(action.ability)
+				):
+					_director.select_ability(-1)
 				return
-			if action.awaiting_target:
-				_preserve_ability_selection_for_action(unit_id, action)
-				if _planning != null:
-					_planning.clear_threat_origin()
-				_request_planning_selection_refresh()
-				return
-			var actor := _proj_unit(unit_id)
-			if actor == null and _director.board != null:
-				actor = _director.board.get_unit_by_id(unit_id)
-			if (
-				actor != null
-				and AbilitySystem.planning_commit_flow(actor, action.ability)
-				== GameEnums.PlanningCommitFlow.AWAITING_TARGET
-			):
-				var saved_paths: Dictionary = preview_state.preview_paths.duplicate()
-				clear_awaiting_targeting()
-				_preserve_ability_selection_for_action(unit_id, action)
-				if not saved_paths.is_empty():
-					preview_state.preview_paths = saved_paths
-			elif (
-				not AbilitySystem.is_run_ability(action.ability)
-				and not AbilitySystem.is_wait_ability(action.ability)
-			):
-				_director.select_ability(-1)
-			return
 
 
 func _preserve_ability_selection_for_action(unit_id: int, action: TimelineAction) -> void:

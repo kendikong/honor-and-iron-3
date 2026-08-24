@@ -2631,10 +2631,7 @@ static func planning_threat_tiles(
 		if motion_requires_occupied_target(unit, ability):
 			tiles = tiles.filter(
 				func(cell: Vector2i) -> bool:
-					var probe: TimelineAction = TimelineAction.make_ability(
-						unit.id, ability, cell, -1,
-					)
-					return can_use(board, probe)
+					return _occupied_push_target_valid(board, unit, ability, cell)
 			)
 		return tiles
 	var filtered: Array[Vector2i] = tiles.filter(
@@ -2644,10 +2641,7 @@ static func planning_threat_tiles(
 	if motion_requires_occupied_target(unit, ability):
 		filtered = filtered.filter(
 			func(cell: Vector2i) -> bool:
-				var probe: TimelineAction = TimelineAction.make_ability(
-					unit.id, ability, cell, -1,
-				)
-				return can_use(board, probe)
+				return _occupied_push_target_valid(board, unit, ability, cell)
 		)
 	return filtered
 

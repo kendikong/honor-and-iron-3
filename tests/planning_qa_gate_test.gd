@@ -46,6 +46,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_premove_reposition_applies_live_board,
 		_test_premove_beast_reposition_applies_live_board,
 		_test_push_through_premove_moves_both_units,
+		_test_push_through_hover_uses_shared_refresh_path,
 		_test_push_through_repaths_off_expensive_walk,
 		_test_move_preview_origin_premove_and_postmove,
 		_test_shield_bash_full_approach_push_preview,
@@ -151,6 +152,7 @@ static func run_all(failures: Array[String]) -> void:
 		"premove_live_board",
 		"beast_reposition_live_board",
 		"push_through_live_both",
+		"push_through_hover_refresh",
 		"push_through_repath",
 		"move_preview_origin",
 		"bash_full_approach_push",
@@ -1704,6 +1706,50 @@ static func _test_push_through_premove_moves_both_units(failures: Array[String])
 	):
 		failures.append(
 			"PlanningQAGate push_through live: premove displacement must be realized on live board",
+		)
+
+
+static func _test_push_through_hover_uses_shared_refresh_path(failures: Array[String]) -> void:
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = BruiserFixture.wire_board(
+		Vector2i(4, 5), Vector2i(-1, -1), Vector2i(3, 5), &"bruiser_push_through",
+	)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	var idx: int = Checklist.select_ability(fix, &"bruiser_push_through")
+	if idx < 0:
+		failures.append("PlanningQAGate push_through hover_refresh: ability not selectable")
+		return
+	overlay.qa_static_overlay = false
+	if input._should_run_hover_sim_sync(Vector2i(3, 5)):
+		failures.append(
+			"PlanningQAGate push_through hover_refresh: premove must use shared hover refresh scheduling",
+		)
+	var slots: Dictionary = Checklist.slots_for_click(fix, Vector2i(3, 5))
+	if Checklist._slots_invalid(slots):
+		failures.append("PlanningQAGate push_through hover_refresh: commit rejected")
+		return
+	var empty_path: Array[Vector2i] = []
+	var committed: bool = input.call(
+		"_commit_at_cell",
+		director.selected_unit_id,
+		Vector2i(3, 5),
+		Vector2.ZERO,
+		empty_path,
+		empty_path,
+		Vector2i(-999999, -999999),
+		-1,
+		slots,
+	)
+	if not committed:
+		failures.append("PlanningQAGate push_through hover_refresh: production commit failed")
+		return
+	if director.selected_ability_index >= 0:
+		failures.append(
+			"PlanningQAGate push_through hover_refresh: committed pre-move skill must be deselected",
 		)
 
 

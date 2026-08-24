@@ -1,4 +1,5 @@
-﻿WARNING: 57 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+﻿[BRIDGE] CombatPlanningPreview: ensure_movement_intent must keep full path when pre-move is committed
+WARNING: 57 ObjectDB instances were leaked at exit (run with `--verbose` for details).
    at: cleanup (core/object/object.cpp:2535)
 ERROR: 17 resources still in use at exit (run with --verbose for details).
    at: clear (core/io/resource.cpp:822)
