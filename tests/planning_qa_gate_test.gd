@@ -1652,7 +1652,7 @@ static func _test_premove_beast_reposition_applies_live_board(failures: Array[St
 
 static func _test_reposition_commit_clears_move_preview(failures: Array[String]) -> void:
 	const Checklist := preload("res://tests/planning_checklist_harness.gd")
-	var fix: Dictionary = Checklist.wire_swap_board(Checklist.SWAP_ALLY_CELL)
+	var fix: Dictionary = Checklist.wire_swap_board(Checklist.WALK_SWAP_ALLY_CELL)
 	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
 	if overlay == null:
 		failures.append("PlanningQAGate reposition_preview_clear: overlay fixture missing")
@@ -1661,11 +1661,19 @@ static func _test_reposition_commit_clears_move_preview(failures: Array[String])
 	if Checklist.select_ability_for_unit(fix, unit_id, Checklist.KNIGHT_SWAP_ID) < 0:
 		failures.append("PlanningQAGate reposition_preview_clear: Swap missing")
 		return
-	Checklist.hover(fix, Checklist.SWAP_ALLY_CELL)
-	var slots: Dictionary = Checklist.commit_production(fix, Checklist.SWAP_ALLY_CELL)
+	Checklist.hover(fix, Checklist.WALK_SWAP_ALLY_CELL)
+	var slots: Dictionary = Checklist.commit_production(fix, Checklist.WALK_SWAP_ALLY_CELL)
 	if Checklist._slots_invalid(slots):
 		failures.append("PlanningQAGate reposition_preview_clear: commit rejected")
 		return
+	if fix.director.plan_pre_move.entries.size() < 2:
+		failures.append(
+			"PlanningQAGate reposition_preview_clear: expected waypointed premove + reposition",
+		)
+	if overlay._should_draw_player_move_preview():
+		failures.append(
+			"PlanningQAGate reposition_preview_clear: renderer still exposes committed move route",
+		)
 	var committed: CombatPlanningPreview = overlay.get_committed_preview()
 	if committed.preview_board != null or not committed.preview_paths.is_empty():
 		failures.append(

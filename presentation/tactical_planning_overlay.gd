@@ -1612,6 +1612,8 @@ func _draw_ability_intents(flowing: bool) -> void:
 	var plan_to_use: Timeline = _director.get_player_plan()
 	if plan_to_use != null:
 		for action: TimelineAction in plan_to_use.entries:
+			if not _should_draw_player_move_preview():
+				break
 			if action.type != GameEnums.ActionType.ABILITY:
 				continue
 			var draw_action: TimelineAction = action
@@ -2025,6 +2027,8 @@ func _draw_preview_arrows() -> void:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
 		if not unit.is_enemy():
+			if not _should_draw_player_move_preview():
+				continue
 			var p_col: Color = _player_color_for_unit(unit)
 			for move_timing: int in [
 				GameEnums.MoveTiming.PRE_ACTION,
@@ -2067,7 +2071,7 @@ func _draw_preview_arrows() -> void:
 
 
 func _draw_forced_movement_arrows() -> void:
-	if _board == null:
+	if _board == null or not _should_draw_player_move_preview():
 		return
 	if not _should_draw_forced_movement_arrows():
 		return
@@ -2142,6 +2146,13 @@ func _skip_committed_move_leg_draw(unit_id: int, leg_timing: int) -> bool:
 	return (
 		_planning_input.is_live_preview_active()
 		and _interaction_move_hover_active(unit_id)
+	)
+
+
+func _should_draw_player_move_preview() -> bool:
+	return (
+		CombatDirector.is_planning_phase(_phase)
+		and not _execution_preview_suppressed
 	)
 
 
