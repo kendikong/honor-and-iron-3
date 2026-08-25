@@ -2354,6 +2354,16 @@ func _play_dash_sequence(block: Array, run_id: int) -> void:
 			return
 	
 	if move_event == null:
+		## A blocked first dash step can produce terminal hit events without a
+		## UNIT_MOVED event. Consume those buckets instead of dropping the impacts.
+		var no_move_steps: Array[int] = []
+		for raw_step: Variant in step_events.keys():
+			no_move_steps.append(int(raw_step))
+		no_move_steps.sort()
+		for step: int in no_move_steps:
+			if run_id != _run_id:
+				return
+			await _emit_step_playback_events(step_events[step] as Array, run_id)
 		var tail_no_move: Array = []
 		tail_no_move.append_array(post_dash_events)
 		tail_no_move.append_array(push_events)

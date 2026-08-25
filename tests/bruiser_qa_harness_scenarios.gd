@@ -1188,6 +1188,44 @@ static func run_violent_collision(failures: Array[String]) -> void:
 			and not H.events_have_unit_pushed(blocked_line_result.events, 42),
 		"blocked terminal enemy must not allow packed enemies to overlap",
 	)
+	var adjacent_board: BoardState = H.make_plain_board(Vector2i(10, 6))
+	H.place_bruiser(adjacent_board, 50, Vector2i(7, 3), cfg)
+	H.place_dummy(adjacent_board, 51, Vector2i(8, 3))
+	H.place_dummy(adjacent_board, 52, Vector2i(9, 3))
+	var adjacent_skill: AbilityData = H.ability_on_unit(
+		H.unit_on_board(adjacent_board, 50), &"bruiser_violent_collision",
+	)
+	var adjacent_plan := Timeline.new()
+	adjacent_plan.add(H.plan_ability(50, adjacent_skill, Vector2i(8, 3), -1))
+	var adjacent_result: SimResult = H.simulate_plan(adjacent_board, adjacent_plan)
+	var adjacent_bruiser: UnitState = adjacent_result.final_state.get_unit_by_id(50)
+	var adjacent_collision := false
+	var adjacent_damage := false
+	for event: SimEvent in adjacent_result.events:
+		if int(event.data.get("dash_hit_step", -1)) != 0:
+			continue
+		if event.type == GameEnums.SimEventType.COLLISION:
+			adjacent_collision = true
+		if (
+			event.type == GameEnums.SimEventType.UNIT_DAMAGED
+			and int(event.data.get("unit", -1)) == 51
+		):
+			adjacent_damage = true
+	H.assert_eq_cell(
+		failures, "violent_collision/adjacent_blocked_actor_stays",
+		adjacent_bruiser.position if adjacent_bruiser != null else Vector2i.ZERO,
+		Vector2i(7, 3),
+	)
+	H.assert_true(
+		failures, "violent_collision/adjacent_terminal_collision_step",
+		adjacent_collision,
+		"adjacent packed bulldoze must tag its terminal collision at dash step 0",
+	)
+	H.assert_true(
+		failures, "violent_collision/adjacent_terminal_damage_step",
+		adjacent_damage,
+		"adjacent packed bulldoze must tag its damage at dash step 0",
+	)
 	var no_extend_board: BoardState = H.make_plain_board(Vector2i(10, 6))
 	H.place_bruiser(no_extend_board, 20, Vector2i(2, 3), cfg)
 	var no_extend_skill: AbilityData = H.ability_on_unit(
