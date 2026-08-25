@@ -124,6 +124,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_committed_premove_then_enemy_hover_click_preserves_intent,
 		_test_painted_route_then_enemy_hover_click_preserves_intent,
 		_test_range1_painted_route_enemy_hover_respects_waypoints,
+		_test_movement_module_hover_uses_route_not_target_arrow,
 		_test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost,
 		_test_post_move_after_variety_of_skills_contract,
 		_test_steady_aim_auto_run_parity,
@@ -230,6 +231,7 @@ static func run_all(failures: Array[String]) -> void:
 		"committed_premove_enemy_click",
 		"painted_route_enemy_click",
 		"range1_painted_route_enemy_click",
+		"movement_module_hover_route",
 		"out_of_range_enemy_hover_exhausted",
 		"post_move_after_skills",
 		"steady_aim_auto_run_parity",
@@ -5274,6 +5276,69 @@ static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: 
 	if not bashed:
 		failures.append("PlanningQAGate range1_enemy_hover: simulator did not execute Shield Bash from (7, 4)")
 		return
+
+
+static func _test_movement_module_hover_uses_route_not_target_arrow(
+	failures: Array[String],
+) -> void:
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	var start := Vector2i(6, 4)
+	var target := Vector2i(7, 5)
+	var fix: Dictionary = BruiserFixture.wire_board(
+		start, Vector2i(-1, -1), Vector2i(-1, -1), &"bruiser_charge_strike",
+	)
+	if fix.is_empty():
+		failures.append("PlanningQAGate movement_module_hover: bruiser fixture missing")
+		return
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var actor: UnitState = fix.actor
+	var ability: AbilityData = actor.active_abilities[0]
+	if not AbilitySystem.ability_has_movement_effect(ability, actor):
+		failures.append("PlanningQAGate movement_module_hover: fixture ability lacks MOVE module")
+		return
+	director.select_ability(0)
+	var expected: Array[Vector2i] = [start, Vector2i(7, 4), target]
+	var live := CombatPlanningPreview.new()
+	live.preview_board = fix.board.clone()
+	live.preview_paths[actor.id] = expected
+	live.preview_splits[actor.id] = expected.size()
+	input.preview_state = live
+	overlay.apply_preview_state(live, actor.id, -1)
+	overlay.set_hover_coord(target)
+	var preview_route: Array = overlay.get_live_preview().preview_paths.get(actor.id, [])
+	if preview_route != expected:
+		failures.append(
+			"PlanningQAGate movement_module_hover: preview route %s expected %s"
+			% [
+				str(preview_route), str(expected),
+			],
+		)
+		return
+	for i: int in range(1, preview_route.size()):
+		if GridSystem.manhattan(preview_route[i - 1], preview_route[i]) != 1:
+			failures.append(
+				"PlanningQAGate movement_module_hover: preview route %s contains diagonal step"
+				% str(preview_route),
+			)
+			return
+	if not overlay.targeting_intent_arrow_cells().is_empty():
+		failures.append(
+			"PlanningQAGate movement_module_hover: MOVE module must not draw direct target arrow",
+		)
+		return
+	var action := TimelineAction.make_ability(
+		actor.id, ability, target, -1, GameEnums.MoveTiming.PRE_ACTION, expected.slice(1),
+	)
+	var committed_route: Array = CombatPlanningPreview.committed_action_route_leg(
+		actor.id, live, action, start,
+	)
+	if committed_route != preview_route:
+		failures.append(
+			"PlanningQAGate movement_module_hover: preview route %s != commit route %s"
+			% [str(preview_route), str(committed_route)],
+		)
 
 
 static func _test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost(failures: Array[String]) -> void:

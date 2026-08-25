@@ -2192,6 +2192,13 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 	var sel_ability: AbilityData = _selected_ability_data(actor, _director.selected_ability_index)
 	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
 		return cells
+	if (
+		sel_ability != null
+		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
+	):
+		## Movement modules render through the route preview below; a direct
+		## stand-to-target arrow would create a second, diagonal interpretation.
+		return cells
 	var origin: Vector2i = _intent_stand_origin(actor)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
 	if attack_target_id >= 0:
