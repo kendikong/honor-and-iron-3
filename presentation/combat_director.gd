@@ -2162,7 +2162,7 @@ func _play_events(events: Array[SimEvent]) -> void:
 		await _play_batched_segment(enemy_events, run_id)
 
 ## Plays a list of events in ordered phases: pre-moves (simultaneous) → attacks
-## (sequential) → post-moves (simultaneous) → forced movement (simultaneous).
+## (sequential) → forced movement/collision effects → post-moves (simultaneous).
 ## Dash ability blocks are peeled out and played with move → pass-through hits → pushes.
 func _play_batched_segment(events: Array[SimEvent], run_id: int) -> void:
 	if events.is_empty() or run_id != _run_id:
@@ -2523,11 +2523,6 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		attack_i += 1
 	if run_id != _run_id: return
 	
-	if not post_move_events.is_empty():
-		await _play_move_batch(post_move_events, run_id)
-		if run_id != _run_id:
-			return
-	
 	# --- Forced movement — all pushes/collisions at the same time ---
 	if not push_events.is_empty():
 		for e in push_events:
@@ -2546,6 +2541,11 @@ func _play_batched_segment_legacy(events: Array[SimEvent], run_id: int) -> void:
 		await get_tree().create_timer(delay).timeout
 		post_push_i += 1
 	if run_id != _run_id: return
+
+	if not post_move_events.is_empty():
+		await _play_move_batch(post_move_events, run_id)
+		if run_id != _run_id:
+			return
 	
 	# --- Meta events (TURN_ENDED, ACTION_FAILED, etc.) ---
 	for e in meta_events:

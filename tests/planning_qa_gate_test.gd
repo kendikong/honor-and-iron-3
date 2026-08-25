@@ -5490,6 +5490,29 @@ static func _test_post_move_after_variety_of_skills_contract(failures: Array[Str
 	if final_dummy_target == null or final_dummy_target.position != Vector2i(2, 6):
 		failures.append("%s: final simulated target dummy push %s != (2, 6)" % [label, str(final_dummy_target.position if final_dummy_target != null else null)])
 		return
+	var last_attack_effect_index := -1
+	var post_move_event_index := -1
+	for event_index: int in range(archer_result.events.size()):
+		var event: SimEvent = archer_result.events[event_index]
+		if event.type in [
+			GameEnums.SimEventType.UNIT_DAMAGED,
+			GameEnums.SimEventType.UNIT_PUSHED,
+			GameEnums.SimEventType.COLLISION,
+		]:
+			last_attack_effect_index = event_index
+		elif (
+			event.type == GameEnums.SimEventType.UNIT_MOVED
+			and int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION))
+				== GameEnums.MoveTiming.POST_ACTION
+		):
+			post_move_event_index = event_index
+	if (
+		last_attack_effect_index < 0
+		or post_move_event_index <= last_attack_effect_index
+	):
+		failures.append(
+			"%s: post-move must follow attack damage/push/collision events" % label,
+		)
 
 	# 4. Training unlimited-actions: skill commit must still route walk to post-move (not live premove)
 	var raw_unlimited: Dictionary = _planning_fixture(Vector2i(2, 2), Vector2i(2, 5))
