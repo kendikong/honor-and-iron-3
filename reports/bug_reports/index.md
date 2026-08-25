@@ -8,7 +8,8 @@
 > You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.
 > All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).
 
-- `BUG-20260824T184634-919` **ongoing** — Medium — Bug — bulldoze from 1 tile away does not animate
+- `BUG-20260824T234226-772` **ongoing** — Medium — Bug — charge strike move 2 module showing bad movepreview
+- `BUG-20260824T184634-919` **done** — Medium — Bug — bulldoze from 1 tile away does not animate
 - `BUG-20260824T003021-722` **trash** — Medium — Bug — violent collision is stopping right before enemy instead of making the collision
 - `BUG-20260823T233825-525` **done** — Medium — Bug — violent collision dash 5
 - `BUG-20260823T233520-982` **done** — Medium — Bug — violent collision dash 5 activates prematurely
