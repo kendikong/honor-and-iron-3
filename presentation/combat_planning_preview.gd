@@ -1368,6 +1368,6 @@ static func awaiting_movement_route_cells(
 	for step: Variant in path:
 		if step is Vector2i:
 			route_cells.append(step)
-	if route_cells.size() == 1:
+	if route_cells.size() == 1 and hover != origin and GridSystem.manhattan(origin, hover) == 1:
 		route_cells.append(hover)
 	return route_cells

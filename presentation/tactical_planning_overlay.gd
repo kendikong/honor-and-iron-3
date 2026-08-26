@@ -619,17 +619,22 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 		and not _planning_input._is_awaiting_movement_endpoint(unit, ability)
 	):
 		return []
+	var move_origin: Vector2i = (
+		_planning_input._awaiting_endpoint_origin(unit)
+		if _planning_input != null
+		else _proj_origin(unit)
+	)
 	if (
 		AbilitySystem.planning_commit_flow(unit, ability)
 		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
 		or not AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(unit), _hover_coord, ability, unit, _planning_board(),
+			move_origin, _hover_coord, ability, unit, _planning_board(),
 		)
 		or not AbilitySystem.ability_has_movement_effect(ability)
 	):
 		return []
 	if AbilitySystem.ability_uses_direct_relocation(ability, unit):
-		var hop: Array[Vector2i] = [_proj_origin(unit), _hover_coord]
+		var hop: Array[Vector2i] = [move_origin, _hover_coord]
 		return hop
 	var sim_path: Array = []
 	var action_split: int = -1
@@ -639,7 +644,7 @@ func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
 			sim_path = hover_preview.preview_paths.get(unit.id, [])
 			action_split = int(hover_preview.action_splits.get(unit.id, -1))
 	return CombatPlanningPreview.awaiting_movement_route_cells(
-		_proj_origin(unit),
+		move_origin,
 		_hover_coord,
 		_planning_input.get_drag_route(),
 		sim_path,
@@ -2178,6 +2183,11 @@ func _resolve_overlay_attack_target_id() -> int:
 func targeting_intent_arrow_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	if _director == null or _board == null or _director.selected_unit_id < 0:
+		return cells
+	if _planning_input != null and (
+		_planning_input.force_basic_movement
+		or _planning_input.dragging
+	):
 		return cells
 	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
 		return cells

@@ -641,6 +641,8 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		start_board = (
 			_director.base_board if _director.base_board != null else _director.board
 		)
+	if _director != null and _director.selected_unit_id >= 0:
+		_anchor_preview_path_for_active_move_leg(_director.selected_unit_id, start_board)
 	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board, {}, _director)
 	if _director != null and _director.selected_unit_id >= 0:
 		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
@@ -657,6 +659,31 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		preview_state.action_splits,
 		_director,
 	)
+
+
+func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardState) -> void:
+	if _director == null or unit_id < 0:
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
+	if actor == null:
+		return
+	var stand: Vector2i = Vector2i(-999999, -999999)
+	var ability: AbilityData = _selected_ability_data(actor)
+	if _is_awaiting_movement_endpoint(actor, ability):
+		stand = _awaiting_endpoint_origin(actor)
+	elif force_basic_movement and not awaiting_targeting_active():
+		var timing: int = _director.get_planning_move_timing(unit_id)
+		if timing == GameEnums.MoveTiming.POST_ACTION:
+			var board: BoardState = start_board if start_board != null else _proj()
+			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
+	if stand.x <= -900000:
+		return
+	preview_state.preview_paths[unit_id] = [stand]
+	preview_state.preview_splits[unit_id] = 1
+	preview_state.preview_post_splits[unit_id] = 1
+	preview_state.action_splits[unit_id] = 0
 
 
 func _sync_intent_live_board() -> void:
@@ -1223,7 +1250,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 				if should_extend_route:
 					if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
 						_drag_unit_id = p_unit.id
-						_drag_route = [_proj_move_origin(p_unit)]
+						_drag_route = [_active_move_drag_origin(p_unit)]
 						_drag_last_free = _drag_route[0]
 					_extend_drag_route(cell)
 			elif (
@@ -1907,7 +1934,7 @@ func _update_hover_attack_preview() -> void:
 	if (
 		_should_use_awaiting_endpoint_on_input(endpoint_ability)
 		and AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(p_unit), cell, endpoint_ability, p_unit, _proj(),
+			_awaiting_endpoint_origin(p_unit), cell, endpoint_ability, p_unit, _proj(),
 		)
 	):
 		var dash_res: Dictionary = _preview_from_commit_slots_at_cell(_director.selected_unit_id, cell)
@@ -3321,7 +3348,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
 		return
-	var move_origin: Vector2i = _proj_move_origin(unit)
+	var move_origin: Vector2i = _active_move_drag_origin(unit)
 	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
 	# Keep this when a skill is armed / auto-run is on — circling is not a painted path.
 	# Once the route has left the origin ring (manhattan > 1), keep corridor paint
@@ -3369,7 +3396,7 @@ func _repath_drag_route_to(
 	move_cost: int,
 	ability: AbilityData,
 ) -> void:
-	var move_origin: Vector2i = _proj_move_origin(unit)
+	var move_origin: Vector2i = _active_move_drag_origin(unit)
 	var path: Array[Vector2i] = MovementSystem.drag_corridor_path(
 		board, move_origin, cell, budget, mt, move_cost, unit, ability,
 	)
@@ -3488,7 +3515,7 @@ func is_skill_aim_hover_at(cell: Vector2i) -> bool:
 		return false
 	if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
 		return AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_proj_origin(actor), cell, ability, actor, _proj(),
+			_awaiting_endpoint_origin(actor), cell, ability, actor, _proj(),
 		)
 	return _is_in_range_tile_skill_aim(actor, cell)
 
@@ -3642,7 +3669,7 @@ func _cell_on_dash_line_from_stand(
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	var origin: Vector2i = _proj_origin(actor)
+	var origin: Vector2i = _awaiting_endpoint_origin(actor)
 	if cell == origin:
 		return true
 	var delta: Vector2i = cell - origin
@@ -3943,6 +3970,13 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
 	if planned_move != null:
 		return planned_move.target_coord
+	var post_timing: int = _director.get_planning_move_timing(unit_id)
+	if post_timing == GameEnums.MoveTiming.POST_ACTION:
+		var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+			_director, _proj(), unit_id,
+		)
+		if _director.board.is_in_bounds(action_end):
+			return action_end
 	var projected: Vector2i = _proj_move_origin(actor)
 	if _action_range_locked_to_projected_stand(unit_id, actor, projected):
 		if _director.projected_state != null:
@@ -4054,34 +4088,16 @@ func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
 	if _director == null or unit_id < 0:
 		return null
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
-	if (
-		move_timing >= 0
-		and _director.unit_has_move_planned_at_timing(unit_id, move_timing)
-	):
-		var plan: Timeline = (
-			_director.plan_post_move
-			if move_timing == GameEnums.MoveTiming.POST_ACTION
-			else _director.plan_pre_move
-		)
-		var current: TimelineAction = CombatPlanningPreview.committed_move_action(
-			plan, unit_id, move_timing,
-		)
-		if current != null:
-			return current
-	for timing: int in [GameEnums.MoveTiming.PRE_ACTION, GameEnums.MoveTiming.POST_ACTION]:
-		if timing == move_timing:
-			continue
-		var plan: Timeline = (
-			_director.plan_pre_move
-			if timing == GameEnums.MoveTiming.PRE_ACTION
-			else _director.plan_post_move
-		)
-		var step: TimelineAction = CombatPlanningPreview.committed_move_action(
-			plan, unit_id, timing,
-		)
-		if step != null:
-			return step
-	return null
+	if move_timing < 0:
+		move_timing = GameEnums.MoveTiming.PRE_ACTION
+	if not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
+		return null
+	var plan: Timeline = (
+		_director.plan_post_move
+		if move_timing == GameEnums.MoveTiming.POST_ACTION
+		else _director.plan_pre_move
+	)
+	return CombatPlanningPreview.committed_move_action(plan, unit_id, move_timing)
 
 
 func _binding_move_action_for_action_range(unit_id: int) -> TimelineAction:
@@ -4699,6 +4715,23 @@ func _planning_drag_origin(unit_id: int) -> Vector2i:
 	var unit: UnitState = _proj_unit(unit_id)
 	if unit == null:
 		return Vector2i(-999999, -999999)
+	return _active_move_drag_origin(unit)
+
+
+func _active_move_drag_origin(unit: UnitState) -> Vector2i:
+	if unit == null:
+		return Vector2i(-999999, -999999)
+	var ability: AbilityData = _selected_ability_data(unit)
+	if _is_awaiting_movement_endpoint(unit, ability):
+		return _awaiting_endpoint_origin(unit)
+	if _director != null:
+		var timing: int = _director.get_planning_move_timing(unit.id)
+		if timing == GameEnums.MoveTiming.POST_ACTION:
+			var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+				_director, _proj(), unit.id,
+			)
+			if _director.board != null and _director.board.is_in_bounds(action_end):
+				return action_end
 	return _proj_move_origin(unit)
 
 
