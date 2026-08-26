@@ -1796,82 +1796,168 @@ static func _test_push_through_hover_uses_shared_refresh_path(failures: Array[St
 
 
 static func _test_move_preview_origin_premove_and_postmove(failures: Array[String]) -> void:
-	var director := CombatDirector.new()
-	director.plan_pre_move = Timeline.new()
-	director.plan_action = Timeline.new()
-	director.plan_post_move = Timeline.new()
-	var knight_def: UnitData = DataLibrary.get_unit(&"knight")
-	var knight: UnitState = UnitState.create(1, knight_def, GameEnums.Team.PLAYER, Vector2i(0, 2), {
-		"active_abilities": knight_def.abilities.duplicate(),
-	})
-	knight.movement.points_left = 3
-	var enemy_def: UnitData = DataLibrary.get_unit(&"charger")
-	var enemy: UnitState = UnitState.create(2, enemy_def, GameEnums.Team.ENEMY, Vector2i(4, 2))
-	var board := _plain_board(Vector2i(8, 6), [knight, enemy])
-	director.board = board
-	director.base_board = board.clone()
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = knight.id
-	var pre_walk := TimelineAction.make_move(
-		knight.id, Vector2i(2, 2), -1, [Vector2i(1, 2), Vector2i(2, 2)],
-		GameEnums.MoveTiming.PRE_ACTION,
-	)
-	var bash: AbilityData = null
-	for ability: AbilityData in knight.active_abilities:
-		if ability != null and ability.id == SHIELD_BASH_ID:
-			bash = ability
-			break
-	if bash == null:
-		failures.append("PlanningQAGate move_preview_origin: shield bash missing")
+	const Trample := preload("res://tests/trampling_advance_e2e_test.gd")
+	var raw_fix: Dictionary = Trample._knight_fixture(Trample.START_CELL)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var unit: UnitState = fix.unit
+	var label := "PlanningQAGate move_preview_origin"
+	if fix.trample_idx < 0:
+		failures.append("%s: Trampling Advance missing" % label)
 		return
-	var bash_action := TimelineAction.make_ability(
-		knight.id, bash, Vector2i(3, 2), enemy.id,
-	)
-	var slots: Dictionary = {
-		"pre": [pre_walk],
-		"action": [bash_action],
-		"post": [],
-		"_preview_validated": true,
-	}
-	if not director.commit_from_slots(knight.id, slots):
-		failures.append("PlanningQAGate move_preview_origin: premove+action commit rejected")
+	PlanningChecklistHarness.set_unit_pools(fix, unit.id, 1, 8)
+
+	# Stage 1: diagonal premove, start -> east -> north.
+	var pre_route: Array[Vector2i] = [
+		Trample.START_CELL, Vector2i(6, 4), Vector2i(6, 3),
+	]
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
+		fix, pre_route, pre_route.back(),
+	):
+		failures.append("%s: diagonal premove commit failed" % label)
 		return
-	_assert_move_preview_origin_contract(
-		failures,
-		"walk+bash committed",
-		director,
-		knight.id,
-		Vector2i(2, 2),
-		Vector2i(2, 2),
-	)
-	var post_move := TimelineAction.make_move(
-		knight.id, Vector2i(1, 2), -1, [], GameEnums.MoveTiming.POST_ACTION,
-	)
-	var post_slots: Dictionary = {
-		"pre": [],
-		"action": [],
-		"post": [post_move],
-		"_preview_validated": true,
-	}
-	if not director.commit_from_slots(knight.id, post_slots):
-		failures.append("PlanningQAGate move_preview_origin: post-move commit rejected")
-		return
-	var preview := CombatPlanningPreview.new()
-	preview.preview_paths[knight.id] = [Vector2i(2, 2), Vector2i(1, 2)]
-	preview.preview_splits[knight.id] = 2
-	var post_leg: Array = CombatPlanningPreview.move_route_leg_from_preview(
-		knight.id,
-		preview,
-		director,
-		director.board,
-		GameEnums.MoveTiming.POST_ACTION,
-		true,
-	)
-	if post_leg.size() < 2 or post_leg[0] != Vector2i(2, 2):
+	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(director, unit.id)
+	if committed_pre == null or committed_pre.waypoints != pre_route.slice(1):
 		failures.append(
-			"PlanningQAGate move_preview_origin: post-move leg must start at action end %s (got %s)"
-			% [Vector2i(2, 2), post_leg],
+			"%s: premove waypoints %s expected %s"
+			% [label, str(committed_pre.waypoints if committed_pre != null else []), str(pre_route.slice(1))],
+		)
+		return
+	var projected_after_pre: UnitState = director.projected_state.get_unit_by_id(unit.id)
+	if projected_after_pre == null or projected_after_pre.position != pre_route.back():
+		failures.append(
+			"%s: projected premove stand %s expected %s"
+			% [label, str(projected_after_pre.position if projected_after_pre != null else null), str(pre_route.back())],
+		)
+		return
+
+	# Stage 2: arm Trampling Advance and paint a second diagonal/L-shaped route.
+	if PlanningChecklistHarness.select_ability(fix, Trample.TRAMPLE_ID) < 0:
+		failures.append("%s: Trampling Advance selection failed" % label)
+		return
+	if not Trample._arm_trample_awaiting(input, director, projected_after_pre):
+		failures.append("%s: movement skill arm failed after premove" % label)
+		return
+	var trample_route: Array[Vector2i] = [
+		pre_route.back(), Vector2i(7, 3), Vector2i(7, 2),
+	]
+	Trample._paint_drag_route(input, projected_after_pre, trample_route, trample_route.back())
+	PlanningChecklistHarness.hover(fix, trample_route.back())
+	var live_trample: CombatPlanningPreview = overlay.get_live_preview()
+	var trample_preview_path: Array = live_trample.preview_paths.get(unit.id, [])
+	if trample_preview_path != trample_route:
+		failures.append(
+			"%s: movement-skill preview path %s expected %s"
+			% [label, str(trample_preview_path), str(trample_route)],
+		)
+		return
+	for i: int in range(1, trample_preview_path.size()):
+		if GridSystem.manhattan(trample_preview_path[i - 1], trample_preview_path[i]) != 1:
+			failures.append("%s: movement-skill preview contains diagonal segment %s" % [label, str(trample_preview_path)])
+			return
+	if not overlay.targeting_intent_arrow_cells().is_empty():
+		failures.append("%s: movement skill drew a duplicate direct target arrow" % label)
+		return
+	var trample_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	var trample_hover_action: TimelineAction = _slot_action_with_ability(
+		trample_slots, Trample.TRAMPLE_ID,
+	)
+	if _slots_invalid(trample_slots) or trample_hover_action == null:
+		failures.append("%s: movement-skill hover slots missing" % label)
+		return
+	if trample_hover_action.waypoints != trample_route.slice(1):
+		failures.append(
+			"%s: hover movement-skill waypoints %s expected %s"
+			% [label, str(trample_hover_action.waypoints), str(trample_route.slice(1))],
+		)
+		return
+	input.set_qa_pointer_grid_cell(trample_route.back())
+	input.on_left_press(fix.map_stub.grid_to_local(trample_route.back()))
+	PlanningChecklistHarness.flush_planning(fix)
+	var committed_trample: TimelineAction = Trample._committed_trample_action(director)
+	if committed_trample == null or committed_trample.waypoints != trample_route.slice(1):
+		failures.append(
+			"%s: committed movement-skill waypoints %s expected %s"
+			% [label, str(committed_trample.waypoints if committed_trample != null else []), str(trample_route.slice(1))],
+		)
+		return
+	var projected_after_trample: UnitState = director.projected_state.get_unit_by_id(unit.id)
+	if projected_after_trample == null or projected_after_trample.position != trample_route.back():
+		failures.append(
+			"%s: projected movement-skill stand %s expected %s"
+			% [label, str(projected_after_trample.position if projected_after_trample != null else null), str(trample_route.back())],
+		)
+		return
+
+	# Stage 3: diagonal postmove from the movement skill's actual action end.
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	var post_route: Array[Vector2i] = [
+		trample_route.back(), Vector2i(8, 2), Vector2i(8, 1),
+	]
+	Trample._paint_drag_route(input, projected_after_trample, post_route, post_route.back())
+	PlanningChecklistHarness.hover(fix, post_route.back())
+	var live_post: CombatPlanningPreview = overlay.get_live_preview()
+	var post_preview_path: Array = live_post.preview_paths.get(unit.id, [])
+	if post_preview_path != post_route:
+		failures.append(
+			"%s: postmove preview path %s expected %s"
+			% [label, str(post_preview_path), str(post_route)],
+		)
+		return
+	for i: int in range(1, post_preview_path.size()):
+		if GridSystem.manhattan(post_preview_path[i - 1], post_preview_path[i]) != 1:
+			failures.append("%s: postmove preview contains diagonal segment %s" % [label, str(post_preview_path)])
+			return
+	input.set_qa_pointer_grid_cell(post_route.back())
+	input.on_left_press(fix.map_stub.grid_to_local(post_route.back()))
+	PlanningChecklistHarness.flush_planning(fix)
+	var committed_post: TimelineAction = PlanningChecklistHarness.committed_post_move(
+		director, unit.id,
+	)
+	if committed_post == null or committed_post.waypoints != post_route.slice(1):
+		failures.append(
+			"%s: postmove waypoints %s expected %s"
+			% [label, str(committed_post.waypoints if committed_post != null else []), str(post_route.slice(1))],
+		)
+		return
+
+	var result: SimResult = _simulate_committed_plan(director)
+	var expected_full_path: Array[Vector2i] = [
+		pre_route[0], pre_route[1], pre_route[2],
+		trample_route[1], trample_route[2],
+		post_route[1], post_route[2],
+	]
+	var visited: Array[Vector2i] = [pre_route[0]]
+	for event: SimEvent in result.events:
+		if event.type != GameEnums.SimEventType.UNIT_MOVED:
+			continue
+		if int(event.data.get("actor", -1)) != unit.id:
+			continue
+		for step: Variant in event.data.get("path", []):
+			if step is Vector2i:
+				visited.append(step as Vector2i)
+	if visited != expected_full_path:
+		failures.append(
+			"%s: Simulator visited %s expected premove -> skill -> postmove %s"
+			% [label, str(visited), str(expected_full_path)],
+		)
+	var final_unit: UnitState = result.final_state.get_unit_by_id(unit.id)
+	if final_unit == null or final_unit.position != post_route.back():
+		failures.append(
+			"%s: final simulated position %s expected %s"
+			% [label, str(final_unit.position if final_unit != null else null), str(post_route.back())],
+		)
+	var committed_preview: CombatPlanningPreview = CombatPlanningPreview.from_sim_result(
+		result, director, director.base_board,
+	)
+	var full_preview_path: Array = committed_preview.preview_paths.get(unit.id, [])
+	if full_preview_path != expected_full_path:
+		failures.append(
+			"%s: committed preview path %s expected %s"
+			% [label, str(full_preview_path), str(expected_full_path)],
 		)
 
 
