@@ -802,7 +802,11 @@ static func planning_latest_stand_cell(
 		return Vector2i(-999999, -999999)
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
-		timing = GameEnums.MoveTiming.PRE_ACTION
+		var idle_board: BoardState = planning_projection_board(director, fallback_board)
+		var idle_unit: UnitState = idle_board.get_unit_by_id(unit_id) if idle_board != null else null
+		if idle_unit != null:
+			return idle_unit.position
+		return Vector2i(-999999, -999999)
 	return planning_move_origin_cell_for_timing(director, fallback_board, unit_id, timing)
 
 

@@ -4119,7 +4119,17 @@ func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
 		return null
 	var move_timing: int = _director.get_planning_move_timing(unit_id)
 	if move_timing < 0:
-		move_timing = GameEnums.MoveTiming.PRE_ACTION
+		var post_move: TimelineAction = CombatPlanningPreview.committed_move_action(
+			_director.plan_post_move, unit_id, GameEnums.MoveTiming.POST_ACTION,
+		)
+		if post_move != null:
+			return post_move
+		var pre_move: TimelineAction = CombatPlanningPreview.committed_move_action(
+			_director.plan_pre_move, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+		)
+		if pre_move != null:
+			return pre_move
+		return null
 	if not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 		return null
 	var plan: Timeline = (
