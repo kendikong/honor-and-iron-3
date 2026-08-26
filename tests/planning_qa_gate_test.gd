@@ -50,6 +50,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_push_through_hover_uses_shared_refresh_path,
 		_test_push_through_repaths_off_expensive_walk,
 		_test_move_preview_origin_premove_and_postmove,
+		_test_charge_strike_composite_move_preview,
 		_test_shield_bash_full_approach_push_preview,
 		_test_committed_hook_approach_uses_premove,
 		_test_out_of_range_hover_is_invalid,
@@ -158,6 +159,7 @@ static func run_all(failures: Array[String]) -> void:
 		"push_through_hover_refresh",
 		"push_through_repath",
 		"move_preview_origin",
+		"charge_strike_composite_preview",
 		"bash_full_approach_push",
 		"hook_committed_premove",
 		"out_of_range_invalid",
@@ -1958,6 +1960,317 @@ static func _test_move_preview_origin_premove_and_postmove(failures: Array[Strin
 		failures.append(
 			"%s: committed preview path %s expected %s"
 			% [label, str(full_preview_path), str(expected_full_path)],
+		)
+
+
+static func _test_charge_strike_composite_move_preview(failures: Array[String]) -> void:
+	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const ChargeStrikeId: StringName = &"bruiser_charge_strike"
+	var start := Vector2i(5, 4)
+	var enemy_cell := Vector2i(8, 2)
+	var pre_route: Array[Vector2i] = [
+		start, Vector2i(6, 4), Vector2i(6, 3),
+	]
+	var charge_route: Array[Vector2i] = [
+		pre_route.back(), Vector2i(7, 3), Vector2i(7, 2),
+	]
+	var post_route: Array[Vector2i] = [
+		charge_route.back(), Vector2i(8, 2), Vector2i(8, 1),
+	]
+	var label := "PlanningQAGate charge_strike_composite"
+	var fix: Dictionary = BruiserFixture.wire_board(
+		start, enemy_cell, Vector2i(-1, -1), ChargeStrikeId,
+	)
+	if fix.is_empty():
+		failures.append("%s: Bruiser fixture missing" % label)
+		return
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	var actor: UnitState = fix.actor
+	PlanningChecklistHarness.set_unit_pools(fix, actor.id, 1, 8)
+
+	# Premove: observe the live route and the exact slots before committing.
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	PlanningDragE2EHarness.begin_drag_route(fix, pre_route)
+	PlanningChecklistHarness.hover(fix, pre_route.back())
+	var pre_live: CombatPlanningPreview = overlay.get_live_preview()
+	var pre_preview_path: Array = pre_live.preview_paths.get(actor.id, [])
+	if pre_preview_path != pre_route:
+		failures.append(
+			"%s: premove hover path %s expected %s"
+			% [label, str(pre_preview_path), str(pre_route)],
+		)
+	var pre_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	var pre_hover: TimelineAction = (pre_slots.get("pre", []) as Array).front() as TimelineAction
+	if _slots_invalid(pre_slots) or pre_hover == null:
+		failures.append("%s: premove hover slots missing" % label)
+	elif pre_hover.waypoints != pre_route.slice(1):
+		failures.append(
+			"%s: premove hover waypoints %s expected %s"
+			% [label, str(pre_hover.waypoints), str(pre_route.slice(1))],
+		)
+	if _slots_invalid(pre_slots):
+		failures.append("%s: premove commit failed" % label)
+		return
+	PlanningDragE2EHarness.release_at(fix, pre_route.back())
+	PlanningChecklistHarness.flush_planning(fix)
+	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(
+		director, actor.id,
+	)
+	if committed_pre == null or committed_pre.waypoints != pre_route.slice(1):
+		failures.append(
+			"%s: committed premove waypoints %s expected %s"
+			% [label, str(committed_pre.waypoints if committed_pre != null else []), str(pre_route.slice(1))],
+		)
+	var pre_committed_preview: CombatPlanningPreview = overlay.get_committed_preview()
+	if pre_committed_preview.preview_board != null or not pre_committed_preview.preview_paths.is_empty():
+		failures.append(
+			"%s: premove execution boundary retained committed preview %s"
+			% [label, str(pre_committed_preview.preview_paths.get(actor.id, []))],
+		)
+
+	# Charge Strike: arm and commit its MOVE module, then observe the NEW_AIM attack.
+	if PlanningChecklistHarness.select_ability(fix, ChargeStrikeId) < 0:
+		failures.append("%s: Charge Strike selection failed" % label)
+		return
+	var stand_after_pre: UnitState = director.projected_state.get_unit_by_id(actor.id)
+	if stand_after_pre == null or stand_after_pre.position != pre_route.back():
+		failures.append(
+			"%s: projected premove stand %s expected %s"
+			% [label, str(stand_after_pre.position if stand_after_pre != null else null), str(pre_route.back())],
+		)
+		return
+	if not _arm_awaiting_at(input, director, stand_after_pre.position):
+		failures.append("%s: Charge Strike MOVE module did not arm" % label)
+		return
+	input._begin_drag(
+		stand_after_pre,
+		fix.map_stub.grid_to_local(charge_route[0]),
+		true,
+	)
+	for route_cell: Vector2i in charge_route.slice(1):
+		input.set_qa_pointer_grid_cell(route_cell)
+		input.update_drag(fix.map_stub.grid_to_local(route_cell))
+	PlanningChecklistHarness.hover(fix, charge_route.back())
+	var charge_move_live: CombatPlanningPreview = overlay.get_live_preview()
+	var charge_move_preview_path: Array = charge_move_live.preview_paths.get(actor.id, [])
+	if charge_move_preview_path != charge_route:
+		failures.append(
+			"%s: Charge Strike MOVE hover path %s expected %s"
+			% [label, str(charge_move_preview_path), str(charge_route)],
+		)
+	for i: int in range(1, charge_move_preview_path.size()):
+		if GridSystem.manhattan(charge_move_preview_path[i - 1], charge_move_preview_path[i]) != 1:
+			failures.append(
+				"%s: Charge Strike MOVE hover path contains diagonal step %s"
+				% [label, str(charge_move_preview_path)],
+			)
+			break
+	var charge_move_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	var charge_move_action: TimelineAction = _slot_action_with_ability(
+		charge_move_slots, ChargeStrikeId,
+	)
+	if _slots_invalid(charge_move_slots) or charge_move_action == null:
+		failures.append("%s: Charge Strike MOVE hover slots missing" % label)
+	elif AbilitySystem.module_target_coord(charge_move_action, 0) != charge_route.back():
+		failures.append("%s: Charge Strike MOVE slot lost landing target" % label)
+	if _slots_invalid(charge_move_slots):
+		failures.append("%s: Charge Strike MOVE landing commit failed" % label)
+		return
+	PlanningDragE2EHarness.release_at(fix, charge_route.back())
+	PlanningChecklistHarness.flush_planning(fix)
+	if not input.awaiting_targeting_active():
+		failures.append("%s: Charge Strike attack module did not remain awaiting" % label)
+		return
+
+	PlanningChecklistHarness.hover(fix, enemy_cell)
+	var charge_live: CombatPlanningPreview = overlay.get_live_preview()
+	var charge_preview_path: Array = charge_live.preview_paths.get(actor.id, [])
+	if charge_preview_path != [charge_route.back()]:
+		failures.append(
+			"%s: Charge Strike attack hover path %s expected committed landing %s; live=%s projected=%s timing=%d"
+			% [
+				label,
+				str(charge_preview_path),
+				str([charge_route.back()]),
+				str(director.live_planning_board().get_unit_by_id(actor.id).position),
+				str(director.projected_state.get_unit_by_id(actor.id).position),
+				director.get_planning_move_timing(actor.id),
+			],
+		)
+	if not overlay.targeting_intent_arrow_cells().is_empty():
+		failures.append("%s: Charge Strike drew a duplicate direct target arrow" % label)
+	var charge_hover_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	var charge_hover_action: TimelineAction = _slot_action_with_ability(
+		charge_hover_slots, ChargeStrikeId,
+	)
+	if _slots_invalid(charge_hover_slots) or charge_hover_action == null:
+		failures.append(
+			"%s: Charge Strike hover slots missing invalid=%s slots=%s"
+			% [label, str(charge_hover_slots.get("invalid", "")), str(charge_hover_slots)],
+		)
+	else:
+		if charge_hover_action.waypoints != charge_route.slice(1):
+			failures.append(
+				"%s: Charge Strike hover waypoints %s expected %s"
+				% [label, str(charge_hover_action.waypoints), str(charge_route.slice(1))],
+			)
+		var move_target: Vector2i = AbilitySystem.module_target_coord(charge_hover_action, 0)
+		var strike_target: Vector2i = AbilitySystem.module_target_coord(charge_hover_action, 1)
+		if move_target != charge_route.back() or strike_target != enemy_cell:
+			failures.append(
+				"%s: Charge Strike module targets move=%s strike=%s expected move=%s strike=%s"
+				% [label, move_target, strike_target, charge_route.back(), enemy_cell],
+			)
+	var charge_click_slots: Dictionary = PlanningChecklistHarness.slots_for_click(fix, enemy_cell)
+	if _intent_slot_signature(charge_hover_slots) != _intent_slot_signature(charge_click_slots):
+		failures.append("%s: Charge Strike hover slots differ from click slots" % label)
+	input.set_qa_pointer_grid_cell(enemy_cell)
+	input.on_left_press(fix.map_stub.grid_to_local(enemy_cell))
+	if director.find_awaiting_action(actor.id) != null:
+		failures.append("%s: Charge Strike click commit failed" % label)
+		return
+	PlanningChecklistHarness.flush_planning(fix)
+	var committed_charge: TimelineAction = PlanningChecklistHarness.committed_action(
+		director, actor.id,
+	)
+	if committed_charge == null:
+		failures.append("%s: committed Charge Strike action missing" % label)
+		return
+	if committed_charge.waypoints != charge_route.slice(1):
+		failures.append(
+			"%s: committed Charge Strike waypoints %s expected %s"
+			% [label, str(committed_charge.waypoints), str(charge_route.slice(1))],
+		)
+	if AbilitySystem.module_target_coord(committed_charge, 0) != charge_route.back():
+		failures.append("%s: committed MOVE target is not Charge Strike landing" % label)
+	if AbilitySystem.module_target_coord(committed_charge, 1) != enemy_cell:
+		failures.append("%s: committed DAMAGE target is not hovered enemy" % label)
+	var projected_after_charge: UnitState = director.projected_state.get_unit_by_id(actor.id)
+	if projected_after_charge == null or projected_after_charge.position != charge_route.back():
+		failures.append(
+			"%s: projected Charge Strike stand %s expected %s"
+			% [label, str(projected_after_charge.position if projected_after_charge != null else null), str(charge_route.back())],
+		)
+	var charge_committed_preview: CombatPlanningPreview = overlay.get_committed_preview()
+	var expected_after_charge: Array[Vector2i] = [
+		pre_route[0], pre_route[1], pre_route[2], charge_route[1], charge_route[2],
+	]
+	if charge_committed_preview.preview_paths.get(actor.id, []) != expected_after_charge:
+		failures.append(
+			"%s: committed Charge Strike preview %s expected %s"
+			% [label, str(charge_committed_preview.preview_paths.get(actor.id, [])), str(expected_after_charge)],
+		)
+
+	# Postmove: its route must begin at Charge Strike's actual landing, not turn start.
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	input._begin_drag(
+		projected_after_charge,
+		fix.map_stub.grid_to_local(post_route[0]),
+		true,
+	)
+	for route_cell: Vector2i in post_route.slice(1):
+		input.set_qa_pointer_grid_cell(route_cell)
+		input.update_drag(fix.map_stub.grid_to_local(route_cell))
+	PlanningChecklistHarness.hover(fix, post_route.back())
+	var post_live: CombatPlanningPreview = overlay.get_live_preview()
+	var post_preview_path: Array = post_live.preview_paths.get(actor.id, [])
+	if post_preview_path != post_route:
+		failures.append(
+			"%s: postmove hover path %s expected %s"
+			% [label, str(post_preview_path), str(post_route)],
+		)
+	var post_slots: Dictionary = input._intent_snapshot_slots.duplicate(true)
+	var post_hover: TimelineAction = (post_slots.get("post", []) as Array).front() as TimelineAction
+	if _slots_invalid(post_slots) or post_hover == null:
+		failures.append("%s: postmove hover slots missing" % label)
+	elif post_hover.waypoints != post_route.slice(1):
+		failures.append(
+			"%s: postmove hover waypoints %s expected %s"
+			% [label, str(post_hover.waypoints), str(post_route.slice(1))],
+		)
+	if _slots_invalid(post_slots):
+		failures.append("%s: postmove click commit failed" % label)
+		return
+	PlanningDragE2EHarness.release_at(fix, post_route.back())
+	PlanningChecklistHarness.flush_planning(fix)
+	var committed_post: TimelineAction = PlanningChecklistHarness.committed_post_move(
+		director, actor.id,
+	)
+	if committed_post == null or committed_post.waypoints != post_route.slice(1):
+		failures.append(
+			"%s: committed postmove waypoints %s expected %s"
+			% [label, str(committed_post.waypoints if committed_post != null else []), str(post_route.slice(1))],
+		)
+
+	# Final parity: one simulator path and one ordered event stream must contain all three legs.
+	var result: SimResult = _simulate_committed_plan(director)
+	var expected_full_path: Array[Vector2i] = [
+		pre_route[0], pre_route[1], pre_route[2],
+		charge_route[1], charge_route[2], post_route[1], post_route[2],
+	]
+	var visited: Array[Vector2i] = [start]
+	var charge_move_index := -1
+	var damage_index := -1
+	var push_index := -1
+	var post_move_index := -1
+	for event_index: int in range(result.events.size()):
+		var event: SimEvent = result.events[event_index] as SimEvent
+		if event == null:
+			continue
+		if event.type == GameEnums.SimEventType.UNIT_MOVED:
+			if int(event.data.get("actor", -1)) != actor.id:
+				continue
+			for step: Variant in event.data.get("path", []):
+				if step is Vector2i:
+					visited.append(step as Vector2i)
+			if event.data.get("ability_id", &"") == ChargeStrikeId:
+				charge_move_index = event_index
+			elif int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)) == GameEnums.MoveTiming.POST_ACTION:
+				post_move_index = event_index
+		elif event.type == GameEnums.SimEventType.UNIT_DAMAGED and int(event.data.get("unit", -1)) == 2:
+			damage_index = event_index
+		elif event.type == GameEnums.SimEventType.UNIT_PUSHED and int(event.data.get("unit", -1)) == 2:
+			push_index = event_index
+	if visited != expected_full_path:
+		failures.append(
+			"%s: Simulator path %s expected %s"
+			% [label, str(visited), str(expected_full_path)],
+		)
+	if charge_move_index < 0 or damage_index < 0 or push_index < 0 or post_move_index < 0:
+		failures.append(
+			"%s: missing ordered Charge Strike events move=%d damage=%d push=%d postmove=%d"
+			% [label, charge_move_index, damage_index, push_index, post_move_index],
+		)
+	elif not (charge_move_index < damage_index and damage_index < push_index and push_index < post_move_index):
+		failures.append(
+			"%s: event order move=%d damage=%d push=%d postmove=%d"
+			% [label, charge_move_index, damage_index, push_index, post_move_index],
+		)
+	var final_unit: UnitState = result.final_state.get_unit_by_id(actor.id)
+	if final_unit == null or final_unit.position != post_route.back():
+		failures.append(
+			"%s: final simulated position %s expected %s"
+			% [label, str(final_unit.position if final_unit != null else null), str(post_route.back())],
+		)
+	var final_preview: CombatPlanningPreview = CombatPlanningPreview.from_sim_result(
+		result, director, director.base_board,
+	)
+	if final_preview.preview_paths.get(actor.id, []) != expected_full_path:
+		failures.append(
+			"%s: final preview path %s expected %s"
+			% [label, str(final_preview.preview_paths.get(actor.id, [])), str(expected_full_path)],
+		)
+	if int(final_preview.action_splits.get(actor.id, -1)) != pre_route.size() - 1:
+		failures.append(
+			"%s: action split %s expected %d"
+			% [label, str(final_preview.action_splits.get(actor.id, -1)), pre_route.size() - 1],
+		)
+	if int(final_preview.preview_post_splits.get(actor.id, -1)) != expected_after_charge.size():
+		failures.append(
+			"%s: post split %s expected %d"
+			% [label, str(final_preview.preview_post_splits.get(actor.id, -1)), expected_after_charge.size()],
 		)
 
 
