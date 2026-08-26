@@ -1810,9 +1810,7 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_click_target_highlight()
 		return
 	if target_enemy_id < 0 and _basic_move_allowed() and _is_hover_move_cell(p_unit, cell):
-		var move_waypoints: Array[Vector2i] = _director.preview_waypoints_for_hover(
-			_proj(), p_unit, cell, [], null,
-		)
+		var move_waypoints: Array[Vector2i] = _corridor_waypoints_to_cell(p_unit, cell)
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, move_waypoints)
 		_refresh_click_target_highlight()
 		return
@@ -5440,9 +5438,7 @@ func _build_commit_slots_at_cell(
 			):
 				var walk_waypoints: Array[Vector2i] = waypoints
 				if walk_waypoints.is_empty():
-					walk_waypoints = _director.preview_waypoints_for_hover(
-						_proj(), actor, cell, walk_waypoints, null,
-					)
+					walk_waypoints = _corridor_waypoints_to_cell(actor, cell)
 				if not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, walk_waypoints):
 					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 						_append_move_to_commit_slots(slots, unit_id, cell, walk_waypoints, actor)
@@ -5580,9 +5576,7 @@ func _build_commit_slots_at_cell(
 	):
 		var move_waypoints: Array[Vector2i] = waypoints
 		if move_waypoints.is_empty():
-			move_waypoints = _director.preview_waypoints_for_hover(
-				_proj(), actor, cell, move_waypoints, _walk_pathfinding_ability(actor),
-			)
+			move_waypoints = _corridor_waypoints_to_cell(actor, cell)
 		if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
 			_append_move_to_commit_slots(slots, unit_id, cell, move_waypoints, actor)
 		if ability_index >= 0 and ability != null and not force_basic_movement:
@@ -6560,7 +6554,9 @@ func _hover_walk_waypoints_for_skill(
 		return empty
 	if _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
 		return empty
-	return _director.preview_waypoints_for_hover(_proj(), actor, cell, empty, ability)
+	if not _can_move_to(actor, cell):
+		return empty
+	return _corridor_waypoints_to_cell(actor, cell)
 
 
 func _skill_takes_priority_over_basic_move() -> bool:

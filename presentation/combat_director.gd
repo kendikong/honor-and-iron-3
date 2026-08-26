@@ -1506,26 +1506,24 @@ func preview_waypoints_for_hover(
 ) -> Array[Vector2i]:
 	if actor == null or not waypoints.is_empty() or target == actor.position:
 		return waypoints.duplicate()
+	var origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(self, board, actor.id)
+	if origin.x <= -900000:
+		origin = actor.position
 	if (
 		direct_dash_endpoint
 		and ability != null
 		and AbilitySystem.ability_has_dash(ability, actor)
 	):
-		return PhysicsSystem.cardinal_straight_line_path(actor.position, target)
-	var movement_type: GameEnums.MovementType = (
-		actor.definition.movement_type
-		if actor.definition != null
-		else GameEnums.MovementType.WALK
-	)
-	return MovementSystem.drag_corridor_path(
+		return PhysicsSystem.cardinal_straight_line_path(origin, target)
+	return CombatPlanningPreview.corridor_waypoints_to_cell(
 		board,
-		actor.position,
+		actor,
+		origin,
 		target,
 		planning_move_budget(actor, board),
-		movement_type,
-		MovementSystem.move_cost_for(actor),
-		actor,
 		ability,
+		self,
+		actor.id,
 	)
 
 
