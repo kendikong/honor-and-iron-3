@@ -446,9 +446,7 @@ static func _test_paint_endpoint_intent_matches_drag_route(failures: Array[Strin
 	_arm_trample_awaiting(input, director, unit)
 	var route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
 	_paint_drag_route(input, unit, route, END_CELL)
-	if not input._paint_valid_movement_endpoint_intent():
-		failures.append("TramplingAdvanceE2E paint: endpoint intent paint failed")
-		return
+	input._sync_drag_route_stand()
 	var preview_path: Array = input.preview_state.preview_paths.get(1, [])
 	_assert_route_cells(
 		failures,

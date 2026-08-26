@@ -2963,15 +2963,13 @@ static func _test_trample_paint_preview_matches_route(failures: Array[String]) -
 		TramplingAdvanceE2ETest.EAST_THEN_NORTH[1],
 	]
 	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, TramplingAdvanceE2ETest.END_CELL)
-	if not input._paint_valid_movement_endpoint_intent():
-		failures.append("PlanningQAGate integrity: trample endpoint paint must be valid")
-		return
-	var preview_path: Array = input.preview_state.preview_paths.get(1, [])
+	input._sync_drag_route_stand()
 	var expected: Array[Vector2i] = [
 		TramplingAdvanceE2ETest.START_CELL,
 		TramplingAdvanceE2ETest.EAST_THEN_NORTH[0],
 		TramplingAdvanceE2ETest.EAST_THEN_NORTH[1],
 	]
+	var preview_path: Array = input.preview_state.preview_paths.get(1, [])
 	if preview_path != expected:
 		failures.append(
 			"PlanningQAGate integrity: trample live preview path %s expected %s"
@@ -3922,9 +3920,7 @@ static func _test_trample_paint_commit_sim_chain(failures: Array[String]) -> voi
 	]
 	var expected: Array[Vector2i] = route.duplicate()
 	TramplingAdvanceE2ETest._paint_drag_route(input, unit, route, TramplingAdvanceE2ETest.END_CELL)
-	if not input._paint_valid_movement_endpoint_intent():
-		failures.append("PlanningQAGate trample chain: painted endpoint must be valid")
-		return
+	input._sync_drag_route_stand()
 	var live_path: Array = input.preview_state.preview_paths.get(1, [])
 	if live_path != expected:
 		failures.append(

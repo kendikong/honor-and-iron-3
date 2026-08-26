@@ -2035,18 +2035,14 @@ func _drag_through_cells_with_route_checks(
 			).is_true()
 		elif route_mode == &"trample_paint":
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
-			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
-				"%s: endpoint paint failed at step %d" % [label_prefix, step_index],
-			).is_true()
+			input._sync_drag_route_stand()
 			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			_assert_preview_path_equals(
 				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],
 			)
 		else:
 			_assert_drag_route_equals(ctx, expected, "%s/drag_route_%d" % [label_prefix, step_index])
-			assert_bool(input._paint_valid_movement_endpoint_intent()).override_failure_message(
-				"%s: endpoint paint failed at step %d" % [label_prefix, step_index],
-			).is_true()
+			input._sync_drag_route_stand()
 			await runner.simulate_frames(2, _MOUSE_MOTION_DELTA_MS)
 			_assert_preview_path_equals(
 				ctx, unit_id, expected, "%s/preview_path_%d" % [label_prefix, step_index],

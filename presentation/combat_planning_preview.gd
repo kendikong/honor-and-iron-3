@@ -1219,6 +1219,59 @@ static func premove_displacement_realized(
 	return false
 
 
+## Shared corridor waypoints (tiles entered) from origin to target.
+## Premove and MOVE module legs use the same MovementSystem paint path.
+static func corridor_waypoints_to_cell(
+	board: BoardState,
+	unit: UnitState,
+	origin: Vector2i,
+	target: Vector2i,
+	budget: int,
+	ability: AbilityData = null,
+	director: CombatDirector = null,
+	unit_id: int = -1,
+) -> Array[Vector2i]:
+	if board == null or unit == null or origin == target or budget <= 0:
+		return []
+	if not board.is_in_bounds(target):
+		return []
+	var movement_type: GameEnums.MovementType = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	var move_cost: int = MovementSystem.move_cost_for(unit)
+	var corridor: Array[Vector2i] = MovementSystem.drag_corridor_path(
+		board,
+		origin,
+		target,
+		budget,
+		movement_type,
+		move_cost,
+		unit,
+		ability,
+	)
+	if corridor.is_empty():
+		corridor = MovementSystem.find_path(
+			board,
+			origin,
+			target,
+			budget,
+			movement_type,
+			move_cost,
+			ability,
+		)
+	if corridor.is_empty():
+		return []
+	if director != null and unit_id >= 0:
+		var route: Array = [origin]
+		route.append_array(corridor)
+		var forbidden: Dictionary = prior_leg_forbidden_cells(director, unit_id, origin)
+		if route_touches_forbidden(route, forbidden):
+			return []
+	return corridor
+
+
 ## Tiles from earlier committed legs that must not reappear on the active leg preview.
 static func prior_leg_forbidden_cells(
 	director: CombatDirector,
