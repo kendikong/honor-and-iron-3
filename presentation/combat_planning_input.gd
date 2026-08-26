@@ -98,12 +98,16 @@ func setup(
 	_planning = planning
 	_intent_state = intent_state
 	_sfx = sfx
+	if not _planning.live_preview_changed.is_connected(_on_planning_live_preview_changed):
+		_planning.live_preview_changed.connect(_on_planning_live_preview_changed)
 	_bind_event_bus()
 
 
 func teardown() -> void:
 	flush_deferred_planning()
 	_disconnect_event_bus()
+	if _planning != null and _planning.live_preview_changed.is_connected(_on_planning_live_preview_changed):
+		_planning.live_preview_changed.disconnect(_on_planning_live_preview_changed)
 	_map_view = null
 	_director = null
 	_planning = null
@@ -180,11 +184,21 @@ func cancel_aim() -> void:
 
 
 func _intent_snapshot_matches_interaction(unit_id: int, cell: Vector2i) -> bool:
-	return (
-		_intent_snapshot_valid
-		and _intent_snapshot_unit_id == unit_id
-		and _intent_snapshot_hover_cell == cell
-	)
+	if not _intent_snapshot_valid or _intent_snapshot_unit_id != unit_id:
+		return false
+	if _intent_snapshot_hover_cell != cell:
+		return false
+	return not _is_invalid_dict(_intent_snapshot_slots)
+
+
+func _waypoints_for_snapshot_key_from_slots(slots: Dictionary) -> Array[Vector2i]:
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				var act: TimelineAction = raw as TimelineAction
+				if not act.waypoints.is_empty():
+					return act.waypoints.duplicate()
+	return []
 
 
 func on_left_press(local: Vector2) -> void:
@@ -193,6 +207,28 @@ func on_left_press(local: Vector2) -> void:
 	if board == null or not board.is_in_bounds(cell):
 		cancel_aim()
 		return
+	var selected_id: int = _director.selected_unit_id
+	if selected_id >= 0 and awaiting_targeting_active():
+		var awaiting_actor: UnitState = _proj_unit(selected_id)
+		var awaiting_ability: AbilityData = _selected_ability_data(awaiting_actor)
+		if (
+			awaiting_actor != null
+			and awaiting_ability != null
+			and _is_awaiting_movement_endpoint(awaiting_actor, awaiting_ability)
+		):
+			if _intent_snapshot_matches_interaction(selected_id, cell):
+				var painted_slots: Dictionary = _duplicate_commit_slots(_intent_snapshot_slots)
+				if not _is_invalid_dict(painted_slots):
+					if _commit_at_cell(
+						selected_id, cell, local, [], [], _NO_PREFERRED_APPROACH, -1, painted_slots,
+					):
+						return
+					_play_sfx("invalid")
+					return
+			if _movement_skill_commits_tile_endpoint(awaiting_actor, awaiting_ability, cell):
+				if not _commit_at_interaction_cell(selected_id, cell, local):
+					_play_sfx("invalid")
+				return
 	var unit := _unit_at_input_cell(cell)
 	if unit != null and not unit.is_enemy() and unit.is_alive():
 		if NetworkManager != null and NetworkManager.is_multiplayer:
@@ -487,22 +523,10 @@ func _refresh_drag_preview_now() -> void:
 	var drag_unit: UnitState = _director.board.get_unit_by_id(_drag_unit_id)
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var waypoints: Array[Vector2i] = _route_waypoints()
-	var preview_waypoints: Array[Vector2i] = []
-	var drag_actor: UnitState = _proj_unit(_drag_unit_id)
-	var drag_ability: AbilityData = (
-		_selected_ability_data(drag_actor) if drag_actor != null else null
+	var preview_waypoints: Array[Vector2i] = (
+		waypoints if _movement_route_paint_allowed() else []
 	)
-	if not waypoints.is_empty():
-		if (
-			force_basic_movement
-			and _director.get_planning_move_timing(_drag_unit_id) == GameEnums.MoveTiming.POST_ACTION
-		):
-			preview_waypoints = waypoints
-		elif (
-			drag_ability != null
-			and _is_awaiting_movement_endpoint(drag_actor, drag_ability)
-		):
-			preview_waypoints = waypoints
+	var route_painted: bool = _movement_route_paint_allowed() and _drag_route.size() >= 2
 	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, preview_waypoints)
 	if cache_key == _drag_preview_cache_key:
 		return
@@ -517,7 +541,13 @@ func _refresh_drag_preview_now() -> void:
 		_snapshot_drag_legal_move_tiles(),
 	)
 	_apply_live_preview(_drag_preview_cache)
-	if (
+	var drag_actor: UnitState = _proj_unit(_drag_unit_id)
+	var drag_ability: AbilityData = (
+		_selected_ability_data(drag_actor) if drag_actor != null else null
+	)
+	if route_painted:
+		_sync_drag_route_stand()
+	elif (
 		drag_ability != null
 		and drag_actor != null
 		and _is_awaiting_movement_endpoint(drag_actor, drag_ability)
@@ -527,7 +557,7 @@ func _refresh_drag_preview_now() -> void:
 		force_basic_movement
 		and _director.get_planning_move_timing(_drag_unit_id) == GameEnums.MoveTiming.POST_ACTION
 	):
-		if not waypoints.is_empty():
+		if _drag_route.size() >= 2:
 			_sync_drag_route_stand()
 		else:
 			var post_stand: Vector2i = _active_move_drag_origin(drag_actor)
@@ -536,6 +566,7 @@ func _refresh_drag_preview_now() -> void:
 			preview_state.preview_post_splits[_drag_unit_id] = 1
 			if _planning != null:
 				_planning.apply_preview_state(preview_state, _drag_unit_id, -1)
+	_refresh_action_range_overlay_when_gate_off()
 
 
 func get_drag_unit_id() -> int:
@@ -609,12 +640,30 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			_planning.set_threat_origin(pv_actor.position)
 		if not bool(preview.get("intent_preview", false)):
 			_planning._recompute_hover_ranges_from_inputs()
+	_refresh_action_range_overlay_when_gate_off()
 	_sync_intent_live_board()
+
+
+func _refresh_action_range_overlay_when_gate_off() -> void:
+	if _planning == null or _director == null or not _is_planning():
+		return
+	if _director.selected_unit_id < 0:
+		return
+	if action_range_visible_for_hover():
+		return
+	_planning._invalidate_hover_cache()
+	_planning._recompute_hover_ranges_from_inputs()
+
+
+func _on_planning_live_preview_changed() -> void:
+	_refresh_action_range_overlay_when_gate_off()
 
 
 func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
 	## Cheap move-only hover: apply_result already built paths from projected stand.
 	if bool(preview.get("intent_preview", false)):
+		return
+	if dragging and _drag_route.size() >= 2 and _movement_route_paint_allowed():
 		return
 	var actions_v: Variant = preview.get("actions", [])
 	if not actions_v is Array or (actions_v as Array).is_empty():
@@ -662,6 +711,10 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 	if _is_awaiting_movement_endpoint(actor, ability):
 		return
 	elif force_basic_movement and not awaiting_targeting_active():
+		if dragging:
+			var timing: int = _director.get_planning_move_timing(unit_id)
+			if timing == GameEnums.MoveTiming.POST_ACTION:
+				return
 		var timing: int = _director.get_planning_move_timing(unit_id)
 		if timing == GameEnums.MoveTiming.POST_ACTION:
 			var board: BoardState = start_board if start_board != null else _proj()
@@ -1396,6 +1449,7 @@ func _flush_hover_heavy_sync() -> void:
 	_flush_drag_preview_refresh()
 	_run_hover_sim_refresh()
 	_run_hover_overlay_refresh()
+	_refresh_action_range_overlay_when_gate_off()
 
 
 func _run_hover_overlay_refresh() -> void:
@@ -2436,17 +2490,22 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
+	var intent_slots: Dictionary = {}
 	if _intent_snapshot_matches_interaction(unit_id, cell):
-		return _commit_at_cell(
+		intent_slots = _duplicate_commit_slots(_intent_snapshot_slots)
+	elif attack_target_id >= 0:
+		var pre_params: Dictionary = _commit_interaction_params(cell, attack_target_id)
+		intent_slots = _slots_with_facing_for_commit(
 			unit_id,
-			cell,
+			pre_params.cell,
 			local,
-			[],
-			[],
-			_NO_PREFERRED_APPROACH,
-			-1,
-			_duplicate_commit_slots(_intent_snapshot_slots),
+			pre_params.waypoints,
+			pre_params.legal_move_tiles,
+			pre_params.preferred,
+			int(pre_params.get("face_dir", -1)),
 		)
+	else:
+		intent_slots = _final_commit_slots_for_click_at_cell(unit_id, cell, local)
 	_flush_hover_heavy_sync()
 	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
 	return _commit_at_cell(
@@ -2457,6 +2516,7 @@ func _commit_at_interaction_cell(
 		params.legal_move_tiles,
 		params.preferred,
 		int(params.get("face_dir", -1)),
+		intent_slots if not _is_invalid_dict(intent_slots) else {},
 	)
 
 
@@ -2478,32 +2538,34 @@ func _commit_at_cell(
 	var effective_face: int = face_dir
 	if effective_face < 0:
 		effective_face = _facing_from_drop(local, cell)
-	var snapshot_key: String = _intent_snapshot_key_for(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-	)
 	var slots: Dictionary = _duplicate_commit_slots(intent_slots) if not intent_slots.is_empty() else {}
 	var actor := _proj_unit(unit_id)
 	var ability: AbilityData = _selected_ability_data(actor)
-	var force_fresh_slots: bool = (
-		ability != null and AbilitySystem.ability_has_swap_effect(ability)
-	)
-	if (
-		slots.is_empty()
-		and not force_fresh_slots
-		and _intent_snapshot_valid
-		and _intent_snapshot_key == snapshot_key
-		and not _intent_snapshot_slots.is_empty()
-	):
-		slots = _duplicate_commit_slots(_intent_snapshot_slots)
-	elif slots.is_empty():
-		slots = _final_commit_slots_for_interaction(
-			unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-		)
+	if slots.is_empty():
+		if _intent_snapshot_matches_interaction(unit_id, cell):
+			slots = _duplicate_commit_slots(_intent_snapshot_slots)
+			_apply_facing_to_slots(slots, local, cell, unit_id)
+		else:
+			slots = _final_commit_slots_for_interaction(
+				unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+			)
+			_apply_facing_to_slots(slots, local, cell, unit_id)
+			if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
+				## Intent truth: never commit slots the player has not painted.
+				_paint_intent_slots_before_commit(unit_id, slots)
+				var wp_for_key: Array[Vector2i] = _waypoints_for_snapshot_key_from_slots(slots)
+				if wp_for_key.is_empty():
+					wp_for_key = waypoints
+				var snapshot_key: String = _intent_snapshot_key_for(
+					unit_id, cell, wp_for_key, legal_move_tiles, preferred_approach, effective_face,
+				)
+				_store_intent_snapshot(snapshot_key, slots, unit_id, cell)
+	else:
 		_apply_facing_to_slots(slots, local, cell, unit_id)
 		if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
-			## Intent truth: never commit slots the player has not painted.
 			_paint_intent_slots_before_commit(unit_id, slots)
-			_store_intent_snapshot(snapshot_key, slots)
+			if slots.get("_preview_validated", false) != true:
+				slots = _finalize_commit_slots(slots, unit_id, true)
 	if slots.get("_noop", false) == true:
 		_play_sfx("ability")
 		return true
@@ -2515,6 +2577,7 @@ func _commit_at_cell(
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	_suppress_post_commit_hover_refresh = true
+	_ensure_movement_waypoints_on_commit_slots(unit_id, slots)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
 		_suppress_post_commit_hover_refresh = false
 		if _drag_move_commit_instant and _director != null:
@@ -2527,6 +2590,34 @@ func _commit_at_cell(
 	_clear_hover_drag_route()
 	_clear_intent_snapshot()
 	return true
+
+
+func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
+	if _is_invalid_dict(slots) or _director == null:
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var act: TimelineAction = raw as TimelineAction
+			if act.type != GameEnums.ActionType.ABILITY or act.ability == null:
+				continue
+			if not act.waypoints.is_empty():
+				continue
+			if not (
+				_is_awaiting_movement_endpoint(actor, act.ability)
+				or AbilitySystem.ability_has_movement_effect(act.ability, actor)
+			):
+				continue
+			if AbilitySystem.ability_has_dash(act.ability, actor):
+				act.waypoints = _director.preview_waypoints_for_hover(
+					_proj(), actor, act.target_coord, [], act.ability, true,
+				)
+			else:
+				act.waypoints = _corridor_waypoints_to_cell(actor, act.target_coord)
 
 
 func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
@@ -2858,8 +2949,11 @@ func _preview_from_commit_slots_at_cell(
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": BoardState.new(), "invalid": true}
+	var wp_for_key: Array[Vector2i] = _waypoints_for_snapshot_key_from_slots(slots)
+	if wp_for_key.is_empty():
+		wp_for_key = waypoints
 	var snapshot_key: String = _intent_snapshot_key_for(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+		unit_id, cell, wp_for_key, legal_move_tiles, preferred_approach, effective_face,
 	)
 	_store_intent_snapshot(snapshot_key, slots, unit_id, cell)
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
@@ -3578,6 +3672,7 @@ func _sync_drag_route_stand() -> void:
 		preview_state.preview_post_splits[_drag_unit_id] = route_size
 		if _planning != null:
 			_planning.apply_preview_state(preview_state, _drag_unit_id, -1)
+	_refresh_action_range_overlay_when_gate_off()
 
 
 func _drag_route_stand_cell() -> Vector2i:
@@ -4873,6 +4968,14 @@ func _proj_move_origin(unit: UnitState) -> Vector2i:
 func _awaiting_endpoint_origin(actor: UnitState) -> Vector2i:
 	if actor == null:
 		return Vector2i(-999999, -999999)
+	if _director != null:
+		var ability: AbilityData = _selected_ability_data(actor)
+		if ability != null and _is_awaiting_movement_endpoint(actor, ability):
+			var leg_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
+				_director, _proj(), actor.id,
+			)
+			if leg_origin.x > -900000:
+				return leg_origin
 	var projected: UnitState = _proj_unit(actor.id)
 	if projected != null:
 		return projected.position
@@ -6074,10 +6177,13 @@ func _append_module_awaiting_target(
 		committed.target_coord = cell
 		committed.target_unit_id = target_unit_id
 		var wps: Array[Vector2i] = waypoints.duplicate()
-		if wps.is_empty() and _director != null and AbilitySystem.ability_has_movement_effect(committed.ability):
-			wps = _director.preview_waypoints_for_hover(
-				_proj(), actor, cell, [], committed.ability, true,
-			)
+		if wps.is_empty() and AbilitySystem.ability_has_movement_effect(committed.ability, actor):
+			if AbilitySystem.ability_has_dash(committed.ability, actor):
+				wps = _director.preview_waypoints_for_hover(
+					_proj(), actor, cell, [], committed.ability, true,
+				)
+			else:
+				wps = _corridor_waypoints_to_cell(actor, cell)
 		committed.waypoints = wps
 	AbilitySystem.prepare_planning_action(_proj(), committed)
 	slots[_ability_plan_column(awaiting_action.ability)].append(committed)

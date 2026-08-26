@@ -431,10 +431,65 @@ func clear_awaiting_action(unit_id: int) -> void:
 	_refresh_plan()
 
 
+func _fill_missing_movement_waypoints_on_slots(unit_id: int, slots: Dictionary) -> void:
+	if slots.is_empty():
+		return
+	var board: BoardState = projected_state if projected_state != null else self.board
+	if board == null:
+		return
+	var actor: UnitState = board.get_unit_by_id(unit_id)
+	if actor == null:
+		return
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction:
+				_fill_missing_movement_waypoints_on_action(actor, raw as TimelineAction)
+
+
+func _fill_missing_movement_waypoints_on_action(actor: UnitState, action: TimelineAction) -> void:
+	if action == null or action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+		return
+	if not action.waypoints.is_empty():
+		return
+	if not AbilitySystem.ability_has_movement_effect(action.ability, actor):
+		return
+	var board: BoardState = projected_state if projected_state != null else self.board
+	if board == null:
+		return
+	if AbilitySystem.ability_has_dash(action.ability, actor):
+		action.waypoints = preview_waypoints_for_hover(
+			board, actor, action.target_coord, [], action.ability, true,
+		)
+	else:
+		action.waypoints = preview_waypoints_for_hover(
+			board, actor, action.target_coord, [], action.ability, false,
+		)
+
+
+func _planning_action_ids_match(awaiting: TimelineAction, action: TimelineAction) -> bool:
+	if awaiting == null or action == null:
+		return false
+	var awaiting_ids: Array[StringName] = []
+	if awaiting.ability != null:
+		awaiting_ids.append(awaiting.ability.id)
+	if awaiting.authored_ability != null:
+		awaiting_ids.append(awaiting.authored_ability.id)
+	var action_ids: Array[StringName] = []
+	if action.ability != null:
+		action_ids.append(action.ability.id)
+	if action.authored_ability != null:
+		action_ids.append(action.authored_ability.id)
+	for awaiting_id: StringName in awaiting_ids:
+		if action_ids.has(awaiting_id):
+			return true
+	return false
+
+
 func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	var awaiting: TimelineAction = find_awaiting_action(unit_id)
 	if awaiting == null:
 		return false
+	_fill_missing_movement_waypoints_on_slots(unit_id, slots)
 	for col: String in ["pre", "action", "post"]:
 		for raw: Variant in slots.get(col, []):
 			if not raw is TimelineAction:
@@ -442,11 +497,19 @@ func _try_finalize_awaiting_from_slots(unit_id: int, slots: Dictionary) -> bool:
 			var action: TimelineAction = raw as TimelineAction
 			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 				continue
-			if awaiting.ability.id != action.ability.id:
+			if not _planning_action_ids_match(awaiting, action):
 				continue
 			awaiting.target_coord = action.target_coord
 			awaiting.target_unit_id = action.target_unit_id
 			awaiting.waypoints = action.waypoints.duplicate()
+			if awaiting.waypoints.is_empty():
+				var actor: UnitState = (
+					projected_state.get_unit_by_id(unit_id)
+					if projected_state != null
+					else board.get_unit_by_id(unit_id)
+				)
+				if actor != null:
+					_fill_missing_movement_waypoints_on_action(actor, awaiting)
 			awaiting.face_dir = action.face_dir
 			if not action.module_target_coords.is_empty():
 				awaiting.module_target_coords = action.module_target_coords.duplicate()
@@ -946,6 +1009,7 @@ func validate_commit_slots(unit_id: int, slots: Dictionary) -> String:
 
 
 func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
+	_fill_missing_movement_waypoints_on_slots(unit_id, slots)
 	var validation_error: String = validate_commit_slots(unit_id, slots)
 	if validation_error != "":
 		EventBus.action_rejected.emit(validation_error)

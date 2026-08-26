@@ -1055,6 +1055,9 @@ func _hover_proj_cache_key(unit: UnitState) -> int:
 	key = key * 10 + (1 if p_unit.turn_action_used else 0)
 	if _director.unit_has_wait_planned(unit.id):
 		key += 10000000
+	if _planning_input != null and _is_selected_player_unit(unit):
+		key = key * 10 + (1 if _planning_input.unit_move_requires_run(unit.id) else 0)
+		key = key * 10 + (1 if _planning_input.action_range_visible_for_hover() else 0)
 	return key
 
 
@@ -1130,11 +1133,17 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
+	if _planning_input != null and not _planning_input.action_range_visible_for_hover():
+		return false
+	if (
+		_planning_input != null
+		and _is_selected_player_unit(unit)
+		and _planning_input.unit_move_requires_run(unit.id)
+	):
+		return false
 	if awaiting_aim:
 		return true
 	if _planning_input != null:
-		if not _planning_input.action_range_visible_for_hover():
-			return false
 		if force_basic:
 			return true
 		return p_unit.ability.points_left >= ability.action_point_cost
@@ -1172,6 +1181,14 @@ func recompute_hover_ranges(
 		_clear_hover_skill_tiles()
 		_queue_static_tiles_redraw()
 		return
+	if (
+		_planning_input != null
+		and _is_selected_player_unit(unit)
+		and unit.id == _director.selected_unit_id
+		and not _planning_input.action_range_visible_for_hover()
+		and (not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty())
+	):
+		_clear_hover_skill_tiles()
 	var move_origin: Vector2i = _proj_origin(unit)
 	if dragging and _fixed_range_origin.x >= 0:
 		move_origin = _fixed_range_origin
@@ -1223,6 +1240,10 @@ func recompute_hover_ranges(
 				unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
 			)
 			_queue_static_tiles_redraw()
+		if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
+			if not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
+				_clear_hover_skill_tiles()
+				_queue_static_tiles_redraw()
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin

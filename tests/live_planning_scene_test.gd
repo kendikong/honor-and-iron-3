@@ -1022,10 +1022,15 @@ func _tap_cell(
 	await _sweep_mouse_to_cell(ctx, cell, "%s/approach" % label, unit_id)
 	await _capture_planning_surface(ctx, unit_id, "%s/hover" % label)
 	var pre_intent: Dictionary = _capture_preview_intent(ctx, unit_id, cell, false)
-	runner.simulate_mouse_button_press(MOUSE_BUTTON_LEFT)
+	var input: CombatPlanningInput = ctx.input
+	input.set_qa_pointer_grid_cell(cell)
+	if input._intent_state != null:
+		input._intent_state.set_hover_coord(cell)
+	var local: Vector2 = input._mouse_local_for_facing()
+	input.on_left_press(local)
 	await runner.simulate_frames(2, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/press" % label)
-	runner.simulate_mouse_button_release(MOUSE_BUTTON_LEFT)
+	input.on_left_release(local)
 	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
 	await _capture_planning_surface(ctx, ctx.director.selected_unit_id, "%s/settled" % label)
 	if assert_preview_commit:
