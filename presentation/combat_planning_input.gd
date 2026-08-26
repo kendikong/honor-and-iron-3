@@ -482,7 +482,13 @@ func _refresh_drag_preview_now() -> void:
 	var drag_unit: UnitState = _director.board.get_unit_by_id(_drag_unit_id)
 	var drag_target_id: int = _drag_preview_target_id(drag_unit, occ)
 	var waypoints: Array[Vector2i] = _route_waypoints()
-	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, waypoints)
+	var preview_waypoints: Array[Vector2i] = []
+	if (
+		force_basic_movement
+		and _director.get_planning_move_timing(_drag_unit_id) == GameEnums.MoveTiming.POST_ACTION
+	):
+		preview_waypoints = waypoints
+	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, preview_waypoints)
 	if cache_key == _drag_preview_cache_key:
 		return
 	_drag_preview_last_flush_usec = Time.get_ticks_usec()
@@ -492,7 +498,7 @@ func _refresh_drag_preview_now() -> void:
 		cell,
 		_drag_last_free,
 		drag_target_id,
-		[],
+		preview_waypoints,
 		_snapshot_drag_legal_move_tiles(),
 	)
 	_apply_live_preview(_drag_preview_cache)
@@ -560,6 +566,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 				break
 	## Valid movement-skill selection must keep intent geometry even if sim path is short.
 	_ensure_live_movement_intent_from_preview_actions(preview)
+	_call_leg_reconcile("reconcile", [self, actor_id, preview])
 	var temp_board: BoardState = preview.get("temp_board")
 	var pv_actor: UnitState = temp_board.get_unit_by_id(actor_id) if temp_board != null else null
 	if pv_actor != null:
@@ -607,16 +614,21 @@ func _paint_valid_movement_endpoint_intent() -> bool:
 		unit_id, ability, cell, AbilitySystem.planning_commit_target_unit_id(ability, -1),
 		GameEnums.MoveTiming.PRE_ACTION, route_wps,
 	)
-	var base: BoardState = (
-		_director.base_board.clone() if _director.base_board != null else _director.board.clone()
-	)
-	preview_state.preview_board = base
+	var path_board: BoardState = _director.live_planning_board()
+	if path_board == null:
+		path_board = (
+			_director.projected_state
+			if _director.projected_state != null
+			else _director.board
+		)
+	preview_state.preview_board = path_board.clone() if path_board != null else BoardState.new()
 	preview_state.preview_paths.clear()
 	preview_state.preview_splits.clear()
 	preview_state.preview_post_splits.clear()
 	preview_state.action_splits.clear()
 	preview_state.preview_pushes.clear()
-	preview_state.ensure_movement_intent_from_actions([action], base)
+	preview_state.ensure_movement_intent_from_actions([action], path_board, {}, _director)
+	_call_leg_reconcile("reconcile", [self, unit_id, {"actions": [action]}])
 	drag_preview_failed = false
 	drag_sim_actor_pos = cell
 	if _planning != null:
@@ -645,12 +657,13 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		_anchor_preview_path_for_active_move_leg(_director.selected_unit_id, start_board)
 	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board, {}, _director)
 	if _director != null and _director.selected_unit_id >= 0:
-		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-			_director,
-			preview_state,
-			_director.selected_unit_id,
-			start_board,
-		)
+		if not bool(_call_leg_reconcile("uses_isolated_move_leg_preview", [self, _director.selected_unit_id])):
+			CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
+				_director,
+				preview_state,
+				_director.selected_unit_id,
+				start_board,
+			)
 	CombatPlanningPreview.ensure_swap_approach_paths_from_actions(
 		actions_v as Array,
 		start_board,
@@ -789,6 +802,11 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_clear_planning_cursor_for_drag()
 	_drag_route = [_planning_drag_origin(unit.id)]
 	_drag_last_free = _drag_route[0]
+	preview_state.preview_paths[unit.id] = [_drag_route[0]]
+	preview_state.preview_splits[unit.id] = 1
+	preview_state.preview_post_splits[unit.id] = 1
+	preview_state.action_splits[unit.id] = 0
+	_call_leg_reconcile("reconcile", [self, unit.id, {}])
 	_planning.set_fixed_range_origin(_drag_route[0])
 	_planning.set_threat_origin(_drag_route[0])
 	_planning._recompute_hover_ranges_from_inputs()
@@ -2301,7 +2319,19 @@ func _final_commit_slots_for_interaction(
 		)
 		_strip_unaffordable_premove_pairs(slots, unit_id, cell, [])
 		slots = _finalize_commit_slots(slots, unit_id, sim_validate)
+	if _should_strip_action_from_basic_postmove_slots(unit_id):
+		slots["action"] = []
 	return slots
+
+
+func _should_strip_action_from_basic_postmove_slots(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	if not force_basic_movement:
+		return false
+	if _director.selected_ability_index >= 0:
+		return false
+	return _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
 
 
 func _strip_unaffordable_premove_pairs(
@@ -6666,3 +6696,12 @@ func _is_invalid_dict(d: Dictionary) -> bool:
 	if typeof(v) == TYPE_STRING:
 		return v != ''
 	return false
+
+
+var _leg_reconcile_script: GDScript = null
+
+
+func _call_leg_reconcile(method: StringName, args: Array) -> Variant:
+	if _leg_reconcile_script == null:
+		_leg_reconcile_script = load("res://presentation/combat_planning_leg_reconcile.gd") as GDScript
+	return _leg_reconcile_script.callv(method, args)

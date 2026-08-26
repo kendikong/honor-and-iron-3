@@ -1215,6 +1215,52 @@ static func premove_displacement_realized(
 	return false
 
 
+## Tiles from earlier committed legs that must not reappear on the active leg preview.
+static func prior_leg_forbidden_cells(
+	director: CombatDirector,
+	unit_id: int,
+	leg_origin: Vector2i,
+) -> Dictionary:
+	var forbidden: Dictionary = {}
+	if director == null or unit_id < 0:
+		return forbidden
+	var pre_move: TimelineAction = committed_move_action(
+		director.plan_pre_move, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if pre_move != null:
+		if director.base_board != null:
+			var base_unit: UnitState = director.base_board.get_unit_by_id(unit_id)
+			if base_unit != null and base_unit.position != leg_origin:
+				forbidden[base_unit.position] = true
+		for wp: Vector2i in pre_move.waypoints:
+			if wp != leg_origin:
+				forbidden[wp] = true
+	for act: TimelineAction in director.plan_action.entries:
+		if act == null or act.actor_id != unit_id:
+			continue
+		if act.type != GameEnums.ActionType.ABILITY:
+			continue
+		for wp: Vector2i in act.waypoints:
+			if wp != leg_origin:
+				forbidden[wp] = true
+	return forbidden
+
+
+static func route_touches_forbidden(
+	route: Array,
+	forbidden: Dictionary,
+	skip_origin: bool = true,
+) -> bool:
+	if route.is_empty() or forbidden.is_empty():
+		return false
+	var start_idx: int = 1 if skip_origin else 0
+	for i: int in range(start_idx, route.size()):
+		var step: Variant = route[i]
+		if step is Vector2i and forbidden.has(step as Vector2i):
+			return true
+	return false
+
+
 ## After a committed pre-move, drop stale route prefix so the next leg starts at latest stand.
 static func anchor_preview_paths_to_latest_stand(
 	director: CombatDirector,
