@@ -1621,7 +1621,7 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit == null or p_unit.is_enemy() or not p_unit.is_alive():
 		return true
-	if selected_phase_action_exhausted():
+	if selected_phase_action_exhausted() and not awaiting_targeting_active():
 		return true
 	if (
 		_drag_route_commits_active()
@@ -1927,7 +1927,8 @@ func _update_hover_attack_preview() -> void:
 		and target_id != p_unit.id
 	):
 		var target := _proj().get_unit_by_id(target_id)
-		if target != null and GridSystem.manhattan(p_unit.position, target.position) > rng:
+		var range_origin: Vector2i = _ability_range_origin(p_unit)
+		if target != null and GridSystem.manhattan(range_origin, target.position) > rng:
 			return
 	var target_unit := _director.board.get_unit_by_id(target_id)
 	var preview_cell: Vector2i = target_unit.position if target_unit != null else cell
@@ -3932,9 +3933,6 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return Vector2i(-999999, -999999)
-	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
-	if planned_move != null:
-		return planned_move.target_coord
 	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
 	if awaiting != null and awaiting.awaiting_module_index > 0:
 		var prior_stand: Vector2i = AbilitySystem.module_target_coord(
@@ -3942,6 +3940,9 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		)
 		if _director.board.is_in_bounds(prior_stand):
 			return prior_stand
+	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
+	if planned_move != null:
+		return planned_move.target_coord
 	var projected: Vector2i = _proj_move_origin(actor)
 	if _action_range_locked_to_projected_stand(unit_id, actor, projected):
 		if _director.projected_state != null:
@@ -4499,6 +4500,14 @@ func _in_ability_range_from(actor: UnitState, coord: Vector2i, target: UnitState
 func _ability_range_origin(actor: UnitState) -> Vector2i:
 	if actor == null:
 		return Vector2i.ZERO
+	if _director != null:
+		var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+		if awaiting != null and awaiting.awaiting_module_index > 0:
+			var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+				awaiting, awaiting.awaiting_module_index - 1,
+			)
+			if _director.board != null and _director.board.is_in_bounds(prior_stand):
+				return prior_stand
 	if aiming:
 		return _proj_origin(actor)
 	if (
