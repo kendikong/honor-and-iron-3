@@ -95,6 +95,20 @@ func test_live_cleric_every_skill(timeout := 240000) -> void:
 		await _OVERLAY_QA.assert_live_overlay_parity(
 			self, runner, overlay, input, director, actor_id, ability, target_cell, item.id,
 		)
+		var target_unit: UnitState = director.board.get_unit_at(item.target)
+		if (
+			target_unit == null
+			and director.find_awaiting_action(actor_id) == null
+			and AbilitySystem.planning_commit_flow(actor, ability)
+				== GameEnums.PlanningCommitFlow.AWAITING_TARGET
+			and ability.planner_group == GameEnums.PlannerGroup.ACTION
+			and (
+				AbilitySystem.active_targeting_flags(actor, ability)
+				& GameEnums.TargetingFlags.TILE
+			) != 0
+		):
+			director.set_awaiting_action(actor_id, ability)
+			director.flush_plan_refresh_signals_if_pending()
 		input._intent_state.set_hover_coord(item.target)
 		var slots: Dictionary = input._final_commit_slots_for_click_at_cell(
 			actor_id, item.target, Vector2.ZERO,

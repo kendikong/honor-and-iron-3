@@ -638,7 +638,13 @@ static func _check_upgrade_contract(failures: Array[String], ability: AbilityDat
 		&"mage_mana_shield":
 			_assert(failures, "upgrade/mage_mana_shield/casting", ability.upgraded_modules[0].mana_shield_casting)
 		&"mage_disintegrate":
-			_assert(failures, "upgrade/mage_disintegrate/ap", ability.upgraded_modules[0].kill_grant_ap == 1)
+			_assert(
+				failures,
+				"upgrade/mage_disintegrate/ap",
+				AbilityModuleBridge.module_modifier_value(
+					ability.upgraded_modules[0], &"kill_grant_ap",
+				) == 1,
+			)
 		&"mage_gravity_well":
 			_assert(failures, "upgrade/mage_gravity_well/blind", effects.size() == 2 and effects[1].status_type == GameEnums.StatusType.BLIND)
 		&"mage_elemental_surge":

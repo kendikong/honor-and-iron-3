@@ -3707,6 +3707,11 @@ static func execute(board: BoardState, action: TimelineAction, events: Array[Sim
 			effect_index += 1
 			continue
 
+		if effect.modifiers.has("landing_adjacent_push"):
+			_queue_landing_adjacent_pushes(board, actor, action, effect)
+			effect_index += 1
+			continue
+
 		if effect.modifiers.has("damage_adjacent_on_landing"):
 			if (
 				effect.modifiers.get("require_dash_line_enemy", false)

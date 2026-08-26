@@ -525,7 +525,7 @@ func _assert_contract(ability: AbilityData, case: Dictionary) -> void:
 		assert_bool(not upgraded_effects.is_empty()).override_failure_message(
 			"%s: authored [+] modules must not be empty" % case.id,
 		).is_true()
-	var primary: EffectData = base_effects[0]
+	var primary: EffectData = ability.modules[0].primary_as_effect()
 	assert_that(primary.type).override_failure_message(
 		"%s: primary effect type" % case.id,
 	).is_equal(case.primary_type)
