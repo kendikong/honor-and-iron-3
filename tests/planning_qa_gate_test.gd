@@ -643,6 +643,58 @@ static func _slots_have_move(slots: Dictionary) -> bool:
 	return false
 
 
+static func _assert_hover_move_preview_contract(
+	failures: Array[String],
+	label: String,
+	overlay: TacticalPlanningOverlay,
+	actor: UnitState,
+	expected_route: Array,
+	suppress_target_arrow: bool = false,
+	expected_stand: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	if live == null:
+		failures.append("%s: live preview missing" % label)
+		return
+	var preview_path: Array = live.preview_paths.get(actor.id, [])
+	if preview_path != expected_route:
+		failures.append(
+			"%s: preview_paths %s expected %s"
+			% [label, str(preview_path), str(expected_route)],
+		)
+	var draw_route: Array = overlay._interaction_move_route(actor.id, live, preview_path)
+	if draw_route != expected_route:
+		failures.append(
+			"%s: drawn hover move route %s expected %s (preview_paths=%s arrow=%s)"
+			% [
+				label,
+				str(draw_route),
+				str(expected_route),
+				str(preview_path),
+				str(overlay.targeting_intent_arrow_cells()),
+			],
+		)
+	for i: int in range(1, draw_route.size()):
+		if GridSystem.manhattan(draw_route[i - 1], draw_route[i]) != 1:
+			failures.append(
+				"%s: drawn hover move route contains diagonal step %s"
+				% [label, str(draw_route)],
+			)
+			break
+	if suppress_target_arrow and not overlay.targeting_intent_arrow_cells().is_empty():
+		failures.append(
+			"%s: movement module must not draw targeting arrow %s"
+			% [label, str(overlay.targeting_intent_arrow_cells())],
+		)
+	if expected_stand.x > -999999:
+		var stand: Vector2i = overlay._intent_stand_origin(actor)
+		if stand != expected_stand:
+			failures.append(
+				"%s: intent stand %s expected %s"
+				% [label, stand, expected_stand],
+			)
+
+
 static func _hook_committed_approach_fixture() -> Dictionary:
 	## Mirrors planning_input_test committed-action approach fixture (hook-only knight).
 	var input := CombatPlanningInput.new()
