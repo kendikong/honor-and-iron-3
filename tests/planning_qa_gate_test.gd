@@ -735,6 +735,130 @@ static func _assert_preview_route_cardinal_only(
 			return
 
 
+static func _assert_path_excludes_bleed_cells(
+	failures: Array[String],
+	label: String,
+	path: Array,
+	forbidden_cells: Array[Vector2i],
+) -> void:
+	for forbidden: Vector2i in forbidden_cells:
+		if path.has(forbidden):
+			failures.append(
+				"%s: path %s bleeds forbidden cell %s"
+				% [label, str(path), forbidden],
+			)
+
+
+static func _assert_targeting_arrow_contract(
+	failures: Array[String],
+	label: String,
+	overlay: TacticalPlanningOverlay,
+	allow_arrow: bool,
+	expected_from: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	var arrow_cells: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+	if not allow_arrow:
+		if not arrow_cells.is_empty():
+			failures.append(
+				"%s: must not draw targeting arrow %s"
+				% [label, str(arrow_cells)],
+			)
+		return
+	if arrow_cells.size() < 2:
+		return
+	var from_cell: Vector2i = arrow_cells[0] as Vector2i
+	var to_cell: Vector2i = arrow_cells[1] as Vector2i
+	if expected_from.x > -900000 and from_cell != expected_from:
+		failures.append(
+			"%s: targeting arrow origin %s expected %s (arrow=%s)"
+			% [label, from_cell, expected_from, str(arrow_cells)],
+		)
+	if from_cell.x != to_cell.x and from_cell.y != to_cell.y:
+		failures.append(
+			"%s: targeting arrow is diagonal %s -> %s"
+			% [label, from_cell, to_cell],
+		)
+
+
+static func _assert_slots_have_no_column_bleed(
+	failures: Array[String],
+	label: String,
+	slots: Dictionary,
+	forbidden_columns: Array[String],
+) -> void:
+	for column_name: String in forbidden_columns:
+		var column_actions: Array = slots.get(column_name, []) as Array
+		if not column_actions.is_empty():
+			failures.append(
+				"%s: slots leaked timeline column '%s' %s"
+				% [label, column_name, str(column_actions)],
+			)
+
+
+static func _assert_charge_strike_hover_visual_contract(
+	failures: Array[String],
+	label: String,
+	overlay: TacticalPlanningOverlay,
+	input: CombatPlanningInput,
+	actor: UnitState,
+	allow_target_arrow: bool,
+	expected_arrow_from: Vector2i = Vector2i(-999999, -999999),
+) -> void:
+	var live: CombatPlanningPreview = overlay.get_live_preview()
+	var preview_path: Array = live.preview_paths.get(actor.id, []) if live != null else []
+	var draw_route: Array = (
+		overlay._interaction_move_route(actor.id, live, preview_path)
+		if live != null else []
+	)
+	var awaiting_route: Array = overlay.awaiting_movement_hover_route_cells()
+	_assert_preview_route_cardinal_only(failures, label + "/preview_paths", preview_path)
+	_assert_preview_route_cardinal_only(failures, label + "/draw_route", draw_route)
+	_assert_preview_route_cardinal_only(failures, label + "/awaiting_route", awaiting_route)
+	_assert_targeting_arrow_contract(
+		failures, label, overlay, allow_target_arrow, expected_arrow_from,
+	)
+	if preview_path.size() == 2:
+		var seg_a: Vector2i = preview_path[0] as Vector2i
+		var seg_b: Vector2i = preview_path[1] as Vector2i
+		if seg_a.x != seg_b.x and seg_a.y != seg_b.y:
+			failures.append(
+				"%s: live preview is a diagonal shortcut %s -> %s"
+				% [label, seg_a, seg_b],
+			)
+	if draw_route.size() == 2:
+		var draw_a: Vector2i = draw_route[0] as Vector2i
+		var draw_b: Vector2i = draw_route[1] as Vector2i
+		if draw_a.x != draw_b.x and draw_a.y != draw_b.y:
+			failures.append(
+				"%s: drawn move route is a diagonal shortcut %s -> %s"
+				% [label, draw_a, draw_b],
+			)
+	if awaiting_route.size() == 2:
+		var await_a: Vector2i = awaiting_route[0] as Vector2i
+		var await_b: Vector2i = awaiting_route[1] as Vector2i
+		if await_a.x != await_b.x and await_a.y != await_b.y:
+			failures.append(
+				"%s: awaiting movement route is a diagonal shortcut %s -> %s"
+				% [label, await_a, await_b],
+			)
+	var input_path: Array = input.preview_state.preview_paths.get(actor.id, [])
+	_assert_preview_route_cardinal_only(failures, label + "/input_preview_paths", input_path)
+
+
+static func _diagonal_neighbor_cells(
+	board: BoardState,
+	center: Vector2i,
+) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	for off: Vector2i in [
+		Vector2i(1, 1), Vector2i(-1, 1), Vector2i(1, -1), Vector2i(-1, -1),
+	]:
+		var cell: Vector2i = center + off
+		if board.is_in_bounds(cell):
+			out.append(cell)
+	return out
+
+
 static func _probe_charge_strike_hover_orbit(
 	failures: Array[String],
 	fix: Dictionary,
@@ -747,31 +871,63 @@ static func _probe_charge_strike_hover_orbit(
 	stand_cell: Vector2i,
 	charge_route: Array[Vector2i],
 	enemy_cell: Vector2i,
+	pre_route: Array[Vector2i],
+	post_route: Array[Vector2i],
 	charge_strike_id: StringName,
 	update_drag: bool = false,
 ) -> void:
+	var premove_bleed_cells: Array[Vector2i] = pre_route.slice(0, pre_route.size() - 1)
+	var charge_bleed_cells: Array[Vector2i] = charge_route.slice(0, charge_route.size() - 1)
+	var postmove_only_bleed: Array[Vector2i] = post_route.slice(1)
+	var post_full_bleed: Array[Vector2i] = []
+	post_full_bleed.append_array(premove_bleed_cells)
+	post_full_bleed.append_array(charge_bleed_cells)
 	var previous: Vector2i = stand_cell
 	for cell_index: int in range(orbit_cells.size()):
 		var cell: Vector2i = orbit_cells[cell_index]
 		PlanningChecklistHarness.sweep_to_cell(fix, cell, previous)
 		if update_drag:
 			input.update_drag(fix.map_stub.grid_to_local(cell))
+		input._flush_hover_heavy_sync()
 		PlanningChecklistHarness.flush_planning(fix)
 		var probe_label: String = "%s/%s_orbit/%s" % [label_prefix, phase, cell]
 		var live: CombatPlanningPreview = overlay.get_live_preview()
 		var preview_path: Array = live.preview_paths.get(actor.id, []) if live != null else []
-		var draw_route: Array = (
-			overlay._interaction_move_route(actor.id, live, preview_path)
-			if live != null else []
+		var allow_arrow: bool = phase == "damage" and cell == enemy_cell
+		var arrow_from: Vector2i = charge_route.back() if allow_arrow else Vector2i(-999999, -999999)
+		_assert_charge_strike_hover_visual_contract(
+			failures,
+			probe_label,
+			overlay,
+			input,
+			actor,
+			allow_arrow,
+			arrow_from,
 		)
-		_assert_preview_route_cardinal_only(failures, probe_label + "/preview_paths", preview_path)
-		_assert_preview_route_cardinal_only(failures, probe_label + "/draw_route", draw_route)
-		if phase == "move":
-			if not overlay.targeting_intent_arrow_cells().is_empty():
-				failures.append(
-					"%s: MOVE module drew targeting arrow %s"
-					% [probe_label, str(overlay.targeting_intent_arrow_cells())],
-				)
+		if phase == "move" or phase == "move_drag":
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_premove_bleed",
+				preview_path,
+				premove_bleed_cells,
+			)
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_postmove_bleed",
+				preview_path,
+				postmove_only_bleed,
+			)
+			if not preview_path.is_empty():
+				var path_start: Vector2i = preview_path[0] as Vector2i
+				if path_start != stand_cell:
+					failures.append(
+						"%s: MOVE preview must start at module stand %s got %s"
+						% [probe_label, stand_cell, path_start],
+					)
+			var hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
+			_assert_slots_have_no_column_bleed(
+				failures, probe_label + "/slots", hover_slots, ["pre", "post"],
+			)
 			if cell == charge_route.back():
 				_assert_hover_move_preview_contract(
 					failures,
@@ -782,43 +938,34 @@ static func _probe_charge_strike_hover_orbit(
 					true,
 					stand_cell,
 				)
-			elif preview_path.size() >= 2:
-				var preview_start: Vector2i = preview_path[0] as Vector2i
-				if preview_start != stand_cell:
-					failures.append(
-						"%s: MOVE hover preview must start at stand %s got %s"
-						% [probe_label, stand_cell, preview_start],
-					)
-				var preview_end: Vector2i = preview_path[preview_path.size() - 1] as Vector2i
-				if (
-					preview_end == cell
-					and GridSystem.manhattan(stand_cell, cell) > 1
-					and preview_path.size() == 2
-				):
-					failures.append(
-						"%s: MOVE hover must not shortcut diagonally from %s to %s"
-						% [probe_label, stand_cell, cell],
-					)
 		elif phase == "damage":
-			if not preview_path.is_empty():
-				var preview_start: Vector2i = preview_path[0] as Vector2i
-				if preview_start != charge_route.back():
-					failures.append(
-						"%s: DAMAGE hover preview must start at landing %s got %s (hover=%s)"
-						% [probe_label, charge_route.back(), preview_start, cell],
-					)
-				if preview_path.size() >= 2:
-					var preview_end: Vector2i = preview_path[preview_path.size() - 1] as Vector2i
-					if (
-						preview_end == cell
-						and preview_end != charge_route.back()
-						and GridSystem.manhattan(charge_route.back(), cell) > 1
-						and preview_path.size() == 2
-					):
-						failures.append(
-							"%s: DAMAGE hover must not diagonal-move preview from landing %s to %s"
-							% [probe_label, charge_route.back(), cell],
-						)
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_premove_bleed",
+				preview_path,
+				premove_bleed_cells,
+			)
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_charge_intermediate_bleed",
+				preview_path,
+				charge_bleed_cells,
+			)
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_postmove_bleed",
+				preview_path,
+				postmove_only_bleed,
+			)
+			if not preview_path.is_empty() and preview_path != [charge_route.back()]:
+				failures.append(
+					"%s: DAMAGE preview must be frozen landing only %s got %s"
+					% [probe_label, charge_route.back(), str(preview_path)],
+				)
+			var damage_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
+			_assert_slots_have_no_column_bleed(
+				failures, probe_label + "/slots", damage_slots, ["pre", "post"],
+			)
 			if cell == enemy_cell:
 				if preview_path != [charge_route.back()]:
 					failures.append(
@@ -831,11 +978,10 @@ static func _probe_charge_strike_hover_orbit(
 						"%s: DAMAGE enemy hover intent stand %s expected landing %s"
 						% [probe_label, intent_stand, charge_route.back()],
 					)
-				var slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
-				if _slots_invalid(slots):
+				if _slots_invalid(damage_slots):
 					failures.append("%s: enemy hover slots invalid" % probe_label)
 				else:
-					var action: TimelineAction = _slot_action_with_ability(slots, charge_strike_id)
+					var action: TimelineAction = _slot_action_with_ability(damage_slots, charge_strike_id)
 					if action == null:
 						failures.append("%s: enemy hover action missing" % probe_label)
 					elif AbilitySystem.module_target_coord(action, 1) != enemy_cell:
@@ -847,7 +993,55 @@ static func _probe_charge_strike_hover_orbit(
 								enemy_cell,
 							],
 						)
+		elif phase == "postmove" or phase == "postmove_drag":
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_charge_bleed",
+				preview_path,
+				charge_bleed_cells,
+			)
+			_assert_path_excludes_bleed_cells(
+				failures,
+				probe_label + "/no_premove_bleed",
+				preview_path,
+				premove_bleed_cells,
+			)
+			if not preview_path.is_empty():
+				var post_start: Vector2i = preview_path[0] as Vector2i
+				if post_start != post_route[0]:
+					failures.append(
+						"%s: postmove preview must start at action landing %s got %s"
+						% [probe_label, post_route[0], post_start],
+					)
+			_assert_targeting_arrow_contract(
+				failures, probe_label + "/post_arrow", overlay, false,
+			)
+			var post_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
+			_assert_slots_have_no_column_bleed(
+				failures, probe_label + "/slots", post_slots, ["action"],
+			)
+			if cell == post_route.back():
+				_assert_hover_move_preview_contract(
+					failures,
+					probe_label,
+					overlay,
+					actor,
+					post_route,
+					true,
+					post_route[0],
+				)
 		previous = cell
+
+
+static func _dedupe_cells(cells: Array[Vector2i]) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var seen: Dictionary = {}
+	for cell: Vector2i in cells:
+		if seen.has(cell):
+			continue
+		seen[cell] = true
+		out.append(cell)
+	return out
 
 
 static func _hook_committed_approach_fixture() -> Dictionary:
@@ -2257,6 +2451,10 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 	move_orbit_cells.append_array(
 		_orbit_hover_cells(fix.board, charge_route.back(), 2, true),
 	)
+	move_orbit_cells.append_array(
+		_diagonal_neighbor_cells(fix.board, stand_after_pre.position),
+	)
+	move_orbit_cells = _dedupe_cells(move_orbit_cells)
 	_probe_charge_strike_hover_orbit(
 		failures,
 		fix,
@@ -2269,6 +2467,8 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 		stand_after_pre.position,
 		charge_route,
 		enemy_cell,
+		pre_route,
+		post_route,
 		ChargeStrikeId,
 		false,
 	)
@@ -2289,6 +2489,8 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 		stand_after_pre.position,
 		charge_route,
 		enemy_cell,
+		pre_route,
+		post_route,
 		ChargeStrikeId,
 		true,
 	)
@@ -2331,6 +2533,8 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 		fix.board, charge_route.back(), 2, true,
 	)
 	damage_orbit_cells.append_array(_orbit_hover_cells(fix.board, enemy_cell, 2, true))
+	damage_orbit_cells.append_array(_diagonal_neighbor_cells(fix.board, charge_route.back()))
+	damage_orbit_cells = _dedupe_cells(damage_orbit_cells)
 	_probe_charge_strike_hover_orbit(
 		failures,
 		fix,
@@ -2343,6 +2547,8 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 		charge_route.back(),
 		charge_route,
 		enemy_cell,
+		pre_route,
+		post_route,
 		ChargeStrikeId,
 		false,
 	)
@@ -2366,7 +2572,22 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 			],
 		)
 	if not overlay.targeting_intent_arrow_cells().is_empty():
-		failures.append("%s: Charge Strike drew a duplicate direct target arrow" % label)
+		var arrow: Array[Vector2i] = overlay.targeting_intent_arrow_cells()
+		if arrow.size() >= 2:
+			var arrow_from: Vector2i = arrow[0] as Vector2i
+			var arrow_to: Vector2i = arrow[1] as Vector2i
+			if arrow_from != charge_route.back():
+				failures.append(
+					"%s: strike arrow origin %s expected landing %s"
+					% [label, arrow_from, charge_route.back()],
+				)
+			if arrow_from.x != arrow_to.x and arrow_from.y != arrow_to.y:
+				failures.append(
+					"%s: strike arrow is diagonal %s -> %s"
+					% [label, arrow_from, arrow_to],
+				)
+		else:
+			failures.append("%s: Charge Strike drew unexpected targeting arrow %s" % [label, str(arrow)])
 	var charge_hover_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, enemy_cell)
 	var charge_hover_action: TimelineAction = _slot_action_with_ability(
 		charge_hover_slots, ChargeStrikeId,
@@ -2431,9 +2652,32 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 
 	# Postmove: its route must begin at Charge Strike's actual landing, not turn start.
 	PlanningChecklistHarness.enter_basic_movement(fix)
+	var post_orbit_cells: Array[Vector2i] = _orbit_hover_cells(
+		fix.board, post_route[0], 2, true,
+	)
+	post_orbit_cells.append_array(_orbit_hover_cells(fix.board, post_route.back(), 2, true))
+	post_orbit_cells.append_array(_diagonal_neighbor_cells(fix.board, post_route[0]))
+	post_orbit_cells = _dedupe_cells(post_orbit_cells)
 	input._begin_drag(
 		projected_after_charge,
 		fix.map_stub.grid_to_local(post_route[0]),
+		true,
+	)
+	_probe_charge_strike_hover_orbit(
+		failures,
+		fix,
+		overlay,
+		input,
+		actor,
+		label,
+		post_orbit_cells,
+		"postmove_drag",
+		post_route[0],
+		charge_route,
+		enemy_cell,
+		pre_route,
+		post_route,
+		ChargeStrikeId,
 		true,
 	)
 	for route_cell: Vector2i in post_route.slice(1):
