@@ -10,6 +10,15 @@
 
 ```text
 ══════════════════════════════════════
+GAUNTLET SCORE │ MOVE-PREVIEW-SSOT │ Round 8 │ SELF-GRADED: no (subagent)
+SCORE: 86/100 │ THRESHOLD: 85 │ PASS
+DELTA: +5 vs round 7 (81); +10 vs round 6 (76)
+STOP_CONDITION_MET: yes (structural bar; planning QA not run this piece)
+══════════════════════════════════════
+```
+
+```text
+══════════════════════════════════════
 GAUNTLET SCORE │ BIBLE-TO-CODE — 100% canvas MATCH lock │ Round 8 extras closed │ SELF-GRADED: no (subagent)
 SCORE: 96/100 │ THRESHOLD: 95 │ PASS │ STALLED
 DELTA: +48 vs Round 8 critic fail (48); +0 vs Round 7 (96)
