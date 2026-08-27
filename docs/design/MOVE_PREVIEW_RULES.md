@@ -28,9 +28,9 @@ Plain-language rules. No parallel preview logic.
 **Not move preview** (different UI):
 
 - **Forced movement** on another unit — push, pull, knockback, slide, etc.
-- Those use their own arrows / markers; do not mix them into the walker’s blue move path.
+- Those use their own arrows / markers; do not mix them into the walker's blue move path.
 
-**Teleport / blink:** Not a walked path — direct line from start tile to landing (hop). Still the character’s own relocation, not push/pull UI.
+**Teleport / blink:** Not a walked path — direct line from start tile to landing (hop). Still the character's own relocation, not push/pull UI.
 
 ---
 
@@ -83,7 +83,7 @@ Do not add extra clear rules beyond this.
 | Step | Same as premove? | Only difference |
 |------|------------------|-----------------|
 | **Premove** | — | Commits to PRE slot; runs before the action |
-| **MOVE module** | Same preview | Commits to the skill’s MOVE leg; stand/handoff for next module |
+| **MOVE module** | Same preview | Commits to the skill's MOVE leg; stand/handoff for next module |
 | **Postmove** | **Exactly like premove** | Commits to POST slot; runs after the action |
 
 **Painted routes:** Drag through blue tiles to build a path; preview follows that route to the hover tile.
@@ -117,7 +117,7 @@ Locked until the phase ends. Does not follow the mouse.
 
 ### 2 — Next phase (on hover)
 
-If there **is** a next phase **and** it is **possible** from the hover tile, show that phase’s range from **predicted stand at hover**:
+If there **is** a next phase **and** it is **possible** from the hover tile, show that phase's range from **predicted stand at hover**:
 
 | Next phase | Color |
 |------------|--------|
@@ -156,7 +156,7 @@ Last planning phase before Execute. **All tiles off** — no blue, red, or yello
 
 ## Co-op
 
-Everyone sees all units’ move previews. Option to hide others’ previews may come later.
+Everyone sees all units' move previews. Option to hide others' previews may come later.
 
 ---
 
@@ -200,24 +200,26 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 | Concern | Owner |
 |---------|--------|
 | Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
-| Two-range tile origins | `PlanningPreviewTiles.resolve_layer_origins` |
+| Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` |
 | Voluntary walk path write | `CombatPlanningInput.live_move_hover_rewrite_applies` → `_write_movement_hover_preview_paths` |
-| Painted route lock | `CombatPlanningInput._painted_drag_route_matches_leg` |
+| Painted drag → `preview_paths` | `CombatPlanningInput._sync_painted_drag_route_to_preview_paths` (only writer) |
+| Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
 | Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` via `CombatPlanningInput.display_move_route_cells` |
-| Path data | `CombatPlanningPreview.preview_paths` |
+| Path data store | `CombatPlanningPreview.preview_paths` |
 | Tile layers (one apply path) | `TacticalPlanningOverlay._apply_planning_tile_layers` |
+| Targeting intent arrow | `TacticalPlanningOverlay.targeting_intent_arrow_cells` (tests + draw) |
 
-### Harsh audit (2026-08-26 refactor pass 2)
+### Harsh audit (2026-08-26 pass 3 — current)
 
-**Owner priorities encoded:** fewer rules, one path per concern, preview_paths is route truth (write on hover, read on draw), two-range tiles (locked current + hover next) via `resolve_layer_origins`.
+**Owner priorities:** simpler global rules · one canonical path per concern · `preview_paths` is route truth (hover writes, display reads) · strike parallel pipelines.
 
 **Collapsed:**
-- `_painted_drag_route_matches_leg` — single painted-route predicate (lock + commit).
-- `display_route_cells_from_preview` — single route read API; `live_move_hover_route_cells` is alias only.
-- `_apply_planning_tile_layers` — only tile apply path; cursor refresh and recompute both call it.
-- `_intent_tiles_blocked` → `PlanningPreviewTiles.tiles_blocked`.
-- Painted route sync: `_ensure_painted_route_preview_sync` writes `_drag_route` → `preview_paths` when locked.
+- Single painted-route writer: `_sync_painted_drag_route_to_preview_paths`.
+- Single route read API: `display_route_cells_from_preview` (co-op / enemy / ally via `frozen_move_route_cells` on committed preview).
+- Single tile apply: `_apply_planning_tile_layers` + `resolve_layer_origins` (locked + next range + blast).
+- Dead `_fill_hover_action_range_tiles` / `_fill_hover_blast_tiles` removed.
+- Ghost / interaction draw uses `display_move_route_cells` and `targeting_intent_arrow_cells`.
 
-**Known deferrals (low severity):**
-- Co-op ally dashed routes read `preview_paths` for non-selected units (committed plan truth, not selected-unit live hover).
-- Committed leg draw uses `committed_move_route_leg` (execution slice, not hover rewrite).
+**Intentional deferrals (not parallel hover rewrite):**
+- `committed_move_route_leg` for timeline-committed player legs during execution preview.
+- `_drag_route` is transient input buffer only; committed truth is always `preview_paths` after sync.

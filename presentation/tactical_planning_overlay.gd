@@ -1968,7 +1968,7 @@ func _draw_preview_arrows() -> void:
 				_draw_route_line(leg, p_col, true, true)
 		if prev.preview_board == null:
 			continue
-		var route: Array = prev.preview_paths.get(unit.id, [])
+		var route: Array = CombatPlanningPreview.frozen_move_route_cells(unit.id, prev)
 		if route.is_empty():
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
@@ -2687,7 +2687,7 @@ func _draw_ghosts() -> void:
 					_draw_facing_wedge(center, leg_face, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
 					break
 		if unit.is_enemy():
-			var route: Array = prev.preview_paths.get(unit.id, [])
+			var route: Array = CombatPlanningPreview.frozen_move_route_cells(unit.id, prev)
 			var voluntary_dest: Vector2i = route[route.size() - 1] if route.size() > 0 else unit.position
 			if voluntary_dest != unit.position:
 				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
@@ -2742,10 +2742,14 @@ func _draw_move_ghosts() -> void:
 			Color(p_col.r, p_col.g, p_col.b, 0.85),
 		)
 	elif ability != null and AbilitySystem.ability_has_movement_effect(ability):
-		var route_cells: Array[Vector2i] = _movement_hover_route_cells(unit.id)
+		var route_cells: Array[Vector2i] = _display_move_route_cells(unit.id)
 		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
-		_draw_targeting_intent_arrow(origin, _hover_coord, Color(p_col.r, p_col.g, p_col.b, 0.85))
+		var arrow_cells: Array[Vector2i] = targeting_intent_arrow_cells()
+		if arrow_cells.size() >= 2:
+			_draw_targeting_intent_arrow(
+				arrow_cells[0], arrow_cells[1], Color(p_col.r, p_col.g, p_col.b, 0.85),
+			)
 
 
 func _facing_toward(from: Vector2i, to: Vector2i) -> int:
