@@ -1348,6 +1348,17 @@ func on_hover_moved(cell: Vector2i) -> void:
 				and _drag_unit_id == p_unit.id
 			):
 				_clear_hover_drag_route()
+	if (
+		not dragging
+		and planning_cell_changed
+		and _director.board.is_in_bounds(cell)
+		and _director.selected_unit_id >= 0
+	):
+		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if hover_unit != null and _movement_slot_hover_preview_applies(hover_unit, cell):
+			var hover_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(hover_unit, cell)
+			_write_movement_hover_preview_paths(hover_unit.id, cell, hover_waypoints)
+			_sync_movement_hover_paths_to_overlay(hover_unit.id)
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -3683,18 +3694,21 @@ func _apply_painted_route_preview_paths(unit_id: int) -> void:
 	var route_size: int = _drag_route.size()
 	preview_state.preview_splits[unit_id] = route_size
 	preview_state.preview_post_splits[unit_id] = route_size
-	if _planning != null:
-		_planning.apply_preview_state(preview_state, unit_id, -1)
-	_refresh_action_range_overlay_when_gate_off()
+	_sync_movement_hover_paths_to_overlay(unit_id)
 
 
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
-	## Paint preview_paths first — live sim must not merge a second corridor on top.
-	_apply_movement_hover_preview_paths(p_unit.id, cell, waypoints)
+	## Paint preview_paths in memory first — live sim must not merge a second corridor on top.
+	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
 	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
 	_refresh_click_target_highlight()
+
+
+func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
+	if _planning != null:
+		_planning.apply_preview_paths_only(preview_state, unit_id)
 
 
 func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> bool:
@@ -3731,13 +3745,20 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 	return false
 
 
-func _apply_movement_hover_preview_paths(
+func _write_movement_hover_preview_paths(
 	unit_id: int,
 	hover_cell: Vector2i,
 	waypoints: Array[Vector2i],
 ) -> void:
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
-		_apply_painted_route_preview_paths(unit_id)
+		if unit_id < 0 or _director == null or _drag_route.is_empty():
+			return
+		if not _movement_route_paint_allowed():
+			return
+		preview_state.preview_paths[unit_id] = _drag_route.duplicate()
+		var route_size: int = _drag_route.size()
+		preview_state.preview_splits[unit_id] = route_size
+		preview_state.preview_post_splits[unit_id] = route_size
 		return
 	if not waypoints.is_empty():
 		var actor: UnitState = _proj_unit(unit_id)
@@ -3756,9 +3777,6 @@ func _apply_movement_hover_preview_paths(
 		preview_state.preview_paths[unit_id] = path
 		preview_state.preview_splits[unit_id] = path.size()
 		preview_state.preview_post_splits[unit_id] = path.size()
-		if _planning != null:
-			_planning.apply_preview_state(preview_state, unit_id, -1)
-		_refresh_action_range_overlay_when_gate_off()
 		return
 	var existing: Array = preview_state.preview_paths.get(unit_id, [])
 	if existing.size() >= 2:
@@ -3774,8 +3792,6 @@ func _apply_movement_hover_preview_paths(
 	preview_state.preview_paths[unit_id] = [stand]
 	preview_state.preview_splits[unit_id] = 1
 	preview_state.preview_post_splits[unit_id] = 1
-	if _planning != null:
-		_planning.apply_preview_state(preview_state, unit_id, -1)
 
 
 ## Shared hover/drag paint: premove, postmove, and MOVE module legs use one corridor owner.

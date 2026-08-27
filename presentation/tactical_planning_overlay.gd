@@ -744,6 +744,22 @@ func apply_preview_state(
 	queue_redraw()
 
 
+## Hover corridor paint only — no sim, forecast, or action-range recompute.
+func apply_preview_paths_only(state: CombatPlanningPreview, unit_id: int) -> void:
+	if state == null or unit_id < 0:
+		return
+	var path: Array = state.preview_paths.get(unit_id, [])
+	if path.is_empty():
+		return
+	_live_preview.preview_paths[unit_id] = path.duplicate()
+	if state.preview_splits.has(unit_id):
+		_live_preview.preview_splits[unit_id] = state.preview_splits[unit_id]
+	if state.preview_post_splits.has(unit_id):
+		_live_preview.preview_post_splits[unit_id] = state.preview_post_splits[unit_id]
+	_queue_hover_tile_redraw()
+	_queue_overlay_redraw()
+
+
 func set_live_preview(state: CombatPlanningPreview) -> void:
 	_execution_preview_suppressed = false
 	_live_preview = state
