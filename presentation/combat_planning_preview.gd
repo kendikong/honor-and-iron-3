@@ -100,9 +100,10 @@ func apply_result(
 			actions_v as Array, path_init_board, {}, director, skip_path_merge,
 		)
 		if intent_preview and director != null and director.selected_unit_id >= 0:
-			anchor_preview_paths_to_latest_stand(
-				director, self, director.selected_unit_id, path_init_board,
-			)
+			if not skip_path_merge.get(director.selected_unit_id, false):
+				anchor_preview_paths_to_latest_stand(
+					director, self, director.selected_unit_id, path_init_board,
+				)
 		ensure_swap_approach_paths_from_actions(
 			actions_v as Array, path_init_board, preview_paths, preview_splits, action_splits, director,
 		)

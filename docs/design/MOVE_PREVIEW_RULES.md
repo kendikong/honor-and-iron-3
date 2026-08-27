@@ -203,7 +203,8 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
 | Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` via `_write_movement_hover_preview_paths` when `live_move_hover_rewrite_applies` |
 | Painted drag → `preview_paths` | `CombatPlanningInput._sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
-| Sim / commit path merge (non-move steps only) | `CombatPlanningPreview.ensure_movement_intent_from_actions` — blocked on movement step when `_movement_hover_path_blocks_sim_merge` |
+| Sim / commit path merge | `CombatPlanningPreview.apply_result` — `authoritative_paths` restore + `skip_path_merge` in `ensure_movement_intent_from_actions`; anchor skipped for authoritative actor |
+| Movement-step authority gate | `CombatPlanningInput._movement_hover_path_authoritative` |
 | Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
 | Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` via `CombatPlanningInput.display_move_route_cells` |
 | Path data store | `CombatPlanningPreview.preview_paths` |
@@ -233,6 +234,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
 - `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.
 
-**Pass 7 (gauntlet loop):**
-- `apply_result(..., authoritative_paths)` — restore hover paths inside merge owner after `build_preview_paths`; `ensure_movement_intent_from_actions` skips path merge for authoritative actors.
-- `_movement_hover_path_authoritative` — broadened gate (movement step + rewrite or painted lock).
+**Pass 8 (gauntlet loop):**
+- `anchor_preview_paths_to_latest_stand` skipped inside `apply_result` when actor is authoritative.
+- `_ensure_live_movement_intent_from_preview_actions` early-returns on `_movement_hover_path_authoritative` (no duplicate merge).
+- Authority gate uses movement-step + rewrite/lock only (no path-length heuristic).

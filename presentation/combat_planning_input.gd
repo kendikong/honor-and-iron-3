@@ -635,9 +635,7 @@ func _movement_hover_path_authoritative(unit_id: int) -> bool:
 	var hover_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)
-	if live_move_hover_rewrite_applies(actor, hover_cell):
-		return true
-	return preview_state.preview_paths.get(unit_id, []).size() >= 2
+	return live_move_hover_rewrite_applies(actor, hover_cell)
 
 
 func _apply_live_preview(preview: Dictionary) -> void:
@@ -704,7 +702,10 @@ func _on_planning_live_preview_changed() -> void:
 
 
 func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
-	## Cheap move-only hover: apply_result already built paths from projected stand.
+	## apply_result already merged paths; skip duplicate merge when hover owns the movement leg.
+	if _director != null and _director.selected_unit_id >= 0:
+		if _movement_hover_path_authoritative(_director.selected_unit_id):
+			return
 	if bool(preview.get("intent_preview", false)):
 		return
 	if dragging and _drag_route.size() >= 2 and _movement_route_paint_allowed():
@@ -715,19 +716,6 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		and _movement_route_paint_allowed()
 	):
 		return
-	if _director != null and _director.selected_unit_id >= 0 and not dragging:
-		var hover_actor: UnitState = _proj_unit(_director.selected_unit_id)
-		if hover_actor != null:
-			var hover_cell: Vector2i = (
-				_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-			)
-			if _movement_slot_hover_preview_applies(hover_actor, hover_cell):
-				return
-			if active_movement_planning_step(hover_actor):
-				if _movement_hover_path_blocks_sim_merge(_director.selected_unit_id):
-					return
-				if live_move_hover_rewrite_applies(hover_actor, hover_cell):
-					return
 	var actions_v: Variant = preview.get("actions", [])
 	if not actions_v is Array or (actions_v as Array).is_empty():
 		return
