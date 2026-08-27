@@ -102,66 +102,39 @@ Where the unit stands **after everything already committed** this turn — not n
 
 ## Tile colors (global)
 
-Three tile layers. Same rules everywhere — no per-skill tile forks.
+**Two range fields** during planning (except **Wait**). Same rules everywhere.
 
-### Blue tiles — where can I walk?
+### 1 — Current phase (locked)
 
-**Meaning:** Legal **movement** range — tiles this unit can reach in the current **movement step**.
+The **current** module/phase range, from the stand **when this phase started**:
 
-**When shown:**
+| Current phase | Color |
+|---------------|--------|
+| **Movement** (premove, MOVE module, postmove) | **Blue** — legal walk this phase |
+| **Non-movement** (damage, target pick, etc.) | **Red** — where this phase can aim from that start stand |
 
-- Premove  
-- Active **movement module** (skill MOVE leg)  
-- Postmove  
+Locked until the phase ends. Does not follow the mouse.
 
-**When not shown:** Any non-movement module (damage, target pick, wait, etc.). Blue during those steps is a bug (frozen **path line** from an earlier commit is still OK — that is not the blue *range* field).
+### 2 — Next phase (on hover)
 
-**Hover:** During a movement step, the tile under the mouse is part of the walk preview (see move path rules above).
+If there **is** a next phase **and** it is **possible** from the hover tile, show that phase’s range from **predicted stand at hover**:
 
----
+| Next phase | Color |
+|------------|--------|
+| **Movement** | **Blue** |
+| **Non-movement** | **Red** |
 
-### Red tiles — where can the *next* module reach?
+No next phase, or not possible from that tile → **no second range**.
 
-**Meaning:** Range of the **next module** in the skill chain, **only when that next module is not a movement module**.
+**Faint outline** on the hover tile when it sits inside a blue or red field.
 
-Examples: after premove, red shows where the upcoming **damage** module can aim from latest stand; not “where I can walk.”
+### Yellow — hover selection
 
-**Origin:** Latest predicted stand (after committed legs).
+**Yellow** = tile under the mouse you are **selecting** — movement destination **or** skill target (or tile pick).
 
-**When not shown:** When there is no upcoming non-movement module, or when a special case below replaces hover red with blue.
+### Wait
 
----
-
-### Yellow tiles — what does this module hit?
-
-**Meaning:** Tiles **affected by the current module** (one tile for non-AOE; full footprint for AOE).
-
-**When shown:**
-
-- **Hover** — while aiming the current module (before commit).  
-- **Committed** — after target/tiles for this module are locked in.
-
-**Not** a substitute for red (range) or blue (walk).
-
----
-
-### Hover highlight outline
-
-When the tile under the mouse is **also** part of the premove/module tile field (blue or red), draw a **faint outline** on that hover tile so it does not blend into the field.
-
-Apply to **both** blue-hover and red-hover cases.
-
----
-
-## Case: skill **starts** with a move module (premove + armed skill)
-
-While planning **premove** before the skill’s first module runs:
-
-1. **Blue field** — normal premove walk range (from latest stand).  
-2. **Under the mouse** — show **blue** reach around the cursor (walk context), **not** red next-module range on the hover tile.  
-3. **Red field** may still show elsewhere for the upcoming non-move module, but the **hovered** tile uses the blue-hover treatment + faint outline.
-
-Same global colors; this case only swaps **what the cursor tile uses** during premove when the skill’s first module is MOVE.
+Last planning phase before Execute. **All tiles off** — no blue, red, or yellow.
 
 ---
 
