@@ -833,30 +833,6 @@ func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: Str
 	_queue_overlay_redraw()
 
 
-func set_fixed_range_origin(_coord: Vector2i) -> void:
-	pass
-
-
-func clear_fixed_range_origin() -> void:
-	pass
-
-
-func set_action_range_origin(_coord: Vector2i) -> void:
-	pass
-
-
-func set_threat_origin(_coord: Vector2i) -> void:
-	pass
-
-
-func clear_action_range_origin() -> void:
-	pass
-
-
-func clear_threat_origin() -> void:
-	pass
-
-
 func bind_planning_cursor(cursor: TacticalPlanningCursor) -> void:
 	_planning_cursor = cursor
 	if _planning_cursor != null:

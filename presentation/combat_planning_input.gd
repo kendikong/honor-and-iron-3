@@ -176,7 +176,6 @@ func cancel_aim() -> void:
 	aiming = false
 	if _planning != null:
 		_planning.set_aim_mode(false)
-		_planning.clear_threat_origin()
 		_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_skill_mode()
 	_restore_hover_preview()
@@ -642,8 +641,6 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
-		if dragging and pv_actor != null:
-			_planning.set_threat_origin(pv_actor.position)
 		if not bool(preview.get("intent_preview", false)):
 			_planning._recompute_hover_ranges_from_inputs()
 	_refresh_action_range_overlay_when_gate_off()
@@ -861,8 +858,6 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	preview_state.action_splits[unit.id] = 0
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, unit.id, -1)
-	_planning.set_fixed_range_origin(_drag_route[0])
-	_planning.set_threat_origin(_drag_route[0])
 	_planning._recompute_hover_ranges_from_inputs()
 	_planning.begin_drag_sprite(unit.id)
 
@@ -883,8 +878,6 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	preview_state.clear_interaction()
 	if _planning != null:
 		_planning.clear_drag_route()
-		_planning.clear_fixed_range_origin()
-		_planning.clear_threat_origin()
 		_planning.end_drag_sprite(snap_back)
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
@@ -963,8 +956,6 @@ func _on_board_changed(board: BoardState) -> void:
 			_planning.restore_committed_display()
 	if _planning != null:
 		_planning.clear_drag_route()
-		_planning.clear_fixed_range_origin()
-		_planning.clear_threat_origin()
 		_planning.end_drag_sprite()
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
@@ -1017,8 +1008,6 @@ func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
 	if _director == null or _planning == null or not _is_planning():
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	if _intent_state != null:
-		_sync_threat_origin_from_cell(cell)
 	if _director.selected_unit_id >= 0:
 		_refresh_selected_interaction_preview()
 	elif _director.board != null and _director.board.is_in_bounds(cell):
@@ -1518,8 +1507,6 @@ func _run_hover_overlay_refresh() -> void:
 			_planning.queue_redraw()
 		return
 	var planning_cell_changed: bool = cell != _last_heavy_hover_refresh_cell
-	if _director.selected_unit_id >= 0 and planning_cell_changed:
-		_sync_threat_origin_from_cell(cell)
 	if _planning != null and planning_cell_changed:
 		if not _last_hover_move_intent_preview:
 			_planning._recompute_hover_ranges_from_inputs()
@@ -1988,7 +1975,6 @@ func _restore_hover_preview() -> void:
 	drag_preview_failed = false
 	_clear_intent_snapshot()
 	if _planning != null:
-		_planning.clear_threat_origin()
 		_planning.restore_committed_display()
 		if _director != null and _director.selected_unit_id >= 0 and _is_planning():
 			_planning._recompute_hover_ranges_from_inputs()
@@ -2912,14 +2898,10 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 				if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
 					continue
 				if action.ability.is_universal_wait():
-					if _planning != null:
-						_planning.clear_threat_origin()
 					_director.select_ability(-1)
 					return
 				if action.awaiting_target:
 					_preserve_ability_selection_for_action(unit_id, action)
-					if _planning != null:
-						_planning.clear_threat_origin()
 					_request_planning_selection_refresh()
 					return
 				var actor := _proj_unit(unit_id)
@@ -7005,13 +6987,6 @@ func _predicted_stand_tile_for_enemy_hover(cell: Vector2i, enemy: UnitState) -> 
 	if actor.active_abilities.is_empty():
 		return origin
 	return _director.preview_approach_tile(unit_id, enemy.id, 0, cell)
-
-
-func _sync_threat_origin_from_cell(_cell: Vector2i) -> void:
-	if _planning == null or dragging:
-		return
-	# Hover: overlay _intent_stand_origin reads live preview stand. Clear stale drag override.
-	_planning.clear_threat_origin()
 
 
 func _drag_preview_target_id(drag_unit: UnitState, occ: UnitState) -> int:
