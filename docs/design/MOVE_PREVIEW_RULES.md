@@ -189,7 +189,7 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 | New walk arrows on damage / target step | Not a movement step |
 | Blue walk tiles during non-move module | Only movement steps get blue **range** |
 | Red tiles showing walk range | Red is next **non-move** module only |
-| Yellow on wrong module or wrong footprint | Yellow = **current** module effect |
+| Yellow on wrong tile | Yellow = **hover selection** only |
 | Hover tile blends into blue/red field | Missing faint outline |
 | Path on screen ≠ path walked | Preview is not truth |
 | Push/pull/knockback shown as blue walk path | Forced displacement is different UI |
@@ -203,10 +203,12 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 - **Any walk leg:** Blue move preview — character moves tile to tile → same preview rules.  
 - **Postmove:** Same as premove; only commit slot and execution order differ.  
 - **Teleport:** Straight hop line, not a walked path.  
-- **Tiles:** Blue = walk range in movement steps; red = next non-move module range; yellow = current module impact (hover or committed).
+- **Tiles:** Locked field = current phase (blue move / red aim). Hover may add **next** phase field from predicted stand. Yellow = hover selection. Wait = all off.
 
 ---
 
-## Open questions (owner)
+## Resolved (owner 2026-08-26)
 
-See chat / update this section when answered — gaps the global rules do not settle by themselves.
+- Two ranges: **current** (locked at phase-start stand) + **next** (from hover predicted stand, if any).  
+- Yellow = any hover selection (move tile or target tile).  
+- Wait = last phase; all tiles off.
