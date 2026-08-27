@@ -57,11 +57,13 @@ Do not add extra clear rules beyond this.
 
 ## Movement steps (same behavior, different slot)
 
-| Step | When |
-|------|------|
-| **Premove** | Before the action |
-| **MOVE module** | Walk leg inside a skill |
-| **Postmove** | After the action |
+**Simple rule:** If the character **moves to another tile**, that is a **blue move preview** — same look, same paint, same path truth. Only **when it commits** and **when it runs** on Execute differ.
+
+| Step | Same as premove? | Only difference |
+|------|------------------|-----------------|
+| **Premove** | — | Commits to PRE slot; runs before the action |
+| **MOVE module** | Same preview | Commits to the skill’s MOVE leg; stand/handoff for next module |
+| **Postmove** | **Exactly like premove** | Commits to POST slot; runs after the action |
 
 **Painted routes:** Drag through blue tiles to build a path; preview follows that route to the hover tile.
 
@@ -98,13 +100,6 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 
 ## Acceptance examples
 
-- **Trampling Advance:** Commit landing → full frozen path on damage step; mouse does not paint new walks; Execute → planning UI gone; character walks the shown path.  
-- **Charge Strike:** Strike uses stand after committed legs, not premove ghost.  
+- **Any walk leg:** Blue move preview — character moves tile to tile → same preview rules.  
+- **Postmove:** Same as premove; only commit slot and execution order differ.  
 - **Teleport:** Straight hop line, not a walked path.
-
----
-
-## Open (owner to confirm)
-
-1. **Postmove:** After the action, is postmove painted the same way as premove (drag a route through blue tiles), or only one tile at a time?  
-2. **Approach then swap:** Is the “step next to ally” walk previewed exactly like a normal premove/MOVE walk (blue tiles + path arrow)?
