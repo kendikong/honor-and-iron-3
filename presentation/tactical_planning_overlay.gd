@@ -474,6 +474,7 @@ func _compute_hover_blast_action_range_tiles(
 	action_range_origin: Vector2i,
 	ability_index: int,
 	_cache_force: bool,
+	_is_selected_player: bool = true,
 ) -> Array[Vector2i]:
 	## Blast visibility gated upstream by resolve_layer_origins show_blast — no second range gate here.
 	var ability: AbilityData = _selected_ability_data(unit, ability_index)

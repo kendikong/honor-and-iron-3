@@ -1516,7 +1516,9 @@ func _run_hover_overlay_refresh() -> void:
 		if _planning != null:
 			_planning.queue_redraw()
 		return
-	## Tile layers already recomputed in set_hover_coord when hover cell changed.
+	## Coord-change recompute lives in set_hover_coord; sim-only path updates need one refresh here.
+	if _planning != null and _last_hover_move_intent_preview:
+		_planning._recompute_hover_ranges_from_inputs()
 	_last_heavy_hover_refresh_cell = cell
 
 
@@ -2194,8 +2196,9 @@ func _drag_route_commits_active() -> bool:
 		return true
 	if _drag_route.size() < 2:
 		return false
+	var p_unit: UnitState = null
 	if _director != null and _director.selected_unit_id >= 0:
-		var p_unit := _proj_unit(_director.selected_unit_id)
+		p_unit = _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
 			var ability := _selected_ability_data(p_unit)
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
@@ -3875,7 +3878,6 @@ func _write_movement_hover_preview_paths(
 		_sync_painted_drag_route_to_preview_paths(unit_id, false)
 		return
 	if not waypoints.is_empty():
-		var actor: UnitState = _proj_unit(unit_id)
 		if actor == null:
 			return
 		var origin: Vector2i = _active_move_drag_origin(actor)
@@ -3893,7 +3895,8 @@ func _write_movement_hover_preview_paths(
 	var existing: Array = preview_state.preview_paths.get(unit_id, [])
 	if existing.size() >= 2:
 		return
-	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _proj_unit(unit_id)
 	if actor == null:
 		return
 	var stand: Vector2i = _active_move_drag_origin(actor)

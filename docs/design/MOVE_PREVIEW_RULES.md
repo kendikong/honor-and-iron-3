@@ -236,14 +236,13 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
 - `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.
 
-**Pass 10 (gauntlet loop — critic HIGH fixes):**
-- Removed `_can_show_action_range_tiles` (blast gated only by `resolve_layer_origins` `show_blast`).
-- Post-commit path trim: `trim_committed_paths_after_slot_promote` only (no preview_state anchor before copy).
-- Hover tile recompute: `set_hover_coord` only; `_run_hover_overlay_refresh` no longer duplicates.
-
 **Pass 9 (gauntlet loop — cold-audit response):**
 - Removed duplicate merge/anchor/swap from `_ensure_live_movement_intent_from_preview_actions` (merge owner is `apply_result` only).
 - `_set_preview_path` always syncs overlay (`_live_preview` mirror).
 - Committed ability route draw uses `display_route_cells_from_preview` first.
 - Side panel tile refresh: `on_hover_moved` only (no double recompute).
-- Blast tile gate: `resolve_layer_origins` `show_blast` only (removed `_can_show_action_range_tiles` from blast helper).
+
+**Pass 10 (gauntlet loop — critic HIGH fixes):**
+- Removed `_can_show_action_range_tiles` (blast gated only by `resolve_layer_origins` `show_blast`).
+- Post-commit path trim: `trim_committed_paths_after_slot_promote` only (no preview_state anchor before copy).
+- Hover tile recompute: `set_hover_coord` only; `_run_hover_overlay_refresh` no longer duplicates.
