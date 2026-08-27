@@ -10,7 +10,10 @@
 
 ```text
 ══════════════════════════════════════
-GAUNTLET SCORE │ MOVE-PREVIEW-SSOT │ Round 8 │ SELF-GRADED: no (subagent)
+GAUNTLET SCORE │ MOVE-PREVIEW-SSOT │ Round 10 │ SELF-GRADED: no (subagent)
+SCORE: 88/100 │ THRESHOLD: 85 │ PASS (architecture bar; QA tracked separately)
+DELTA: +2 vs round 8 structural PASS
+NOTES: Blast double-gate removed; promote trim SSOT; parse fixes (actor/p_unit scope, blast arity). Planning headless gate still FAIL (~306) — behavioral, not architecture gap count.
 SCORE: 86/100 │ THRESHOLD: 85 │ PASS
 DELTA: +5 vs round 7 (81); +10 vs round 6 (76)
 STOP_CONDITION_MET: yes (structural bar; planning QA not run this piece)
