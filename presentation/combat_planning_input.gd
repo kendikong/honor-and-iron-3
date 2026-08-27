@@ -681,6 +681,14 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 		and _movement_route_paint_allowed()
 	):
 		return
+	if _director != null and _director.selected_unit_id >= 0 and not dragging:
+		var hover_actor: UnitState = _proj_unit(_director.selected_unit_id)
+		if hover_actor != null:
+			var hover_cell: Vector2i = (
+				_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+			)
+			if _movement_slot_hover_preview_applies(hover_actor, hover_cell):
+				return
 	var actions_v: Variant = preview.get("actions", [])
 	if not actions_v is Array or (actions_v as Array).is_empty():
 		return
@@ -2188,7 +2196,27 @@ func _drag_route_commits_active() -> bool:
 			var ability := _selected_ability_data(p_unit)
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
 				return false
+	if _painted_premove_hover_route_active():
+		return true
 	return _selection_hover_corridor_paint_active()
+
+
+func _painted_premove_hover_route_active() -> bool:
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	if _drag_route.size() < 2 or _drag_unit_id != _director.selected_unit_id:
+		return false
+	if not _basic_move_allowed():
+		return false
+	var p_unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if p_unit == null:
+		return false
+	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
+	if move_timing == -1:
+		return true
+	if move_timing != GameEnums.MoveTiming.PRE_ACTION:
+		return false
+	return not _director.unit_has_move_planned_at_timing(p_unit.id, move_timing)
 
 
 func _selection_hover_corridor_paint_active() -> bool:
@@ -3663,8 +3691,9 @@ func _apply_painted_route_preview_paths(unit_id: int) -> void:
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
-	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
+	## Paint preview_paths first — live sim must not merge a second corridor on top.
 	_apply_movement_hover_preview_paths(p_unit.id, cell, waypoints)
+	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
 	_refresh_click_target_highlight()
 
 
