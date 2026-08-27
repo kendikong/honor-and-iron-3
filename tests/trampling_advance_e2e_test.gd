@@ -403,8 +403,8 @@ static func _test_overlay_partial_paint_completes_to_hover(failures: Array[Strin
 	preview.preview_paths[1] = [origin, EAST_THEN_NORTH[0], hover]
 	preview.preview_splits[1] = 3
 	preview.preview_post_splits[1] = 3
-	var route_cells: Array[Vector2i] = CombatPlanningPreview.live_move_hover_route_cells(
-		1, preview, null, null,
+	var route_cells: Array[Vector2i] = CombatPlanningPreview.display_route_cells_from_preview(
+		1, preview, null, null, true,
 	)
 	_assert_route_cells(
 		failures,

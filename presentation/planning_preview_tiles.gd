@@ -62,6 +62,8 @@ static func resolve_layer_origins(
 		"next_aim_origin": none,
 		"next_move_origin": none,
 		"show_blast": false,
+		"blast_origin": none,
+		"blast_on_hover_layer": false,
 	}
 	if unit == null or director == null:
 		return plan
@@ -82,6 +84,12 @@ static func resolve_layer_origins(
 				and planning_input.action_range_visible_for_hover()
 				and not planning_input.is_walk_only_hover_move(unit, hover_coord)
 			)
+			if plan["show_blast"] and plan["next_aim_origin"] != none:
+				plan["blast_origin"] = plan["next_aim_origin"]
+			plan["blast_on_hover_layer"] = (
+				planning_input != null
+				and planning_input.action_range_stand_locked_to_projection(unit.id)
+			)
 		PhaseKind.NON_MOVEMENT:
 			if planning_input != null:
 				plan["locked_aim_origin"] = planning_input.action_range_intent_stand_cell(unit.id)
@@ -99,4 +107,6 @@ static func resolve_layer_origins(
 			plan["show_blast"] = (
 				planning_input == null or planning_input.action_range_visible_for_hover()
 			)
+			if plan["show_blast"] and plan["locked_aim_origin"] != none:
+				plan["blast_origin"] = plan["locked_aim_origin"]
 	return plan

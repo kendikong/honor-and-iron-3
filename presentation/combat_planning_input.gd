@@ -1285,7 +1285,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if p_unit != null:
 			_discard_stale_drag_route_for_leg(p_unit)
 			if painted_move_route_locked(p_unit):
-				_ensure_painted_route_preview_sync(p_unit.id)
+				_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
 			var ability := _selected_ability_data(p_unit)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -3597,19 +3597,6 @@ func _discard_stale_drag_route_for_leg(p_unit: UnitState) -> void:
 		_drag_last_free = Vector2i(-999999, -999999)
 
 
-func _ensure_painted_route_preview_sync(unit_id: int) -> void:
-	if unit_id < 0 or _director == null:
-		return
-	var actor: UnitState = _proj_unit(unit_id)
-	if not _painted_drag_route_matches_leg(actor):
-		return
-	preview_state.preview_paths[unit_id] = _drag_route.duplicate()
-	var route_size: int = _drag_route.size()
-	preview_state.preview_splits[unit_id] = route_size
-	preview_state.preview_post_splits[unit_id] = route_size
-	_sync_movement_hover_paths_to_overlay(unit_id)
-
-
 ## Premove, postmove, and armed MOVE module legs share the same painted-route input.
 func _movement_route_paint_allowed() -> bool:
 	if _basic_move_allowed():
@@ -3813,11 +3800,15 @@ func _sync_drag_route_stand() -> void:
 		return
 	if not dragging and not _drag_route_commits_active():
 		return
-	_apply_painted_route_preview_paths(_drag_unit_id)
+	_sync_painted_drag_route_to_preview_paths(_drag_unit_id, false)
 
 
-func _apply_painted_route_preview_paths(unit_id: int) -> void:
-	if unit_id < 0 or _director == null or _drag_route.is_empty():
+## Single painted-route → preview_paths writer (drag buffer → route truth).
+func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: bool) -> void:
+	if unit_id < 0 or _director == null or _drag_route.size() < 2:
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if require_leg_match and not _painted_drag_route_matches_leg(actor):
 		return
 	if not _movement_route_paint_allowed():
 		return
@@ -3892,14 +3883,7 @@ func _write_movement_hover_preview_paths(
 				preview_state.preview_post_splits[unit_id] = hop.size()
 				return
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
-		if unit_id < 0 or _director == null or _drag_route.is_empty():
-			return
-		if not _movement_route_paint_allowed():
-			return
-		preview_state.preview_paths[unit_id] = _drag_route.duplicate()
-		var route_size: int = _drag_route.size()
-		preview_state.preview_splits[unit_id] = route_size
-		preview_state.preview_post_splits[unit_id] = route_size
+		_sync_painted_drag_route_to_preview_paths(unit_id, false)
 		return
 	if not waypoints.is_empty():
 		var actor: UnitState = _proj_unit(unit_id)

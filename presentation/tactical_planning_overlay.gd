@@ -1225,22 +1225,12 @@ func _apply_planning_tile_layers(
 					unit, p_unit, selected_ability, next_move, is_selected_player,
 				)
 	if bool(layer_plan.get("show_blast", false)):
-		var blast_origin: Vector2i = _intent_stand_origin(unit)
-		var next_aim_blast: Vector2i = layer_plan.get("next_aim_origin", Vector2i(-999999, -999999))
-		if next_aim_blast.x > -900000:
-			blast_origin = next_aim_blast
-		elif phase == PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-			var locked_aim_blast: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
-			if locked_aim_blast.x > -900000:
-				blast_origin = locked_aim_blast
-		_blast_tiles_on_hover_layer = (
-			_planning_input != null
-			and _planning_input.action_range_stand_locked_to_projection(unit.id)
-			and phase == PlanningPreviewTiles.PhaseKind.MOVEMENT
-		)
-		_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-			unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
-		)
+		var blast_origin: Vector2i = layer_plan.get("blast_origin", Vector2i(-999999, -999999))
+		if blast_origin.x > -900000:
+			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
+			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
+				unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
+			)
 
 
 func _reachable_move_tiles_for_origin(
@@ -1276,71 +1266,6 @@ func _reachable_move_tiles_for_origin(
 		move_ability = _planning_input._route_pathfinding_ability(p_unit)
 	return MovementSystem.get_reachable_tiles(
 		move_board, move_from, move_budget, mt, move_cost, move_ability,
-	)
-
-
-func _fill_hover_action_range_tiles(
-	unit: UnitState,
-	p_unit: UnitState,
-	action_range_origin: Vector2i,
-	selected_ability: int,
-	cache_force: bool,
-	is_selected_player: bool,
-) -> void:
-	_hover_action_range_tiles.clear()
-	_hover_blast_tiles.clear()
-	if _intent_tiles_blocked(unit, selected_ability):
-		return
-	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-		return
-	var ability_index: int = selected_ability if is_selected_player else -1
-	if cache_force and is_selected_player:
-		ability_index = selected_ability
-	if ability_index >= 0 and is_selected_player:
-		var ability: AbilityData = _selected_ability_data(unit, ability_index)
-		var budget_unit: UnitState = p_unit if p_unit != null else unit
-		if (
-			ability != null
-			and AbilitySystem.is_run_ability(ability)
-			and budget_unit != null
-			and budget_unit.ability.points_left >= ability.action_point_cost
-		):
-			return
-		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-			unit, action_range_origin, ability_index,
-		)
-	elif (
-		is_selected_player
-		and _director != null
-		and _director.find_awaiting_action(unit.id) != null
-	):
-		_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-			unit, action_range_origin, ability_index,
-		)
-	else:
-		_populate_action_range_tiles(unit, action_range_origin, ability_index)
-	_fill_hover_blast_tiles(
-		unit, p_unit, action_range_origin, ability_index, cache_force, is_selected_player,
-	)
-
-
-func _fill_hover_blast_tiles(
-	unit: UnitState,
-	p_unit: UnitState,
-	action_range_origin: Vector2i,
-	ability_index: int,
-	cache_force: bool,
-	is_selected_player: bool,
-) -> void:
-	_hover_blast_tiles.clear()
-	if not is_selected_player:
-		return
-	if _intent_tiles_blocked(unit, ability_index):
-		return
-	if _hover_is_walk_only_premove(unit):
-		return
-	_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-		unit, p_unit, action_range_origin, ability_index, cache_force,
 	)
 
 
@@ -2266,7 +2191,9 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 			var other_unit_id: int = int(other_id)
 			if other_unit_id == actor.id:
 				continue
-			var other_route: Array = prev.preview_paths.get(other_unit_id, [])
+			var other_route: Array[Vector2i] = CombatPlanningPreview.frozen_move_route_cells(
+				other_unit_id, prev,
+			)
 			if other_route.size() < 2:
 				continue
 			var other_unit: UnitState = _board.get_unit_by_id(other_unit_id) if _board != null else null
