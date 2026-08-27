@@ -1,6 +1,8 @@
 class_name PlanningQAGateTest
 extends RefCounted
 
+const HoverMatrix := preload("res://tests/move_skill_hover_matrix_harness.gd")
+
 ## Automated mirror of the owner's manual planning QA checklist (Skill Arena / TestBattle).
 ## Asserts production planning, preview, commit-slot, cursor, and sim APIs — not pixel draw.
 
@@ -60,6 +62,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_repath_does_not_replace_painted_order,
 		_test_trample_post_move_preview_commit_sim,
 		_test_trample_full_preview_truth_click,
+		_test_trample_full_phase_hover_matrix,
 		_test_teleport_full_preview_truth_click,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
@@ -169,6 +172,7 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_repath_preserves_painted_order",
 		"trample_post_move_truth",
 		"trample_full_preview_truth_click",
+		"trample_full_phase_hover_matrix",
 		"teleport_full_preview_truth_click",
 		"bash_preview_board_parity",
 		"hover_click_drop_parity",
@@ -904,7 +908,37 @@ static func _probe_charge_strike_hover_orbit(
 			allow_arrow,
 			arrow_from,
 		)
+		var strike_ability: AbilityData = _ability_for_id(actor, charge_strike_id)
+		var matrix_config: Dictionary = _charge_strike_matrix_config(
+			phase,
+			label_prefix,
+			actor,
+			strike_ability,
+			stand_cell,
+			charge_route,
+			enemy_cell,
+			post_route,
+			update_drag,
+			cell,
+		)
+		HoverMatrix.assert_hover_layers(
+			failures, fix, probe_label, matrix_config, cell,
+		)
 		if phase == "move" or phase == "move_drag":
+			if not update_drag and input._can_move_to(actor, cell):
+				var expected_path: Array[Vector2i] = _expected_move_module_corridor_path(
+					input, actor, cell, stand_cell,
+				)
+				if preview_path != expected_path:
+					failures.append(
+						"%s: MOVE module orbit preview %s expected corridor %s"
+						% [probe_label, str(preview_path), str(expected_path)],
+					)
+				if not input.get_drag_route().is_empty():
+					failures.append(
+						"%s: MOVE module orbit must not accumulate hover drag route %s"
+						% [probe_label, str(input.get_drag_route())],
+					)
 			_assert_path_excludes_bleed_cells(
 				failures,
 				probe_label + "/no_premove_bleed",
@@ -1031,6 +1065,77 @@ static func _probe_charge_strike_hover_orbit(
 					post_route[0],
 				)
 		previous = cell
+
+
+static func _ability_for_id(actor: UnitState, ability_id: StringName) -> AbilityData:
+	for raw: Variant in actor.active_abilities:
+		var ability: AbilityData = raw as AbilityData
+		if ability != null and ability.id == ability_id:
+			return ability
+	return null
+
+
+static func _charge_strike_matrix_config(
+	phase: String,
+	label_prefix: String,
+	actor: UnitState,
+	ability: AbilityData,
+	stand_cell: Vector2i,
+	charge_route: Array[Vector2i],
+	enemy_cell: Vector2i,
+	post_route: Array[Vector2i],
+	update_drag: bool,
+	hover_cell: Vector2i,
+) -> Dictionary:
+	var config: Dictionary = {
+		"label_prefix": label_prefix,
+		"phase": phase,
+		"actor": actor,
+		"ability": ability,
+		"stand_cell": stand_cell,
+		"update_drag": update_drag,
+		"suppress_target_arrow": true,
+		"allow_target_arrow_at": Vector2i(-999999, -999999),
+		"arrow_from": charge_route.back(),
+	}
+	match phase:
+		"premove_hover", "premove_drag":
+			config["ability"] = null
+			config["expect_red"] = false
+			config["expect_blue"] = true
+			config["move_preview_kind"] = "drag_painted" if update_drag else "corridor"
+			config["check_empty_drag_route"] = not update_drag
+			config["check_module_stand"] = false
+			config["expect_awaiting_move_route"] = false
+		"move", "move_drag":
+			config["expect_red"] = true
+			config["expect_blue"] = true
+			config["move_preview_kind"] = "drag_painted" if update_drag else "corridor"
+			config["check_empty_drag_route"] = not update_drag
+			config["check_module_stand"] = true
+			config["expect_awaiting_move_route"] = not update_drag
+		"damage":
+			config["expect_red"] = true
+			config["expect_blue"] = false
+			config["move_preview_kind"] = "frozen_landing"
+			config["frozen_cell"] = charge_route.back()
+			config["allow_target_arrow_at"] = enemy_cell
+			config["suppress_target_arrow"] = hover_cell != enemy_cell
+			config["check_module_stand"] = false
+			config["expect_awaiting_move_route"] = false
+		"postmove", "postmove_drag":
+			config["ability"] = null
+			config["expect_red"] = false
+			config["expect_blue"] = true
+			config["move_preview_kind"] = "drag_painted" if update_drag else "postmove_corridor"
+			config["post_start"] = post_route[0]
+			config["check_module_stand"] = false
+			config["expect_awaiting_move_route"] = false
+		_:
+			config["expect_red"] = false
+			config["expect_blue"] = false
+			config["move_preview_kind"] = "none"
+	return config
 
 
 static func _dedupe_cells(cells: Array[Vector2i]) -> Array[Vector2i]:
@@ -1239,6 +1344,172 @@ static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 
 static func _wire_click_drop_context(fix: Dictionary) -> void:
 	_wire_overlay(fix)
+
+
+static func _expected_move_module_corridor_path(
+	input: CombatPlanningInput,
+	actor: UnitState,
+	cell: Vector2i,
+	stand_cell: Vector2i,
+) -> Array[Vector2i]:
+	if actor == null or input == null:
+		return []
+	if cell == stand_cell:
+		return [stand_cell]
+	if not input._can_move_to(actor, cell):
+		return [stand_cell]
+	var waypoints: Array[Vector2i] = input._corridor_waypoints_to_cell(actor, cell)
+	var path: Array[Vector2i] = [stand_cell]
+	for wp: Vector2i in waypoints:
+		path.append(wp)
+	if path.size() == 1 and GridSystem.manhattan(stand_cell, cell) == 1:
+		path.append(cell)
+	return path
+
+
+static func _test_trample_full_phase_hover_matrix(failures: Array[String]) -> void:
+	## Mandatory regression bar: dense multi-hover on every Trampling Advance phase.
+	## Each hover asserts red tiles, blue tiles, move-preview arrows, and corridor truth.
+	TramplingAdvanceE2ETest._test_awaiting_hover_orbit_matches_corridor_not_paint(failures)
+	TramplingAdvanceE2ETest._test_undo_during_awaiting_movement_clears_arm(failures)
+	TramplingAdvanceE2ETest._test_undo_committed_move_module_while_skill_still_awaiting(failures)
+	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
+	_wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	const LABEL := "PlanningQAGate trample/matrix"
+	if fix.trample_idx < 0:
+		failures.append("%s: Trampling Advance missing" % LABEL)
+		return
+	var trample: AbilityData = unit.active_abilities[fix.trample_idx]
+	var stand: Vector2i = TramplingAdvanceE2ETest.START_CELL
+	var end_cell: Vector2i = TramplingAdvanceE2ETest.END_CELL
+	var full_route: Array[Vector2i] = [
+		stand, TramplingAdvanceE2ETest.EAST_THEN_NORTH[0], end_cell,
+	]
+	var sweep_cells: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [stand, end_cell], HoverMatrix.ORBIT_RADIUS, true,
+	)
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
+		failures.append("%s: arm awaiting failed" % LABEL)
+		return
+	# Phase 1 — armed MOVE module selection-hover (circle the pointer; no drag paint).
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "armed_move_hover",
+		"hover_cells": sweep_cells,
+		"sweep_from": stand,
+		"actor": unit,
+		"ability": trample,
+		"stand_cell": stand,
+		"expect_red": true,
+		"expect_blue": true,
+		"move_preview_kind": "corridor",
+		"check_empty_drag_route": true,
+		"suppress_target_arrow": true,
+		"check_module_stand": true,
+		"expect_awaiting_move_route": true,
+	})
+	input._begin_drag(unit, fix.map_stub.grid_to_local(stand), true)
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "armed_move_drag",
+		"hover_cells": sweep_cells,
+		"sweep_from": stand,
+		"actor": unit,
+		"ability": trample,
+		"stand_cell": stand,
+		"update_drag": true,
+		"expect_red": true,
+		"expect_blue": true,
+		"move_preview_kind": "drag_painted",
+		"suppress_target_arrow": true,
+		"check_module_stand": true,
+		"expect_awaiting_move_route": false,
+	})
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, full_route, end_cell)
+	input.dragging = false
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "painted_landing_hover",
+		"hover_cells": sweep_cells,
+		"sweep_from": end_cell,
+		"actor": unit,
+		"ability": trample,
+		"stand_cell": stand,
+		"expect_red": true,
+		"expect_blue": true,
+		"move_preview_kind": "fixed_route",
+		"fixed_route": full_route,
+		"check_empty_drag_route": true,
+		"suppress_target_arrow": true,
+		"check_module_stand": true,
+		"expect_awaiting_move_route": true,
+	})
+	# Commit trample MOVE leg — post-move planning must stay on landing stand.
+	var slots: Dictionary = TramplingAdvanceE2ETest._commit_drag_route(input, director, end_cell)
+	if slots.is_empty():
+		failures.append("%s: trample commit failed" % LABEL)
+		return
+	director.selected_ability_index = -1
+	input.force_basic_movement = true
+	var post_start: Vector2i = end_cell
+	var post_dest: Vector2i = PlanningChecklistHarness.TRAMPLE_POST_DEST
+	var post_route: Array[Vector2i] = PlanningChecklistHarness.TRAMPLE_POST_ROUTE.duplicate()
+	var post_sweep: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [post_start, post_dest], HoverMatrix.ORBIT_RADIUS, true,
+	)
+	# Phase 4 — post-move hover (basic movement from trample landing).
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "postmove_hover",
+		"hover_cells": post_sweep,
+		"sweep_from": post_start,
+		"actor": unit,
+		"ability": null,
+		"stand_cell": post_start,
+		"expect_red": false,
+		"expect_blue": true,
+		"move_preview_kind": "postmove_corridor",
+		"post_start": post_start,
+		"suppress_target_arrow": true,
+	})
+	# Phase 5 — post-move drag orbit.
+	input._begin_drag(unit, fix.map_stub.grid_to_local(post_start), true)
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "postmove_drag",
+		"hover_cells": post_sweep,
+		"sweep_from": post_start,
+		"actor": unit,
+		"ability": null,
+		"stand_cell": post_start,
+		"update_drag": true,
+		"expect_red": false,
+		"expect_blue": true,
+		"move_preview_kind": "postmove_corridor",
+		"post_start": post_start,
+		"suppress_target_arrow": true,
+	})
+	# Landing hover on full post route after paint.
+	TramplingAdvanceE2ETest._paint_drag_route(input, unit, post_route, post_dest)
+	input.dragging = false
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": LABEL,
+		"phase": "postmove_painted_hover",
+		"hover_cells": post_sweep,
+		"sweep_from": post_dest,
+		"actor": unit,
+		"ability": null,
+		"stand_cell": post_start,
+		"expect_red": false,
+		"expect_blue": true,
+		"move_preview_kind": "fixed_route",
+		"fixed_route": post_route,
+		"suppress_target_arrow": true,
+	})
 
 
 static func _test_waypoint_paint_order_preserved_on_tile_drag(failures: Array[String]) -> void:
@@ -2391,8 +2662,26 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 	var actor: UnitState = fix.actor
 	PlanningChecklistHarness.set_unit_pools(fix, actor.id, 1, 8)
 
-	# Premove: observe the live route and the exact slots before committing.
+	# Premove: dense hover orbit before any drag paint (red off, blue + move arrows on).
 	PlanningChecklistHarness.enter_basic_movement(fix)
+	var premove_sweep: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [start], HoverMatrix.ORBIT_RADIUS, true,
+	)
+	HoverMatrix.probe_hover_sweep(failures, fix, {
+		"label_prefix": label,
+		"phase": "premove_hover",
+		"hover_cells": premove_sweep,
+		"sweep_from": start,
+		"actor": actor,
+		"ability": null,
+		"stand_cell": start,
+		"expect_red": false,
+		"expect_blue": true,
+		"move_preview_kind": "corridor",
+		"suppress_target_arrow": true,
+		"check_module_stand": false,
+		"expect_awaiting_move_route": false,
+	})
 	PlanningDragE2EHarness.begin_drag_route(fix, pre_route)
 	PlanningChecklistHarness.hover(fix, pre_route.back())
 	var pre_live: CombatPlanningPreview = overlay.get_live_preview()
@@ -2414,6 +2703,30 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 	if _slots_invalid(pre_slots):
 		failures.append("%s: premove commit failed" % label)
 		return
+	# Premove drag orbit while keeping the painted corridor (pointer jitters during paint).
+	var premove_drag_sweep: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, pre_route, 2, true,
+	)
+	input._begin_drag(actor, fix.map_stub.grid_to_local(pre_route.back()), true)
+	input._drag_route = pre_route.duplicate()
+	input._drag_last_free = pre_route.back()
+	_probe_charge_strike_hover_orbit(
+		failures,
+		fix,
+		overlay,
+		input,
+		actor,
+		label,
+		premove_drag_sweep,
+		"premove_drag",
+		start,
+		charge_route,
+		enemy_cell,
+		pre_route,
+		post_route,
+		ChargeStrikeId,
+		true,
+	)
 	PlanningDragE2EHarness.release_at(fix, pre_route.back())
 	PlanningChecklistHarness.flush_planning(fix)
 	var committed_pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(
@@ -2445,16 +2758,9 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 	if not _arm_awaiting_at(input, director, stand_after_pre.position):
 		failures.append("%s: Charge Strike MOVE module did not arm" % label)
 		return
-	var move_orbit_cells: Array[Vector2i] = _orbit_hover_cells(
-		fix.board, stand_after_pre.position, 2, true,
+	var move_orbit_cells: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [stand_after_pre.position, charge_route.back()], HoverMatrix.ORBIT_RADIUS, true,
 	)
-	move_orbit_cells.append_array(
-		_orbit_hover_cells(fix.board, charge_route.back(), 2, true),
-	)
-	move_orbit_cells.append_array(
-		_diagonal_neighbor_cells(fix.board, stand_after_pre.position),
-	)
-	move_orbit_cells = _dedupe_cells(move_orbit_cells)
 	_probe_charge_strike_hover_orbit(
 		failures,
 		fix,
@@ -2529,12 +2835,9 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 		failures.append("%s: Charge Strike attack module did not remain awaiting" % label)
 		return
 
-	var damage_orbit_cells: Array[Vector2i] = _orbit_hover_cells(
-		fix.board, charge_route.back(), 2, true,
+	var damage_orbit_cells: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [charge_route.back(), enemy_cell], HoverMatrix.ORBIT_RADIUS, true,
 	)
-	damage_orbit_cells.append_array(_orbit_hover_cells(fix.board, enemy_cell, 2, true))
-	damage_orbit_cells.append_array(_diagonal_neighbor_cells(fix.board, charge_route.back()))
-	damage_orbit_cells = _dedupe_cells(damage_orbit_cells)
 	_probe_charge_strike_hover_orbit(
 		failures,
 		fix,
@@ -2652,12 +2955,9 @@ static func _test_charge_strike_composite_move_preview(failures: Array[String]) 
 
 	# Postmove: its route must begin at Charge Strike's actual landing, not turn start.
 	PlanningChecklistHarness.enter_basic_movement(fix)
-	var post_orbit_cells: Array[Vector2i] = _orbit_hover_cells(
-		fix.board, post_route[0], 2, true,
+	var post_orbit_cells: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [post_route[0], post_route.back()], HoverMatrix.ORBIT_RADIUS, true,
 	)
-	post_orbit_cells.append_array(_orbit_hover_cells(fix.board, post_route.back(), 2, true))
-	post_orbit_cells.append_array(_diagonal_neighbor_cells(fix.board, post_route[0]))
-	post_orbit_cells = _dedupe_cells(post_orbit_cells)
 	input._begin_drag(
 		projected_after_charge,
 		fix.map_stub.grid_to_local(post_route[0]),

@@ -27,6 +27,9 @@ static func run_all(failures: Array[String]) -> void:
 	_test_post_move_leg_keeps_painted_route_after_trample(failures)
 	_test_post_move_sim_preview_keeps_trample_paint_order(failures)
 	_test_planning_animation_cells_after_post_move(failures)
+	_test_awaiting_hover_orbit_matches_corridor_not_paint(failures)
+	_test_undo_during_awaiting_movement_clears_arm(failures)
+	_test_undo_committed_move_module_while_skill_still_awaiting(failures)
 
 
 static func _plain_board(size: Vector2i) -> BoardState:
@@ -737,3 +740,146 @@ static func _test_planning_animation_cells_after_post_move(failures: Array[Strin
 		expected_post_wps,
 		"TramplingAdvanceE2E animation post-move leg",
 	)
+
+
+static func _orbit_cells(board: BoardState, center: Vector2i, radius: int = 2) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var seen: Dictionary = {}
+	for ring: int in range(1, radius + 1):
+		for dx: int in range(-ring, ring + 1):
+			for dy: int in range(-ring, ring + 1):
+				if maxi(absi(dx), absi(dy)) != ring:
+					continue
+				var cell: Vector2i = center + Vector2i(dx, dy)
+				if seen.has(cell) or not board.is_in_bounds(cell):
+					continue
+				seen[cell] = true
+				out.append(cell)
+	return out
+
+
+static func _expected_hover_move_path(
+	input: CombatPlanningInput,
+	unit: UnitState,
+	cell: Vector2i,
+) -> Array[Vector2i]:
+	var origin: Vector2i = input._active_move_drag_origin(unit)
+	if origin.x <= -900000:
+		return []
+	if cell == origin:
+		return [origin]
+	if not input._can_move_to(unit, cell):
+		return [origin]
+	var waypoints: Array[Vector2i] = input._corridor_waypoints_to_cell(unit, cell)
+	var path: Array[Vector2i] = [origin]
+	for wp: Vector2i in waypoints:
+		path.append(wp)
+	if path.size() == 1 and GridSystem.manhattan(origin, cell) == 1:
+		path.append(cell)
+	return path
+
+
+static func _hover_and_flush(input: CombatPlanningInput, cell: Vector2i) -> void:
+	if input._intent_state == null:
+		input._intent_state = CombatIntentState.new()
+		input._intent_state.bind(input._director)
+	input._intent_state.set_hover_coord(cell)
+	input.on_hover_moved(cell)
+	input._flush_hover_heavy_sync()
+
+
+static func _test_awaiting_hover_orbit_matches_corridor_not_paint(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("TramplingAdvanceE2E orbit: knight missing Trampling Advance ability")
+		return
+	if not _arm_trample_awaiting(input, director, unit):
+		failures.append("TramplingAdvanceE2E orbit: arm awaiting failed")
+		return
+	var orbit: Array[Vector2i] = _orbit_cells(fix.board, START_CELL, 2)
+	orbit.append(END_CELL)
+	for cell: Vector2i in orbit:
+		_hover_and_flush(input, cell)
+		if not input.get_drag_route().is_empty():
+			failures.append(
+				"TramplingAdvanceE2E orbit: selection-hover must not paint drag route at %s, got %s"
+				% [cell, str(input.get_drag_route())],
+			)
+		if not input._can_move_to(unit, cell):
+			var oob_path: Array = input.preview_state.preview_paths.get(unit.id, [])
+			if not oob_path.is_empty() and oob_path != [START_CELL]:
+				failures.append(
+					"TramplingAdvanceE2E orbit: unreachable %s must not keep move preview %s"
+					% [cell, str(oob_path)],
+				)
+			continue
+		var expected: Array[Vector2i] = _expected_hover_move_path(input, unit, cell)
+		var actual: Array = input.preview_state.preview_paths.get(unit.id, [])
+		if actual != expected:
+			failures.append(
+				"TramplingAdvanceE2E orbit: preview at %s expected %s got %s"
+				% [cell, str(expected), str(actual)],
+			)
+	# Full circle must not poison the canonical landing preview.
+	_hover_and_flush(input, END_CELL)
+	var landing_path: Array = input.preview_state.preview_paths.get(unit.id, [])
+	var landing_expected: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
+	if landing_path != landing_expected:
+		failures.append(
+			"TramplingAdvanceE2E orbit: landing preview %s expected %s after orbit"
+			% [str(landing_path), str(landing_expected)],
+		)
+
+
+static func _test_undo_during_awaiting_movement_clears_arm(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if not _arm_trample_awaiting(input, director, unit):
+		failures.append("TramplingAdvanceE2E undo arm: arm awaiting failed")
+		return
+	for cell: Vector2i in _orbit_cells(fix.board, START_CELL, 2):
+		_hover_and_flush(input, cell)
+	if not input.awaiting_targeting_active():
+		failures.append("TramplingAdvanceE2E undo arm: orbit must keep awaiting before cancel")
+		return
+	input.on_right_click()
+	director.flush_plan_refresh_signals_if_pending()
+	if input.awaiting_targeting_active():
+		failures.append("TramplingAdvanceE2E undo arm: right-click must clear awaiting when nothing committed")
+	if director.find_awaiting_action(unit.id) != null:
+		failures.append("TramplingAdvanceE2E undo arm: timeline awaiting entry must clear")
+	if not input.get_drag_route().is_empty():
+		failures.append("TramplingAdvanceE2E undo arm: drag route must clear after cancel")
+
+
+static func _test_undo_committed_move_module_while_skill_still_awaiting(failures: Array[String]) -> void:
+	var fix: Dictionary = _knight_fixture(START_CELL)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if not _arm_trample_awaiting(input, director, unit):
+		failures.append("TramplingAdvanceE2E undo commit: arm awaiting failed")
+		return
+	var route: Array[Vector2i] = [START_CELL, EAST_THEN_NORTH[0], EAST_THEN_NORTH[1]]
+	_paint_drag_route(input, unit, route, END_CELL)
+	var slots: Dictionary = _commit_drag_route(input, director, END_CELL)
+	if slots.is_empty():
+		failures.append("TramplingAdvanceE2E undo commit: trample commit failed")
+		return
+	if _committed_trample_action(director) == null:
+		failures.append("TramplingAdvanceE2E undo commit: trample missing before undo")
+		return
+	if not director.unit_has_undoable_action(unit.id):
+		failures.append("TramplingAdvanceE2E undo commit: committed trample must be undoable")
+		return
+	input.on_right_click()
+	director.flush_plan_refresh_signals_if_pending()
+	if _committed_trample_action(director) != null:
+		failures.append("TramplingAdvanceE2E undo commit: right-click must undo committed MOVE module")
+	if input.awaiting_targeting_active():
+		failures.append("TramplingAdvanceE2E undo commit: awaiting must clear after undoing committed module")
