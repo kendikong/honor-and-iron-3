@@ -404,12 +404,7 @@ func _on_auto_use_skill_toggled(pressed: bool) -> void:
 
 func _refresh_planning_move_overlay() -> void:
 	if _planning_overlay != null and _director != null:
-		_planning_overlay.recompute_hover_ranges(
-			_planning_input.force_basic_movement if _planning_input != null else false,
-			_director.selected_ability_index,
-			_planning_input.dragging if _planning_input != null else false,
-			_planning_input.get_drag_unit_id() if _planning_input != null else -1,
-		)
+		_planning_overlay._recompute_hover_ranges_from_inputs()
 	if _planning_input != null:
 		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
 		_planning_input.on_hover_moved(cell)

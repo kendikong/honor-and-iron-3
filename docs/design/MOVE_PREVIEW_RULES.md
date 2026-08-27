@@ -226,3 +226,9 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Overlay hover tile cache keyed on `_intent_stand_origin` (stale two-range risk).
 - `set_hover_coord` → `_refresh_cursor_action_tiles` fork (second tile entry).
 - Overlay `_intent_stand_origin` live-board duplicate (delegates to input stand SSOT).
+
+**Pass 6 (gauntlet loop):**
+- `_apply_preview_result_preserving_hover_paths` — snapshot/restore authoritative movement hover paths across `build_preview_paths` `paths.clear()`.
+- `CombatPlanningPreview.set_unit_preview_path` — shared path assign for input + committed promote.
+- `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
+- `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.

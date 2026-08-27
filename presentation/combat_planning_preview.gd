@@ -31,6 +31,15 @@ func clear_all() -> void:
 	live_intents.clear()
 
 
+static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
+	if preview == null or unit_id < 0 or path.is_empty():
+		return
+	preview.preview_paths[unit_id] = path.duplicate()
+	var split_size: int = path.size()
+	preview.preview_splits[unit_id] = split_size
+	preview.preview_post_splits[unit_id] = split_size
+
+
 func apply_result(res: Dictionary, director: CombatDirector) -> void:
 	var temp_board: BoardState = res.get("temp_board")
 	if temp_board == null:

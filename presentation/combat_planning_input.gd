@@ -599,6 +599,45 @@ func refresh_live_preview() -> void:
 	_apply_live_preview(preview)
 
 
+func _apply_preview_result_preserving_hover_paths(res: Dictionary) -> void:
+	if _director == null:
+		return
+	var snap: Dictionary = _snapshot_authoritative_move_hover_paths()
+	preview_state.apply_result(res, _director)
+	_restore_authoritative_move_hover_paths(snap)
+
+
+func _snapshot_authoritative_move_hover_paths() -> Dictionary:
+	if _director == null or _director.selected_unit_id < 0:
+		return {}
+	var unit_id: int = _director.selected_unit_id
+	if not _movement_hover_path_blocks_sim_merge(unit_id):
+		return {}
+	var path: Array = preview_state.preview_paths.get(unit_id, [])
+	if path.is_empty():
+		return {}
+	return {
+		"unit_id": unit_id,
+		"path": path.duplicate(),
+		"splits": preview_state.preview_splits.get(unit_id, path.size()),
+		"post_splits": preview_state.preview_post_splits.get(unit_id, path.size()),
+	}
+
+
+func _restore_authoritative_move_hover_paths(snap: Dictionary) -> void:
+	if snap.is_empty():
+		return
+	var unit_id: int = int(snap.get("unit_id", -1))
+	if unit_id < 0:
+		return
+	var path: Variant = snap.get("path", [])
+	if not path is Array or (path as Array).is_empty():
+		return
+	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, path as Array)
+	if _planning != null:
+		_planning.apply_preview_paths_only(preview_state, unit_id)
+
+
 func _apply_live_preview(preview: Dictionary) -> void:
 	if preview.is_empty():
 		return
@@ -617,7 +656,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			_planning.restore_committed_display()
 		_sync_intent_live_board()
 		return
-	preview_state.apply_result(preview, _director)
+	_apply_preview_result_preserving_hover_paths(preview)
 	drag_preview_failed = false
 	_last_hover_move_intent_preview = _preview_dict_is_move_only_intent(preview)
 	var actor_id: int = _drag_unit_id if dragging else _director.selected_unit_id
@@ -1345,9 +1384,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 	):
 		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 		if hover_unit != null and _movement_slot_hover_preview_applies(hover_unit, cell):
-			var hover_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(hover_unit, cell)
-			_write_movement_hover_preview_paths(hover_unit.id, cell, hover_waypoints)
-			_sync_movement_hover_paths_to_overlay(hover_unit.id)
+			_refresh_movement_slot_hover_preview(hover_unit, cell)
+			_last_sim_hover_refresh_cell = cell
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -2049,7 +2087,7 @@ func _apply_hover_preview_dict(res: Dictionary) -> void:
 	if _is_invalid_dict(res):
 		_clear_hover_preview()
 		return
-	preview_state.apply_result(res, _director)
+	_apply_preview_result_preserving_hover_paths(res)
 	_ensure_live_movement_intent_from_preview_actions(res)
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
@@ -2681,10 +2719,9 @@ func _promote_intent_preview_after_commit() -> void:
 		if preserve_full_route and intent_paths.has(unit_id):
 			var route: Variant = intent_paths[unit_id]
 			if route is Array and (route as Array).size() > 1:
-				committed.preview_paths[unit_id] = (route as Array).duplicate()
-				var route_size: int = (route as Array).size()
-				committed.preview_splits[unit_id] = route_size
-				committed.preview_post_splits[unit_id] = route_size
+				CombatPlanningPreview.set_unit_preview_path(
+					committed, unit_id, route as Array,
+				)
 	if unit_id >= 0 and _director != null:
 		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
 			_director, preview_state, unit_id, fallback_board,
@@ -3786,10 +3823,7 @@ func _sync_drag_route_stand() -> void:
 func _set_preview_path(unit_id: int, path: Array, sync_overlay: bool) -> void:
 	if unit_id < 0 or path.is_empty():
 		return
-	preview_state.preview_paths[unit_id] = path.duplicate()
-	var split_size: int = path.size()
-	preview_state.preview_splits[unit_id] = split_size
-	preview_state.preview_post_splits[unit_id] = split_size
+	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, path)
 	if sync_overlay and _planning != null:
 		_planning.apply_preview_paths_only(preview_state, unit_id)
 
