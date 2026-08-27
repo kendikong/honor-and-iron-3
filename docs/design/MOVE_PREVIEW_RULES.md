@@ -128,9 +128,14 @@ No next phase, or not possible from that tile → **no second range**.
 
 **Faint outline** on the hover tile when it sits inside a blue or red field.
 
-### Yellow — hover selection
+### Yellow — hover selection (Triangle Strategy style)
 
-**Yellow** = tile under the mouse you are **selecting** — movement destination **or** skill target (or tile pick).
+**Yellow** = what your **click would affect** at the current hover — movement destination tile **or** skill target footprint.
+
+- **AOE:** show the **full affected tile set** at hover (not just the cursor cell).  
+- **Non-AOE:** the single target tile.  
+- **Hover only** — does **not** freeze or persist after commit; move the mouse → yellow updates.  
+- **Invalid tile** — **no** yellow (invalid cursor only).
 
 ### Wait
 
@@ -162,7 +167,9 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 | New walk arrows on damage / target step | Not a movement step |
 | Blue walk tiles during non-move module | Only movement steps get blue **range** |
 | Red tiles showing walk range | Red is next **non-move** module only |
-| Yellow on wrong tile | Yellow = **hover selection** only |
+| Yellow on wrong tile | Yellow = **hover-only** click footprint (AOE = full blast) |
+| Yellow on invalid hover | No yellow — invalid cursor only |
+| Yellow frozen after commit | Yellow does **not** freeze |
 | Hover tile blends into blue/red field | Missing faint outline |
 | Path on screen ≠ path walked | Preview is not truth |
 | Push/pull/knockback shown as blue walk path | Forced displacement is different UI |
@@ -183,5 +190,5 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 ## Resolved (owner 2026-08-26)
 
 - Two ranges: **current** (locked at phase-start stand) + **next** (from hover predicted stand, if any).  
-- Yellow = any hover selection (move tile or target tile).  
+- Yellow = hover-only click footprint (AOE = full blast; Triangle Strategy style). No yellow on invalid. Does not freeze.  
 - Wait = last phase; all tiles off.
