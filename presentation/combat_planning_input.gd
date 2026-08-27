@@ -2584,27 +2584,23 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 			if ability != null and _director != null:
 				var awaiting: TimelineAction = _director.find_awaiting_action(p_unit.id)
 				if awaiting != null:
-					var await_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
-						p_unit, ability, awaiting.awaiting_module_index,
+					var enemy_pick: Dictionary = AbilitySystem.planning_open_enemy_awaiting_pick(
+						p_unit, awaiting,
 					)
-					if (
-						await_phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK
-						or await_phase == GameEnums.PlanningAwaitingPhase.GENERIC
-					):
-						var await_module: AbilityModule = AbilitySystem.active_module_for_index(
-							p_unit, ability, awaiting.awaiting_module_index,
-						)
-						if (
-							await_module != null
-							and await_module.has_targeting(GameEnums.TargetingFlags.ENEMY)
-						):
-							if _can_target_unit_with_selected_ability(p_unit, hover_unit):
-								return hover_unit.id
-							return -1
-						if await_phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
-							if _can_target_unit_with_selected_ability(p_unit, hover_unit):
-								return hover_unit.id
-							return -1
+					if not enemy_pick.is_empty():
+						if _can_target_unit_with_selected_ability(p_unit, hover_unit):
+							return hover_unit.id
+						return -1
+					var open_pick: Dictionary = AbilitySystem.planning_resolve_open_awaiting_pick(
+						p_unit, awaiting,
+					)
+					var await_phase: int = open_pick.get(
+						"phase", GameEnums.PlanningAwaitingPhase.GENERIC,
+					)
+					if await_phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+						if _can_target_unit_with_selected_ability(p_unit, hover_unit):
+							return hover_unit.id
+						return -1
 			if ability == null or _awaiting_flow_selected(p_unit, ability):
 				return -1
 			if AbilitySystem.ability_uses_attack_animation(ability, p_unit):
@@ -6163,6 +6159,130 @@ func _aim_enemy_pos(unit_id: int) -> Vector2i:
 	return preview_unit.position if preview_unit != null else live.position
 
 
+func awaiting_enemy_pick_active() -> bool:
+	if not awaiting_targeting_active() or _director == null:
+		return false
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		return false
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	return not AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty()
+
+
+func force_basic_suppresses_targeting_arrow() -> bool:
+	return force_basic_movement and not awaiting_enemy_pick_active()
+
+
+func enemy_unit_at_hover_cell() -> UnitState:
+	if _director == null or _director.board == null:
+		return null
+	var cell: Vector2i = get_hover_tile_for_ui()
+	if not _director.board.is_in_bounds(cell):
+		return null
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	if actor == null:
+		return null
+	for board_variant: Variant in _boards_for_hover_target():
+		var board: BoardState = board_variant as BoardState
+		if board == null:
+			continue
+		var unit: UnitState = board.get_unit_at(cell)
+		if unit == null or not unit.is_enemy():
+			continue
+		if _resolve_hover_attack_target(actor, unit) >= 0:
+			return unit
+	return null
+
+
+func targeting_intent_arrow_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	if _director == null or _director.board == null or _director.selected_unit_id < 0:
+		return cells
+	if dragging or force_basic_suppresses_targeting_arrow():
+		return cells
+	var unit_id: int = _director.selected_unit_id
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return cells
+	if awaiting_targeting_active():
+		var awaiting_pick: TimelineAction = _director.find_awaiting_action(unit_id)
+		if _append_targeting_arrow_for_awaiting_enemy_pick(cells, actor, awaiting_pick):
+			return cells
+	if selected_phase_action_exhausted() and not awaiting_targeting_active():
+		return cells
+	var sel_ability: AbilityData = _selected_ability_data(actor)
+	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
+	if sel_ability == null and awaiting != null:
+		sel_ability = awaiting.ability
+	if awaiting != null and sel_ability != null:
+		if _append_targeting_arrow_for_awaiting_enemy_pick(cells, actor, awaiting):
+			return cells
+	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
+		if awaiting == null:
+			return cells
+		var self_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+			actor, sel_ability, awaiting.awaiting_module_index,
+		)
+		if self_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+			return cells
+	if sel_ability != null and AbilitySystem.ability_has_movement_effect(sel_ability, actor):
+		if awaiting != null:
+			if AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty():
+				if _is_awaiting_movement_endpoint(actor, sel_ability):
+					return cells
+		else:
+			return cells
+	var origin: Vector2i = action_range_intent_stand_cell(unit_id)
+	var attack_target_id: int = _hover_attack_target_id()
+	if attack_target_id >= 0:
+		var target_coord: Vector2i = get_hover_tile_for_ui()
+		var target_unit: UnitState = _director.board.get_unit_by_id(attack_target_id)
+		if target_unit == null and preview_state.preview_board != null:
+			target_unit = preview_state.preview_board.get_unit_by_id(attack_target_id)
+		if target_unit != null:
+			target_coord = target_unit.position
+		if origin != target_coord:
+			cells.append(origin)
+			cells.append(target_coord)
+		return cells
+	var hover_cell: Vector2i = get_hover_tile_for_ui()
+	if (
+		sel_ability != null
+		and is_skill_aim_hover_at(hover_cell)
+		and origin != hover_cell
+		and not _is_awaiting_movement_endpoint(actor, sel_ability)
+	):
+		cells.append(origin)
+		cells.append(hover_cell)
+	return cells
+
+
+func _append_targeting_arrow_for_awaiting_enemy_pick(
+	cells: Array[Vector2i],
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> bool:
+	if awaiting == null:
+		return false
+	if AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty():
+		return false
+	var hover_enemy: UnitState = enemy_unit_at_hover_cell()
+	if hover_enemy == null or not hover_enemy.is_enemy():
+		return false
+	var aim_origin: Vector2i = action_range_intent_stand_cell(actor.id)
+	var aim_target: Vector2i = hover_enemy.position
+	var hover_cell: Vector2i = get_hover_tile_for_ui()
+	if aim_origin != aim_target:
+		cells.append(aim_origin)
+		cells.append(aim_target)
+	elif _director.board.is_in_bounds(hover_cell) and aim_origin != hover_cell:
+		cells.append(aim_origin)
+		cells.append(hover_cell)
+	return cells.size() >= 2
+
+
 ## Live hover enemy/unit id for skill targeting overlays (presentation only).
 func hover_attack_target_id() -> int:
 	return _hover_attack_target_id()
@@ -6171,7 +6291,7 @@ func hover_attack_target_id() -> int:
 func _hover_attack_target_id() -> int:
 	if _director == null or _director.board == null:
 		return -1
-	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	var cell: Vector2i = get_hover_tile_for_ui()
 	if not _director.board.is_in_bounds(cell):
 		return -1
 	var actor := _proj_unit(_director.selected_unit_id)

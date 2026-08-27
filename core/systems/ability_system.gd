@@ -2079,6 +2079,88 @@ static func planning_awaiting_phase_for_module(
 	return GameEnums.PlanningAwaitingPhase.GENERIC
 
 
+## Open awaiting module at awaiting_module_index (no promotion).
+static func planning_open_awaiting_module(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> Dictionary:
+	if actor == null or awaiting == null or awaiting.ability == null or not awaiting.awaiting_target:
+		return {}
+	var ability: AbilityData = awaiting.ability
+	var module_index: int = awaiting.awaiting_module_index
+	if module_index < 0:
+		module_index = 0
+	var module: AbilityModule = active_module_for_index(actor, ability, module_index)
+	if module == null:
+		return {}
+	return {
+		"module_index": module_index,
+		"module": module,
+		"phase": planning_awaiting_phase_for_module(actor, ability, module_index),
+	}
+
+
+static func planning_move_module_committed(
+	awaiting: TimelineAction,
+	module_index: int,
+) -> bool:
+	if awaiting == null or module_index < 0:
+		return false
+	if planning_committed_prefix(awaiting) != null:
+		return true
+	if awaiting.module_target_coords.size() <= module_index:
+		return false
+	return awaiting.module_target_coords[module_index] != Vector2i.ZERO
+
+
+## Resolve the module the player is picking now, promoting past a committed MOVE leg.
+static func planning_resolve_open_awaiting_pick(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> Dictionary:
+	var current: Dictionary = planning_open_awaiting_module(actor, awaiting)
+	if current.is_empty():
+		return {}
+	var phase: int = current.get("phase", GameEnums.PlanningAwaitingPhase.GENERIC)
+	if phase != GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		return current
+	var module_index: int = current.get("module_index", 0)
+	if not planning_move_module_committed(awaiting, module_index):
+		return {}
+	var ability: AbilityData = awaiting.ability
+	var next_index: int = planning_next_aim_module_index(actor, ability, module_index)
+	if next_index < 0:
+		return {}
+	var next_module: AbilityModule = active_module_for_index(actor, ability, next_index)
+	if next_module == null:
+		return {}
+	return {
+		"module_index": next_index,
+		"module": next_module,
+		"phase": planning_awaiting_phase_for_module(actor, ability, next_index),
+	}
+
+
+## Open awaiting pick when it is an ENEMY TARGET_PICK / GENERIC module.
+static func planning_open_enemy_awaiting_pick(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> Dictionary:
+	var open_pick: Dictionary = planning_resolve_open_awaiting_pick(actor, awaiting)
+	if open_pick.is_empty():
+		return {}
+	var module: AbilityModule = open_pick.get("module") as AbilityModule
+	var phase: int = open_pick.get("phase", GameEnums.PlanningAwaitingPhase.GENERIC)
+	if module == null or not module.has_targeting(GameEnums.TargetingFlags.ENEMY):
+		return {}
+	if (
+		phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK
+		and phase != GameEnums.PlanningAwaitingPhase.GENERIC
+	):
+		return {}
+	return open_pick
+
+
 static func planning_awaiting_endpoint_range(
 	ability: AbilityData,
 	actor: UnitState = null,
