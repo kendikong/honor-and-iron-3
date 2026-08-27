@@ -192,3 +192,29 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 - Two ranges: **current** (locked at phase-start stand) + **next** (from hover predicted stand, if any).  
 - Yellow = hover-only click footprint (AOE = full blast; Triangle Strategy style). No yellow on invalid. Does not freeze.  
 - Wait = last phase; all tiles off.
+
+---
+
+## Implementation SSOT (code owners)
+
+| Concern | Owner |
+|---------|--------|
+| Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
+| Voluntary walk path write | `CombatPlanningInput` — `live_move_hover_rewrite_applies`, `_write_movement_hover_preview_paths` |
+| Painted route lock | `CombatPlanningInput.painted_move_route_locked` |
+| Path display (live vs frozen) | `CombatPlanningInput.display_move_route_cells` |
+| Path data | `CombatPlanningPreview.preview_paths` |
+| Tile layers (one apply path) | `TacticalPlanningOverlay._apply_planning_tile_layers` |
+
+### Harsh audit (2026-08-26 refactor)
+
+**Removed / collapsed parallel paths:**
+- Overlay `_display_move_route_cells` no longer reads `live_move_hover_route_cells` directly — delegates to `CombatPlanningInput.display_move_route_cells`.
+- `_painted_premove_hover_route_active` → `_painted_basic_move_route_commits_active` (PRE + POST, stale-leg origin check).
+- `_movement_slot_hover_preview_applies` gates on `live_move_hover_rewrite_applies` (movement step ∧ ¬painted lock).
+- Tile fill: `recompute_hover_ranges` + `_refresh_cursor_action_tiles` share `_apply_planning_tile_layers` + `PlanningPreviewTiles` phase gates.
+- Removed hover-origin shift for locked red range in `_refresh_cursor_action_tiles` (was second truth for aim origin).
+
+**Still open (next pass, not new rules):**
+- Hover **next-phase** second range field (locked current + hover next) — phase gates exist; predicted-stand next field not wired yet.
+- Yellow should never persist after commit — verify blast layer on cache hits only refreshes on hover.

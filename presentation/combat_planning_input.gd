@@ -1283,6 +1283,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 	):
 		var p_unit := _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
+			_discard_stale_drag_route_for_leg(p_unit)
 			var ability := _selected_ability_data(p_unit)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -2207,12 +2208,12 @@ func _drag_route_commits_active() -> bool:
 			var ability := _selected_ability_data(p_unit)
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
 				return false
-	if _painted_premove_hover_route_active():
+	if _painted_basic_move_route_commits_active():
 		return true
 	return _selection_hover_corridor_paint_active()
 
 
-func _painted_premove_hover_route_active() -> bool:
+func _painted_basic_move_route_commits_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
 	if _drag_route.size() < 2 or _drag_unit_id != _director.selected_unit_id:
@@ -2222,10 +2223,16 @@ func _painted_premove_hover_route_active() -> bool:
 	var p_unit: UnitState = _proj_unit(_director.selected_unit_id)
 	if p_unit == null:
 		return false
+	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	if origin.x <= -900000 or (_drag_route[0] as Vector2i) != origin:
+		return false
 	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
 	if move_timing == -1:
 		return true
-	if move_timing != GameEnums.MoveTiming.PRE_ACTION:
+	if (
+		move_timing != GameEnums.MoveTiming.PRE_ACTION
+		and move_timing != GameEnums.MoveTiming.POST_ACTION
+	):
 		return false
 	return not _director.unit_has_move_planned_at_timing(p_unit.id, move_timing)
 
@@ -3479,6 +3486,90 @@ func _basic_move_allowed() -> bool:
 	return not _movement_blocked_by_dash()
 
 
+## MOVE_PREVIEW_RULES SSOT — true only while the player is choosing a voluntary walk leg.
+func active_movement_planning_step(p_unit: UnitState) -> bool:
+	if _director == null or p_unit == null:
+		return false
+	if _director.unit_has_wait_planned(p_unit.id):
+		return false
+	if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+		return false
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if awaiting_targeting_active() or _director.find_awaiting_action(p_unit.id) != null:
+		return ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
+	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
+	if move_timing < 0:
+		return false
+	if _director.unit_has_move_planned_at_timing(p_unit.id, move_timing):
+		return false
+	if move_timing == GameEnums.MoveTiming.POST_ACTION:
+		return force_basic_movement and _basic_move_allowed()
+	return _basic_move_allowed()
+
+
+## Painted drag route is locked for the current move leg — hover must not rewrite it.
+func painted_move_route_locked(p_unit: UnitState) -> bool:
+	if p_unit == null or dragging:
+		return false
+	if _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+		return false
+	if not _movement_route_paint_allowed():
+		return false
+	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	if origin.x <= -900000:
+		return false
+	return (_drag_route[0] as Vector2i) == origin
+
+
+## True when hover may rewrite preview_paths / live corridor for this cell.
+func live_move_hover_rewrite_applies(p_unit: UnitState, _cell: Vector2i) -> bool:
+	if not active_movement_planning_step(p_unit):
+		return false
+	if painted_move_route_locked(p_unit):
+		return false
+	return true
+
+
+## Overlay + tests — one display owner; reads preview_paths only (write path owns updates).
+func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
+	if _director == null or unit_id < 0:
+		return []
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return []
+	var board: BoardState = _proj()
+	if active_movement_planning_step(actor):
+		var leg: Array = CombatPlanningPreview.pending_move_route_leg(
+			unit_id, preview_state, _director, board,
+		)
+		if leg.size() >= 2:
+			return _typed_route_cells(leg)
+		return _typed_route_cells(preview_state.preview_paths.get(unit_id, []))
+	return CombatPlanningPreview.frozen_move_route_cells(unit_id, preview_state)
+
+
+func _typed_route_cells(route: Array) -> Array[Vector2i]:
+	var typed: Array[Vector2i] = []
+	for tile: Variant in route:
+		if tile is Vector2i:
+			typed.append(tile as Vector2i)
+	return typed
+
+
+func _discard_stale_drag_route_for_leg(p_unit: UnitState) -> void:
+	if p_unit == null or _drag_route.is_empty():
+		return
+	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	if origin.x <= -900000:
+		return
+	if (_drag_route[0] as Vector2i) != origin:
+		_drag_route.clear()
+		_drag_unit_id = -1
+		_drag_last_free = Vector2i(-999999, -999999)
+
+
 ## Premove, postmove, and armed MOVE module legs share the same painted-route input.
 func _movement_route_paint_allowed() -> bool:
 	if _basic_move_allowed():
@@ -3714,14 +3805,8 @@ func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	if _director == null or not _director.board.is_in_bounds(cell):
 		return false
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
-		return true
-	if (
-		force_basic_movement
-		and _director.get_planning_move_timing(p_unit.id) == GameEnums.MoveTiming.POST_ACTION
-	):
-		return true
+	if not live_move_hover_rewrite_applies(p_unit, cell):
+		return false
 	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 	if (
 		target_enemy_id < 0
@@ -3736,11 +3821,7 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 		)
 	):
 		return true
-	if (
-		target_enemy_id < 0
-		and _basic_move_allowed()
-		and _is_hover_move_cell(p_unit, cell)
-	):
+	if target_enemy_id < 0 and _is_hover_move_cell(p_unit, cell):
 		return true
 	return false
 
@@ -3750,6 +3831,26 @@ func _write_movement_hover_preview_paths(
 	hover_cell: Vector2i,
 	waypoints: Array[Vector2i],
 ) -> void:
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor != null:
+		var ability: AbilityData = _selected_ability_data(actor)
+		if (
+			ability != null
+			and AbilitySystem.ability_uses_direct_relocation(ability, actor)
+			and _is_awaiting_movement_endpoint(actor, ability)
+		):
+			var hop_origin: Vector2i = _awaiting_endpoint_origin(actor)
+			if (
+				hop_origin.x > -900000
+				and _director != null
+				and _director.board != null
+				and _director.board.is_in_bounds(hover_cell)
+			):
+				var hop: Array[Vector2i] = [hop_origin, hover_cell]
+				preview_state.preview_paths[unit_id] = hop
+				preview_state.preview_splits[unit_id] = hop.size()
+				preview_state.preview_post_splits[unit_id] = hop.size()
+				return
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
 		if unit_id < 0 or _director == null or _drag_route.is_empty():
 			return
