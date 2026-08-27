@@ -459,7 +459,8 @@ func update_drag(local: Vector2) -> void:
 	
 	var cell_changed: bool = cell != _drag_last_cursor_cell
 	if _movement_route_paint_allowed() and cell_changed:
-		_extend_drag_route(cell)
+		if not _basic_postmove_corridor_preview_overrides_drag(_drag_unit_id):
+			_extend_drag_route(cell)
 		
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
 		if cell == drag_unit.position or (_planning != null and _planning.is_hover_move_tile(cell)):
@@ -564,6 +565,8 @@ func _refresh_drag_preview_now() -> void:
 		and _is_awaiting_movement_endpoint(drag_actor, drag_ability)
 	):
 		_sync_drag_route_stand()
+	elif drag_actor != null and _modular_postmove_corridor_active(drag_actor):
+		_refresh_movement_slot_hover_preview(drag_actor, cell)
 	elif (
 		force_basic_movement
 		and _director.get_planning_move_timing(_drag_unit_id) == GameEnums.MoveTiming.POST_ACTION
@@ -1122,6 +1125,17 @@ func _run_ability_settled_refresh() -> void:
 		if _intent_state != null:
 			refresh_mouse_cursor(_intent_state.hover_coord)
 		return
+	if (
+		actor != null
+		and awaiting != null
+		and cur_ability == null
+		and force_basic_movement
+		and _post_move_basic_planning_open(actor)
+	):
+		_resync_hover_after_ability_change()
+		if _intent_state != null:
+			refresh_mouse_cursor(_intent_state.hover_coord)
+		return
 	var had_awaiting: bool = awaiting_targeting_active()
 	clear_awaiting_targeting()
 	if had_awaiting:
@@ -1290,13 +1304,10 @@ func on_hover_moved(cell: Vector2i) -> void:
 		var p_unit := _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
 			_discard_stale_drag_route_for_leg(p_unit)
-			_seal_postmove_painted_drag_buffer_if_needed(p_unit)
 			var ability := _selected_ability_data(p_unit)
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
 			if _post_move_basic_planning_open(p_unit):
 				var post_origin: Vector2i = _active_move_drag_origin(p_unit)
-				if not dragging:
-					_clear_hover_drag_route()
 				if _frozen_painted_leg_routes.has(p_unit.id):
 					var stale_frozen: Array = _frozen_painted_leg_routes[p_unit.id]
 					if (
@@ -1313,6 +1324,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and (_drag_route[0] as Vector2i) != post_origin
 				):
 					_clear_hover_drag_route()
+				if not dragging:
+					_seal_postmove_painted_drag_buffer_if_needed(p_unit)
 			if painted_move_route_locked(p_unit):
 				_restore_locked_painted_preview_paths(p_unit.id)
 			var awaiting_move_leg: bool = (
@@ -1356,6 +1369,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			)
 			if allow_hover_paint and painted_move_route_locked(p_unit):
 				allow_hover_paint = false
+			var modular_postmove_corridor: bool = _modular_postmove_corridor_active(p_unit)
 			var should_extend_route: bool = planning_cell_changed
 			if (
 				not should_extend_route
@@ -1365,7 +1379,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 				and _can_move_to(p_unit, cell)
 			):
 				should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
-			if allow_hover_paint:
+			if allow_hover_paint and not modular_postmove_corridor:
 				var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 				if target_enemy_id >= 0:
 					var enemy_unit: UnitState = _director.board.get_unit_by_id(target_enemy_id) if _director.board != null else null
@@ -1393,6 +1407,16 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if hover_unit != null and _movement_slot_hover_preview_applies(hover_unit, cell):
 			_refresh_movement_slot_hover_preview(hover_unit, cell)
 			_last_sim_hover_refresh_cell = cell
+	elif (
+		dragging
+		and planning_cell_changed
+		and _director.board.is_in_bounds(cell)
+		and _director.selected_unit_id >= 0
+	):
+		var corridor_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if corridor_unit != null and _modular_postmove_corridor_active(corridor_unit):
+			_refresh_movement_slot_hover_preview(corridor_unit, cell)
+			_last_sim_hover_refresh_cell = cell
 	if not _director.board.is_in_bounds(cell):
 		_flush_hover_heavy_sync()
 		return
@@ -1402,10 +1426,45 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
 		_run_hover_overlay_refresh()
+		_sync_movement_preview_after_hover_sim(cell)
 		if not dragging:
 			refresh_mouse_cursor(cell)
 	else:
 		_schedule_hover_sim_refresh()
+
+
+## Movement corridor paint runs after sim/blue tiles — premove and post-move share one path.
+func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
+	if dragging or _director == null or not _director.board.is_in_bounds(cell):
+		return
+	if _director.selected_unit_id < 0:
+		return
+	var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if hover_unit == null:
+		return
+	if painted_move_route_locked(hover_unit):
+		_restore_locked_painted_preview_paths(hover_unit.id)
+		return
+	if not active_movement_planning_step(hover_unit):
+		return
+	if not _movement_preview_resync_after_sim_allowed(hover_unit):
+		return
+	_refresh_movement_slot_hover_preview(hover_unit, cell)
+	_last_sim_hover_refresh_cell = cell
+
+
+## Sim refresh must not stomp composite skill previews (bash approach, charge DAMAGE).
+func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
+	if force_basic_movement:
+		return true
+	if _director == null or p_unit == null:
+		return false
+	if _director.selected_ability_index < 0:
+		return true
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null:
+		return false
+	return _is_awaiting_movement_endpoint(p_unit, ability)
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
@@ -1533,6 +1592,10 @@ func _flush_hover_heavy_sync() -> void:
 	_flush_drag_preview_refresh()
 	_run_hover_sim_refresh()
 	_run_hover_overlay_refresh()
+	var flush_cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	)
+	_sync_movement_preview_after_hover_sim(flush_cell)
 	_refresh_action_range_overlay_when_gate_off()
 
 
@@ -1874,6 +1937,9 @@ func _refresh_selected_interaction_preview() -> void:
 	if p_unit == null:
 		_restore_hover_preview()
 		return
+	if painted_move_route_locked(p_unit):
+		_restore_locked_painted_preview_paths(p_unit.id)
+		return
 	var ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
 	if not ally_slots.is_empty():
 		var ally: UnitState = _director.board.get_unit_at(cell)
@@ -2067,6 +2133,9 @@ func _seal_painted_leg_from_drag(unit_id: int) -> void:
 func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 	if unit_id < 0:
 		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor != null and _post_move_basic_planning_open(actor) and not _frozen_painted_leg_routes.has(unit_id):
+		_seal_postmove_painted_drag_buffer_if_needed(actor)
 	var route: Array = _frozen_painted_leg_routes.get(unit_id, [])
 	if route.is_empty() and _drag_route.size() >= 2 and _drag_unit_id == unit_id:
 		route = _drag_route
@@ -2081,7 +2150,7 @@ func _seal_postmove_painted_drag_buffer_if_needed(p_unit: UnitState) -> void:
 		return
 	if not _painted_drag_route_matches_leg(p_unit):
 		return
-	if _director.get_planning_move_timing(p_unit.id) != GameEnums.MoveTiming.POST_ACTION:
+	if not _post_move_basic_planning_open(p_unit):
 		return
 	_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
 	_seal_painted_leg_from_drag(p_unit.id)
@@ -3722,17 +3791,21 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 func painted_move_route_locked(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
-	if not _frozen_painted_leg_routes.has(p_unit.id):
+	if _modular_postmove_corridor_active(p_unit):
 		return false
-	var frozen: Array = _frozen_painted_leg_routes[p_unit.id]
-	if frozen.size() < 2:
-		_clear_frozen_painted_leg(p_unit.id)
-		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
-	if origin.x <= -900000 or (frozen[0] as Vector2i) != origin:
-		_clear_frozen_painted_leg(p_unit.id)
-		return false
-	return true
+	if _frozen_painted_leg_routes.has(p_unit.id):
+		var frozen: Array = _frozen_painted_leg_routes[p_unit.id]
+		if frozen.size() < 2:
+			_clear_frozen_painted_leg(p_unit.id)
+		else:
+			var origin: Vector2i = _active_move_drag_origin(p_unit)
+			if origin.x <= -900000 or (frozen[0] as Vector2i) != origin:
+				_clear_frozen_painted_leg(p_unit.id)
+			else:
+				return true
+	if _post_move_basic_planning_open(p_unit) and _painted_drag_route_matches_leg(p_unit):
+		return true
+	return false
 
 
 ## True when hover may rewrite preview_paths / live corridor for this cell.
@@ -3862,6 +3935,18 @@ func _route_has_left_origin_ring(move_origin: Vector2i) -> bool:
 	return false
 
 
+## Basic premove drag orbit must not corridor-repath a sealed painted leg.
+func _basic_painted_drag_orbit_guard_active() -> bool:
+	if not dragging or not force_basic_movement:
+		return false
+	if _director == null or _director.selected_ability_index >= 0:
+		return false
+	var actor: UnitState = _proj_unit(_drag_unit_id)
+	if actor == null or not _painted_drag_route_matches_leg(actor) or _drag_route.size() < 2:
+		return false
+	return not _post_move_basic_planning_open(actor)
+
+
 func _extend_drag_route(cell: Vector2i) -> void:
 	if _drag_route.is_empty():
 		return
@@ -3876,6 +3961,8 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var board: BoardState = _proj()
 	var unit := _proj_unit(_drag_unit_id)
 	if unit == null:
+		return
+	if _basic_painted_drag_orbit_guard_active():
 		return
 	var move_origin: Vector2i = _active_move_drag_origin(unit)
 	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
@@ -4032,16 +4119,24 @@ func _sync_drag_route_stand() -> void:
 		_clear_stale_painted_preview_route(_drag_unit_id)
 
 
+## Modular skill landing post-move: corridor per hover, never accumulated drag paint.
+func _modular_postmove_corridor_active(p_unit: UnitState) -> bool:
+	if p_unit == null or _director == null or not force_basic_movement:
+		return false
+	if not _post_move_basic_planning_open(p_unit):
+		return false
+	var awaiting: TimelineAction = _director.find_awaiting_action(p_unit.id)
+	return awaiting != null and awaiting.ability != null
+
+
 ## Post-move basic drag orbit uses per-hover corridor preview, not accumulated drag paint.
 func _basic_postmove_corridor_preview_overrides_drag(unit_id: int) -> bool:
 	if not dragging or _director == null or unit_id < 0:
 		return false
-	if not force_basic_movement:
-		return false
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null:
 		return false
-	return _director.get_planning_move_timing(actor.id) == GameEnums.MoveTiming.POST_ACTION
+	return _modular_postmove_corridor_active(actor)
 
 
 ## Single live preview_paths write owner for hover/drag/stand-stub routes.
@@ -4137,6 +4232,13 @@ func _write_movement_hover_preview_paths(
 		if not _basic_postmove_corridor_preview_overrides_drag(unit_id):
 			_sync_painted_drag_route_to_preview_paths(unit_id, false)
 			return
+	if actor != null and _modular_postmove_corridor_active(actor):
+		var post_origin: Vector2i = _active_move_drag_origin(actor)
+		if post_origin.x <= -900000:
+			return
+		if waypoints.is_empty():
+			_set_preview_path(unit_id, [post_origin])
+			return
 	if not waypoints.is_empty():
 		if actor == null:
 			return
@@ -4156,7 +4258,10 @@ func _write_movement_hover_preview_paths(
 	if existing.size() >= 2:
 		if actor == null:
 			actor = _proj_unit(unit_id)
-		if actor != null and live_move_hover_rewrite_applies(actor, hover_cell):
+		if actor != null and (
+			live_move_hover_rewrite_applies(actor, hover_cell)
+			or _modular_postmove_corridor_active(actor)
+		):
 			pass
 		else:
 			return
@@ -4178,6 +4283,10 @@ func _write_movement_hover_preview_paths(
 ## Shared hover/drag paint: premove, postmove, and MOVE module legs use one corridor owner.
 func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null or not _director.board.is_in_bounds(cell):
+		return []
+	if _modular_postmove_corridor_active(actor):
+		if _can_move_to(actor, cell):
+			return _corridor_waypoints_to_cell(actor, cell)
 		return []
 	if (
 		_drag_route_commits_active()
@@ -5543,6 +5652,15 @@ func _active_move_drag_origin(unit: UnitState) -> Vector2i:
 	var ability: AbilityData = _selected_ability_data(unit)
 	if _is_awaiting_movement_endpoint(unit, ability):
 		return _awaiting_endpoint_origin(unit)
+	if _director != null and _post_move_basic_planning_open(unit):
+		var board: BoardState = _proj()
+		var landing: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+			_director, board, unit.id,
+		)
+		if board != null and board.is_in_bounds(landing):
+			var projected: UnitState = board.get_unit_by_id(unit.id)
+			if projected != null and projected.position == landing:
+				return landing
 	if _director != null:
 		var timing: int = _director.get_planning_move_timing(unit.id)
 		if timing == GameEnums.MoveTiming.POST_ACTION:
