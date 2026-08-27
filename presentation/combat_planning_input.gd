@@ -1291,6 +1291,24 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_seal_postmove_painted_drag_buffer_if_needed(p_unit)
 			var ability := _selected_ability_data(p_unit)
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
+			if _post_move_basic_planning_open(p_unit):
+				var post_origin: Vector2i = _active_move_drag_origin(p_unit)
+				if _frozen_painted_leg_routes.has(p_unit.id):
+					var stale_frozen: Array = _frozen_painted_leg_routes[p_unit.id]
+					if (
+						stale_frozen.size() >= 2
+						and post_origin.x > -900000
+						and (stale_frozen[0] as Vector2i) != post_origin
+					):
+						_clear_frozen_painted_leg(p_unit.id)
+				if (
+					_drag_route_commits_active()
+					and _drag_unit_id == p_unit.id
+					and not _drag_route.is_empty()
+					and post_origin.x > -900000
+					and (_drag_route[0] as Vector2i) != post_origin
+				):
+					_clear_hover_drag_route()
 			if painted_move_route_locked(p_unit):
 				_restore_locked_painted_preview_paths(p_unit.id)
 			var awaiting_move_leg: bool = (
@@ -3581,6 +3599,37 @@ func _basic_move_allowed() -> bool:
 	return not _movement_blocked_by_dash()
 
 
+## Timeline post-move or modular MOVE-prefix landing — basic walk preview/commit may open.
+func _post_move_basic_planning_open(p_unit: UnitState) -> bool:
+	if _director == null or p_unit == null or not force_basic_movement:
+		return false
+	if not _basic_move_allowed():
+		return false
+	if not _director._unit_can_post_move(p_unit.id, p_unit):
+		return false
+	if _director.unit_has_move_planned_at_timing(p_unit.id, GameEnums.MoveTiming.POST_ACTION):
+		return false
+	var timing: int = _director.get_planning_move_timing(p_unit.id)
+	if timing == GameEnums.MoveTiming.POST_ACTION:
+		return true
+	var awaiting: TimelineAction = _director.find_awaiting_action(p_unit.id)
+	if awaiting == null or awaiting.ability == null:
+		return false
+	if awaiting.awaiting_module_index <= 0:
+		return false
+	var open_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+		p_unit, awaiting.ability, awaiting.awaiting_module_index,
+	)
+	if open_phase == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		return false
+	var prior_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+		p_unit, awaiting.ability, awaiting.awaiting_module_index - 1,
+	)
+	if prior_phase != GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		return false
+	return AbilitySystem.planning_committed_prefix(awaiting) != null
+
+
 ## MOVE_PREVIEW_RULES SSOT — true only while the player is choosing a voluntary walk leg.
 func active_movement_planning_step(p_unit: UnitState) -> bool:
 	if _director == null or p_unit == null:
@@ -3591,7 +3640,11 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 		return false
 	var ability: AbilityData = _selected_ability_data(p_unit)
 	if awaiting_targeting_active() or _director.find_awaiting_action(p_unit.id) != null:
-		return ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
+		if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
+			return true
+		if _post_move_basic_planning_open(p_unit):
+			return true
+		return false
 	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
 	if move_timing < 0:
 		return false
@@ -3756,6 +3809,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		if idx < _drag_route.size() - 1:
 			_drag_route = _drag_route.slice(0, idx + 1)
 			_sanitize_drag_route_context()
+			_sync_drag_route_stand()
 		return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	var board: BoardState = _proj()
