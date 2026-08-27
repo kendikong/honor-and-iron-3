@@ -61,27 +61,33 @@ static func resolve_layer_origins(
 		"locked_aim_origin": none,
 		"next_aim_origin": none,
 		"next_move_origin": none,
+		"show_action_range": false,
 		"show_blast": false,
 		"blast_origin": none,
 		"blast_on_hover_layer": false,
 	}
 	if unit == null or director == null:
 		return plan
+	var show_action_range: bool = (
+		planning_input != null
+		and unit.id == director.selected_unit_id
+		and planning_input.action_range_visible_for_hover()
+	)
+	plan["show_action_range"] = show_action_range
 	var locked_move: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
 		director, board, unit.id,
 	)
 	match phase:
 		PhaseKind.MOVEMENT:
 			plan["locked_move_origin"] = locked_move if locked_move.x > -900000 else none
-			if planning_input != null and planning_input.action_range_visible_for_hover():
+			if show_action_range:
 				var predicted: Vector2i = planning_input.predicted_stand_at_hover(
 					unit.id, hover_coord,
 				)
 				if predicted.x > -900000:
 					plan["next_aim_origin"] = predicted
 			plan["show_blast"] = (
-				planning_input != null
-				and planning_input.action_range_visible_for_hover()
+				show_action_range
 				and not planning_input.is_walk_only_hover_move(unit, hover_coord)
 			)
 			if plan["show_blast"] and plan["next_aim_origin"] != none:
@@ -104,9 +110,7 @@ static func resolve_layer_origins(
 				)
 				if hover_stand.x > -900000:
 					plan["next_move_origin"] = hover_stand
-			plan["show_blast"] = (
-				planning_input == null or planning_input.action_range_visible_for_hover()
-			)
+			plan["show_blast"] = show_action_range or planning_input == null
 			if plan["show_blast"] and plan["locked_aim_origin"] != none:
 				plan["blast_origin"] = plan["locked_aim_origin"]
 	return plan

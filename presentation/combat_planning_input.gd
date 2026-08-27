@@ -571,11 +571,7 @@ func _refresh_drag_preview_now() -> void:
 			_sync_drag_route_stand()
 		else:
 			var post_stand: Vector2i = _active_move_drag_origin(drag_actor)
-			preview_state.preview_paths[_drag_unit_id] = [post_stand]
-			preview_state.preview_splits[_drag_unit_id] = 1
-			preview_state.preview_post_splits[_drag_unit_id] = 1
-			if _planning != null:
-				_planning.apply_preview_state(preview_state, _drag_unit_id, -1)
+			_set_preview_path(_drag_unit_id, [post_stand], true)
 	_refresh_action_range_overlay_when_gate_off()
 
 
@@ -689,6 +685,11 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 			)
 			if _movement_slot_hover_preview_applies(hover_actor, hover_cell):
 				return
+			if active_movement_planning_step(hover_actor):
+				if _movement_hover_path_blocks_sim_merge(_director.selected_unit_id):
+					return
+				if live_move_hover_rewrite_applies(hover_actor, hover_cell):
+					return
 	var actions_v: Variant = preview.get("actions", [])
 	if not actions_v is Array or (actions_v as Array).is_empty():
 		return
@@ -745,9 +746,7 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
 	if stand.x <= -900000:
 		return
-	preview_state.preview_paths[unit_id] = [stand]
-	preview_state.preview_splits[unit_id] = 1
-	preview_state.preview_post_splits[unit_id] = 1
+	_set_preview_path(unit_id, [stand], false)
 	preview_state.action_splits[unit_id] = 0
 
 
@@ -858,9 +857,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_clear_planning_cursor_for_drag()
 	_drag_route = [_planning_drag_origin(unit.id)]
 	_drag_last_free = _drag_route[0]
-	preview_state.preview_paths[unit.id] = [_drag_route[0]]
-	preview_state.preview_splits[unit.id] = 1
-	preview_state.preview_post_splits[unit.id] = 1
+	_set_preview_path(unit.id, [_drag_route[0]], false)
 	preview_state.action_splits[unit.id] = 0
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, unit.id, -1)
@@ -1452,7 +1449,7 @@ func _begin_hover_sim_throttled_flush() -> void:
 	## Settle on the current tile before the expensive replay. Circling cancels
 	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
 	## If the pointer is still moving inside the tile, skip leftover replay —
-	## red tiles already follow via overlay `_refresh_cursor_action_tiles`.
+	## red tiles already follow via overlay _recompute_hover_ranges_from_inputs.
 	_hover_sim_throttle_gen += 1
 	var gen: int = _hover_sim_throttle_gen
 	_hover_sim_pointer_at_schedule = _mouse_local_for_facing()
@@ -3803,6 +3800,33 @@ func _sync_drag_route_stand() -> void:
 	_sync_painted_drag_route_to_preview_paths(_drag_unit_id, false)
 
 
+## Single live preview_paths write owner for hover/drag/stand-stub routes.
+func _set_preview_path(unit_id: int, path: Array, sync_overlay: bool) -> void:
+	if unit_id < 0 or path.is_empty():
+		return
+	preview_state.preview_paths[unit_id] = path.duplicate()
+	var split_size: int = path.size()
+	preview_state.preview_splits[unit_id] = split_size
+	preview_state.preview_post_splits[unit_id] = split_size
+	if sync_overlay and _planning != null:
+		_planning.apply_preview_paths_only(preview_state, unit_id)
+
+
+## Movement-step hover path is authoritative — sim merge must not stomp it.
+func _movement_hover_path_blocks_sim_merge(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return false
+	if not active_movement_planning_step(actor):
+		return false
+	if painted_move_route_locked(actor):
+		return true
+	var path: Array = preview_state.preview_paths.get(unit_id, [])
+	return path.size() >= 2
+
+
 ## Single painted-route → preview_paths writer (drag buffer → route truth).
 func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: bool) -> void:
 	if unit_id < 0 or _director == null or _drag_route.size() < 2:
@@ -3812,11 +3836,7 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 		return
 	if not _movement_route_paint_allowed():
 		return
-	preview_state.preview_paths[unit_id] = _drag_route.duplicate()
-	var route_size: int = _drag_route.size()
-	preview_state.preview_splits[unit_id] = route_size
-	preview_state.preview_post_splits[unit_id] = route_size
-	_sync_movement_hover_paths_to_overlay(unit_id)
+	_set_preview_path(unit_id, _drag_route, true)
 
 
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
@@ -3878,9 +3898,7 @@ func _write_movement_hover_preview_paths(
 				and _director.board.is_in_bounds(hover_cell)
 			):
 				var hop: Array[Vector2i] = [hop_origin, hover_cell]
-				preview_state.preview_paths[unit_id] = hop
-				preview_state.preview_splits[unit_id] = hop.size()
-				preview_state.preview_post_splits[unit_id] = hop.size()
+				_set_preview_path(unit_id, hop, false)
 				return
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
 		_sync_painted_drag_route_to_preview_paths(unit_id, false)
@@ -3899,9 +3917,7 @@ func _write_movement_hover_preview_paths(
 			path.append(wp)
 		if path.size() == 1 and GridSystem.manhattan(origin, hover_cell) == 1:
 			path.append(hover_cell)
-		preview_state.preview_paths[unit_id] = path
-		preview_state.preview_splits[unit_id] = path.size()
-		preview_state.preview_post_splits[unit_id] = path.size()
+		_set_preview_path(unit_id, path, false)
 		return
 	var existing: Array = preview_state.preview_paths.get(unit_id, [])
 	if existing.size() >= 2:
@@ -3914,9 +3930,7 @@ func _write_movement_hover_preview_paths(
 		stand = _awaiting_endpoint_origin(actor)
 	if stand.x <= -900000:
 		return
-	preview_state.preview_paths[unit_id] = [stand]
-	preview_state.preview_splits[unit_id] = 1
-	preview_state.preview_post_splits[unit_id] = 1
+	_set_preview_path(unit_id, [stand], false)
 
 
 ## Shared hover/drag paint: premove, postmove, and MOVE module legs use one corridor owner.

@@ -200,26 +200,29 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Concern | Owner |
 |---------|--------|
 | Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
-| Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` |
-| Voluntary walk path write | `CombatPlanningInput.live_move_hover_rewrite_applies` → `_write_movement_hover_preview_paths` |
-| Painted drag → `preview_paths` | `CombatPlanningInput._sync_painted_drag_route_to_preview_paths` (only writer) |
+| Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
+| Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` via `_write_movement_hover_preview_paths` when `live_move_hover_rewrite_applies` |
+| Painted drag → `preview_paths` | `CombatPlanningInput._sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
+| Sim / commit path merge (non-move steps only) | `CombatPlanningPreview.ensure_movement_intent_from_actions` — blocked on movement step when `_movement_hover_path_blocks_sim_merge` |
 | Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
 | Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` via `CombatPlanningInput.display_move_route_cells` |
 | Path data store | `CombatPlanningPreview.preview_paths` |
-| Tile layers (one apply path) | `TacticalPlanningOverlay._apply_planning_tile_layers` |
-| Targeting intent arrow | `TacticalPlanningOverlay.targeting_intent_arrow_cells` (tests + draw) |
+| Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
+| Action-range stand (aim origin) | `CombatPlanningInput.action_range_intent_stand_cell` (overlay `_intent_stand_origin` delegates) |
+| Targeting intent arrow (live hover) | `TacticalPlanningOverlay.targeting_intent_arrow_cells` |
 
-### Harsh audit (2026-08-26 pass 4 — critic PASS 85/100)
+### Architecture audit (2026-08-26 pass 5)
 
-**Owner priorities:** simpler global rules · one canonical path per concern · `preview_paths` is route truth (hover writes, display reads) · strike parallel pipelines.
+**Write paths (honest):**
+- Live hover/drag/stand-stub: `_set_preview_path` only (input layer).
+- Sim timeline merge: `ensure_movement_intent_from_actions` (preview layer) — must not run during authoritative movement-step hover.
+- Committed snapshot copy: `apply_preview_paths_only` (overlay perf sync from input state, not a second route calculator).
 
-**Collapsed:**
-- Single painted-route writer: `_sync_painted_drag_route_to_preview_paths`.
-- Single route read API: `display_route_cells_from_preview` (co-op / enemy / ally via `frozen_move_route_cells` on committed preview).
-- Single tile apply: `_apply_planning_tile_layers` + `resolve_layer_origins` (locked + next range + blast).
-- Dead `_fill_hover_action_range_tiles` / `_fill_hover_blast_tiles` removed.
-- Ghost / interaction draw uses `display_move_route_cells` and `targeting_intent_arrow_cells`.
+**Read paths:**
+- On-screen walk routes: `display_move_route_cells` → `display_route_cells_from_preview`.
+- Committed timeline chevrons: `committed_action_route_leg` / `movement_intent_cells` (execution preview, not live hover).
 
-**Intentional deferrals (not parallel hover rewrite):**
-- `committed_move_route_leg` for timeline-committed player legs during execution preview.
-- `_drag_route` is transient input buffer only; committed truth is always `preview_paths` after sync.
+**Removed parallel paths (pass 5):**
+- Overlay hover tile cache keyed on `_intent_stand_origin` (stale two-range risk).
+- `set_hover_coord` → `_refresh_cursor_action_tiles` fork (second tile entry).
+- Overlay `_intent_stand_origin` live-board duplicate (delegates to input stand SSOT).

@@ -5,7 +5,7 @@ extends Node2D
 ##
 ## Owner spec: docs/design/MOVE_PREVIEW_RULES.md
 ##
-## Tile layers (recompute_hover_ranges / _refresh_cursor_action_tiles):
+## Tile layers (_recompute_hover_ranges_from_inputs → _apply_planning_tile_layers):
 ## - BLUE: current movement-phase range (locked at phase-start stand).
 ## - RED: current non-move aim range OR next-phase range on hover (see spec).
 ## - YELLOW: hover-only click footprint (AOE blast); never frozen after commit.
@@ -84,18 +84,6 @@ var _hover_blast_tiles: Array[Vector2i] = []
 var _blast_tiles_on_hover_layer: bool = false
 ## Tier 3 QA: skip flow redraws from committed plan entries (drag-only pulse).
 var qa_static_overlay: bool = false
-var _cached_hover_unit_id: int = -1
-var _cached_hover_origin: Vector2i = Vector2i(-999, -999)
-var _cached_hover_ability: int = -1
-var _cached_hover_force: bool = false
-var _fixed_range_origin: Vector2i = Vector2i(-999, -999)
-## Separate from move range: follows cursor during drag / aim. Invalid = use move origin.
-var _action_range_origin: Vector2i = Vector2i(-999, -999)
-var _cached_hover_action_range_origin: Vector2i = Vector2i(-999, -999)
-var _cached_hover_proj_key: int = -1
-var _cached_hover_awaiting_targeting: bool = false
-var _cached_hover_awaiting_module: int = -1
-var _cached_hover_coord: Vector2i = Vector2i(-999, -999)
 var _hover_action_icon: String = ""
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -373,14 +361,6 @@ func bind_planning_input(input: CombatPlanningInput) -> void:
 
 
 func _invalidate_hover_cache() -> void:
-	_cached_hover_unit_id = -1
-	_cached_hover_origin = Vector2i(-999, -999)
-	_cached_hover_action_range_origin = Vector2i(-999, -999)
-	_cached_hover_ability = -1
-	_cached_hover_proj_key = -1
-	_cached_hover_awaiting_targeting = false
-	_cached_hover_awaiting_module = -1
-	_cached_hover_coord = Vector2i(-999, -999)
 	_hover_perimeter_cache_key = 0
 	_cached_hover_perimeter_segments.clear()
 
@@ -542,6 +522,16 @@ func get_committed_preview() -> CombatPlanningPreview:
 	return _committed_preview
 
 
+func _debug_intent_stand_array() -> Array:
+	if _director == null or _board == null or _director.selected_unit_id < 0:
+		return [-999, -999]
+	var unit: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
+	if unit == null:
+		return [-999, -999]
+	var stand: Vector2i = _intent_stand_origin(unit)
+	return [stand.x, stand.y]
+
+
 func build_debug_context() -> Dictionary:
 	return {
 		"hover_coord": [_hover_coord.x, _hover_coord.y],
@@ -551,7 +541,7 @@ func build_debug_context() -> Dictionary:
 		"route": _coords_to_arrays(_route),
 		"aiming": _aiming,
 		"attack_target_id": _attack_target_id,
-		"action_range_origin": [_action_range_origin.x, _action_range_origin.y],
+		"intent_stand_origin": _debug_intent_stand_array(),
 		"hover_action_icon": _hover_action_icon,
 	}
 
@@ -768,38 +758,14 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 	if coord == _hover_coord:
 		return
 	_hover_coord = coord
-	if _director != null and _director.selected_unit_id < 0:
+	if _director != null and (
+		_director.selected_unit_id < 0 or CombatDirector.is_planning_phase(_phase)
+	):
 		_recompute_hover_ranges_from_inputs()
-	elif CombatDirector.is_planning_phase(_phase):
-		if _planning_input != null:
-			if _planning_input.action_range_visible_for_hover():
-				_refresh_cursor_action_tiles()
-			elif not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
-				_clear_hover_skill_tiles()
-				_queue_static_tiles_redraw()
 	if _planning_input == null:
 		_update_hover_action_icon()
 	if redraw:
 		_queue_hover_tile_redraw()
-
-
-## Cheap red range + yellow blast at the cursor. Delegates to _apply_planning_tile_layers.
-func _refresh_cursor_action_tiles() -> void:
-	if _director == null or _board == null:
-		return
-	if _planning_input != null and _planning_input.dragging:
-		return
-	if _director.selected_unit_id < 0:
-		return
-	var unit: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
-	if unit == null or not unit.is_alive():
-		return
-	var selected_ability: int = _director.selected_ability_index
-	var force_basic: bool = (
-		_planning_input.force_basic_movement if _planning_input != null else false
-	)
-	_apply_planning_tile_layers(unit, force_basic, selected_ability, false)
-	_queue_static_tiles_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:
@@ -867,34 +833,28 @@ func set_aim_mode(active: bool, local_pos: Vector2 = Vector2.ZERO, class_id: Str
 	_queue_overlay_redraw()
 
 
-func set_fixed_range_origin(coord: Vector2i) -> void:
-	_fixed_range_origin = coord
+func set_fixed_range_origin(_coord: Vector2i) -> void:
+	pass
 
 
 func clear_fixed_range_origin() -> void:
-	_fixed_range_origin = Vector2i(-999, -999)
+	pass
 
 
-func set_action_range_origin(coord: Vector2i) -> void:
-	if coord == _action_range_origin:
-		return
-	_action_range_origin = coord
-	_invalidate_hover_cache()
+func set_action_range_origin(_coord: Vector2i) -> void:
+	pass
 
 
-func set_threat_origin(coord: Vector2i) -> void:
-	set_action_range_origin(coord)
+func set_threat_origin(_coord: Vector2i) -> void:
+	pass
 
 
 func clear_action_range_origin() -> void:
-	if _action_range_origin.x <= -900:
-		return
-	_action_range_origin = Vector2i(-999, -999)
-	_invalidate_hover_cache()
+	pass
 
 
 func clear_threat_origin() -> void:
-	clear_action_range_origin()
+	pass
 
 
 func bind_planning_cursor(cursor: TacticalPlanningCursor) -> void:
@@ -952,25 +912,6 @@ func _movement_status_blocked(unit: UnitState) -> bool:
 	if unit == null:
 		return true
 	return unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER)
-
-
-func _hover_proj_cache_key(unit: UnitState) -> int:
-	if unit == null or _director == null:
-		return 0
-	var p_unit := _proj_unit(unit.id)
-	if p_unit == null:
-		return 0
-	var key: int = p_unit.position.x
-	key = key * 1000 + p_unit.position.y
-	key = key * 100 + p_unit.movement.points_left
-	key = key * 10 + p_unit.ability.points_left
-	key = key * 10 + (1 if p_unit.turn_action_used else 0)
-	if _director.unit_has_wait_planned(unit.id):
-		key += 10000000
-	if _planning_input != null and _is_selected_player_unit(unit):
-		key = key * 10 + (1 if _planning_input.unit_move_requires_run(unit.id) else 0)
-		key = key * 10 + (1 if _planning_input.action_range_visible_for_hover() else 0)
-	return key
 
 
 func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: int) -> int:
@@ -1045,8 +986,6 @@ func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_
 		return false
 	if AbilitySystem.is_run_ability(ability):
 		return false
-	if _planning_input != null and not _planning_input.action_range_visible_for_hover():
-		return false
 	if (
 		_planning_input != null
 		and _is_selected_player_unit(unit)
@@ -1093,80 +1032,7 @@ func recompute_hover_ranges(
 		_clear_hover_skill_tiles()
 		_queue_static_tiles_redraw()
 		return
-	if (
-		_planning_input != null
-		and _is_selected_player_unit(unit)
-		and unit.id == _director.selected_unit_id
-		and not _planning_input.action_range_visible_for_hover()
-		and (not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty())
-	):
-		_clear_hover_skill_tiles()
-	var move_origin: Vector2i = _proj_origin(unit)
-	if dragging and _fixed_range_origin.x >= 0:
-		move_origin = _fixed_range_origin
-	# Intent stand (projection + live move preview). Drag may override via set_threat_origin.
-	var action_range_origin: Vector2i = _intent_stand_origin(unit)
-	if _action_range_origin.x > -900:
-		action_range_origin = _action_range_origin
-	var cache_ability: int = selected_ability if unit.id == _director.selected_unit_id else -1
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
-	var proj_key: int = _hover_proj_cache_key(unit) if _is_selected_player_unit(unit) else 0
-	var cache_awaiting_targeting: bool = (
-		_planning_input != null and _planning_input.awaiting_targeting_active()
-	)
-	var cache_awaiting_module: int = -1
-	if _director != null:
-		var cache_awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
-		if cache_awaiting != null:
-			cache_awaiting_targeting = true
-			cache_awaiting_module = cache_awaiting.awaiting_module_index
-	var is_selected_player: bool = _is_selected_player_unit(unit)
-	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
-	if _planning_input != null and is_selected_player and p_unit != null:
-		var move_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-		if (
-			move_ability != null
-			and _planning_input._is_awaiting_movement_endpoint(p_unit, move_ability)
-		):
-			var leg_origin: Vector2i = _planning_input._awaiting_endpoint_origin(p_unit)
-			if leg_origin.x > -900000:
-				move_origin = leg_origin
-	var move_cache_hit: bool = (
-		_cached_hover_unit_id == unit.id
-		and _cached_hover_origin == move_origin
-		and _cached_hover_ability == cache_ability
-		and _cached_hover_force == cache_force
-		and _cached_hover_proj_key == proj_key
-		and _cached_hover_awaiting_targeting == cache_awaiting_targeting
-		and _cached_hover_awaiting_module == cache_awaiting_module
-	)
-	# Enemy / unselected hover still keys off the cursor cell.
-	if not is_selected_player or unit.id != _director.selected_unit_id:
-		move_cache_hit = move_cache_hit and _cached_hover_coord == _hover_coord
-	var action_cache_hit: bool = (
-		move_cache_hit
-		and _cached_hover_action_range_origin == action_range_origin
-	)
-	if not is_selected_player or unit.id != _director.selected_unit_id:
-		action_cache_hit = action_cache_hit and _cached_hover_coord == _hover_coord
-	if move_cache_hit and action_cache_hit:
-		if _cached_hover_coord != _hover_coord:
-			_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
-			_queue_static_tiles_redraw()
-		return
-	_cached_hover_unit_id = unit.id
-	_cached_hover_origin = move_origin
-	_cached_hover_action_range_origin = action_range_origin
-	_cached_hover_ability = cache_ability
-	_cached_hover_force = cache_force
-	_cached_hover_proj_key = proj_key
-	_cached_hover_awaiting_targeting = cache_awaiting_targeting
-	_cached_hover_awaiting_module = cache_awaiting_module
-	_cached_hover_coord = _hover_coord
-	if move_cache_hit:
-		_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
-		_queue_static_tiles_redraw()
-		return
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()
 	_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
@@ -1195,6 +1061,7 @@ func _apply_planning_tile_layers(
 		_director, _board, unit, selected_ability, _planning_input, _hover_coord,
 	)
 	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
+	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
@@ -1212,9 +1079,7 @@ func _apply_planning_tile_layers(
 				)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 			var locked_aim: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
-			if locked_aim.x > -900000 and (
-				_planning_input == null or _planning_input.action_range_visible_for_hover()
-			):
+			if locked_aim.x > -900000 and show_action_range:
 				_blast_tiles_on_hover_layer = false
 				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
 					unit, locked_aim, selected_ability if is_selected_player else -1,
@@ -2712,6 +2577,8 @@ func _draw_move_ghosts() -> void:
 	if unit == null or not unit.is_alive():
 		return
 	var force_basic: bool = _planning_input.force_basic_movement
+	if not _planning_input.action_range_visible_for_hover():
+		return
 	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
@@ -2820,28 +2687,15 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return CombatPlanningPreview.planning_latest_stand_cell(_director, _board, unit.id)
 
 
-## Action-range anchor: committed projection plus live move-preview stand (intent truth).
-## Armed TILE aim locks projected stand — hover only drives yellow blast / endpoint ghosts.
+## Action-range anchor: delegates to CombatPlanningInput stand SSOT.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
-	var projected: Vector2i = _proj_origin(unit)
 	if unit == null:
-		return projected
+		return Vector2i(-999999, -999999)
 	if _planning_input != null and _is_selected_player_unit(unit):
-		var intent_stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
-		if intent_stand.x > -900000:
-			return intent_stand
-	if (
-		_planning_input != null
-		and _planning_input._armed_tile_target_locks_action_range(unit)
-	):
-		return projected
-	if _planning_input != null and _planning_input.is_live_preview_active():
-		var live_board: BoardState = _live_preview.preview_board
-		if live_board != null:
-			var live_unit: UnitState = live_board.get_unit_by_id(unit.id)
-			if live_unit != null:
-				return live_unit.position
-	return projected
+		var stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
+		if stand.x > -900000:
+			return stand
+	return _proj_origin(unit)
 
 
 func _selected_ability_data(unit: UnitState, ability_index: int) -> AbilityData:
