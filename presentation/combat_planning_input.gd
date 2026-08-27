@@ -680,8 +680,8 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
-		if not bool(preview.get("intent_preview", false)):
-			_planning._recompute_hover_ranges_from_inputs()
+		## Preview board moved stand — refresh locked/next range fields (MOVE_PREVIEW_RULES two-range).
+		_planning._recompute_hover_ranges_from_inputs()
 	_refresh_action_range_overlay_when_gate_off()
 	_sync_intent_live_board()
 
@@ -1502,7 +1502,7 @@ func _flush_hover_heavy_sync() -> void:
 
 
 func _run_hover_overlay_refresh() -> void:
-	if _director == null or _director.board == null or not _is_planning() or dragging:
+	if _director == null or _director.board == null or not _is_planning():
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
@@ -3540,14 +3540,14 @@ func predicted_stand_at_hover(unit_id: int, hover_coord: Vector2i) -> Vector2i:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return Vector2i(-999999, -999999)
-	if active_movement_planning_step(actor):
-		if _director.board.is_in_bounds(hover_coord) and _is_hover_move_cell(actor, hover_coord):
-			return hover_coord
-		return _active_move_drag_origin(actor)
 	if is_live_preview_active() and preview_state.preview_board != null:
 		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
 		if live_unit != null:
 			return live_unit.position
+	if active_movement_planning_step(actor):
+		if _director.board.is_in_bounds(hover_coord) and _is_hover_move_cell(actor, hover_coord):
+			return hover_coord
+		return _active_move_drag_origin(actor)
 	return action_range_intent_stand_cell(unit_id)
 
 
@@ -3829,6 +3829,8 @@ func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 
 func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	if _director == null or not _director.board.is_in_bounds(cell):
+		return false
+	if painted_move_route_locked(p_unit):
 		return false
 	if not live_move_hover_rewrite_applies(p_unit, cell):
 		return false

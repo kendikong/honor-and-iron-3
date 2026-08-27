@@ -971,8 +971,6 @@ func _apply_planning_tile_layers(
 		_director, unit, selected_ability, _planning_input, is_selected_player,
 	):
 		return
-	if dragging:
-		return
 	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
 		_director, _board, unit, selected_ability, _planning_input, _hover_coord,
 	)
@@ -983,7 +981,7 @@ func _apply_planning_tile_layers(
 			return
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
-			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+			if not dragging and locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
 				_hover_move_tiles = _reachable_move_tiles_for_origin(
 					unit, p_unit, selected_ability, locked_move, is_selected_player,
 				)
