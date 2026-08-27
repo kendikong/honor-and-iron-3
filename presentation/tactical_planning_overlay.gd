@@ -981,7 +981,7 @@ func _apply_planning_tile_layers(
 			return
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
-			if not dragging and locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
 				_hover_move_tiles = _reachable_move_tiles_for_origin(
 					unit, p_unit, selected_ability, locked_move, is_selected_player,
 				)
@@ -1010,6 +1010,15 @@ func _apply_planning_tile_layers(
 			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
 				unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
 			)
+	if (
+		_planning_input != null
+		and _planning_input._drag_route_commits_active()
+		and _planning_input._drag_unit_id == unit.id
+	):
+		for i: int in range(1, _planning_input._drag_route.size()):
+			var painted_wp: Vector2i = _planning_input._drag_route[i] as Vector2i
+			if not _hover_move_tiles.has(painted_wp):
+				_hover_move_tiles.append(painted_wp)
 
 
 func _reachable_move_tiles_for_origin(
