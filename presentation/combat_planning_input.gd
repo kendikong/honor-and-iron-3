@@ -673,15 +673,6 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 	## Cheap move-only hover: apply_result already built paths from projected stand.
 	if bool(preview.get("intent_preview", false)):
 		return
-	if _director != null and _director.selected_unit_id >= 0 and not dragging:
-		var hover_actor: UnitState = _proj_unit(_director.selected_unit_id)
-		if hover_actor != null:
-			var hover_ability: AbilityData = _selected_ability_data(hover_actor)
-			if (
-				hover_ability != null
-				and _is_awaiting_movement_endpoint(hover_actor, hover_ability)
-			):
-				return
 	if dragging and _drag_route.size() >= 2 and _movement_route_paint_allowed():
 		return
 	if (
@@ -1839,56 +1830,12 @@ func _refresh_selected_interaction_preview() -> void:
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
 		_refresh_click_target_highlight()
 		return
-	var move_ability: AbilityData = _selected_ability_data(p_unit)
-	if (
-		move_ability != null
-		and _is_awaiting_movement_endpoint(p_unit, move_ability)
-		and _director.board.is_in_bounds(cell)
-	):
-		var move_waypoints: Array[Vector2i] = _corridor_waypoints_to_cell(p_unit, cell)
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, move_waypoints)
-		_apply_corridor_preview_paths(p_unit.id, cell, move_waypoints)
-		_refresh_click_target_highlight()
-		return
-	if (
-		force_basic_movement
-		and _director.get_planning_move_timing(p_unit.id) == GameEnums.MoveTiming.POST_ACTION
-		and _director.board.is_in_bounds(cell)
-	):
-		var post_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, post_waypoints)
-		_apply_painted_route_preview_if_active(p_unit.id, cell, post_waypoints)
-		_refresh_click_target_highlight()
+	if _movement_slot_hover_preview_applies(p_unit, cell):
+		_refresh_movement_slot_hover_preview(p_unit, cell)
 		return
 	var target_enemy_id: int = -1
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
 		target_enemy_id = _attack_target_id_at_cell(p_unit, cell)
-	## K4 / auto_run: selection-hover painted route is pre-move intent while class skill stays armed.
-	## TARGET_PICK awaiting is tile aim, not a walk — leftover paint must not preview MOVE.
-	## If hovering an enemy with an armed skill, do not intercept as pure move.
-	if (
-		target_enemy_id < 0
-		and not _awaiting_target_pick_blocks_premove()
-		and _drag_route_commits_active()
-		and _drag_unit_id == p_unit.id
-		and _movement_route_paint_allowed()
-		and _director.board.is_in_bounds(cell)
-		and (
-			cell == _drag_route_stand_cell()
-			or _drag_route.has(cell)
-			or _can_move_to(p_unit, cell)
-		)
-	):
-		var painted_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, painted_waypoints)
-		_apply_painted_route_preview_if_active(p_unit.id, cell, painted_waypoints)
-		_refresh_click_target_highlight()
-		return
-	if target_enemy_id < 0 and _basic_move_allowed() and _is_hover_move_cell(p_unit, cell):
-		var move_waypoints: Array[Vector2i] = _corridor_waypoints_to_cell(p_unit, cell)
-		_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, move_waypoints)
-		_refresh_click_target_highlight()
-		return
 	if (
 		_director.selected_ability_index >= 0
 		and awaiting_targeting_active()
@@ -2259,7 +2206,7 @@ func _selection_hover_corridor_paint_active() -> bool:
 	var ability := _selected_ability_data(p_unit)
 	if ability == null:
 		return false
-	## MOVE module hover (not drag) uses fresh corridor-per-cell — same as premove.
+	## Awaiting MOVE module uses _refresh_movement_slot_hover_preview — not drag corridor paint.
 	if _is_awaiting_movement_endpoint(p_unit, ability):
 		return false
 	if (
@@ -3713,15 +3660,79 @@ func _apply_painted_route_preview_paths(unit_id: int) -> void:
 	_refresh_action_range_overlay_when_gate_off()
 
 
-func _apply_painted_route_preview_if_active(
+## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
+func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
+	var waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
+	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
+	_apply_movement_hover_preview_paths(p_unit.id, cell, waypoints)
+	_refresh_click_target_highlight()
+
+
+func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> bool:
+	if _director == null or not _director.board.is_in_bounds(cell):
+		return false
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
+		return true
+	if (
+		force_basic_movement
+		and _director.get_planning_move_timing(p_unit.id) == GameEnums.MoveTiming.POST_ACTION
+	):
+		return true
+	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
+	if (
+		target_enemy_id < 0
+		and not _awaiting_target_pick_blocks_premove()
+		and _drag_route_commits_active()
+		and _drag_unit_id == p_unit.id
+		and _movement_route_paint_allowed()
+		and (
+			cell == _drag_route_stand_cell()
+			or _drag_route.has(cell)
+			or _can_move_to(p_unit, cell)
+		)
+	):
+		return true
+	if (
+		target_enemy_id < 0
+		and _basic_move_allowed()
+		and _is_hover_move_cell(p_unit, cell)
+	):
+		return true
+	return false
+
+
+func _apply_movement_hover_preview_paths(
 	unit_id: int,
-	cell: Vector2i,
+	hover_cell: Vector2i,
 	waypoints: Array[Vector2i],
 ) -> void:
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
 		_apply_painted_route_preview_paths(unit_id)
 		return
 	if not waypoints.is_empty():
+		var actor: UnitState = _proj_unit(unit_id)
+		if actor == null:
+			return
+		var origin: Vector2i = _active_move_drag_origin(actor)
+		if origin.x <= -900000:
+			origin = _awaiting_endpoint_origin(actor)
+		if origin.x <= -900000:
+			return
+		var path: Array[Vector2i] = [origin]
+		for wp: Vector2i in waypoints:
+			path.append(wp)
+		if path.size() == 1 and GridSystem.manhattan(origin, hover_cell) == 1:
+			path.append(hover_cell)
+		preview_state.preview_paths[unit_id] = path
+		preview_state.preview_splits[unit_id] = path.size()
+		preview_state.preview_post_splits[unit_id] = path.size()
+		if _planning != null:
+			_planning.apply_preview_state(preview_state, unit_id, -1)
+		_refresh_action_range_overlay_when_gate_off()
+		return
+	var existing: Array = preview_state.preview_paths.get(unit_id, [])
+	if existing.size() >= 2:
 		return
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null:
@@ -3734,30 +3745,6 @@ func _apply_painted_route_preview_if_active(
 	preview_state.preview_paths[unit_id] = [stand]
 	preview_state.preview_splits[unit_id] = 1
 	preview_state.preview_post_splits[unit_id] = 1
-	if _planning != null:
-		_planning.apply_preview_state(preview_state, unit_id, -1)
-
-
-## MOVE module selection-hover: corridor path is preview truth (same owner as premove).
-func _apply_corridor_preview_paths(
-	unit_id: int,
-	hover_cell: Vector2i,
-	waypoints: Array[Vector2i],
-) -> void:
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		return
-	var origin: Vector2i = _active_move_drag_origin(actor)
-	if origin.x <= -900000:
-		return
-	var path: Array[Vector2i] = [origin]
-	for wp: Vector2i in waypoints:
-		path.append(wp)
-	if path.size() == 1 and GridSystem.manhattan(origin, hover_cell) == 1:
-		path.append(hover_cell)
-	preview_state.preview_paths[unit_id] = path
-	preview_state.preview_splits[unit_id] = path.size()
-	preview_state.preview_post_splits[unit_id] = path.size()
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, unit_id, -1)
 

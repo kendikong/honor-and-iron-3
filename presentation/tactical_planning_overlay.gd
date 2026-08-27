@@ -598,58 +598,47 @@ func is_hover_threat_tile(cell: Vector2i) -> bool:
 	return is_hover_action_range_tile(cell)
 
 
-## Blue route for an armed movement skill, shared with the preview route renderer.
-func awaiting_movement_hover_route_cells() -> Array[Vector2i]:
+## Global movement hover route — preview_paths SSOT for premove, move module, and postmove.
+func _movement_hover_route_cells(unit_id: int = -1) -> Array[Vector2i]:
 	if _director == null or _board == null or _planning_input == null:
 		return []
-	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+	if unit_id < 0:
+		unit_id = _director.selected_unit_id
+	if unit_id < 0 or not _board.is_in_bounds(_hover_coord):
 		return []
-	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	var unit: UnitState = _proj_unit(unit_id)
 	if unit == null or not unit.is_alive():
-		return []
-	if not _can_show_action_range_tiles(
-		unit, _director.selected_ability_index, _planning_input.force_basic_movement,
-	):
 		return []
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null:
 		return []
 	if (
-		_planning_input != null
-		and not _planning_input._is_awaiting_movement_endpoint(unit, ability)
+		AbilitySystem.ability_uses_direct_relocation(ability, unit)
+		and _planning_input._is_awaiting_movement_endpoint(unit, ability)
 	):
+		var move_origin: Vector2i = _planning_input._awaiting_endpoint_origin(unit)
+		return [move_origin, _hover_coord]
+	if not _movement_hover_route_context_active(unit, ability):
 		return []
-	var move_origin: Vector2i = (
-		_planning_input._awaiting_endpoint_origin(unit)
-		if _planning_input != null
-		else _proj_origin(unit)
+	var prev: CombatPlanningPreview = _active_preview()
+	return CombatPlanningPreview.live_move_hover_route_cells(
+		unit_id, prev, _director, _board,
 	)
+
+
+func _movement_hover_route_context_active(unit: UnitState, ability: AbilityData) -> bool:
+	if _planning_input == null or unit == null or ability == null:
+		return false
+	if _planning_input._is_awaiting_movement_endpoint(unit, ability):
+		return true
 	if (
-		AbilitySystem.planning_commit_flow(unit, ability)
-		!= GameEnums.PlanningCommitFlow.AWAITING_TARGET
-		or not AbilitySystem.planning_is_valid_awaiting_endpoint(
-			move_origin, _hover_coord, ability, unit, _planning_board(),
-		)
-		or not AbilitySystem.ability_has_movement_effect(ability)
+		_planning_input.force_basic_movement
+		and _director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION
 	):
-		return []
-	if AbilitySystem.ability_uses_direct_relocation(ability, unit):
-		var hop: Array[Vector2i] = [move_origin, _hover_coord]
-		return hop
-	var sim_path: Array = []
-	var action_split: int = -1
-	if _planning_input.live_sim_matches_hover():
-		var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-		if hover_preview != null:
-			sim_path = hover_preview.preview_paths.get(unit.id, [])
-			action_split = int(hover_preview.action_splits.get(unit.id, -1))
-	return CombatPlanningPreview.awaiting_movement_route_cells(
-		move_origin,
-		_hover_coord,
-		_planning_input.get_drag_route(),
-		sim_path,
-		action_split,
-	)
+		return true
+	if _planning_input.dragging:
+		return true
+	return _planning_input._movement_slot_hover_preview_applies(unit, _hover_coord)
 
 
 func clear_live_preview() -> void:
@@ -1210,6 +1199,15 @@ func recompute_hover_ranges(
 			cache_awaiting_module = cache_awaiting.awaiting_module_index
 	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
+	if _planning_input != null and is_selected_player and p_unit != null:
+		var move_ability: AbilityData = _selected_ability_data(unit, selected_ability)
+		if (
+			move_ability != null
+			and _planning_input._is_awaiting_movement_endpoint(p_unit, move_ability)
+		):
+			var leg_origin: Vector2i = _planning_input._awaiting_endpoint_origin(p_unit)
+			if leg_origin.x > -900000:
+				move_origin = leg_origin
 	var move_cache_hit: bool = (
 		_cached_hover_unit_id == unit.id
 		and _cached_hover_origin == move_origin
@@ -2188,7 +2186,9 @@ func _pending_move_route_leg(unit_id: int, prev: CombatPlanningPreview) -> Array
 
 ## Live/drag move arrow — same leg slice as commit preview.
 func _interaction_move_route(unit_id: int, prev: CombatPlanningPreview, route: Array) -> Array:
-	var leg: Array = _pending_move_route_leg(unit_id, prev)
+	var leg: Array = CombatPlanningPreview.live_move_hover_route_cells(
+		unit_id, prev, _director, _board,
+	)
 	if leg.size() >= 2:
 		return leg
 	return []
@@ -2274,7 +2274,7 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 	)
 	if not flowing:
 		if caster_teleport_hover:
-			var hop: Array[Vector2i] = awaiting_movement_hover_route_cells()
+			var hop: Array[Vector2i] = _movement_hover_route_cells(actor.id)
 			if hop.size() >= 2:
 				_draw_dashed_route(hop, p_col)
 			return
@@ -2354,7 +2354,11 @@ func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
 		return
 	if _director.selected_unit_id < 0 or not _unit_can_still_move(_director.selected_unit_id):
 		return
-	var cells: Array[Vector2i] = awaiting_movement_hover_route_cells()
+	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	var prev: CombatPlanningPreview = _active_preview()
+	var cells: Array[Vector2i] = CombatPlanningPreview.live_move_hover_route_cells(
+		_director.selected_unit_id, prev, _director, _board,
+	)
 	if cells.size() < 2:
 		var drag_route: Array = _planning_input.get_drag_route()
 		if drag_route.size() >= 2:
@@ -2364,7 +2368,6 @@ func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
 					cells.append(tile as Vector2i)
 	if cells.size() < 2:
 		return
-	var unit: UnitState = _proj_unit(_director.selected_unit_id)
 	var p_col: Color = _player_color_for_unit(unit) if unit != null else _COLOR_HOVER
 	var ability: AbilityData = (
 		_selected_ability_data(unit, _director.selected_ability_index)
@@ -2868,19 +2871,7 @@ func _draw_move_ghosts() -> void:
 			Color(p_col.r, p_col.g, p_col.b, 0.85),
 		)
 	elif ability != null and AbilitySystem.ability_has_movement_effect(ability):
-		var drag_route: Array = []
-		var sim_path: Array = []
-		var action_split: int = -1
-		if _planning_input != null:
-			drag_route = _planning_input.get_drag_route()
-			if _planning_input.live_sim_matches_hover():
-				var hover_preview: CombatPlanningPreview = _planning_input.preview_state
-				if hover_preview != null:
-					sim_path = hover_preview.preview_paths.get(unit.id, [])
-					action_split = int(hover_preview.action_splits.get(unit.id, -1))
-		var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
-			origin, _hover_coord, drag_route, sim_path, action_split,
-		)
+		var route_cells: Array[Vector2i] = _movement_hover_route_cells(unit.id)
 		_draw_route_line(route_cells, Color(p_col.r, p_col.g, p_col.b, 0.85), true, true)
 	else:
 		_draw_targeting_intent_arrow(origin, _hover_coord, Color(p_col.r, p_col.g, p_col.b, 0.85))

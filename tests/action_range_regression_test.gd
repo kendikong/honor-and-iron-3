@@ -368,7 +368,7 @@ static func _test_bowling_enemy_hover_not_bash_route(failures: Array[String]) ->
 		return
 	director.selected_ability_index = bash_idx
 	_hover_sync(input, overlay, ENEMY_POS)
-	if not overlay.awaiting_movement_hover_route_cells().is_empty():
+	if not overlay._movement_hover_route_cells().is_empty():
 		failures.append(
 			"ActionRangeRegression bowling_enemy_hover_not_bash: bash enemy hover must not use awaiting dash route",
 		)

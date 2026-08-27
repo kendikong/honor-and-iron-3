@@ -1440,37 +1440,23 @@ static func planning_animation_cells(
 	return []
 
 
-## Awaiting movement-skill arrow cells. Drag paint is intent truth — never swap to
-## pathfinder order while the player is still painting toward the hover endpoint.
-static func awaiting_movement_route_cells(
-	origin: Vector2i,
-	hover: Vector2i,
-	drag_route: Array,
-	sim_path: Array,
-	action_split: int = -1,
+## Live hover/drag move route for overlay arrows — one leg slice for all move timings.
+static func live_move_hover_route_cells(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
 ) -> Array[Vector2i]:
-	var path: Array = []
-	if drag_route.size() >= 2:
-		var hover_idx: int = drag_route.find(hover)
-		if hover_idx > 0:
-			path = drag_route.slice(1, hover_idx + 1)
-		else:
-			var tail: Variant = drag_route[drag_route.size() - 1]
-			if tail is Vector2i and GridSystem.manhattan(tail as Vector2i, hover) == 1:
-				path = drag_route.slice(1)
-				path.append(hover)
-	if path.is_empty() and sim_path.size() >= 2:
-		var start_idx: int = action_split
-		if start_idx < 0:
-			start_idx = _last_route_index(sim_path, origin)
-		if start_idx < 0:
-			start_idx = 0
-		if start_idx < sim_path.size() - 1:
-			path = sim_path.slice(start_idx + 1, sim_path.size())
-	var route_cells: Array[Vector2i] = [origin]
-	for step: Variant in path:
-		if step is Vector2i:
-			route_cells.append(step)
-	if route_cells.size() == 1 and hover != origin and GridSystem.manhattan(origin, hover) == 1:
-		route_cells.append(hover)
-	return route_cells
+	if preview == null or unit_id < 0:
+		return []
+	var route: Array = preview.preview_paths.get(unit_id, [])
+	var leg: Array = pending_move_route_leg(unit_id, preview, director, board)
+	if leg.size() >= 2:
+		return leg.duplicate()
+	if route.size() < 2:
+		return []
+	var typed: Array[Vector2i] = []
+	for tile: Variant in route:
+		if tile is Vector2i:
+			typed.append(tile as Vector2i)
+	return typed

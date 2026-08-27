@@ -399,10 +399,12 @@ static func _rebuild_committed_preview(director: CombatDirector) -> CombatPlanni
 static func _test_overlay_partial_paint_completes_to_hover(failures: Array[String]) -> void:
 	var origin := START_CELL
 	var hover := END_CELL
-	var drag_route: Array = [origin, EAST_THEN_NORTH[0]]
-	var sim_path: Array = [origin, NORTH_THEN_EAST[0], hover]
-	var route_cells: Array[Vector2i] = CombatPlanningPreview.awaiting_movement_route_cells(
-		origin, hover, drag_route, sim_path,
+	var preview: CombatPlanningPreview = CombatPlanningPreview.new()
+	preview.preview_paths[1] = [origin, EAST_THEN_NORTH[0], hover]
+	preview.preview_splits[1] = 3
+	preview.preview_post_splits[1] = 3
+	var route_cells: Array[Vector2i] = CombatPlanningPreview.live_move_hover_route_cells(
+		1, preview, null, null,
 	)
 	_assert_route_cells(
 		failures,

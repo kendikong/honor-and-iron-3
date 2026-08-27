@@ -282,12 +282,12 @@ static func _assert_move_preview_layers(
 					str(overlay.targeting_intent_arrow_cells()),
 				],
 			)
-	var awaiting_route: Array = overlay.awaiting_movement_hover_route_cells()
+	var movement_route: Array = overlay._movement_hover_route_cells(actor.id)
 	if bool(config.get("expect_awaiting_move_route", false)):
-		if awaiting_route != draw_route and not draw_route.is_empty():
+		if movement_route != draw_route and not draw_route.is_empty():
 			failures.append(
-				"%s: awaiting movement route %s must match draw route %s"
-				% [label, str(awaiting_route), str(draw_route)],
+				"%s: movement hover route %s must match draw route %s"
+				% [label, str(movement_route), str(draw_route)],
 			)
 	for step_index: int in range(1, expected_path.size()):
 		var a: Vector2i = expected_path[step_index - 1] as Vector2i

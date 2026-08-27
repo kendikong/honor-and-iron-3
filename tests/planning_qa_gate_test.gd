@@ -814,10 +814,8 @@ static func _assert_charge_strike_hover_visual_contract(
 		overlay._interaction_move_route(actor.id, live, preview_path)
 		if live != null else []
 	)
-	var awaiting_route: Array = overlay.awaiting_movement_hover_route_cells()
 	_assert_preview_route_cardinal_only(failures, label + "/preview_paths", preview_path)
 	_assert_preview_route_cardinal_only(failures, label + "/draw_route", draw_route)
-	_assert_preview_route_cardinal_only(failures, label + "/awaiting_route", awaiting_route)
 	_assert_targeting_arrow_contract(
 		failures, label, overlay, allow_target_arrow, expected_arrow_from,
 	)
@@ -836,14 +834,6 @@ static func _assert_charge_strike_hover_visual_contract(
 			failures.append(
 				"%s: drawn move route is a diagonal shortcut %s -> %s"
 				% [label, draw_a, draw_b],
-			)
-	if awaiting_route.size() == 2:
-		var await_a: Vector2i = awaiting_route[0] as Vector2i
-		var await_b: Vector2i = awaiting_route[1] as Vector2i
-		if await_a.x != await_b.x and await_a.y != await_b.y:
-			failures.append(
-				"%s: awaiting movement route is a diagonal shortcut %s -> %s"
-				% [label, await_a, await_b],
 			)
 	var input_path: Array = input.preview_state.preview_paths.get(actor.id, [])
 	_assert_preview_route_cardinal_only(failures, label + "/input_preview_paths", input_path)

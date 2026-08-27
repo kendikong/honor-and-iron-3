@@ -255,7 +255,7 @@ func _assert_teleport_direct_hop(
 		and not _input.awaiting_targeting_active()
 	):
 		return
-	var hop: Array[Vector2i] = _overlay.awaiting_movement_hover_route_cells()
+	var hop: Array[Vector2i] = _overlay._movement_hover_route_cells(actor.id)
 	assert_int(hop.size()).override_failure_message(
 		"%s: teleport hover must be a direct hop; route=%s" % [label, str(hop)],
 	).is_equal(2)
