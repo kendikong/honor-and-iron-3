@@ -1,119 +1,110 @@
 # Move preview rules (owner spec)
 
 **Status:** ACTIVE — canonical player-facing behavior for walk previews during planning.  
-**Related:** `class_abilities.txt` (economy/timeline), `PLANNING_SKILL_QA_CHECKLIST.md` (preview = commit truth).
+**Related:** `class_abilities.txt`, `PLANNING_SKILL_QA_CHECKLIST.md`.
 
-This doc states the game rules in plain language. Implementation must follow these rules; agents should not invent parallel preview logic.
+Plain-language rules. No parallel preview logic.
+
+---
+
+## Core truth
+
+**The move preview is the source of truth.** Whatever path is shown is the path the character actually walks on Execute. Preview, commit, and execution must match.
 
 ---
 
 ## The one rule
 
-**If the player is in a movement step** (premove, the skill’s MOVE module, or postmove):
+**Movement step** (premove, skill MOVE module, or postmove):
 
-- Show a **live** walk preview from **latest predicted stand** to the mouse (or along a **painted drag route** to the hovered tile).
+- Live walk preview from **latest predicted stand** to the mouse (or along a **painted drag route** to the hovered tile).
 
-**If the player is in any other step** (damage, pick target, wait, etc.):
+**Any other step** (damage, target pick, wait, etc.):
 
-- **Do not** draw a new live walk from the mouse.
-- **Do** keep showing any walk that was already **committed** but not yet **executed** (frozen route).
+- **No** live walk from the mouse.
+- **No blue walk tiles** — if blue tiles appear here, that is a bug.
+- **Do** keep showing **committed** walks that are not cleared yet (frozen full path).
 
-**Move previews clear only when the walk actually runs** at turn execution — not when you advance to the next module, not when you change target, not when you arm another part of the same ability.
-
----
-
-## Modular skills = chained mini-skills, one resource
-
-Treat each **module** of a multi-part ability as **its own skill use**, one after another, all paid from the **same ability / AP / timeline slot**.
-
-Example — **Trampling Advance**:
-
-1. **MOVE module** — “Walk here.” Player commits a landing tile and path. That leg is **done**. Predicted stand updates.
-2. **DAMAGE module** — “Hit from where you landed.” Starts from the **new** stand. It does **not** get to redraw or replace the walk; the walk module already finished.
-
-Example — **Charge Strike**:
-
-1. Premove (if used) → commit → new stand.  
-2. Charge MOVE module → commit → new stand.  
-3. Strike (damage / target) → only uses stand **after** prior committed legs.
-
-**Handoff rule:** When module N finishes, module N+1 only sees the board **after** everything committed in modules 1…N. Earlier legs must not leak path or stand into later legs.
+**Modular skills** = chained mini-skills on one ability/AP. Each module finishes and hands off **stand** to the next. A damage module does not redraw or replace a walk that was already committed.
 
 ---
 
-## Live vs frozen preview
+## Live vs frozen (planning only)
 
-| Situation | What the player sees |
-|-----------|----------------------|
-| **Choosing** a walk (movement step active, not yet committed) | Live preview: stand → mouse (or painted route to hover) |
-| **Committed** a walk, now on a non-movement step | **Frozen** committed route — same path as at commit |
-| **Committed** a walk, still planning before Execute | Frozen route **stays visible** until that walk runs |
-| **Turn executes**, walk resolves | Move preview for that leg **clears** (after animation / resolution as appropriate) |
+| Situation | What you see |
+|-----------|----------------|
+| Choosing a walk | Live path: stand → mouse (or painted route) |
+| Committed a walk, now on a non-move step | **Frozen** full committed path — mouse does not draw a new one |
+| Invalid hover for this movement step | **No** move preview for that step (invalid cursor only) |
+| Undo a committed walk | Frozen path goes away; on a movement step again → live preview works |
 
-Frozen does **not** mean hidden. It means: **no new corridor from the cursor**; show what was locked in.
+**Frozen** = show the locked path, not hidden. Not live from cursor.
 
 ---
 
-## Movement steps (when live preview applies)
+## When previews clear
 
-All three use the **same** live preview behavior; only **which timeline slot** receives the commit differs:
+All committed move previews stay visible through planning until:
+
+1. **Ready to Execute** is pressed, or  
+2. That walk **starts animating / executing**.
+
+**Execution phase:** **Zero planning UI** — no blue tiles, no hover paths, no planning overlays. Only the actual turn playing out.
+
+Do not add extra clear rules beyond this.
+
+---
+
+## Movement steps (same behavior, different slot)
 
 | Step | When |
 |------|------|
-| **Premove** | Walk before the action |
-| **MOVE module** | Walk leg inside a skill (e.g. Trampling Advance landing) |
-| **Postmove** | Walk after the action |
+| **Premove** | Before the action |
+| **MOVE module** | Walk leg inside a skill |
+| **Postmove** | After the action |
 
-**Painted routes:** Dragging through blue tiles builds a path. Live preview follows that painted route to the hovered cell, not only a single-step hop.
+**Painted routes:** Drag through blue tiles to build a path; preview follows that route to the hover tile.
 
-**Move + damage on the same hover** (e.g. Charge Strike on the MOVE module): Blue walk preview and red hit preview can both show. Blue still follows the movement-step rule; red follows targeting rules from the **landing** stand.
+**Run:** No change to current behavior — run icon already signals when Run is used.
+
+**Teleport / blink:** Not a real walk. Preview is a **direct line** from start tile to landing tile (hop), not a stepped corridor.
 
 ---
 
 ## Latest predicted stand
 
-**Latest predicted stand** = where the unit would stand **after all committed planning so far** (premove, committed move modules, swaps, etc.), not necessarily turn-start position.
-
-- Red action range, blue walk tiles, and walk preview origin all use this stand during planning.
-- After each **committed** movement leg, stand advances for the next module.
+Where the unit stands **after everything already committed** this turn — not necessarily turn-start. Walk preview, blue tiles, and action range all use this during planning.
 
 ---
 
-## Preview = commit truth
+## Co-op
 
-What the player sees in the last valid preview for a click is what commit must lock:
-
-- Same path / waypoints  
-- Same landing tile  
-- Same predicted stand for the next step  
-
-Commit must not jump to a different route than preview showed. Execution must match commit.
+Everyone sees all units’ move previews. Option to hide others’ previews may come later.
 
 ---
 
-## Performance (player-visible)
+## Common bugs (do not ship)
 
-- **While moving the mouse:** Path arrows and tiles should update smoothly (lightweight path paint).
-- **When the pointer settles:** Heavier “what-if” simulation may run to validate AP, damage preview, etc.
-
-Sluggish hover is a bug; throttling must not change **what** preview means, only **when** expensive validation runs.
-
----
-
-## Common failure modes (do not ship)
-
-| Symptom | Violation |
-|---------|-----------|
-| On damage step, mouse draws **new** walk arrows | Non-movement step using live walk preview |
-| Committed walk **disappears** when opening next module | Cleared preview before execution |
-| Strike range/path uses **old** premove position | Module handoff / latest stand wrong |
-| Commit path ≠ last hover preview | Preview ≠ commit |
-| Premove path **duplicated** or walk animates twice | Same leg merged or applied twice |
+| Symptom | Wrong because |
+|---------|----------------|
+| New walk arrows on damage / target step | Not a movement step |
+| Blue walk tiles during non-move module | Only movement steps get blue tiles |
+| Committed path vanishes when opening next module | Cleared too early |
+| Path on screen ≠ path walked | Preview is not truth |
+| Old premove ghost affects later module | Module handoff / stand wrong |
+| Planning UI visible during execution | Execution = zero planning UI |
 
 ---
 
-## Acceptance (plain language)
+## Acceptance examples
 
-- **Trampling Advance:** Paint and commit landing → frozen walk stays visible on damage targeting; mouse does not paint alternate walks; preview clears only after Execute runs the walk.  
-- **Charge Strike:** After premove + charge commit, strike preview uses charge landing stand, not premove ghost.  
-- **Any skill:** Movement step = live stand→mouse; other steps = frozen committed walks only until execution.
+- **Trampling Advance:** Commit landing → full frozen path on damage step; mouse does not paint new walks; Execute → planning UI gone; character walks the shown path.  
+- **Charge Strike:** Strike uses stand after committed legs, not premove ghost.  
+- **Teleport:** Straight hop line, not a walked path.
+
+---
+
+## Open (owner to confirm)
+
+1. **Postmove:** After the action, is postmove painted the same way as premove (drag a route through blue tiles), or only one tile at a time?  
+2. **Approach then swap:** Is the “step next to ally” walk previewed exactly like a normal premove/MOVE walk (blue tiles + path arrow)?
