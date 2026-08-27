@@ -1445,6 +1445,7 @@ static func _test_trample_full_phase_hover_matrix(failures: Array[String]) -> vo
 		return
 	director.selected_ability_index = -1
 	input.force_basic_movement = true
+	input._clear_hover_drag_route()
 	var post_start: Vector2i = end_cell
 	var post_dest: Vector2i = PlanningChecklistHarness.TRAMPLE_POST_DEST
 	var post_route: Array[Vector2i] = PlanningChecklistHarness.TRAMPLE_POST_ROUTE.duplicate()
