@@ -467,16 +467,9 @@ func _planning_action_range_tiles_for_unit(
 
 
 func _hover_is_walk_only_premove(unit: UnitState) -> bool:
-	if unit == null or _board == null or not _board.is_in_bounds(_hover_coord):
-		return false
-	var actor: UnitState = _proj_unit(unit.id)
-	if actor == null:
-		actor = unit
 	if _planning_input != null:
-		return _planning_input._is_hover_move_cell(actor, _hover_coord)
-	if _director != null and _director.find_awaiting_action(unit.id) != null:
-		return false
-	return _hover_move_tiles.has(_hover_coord)
+		return _planning_input.is_walk_only_hover_move(unit, _hover_coord)
+	return false
 
 
 func _clear_hover_skill_tiles() -> void:
@@ -801,45 +794,11 @@ func _refresh_cursor_action_tiles() -> void:
 	var unit: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
 	if unit == null or not unit.is_alive():
 		return
-	if _intent_tiles_blocked(unit, _director.selected_ability_index):
-		_clear_hover_skill_tiles()
-		_queue_static_tiles_redraw()
-		return
 	var selected_ability: int = _director.selected_ability_index
 	var force_basic: bool = (
 		_planning_input.force_basic_movement if _planning_input != null else false
 	)
-	var p_unit: UnitState = _proj_unit(unit.id)
-	var stand_locked: bool = (
-		_planning_input != null
-		and _planning_input.action_range_stand_locked_to_projection(unit.id)
-	)
-	if stand_locked and _hover_is_walk_only_premove(unit):
-		_blast_tiles_on_hover_layer = true
-		var origin: Vector2i = _intent_stand_origin(unit)
-		_fill_hover_blast_tiles(
-			unit, p_unit, origin, selected_ability, force_basic, true,
-		)
-		_queue_hover_tile_redraw()
-		return
-	var move_origin: Vector2i = _proj_origin(unit)
-	if _planning_input != null and p_unit != null:
-		var move_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-		if (
-			move_ability != null
-			and _planning_input._is_awaiting_movement_endpoint(p_unit, move_ability)
-		):
-			var leg_origin: Vector2i = _planning_input._awaiting_endpoint_origin(p_unit)
-			if leg_origin.x > -900000:
-				move_origin = leg_origin
-	_apply_planning_tile_layers(
-		unit,
-		force_basic,
-		selected_ability,
-		false,
-		move_origin,
-		_intent_stand_origin(unit),
-	)
+	_apply_planning_tile_layers(unit, force_basic, selected_ability, false)
 	_queue_static_tiles_redraw()
 
 
@@ -1191,21 +1150,9 @@ func recompute_hover_ranges(
 	if not is_selected_player or unit.id != _director.selected_unit_id:
 		action_cache_hit = action_cache_hit and _cached_hover_coord == _hover_coord
 	if move_cache_hit and action_cache_hit:
-		if (
-			_cached_hover_coord != _hover_coord
-			and _hover_action_range_uses_blast_at_coord(
-				unit, p_unit, selected_ability, cache_force,
-			)
-		):
-			_cached_hover_coord = _hover_coord
-			_fill_hover_blast_tiles(
-				unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
-			)
+		if _cached_hover_coord != _hover_coord:
+			_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
 			_queue_static_tiles_redraw()
-		if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-			if not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
-				_clear_hover_skill_tiles()
-				_queue_static_tiles_redraw()
 		return
 	_cached_hover_unit_id = unit.id
 	_cached_hover_origin = move_origin
@@ -1217,104 +1164,119 @@ func recompute_hover_ranges(
 	_cached_hover_awaiting_module = cache_awaiting_module
 	_cached_hover_coord = _hover_coord
 	if move_cache_hit:
-		if _can_show_action_range_tiles(unit, selected_ability, cache_force):
-			_fill_hover_action_range_tiles(
-				unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
-			)
-			_queue_static_tiles_redraw()
-		elif not _hover_action_range_tiles.is_empty() or not _hover_blast_tiles.is_empty():
-			_clear_hover_skill_tiles()
-			_queue_static_tiles_redraw()
+		_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
+		_queue_static_tiles_redraw()
 		return
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()
-	_apply_planning_tile_layers(
-		unit,
-		cache_force,
-		selected_ability,
-		dragging,
-		move_origin,
-		action_range_origin,
-	)
+	_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
 	_queue_static_tiles_redraw()
 
 
-## MOVE_PREVIEW_RULES tile SSOT — one apply path (phase gates via PlanningPreviewTiles).
+## MOVE_PREVIEW_RULES tile SSOT — one apply path (two-range model via PlanningPreviewTiles).
 func _apply_planning_tile_layers(
 	unit: UnitState,
 	force_basic: bool,
 	selected_ability: int,
 	dragging: bool,
-	move_origin: Vector2i,
-	action_range_origin: Vector2i,
 ) -> void:
 	if _board == null or _director == null or unit == null:
 		return
 	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
 	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
-	var phase: PlanningPreviewTiles.PhaseKind = PlanningPreviewTiles.planning_phase(
-		_director, unit, selected_ability, _planning_input,
-	)
 	if PlanningPreviewTiles.tiles_blocked(
 		_director, unit, selected_ability, _planning_input, is_selected_player,
 	):
 		return
 	if dragging:
 		return
+	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+		_director, _board, unit, selected_ability, _planning_input, _hover_coord,
+	)
+	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
-			if _can_show_move_tiles(unit, selected_ability):
-				var move_board: BoardState = _board
-				var move_from: Vector2i = move_origin
-				var move_budget: int = 0
-				var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
-				var mt: int = (
-					unit.definition.movement_type
-					if unit.definition != null
-					else GameEnums.MovementType.WALK
+			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
+			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+				_hover_move_tiles = _reachable_move_tiles_for_origin(
+					unit, p_unit, selected_ability, locked_move, is_selected_player,
 				)
-				if is_selected_player and p_unit != null:
-					move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
-					mt = (
-						p_unit.definition.movement_type
-						if p_unit.definition != null
-						else GameEnums.MovementType.WALK
-					)
-					move_board = CombatPlanningPreview.planning_projection_board(_director, _board)
-					move_from = move_origin
-					move_budget = _compute_move_budget(unit, p_unit, selected_ability)
-				else:
-					move_budget = unit.movement.points_left
-				if move_budget > 0:
-					var move_ability: AbilityData = null
-					if is_selected_player and p_unit != null and _planning_input != null:
-						move_ability = _planning_input._route_pathfinding_ability(p_unit)
-					_hover_move_tiles = MovementSystem.get_reachable_tiles(
-						move_board,
-						move_from,
-						move_budget,
-						mt,
-						move_cost,
-						move_ability,
-					)
-			if (
-				_planning_input != null
-				and _planning_input.action_range_visible_for_hover()
-				and not _hover_is_walk_only_premove(unit)
-			):
+			var next_aim: Vector2i = layer_plan.get("next_aim_origin", Vector2i(-999999, -999999))
+			if next_aim.x > -900000:
 				_blast_tiles_on_hover_layer = false
-				_fill_hover_action_range_tiles(
-					unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
+				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+					unit, next_aim, selected_ability if is_selected_player else -1,
 				)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-			if _planning_input == null or _planning_input.action_range_visible_for_hover():
+			var locked_aim: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
+			if locked_aim.x > -900000 and (
+				_planning_input == null or _planning_input.action_range_visible_for_hover()
+			):
 				_blast_tiles_on_hover_layer = false
-				_fill_hover_action_range_tiles(
-					unit, p_unit, action_range_origin, selected_ability, cache_force, is_selected_player,
+				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+					unit, locked_aim, selected_ability if is_selected_player else -1,
 				)
+			var next_move: Vector2i = layer_plan.get("next_move_origin", Vector2i(-999999, -999999))
+			if next_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+				_hover_move_tiles = _reachable_move_tiles_for_origin(
+					unit, p_unit, selected_ability, next_move, is_selected_player,
+				)
+	if bool(layer_plan.get("show_blast", false)):
+		var blast_origin: Vector2i = _intent_stand_origin(unit)
+		var next_aim_blast: Vector2i = layer_plan.get("next_aim_origin", Vector2i(-999999, -999999))
+		if next_aim_blast.x > -900000:
+			blast_origin = next_aim_blast
+		elif phase == PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+			var locked_aim_blast: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
+			if locked_aim_blast.x > -900000:
+				blast_origin = locked_aim_blast
+		_blast_tiles_on_hover_layer = (
+			_planning_input != null
+			and _planning_input.action_range_stand_locked_to_projection(unit.id)
+			and phase == PlanningPreviewTiles.PhaseKind.MOVEMENT
+		)
+		_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
+			unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
+		)
+
+
+func _reachable_move_tiles_for_origin(
+	unit: UnitState,
+	p_unit: UnitState,
+	selected_ability: int,
+	move_from: Vector2i,
+	is_selected_player: bool,
+) -> Array[Vector2i]:
+	var move_board: BoardState = _board
+	var move_budget: int = 0
+	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
+	var mt: int = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	if is_selected_player and p_unit != null:
+		move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
+		mt = (
+			p_unit.definition.movement_type
+			if p_unit.definition != null
+			else GameEnums.MovementType.WALK
+		)
+		move_board = CombatPlanningPreview.planning_projection_board(_director, _board)
+		move_budget = _compute_move_budget(unit, p_unit, selected_ability)
+	else:
+		move_budget = unit.movement.points_left
+	if move_budget <= 0:
+		return []
+	var move_ability: AbilityData = null
+	if is_selected_player and p_unit != null and _planning_input != null:
+		move_ability = _planning_input._route_pathfinding_ability(p_unit)
+	return MovementSystem.get_reachable_tiles(
+		move_board, move_from, move_budget, mt, move_cost, move_ability,
+	)
 
 
 func _fill_hover_action_range_tiles(
@@ -2271,7 +2233,6 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 	if actor == null:
 		return
 	var p_col: Color = _player_color_for_unit(actor)
-	var route: Array = prev.preview_paths.get(actor.id, [])
 	var sel_ability := _selected_ability_data(actor, _director.selected_ability_index)
 	var caster_teleport_hover: bool = (
 		sel_ability != null

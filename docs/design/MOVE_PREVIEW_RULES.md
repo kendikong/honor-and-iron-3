@@ -200,21 +200,24 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 | Concern | Owner |
 |---------|--------|
 | Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
-| Voluntary walk path write | `CombatPlanningInput` — `live_move_hover_rewrite_applies`, `_write_movement_hover_preview_paths` |
-| Painted route lock | `CombatPlanningInput.painted_move_route_locked` |
-| Path display (live vs frozen) | `CombatPlanningInput.display_move_route_cells` |
+| Two-range tile origins | `PlanningPreviewTiles.resolve_layer_origins` |
+| Voluntary walk path write | `CombatPlanningInput.live_move_hover_rewrite_applies` → `_write_movement_hover_preview_paths` |
+| Painted route lock | `CombatPlanningInput._painted_drag_route_matches_leg` |
+| Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` via `CombatPlanningInput.display_move_route_cells` |
 | Path data | `CombatPlanningPreview.preview_paths` |
 | Tile layers (one apply path) | `TacticalPlanningOverlay._apply_planning_tile_layers` |
 
-### Harsh audit (2026-08-26 refactor)
+### Harsh audit (2026-08-26 refactor pass 2)
 
-**Removed / collapsed parallel paths:**
-- Overlay `_display_move_route_cells` no longer reads `live_move_hover_route_cells` directly — delegates to `CombatPlanningInput.display_move_route_cells`.
-- `_painted_premove_hover_route_active` → `_painted_basic_move_route_commits_active` (PRE + POST, stale-leg origin check).
-- `_movement_slot_hover_preview_applies` gates on `live_move_hover_rewrite_applies` (movement step ∧ ¬painted lock).
-- Tile fill: `recompute_hover_ranges` + `_refresh_cursor_action_tiles` share `_apply_planning_tile_layers` + `PlanningPreviewTiles` phase gates.
-- Removed hover-origin shift for locked red range in `_refresh_cursor_action_tiles` (was second truth for aim origin).
+**Owner priorities encoded:** fewer rules, one path per concern, preview_paths is route truth (write on hover, read on draw), two-range tiles (locked current + hover next) via `resolve_layer_origins`.
 
-**Still open (next pass, not new rules):**
-- Hover **next-phase** second range field (locked current + hover next) — phase gates exist; predicted-stand next field not wired yet.
-- Yellow should never persist after commit — verify blast layer on cache hits only refreshes on hover.
+**Collapsed:**
+- `_painted_drag_route_matches_leg` — single painted-route predicate (lock + commit).
+- `display_route_cells_from_preview` — single route read API; `live_move_hover_route_cells` is alias only.
+- `_apply_planning_tile_layers` — only tile apply path; cursor refresh and recompute both call it.
+- `_intent_tiles_blocked` → `PlanningPreviewTiles.tiles_blocked`.
+- Painted route sync: `_ensure_painted_route_preview_sync` writes `_drag_route` → `preview_paths` when locked.
+
+**Known deferrals (low severity):**
+- Co-op ally dashed routes read `preview_paths` for non-selected units (committed plan truth, not selected-unit live hover).
+- Committed leg draw uses `committed_move_route_leg` (execution slice, not hover rewrite).

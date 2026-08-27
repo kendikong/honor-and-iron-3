@@ -1284,6 +1284,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 		var p_unit := _proj_unit(_director.selected_unit_id)
 		if p_unit != null:
 			_discard_stale_drag_route_for_leg(p_unit)
+			if painted_move_route_locked(p_unit):
+				_ensure_painted_route_preview_sync(p_unit.id)
 			var ability := _selected_ability_data(p_unit)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -2208,23 +2210,29 @@ func _drag_route_commits_active() -> bool:
 			var ability := _selected_ability_data(p_unit)
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
 				return false
-	if _painted_basic_move_route_commits_active():
+	if _painted_drag_route_matches_leg(p_unit):
 		return true
 	return _selection_hover_corridor_paint_active()
+
+
+func _painted_drag_route_matches_leg(p_unit: UnitState) -> bool:
+	if p_unit == null or _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+		return false
+	if not _movement_route_paint_allowed():
+		return false
+	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	if origin.x <= -900000:
+		return false
+	return (_drag_route[0] as Vector2i) == origin
 
 
 func _painted_basic_move_route_commits_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
-	if _drag_route.size() < 2 or _drag_unit_id != _director.selected_unit_id:
+	var p_unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if not _painted_drag_route_matches_leg(p_unit):
 		return false
 	if not _basic_move_allowed():
-		return false
-	var p_unit: UnitState = _proj_unit(_director.selected_unit_id)
-	if p_unit == null:
-		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
-	if origin.x <= -900000 or (_drag_route[0] as Vector2i) != origin:
 		return false
 	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
 	if move_timing == -1:
@@ -3509,16 +3517,7 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 
 ## Painted drag route is locked for the current move leg — hover must not rewrite it.
 func painted_move_route_locked(p_unit: UnitState) -> bool:
-	if p_unit == null or dragging:
-		return false
-	if _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
-		return false
-	if not _movement_route_paint_allowed():
-		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
-	if origin.x <= -900000:
-		return false
-	return (_drag_route[0] as Vector2i) == origin
+	return not dragging and _painted_drag_route_matches_leg(p_unit)
 
 
 ## True when hover may rewrite preview_paths / live corridor for this cell.
@@ -3539,15 +3538,43 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return []
-	var board: BoardState = _proj()
+	return CombatPlanningPreview.display_route_cells_from_preview(
+		unit_id,
+		preview_state,
+		_director,
+		_proj(),
+		active_movement_planning_step(actor),
+	)
+
+
+## Predicted stand at hover for next-phase range field (two-range tile model).
+func predicted_stand_at_hover(unit_id: int, hover_coord: Vector2i) -> Vector2i:
+	if _director == null or unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	if actor == null:
+		return Vector2i(-999999, -999999)
 	if active_movement_planning_step(actor):
-		var leg: Array = CombatPlanningPreview.pending_move_route_leg(
-			unit_id, preview_state, _director, board,
-		)
-		if leg.size() >= 2:
-			return _typed_route_cells(leg)
-		return _typed_route_cells(preview_state.preview_paths.get(unit_id, []))
-	return CombatPlanningPreview.frozen_move_route_cells(unit_id, preview_state)
+		if _director.board.is_in_bounds(hover_coord) and _is_hover_move_cell(actor, hover_coord):
+			return hover_coord
+		return _active_move_drag_origin(actor)
+	if is_live_preview_active() and preview_state.preview_board != null:
+		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
+		if live_unit != null:
+			return live_unit.position
+	return action_range_intent_stand_cell(unit_id)
+
+
+## Walk-only hover orbit — no yellow blast, no next-phase aim field.
+func is_walk_only_hover_move(unit: UnitState, hover_coord: Vector2i) -> bool:
+	if unit == null or _director == null or not _director.board.is_in_bounds(hover_coord):
+		return false
+	var actor: UnitState = _proj_unit(unit.id)
+	if actor == null:
+		actor = unit
+	return active_movement_planning_step(actor) and _is_hover_move_cell(actor, hover_coord)
 
 
 func _typed_route_cells(route: Array) -> Array[Vector2i]:
@@ -3568,6 +3595,19 @@ func _discard_stale_drag_route_for_leg(p_unit: UnitState) -> void:
 		_drag_route.clear()
 		_drag_unit_id = -1
 		_drag_last_free = Vector2i(-999999, -999999)
+
+
+func _ensure_painted_route_preview_sync(unit_id: int) -> void:
+	if unit_id < 0 or _director == null:
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if not _painted_drag_route_matches_leg(actor):
+		return
+	preview_state.preview_paths[unit_id] = _drag_route.duplicate()
+	var route_size: int = _drag_route.size()
+	preview_state.preview_splits[unit_id] = route_size
+	preview_state.preview_post_splits[unit_id] = route_size
+	_sync_movement_hover_paths_to_overlay(unit_id)
 
 
 ## Premove, postmove, and armed MOVE module legs share the same painted-route input.

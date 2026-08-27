@@ -1440,19 +1440,13 @@ static func planning_animation_cells(
 	return []
 
 
-## Live hover/drag move route for overlay arrows — one leg slice for all move timings.
-static func live_move_hover_route_cells(
+static func frozen_move_route_cells(
 	unit_id: int,
 	preview: CombatPlanningPreview,
-	director: CombatDirector,
-	board: BoardState,
 ) -> Array[Vector2i]:
 	if preview == null or unit_id < 0:
 		return []
 	var route: Array = preview.preview_paths.get(unit_id, [])
-	var leg: Array = pending_move_route_leg(unit_id, preview, director, board)
-	if leg.size() >= 2:
-		return leg.duplicate()
 	if route.size() < 2:
 		return []
 	var typed: Array[Vector2i] = []
@@ -1460,3 +1454,38 @@ static func live_move_hover_route_cells(
 		if tile is Vector2i:
 			typed.append(tile as Vector2i)
 	return typed
+
+
+static func display_route_cells_from_preview(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+	movement_step_active: bool,
+) -> Array[Vector2i]:
+	if preview == null or unit_id < 0:
+		return []
+	if movement_step_active:
+		var leg: Array = pending_move_route_leg(unit_id, preview, director, board)
+		if leg.size() >= 2:
+			return frozen_move_route_cells_from_array(leg)
+		return frozen_move_route_cells_from_array(preview.preview_paths.get(unit_id, []))
+	return frozen_move_route_cells(unit_id, preview)
+
+
+static func frozen_move_route_cells_from_array(route: Array) -> Array[Vector2i]:
+	var typed: Array[Vector2i] = []
+	for tile: Variant in route:
+		if tile is Vector2i:
+			typed.append(tile as Vector2i)
+	return typed
+
+
+## Deprecated alias — reads preview_paths only; use display_route_cells_from_preview.
+static func live_move_hover_route_cells(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+) -> Array[Vector2i]:
+	return display_route_cells_from_preview(unit_id, preview, director, board, true)
