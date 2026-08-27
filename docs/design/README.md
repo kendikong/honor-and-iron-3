@@ -40,6 +40,8 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | Doc | Purpose |
 |-----|---------|
 | [`ability-data.md`](ability-data.md) | Modular AbilityData bible — **ACTIVE** (start at §0). Extra Rules conversion in progress. |
+| [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) | **ACTIVE** Owner spec — move phases, module handoffs, frozen vs live preview |
+| [`ACTION_RANGE_LATEST_STAND.md`](ACTION_RANGE_LATEST_STAND.md) | Red tiles from latest stand — failure log |
 | [`EXTRA_RULES_TO_MODULES_PLAN.md`](EXTRA_RULES_TO_MODULES_PLAN.md) | **ACTIVE** Extra Rules → modules/layers conversion (binding matrix) |
 | [`_TEMPLATE.md`](_TEMPLATE.md) | Copy for new pillar files |
 | [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) | **ACTIVE** K3-LOCK boundary contract · template: [`UNATTENDED_RUN.template.md`](UNATTENDED_RUN.template.md) |
