@@ -40,7 +40,11 @@ static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, 
 	preview.preview_post_splits[unit_id] = split_size
 
 
-func apply_result(res: Dictionary, director: CombatDirector) -> void:
+func apply_result(
+	res: Dictionary,
+	director: CombatDirector,
+	authoritative_paths: Dictionary = {},
+) -> void:
 	var temp_board: BoardState = res.get("temp_board")
 	if temp_board == null:
 		return
@@ -71,6 +75,11 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
+	var skip_path_merge: Dictionary = {}
+	for uid: Variant in authoritative_paths.keys():
+		var path_v: Variant = authoritative_paths[uid]
+		if path_v is Array and not (path_v as Array).is_empty():
+			skip_path_merge[int(uid)] = true
 	build_preview_paths(
 		events,
 		director,
@@ -81,9 +90,15 @@ func apply_result(res: Dictionary, director: CombatDirector) -> void:
 		action_splits,
 		path_init_board,
 	)
+	for uid: Variant in authoritative_paths.keys():
+		var path_v: Variant = authoritative_paths[uid]
+		if path_v is Array and not (path_v as Array).is_empty():
+			set_unit_preview_path(self, int(uid), path_v as Array)
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	if actions_v is Array:
-		ensure_movement_intent_from_actions(actions_v as Array, path_init_board, {}, director)
+		ensure_movement_intent_from_actions(
+			actions_v as Array, path_init_board, {}, director, skip_path_merge,
+		)
 		if intent_preview and director != null and director.selected_unit_id >= 0:
 			anchor_preview_paths_to_latest_stand(
 				director, self, director.selected_unit_id, path_init_board,
@@ -428,6 +443,7 @@ func ensure_movement_intent_from_actions(
 	start_board: BoardState,
 	actors_with_committed_move: Dictionary = {},
 	director: CombatDirector = null,
+	skip_path_merge_actor_ids: Dictionary = {},
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
@@ -438,6 +454,10 @@ func ensure_movement_intent_from_actions(
 		if not raw is TimelineAction:
 			continue
 		var action: TimelineAction = raw as TimelineAction
+		if skip_path_merge_actor_ids.get(action.actor_id, false):
+			if action.type == GameEnums.ActionType.MOVE:
+				origins[action.actor_id] = action.target_coord
+			continue
 		if action.type == GameEnums.ActionType.MOVE:
 			move_actors[action.actor_id] = true
 			var move_origin_from_plan: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i

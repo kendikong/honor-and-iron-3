@@ -232,3 +232,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `CombatPlanningPreview.set_unit_preview_path` — shared path assign for input + committed promote.
 - `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
 - `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.
+
+**Pass 7 (gauntlet loop):**
+- `apply_result(..., authoritative_paths)` — restore hover paths inside merge owner after `build_preview_paths`; `ensure_movement_intent_from_actions` skips path merge for authoritative actors.
+- `_movement_hover_path_authoritative` — broadened gate (movement step + rewrite or painted lock).

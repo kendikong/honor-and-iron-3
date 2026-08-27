@@ -602,40 +602,42 @@ func refresh_live_preview() -> void:
 func _apply_preview_result_preserving_hover_paths(res: Dictionary) -> void:
 	if _director == null:
 		return
-	var snap: Dictionary = _snapshot_authoritative_move_hover_paths()
-	preview_state.apply_result(res, _director)
-	_restore_authoritative_move_hover_paths(snap)
+	var payload: Dictionary = _authoritative_move_hover_paths_payload()
+	preview_state.apply_result(res, _director, payload)
+	if payload.is_empty() or _planning == null:
+		return
+	for uid: Variant in payload.keys():
+		_planning.apply_preview_paths_only(preview_state, int(uid))
 
 
-func _snapshot_authoritative_move_hover_paths() -> Dictionary:
+func _authoritative_move_hover_paths_payload() -> Dictionary:
 	if _director == null or _director.selected_unit_id < 0:
 		return {}
 	var unit_id: int = _director.selected_unit_id
-	if not _movement_hover_path_blocks_sim_merge(unit_id):
+	if not _movement_hover_path_authoritative(unit_id):
 		return {}
 	var path: Array = preview_state.preview_paths.get(unit_id, [])
 	if path.is_empty():
 		return {}
-	return {
-		"unit_id": unit_id,
-		"path": path.duplicate(),
-		"splits": preview_state.preview_splits.get(unit_id, path.size()),
-		"post_splits": preview_state.preview_post_splits.get(unit_id, path.size()),
-	}
+	return {unit_id: path.duplicate()}
 
 
-func _restore_authoritative_move_hover_paths(snap: Dictionary) -> void:
-	if snap.is_empty():
-		return
-	var unit_id: int = int(snap.get("unit_id", -1))
-	if unit_id < 0:
-		return
-	var path: Variant = snap.get("path", [])
-	if not path is Array or (path as Array).is_empty():
-		return
-	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, path as Array)
-	if _planning != null:
-		_planning.apply_preview_paths_only(preview_state, unit_id)
+func _movement_hover_path_authoritative(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return false
+	if not active_movement_planning_step(actor):
+		return false
+	if painted_move_route_locked(actor):
+		return true
+	var hover_cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	)
+	if live_move_hover_rewrite_applies(actor, hover_cell):
+		return true
+	return preview_state.preview_paths.get(unit_id, []).size() >= 2
 
 
 func _apply_live_preview(preview: Dictionary) -> void:
@@ -3830,17 +3832,7 @@ func _set_preview_path(unit_id: int, path: Array, sync_overlay: bool) -> void:
 
 ## Movement-step hover path is authoritative — sim merge must not stomp it.
 func _movement_hover_path_blocks_sim_merge(unit_id: int) -> bool:
-	if _director == null or unit_id < 0:
-		return false
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		return false
-	if not active_movement_planning_step(actor):
-		return false
-	if painted_move_route_locked(actor):
-		return true
-	var path: Array = preview_state.preview_paths.get(unit_id, [])
-	return path.size() >= 2
+	return _movement_hover_path_authoritative(unit_id)
 
 
 ## Single painted-route → preview_paths writer (drag buffer → route truth).
