@@ -7,6 +7,17 @@ Plain-language rules. No parallel preview logic.
 
 ---
 
+## Design principle (why this stays simple)
+
+**Fewer global rules → fewer branches → one canonical path → fewer bugs → easier debug.**
+
+- One rule for every **voluntary walk** (premove, MOVE module, postmove): same blue preview, same paint, same commit shape — only slot and execution order differ.
+- One rule for **what preview means**: shown path = walked path.
+- **Exceptions are rare and explicit** (forced push/pull UI, teleport hop) — not per-skill `if` trees.
+- Do not invent a second hover, route, or preview pipeline when the global path can carry the case.
+
+---
+
 ## What move preview is
 
 **Move preview** = the path this character **walks** (tile to tile) to reach their **chosen destination**.
