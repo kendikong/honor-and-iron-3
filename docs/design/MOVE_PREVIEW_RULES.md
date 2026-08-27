@@ -215,13 +215,14 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 ### Architecture audit (2026-08-26 pass 5)
 
 **Write paths (honest):**
-- Live hover/drag/stand-stub: `_set_preview_path` only (input layer).
-- Sim timeline merge: `ensure_movement_intent_from_actions` (preview layer) — must not run during authoritative movement-step hover.
-- Committed snapshot copy: `apply_preview_paths_only` (overlay perf sync from input state, not a second route calculator).
+- Live hover/drag/stand-stub (input): `_set_preview_path` → `set_unit_preview_path` + mandatory overlay sync.
+- Sim timeline merge (preview): `apply_result` → `build_preview_paths` + `ensure_movement_intent_from_actions` with `skip_path_merge` for authoritative actors.
+- Committed promote: `CombatPlanningPreview.set_unit_preview_path` on committed snapshot.
+- Overlay display copy: `apply_preview_paths_only` mirrors input `preview_state` into `_live_preview` (not a route calculator).
 
 **Read paths:**
-- On-screen walk routes: `display_move_route_cells` → `display_route_cells_from_preview`.
-- Committed timeline chevrons: `committed_action_route_leg` / `movement_intent_cells` (execution preview, not live hover).
+- On-screen walk routes (live + frozen committed preview): `display_move_route_cells` → `display_route_cells_from_preview`.
+- Committed timeline chevrons: same read API first; `movement_intent_cells` fallback only when preview has no route.
 
 **Removed parallel paths (pass 5):**
 - Overlay hover tile cache keyed on `_intent_stand_origin` (stale two-range risk).
@@ -234,7 +235,9 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
 - `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.
 
-**Pass 8 (gauntlet loop):**
-- `anchor_preview_paths_to_latest_stand` skipped inside `apply_result` when actor is authoritative.
-- `_ensure_live_movement_intent_from_preview_actions` early-returns on `_movement_hover_path_authoritative` (no duplicate merge).
-- Authority gate uses movement-step + rewrite/lock only (no path-length heuristic).
+**Pass 9 (gauntlet loop — cold-audit response):**
+- Removed duplicate merge/anchor/swap from `_ensure_live_movement_intent_from_preview_actions` (merge owner is `apply_result` only).
+- `_set_preview_path` always syncs overlay (`_live_preview` mirror).
+- Committed ability route draw uses `display_route_cells_from_preview` first.
+- Side panel tile refresh: `on_hover_moved` only (no double recompute).
+- Blast tile gate: `resolve_layer_origins` `show_blast` only (removed `_can_show_action_range_tiles` from blast helper).

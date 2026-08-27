@@ -570,7 +570,7 @@ func _refresh_drag_preview_now() -> void:
 			_sync_drag_route_stand()
 		else:
 			var post_stand: Vector2i = _active_move_drag_origin(drag_actor)
-			_set_preview_path(_drag_unit_id, [post_stand], true)
+			_set_preview_path(_drag_unit_id, [post_stand])
 	_refresh_action_range_overlay_when_gate_off()
 
 
@@ -702,10 +702,11 @@ func _on_planning_live_preview_changed() -> void:
 
 
 func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
-	## apply_result already merged paths; skip duplicate merge when hover owns the movement leg.
-	if _director != null and _director.selected_unit_id >= 0:
-		if _movement_hover_path_authoritative(_director.selected_unit_id):
-			return
+	## Path merge runs only inside apply_result (_apply_preview_result_preserving_hover_paths).
+	if _director == null or _director.selected_unit_id < 0:
+		return
+	if _movement_hover_path_authoritative(_director.selected_unit_id):
+		return
 	if bool(preview.get("intent_preview", false)):
 		return
 	if dragging and _drag_route.size() >= 2 and _movement_route_paint_allowed():
@@ -717,35 +718,16 @@ func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> v
 	):
 		return
 	var actions_v: Variant = preview.get("actions", [])
-	if not actions_v is Array or (actions_v as Array).is_empty():
+	if actions_v is Array and not (actions_v as Array).is_empty():
 		return
 	var start_board: BoardState = (
-		_director.live_planning_board()
-		if _director != null
-		else null
+		_director.live_planning_board() if _director != null else null
 	)
 	if start_board == null and _director != null:
 		start_board = (
 			_director.base_board if _director.base_board != null else _director.board
 		)
-	if _director != null and _director.selected_unit_id >= 0:
-		_anchor_preview_path_for_active_move_leg(_director.selected_unit_id, start_board)
-	preview_state.ensure_movement_intent_from_actions(actions_v as Array, start_board, {}, _director)
-	if _director != null and _director.selected_unit_id >= 0:
-		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-			_director,
-			preview_state,
-			_director.selected_unit_id,
-			start_board,
-		)
-	CombatPlanningPreview.ensure_swap_approach_paths_from_actions(
-		actions_v as Array,
-		start_board,
-		preview_state.preview_paths,
-		preview_state.preview_splits,
-		preview_state.action_splits,
-		_director,
-	)
+	_anchor_preview_path_for_active_move_leg(_director.selected_unit_id, start_board)
 
 
 func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardState) -> void:
@@ -772,7 +754,7 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
 	if stand.x <= -900000:
 		return
-	_set_preview_path(unit_id, [stand], false)
+	_set_preview_path(unit_id, [stand])
 	preview_state.action_splits[unit_id] = 0
 
 
@@ -883,7 +865,7 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 	_clear_planning_cursor_for_drag()
 	_drag_route = [_planning_drag_origin(unit.id)]
 	_drag_last_free = _drag_route[0]
-	_set_preview_path(unit.id, [_drag_route[0]], false)
+	_set_preview_path(unit.id, [_drag_route[0]])
 	preview_state.action_splits[unit.id] = 0
 	if _planning != null:
 		_planning.apply_preview_state(preview_state, unit.id, -1)
@@ -3810,11 +3792,11 @@ func _sync_drag_route_stand() -> void:
 
 
 ## Single live preview_paths write owner for hover/drag/stand-stub routes.
-func _set_preview_path(unit_id: int, path: Array, sync_overlay: bool) -> void:
+func _set_preview_path(unit_id: int, path: Array) -> void:
 	if unit_id < 0 or path.is_empty():
 		return
 	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, path)
-	if sync_overlay and _planning != null:
+	if _planning != null:
 		_planning.apply_preview_paths_only(preview_state, unit_id)
 
 
@@ -3832,7 +3814,7 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 		return
 	if not _movement_route_paint_allowed():
 		return
-	_set_preview_path(unit_id, _drag_route, true)
+	_set_preview_path(unit_id, _drag_route)
 
 
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
@@ -3894,7 +3876,7 @@ func _write_movement_hover_preview_paths(
 				and _director.board.is_in_bounds(hover_cell)
 			):
 				var hop: Array[Vector2i] = [hop_origin, hover_cell]
-				_set_preview_path(unit_id, hop, false)
+				_set_preview_path(unit_id, hop)
 				return
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
 		_sync_painted_drag_route_to_preview_paths(unit_id, false)
@@ -3913,7 +3895,7 @@ func _write_movement_hover_preview_paths(
 			path.append(wp)
 		if path.size() == 1 and GridSystem.manhattan(origin, hover_cell) == 1:
 			path.append(hover_cell)
-		_set_preview_path(unit_id, path, false)
+		_set_preview_path(unit_id, path)
 		return
 	var existing: Array = preview_state.preview_paths.get(unit_id, [])
 	if existing.size() >= 2:
@@ -3926,7 +3908,7 @@ func _write_movement_hover_preview_paths(
 		stand = _awaiting_endpoint_origin(actor)
 	if stand.x <= -900000:
 		return
-	_set_preview_path(unit_id, [stand], false)
+	_set_preview_path(unit_id, [stand])
 
 
 ## Shared hover/drag paint: premove, postmove, and MOVE module legs use one corridor owner.

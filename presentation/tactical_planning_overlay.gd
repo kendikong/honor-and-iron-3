@@ -462,11 +462,9 @@ func _hover_action_range_uses_blast_at_coord(
 	unit: UnitState,
 	_p_unit: UnitState,
 	selected_ability: int,
-	cache_force: bool,
+	_cache_force: bool,
 ) -> bool:
 	## Yellow impact tiles follow the aim hover for every skill (SINGLE and shaped).
-	if not _can_show_action_range_tiles(unit, selected_ability, cache_force):
-		return false
 	return _board != null and _board.is_in_bounds(_hover_coord)
 
 
@@ -1398,16 +1396,24 @@ func _draw_ability_intents(flowing: bool) -> void:
 			if start_pos == dest_pos:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(start_pos, draw_action)
-			var draw_route: Array = intent_cells
-			if (
-				draw_action.ability != null
-				and AbilitySystem.ability_has_movement_effect(draw_action.ability)
-				and draw_action.waypoints.is_empty()
-			):
-				## Committed action path must not use _pending_move_route_leg — that follows the
-				## active move-timing slot (post-move) and falls back to a straight diagonal.
-				if intent_cells.size() <= 2:
+			var draw_route: Array = CombatPlanningPreview.display_route_cells_from_preview(
+				draw_action.actor_id,
+				_committed_preview,
+				_director,
+				_board,
+				false,
+			)
+			if draw_route.size() < 2:
+				var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(
+					start_pos, draw_action,
+				)
+				draw_route = intent_cells
+				if (
+					draw_action.ability != null
+					and AbilitySystem.ability_has_movement_effect(draw_action.ability)
+					and draw_action.waypoints.is_empty()
+					and intent_cells.size() <= 2
+				):
 					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
 						draw_action.actor_id, _committed_preview, draw_action, start_pos,
 					)
@@ -2554,8 +2560,6 @@ func _draw_move_ghosts() -> void:
 		return
 	var force_basic: bool = _planning_input.force_basic_movement
 	if not _planning_input.action_range_visible_for_hover():
-		return
-	if not _can_show_action_range_tiles(unit, _director.selected_ability_index, force_basic):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:

@@ -403,8 +403,6 @@ func _on_auto_use_skill_toggled(pressed: bool) -> void:
 
 
 func _refresh_planning_move_overlay() -> void:
-	if _planning_overlay != null and _director != null:
-		_planning_overlay._recompute_hover_ranges_from_inputs()
 	if _planning_input != null:
 		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
 		_planning_input.on_hover_moved(cell)
