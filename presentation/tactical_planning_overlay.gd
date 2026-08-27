@@ -1893,17 +1893,150 @@ func _resolve_overlay_attack_target_id() -> int:
 	return _attack_target_id
 
 
+## Hover cell for targeting overlays — intent SSOT from CombatPlanningInput.
+func _intent_hover_cell() -> Vector2i:
+	if _planning_input != null and _board != null:
+		var cell: Vector2i = _planning_input.get_hover_tile_for_ui()
+		if _board.is_in_bounds(cell):
+			return cell
+	if _board != null and _board.is_in_bounds(_hover_coord):
+		return _hover_coord
+	return Vector2i(-999, -999)
+
+
+func _enemy_unit_at_hover(prev: CombatPlanningPreview) -> UnitState:
+	var hover_cell: Vector2i = _intent_hover_cell()
+	if _board == null or not _board.is_in_bounds(hover_cell):
+		return null
+	var boards: Array[BoardState] = [_board]
+	if prev != null and prev.preview_board != null:
+		boards.append(prev.preview_board)
+	if _director != null and _director.projected_state != null:
+		boards.append(_director.projected_state)
+	var fallback: UnitState = null
+	for board: BoardState in boards:
+		var unit: UnitState = board.get_unit_at(hover_cell)
+		if unit == null:
+			continue
+		if unit.is_enemy():
+			return unit
+		if fallback == null:
+			fallback = unit
+	return fallback
+
+
+func _resolve_awaiting_enemy_pick_module(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> Dictionary:
+	if actor == null or awaiting == null or awaiting.ability == null:
+		return {}
+	var ability: AbilityData = awaiting.ability
+	var module_index: int = awaiting.awaiting_module_index
+	if module_index < 0:
+		module_index = 0
+	var pick_module: AbilityModule = AbilitySystem.active_module_for_index(
+		actor, ability, module_index,
+	)
+	var pick_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+		actor, ability, module_index,
+	)
+	if (
+		pick_module != null
+		and pick_module.has_targeting(GameEnums.TargetingFlags.ENEMY)
+		and pick_phase != GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		return {
+			"module_index": module_index,
+			"module": pick_module,
+			"phase": pick_phase,
+		}
+	if pick_phase != GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+		return {}
+	if awaiting.module_target_coords.size() <= module_index:
+		return {}
+	var move_target: Vector2i = awaiting.module_target_coords[module_index]
+	if not _board.is_in_bounds(move_target):
+		return {}
+	var next_index: int = AbilitySystem.planning_next_aim_module_index(
+		actor, ability, module_index,
+	)
+	if next_index < 0:
+		return {}
+	var next_module: AbilityModule = AbilitySystem.active_module_for_index(
+		actor, ability, next_index,
+	)
+	if next_module == null or not next_module.has_targeting(GameEnums.TargetingFlags.ENEMY):
+		return {}
+	return {
+		"module_index": next_index,
+		"module": next_module,
+		"phase": AbilitySystem.planning_awaiting_phase_for_module(
+			actor, ability, next_index,
+		),
+	}
+
+
+func _append_awaiting_enemy_arrow_cells(
+	cells: Array[Vector2i],
+	actor: UnitState,
+	prev: CombatPlanningPreview,
+	awaiting: TimelineAction,
+) -> bool:
+	var pick: Dictionary = _resolve_awaiting_enemy_pick_module(actor, awaiting)
+	if pick.is_empty():
+		return false
+	var pick_phase: int = pick.get("phase", GameEnums.PlanningAwaitingPhase.GENERIC)
+	if (
+		pick_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK
+		and pick_phase != GameEnums.PlanningAwaitingPhase.GENERIC
+	):
+		return false
+	var hover_enemy: UnitState = _enemy_unit_at_hover(prev)
+	if hover_enemy == null and _planning_input != null:
+		var target_id: int = _planning_input.hover_attack_target_id()
+		if target_id >= 0:
+			hover_enemy = _board.get_unit_by_id(target_id)
+			if hover_enemy == null and prev != null and prev.preview_board != null:
+				hover_enemy = prev.preview_board.get_unit_by_id(target_id)
+	if hover_enemy == null or not hover_enemy.is_enemy():
+		return false
+	var aim_origin: Vector2i = _intent_stand_origin(actor)
+	var aim_target: Vector2i = hover_enemy.position
+	var hover_cell: Vector2i = _intent_hover_cell()
+	if aim_origin != aim_target:
+		cells.append(aim_origin)
+		cells.append(aim_target)
+	elif _board.is_in_bounds(hover_cell) and aim_origin != hover_cell:
+		cells.append(aim_origin)
+		cells.append(hover_cell)
+	return cells.size() >= 2
+
+
+func _awaiting_enemy_pick_arrow_active() -> bool:
+	if _director == null or _board == null or _planning_input == null:
+		return false
+	if not _planning_input.awaiting_targeting_active():
+		return false
+	var actor: UnitState = _board.get_unit_by_id(_director.selected_unit_id)
+	if actor == null:
+		return false
+	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
+	return awaiting != null and not _resolve_awaiting_enemy_pick_module(actor, awaiting).is_empty()
+
+
 ## Dotted targeting arrow from latest stand to aim cell. Tests and draw share this.
 func targeting_intent_arrow_cells() -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	if _director == null or _board == null or _director.selected_unit_id < 0:
 		return cells
-	if _planning_input != null and (
-		_planning_input.force_basic_movement
-		or _planning_input.dragging
-	):
+	if _planning_input != null and _planning_input.dragging:
 		return cells
-	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
+	if (
+		_planning_input != null
+		and _planning_input.force_basic_movement
+		and not _awaiting_enemy_pick_arrow_active()
+	):
 		return cells
 	var prev: CombatPlanningPreview = _active_preview()
 	var actor: UnitState = null
@@ -1911,34 +2044,86 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 		actor = prev.preview_board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		actor = _board.get_unit_by_id(_director.selected_unit_id)
-	if actor == null:
+	if (
+		actor != null
+		and _planning_input != null
+		and _planning_input.awaiting_targeting_active()
+	):
+		var awaiting_pick: TimelineAction = _director.find_awaiting_action(actor.id)
+		if awaiting_pick != null and _append_awaiting_enemy_arrow_cells(
+			cells, actor, prev, awaiting_pick,
+		):
+			return cells
+	if (
+		_planning_input != null
+		and _planning_input.selected_phase_action_exhausted()
+		and not _planning_input.awaiting_targeting_active()
+	):
 		return cells
 	var sel_ability: AbilityData = _selected_ability_data(actor, _director.selected_ability_index)
-	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
+	if actor == null:
 		return cells
+	var awaiting: TimelineAction = (
+		_director.find_awaiting_action(actor.id) if _director != null else null
+	)
+	if sel_ability == null and awaiting != null:
+		sel_ability = awaiting.ability
+	if awaiting != null and sel_ability != null:
+		if _append_awaiting_enemy_arrow_cells(cells, actor, prev, awaiting):
+			return cells
+	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
+		var awaiting_self: TimelineAction = (
+			_director.find_awaiting_action(actor.id) if _director != null else null
+		)
+		if awaiting_self == null:
+			return cells
+		var self_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+			actor, sel_ability, awaiting_self.awaiting_module_index,
+		)
+		if self_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+			return cells
 	if (
 		sel_ability != null
 		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
 	):
-		var awaiting: TimelineAction = (
-			_director.find_awaiting_action(actor.id) if _director != null else null
-		)
 		if awaiting != null:
-			var await_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
-				actor, sel_ability, awaiting.awaiting_module_index,
-			)
-			if await_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK:
-				## Movement modules render through the route preview below; a direct
-				## stand-to-target arrow would create a second, diagonal interpretation.
-				return cells
+			var enemy_pick: Dictionary = _resolve_awaiting_enemy_pick_module(actor, awaiting)
+			if not enemy_pick.is_empty():
+				pass
+			else:
+				var await_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+					actor, sel_ability, awaiting.awaiting_module_index,
+				)
+				if await_phase == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
+					## Movement modules render through the route preview below; a direct
+					## stand-to-target arrow would create a second, diagonal interpretation.
+					return cells
 		else:
 			## Movement modules render through the route preview below; a direct
 			## stand-to-target arrow would create a second, diagonal interpretation.
 			return cells
 	var origin: Vector2i = _intent_stand_origin(actor)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
+	if attack_target_id < 0 and awaiting != null and sel_ability != null:
+		var pick_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+			actor, sel_ability, awaiting.awaiting_module_index,
+		)
+		if pick_phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK or (
+			pick_phase == GameEnums.PlanningAwaitingPhase.GENERIC
+			and awaiting.awaiting_module_index >= 0
+			and sel_ability != null
+			and AbilitySystem.active_module_for_index(
+				actor, sel_ability, awaiting.awaiting_module_index,
+			) != null
+			and AbilitySystem.active_module_for_index(
+				actor, sel_ability, awaiting.awaiting_module_index,
+			).has_targeting(GameEnums.TargetingFlags.ENEMY)
+		):
+			var hover_unit: UnitState = _enemy_unit_at_hover(prev)
+			if hover_unit != null and hover_unit.is_enemy():
+				attack_target_id = hover_unit.id
 	if attack_target_id >= 0:
-		var target_coord: Vector2i = _hover_coord
+		var target_coord: Vector2i = _intent_hover_cell()
 		var target_unit: UnitState = _board.get_unit_by_id(attack_target_id)
 		if target_unit == null and prev != null and prev.preview_board != null:
 			target_unit = prev.preview_board.get_unit_by_id(attack_target_id)
@@ -1948,14 +2133,15 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 			cells.append(origin)
 			cells.append(target_coord)
 		return cells
+	var hover_cell: Vector2i = _intent_hover_cell()
 	if (
 		sel_ability != null
 		and _planning_input != null
-		and _planning_input.is_skill_aim_hover_at(_hover_coord)
-		and origin != _hover_coord
+		and _planning_input.is_skill_aim_hover_at(hover_cell)
+		and origin != hover_cell
 	):
 		cells.append(origin)
-		cells.append(_hover_coord)
+		cells.append(hover_cell)
 	return cells
 
 
