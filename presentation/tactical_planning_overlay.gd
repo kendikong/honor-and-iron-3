@@ -436,10 +436,15 @@ func _planning_action_range_tiles_for_unit(
 	if _director != null:
 		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
 		if awaiting != null and awaiting.awaiting_module_index >= 0:
-			## Latest stand (`origin` from `_intent_stand_origin`), projected board.
+			var range_stand: Vector2i = origin
+			if _planning_input != null:
+				var intent_stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
+				if intent_stand.x > -900000:
+					range_stand = intent_stand
+			## Latest stand (`range_stand`), projected board.
 			## Never `base_board` — that is turn start. See action-range-latest-stand.mdc.
 			return AbilitySystem.planning_module_range_tiles(
-				plan_board, awaiting, awaiting.awaiting_module_index, origin, _hover_coord,
+				plan_board, awaiting, awaiting.awaiting_module_index, range_stand, _hover_coord,
 			)
 	return AbilitySystem.planning_action_range_tiles(
 		plan_board, actor, ability, origin, [], _hover_coord,
@@ -1915,9 +1920,21 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 		sel_ability != null
 		and AbilitySystem.ability_has_movement_effect(sel_ability, actor)
 	):
-		## Movement modules render through the route preview below; a direct
-		## stand-to-target arrow would create a second, diagonal interpretation.
-		return cells
+		var awaiting: TimelineAction = (
+			_director.find_awaiting_action(actor.id) if _director != null else null
+		)
+		if awaiting != null:
+			var await_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
+				actor, sel_ability, awaiting.awaiting_module_index,
+			)
+			if await_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+				## Movement modules render through the route preview below; a direct
+				## stand-to-target arrow would create a second, diagonal interpretation.
+				return cells
+		else:
+			## Movement modules render through the route preview below; a direct
+			## stand-to-target arrow would create a second, diagonal interpretation.
+			return cells
 	var origin: Vector2i = _intent_stand_origin(actor)
 	var attack_target_id: int = _resolve_overlay_attack_target_id()
 	if attack_target_id >= 0:
