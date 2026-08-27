@@ -209,7 +209,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Tile layers (one apply path) | `TacticalPlanningOverlay._apply_planning_tile_layers` |
 | Targeting intent arrow | `TacticalPlanningOverlay.targeting_intent_arrow_cells` (tests + draw) |
 
-### Harsh audit (2026-08-26 pass 3 — current)
+### Harsh audit (2026-08-26 pass 4 — critic PASS 85/100)
 
 **Owner priorities:** simpler global rules · one canonical path per concern · `preview_paths` is route truth (hover writes, display reads) · strike parallel pipelines.
 
