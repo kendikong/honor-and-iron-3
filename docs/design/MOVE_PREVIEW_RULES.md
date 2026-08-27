@@ -7,9 +7,19 @@ Plain-language rules. No parallel preview logic.
 
 ---
 
-## Core truth
+## What move preview is
 
-**The move preview is the source of truth.** Whatever path is shown is the path the character actually walks on Execute. Preview, commit, and execution must match.
+**Move preview** = the path this character **walks** (tile to tile) to reach their **chosen destination**.
+
+- Blue tiles, path arrow, painted route — all of that is move preview.
+- **Source of truth:** what is shown is what they walk on Execute.
+
+**Not move preview** (different UI):
+
+- **Forced movement** on another unit — push, pull, knockback, slide, etc.
+- Those use their own arrows / markers; do not mix them into the walker’s blue move path.
+
+**Teleport / blink:** Not a walked path — direct line from start tile to landing (hop). Still the character’s own relocation, not push/pull UI.
 
 ---
 
@@ -93,6 +103,7 @@ Everyone sees all units’ move previews. Option to hide others’ previews may 
 | Blue walk tiles during non-move module | Only movement steps get blue tiles |
 | Committed path vanishes when opening next module | Cleared too early |
 | Path on screen ≠ path walked | Preview is not truth |
+| Push/pull/knockback shown as blue walk path | Forced displacement is different UI |
 | Old premove ghost affects later module | Module handoff / stand wrong |
 | Planning UI visible during execution | Execution = zero planning UI |
 
