@@ -1516,10 +1516,7 @@ func _run_hover_overlay_refresh() -> void:
 		if _planning != null:
 			_planning.queue_redraw()
 		return
-	var planning_cell_changed: bool = cell != _last_heavy_hover_refresh_cell
-	if _planning != null and planning_cell_changed:
-		if not _last_hover_move_intent_preview:
-			_planning._recompute_hover_ranges_from_inputs()
+	## Tile layers already recomputed in set_hover_coord when hover cell changed.
 	_last_heavy_hover_refresh_cell = cell
 
 
@@ -2695,13 +2692,9 @@ func _promote_intent_preview_after_commit() -> void:
 					committed, unit_id, route as Array,
 				)
 	if unit_id >= 0 and _director != null:
-		CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-			_director, preview_state, unit_id, fallback_board,
+		CombatPlanningPreview.trim_committed_paths_after_slot_promote(
+			_director, committed, unit_id, fallback_board, preserve_full_route,
 		)
-		if not preserve_full_route:
-			CombatPlanningPreview.anchor_preview_paths_to_latest_stand(
-				_director, committed, unit_id, fallback_board,
-			)
 	preview_state.preview_paths = committed.preview_paths.duplicate(true)
 	preview_state.preview_splits = committed.preview_splits.duplicate()
 	preview_state.preview_post_splits = committed.preview_post_splits.duplicate()

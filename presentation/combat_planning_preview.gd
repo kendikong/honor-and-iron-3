@@ -1378,6 +1378,19 @@ static func anchor_preview_paths_to_latest_stand(
 	preview.preview_post_splits[unit_id] = anchored.size()
 
 
+## Post-commit ratify trim — sole caller after slot promote (not sim apply_result merge).
+static func trim_committed_paths_after_slot_promote(
+	director: CombatDirector,
+	committed: CombatPlanningPreview,
+	unit_id: int,
+	fallback_board: BoardState,
+	preserve_full_route: bool,
+) -> void:
+	if preserve_full_route or director == null or committed == null or unit_id < 0:
+		return
+	anchor_preview_paths_to_latest_stand(director, committed, unit_id, fallback_board)
+
+
 ## Last index of `cell` in a preview route (handles revisits / stale post_split).
 static func _last_route_index(route: Array, cell: Vector2i) -> int:
 	var found: int = -1
@@ -1509,13 +1522,3 @@ static func frozen_move_route_cells_from_array(route: Array) -> Array[Vector2i]:
 		if tile is Vector2i:
 			typed.append(tile as Vector2i)
 	return typed
-
-
-## Deprecated alias — reads preview_paths only; use display_route_cells_from_preview.
-static func live_move_hover_route_cells(
-	unit_id: int,
-	preview: CombatPlanningPreview,
-	director: CombatDirector,
-	board: BoardState,
-) -> Array[Vector2i]:
-	return display_route_cells_from_preview(unit_id, preview, director, board, true)

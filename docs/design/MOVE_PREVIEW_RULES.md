@@ -216,8 +216,9 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 
 **Write paths (honest):**
 - Live hover/drag/stand-stub (input): `_set_preview_path` → `set_unit_preview_path` + mandatory overlay sync.
-- Sim timeline merge (preview): `apply_result` → `build_preview_paths` + `ensure_movement_intent_from_actions` with `skip_path_merge` for authoritative actors.
-- Committed promote: `CombatPlanningPreview.set_unit_preview_path` on committed snapshot.
+- Sim timeline merge (preview): `apply_result` → `build_preview_paths` + `ensure_movement_intent_from_actions` with `skip_path_merge` for authoritative actors; `anchor_preview_paths_to_latest_stand` only when not authoritative.
+- Post-commit promote trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` on committed snapshot only.
+- Committed promote copy: `preview_state.preview_paths = committed.preview_paths.duplicate` after promote (display sync, not route calculation).
 - Overlay display copy: `apply_preview_paths_only` mirrors input `preview_state` into `_live_preview` (not a route calculator).
 
 **Read paths:**
@@ -234,6 +235,11 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `CombatPlanningPreview.set_unit_preview_path` — shared path assign for input + committed promote.
 - `on_hover_moved` — single movement hover pipeline via `_refresh_movement_slot_hover_preview`.
 - `tactical_side_panels` — tile refresh via `_recompute_hover_ranges_from_inputs` only.
+
+**Pass 10 (gauntlet loop — critic HIGH fixes):**
+- Removed `_can_show_action_range_tiles` (blast gated only by `resolve_layer_origins` `show_blast`).
+- Post-commit path trim: `trim_committed_paths_after_slot_promote` only (no preview_state anchor before copy).
+- Hover tile recompute: `set_hover_coord` only; `_run_hover_overlay_refresh` no longer duplicates.
 
 **Pass 9 (gauntlet loop — cold-audit response):**
 - Removed duplicate merge/anchor/swap from `_ensure_live_movement_intent_from_preview_actions` (merge owner is `apply_result` only).

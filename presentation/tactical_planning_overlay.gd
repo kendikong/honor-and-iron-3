@@ -473,10 +473,9 @@ func _compute_hover_blast_action_range_tiles(
 	p_unit: UnitState,
 	action_range_origin: Vector2i,
 	ability_index: int,
-	cache_force: bool,
+	_cache_force: bool,
 ) -> Array[Vector2i]:
-	if not _can_show_action_range_tiles(unit, ability_index, cache_force):
-		return []
+	## Blast visibility gated upstream by resolve_layer_origins show_blast — no second range gate here.
 	var ability: AbilityData = _selected_ability_data(unit, ability_index)
 	if ability == null and _director != null:
 		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
@@ -925,64 +924,6 @@ func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 	if _is_selected_player_unit(unit):
 		return _compute_move_budget(unit, _proj_unit(unit.id), selected_ability) > 0
 	return unit.movement.points_left > 0 and not _movement_status_blocked(unit)
-
-
-func _can_show_action_range_tiles(unit: UnitState, selected_ability: int, force_basic: bool) -> bool:
-	if unit == null:
-		return false
-	if _intent_tiles_blocked(unit, selected_ability):
-		return false
-	if not _is_selected_player_unit(unit):
-		return unit.is_enemy()
-	var p_unit := _proj_unit(unit.id)
-	if p_unit == null:
-		return false
-	if p_unit.has_status(GameEnums.StatusType.STAGGER) or p_unit.has_status(GameEnums.StatusType.SILENCE):
-		return false
-	var awaiting_aim: bool = false
-	if _planning_input != null and _planning_input.awaiting_targeting_active():
-		awaiting_aim = true
-	elif _director != null and unit != null and _director.find_awaiting_action(unit.id) != null:
-		awaiting_aim = true
-	if selected_ability < 0 and not force_basic and not awaiting_aim:
-		return false
-	if not p_unit.can_use_action_slot() and not awaiting_aim:
-		return false
-	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
-	if awaiting_aim and (ability == null or AbilitySystem.is_wait_ability(ability)):
-		var awaiting_action: TimelineAction = _director.find_awaiting_action(unit.id)
-		if awaiting_action != null:
-			ability = awaiting_action.ability
-	if force_basic and (ability == null or AbilitySystem.is_wait_ability(ability)):
-		if not p_unit.active_abilities.is_empty():
-			ability = p_unit.active_abilities[0]
-	if ability == null or AbilitySystem.is_wait_ability(ability):
-		return false
-	if AbilitySystem.is_run_ability(ability):
-		return false
-	if (
-		_planning_input != null
-		and _is_selected_player_unit(unit)
-		and _planning_input.unit_move_requires_run(unit.id)
-	):
-		return false
-	if awaiting_aim:
-		return true
-	if _planning_input != null:
-		if force_basic:
-			return true
-		return p_unit.ability.points_left >= ability.action_point_cost
-	## Fallback when planning input is unavailable (headless fixtures).
-	var premove_cell: Vector2i = _intent_stand_origin(unit)
-	var plan_board: BoardState = _director.projected_state if _director.projected_state != null else _board
-	var auto_run_active: bool = false
-	if not AbilitySystem.can_show_planning_action_range_after_premove(
-		plan_board, p_unit, ability, premove_cell, auto_run_active,
-	):
-		return false
-	if force_basic:
-		return true
-	return p_unit.ability.points_left >= ability.action_point_cost
 
 
 func recompute_hover_ranges(
