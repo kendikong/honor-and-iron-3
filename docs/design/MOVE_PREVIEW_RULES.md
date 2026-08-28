@@ -202,6 +202,8 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
 | Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
 | Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` → `CombatPlanningPreview.set_unit_preview_path` |
+| Painted leg seal | `CombatPlanningPreview.painted_leg_sealed` / `seal_painted_leg` |
+| Route read (live + frozen + committed legs) | `CombatPlanningInput.display_*_route_cells` / `preview_board_for_display` |
 | Painted drag → `preview_paths` | `_sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
 | Sim / commit path merge | `apply_result`: `build_preview_paths` (sim events) + `ensure_movement_intent_from_actions` via `_commit_preview_path`; hover authoritative restore via `authoritative_paths` |
 | Movement-step authority gate | `CombatPlanningInput._movement_hover_path_authoritative` |
@@ -269,3 +271,17 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Hover tile faint outline only when cell is inside blue/red/yellow field (`_draw_hover_tile_on`).
 - Execution phase: no `_route` fallback draw outside planning (`_draw`).
 - **Perf deferrals retained (approved):** `_deferred_preview_pending`, `_hover_preview_lru`, `_hover_recompute_pending` — overlay batching only, not alternate preview truth.
+
+**Pass 14 (read-path closure):**
+- `CombatPlanningInput` owns route **reads**: `display_move_route_cells`, `display_committed_move_route_leg`, `display_frozen_route_cells`, `preview_board_for_display`, `clear_hover_route_preview`.
+- Overlay route draw delegates to input; `_active_preview()` retained for intents/live_intents only.
+- `painted_leg_sealed` on `CombatPlanningPreview` replaces parallel `_frozen_painted_leg_routes` buffer.
+- `sync_route_paths_from` — path-only bulk copy; `restore_committed_display` **clears** live route geometry (does not mirror committed paths into live/input).
+- `painted_move_route_locked` only during `active_movement_planning_step`; sealed-leg restore runs before stand-restore in `_refresh_selected_interaction_preview`.
+- `committed_move_route_leg` / `display_committed_action_route_cells` — preview slice only (no geometry fallback).
+- Overlay `_route` storage removed; drag SSOT is `CombatPlanningInput._drag_route`.
+- `action_range_visible_for_hover` documented as economy gate (below).
+
+### Action-range economy gate
+
+`CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

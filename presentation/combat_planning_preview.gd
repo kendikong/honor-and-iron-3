@@ -13,6 +13,8 @@ var action_splits: Dictionary = {}
 var preview_pushes: Dictionary = {}
 var preview_board: BoardState = null
 var live_intents: Array = []
+## Painted drag legs sealed across awaiting-move buffer clears (unit_id → true).
+var painted_leg_sealed: Dictionary = {}
 
 
 func clear_interaction() -> void:
@@ -28,6 +30,7 @@ func clear_all() -> void:
 	action_splits.clear()
 	preview_pushes.clear()
 	preview_board = null
+	painted_leg_sealed.clear()
 	live_intents.clear()
 
 
@@ -835,11 +838,39 @@ func sync_route_geometry_from(other: CombatPlanningPreview) -> void:
 	if other == null:
 		return
 	preview_board = other.preview_board
+	sync_route_paths_from(other)
+
+
+func sync_route_paths_from(other: CombatPlanningPreview) -> void:
+	if other == null:
+		return
 	preview_paths = other.preview_paths.duplicate(true)
 	preview_splits = other.preview_splits.duplicate()
 	preview_post_splits = other.preview_post_splits.duplicate()
 	action_splits = other.action_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)
+	painted_leg_sealed = other.painted_leg_sealed.duplicate()
+
+
+func seal_painted_leg(unit_id: int) -> void:
+	if unit_id >= 0:
+		painted_leg_sealed[unit_id] = true
+
+
+func clear_route_geometry() -> void:
+	preview_paths.clear()
+	preview_splits.clear()
+	preview_post_splits.clear()
+	preview_pushes.clear()
+	painted_leg_sealed.clear()
+
+
+func is_painted_leg_sealed(unit_id: int) -> bool:
+	return bool(painted_leg_sealed.get(unit_id, false))
+
+
+func clear_sealed_painted_leg(unit_id: int) -> void:
+	painted_leg_sealed.erase(unit_id)
 
 
 ## Read-only preview stub for commit-animation path slicing (paths dict only).
@@ -1125,20 +1156,7 @@ static func committed_move_route_leg(
 		):
 			return []
 		return leg
-	var origin: Vector2i = move_leg_origin_cell(
-		director, board, unit_id, timing, move_action,
-	)
-	if origin.x == -999999:
-		return []
-	var fallback: Array = movement_intent_cells(origin, move_action)
-	if (
-		fallback.size() >= 2
-		and committed_move_already_realized(
-			director, board, unit_id, timing, move_action, fallback, visual_cell,
-		)
-	):
-		return []
-	return fallback
+	return []
 
 
 ## Grid cell where the committed class action leaves the unit (post-move starts here).
@@ -1566,8 +1584,6 @@ static func display_committed_action_route_cells(
 	var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
 	if path_leg.size() >= 2:
 		return path_leg
-	if not action.waypoints.is_empty():
-		return movement_intent_cells(start_pos, action)
 	return []
 
 

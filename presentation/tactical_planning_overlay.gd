@@ -71,7 +71,6 @@ var _director: CombatDirector
 var _intent_state: CombatIntentState
 var _board: BoardState
 var _preview_board: BoardState
-var _route: Array[Vector2i] = []
 var _aiming: bool = false
 var _aim_local: Vector2 = Vector2.ZERO
 var _aim_class_id: StringName = &"knight"
@@ -541,7 +540,11 @@ func build_debug_context() -> Dictionary:
 		"hover_move_tiles": _coords_to_arrays(_hover_move_tiles),
 		"hover_action_range_tiles": _coords_to_arrays(_hover_action_range_tiles),
 		"hover_blast_tiles": _coords_to_arrays(_hover_blast_tiles),
-		"route": _coords_to_arrays(_route),
+		"route": (
+			_coords_to_arrays(_planning_input.get_drag_route())
+			if _planning_input != null
+			else []
+		),
 		"aiming": _aiming,
 		"attack_target_id": _attack_target_id,
 		"intent_stand_origin": _debug_intent_stand_array(),
@@ -640,12 +643,11 @@ func restore_stashed_committed() -> void:
 func restore_committed_display() -> void:
 	_live_preview.clear_interaction()
 	_live_preview.preview_board = null
-	_live_preview.preview_paths.clear()
-	_live_preview.preview_splits.clear()
-	_live_preview.preview_post_splits.clear()
-	_live_preview.preview_pushes.clear()
+	_live_preview.clear_route_geometry()
 	_attack_target_id = -1
 	_preview_board = _committed_preview.preview_board
+	if _planning_input != null:
+		_planning_input.clear_hover_route_preview()
 	if _unit_layer != null:
 		_unit_layer.clear_live_forecast()
 	_push_committed_forecast_to_unit_layer()
@@ -671,7 +673,6 @@ func _clear_execution_preview_state() -> void:
 	_has_stashed_committed = false
 	_lock_committed_from_intent = false
 	_preview_board = null
-	_route.clear()
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()
 	_hit_markers.clear()
@@ -731,6 +732,16 @@ func apply_preview_paths_only(state: CombatPlanningPreview, unit_id: int) -> voi
 	if path.is_empty():
 		return
 	CombatPlanningPreview.set_unit_preview_path(_live_preview, unit_id, path)
+	if state.preview_splits.has(unit_id):
+		_live_preview.preview_splits[unit_id] = state.preview_splits[unit_id]
+	if state.preview_post_splits.has(unit_id):
+		_live_preview.preview_post_splits[unit_id] = state.preview_post_splits[unit_id]
+	if state.preview_pushes.has(unit_id):
+		_live_preview.preview_pushes[unit_id] = state.preview_pushes[unit_id]
+	if state.is_painted_leg_sealed(unit_id):
+		_live_preview.seal_painted_leg(unit_id)
+	else:
+		_live_preview.clear_sealed_painted_leg(unit_id)
 	_queue_hover_tile_redraw()
 	_queue_overlay_redraw()
 
@@ -807,13 +818,12 @@ func set_drag_attack_target(unit_id: int) -> void:
 		_unit_layer.clear_drag_attack_target()
 
 
-func set_drag_route(route: Array[Vector2i]) -> void:
-	_route = route
+## Legacy test hook — drag route SSOT is CombatPlanningInput._drag_route.
+func set_drag_route(_route_unused: Array[Vector2i]) -> void:
 	_queue_overlay_redraw()
 
 
 func clear_drag_route() -> void:
-	_route.clear()
 	_queue_overlay_redraw()
 
 
@@ -1416,7 +1426,11 @@ func _draw_ability_intents(flowing: bool) -> void:
 					if flowing:
 						continue
 					if action.target_coord != enemy_pos:
-						var preview_for_push: CombatPlanningPreview = _active_preview()
+						var preview_for_push: CombatPlanningPreview = (
+							_planning_input.route_preview_for_push_checks()
+							if _planning_input != null
+							else _committed_preview
+						)
 						if _is_push_preview_segment(
 							preview_for_push, enemy_pos, action.target_coord
 						):
@@ -1493,9 +1507,10 @@ func _should_draw_interaction_overlay() -> bool:
 
 
 func _display_preview_board() -> BoardState:
-	var preview: CombatPlanningPreview = _active_preview()
-	if preview.preview_board != null:
-		return preview.preview_board
+	if _planning_input != null:
+		var board: BoardState = _planning_input.preview_board_for_display()
+		if board != null:
+			return board
 	return _preview_board
 
 
@@ -1729,9 +1744,9 @@ func _draw_danger_area(canvas: CanvasItem) -> void:
 
 
 func _draw_preview_arrows() -> void:
-	if _board == null or _director == null:
+	if _board == null or _director == null or _planning_input == null:
 		return
-	var prev: CombatPlanningPreview = _active_preview()
+	var prev: CombatPlanningPreview = _planning_input.committed_route_preview()
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
 			continue
@@ -1746,8 +1761,8 @@ func _draw_preview_arrows() -> void:
 				var visual_cell: Vector2i = CombatPlanningPreview.INVALID_VISUAL_CELL
 				if _unit_layer != null:
 					visual_cell = _unit_layer.actor_grid_cell(unit.id)
-				var leg: Array = CombatPlanningPreview.committed_move_route_leg(
-					unit.id, _committed_preview, _director, _board, move_timing, visual_cell,
+				var leg: Array = _planning_input.display_committed_move_route_leg(
+					unit.id, move_timing, visual_cell,
 				)
 				if leg.size() < 2:
 					continue
@@ -1756,7 +1771,7 @@ func _draw_preview_arrows() -> void:
 				_draw_route_line(leg, p_col, true, true)
 		if prev.preview_board == null:
 			continue
-		var route: Array = CombatPlanningPreview.frozen_move_route_cells(unit.id, prev)
+		var route: Array = _planning_input.display_frozen_route_cells(unit.id)
 		if route.is_empty():
 			continue
 		var split: int = int(prev.preview_splits.get(unit.id, route.size()))
@@ -1898,12 +1913,12 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 
 
 func _draw_interaction_overlay(flowing: bool) -> void:
-	if _director == null or _director.selected_unit_id < 0:
+	if _director == null or _director.selected_unit_id < 0 or _planning_input == null:
 		return
-	var prev: CombatPlanningPreview = _active_preview()
-	if prev.preview_board == null:
+	var preview_board: BoardState = _planning_input.preview_board_for_display()
+	if preview_board == null:
 		return
-	var actor := prev.preview_board.get_unit_by_id(_director.selected_unit_id)
+	var actor := preview_board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
 		actor = _board.get_unit_by_id(_director.selected_unit_id)
 	if actor == null:
@@ -1938,13 +1953,11 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 		and _planning_input.is_live_preview_active()
 		and not _planning_input.drag_preview_failed
 	):
-		for other_id: Variant in prev.preview_paths.keys():
+		for other_id: Variant in _planning_input.preview_state.preview_paths.keys():
 			var other_unit_id: int = int(other_id)
 			if other_unit_id == actor.id:
 				continue
-			var other_route: Array[Vector2i] = CombatPlanningPreview.frozen_move_route_cells(
-				other_unit_id, prev,
-			)
+			var other_route: Array[Vector2i] = _planning_input.display_frozen_route_cells(other_unit_id)
 			if other_route.size() < 2:
 				continue
 			var other_unit: UnitState = _board.get_unit_by_id(other_unit_id) if _board != null else null
@@ -2389,9 +2402,12 @@ func _draw_push_arrow(from: Vector2i, to: Vector2i, pushed_unit: UnitState = nul
 
 
 func _draw_ghosts() -> void:
-	var prev: CombatPlanningPreview = _active_preview()
-	if prev.preview_board == null or _board == null or _director == null:
+	if _planning_input == null or _board == null or _director == null:
 		return
+	var preview_board: BoardState = _planning_input.preview_board_for_display()
+	if preview_board == null:
+		return
+	var prev: CombatPlanningPreview = _planning_input.committed_route_preview()
 	var plan_to_use: Timeline = _director.get_player_plan()
 	for unit: UnitState in _board.units:
 		if not unit.is_alive() or not _intent_visible(unit):
@@ -2418,11 +2434,7 @@ func _draw_ghosts() -> void:
 					if ghost_action.target_coord == leg_origin:
 						break
 					var stand: Vector2i = unit.position
-					var pv_unit: UnitState = (
-						prev.preview_board.get_unit_by_id(unit.id)
-						if prev.preview_board != null
-						else null
-					)
+					var pv_unit: UnitState = preview_board.get_unit_by_id(unit.id)
 					if pv_unit != null:
 						stand = pv_unit.position
 					if ghost_action.target_coord == stand:
@@ -2438,7 +2450,7 @@ func _draw_ghosts() -> void:
 					_draw_facing_wedge(center, leg_face, Color(ghost_col.r, ghost_col.g, ghost_col.b, 0.8))
 					break
 		if unit.is_enemy():
-			var route: Array = CombatPlanningPreview.frozen_move_route_cells(unit.id, prev)
+			var route: Array = _planning_input.display_frozen_route_cells(unit.id)
 			var voluntary_dest: Vector2i = route[route.size() - 1] if route.size() > 0 else unit.position
 			if voluntary_dest != unit.position:
 				var ghost_center: Vector2 = _map_view.grid_to_local(voluntary_dest)
@@ -2449,7 +2461,7 @@ func _draw_ghosts() -> void:
 				var enemy_leg: Array = route.slice(maxi(route.size() - 2, 0))
 				var face: int = CombatPlanningPreview.facing_from_route_leg(enemy_leg)
 				if face < 0:
-					var pv_enemy := prev.preview_board.get_unit_by_id(unit.id) if prev.preview_board != null else null
+					var pv_enemy := preview_board.get_unit_by_id(unit.id)
 					face = pv_enemy.facing if pv_enemy != null else unit.facing
 				_draw_facing_wedge(ghost_center, face, Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha + 0.15))
 

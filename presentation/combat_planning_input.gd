@@ -37,8 +37,6 @@ const _HOVER_SIM_STILL_PX: float = 3.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
-## Sealed drag-paint routes survive _drag_route clears (awaiting-move selection-hover).
-var _frozen_painted_leg_routes: Dictionary = {}
 var _drag_last_free: Vector2i = Vector2i(-1, -1)
 var _drag_unit_was_selected: bool = false
 var _drag_saved_preview: BoardState = null
@@ -846,13 +844,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_preview_failed = true
 		_hover_preview_cache_key = ""
 		_last_hover_move_intent_preview = false
-		preview_state.clear_interaction()
-		## Drop stale spent-AP boards so UI does not keep a previous skill's preview.
-		preview_state.preview_board = null
-		preview_state.preview_paths.clear()
-		preview_state.preview_splits.clear()
-		preview_state.preview_post_splits.clear()
-		preview_state.preview_pushes.clear()
+		preview_state.clear_all()
 		if _planning != null:
 			_planning.restore_committed_display()
 		_sync_intent_live_board()
@@ -1506,12 +1498,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
 			if _post_move_basic_planning_open(p_unit):
 				var post_origin: Vector2i = _active_move_drag_origin(p_unit)
-				if _frozen_painted_leg_routes.has(p_unit.id):
-					var stale_frozen: Array = _frozen_painted_leg_routes[p_unit.id]
+				if preview_state.is_painted_leg_sealed(p_unit.id):
+					var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
 					if (
-						stale_frozen.size() >= 2
+						sealed_route.size() >= 2
 						and post_origin.x > -900000
-						and (stale_frozen[0] as Vector2i) != post_origin
+						and (sealed_route[0] as Vector2i) != post_origin
 					):
 						_clear_frozen_painted_leg(p_unit.id)
 				if (
@@ -2053,12 +2045,9 @@ func get_drag_route() -> Array[Vector2i]:
 
 
 func _clear_hover_preview() -> void:
+	clear_hover_route_preview()
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
-	preview_state.preview_paths.clear()
-	preview_state.preview_splits.clear()
-	preview_state.preview_post_splits.clear()
-	preview_state.preview_pushes.clear()
 	drag_preview_failed = false
 	_last_hover_move_intent_preview = false
 	_clear_intent_snapshot()
@@ -2165,15 +2154,15 @@ func _refresh_selected_interaction_preview() -> void:
 	if dragging or _director == null or _director.board == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit != null and painted_move_route_locked(p_unit):
+		_restore_locked_painted_preview_paths(p_unit.id)
+		return
 	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
 		return
-	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit == null:
 		_restore_hover_preview()
-		return
-	if painted_move_route_locked(p_unit):
-		_restore_locked_painted_preview_paths(p_unit.id)
 		return
 	var ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
 	if not ally_slots.is_empty():
@@ -2323,12 +2312,9 @@ func _restore_hover_preview() -> void:
 		_clear_hover_drag_route()
 	if _planning != null:
 		_planning.set_drag_attack_target(-1)
+	clear_hover_route_preview()
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
-	preview_state.preview_paths.clear()
-	preview_state.preview_splits.clear()
-	preview_state.preview_post_splits.clear()
-	preview_state.preview_pushes.clear()
 	drag_preview_failed = false
 	_clear_intent_snapshot()
 	if _planning != null:
@@ -2363,7 +2349,7 @@ func _clear_stale_painted_preview_route(unit_id: int) -> void:
 func _clear_frozen_painted_leg(unit_id: int) -> void:
 	if unit_id < 0:
 		return
-	_frozen_painted_leg_routes.erase(unit_id)
+	preview_state.clear_sealed_painted_leg(unit_id)
 
 
 func _seal_painted_leg_from_drag(unit_id: int) -> void:
@@ -2374,16 +2360,17 @@ func _seal_painted_leg_from_drag(unit_id: int) -> void:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null or not _painted_drag_route_matches_leg(actor):
 		return
-	_frozen_painted_leg_routes[unit_id] = _typed_route_cells(_drag_route)
+	_sync_painted_drag_route_to_preview_paths(unit_id, true)
+	preview_state.seal_painted_leg(unit_id)
 
 
 func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 	if unit_id < 0:
 		return
 	var actor: UnitState = _proj_unit(unit_id)
-	if actor != null and _post_move_basic_planning_open(actor) and not _frozen_painted_leg_routes.has(unit_id):
+	if actor != null and _post_move_basic_planning_open(actor) and not preview_state.is_painted_leg_sealed(unit_id):
 		_seal_postmove_painted_drag_buffer_if_needed(actor)
-	var route: Array = _frozen_painted_leg_routes.get(unit_id, [])
+	var route: Array = preview_state.preview_paths.get(unit_id, [])
 	if route.is_empty() and _drag_route.size() >= 2 and _drag_unit_id == unit_id:
 		route = _drag_route
 	if route.size() >= 2:
@@ -2393,7 +2380,7 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 func _seal_postmove_painted_drag_buffer_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
 		return
-	if _frozen_painted_leg_routes.has(p_unit.id):
+	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return
 	if not _painted_drag_route_matches_leg(p_unit):
 		return
@@ -4080,13 +4067,15 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 func painted_move_route_locked(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
-	if _frozen_painted_leg_routes.has(p_unit.id):
-		var frozen: Array = _frozen_painted_leg_routes[p_unit.id]
-		if frozen.size() < 2:
+	if not active_movement_planning_step(p_unit):
+		return false
+	if preview_state.is_painted_leg_sealed(p_unit.id):
+		var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+		if sealed_route.size() < 2:
 			_clear_frozen_painted_leg(p_unit.id)
 		else:
 			var origin: Vector2i = _active_move_drag_origin(p_unit)
-			if origin.x <= -900000 or (frozen[0] as Vector2i) != origin:
+			if origin.x <= -900000 or (sealed_route[0] as Vector2i) != origin:
 				_clear_frozen_painted_leg(p_unit.id)
 			else:
 				return true
@@ -4120,6 +4109,70 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		_proj(),
 		active_movement_planning_step(actor),
 	)
+
+
+func clear_hover_route_preview() -> void:
+	preview_state.clear_route_geometry()
+
+
+func sync_preview_state_from_committed() -> void:
+	if _planning == null:
+		preview_state.clear_all()
+		return
+	var committed: CombatPlanningPreview = _planning.get_committed_preview()
+	if committed.preview_paths.is_empty() and committed.preview_board == null:
+		preview_state.clear_all()
+		return
+	preview_state.sync_route_paths_from(committed)
+	preview_state.clear_interaction()
+
+
+func committed_route_preview() -> CombatPlanningPreview:
+	if _planning != null:
+		return _planning.get_committed_preview()
+	return preview_state
+
+
+func preview_board_for_display() -> BoardState:
+	if is_live_preview_active() and preview_state.preview_board != null:
+		return preview_state.preview_board
+	if _planning != null:
+		var committed: CombatPlanningPreview = _planning.get_committed_preview()
+		if committed.preview_board != null:
+			return committed.preview_board
+	return _proj()
+
+
+func display_committed_move_route_leg(
+	unit_id: int,
+	timing: int,
+	visual_cell: Vector2i = CombatPlanningPreview.INVALID_VISUAL_CELL,
+) -> Array:
+	if _director == null:
+		return []
+	return CombatPlanningPreview.committed_move_route_leg(
+		unit_id,
+		committed_route_preview(),
+		_director,
+		_proj(),
+		timing,
+		visual_cell,
+	)
+
+
+func display_frozen_route_cells(unit_id: int) -> Array[Vector2i]:
+	if _director == null or unit_id < 0:
+		return []
+	var preview: CombatPlanningPreview = committed_route_preview()
+	if unit_id == _director.selected_unit_id:
+		var live_route: Array = preview_state.preview_paths.get(unit_id, [])
+		if live_route.size() >= 2:
+			preview = preview_state
+	return CombatPlanningPreview.frozen_move_route_cells(unit_id, preview)
+
+
+func route_preview_for_push_checks() -> CombatPlanningPreview:
+	return committed_route_preview()
 
 
 ## Predicted stand at hover for next-phase range field (two-range tile model).
@@ -4476,7 +4529,7 @@ func _postmove_live_corridor_active(p_unit: UnitState) -> bool:
 		return false
 	if _director.find_awaiting_action(p_unit.id) != null:
 		return false
-	if _frozen_painted_leg_routes.has(p_unit.id):
+	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
 	if _painted_drag_route_matches_leg(p_unit):
 		return false
