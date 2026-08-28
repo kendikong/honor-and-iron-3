@@ -3482,23 +3482,6 @@ func _finalize_planning_commit_move_event(
 		if path_cells.size() < 2:
 			if moved_id == action.actor_id and not action.waypoints.is_empty():
 				path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
-		if path_cells.size() < 2:
-			var has_painted_commit_intent: bool = (
-				moved_id == action.actor_id
-				and (
-					not action.waypoints.is_empty()
-					or _commit_intent_preview_paths.has(action.actor_id)
-				)
-			)
-			if not has_painted_commit_intent:
-				path_cells = [from_cell]
-				var found: Array[Vector2i] = MovementSystem.find_path(
-					before_board, from_cell, to_cell, moved.movement.points_left,
-				)
-				if not found.is_empty():
-					path_cells.append_array(found)
-				elif GridSystem.manhattan(from_cell, to_cell) == 1:
-					path_cells.append(to_cell)
 	move_event.data["path"] = path_cells
 	move_event.data["planning_commit_move"] = true
 	move_event.data["move_timing"] = action.move_timing

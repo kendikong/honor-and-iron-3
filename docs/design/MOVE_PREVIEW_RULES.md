@@ -306,8 +306,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 **Pass 17 audit closure (2026-08-27):**
 - **6-row SSOT:** single hover owner (`_refresh_hover_interaction_preview`); one commit ratify path (`trust_painted_route` + director painted-intent gate); no per-skill branches; overlay reads input/display APIs only; `PlanningRoutePolicy` reusable geometry; inline enemy-hover geometry removed from input.
 - **Sequenced hook (not parallel truth):** `_sync_movement_preview_after_hover_sim` runs after sim refresh for composite MOVE-leg corridor — required for charge/bash frozen landing; headless `charge_strike_composite` fails if removed.
-- **Intentional fallback:** `find_path` on commit remains only when no painted waypoints and no stashed preview path (unpainted basic move).
 - **QA:** `run_planning_qa_gate.ps1` PASS · `run_planning_scene_acceptance.ps1` PASS (live bible session).
+
+**Pass 18 (remove commit-time pathfind band-aids):**
+- `_append_move_to_commit_slots` — no `find_path` rewrite; invalid or empty waypoints → `slots["invalid"]` (fail loud).
+- `_ensure_move_waypoints_on_commit_slots` — MOVE slots get waypoints from painted preview / corridor builder before commit (same geometry as hover).
+- `CombatDirector._finalize_planning_commit_move_event` — no `find_path` or adjacent-step invent; replays `action.waypoints` only.
 
 ### Action-range economy gate
 

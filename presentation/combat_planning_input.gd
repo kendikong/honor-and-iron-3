@@ -3136,6 +3136,7 @@ func _commit_at_cell(
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	_suppress_post_commit_hover_refresh = true
 	_ratify_painted_route_on_commit_slots(unit_id, slots)
+	_ensure_move_waypoints_on_commit_slots(unit_id, slots)
 	_ensure_movement_waypoints_on_commit_slots(unit_id, slots)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
 		_suppress_post_commit_hover_refresh = false
@@ -3181,6 +3182,43 @@ func _ratify_painted_route_on_commit_slots(unit_id: int, slots: Dictionary) -> v
 				return
 			else:
 				act.uses_run = false
+
+
+func _ensure_move_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
+	if _is_invalid_dict(slots) or _director == null:
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return
+	for col: String in ["pre", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var act: TimelineAction = raw as TimelineAction
+			if act.type != GameEnums.ActionType.MOVE or act.actor_id != unit_id:
+				continue
+			if not act.waypoints.is_empty():
+				continue
+			var dest: Vector2i = act.target_coord
+			if dest == _proj_move_origin(actor):
+				continue
+			var from_preview: Array[Vector2i] = _route_waypoints_for_commit()
+			if not from_preview.is_empty() and from_preview.back() == dest:
+				act.waypoints = from_preview.duplicate()
+				continue
+			var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
+			if painted_path.size() >= 2:
+				var from_paths: Array[Vector2i] = []
+				for i: int in range(1, painted_path.size()):
+					from_paths.append(painted_path[i] as Vector2i)
+				if not from_paths.is_empty() and from_paths.back() == dest:
+					act.waypoints = from_paths
+					continue
+			var corridor: Array[Vector2i] = _corridor_waypoints_to_cell(actor, dest)
+			if corridor.is_empty() or corridor.back() != dest:
+				slots["invalid"] = "Move requires preview waypoints."
+				return
+			act.waypoints = corridor
 
 
 func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
@@ -6614,37 +6652,34 @@ func _append_move_to_commit_slots(
 		return
 	var move_origin: Vector2i = _proj_move_origin(actor)
 
+	var safe_waypoints: Array[Vector2i] = waypoints.duplicate()
+	if safe_waypoints.is_empty() and cell != move_origin:
+		var from_preview: Array[Vector2i] = _route_waypoints_for_commit()
+		if not from_preview.is_empty() and from_preview.back() == cell:
+			safe_waypoints = from_preview
+		if safe_waypoints.is_empty():
+			var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
+			if painted_path.size() >= 2:
+				for i: int in range(1, painted_path.size()):
+					var step: Vector2i = painted_path[i] as Vector2i
+					if safe_waypoints.is_empty() or safe_waypoints.back() != step:
+						safe_waypoints.append(step)
+				if not safe_waypoints.is_empty() and safe_waypoints.back() != cell:
+					safe_waypoints.clear()
+		if safe_waypoints.is_empty():
+			safe_waypoints = _corridor_waypoints_to_cell(actor, cell)
+		if safe_waypoints.is_empty():
+			slots["invalid"] = "Move requires preview waypoints."
+			return
 	var trust_painted_route: bool = (
-		not waypoints.is_empty()
+		not safe_waypoints.is_empty()
 		and (_drag_route_commits_active() or _painted_preview_route_matches_leg(actor))
 	)
-	# Sanitize waypoints to strip leaked ability effects (like pass-through).
-	# Painted preview routes are intent truth — never replace with find_path on commit.
-	var is_valid_basic_path := true
 	if not trust_painted_route:
-		for step in waypoints:
+		for step: Vector2i in safe_waypoints:
 			if not MovementSystem._is_walkable_for(_proj(), step, actor, null):
-				is_valid_basic_path = false
-				break
-			
-	var safe_waypoints: Array[Vector2i] = waypoints
-	if trust_painted_route:
-		safe_waypoints = waypoints
-	elif not is_valid_basic_path:
-		var mt: int = actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
-		var budget: int = _move_budget(actor)
-		var move_cost: int = MovementSystem.move_cost_for(actor)
-		safe_waypoints = MovementSystem.find_path(
-			_proj(), move_origin, cell, budget, mt, move_cost, null,
-		)
-		
-	# If the original waypoints were valid (likely due to an ability pass-through leak), 
-	# but we couldn't find ANY valid path to the cell using basic movement rules 
-	# (e.g., going around the enemy costs more movement points than the unit has),
-	# we must reject the drop entirely rather than committing an empty move.
-	if safe_waypoints.is_empty() and not waypoints.is_empty() and cell != move_origin:
-		slots["invalid"] = "Cannot reach this tile with basic movement."
-		return
+				slots["invalid"] = "Cannot reach this tile with basic movement."
+				return
 		
 	var move: TimelineAction = TimelineAction.make_move(unit_id, cell, -1, safe_waypoints, timing)
 	if AbilitySystem.movement_requires_run(_proj(), actor, cell, safe_waypoints):
