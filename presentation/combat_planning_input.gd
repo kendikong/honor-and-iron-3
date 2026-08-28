@@ -1593,13 +1593,17 @@ func on_hover_moved(cell: Vector2i) -> void:
 				_drag_route.size() >= 2
 				and _drag_unit_id == p_unit.id
 				and not painted_move_route_locked(p_unit)
+				and not _selection_hover_corridor_paint_active()
 			):
 				_clear_hover_drag_route()
 			if (
-				dragging
-				and _drag_route.size() >= 2
+				_drag_route.size() >= 2
 				and _drag_unit_id == p_unit.id
 				and _painted_drag_route_matches_leg(p_unit)
+				and (
+					dragging
+					or _selection_hover_corridor_paint_active()
+				)
 			):
 				_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
 	if (
@@ -1610,7 +1614,13 @@ func on_hover_moved(cell: Vector2i) -> void:
 	):
 		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 		if hover_unit != null and _movement_slot_hover_preview_applies(hover_unit, cell):
-			_refresh_movement_slot_hover_preview(hover_unit, cell)
+			if not (
+				_selection_hover_corridor_paint_active()
+				and _drag_route_commits_active()
+				and _drag_unit_id == hover_unit.id
+				and _drag_route.size() >= 2
+			):
+				_refresh_movement_slot_hover_preview(hover_unit, cell)
 			_last_sim_hover_refresh_cell = cell
 	elif (
 		dragging
@@ -4821,9 +4831,14 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 		return []
 	if (
 		_painted_drag_route_drives_live_preview()
-		and _drag_unit_id == actor.id
-		and _movement_route_paint_allowed()
-	):
+		or (
+			_selection_hover_corridor_paint_active()
+			and _drag_route_commits_active()
+			and _drag_unit_id == actor.id
+			and _drag_route.size() >= 2
+		)
+	) and _drag_unit_id == actor.id
+		and _movement_route_paint_allowed():
 		var route_idx: int = _drag_route.find(cell)
 		if route_idx > 0:
 			var partial: Array[Vector2i] = []
