@@ -1606,13 +1606,17 @@ func on_hover_moved(cell: Vector2i) -> void:
 				_drag_route.size() >= 2
 				and _drag_unit_id == p_unit.id
 				and not painted_move_route_locked(p_unit)
+				and not _selection_hover_corridor_paint_active()
 			):
 				_clear_hover_drag_route()
 			if (
-				dragging
-				and _drag_route.size() >= 2
+				_drag_route.size() >= 2
 				and _drag_unit_id == p_unit.id
 				and _painted_drag_route_matches_leg(p_unit)
+				and (
+					dragging
+					or _selection_hover_corridor_paint_active()
+				)
 			):
 				_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
 	if (
@@ -2692,9 +2696,13 @@ func _drag_route_commits_active() -> bool:
 	return _selection_hover_corridor_paint_active()
 
 
-## Painted route drives commit/slots; live preview uses it only while the mouse is held dragging.
+## Painted route drives commit/slots; live preview uses drag buffer while dragging or selection-sweep painting.
 func _painted_drag_route_drives_live_preview() -> bool:
-	return dragging and _drag_route_commits_active()
+	if not _drag_route_commits_active():
+		return false
+	if dragging:
+		return true
+	return _selection_hover_corridor_paint_active() and _drag_route.size() >= 2
 
 
 func _painted_drag_route_matches_leg(p_unit: UnitState) -> bool:
@@ -4667,7 +4675,7 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 	var actor: UnitState = _proj_unit(unit_id)
 	if require_leg_match and not _painted_drag_route_matches_leg(actor):
 		return
-	if not _movement_route_paint_allowed():
+	if not _movement_route_paint_allowed() and not _selection_hover_corridor_paint_active():
 		return
 	if _drag_route.size() < 2:
 		if actor != null:
@@ -6518,27 +6526,42 @@ func _enemy_hover_respects_painted_route(
 		return false
 	if ability == null:
 		return false
-	var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
-	# Range 2+ actions never respect hover-painted detours on enemy hover.
-	# Direct hover always uses shortest approach (or stationary shot if already in range).
-	# To take a deliberate detour for Range 2+, the player pre-plans the move first.
-	if ability_range > 1:
-		return false
-	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
-		return false
 	var move_origin: Vector2i = _proj_move_origin(actor)
 	var stand: Vector2i = route_waypoints.back()
 	if stand == move_origin:
 		return false
+	var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
+	var stand_in_range: bool = AbilitySystem.planning_target_is_in_range(
+		_proj(), actor, ability, stand, enemy.position,
+	)
+	# Range 2+: respect deliberate premove only when out of range from the live stand.
+	# In-range enemy hover is always a stationary shot — painted corridors are ignored.
+	if ability_range > 1:
+		if _in_ability_range_from(actor, enemy.position, enemy):
+			return false
+		if not stand_in_range:
+			return false
+	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
+		return false
 	if not _in_ability_range_from(actor, enemy.position, enemy):
-		if _director != null:
-			var approach: Vector2i = _director.preview_approach_tile(
+		if not stand_in_range:
+			if _director != null:
+				var approach: Vector2i = _director.preview_approach_tile(
+					actor.id,
+					enemy.id,
+					_director.selected_ability_index,
+					enemy.position,
+				)
+				if stand != approach:
+					return false
+		elif route_waypoints.size() <= 1 and _director != null:
+			var painted_approach: Vector2i = _director.preview_approach_tile(
 				actor.id,
 				enemy.id,
 				_director.selected_ability_index,
 				enemy.position,
 			)
-			if stand != approach:
+			if stand != painted_approach:
 				return false
 	if _in_ability_range_from(actor, enemy.position, enemy):
 		if not dragging and route_waypoints.size() <= 1 and GridSystem.manhattan(move_origin, stand) <= 1:
