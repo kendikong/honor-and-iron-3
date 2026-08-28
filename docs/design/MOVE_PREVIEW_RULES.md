@@ -208,6 +208,8 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
 | Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` / `display_committed_action_route_cells` via `CombatPlanningInput.display_move_route_cells` |
 | Path data store | `CombatPlanningPreview.preview_paths` |
+| Bulk route geometry copy | `CombatPlanningPreview.sync_route_geometry_from` |
+| Commit-animation path read stub | `CombatPlanningPreview.preview_read_stub` |
 | Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
 | Action-range stand (aim origin) | `CombatPlanningInput.action_range_intent_stand_cell` (overlay `_intent_stand_origin` delegates) |
 | Targeting intent arrow (live hover) | `CombatPlanningInput.targeting_intent_arrow_cells` (overlay delegates) |
@@ -255,6 +257,15 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 
 **Pass 12 (path write / read closure):**
 - `assign_preview_path_dict` + `set_unit_preview_path` — sole assign API for intent/anchor/swap merge writes (`_commit_preview_path` in preview).
-- `build_preview_paths` remains sim-event builder only (clears + rebuilds from `UNIT_MOVED` events).
+- `build_preview_paths` remains sim-event builder only (clears + rebuilds from `UNIT_MOVED` events); `preview_post_splits` owned here only (POST_ACTION index).
 - `display_committed_action_route_cells` — sole committed chevron read (overlay no longer chains `movement_intent_cells` locally).
 - `apply_preview_paths_only` mirrors via `set_unit_preview_path` (no direct `_live_preview.preview_paths[…]` write).
+
+**Pass 13 (residual SSOT closure):**
+- `sync_route_geometry_from` — sole bulk route copy (promote, awaiting restore, `copy_from` route half); replaces scattered `preview_paths = …` dict assigns.
+- `preview_read_stub` — sole commit-animation read stub for `CombatDirector._finalize_planning_commit_move_event`.
+- `assign_preview_path_dict` no longer accepts `post_splits` (removed footgun).
+- `display_committed_action_route_cells` — frozen preview → `committed_action_route_leg` → plan `waypoints` only (no ability-movement heuristic fallback).
+- Hover tile faint outline only when cell is inside blue/red/yellow field (`_draw_hover_tile_on`).
+- Execution phase: no `_route` fallback draw outside planning (`_draw`).
+- **Perf deferrals retained (approved):** `_deferred_preview_pending`, `_hover_preview_lru`, `_hover_recompute_pending` — overlay batching only, not alternate preview truth.

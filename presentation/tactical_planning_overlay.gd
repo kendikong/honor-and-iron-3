@@ -1207,8 +1207,6 @@ func _draw() -> void:
 			_draw_interaction_overlay(false)
 		if _preview_committed_intents_enabled():
 			_draw_ability_intents(false)
-	elif _preview_routes_enabled() and _route.size() >= 2:
-		_draw_route_line(_route, _COLOR_ROUTE, true, true)
 	if _aiming:
 		var aim_scale: float = 0.55 / _ui_scale()
 		ClassIconDrawer.draw_icon(self, _aim_local, _aim_class_id, _COLOR_AIM, aim_scale)
@@ -1305,6 +1303,14 @@ func _draw_hover_tile_on(canvas: CanvasItem) -> void:
 			return
 		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 			return
+	var in_field: bool = (
+		_hover_move_tiles.has(_hover_coord)
+		or _hover_action_range_tiles.has(_hover_coord)
+		or _hover_blast_tiles.has(_hover_coord)
+	)
+	if not in_field:
+		_draw_hover_follow_route_on(canvas)
+		return
 	var tile_px: float = float(TacticalConstants.TILE_PX)
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var rect := Rect2(center - Vector2(tile_px * 0.5, tile_px * 0.5), Vector2(tile_px, tile_px)).grow(-2.0)
@@ -2630,46 +2636,6 @@ func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:
 	for ability: AbilityData in unit.active_abilities:
 		best = maxi(best, AbilitySystem.active_range_tiles(unit, ability))
 	return best
-
-
-func _populate_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
-	if unit.is_enemy():
-		var origins: Array[Vector2i] = _hover_move_tiles.duplicate()
-		if origins.is_empty():
-			origins.append(origin)
-		for ability: AbilityData in unit.active_abilities:
-			for src: Vector2i in origins:
-				var tiles: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
-					_board, unit, ability, src, [],
-				)
-				for tile: Vector2i in tiles:
-					if not _hover_action_range_tiles.has(tile):
-						_hover_action_range_tiles.append(tile)
-		return
-	var rng: int = _unit_attack_range(unit, selected_ability)
-	if rng <= 0:
-		if unit.id == _director.selected_unit_id and selected_ability >= 0:
-			var sel_ability: AbilityData = _selected_ability_data(unit, selected_ability)
-			if sel_ability != null:
-				_hover_action_range_tiles = AbilitySystem.planning_action_range_tiles(
-					_board, unit, sel_ability, origin, [],
-				)
-		return
-	var threat_sources: Array[Vector2i] = []
-	threat_sources.append(origin)
-	for y: int in range(_board.grid_size.y):
-		for x: int in range(_board.grid_size.x):
-			var coord := Vector2i(x, y)
-			if _hover_action_range_tiles.has(coord):
-				continue
-			for src: Vector2i in threat_sources:
-				if GridSystem.manhattan(coord, src) <= rng:
-					_hover_action_range_tiles.append(coord)
-					break
-
-
-func _add_action_range_tiles(unit: UnitState, origin: Vector2i, selected_ability: int) -> void:
-	_populate_action_range_tiles(unit, origin, selected_ability)
 
 
 func _update_hover_action_icon() -> void:

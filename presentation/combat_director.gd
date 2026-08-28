@@ -3460,8 +3460,9 @@ func _finalize_planning_commit_move_event(
 		elif moved_id == action.actor_id and not action.waypoints.is_empty():
 			path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
 		elif moved_id == action.actor_id and not _commit_intent_preview_paths.is_empty():
-			var preview_stub: CombatPlanningPreview = CombatPlanningPreview.new()
-			preview_stub.preview_paths = _commit_intent_preview_paths.duplicate(true)
+			var preview_stub: CombatPlanningPreview = CombatPlanningPreview.preview_read_stub(
+				_commit_intent_preview_paths,
+			)
 			var leg: Array = CombatPlanningPreview.committed_action_route_leg(
 				action.actor_id, preview_stub, action, from_cell,
 			)

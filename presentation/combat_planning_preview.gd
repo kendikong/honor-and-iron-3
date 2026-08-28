@@ -36,15 +36,11 @@ static func assign_preview_path_dict(
 	splits: Dictionary,
 	unit_id: int,
 	path: Array,
-	post_splits: Dictionary = {},
 ) -> void:
 	if unit_id < 0 or path.is_empty():
 		return
 	paths[unit_id] = path.duplicate()
-	var split_size: int = path.size()
-	splits[unit_id] = split_size
-	if not post_splits.is_empty():
-		post_splits[unit_id] = split_size
+	splits[unit_id] = path.size()
 
 
 static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
@@ -831,12 +827,26 @@ static func build_preview_paths(
 func copy_from(other: CombatPlanningPreview) -> void:
 	forecast = other.forecast
 	live_intents = other.live_intents.duplicate()
+	sync_route_geometry_from(other)
+
+
+## Route geometry mirror — sole bulk copy owner (promote, awaiting restore, overlay copy_from).
+func sync_route_geometry_from(other: CombatPlanningPreview) -> void:
+	if other == null:
+		return
 	preview_board = other.preview_board
 	preview_paths = other.preview_paths.duplicate(true)
 	preview_splits = other.preview_splits.duplicate()
 	preview_post_splits = other.preview_post_splits.duplicate()
 	action_splits = other.action_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)
+
+
+## Read-only preview stub for commit-animation path slicing (paths dict only).
+static func preview_read_stub(paths: Dictionary) -> CombatPlanningPreview:
+	var preview := CombatPlanningPreview.new()
+	preview.preview_paths = paths.duplicate(true)
+	return preview
 
 
 ## Committed projection board — never use move-only `director.board` for planning geometry.
@@ -1537,7 +1547,7 @@ static func display_route_cells_from_preview(
 	return frozen_move_route_cells(unit_id, preview)
 
 
-## Committed timeline chevron route — single read API (preview slice, then plan geometry).
+## Committed timeline chevron route — single read API (frozen preview, then plan waypoints).
 static func display_committed_action_route_cells(
 	unit_id: int,
 	preview: CombatPlanningPreview,
@@ -1553,17 +1563,12 @@ static func display_committed_action_route_cells(
 	)
 	if draw_route.size() >= 2:
 		return draw_route
-	var intent_cells: Array = movement_intent_cells(start_pos, action)
-	if (
-		action.ability != null
-		and AbilitySystem.ability_has_movement_effect(action.ability)
-		and action.waypoints.is_empty()
-		and intent_cells.size() <= 2
-	):
-		var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
-		if path_leg.size() >= 2:
-			return path_leg
-	return intent_cells
+	var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
+	if path_leg.size() >= 2:
+		return path_leg
+	if not action.waypoints.is_empty():
+		return movement_intent_cells(start_pos, action)
+	return []
 
 
 static func frozen_move_route_cells_from_array(route: Array) -> Array[Vector2i]:

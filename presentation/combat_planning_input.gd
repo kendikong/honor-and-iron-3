@@ -3211,11 +3211,7 @@ func _promote_intent_preview_after_commit() -> void:
 		CombatPlanningPreview.trim_committed_paths_after_slot_promote(
 			_director, committed, unit_id, fallback_board, preserve_full_route,
 		)
-	preview_state.preview_paths = committed.preview_paths.duplicate(true)
-	preview_state.preview_splits = committed.preview_splits.duplicate()
-	preview_state.preview_post_splits = committed.preview_post_splits.duplicate()
-	preview_state.preview_pushes = committed.preview_pushes.duplicate(true)
-	preview_state.preview_board = committed.preview_board
+	preview_state.sync_route_geometry_from(committed)
 	preview_state.clear_interaction()
 	_sync_intent_live_board()
 
@@ -3430,11 +3426,12 @@ func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
 					and AbilitySystem.planning_commit_flow(actor, action.ability)
 					== GameEnums.PlanningCommitFlow.AWAITING_TARGET
 				):
-					var saved_paths: Dictionary = preview_state.preview_paths.duplicate()
+					var saved_route_snapshot := CombatPlanningPreview.new()
+					saved_route_snapshot.sync_route_geometry_from(preview_state)
 					clear_awaiting_targeting()
 					_preserve_ability_selection_for_action(unit_id, action)
-					if not saved_paths.is_empty():
-						preview_state.preview_paths = saved_paths
+					if not saved_route_snapshot.preview_paths.is_empty():
+						preview_state.sync_route_geometry_from(saved_route_snapshot)
 				elif (
 					not AbilitySystem.is_run_ability(action.ability)
 					and not AbilitySystem.is_wait_ability(action.ability)
