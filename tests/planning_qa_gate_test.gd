@@ -6535,6 +6535,54 @@ static func _test_movement_module_hover_uses_route_not_target_arrow(
 			"PlanningQAGate movement_module_hover: preview route %s != commit route %s"
 			% [str(preview_route), str(committed_route)],
 		)
+	# Live production path: charge MOVE module hover must not emit diagonal target arrow.
+	var live_start := Vector2i(6, 4)
+	var live_enemy := Vector2i(8, 6)
+	var live_fix: Dictionary = BruiserFixture.wire_board(
+		live_start, live_enemy, Vector2i(-1, -1), &"bruiser_charge_strike",
+	)
+	if live_fix.is_empty():
+		failures.append("PlanningQAGate movement_module_hover live: bruiser fixture missing")
+		return
+	var live_input: CombatPlanningInput = live_fix.input
+	var live_director: CombatDirector = live_fix.director
+	var live_overlay: TacticalPlanningOverlay = live_fix.overlay
+	var live_actor: UnitState = live_fix.actor
+	if PlanningChecklistHarness.select_ability(live_fix, &"bruiser_charge_strike") < 0:
+		failures.append("PlanningQAGate movement_module_hover live: ability select failed")
+		return
+	if not _arm_awaiting_at(live_input, live_director, live_start):
+		failures.append("PlanningQAGate movement_module_hover live: MOVE module did not arm")
+		return
+	if not live_input.active_movement_planning_step(live_actor):
+		failures.append("PlanningQAGate movement_module_hover live: expected active movement step")
+		return
+	PlanningChecklistHarness.hover(live_fix, live_enemy)
+	PlanningChecklistHarness.flush_planning(live_fix)
+	if not live_input.active_movement_planning_step(live_actor):
+		failures.append(
+			"PlanningQAGate movement_module_hover live: movement step lost after enemy hover",
+		)
+		return
+	_assert_charge_strike_hover_visual_contract(
+		failures,
+		"PlanningQAGate movement_module_hover live/enemy",
+		live_overlay,
+		live_input,
+		live_actor,
+		false,
+	)
+	var move_dest := Vector2i(7, 5)
+	PlanningChecklistHarness.hover(live_fix, move_dest)
+	PlanningChecklistHarness.flush_planning(live_fix)
+	_assert_charge_strike_hover_visual_contract(
+		failures,
+		"PlanningQAGate movement_module_hover live/dest",
+		live_overlay,
+		live_input,
+		live_actor,
+		false,
+	)
 
 
 static func _test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost(failures: Array[String]) -> void:

@@ -4153,6 +4153,16 @@ func live_move_hover_rewrite_applies(p_unit: UnitState, _cell: Vector2i) -> bool
 
 
 ## Live hover corridor — preview_state only; non-move steps return frozen slice without committed bleed.
+## Painted corridor waypoints for blue move-tile extension — preview_paths SSOT, not _drag_route peek.
+func painted_corridor_waypoints_for_blue_tiles(unit_id: int) -> Array[Vector2i]:
+	if not _drag_route_commits_active() or _drag_unit_id != unit_id:
+		return []
+	var route: Array[Vector2i] = display_move_route_cells(unit_id)
+	if route.size() < 2:
+		return []
+	return route.slice(1)
+
+
 func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _director == null or unit_id < 0:
 		return []
@@ -6371,6 +6381,15 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 	var origin: Vector2i = action_range_intent_stand_cell(unit_id)
 	var attack_target_id: int = _hover_attack_target_id()
 	if attack_target_id >= 0:
+		var arrow_ability: AbilityData = sel_ability
+		if arrow_ability == null:
+			arrow_ability = _selected_ability_data(actor)
+		if arrow_ability != null and AbilitySystem.ability_has_movement_effect(arrow_ability, actor):
+			if _is_awaiting_movement_endpoint(actor, arrow_ability):
+				return cells
+			if active_movement_planning_step(actor):
+				if awaiting == null or not AbilitySystem.planning_awaiting_enemy_pick_active(actor, awaiting):
+					return cells
 		var target_coord: Vector2i = get_hover_tile_for_ui()
 		var target_unit: UnitState = _director.board.get_unit_by_id(attack_target_id)
 		if target_unit == null and preview_state.preview_board != null:

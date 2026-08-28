@@ -292,6 +292,11 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `CombatDirector._finalize_planning_commit_move_event` uses `action.waypoints` before pathfind fallback.
 - Removed dead `sync_preview_state_from_committed`, `_active_preview()`.
 
+**Pass 16 (MOVE module arrow suppression + blue-tile SSOT):**
+- `targeting_intent_arrow_cells` — `attack_target_id` branch suppresses diagonal aim arrow during MOVE leg (`_is_awaiting_movement_endpoint` or `active_movement_planning_step` without active damage enemy-pick); DAMAGE module enemy hover still draws arrow.
+- Blue move-tile extension reads `painted_corridor_waypoints_for_blue_tiles` → `display_move_route_cells` (preview_paths), not `_drag_route` peek.
+- Headless contract `movement_module_hover` extended with live charge-strike MOVE module hover (enemy + dest orbit).
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

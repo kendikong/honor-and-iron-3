@@ -1021,13 +1021,8 @@ func _apply_planning_tile_layers(
 			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
 				unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
 			)
-	if (
-		_planning_input != null
-		and _planning_input._drag_route_commits_active()
-		and _planning_input._drag_unit_id == unit.id
-	):
-		for i: int in range(1, _planning_input._drag_route.size()):
-			var painted_wp: Vector2i = _planning_input._drag_route[i] as Vector2i
+	if _planning_input != null:
+		for painted_wp: Vector2i in _planning_input.painted_corridor_waypoints_for_blue_tiles(unit.id):
 			if not _hover_move_tiles.has(painted_wp):
 				_hover_move_tiles.append(painted_wp)
 

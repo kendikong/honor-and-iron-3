@@ -4088,6 +4088,6 @@
 	},
 	"screenshot": "C:/Users/Kendy/Downloads/honor-and-iron-3/reports/bug_reports/BUG-20260824T234226-772.png",
 	"severity": "Medium",
-	"status": "ongoing",
+	"status": "fixed_headless",
 	"title": "charge strike move 2 module showing bad movepreview"
 }
