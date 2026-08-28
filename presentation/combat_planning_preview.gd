@@ -50,12 +50,12 @@ static func assign_preview_path_dict(
 static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
 	if preview == null:
 		return
+	## Post-move split index is owned by build_preview_paths (sim POST_ACTION); do not clobber on intent writes.
 	assign_preview_path_dict(
 		preview.preview_paths,
 		preview.preview_splits,
 		unit_id,
 		path,
-		preview.preview_post_splits,
 	)
 
 
@@ -241,7 +241,7 @@ static func ensure_swap_approach_paths_from_actions(
 	if route_cells.size() < 2:
 		return
 	assign_preview_path_dict(
-		preview_paths, preview_splits, actor_id, route_cells, preview_post_splits,
+		preview_paths, preview_splits, actor_id, route_cells,
 	)
 	if not action_splits.has(actor_id):
 		action_splits[actor_id] = 0
