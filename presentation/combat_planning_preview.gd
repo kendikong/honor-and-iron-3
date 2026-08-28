@@ -58,6 +58,15 @@ static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, 
 	)
 
 
+static func clear_unit_preview_path(preview: CombatPlanningPreview, unit_id: int) -> void:
+	if preview == null or unit_id < 0:
+		return
+	preview.preview_paths.erase(unit_id)
+	preview.preview_splits.erase(unit_id)
+	preview.preview_post_splits.erase(unit_id)
+	preview.clear_sealed_painted_leg(unit_id)
+
+
 func _commit_preview_path(actor_id: int, path: Array) -> void:
 	set_unit_preview_path(self, actor_id, path)
 

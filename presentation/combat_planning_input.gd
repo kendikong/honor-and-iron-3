@@ -2341,7 +2341,7 @@ func _clear_stale_painted_preview_route(unit_id: int) -> void:
 	_clear_frozen_painted_leg(unit_id)
 	if not preview_state.preview_paths.has(unit_id):
 		return
-	preview_state.preview_paths.erase(unit_id)
+	CombatPlanningPreview.clear_unit_preview_path(preview_state, unit_id)
 	if _planning != null:
 		_planning.apply_preview_paths_only(preview_state, unit_id)
 
@@ -2656,6 +2656,8 @@ const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 ## Single source for commit cell, waypoints, and approach hint — cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
+	if _drag_drop_finishing and _drag_route.size() >= 2:
+		return true
 	if dragging:
 		return true
 	if _drag_route.size() < 2:
@@ -3105,6 +3107,7 @@ func _commit_at_cell(
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
 	_suppress_post_commit_hover_refresh = true
+	_ratify_painted_route_on_commit_slots(unit_id, slots)
 	_ensure_movement_waypoints_on_commit_slots(unit_id, slots)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
 		_suppress_post_commit_hover_refresh = false
@@ -3118,6 +3121,38 @@ func _commit_at_cell(
 	_clear_hover_drag_route()
 	_clear_intent_snapshot()
 	return true
+
+
+func _ratify_painted_route_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
+	if _is_invalid_dict(slots) or unit_id < 0:
+		return
+	if not _drag_route_commits_active() and not _painted_preview_route_matches_leg(_proj_unit(unit_id)):
+		return
+	var painted: Array[Vector2i] = _route_waypoints_for_commit()
+	if painted.is_empty():
+		return
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null:
+		return
+	var dest: Vector2i = painted[painted.size() - 1]
+	for col: String in ["pre", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var act: TimelineAction = raw as TimelineAction
+			if act.type != GameEnums.ActionType.MOVE or act.actor_id != unit_id:
+				continue
+			if act.target_coord != dest:
+				continue
+			act.waypoints = painted.duplicate()
+			var needs_run: bool = AbilitySystem.movement_requires_run(_proj(), actor, dest, painted)
+			if needs_run and (_run_mode_selected(actor) or auto_run_movement_active(actor)):
+				act.uses_run = true
+			elif needs_run:
+				slots["invalid"] = "Cannot run without selecting run mode."
+				return
+			else:
+				act.uses_run = false
 
 
 func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
@@ -4093,7 +4128,7 @@ func live_move_hover_rewrite_applies(p_unit: UnitState, _cell: Vector2i) -> bool
 	return true
 
 
-## Overlay + tests — one display owner; reads preview_paths only (write path owns updates).
+## Live hover corridor — preview_state only; non-move steps return frozen slice without committed bleed.
 func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _director == null or unit_id < 0:
 		return []
@@ -4102,29 +4137,26 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return []
+	var movement_step: bool = active_movement_planning_step(actor)
+	if not movement_step:
+		return CombatPlanningPreview.display_route_cells_from_preview(
+			unit_id,
+			preview_state,
+			_director,
+			_proj(),
+			false,
+		)
 	return CombatPlanningPreview.display_route_cells_from_preview(
 		unit_id,
 		preview_state,
 		_director,
 		_proj(),
-		active_movement_planning_step(actor),
+		true,
 	)
 
 
 func clear_hover_route_preview() -> void:
 	preview_state.clear_route_geometry()
-
-
-func sync_preview_state_from_committed() -> void:
-	if _planning == null:
-		preview_state.clear_all()
-		return
-	var committed: CombatPlanningPreview = _planning.get_committed_preview()
-	if committed.preview_paths.is_empty() and committed.preview_board == null:
-		preview_state.clear_all()
-		return
-	preview_state.sync_route_paths_from(committed)
-	preview_state.clear_interaction()
 
 
 func committed_route_preview() -> CombatPlanningPreview:
@@ -4163,12 +4195,52 @@ func display_committed_move_route_leg(
 func display_frozen_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _director == null or unit_id < 0:
 		return []
-	var preview: CombatPlanningPreview = committed_route_preview()
-	if unit_id == _director.selected_unit_id:
-		var live_route: Array = preview_state.preview_paths.get(unit_id, [])
-		if live_route.size() >= 2:
-			preview = preview_state
-	return CombatPlanningPreview.frozen_move_route_cells(unit_id, preview)
+	return CombatPlanningPreview.frozen_move_route_cells(
+		unit_id, committed_route_preview(),
+	)
+
+
+func display_committed_action_route_cells(
+	unit_id: int,
+	action: TimelineAction,
+	start_pos: Vector2i,
+) -> Array:
+	if _director == null or action == null:
+		return []
+	return CombatPlanningPreview.display_committed_action_route_cells(
+		unit_id,
+		committed_route_preview(),
+		_director,
+		_proj(),
+		action,
+		start_pos,
+	)
+
+
+func display_units_with_route_preview() -> Array[int]:
+	var ids: Dictionary = {}
+	var committed: CombatPlanningPreview = committed_route_preview()
+	if committed != null:
+		for uid: Variant in committed.preview_paths.keys():
+			ids[int(uid)] = true
+	if is_live_preview_active():
+		for uid: Variant in preview_state.preview_paths.keys():
+			ids[int(uid)] = true
+	var out: Array[int] = []
+	for uid: Variant in ids.keys():
+		out.append(int(uid))
+	return out
+
+
+func preview_push_draw_sources() -> Array[CombatPlanningPreview]:
+	var sources: Array[CombatPlanningPreview] = []
+	if is_live_preview_active() and preview_state.preview_board != null:
+		sources.append(preview_state)
+	var committed: CombatPlanningPreview = committed_route_preview()
+	if committed != null and committed.preview_board != null:
+		if sources.is_empty() or sources[0] != committed:
+			sources.append(committed)
+	return sources
 
 
 func route_preview_for_push_checks() -> CombatPlanningPreview:
@@ -6487,13 +6559,18 @@ func _append_move_to_commit_slots(
 		return
 	var move_origin: Vector2i = _proj_move_origin(actor)
 
+	var trust_painted_route: bool = (
+		not waypoints.is_empty()
+		and (_drag_route_commits_active() or _painted_preview_route_matches_leg(actor))
+	)
 	# Sanitize waypoints to strip leaked ability effects (like pass-through).
-	# This ensures the UI animation exactly matches the Simulator's fallback logic.
+	# Painted preview routes are intent truth — never replace with find_path on commit.
 	var is_valid_basic_path := true
-	for step in waypoints:
-		if not MovementSystem._is_walkable_for(_proj(), step, actor, null):
-			is_valid_basic_path = false
-			break
+	if not trust_painted_route:
+		for step in waypoints:
+			if not MovementSystem._is_walkable_for(_proj(), step, actor, null):
+				is_valid_basic_path = false
+				break
 			
 	var safe_waypoints: Array[Vector2i] = waypoints
 	if not is_valid_basic_path:

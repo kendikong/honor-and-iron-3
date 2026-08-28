@@ -282,6 +282,16 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Overlay `_route` storage removed; drag SSOT is `CombatPlanningInput._drag_route`.
 - `action_range_visible_for_hover` documented as economy gate (below).
 
+**Pass 15 (display read APIs + commit ratify):**
+- `CombatPlanningInput.display_committed_action_route_cells`, `display_units_with_route_preview`, `preview_push_draw_sources` — overlay reads routes/pushes through input only.
+- `display_frozen_route_cells` always reads committed preview (no live bleed on other-unit dashed routes).
+- `display_move_route_cells` gates live corridor to `active_movement_planning_step` only.
+- `CombatPlanningPreview.clear_unit_preview_path` — single erase owner for stale painted routes.
+- `_skip_committed_move_leg_draw` only hides frozen legs during active movement step (frozen visible on DAMAGE/targeting).
+- `_drag_route_commits_active` includes `_drag_drop_finishing`; `_ratify_painted_route_on_commit_slots` + painted-route trust in `_append_move_to_commit_slots` — commit ratifies preview waypoints/run (no silent `find_path`).
+- `CombatDirector._finalize_planning_commit_move_event` uses `action.waypoints` before pathfind fallback.
+- Removed dead `sync_preview_state_from_committed`, `_active_preview()`.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

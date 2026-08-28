@@ -1362,11 +1362,8 @@ func _draw_ability_intents(flowing: bool) -> void:
 			if start_pos == dest_pos:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			var draw_route: Array = CombatPlanningPreview.display_committed_action_route_cells(
+			var draw_route: Array = _planning_input.display_committed_action_route_cells(
 				draw_action.actor_id,
-				_committed_preview,
-				_director,
-				_board,
 				draw_action,
 				start_pos,
 			)
@@ -1465,27 +1462,6 @@ func _display_intent_list() -> Array:
 	if _board != null:
 		return _board.intents
 	return []
-
-
-func _active_preview() -> CombatPlanningPreview:
-	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
-		return _committed_preview
-	if _planning_input != null:
-		var use_live: bool = (
-			_planning_input.dragging
-			or (
-				_planning_input.live_sim_matches_hover()
-				and (
-					_planning_input.skill_interaction_active()
-					or _planning_input.aiming
-					or _planning_input.run_mode_selected()
-					or _planning_input.is_live_preview_active()
-				)
-			)
-		)
-		if use_live and _live_preview.preview_board != null:
-			return _live_preview
-	return _committed_preview
 
 
 func _should_draw_interaction_overlay() -> bool:
@@ -1799,23 +1775,9 @@ func _draw_forced_movement_arrows() -> void:
 		return
 	if not _should_draw_forced_movement_arrows():
 		return
-	var sources: Array[CombatPlanningPreview] = []
-	if (
-		_live_preview.preview_board != null
-		and (_planning_input == null or _planning_input.dragging or _planning_input.live_sim_matches_hover())
-	):
-		sources.append(_live_preview)
-	if (
-		_committed_preview.preview_board != null
-		and _committed_preview != _live_preview
-		and (
-			_planning_input == null
-			or not _planning_input.is_live_preview_active()
-		)
-	):
-		sources.append(_committed_preview)
-	if sources.is_empty() and _committed_preview.preview_board != null:
-		sources.append(_committed_preview)
+	if _planning_input == null:
+		return
+	var sources: Array[CombatPlanningPreview] = _planning_input.preview_push_draw_sources()
 	var drawn: Dictionary = {}
 	for prev: CombatPlanningPreview in sources:
 		if prev.preview_board == null:
@@ -1851,6 +1813,13 @@ func _interaction_move_hover_active(unit_id: int) -> bool:
 
 func _skip_committed_move_leg_draw(unit_id: int, leg_timing: int) -> bool:
 	if _director == null or _planning_input == null or unit_id != _director.selected_unit_id:
+		return false
+	var actor: UnitState = null
+	if _board != null:
+		actor = _board.get_unit_by_id(unit_id)
+	if actor == null and _director.base_board != null:
+		actor = _director.base_board.get_unit_by_id(unit_id)
+	if actor == null or not _planning_input.active_movement_planning_step(actor):
 		return false
 	## Post committed leg hides during any move drag/hover (legacy overlay behavior).
 	if leg_timing == GameEnums.MoveTiming.POST_ACTION:
@@ -1953,14 +1922,13 @@ func _draw_interaction_overlay(flowing: bool) -> void:
 		and _planning_input.is_live_preview_active()
 		and not _planning_input.drag_preview_failed
 	):
-		for other_id: Variant in _planning_input.preview_state.preview_paths.keys():
-			var other_unit_id: int = int(other_id)
-			if other_unit_id == actor.id:
+		for other_id: int in _planning_input.display_units_with_route_preview():
+			if other_id == actor.id:
 				continue
-			var other_route: Array[Vector2i] = _planning_input.display_frozen_route_cells(other_unit_id)
+			var other_route: Array[Vector2i] = _planning_input.display_frozen_route_cells(other_id)
 			if other_route.size() < 2:
 				continue
-			var other_unit: UnitState = _board.get_unit_by_id(other_unit_id) if _board != null else null
+			var other_unit: UnitState = _board.get_unit_by_id(other_id) if _board != null else null
 			var other_col: Color = (
 				_player_color_for_unit(other_unit)
 				if other_unit != null

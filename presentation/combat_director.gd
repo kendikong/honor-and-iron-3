@@ -3480,6 +3480,9 @@ func _finalize_planning_commit_move_event(
 						if _planning_path_is_tile_walk(built, from_cell, to_cell):
 							path_cells = built
 		if path_cells.size() < 2:
+			if moved_id == action.actor_id and not action.waypoints.is_empty():
+				path_cells = CombatPlanningPreview.movement_intent_cells(from_cell, action)
+		if path_cells.size() < 2:
 			path_cells = [from_cell]
 			var found: Array[Vector2i] = MovementSystem.find_path(
 				before_board, from_cell, to_cell, moved.movement.points_left,
