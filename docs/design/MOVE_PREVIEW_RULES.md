@@ -314,6 +314,14 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `_ensure_move_waypoints_on_commit_slots` — MOVE slots filled via `_resolve_commit_move_waypoints` before commit.
 - `CombatDirector._finalize_planning_commit_move_event` — no `find_path` or adjacent-step invent; replays `action.waypoints` only.
 
+**Pass 19 (MOVE preview SSOT unification — 2026-08-27):**
+- `_assemble_voluntary_walk_preview_path` + `_write_movement_hover_preview_paths` — PRE / MOVE module / POST share one stand→hover assembler (forbidden trim); post-only write block removed.
+- `_try_commit_voluntary_walk` — sole voluntary-walk commit entry; post early exit and general premove branch both delegate here.
+- `_route_waypoints_for_commit` — delegates to `_resolve_commit_move_waypoints` (leg slice, never full preview tail).
+- `_finish_movement_hover_preview_after_sim` — sequenced tail of `_refresh_hover_interaction_preview` (replaces parallel `_sync_movement_preview_after_hover_sim` callers).
+- Drag illegal walk: `_sanitize_drag_route_context` corrects via `find_path` to painted destination when the leg is illegal, else trims tail (no commit-time invent).
+- `_can_move_to` — legality probe only (`find_path` + forbidden trim); preview paint uses `_assemble_voluntary_walk_preview_path`.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

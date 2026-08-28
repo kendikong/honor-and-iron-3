@@ -238,14 +238,7 @@ static func ensure_swap_approach_paths_from_actions(
 		):
 			route_cells = movement_intent_cells(origin, move_action)
 		else:
-			var budget: int = actor.movement.points_left
-			var found: Array[Vector2i] = MovementSystem.find_path(
-				start_board, origin, walk_dest, budget,
-			)
-			if not found.is_empty():
-				route_cells.append_array(found)
-			elif GridSystem.manhattan(origin, walk_dest) == 1:
-				route_cells.append(walk_dest)
+			route_cells = corridor_route_cells(start_board, actor, origin, walk_dest)
 	if route_cells.size() < 2:
 		return
 	assign_preview_path_dict(
@@ -528,13 +521,10 @@ func ensure_movement_intent_from_actions(
 				var route_cells: Array = movement_intent_cells(move_origin, action)
 				if route_cells.size() < 2 and path_board != null:
 					var actor: UnitState = path_board.get_unit_by_id(action.actor_id)
-					var budget: int = actor.movement.points_left if actor != null else 999
-					var found: Array[Vector2i] = MovementSystem.find_path(
-						path_board, move_origin, action.target_coord, budget,
-					)
-					if not found.is_empty():
-						route_cells = [move_origin]
-						route_cells.append_array(found)
+					if actor != null:
+						route_cells = corridor_route_cells(
+							path_board, actor, move_origin, action.target_coord, action.ability, director,
+						)
 				if route_cells.size() >= 2:
 					var anchor_idx: int = _last_route_index(existing, move_origin)
 					if anchor_idx >= 0:
@@ -573,14 +563,9 @@ func ensure_movement_intent_from_actions(
 					walk_origin = walker.position
 				var route_cells: Array = [walk_origin]
 				if approach != walk_origin:
-					var budget: int = walker.movement.points_left if walker != null else 999
-					var found: Array[Vector2i] = MovementSystem.find_path(
-						swap_board, walk_origin, approach, budget,
+					route_cells = corridor_route_cells(
+						swap_board, walker, walk_origin, approach, action.ability, director,
 					)
-					if not found.is_empty():
-						route_cells.append_array(found)
-					elif GridSystem.manhattan(walk_origin, approach) == 1:
-						route_cells.append(approach)
 				if route_cells.size() >= 2:
 					_commit_preview_path(action.actor_id, route_cells)
 			else:
@@ -594,14 +579,9 @@ func ensure_movement_intent_from_actions(
 						walk_origin2 = walker2.position
 					var route2: Array = [walk_origin2]
 					if approach != walk_origin2:
-						var budget2: int = walker2.movement.points_left if walker2 != null else 999
-						var found2: Array[Vector2i] = MovementSystem.find_path(
-							swap_board2, walk_origin2, approach, budget2,
+						route2 = corridor_route_cells(
+							swap_board2, walker2, walk_origin2, approach, action.ability, director,
 						)
-						if not found2.is_empty():
-							route2.append_array(found2)
-						elif GridSystem.manhattan(walk_origin2, approach) == 1:
-							route2.append(approach)
 					if route2.size() >= 2:
 						_commit_preview_path(action.actor_id, route2)
 			origins[action.actor_id] = action.target_coord
@@ -1343,16 +1323,6 @@ static func corridor_waypoints_to_cell(
 		ability,
 	)
 	if corridor.is_empty():
-		corridor = MovementSystem.find_path(
-			board,
-			origin,
-			target,
-			budget,
-			movement_type,
-			move_cost,
-			ability,
-		)
-	if corridor.is_empty():
 		return []
 	if director != null and unit_id >= 0:
 		var route: Array = [origin]
@@ -1361,6 +1331,32 @@ static func corridor_waypoints_to_cell(
 		if route_touches_forbidden(route, forbidden):
 			return []
 	return corridor
+
+
+## Full route cells (origin + corridor) for committed/sim rebuild — corridor only, no pathfind invent.
+static func corridor_route_cells(
+	board: BoardState,
+	unit: UnitState,
+	origin: Vector2i,
+	target: Vector2i,
+	ability: AbilityData = null,
+	director: CombatDirector = null,
+) -> Array:
+	if board == null or unit == null:
+		return []
+	if origin == target:
+		return [origin]
+	var budget: int = unit.movement.points_left
+	var wps: Array[Vector2i] = corridor_waypoints_to_cell(
+		board, unit, origin, target, budget, ability, director, unit.id,
+	)
+	if wps.is_empty():
+		if GridSystem.manhattan(origin, target) == 1:
+			return [origin, target]
+		return []
+	var route: Array = [origin]
+	route.append_array(wps)
+	return route
 
 
 ## Tiles from earlier committed legs that must not reappear on the active leg preview.
