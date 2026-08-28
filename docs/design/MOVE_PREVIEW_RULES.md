@@ -310,7 +310,8 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 
 **Pass 18 (remove commit-time pathfind band-aids):**
 - `_append_move_to_commit_slots` — no `find_path` rewrite; invalid or empty waypoints → `slots["invalid"]` (fail loud).
-- `_ensure_move_waypoints_on_commit_slots` — MOVE slots get waypoints from painted preview / corridor builder before commit (same geometry as hover).
+- `_resolve_commit_move_waypoints` — sole commit leg resolver: drag route, `destination_cells_from_route(preview, stand, dest)`, or corridor builder (never full stale preview tail).
+- `_ensure_move_waypoints_on_commit_slots` — MOVE slots filled via `_resolve_commit_move_waypoints` before commit.
 - `CombatDirector._finalize_planning_commit_move_event` — no `find_path` or adjacent-step invent; replays `action.waypoints` only.
 
 ### Action-range economy gate

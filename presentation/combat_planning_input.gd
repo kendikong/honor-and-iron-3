@@ -3202,23 +3202,11 @@ func _ensure_move_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> 
 			var dest: Vector2i = act.target_coord
 			if dest == _proj_move_origin(actor):
 				continue
-			var from_preview: Array[Vector2i] = _route_waypoints_for_commit()
-			if not from_preview.is_empty() and from_preview.back() == dest:
-				act.waypoints = from_preview.duplicate()
-				continue
-			var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
-			if painted_path.size() >= 2:
-				var from_paths: Array[Vector2i] = []
-				for i: int in range(1, painted_path.size()):
-					from_paths.append(painted_path[i] as Vector2i)
-				if not from_paths.is_empty() and from_paths.back() == dest:
-					act.waypoints = from_paths
-					continue
-			var corridor: Array[Vector2i] = _corridor_waypoints_to_cell(actor, dest)
-			if corridor.is_empty() or corridor.back() != dest:
+			var leg: Array[Vector2i] = _resolve_commit_move_waypoints(unit_id, actor, dest)
+			if leg.is_empty() or leg.back() != dest:
 				slots["invalid"] = "Move requires preview waypoints."
 				return
-			act.waypoints = corridor
+			act.waypoints = leg
 
 
 func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> void:
@@ -4962,6 +4950,27 @@ func _route_waypoints_for_commit() -> Array[Vector2i]:
 	return []
 
 
+## Commit MOVE waypoints — leg from latest stand to destination only (never full stale preview tail).
+func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
+	if actor == null or _director == null:
+		return []
+	var move_origin: Vector2i = _proj_move_origin(actor)
+	if cell == move_origin:
+		return []
+	if _drag_route.size() >= 2:
+		var drag_wps: Array[Vector2i] = _route_waypoints()
+		if not drag_wps.is_empty() and drag_wps.back() == cell:
+			return drag_wps
+	var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
+	if painted_path.size() >= 2:
+		var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+			painted_path, move_origin, cell,
+		)
+		if not leg.is_empty() and leg.back() == cell:
+			return leg
+	return _corridor_waypoints_to_cell(actor, cell)
+
+
 ## Global corridor paint: premove and MOVE module legs share MovementSystem + forbidden trim.
 func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
@@ -6654,20 +6663,7 @@ func _append_move_to_commit_slots(
 
 	var safe_waypoints: Array[Vector2i] = waypoints.duplicate()
 	if safe_waypoints.is_empty() and cell != move_origin:
-		var from_preview: Array[Vector2i] = _route_waypoints_for_commit()
-		if not from_preview.is_empty() and from_preview.back() == cell:
-			safe_waypoints = from_preview
-		if safe_waypoints.is_empty():
-			var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
-			if painted_path.size() >= 2:
-				for i: int in range(1, painted_path.size()):
-					var step: Vector2i = painted_path[i] as Vector2i
-					if safe_waypoints.is_empty() or safe_waypoints.back() != step:
-						safe_waypoints.append(step)
-				if not safe_waypoints.is_empty() and safe_waypoints.back() != cell:
-					safe_waypoints.clear()
-		if safe_waypoints.is_empty():
-			safe_waypoints = _corridor_waypoints_to_cell(actor, cell)
+		safe_waypoints = _resolve_commit_move_waypoints(unit_id, actor, cell)
 		if safe_waypoints.is_empty():
 			slots["invalid"] = "Move requires preview waypoints."
 			return
