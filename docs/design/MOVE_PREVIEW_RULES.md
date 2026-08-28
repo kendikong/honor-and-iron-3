@@ -201,12 +201,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 |---------|--------|
 | Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
 | Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
-| Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` via `_write_movement_hover_preview_paths` when `live_move_hover_rewrite_applies` |
-| Painted drag → `preview_paths` | `CombatPlanningInput._sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
-| Sim / commit path merge | `CombatPlanningPreview.apply_result` — `authoritative_paths` restore + `skip_path_merge` in `ensure_movement_intent_from_actions`; anchor skipped for authoritative actor |
+| Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` → `CombatPlanningPreview.set_unit_preview_path` |
+| Painted drag → `preview_paths` | `_sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
+| Sim / commit path merge | `apply_result`: `build_preview_paths` (sim events) + `ensure_movement_intent_from_actions` via `_commit_preview_path`; hover authoritative restore via `authoritative_paths` |
 | Movement-step authority gate | `CombatPlanningInput._movement_hover_path_authoritative` |
 | Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
-| Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` via `CombatPlanningInput.display_move_route_cells` |
+| Path display (read) | `CombatPlanningPreview.display_route_cells_from_preview` / `display_committed_action_route_cells` via `CombatPlanningInput.display_move_route_cells` |
 | Path data store | `CombatPlanningPreview.preview_paths` |
 | Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
 | Action-range stand (aim origin) | `CombatPlanningInput.action_range_intent_stand_cell` (overlay `_intent_stand_origin` delegates) |
@@ -215,15 +215,15 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 ### Architecture audit (2026-08-26 pass 5)
 
 **Write paths (honest):**
-- Live hover/drag/stand-stub (input): `_set_preview_path` → `set_unit_preview_path` + mandatory overlay sync.
-- Sim timeline merge (preview): `apply_result` → `build_preview_paths` + `ensure_movement_intent_from_actions` with `skip_path_merge` for authoritative actors; `anchor_preview_paths_to_latest_stand` only when not authoritative.
-- Post-commit promote trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` on committed snapshot only.
-- Committed promote copy: `preview_state.preview_paths = committed.preview_paths.duplicate` after promote (display sync, not route calculation).
-- Overlay display copy: `apply_preview_paths_only` mirrors input `preview_state` into `_live_preview` (not a route calculator).
+- Live hover/drag/stand-stub (input): `_set_preview_path` → `set_unit_preview_path` + overlay sync.
+- Intent/swap/anchor merge (preview): `_commit_preview_path` → `set_unit_preview_path` only.
+- Sim timeline (preview): `build_preview_paths` from `UNIT_MOVED` events (rebuilds dict; not hover intent).
+- Post-commit trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` → `set_unit_preview_path`.
+- Overlay mirror: `apply_preview_paths_only` → `set_unit_preview_path` on `_live_preview`.
 
 **Read paths:**
 - On-screen walk routes (live + frozen committed preview): `display_move_route_cells` → `display_route_cells_from_preview`.
-- Committed timeline chevrons: same read API first; `movement_intent_cells` fallback only when preview has no route.
+- Committed timeline chevrons: `display_committed_action_route_cells` only.
 
 **Removed parallel paths (pass 5):**
 - Overlay hover tile cache keyed on `_intent_stand_origin` (stale two-range risk).
@@ -252,3 +252,9 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `CombatPlanningInput.targeting_intent_arrow_cells` — one enemy-pick append path; `_awaiting_ability_for` / `_awaiting_action_for` / `_awaiting_permits_hover_unit_target` replace inline phase branches in `_resolve_hover_attack_target`.
 - Overlay `targeting_intent_arrow_cells` delegates to input; movement-endpoint ghosts use `awaiting_movement_endpoint_ghost_visible` (not `action_range_visible_for_hover`).
 - Removed `presentation/*.gd.wip` scratch copies.
+
+**Pass 12 (path write / read closure):**
+- `assign_preview_path_dict` + `set_unit_preview_path` — sole assign API for intent/anchor/swap merge writes (`_commit_preview_path` in preview).
+- `build_preview_paths` remains sim-event builder only (clears + rebuilds from `UNIT_MOVED` events).
+- `display_committed_action_route_cells` — sole committed chevron read (overlay no longer chains `movement_intent_cells` locally).
+- `apply_preview_paths_only` mirrors via `set_unit_preview_path` (no direct `_live_preview.preview_paths[…]` write).

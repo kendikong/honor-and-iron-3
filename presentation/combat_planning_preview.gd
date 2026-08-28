@@ -31,13 +31,36 @@ func clear_all() -> void:
 	live_intents.clear()
 
 
-static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
-	if preview == null or unit_id < 0 or path.is_empty():
+static func assign_preview_path_dict(
+	paths: Dictionary,
+	splits: Dictionary,
+	unit_id: int,
+	path: Array,
+	post_splits: Dictionary = {},
+) -> void:
+	if unit_id < 0 or path.is_empty():
 		return
-	preview.preview_paths[unit_id] = path.duplicate()
+	paths[unit_id] = path.duplicate()
 	var split_size: int = path.size()
-	preview.preview_splits[unit_id] = split_size
-	preview.preview_post_splits[unit_id] = split_size
+	splits[unit_id] = split_size
+	if not post_splits.is_empty():
+		post_splits[unit_id] = split_size
+
+
+static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
+	if preview == null:
+		return
+	assign_preview_path_dict(
+		preview.preview_paths,
+		preview.preview_splits,
+		unit_id,
+		path,
+		preview.preview_post_splits,
+	)
+
+
+func _commit_preview_path(actor_id: int, path: Array) -> void:
+	set_unit_preview_path(self, actor_id, path)
 
 
 func apply_result(
@@ -105,7 +128,13 @@ func apply_result(
 					director, self, director.selected_unit_id, path_init_board,
 				)
 		ensure_swap_approach_paths_from_actions(
-			actions_v as Array, path_init_board, preview_paths, preview_splits, action_splits, director,
+			actions_v as Array,
+			path_init_board,
+			preview_paths,
+			preview_splits,
+			preview_post_splits,
+			action_splits,
+			director,
 		)
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
@@ -131,6 +160,7 @@ static func ensure_swap_approach_paths_from_actions(
 	start_board: BoardState,
 	preview_paths: Dictionary,
 	preview_splits: Dictionary,
+	preview_post_splits: Dictionary,
 	action_splits: Dictionary,
 	director: CombatDirector = null,
 ) -> void:
@@ -210,8 +240,9 @@ static func ensure_swap_approach_paths_from_actions(
 				route_cells.append(walk_dest)
 	if route_cells.size() < 2:
 		return
-	preview_paths[actor_id] = route_cells
-	preview_splits[actor_id] = route_cells.size()
+	assign_preview_path_dict(
+		preview_paths, preview_splits, actor_id, route_cells, preview_post_splits,
+	)
 	if not action_splits.has(actor_id):
 		action_splits[actor_id] = 0
 
@@ -504,11 +535,9 @@ func ensure_movement_intent_from_actions(
 							merged.append_array(route_cells.slice(1))
 						else:
 							merged.append_array(route_cells)
-						preview_paths[action.actor_id] = merged
-						preview_splits[action.actor_id] = merged.size()
+						_commit_preview_path(action.actor_id, merged)
 					else:
-						preview_paths[action.actor_id] = route_cells
-						preview_splits[action.actor_id] = route_cells.size()
+						_commit_preview_path(action.actor_id, route_cells)
 					if not action_splits.has(action.actor_id):
 						action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
@@ -526,8 +555,7 @@ func ensure_movement_intent_from_actions(
 			if move_actors.get(action.actor_id, false):
 				var planned_route: Array = movement_intents.get(action.actor_id, [])
 				if planned_route.size() >= 2:
-					preview_paths[action.actor_id] = planned_route
-					preview_splits[action.actor_id] = planned_route.size()
+					_commit_preview_path(action.actor_id, planned_route)
 					origins[action.actor_id] = action.target_coord
 					continue
 				var swap_board: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
@@ -546,8 +574,7 @@ func ensure_movement_intent_from_actions(
 					elif GridSystem.manhattan(walk_origin, approach) == 1:
 						route_cells.append(approach)
 				if route_cells.size() >= 2:
-					preview_paths[action.actor_id] = route_cells
-					preview_splits[action.actor_id] = route_cells.size()
+					_commit_preview_path(action.actor_id, route_cells)
 			else:
 				var inferred: Vector2i = _swap_approach_cell(director, start_board, action)
 				if inferred.x > -900000:
@@ -568,8 +595,7 @@ func ensure_movement_intent_from_actions(
 						elif GridSystem.manhattan(walk_origin2, approach) == 1:
 							route2.append(approach)
 					if route2.size() >= 2:
-						preview_paths[action.actor_id] = route2
-						preview_splits[action.actor_id] = route2.size()
+						_commit_preview_path(action.actor_id, route2)
 			origins[action.actor_id] = action.target_coord
 			continue
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
@@ -578,8 +604,7 @@ func ensure_movement_intent_from_actions(
 		var relocation_actor: UnitState = start_board.get_unit_by_id(action.actor_id)
 		if AbilitySystem.ability_uses_direct_relocation(action.ability, relocation_actor):
 			var hop: Array = [origin, action.target_coord]
-			preview_paths[action.actor_id] = hop
-			preview_splits[action.actor_id] = hop.size()
+			_commit_preview_path(action.actor_id, hop)
 			if not action_splits.has(action.actor_id):
 				action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
@@ -597,18 +622,18 @@ func ensure_movement_intent_from_actions(
 			):
 				var combined: Array = existing.duplicate()
 				combined.append_array(intent.slice(1))
-				preview_paths[action.actor_id] = combined
-				preview_splits[action.actor_id] = combined.size()
+				_commit_preview_path(action.actor_id, combined)
 				if not action_splits.has(action.actor_id):
 					action_splits[action.actor_id] = 0
 				origins[action.actor_id] = action.target_coord
 				continue
 			if existing.size() > intent.size():
-				preview_paths[action.actor_id] = _splice_waypoint_action_leg(existing, origin, action)
-				preview_splits[action.actor_id] = (preview_paths[action.actor_id] as Array).size()
+				_commit_preview_path(
+					action.actor_id,
+					_splice_waypoint_action_leg(existing, origin, action),
+				)
 			else:
-				preview_paths[action.actor_id] = intent
-				preview_splits[action.actor_id] = intent.size()
+				_commit_preview_path(action.actor_id, intent)
 			if not action_splits.has(action.actor_id):
 				action_splits[action.actor_id] = 0
 			origins[action.actor_id] = action.target_coord
@@ -625,8 +650,7 @@ func ensure_movement_intent_from_actions(
 			## Sim path (e.g. L-shaped trample + post-move tail) beats straight intent geometry.
 			if existing.size() > intent.size():
 				continue
-		preview_paths[action.actor_id] = intent
-		preview_splits[action.actor_id] = intent.size()
+		_commit_preview_path(action.actor_id, intent)
 		if not action_splits.has(action.actor_id):
 			action_splits[action.actor_id] = 0
 		origins[action.actor_id] = action.target_coord
@@ -1366,16 +1390,13 @@ static func anchor_preview_paths_to_latest_stand(
 		return
 	var route: Array = preview.preview_paths.get(unit_id, [])
 	if route.is_empty():
-		preview.preview_paths[unit_id] = [stand]
+		set_unit_preview_path(preview, unit_id, [stand])
 	else:
 		var start_idx: int = _last_route_index(route, stand)
 		if start_idx >= 0:
-			preview.preview_paths[unit_id] = route.slice(start_idx)
+			set_unit_preview_path(preview, unit_id, route.slice(start_idx))
 		else:
-			preview.preview_paths[unit_id] = [stand]
-	var anchored: Array = preview.preview_paths.get(unit_id, [])
-	preview.preview_splits[unit_id] = anchored.size()
-	preview.preview_post_splits[unit_id] = anchored.size()
+			set_unit_preview_path(preview, unit_id, [stand])
 
 
 ## Post-commit ratify trim — sole caller after slot promote (not sim apply_result merge).
@@ -1514,6 +1535,35 @@ static func display_route_cells_from_preview(
 			return frozen_move_route_cells_from_array(leg)
 		return frozen_move_route_cells_from_array(preview.preview_paths.get(unit_id, []))
 	return frozen_move_route_cells(unit_id, preview)
+
+
+## Committed timeline chevron route — single read API (preview slice, then plan geometry).
+static func display_committed_action_route_cells(
+	unit_id: int,
+	preview: CombatPlanningPreview,
+	director: CombatDirector,
+	board: BoardState,
+	action: TimelineAction,
+	start_pos: Vector2i,
+) -> Array:
+	if action == null:
+		return []
+	var draw_route: Array = display_route_cells_from_preview(
+		unit_id, preview, director, board, false,
+	)
+	if draw_route.size() >= 2:
+		return draw_route
+	var intent_cells: Array = movement_intent_cells(start_pos, action)
+	if (
+		action.ability != null
+		and AbilitySystem.ability_has_movement_effect(action.ability)
+		and action.waypoints.is_empty()
+		and intent_cells.size() <= 2
+	):
+		var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
+		if path_leg.size() >= 2:
+			return path_leg
+	return intent_cells
 
 
 static func frozen_move_route_cells_from_array(route: Array) -> Array[Vector2i]:

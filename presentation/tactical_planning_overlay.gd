@@ -730,11 +730,7 @@ func apply_preview_paths_only(state: CombatPlanningPreview, unit_id: int) -> voi
 	var path: Array = state.preview_paths.get(unit_id, [])
 	if path.is_empty():
 		return
-	_live_preview.preview_paths[unit_id] = path.duplicate()
-	if state.preview_splits.has(unit_id):
-		_live_preview.preview_splits[unit_id] = state.preview_splits[unit_id]
-	if state.preview_post_splits.has(unit_id):
-		_live_preview.preview_post_splits[unit_id] = state.preview_post_splits[unit_id]
+	CombatPlanningPreview.set_unit_preview_path(_live_preview, unit_id, path)
 	_queue_hover_tile_redraw()
 	_queue_overlay_redraw()
 
@@ -1350,29 +1346,14 @@ func _draw_ability_intents(flowing: bool) -> void:
 			if start_pos == dest_pos:
 				continue
 			var p_col: Color = _player_color_for_unit(actor)
-			var draw_route: Array = CombatPlanningPreview.display_route_cells_from_preview(
+			var draw_route: Array = CombatPlanningPreview.display_committed_action_route_cells(
 				draw_action.actor_id,
 				_committed_preview,
 				_director,
 				_board,
-				false,
+				draw_action,
+				start_pos,
 			)
-			if draw_route.size() < 2:
-				var intent_cells: Array = CombatPlanningPreview.movement_intent_cells(
-					start_pos, draw_action,
-				)
-				draw_route = intent_cells
-				if (
-					draw_action.ability != null
-					and AbilitySystem.ability_has_movement_effect(draw_action.ability)
-					and draw_action.waypoints.is_empty()
-					and intent_cells.size() <= 2
-				):
-					var path_leg: Array = CombatPlanningPreview.committed_action_route_leg(
-						draw_action.actor_id, _committed_preview, draw_action, start_pos,
-					)
-					if path_leg.size() >= 2:
-						draw_route = path_leg
 			if draw_route.size() >= 2:
 				var from_cell: Vector2i = draw_route[0] as Vector2i
 				var to_cell: Vector2i = draw_route[draw_route.size() - 1] as Vector2i
