@@ -210,7 +210,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Path data store | `CombatPlanningPreview.preview_paths` |
 | Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
 | Action-range stand (aim origin) | `CombatPlanningInput.action_range_intent_stand_cell` (overlay `_intent_stand_origin` delegates) |
-| Targeting intent arrow (live hover) | `TacticalPlanningOverlay.targeting_intent_arrow_cells` |
+| Targeting intent arrow (live hover) | `CombatPlanningInput.targeting_intent_arrow_cells` (overlay delegates) |
 
 ### Architecture audit (2026-08-26 pass 5)
 
@@ -246,3 +246,9 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Removed `_can_show_action_range_tiles` (blast gated only by `resolve_layer_origins` `show_blast`).
 - Post-commit path trim: `trim_committed_paths_after_slot_promote` only (no preview_state anchor before copy).
 - Hover tile recompute: `set_hover_coord` only; `_run_hover_overlay_refresh` no longer duplicates.
+
+**Pass 11 (awaiting / arrow SSOT):**
+- `AbilitySystem.planning_awaiting_enemy_pick_active`, `planning_awaiting_target_pick_open`, `planning_modular_post_move_open` — single awaiting-module resolution for hover target, arrows, post-move open.
+- `CombatPlanningInput.targeting_intent_arrow_cells` — one enemy-pick append path; `_awaiting_ability_for` / `_awaiting_action_for` / `_awaiting_permits_hover_unit_target` replace inline phase branches in `_resolve_hover_attack_target`.
+- Overlay `targeting_intent_arrow_cells` delegates to input; movement-endpoint ghosts use `awaiting_movement_endpoint_ghost_visible` (not `action_range_visible_for_hover`).
+- Removed `presentation/*.gd.wip` scratch copies.

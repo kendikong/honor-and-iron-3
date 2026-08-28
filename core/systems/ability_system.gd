@@ -2161,6 +2161,46 @@ static func planning_open_enemy_awaiting_pick(
 	return open_pick
 
 
+## True when awaiting flow is on an open ENEMY pick (TARGET_PICK or GENERIC).
+static func planning_awaiting_enemy_pick_active(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> bool:
+	return not planning_open_enemy_awaiting_pick(actor, awaiting).is_empty()
+
+
+## True when awaiting flow promotes to an open TARGET_PICK module.
+static func planning_awaiting_target_pick_open(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> bool:
+	var open_pick: Dictionary = planning_resolve_open_awaiting_pick(actor, awaiting)
+	if open_pick.is_empty():
+		return false
+	return (
+		open_pick.get("phase", GameEnums.PlanningAwaitingPhase.GENERIC)
+		== GameEnums.PlanningAwaitingPhase.TARGET_PICK
+	)
+
+
+## True when a committed modular MOVE prefix finished and play is on a later module.
+static func planning_modular_post_move_open(
+	actor: UnitState,
+	awaiting: TimelineAction,
+) -> bool:
+	if awaiting == null or awaiting.ability == null:
+		return false
+	if planning_committed_prefix(awaiting) == null:
+		return false
+	var open_pick: Dictionary = planning_resolve_open_awaiting_pick(actor, awaiting)
+	if open_pick.is_empty():
+		return false
+	return (
+		open_pick.get("phase", GameEnums.PlanningAwaitingPhase.GENERIC)
+		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	)
+
+
 static func planning_awaiting_endpoint_range(
 	ability: AbilityData,
 	actor: UnitState = null,

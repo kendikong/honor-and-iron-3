@@ -2563,6 +2563,35 @@ func _apply_hover_preview_from_result(
 		_hover_preview_cache_key = ""
 
 
+func _awaiting_action_for(actor: UnitState) -> TimelineAction:
+	if _director == null or actor == null:
+		return null
+	return _director.find_awaiting_action(actor.id)
+
+
+func _awaiting_ability_for(actor: UnitState) -> AbilityData:
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability != null:
+		return ability
+	var awaiting: TimelineAction = _awaiting_action_for(actor)
+	if awaiting != null:
+		return awaiting.ability
+	return null
+
+
+func _awaiting_permits_hover_unit_target(actor: UnitState, hover_unit: UnitState) -> bool:
+	if actor == null or hover_unit == null:
+		return false
+	var awaiting: TimelineAction = _awaiting_action_for(actor)
+	if awaiting == null:
+		return false
+	if AbilitySystem.planning_awaiting_enemy_pick_active(actor, awaiting):
+		return _can_target_unit_with_selected_ability(actor, hover_unit)
+	if AbilitySystem.planning_awaiting_target_pick_open(actor, awaiting):
+		return _can_target_unit_with_selected_ability(actor, hover_unit)
+	return false
+
+
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
 	if _skill_interaction_active() or aiming:
 		if hover_unit.id == p_unit.id:
@@ -2576,31 +2605,10 @@ func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> i
 				return -1
 			return p_unit.id
 		if hover_unit.is_enemy():
-			var ability := _selected_ability_data(p_unit)
-			if ability == null and _director != null:
-				var awaiting_pick: TimelineAction = _director.find_awaiting_action(p_unit.id)
-				if awaiting_pick != null:
-					ability = awaiting_pick.ability
-			if ability != null and _director != null:
-				var awaiting: TimelineAction = _director.find_awaiting_action(p_unit.id)
-				if awaiting != null:
-					var enemy_pick: Dictionary = AbilitySystem.planning_open_enemy_awaiting_pick(
-						p_unit, awaiting,
-					)
-					if not enemy_pick.is_empty():
-						if _can_target_unit_with_selected_ability(p_unit, hover_unit):
-							return hover_unit.id
-						return -1
-					var open_pick: Dictionary = AbilitySystem.planning_resolve_open_awaiting_pick(
-						p_unit, awaiting,
-					)
-					var await_phase: int = open_pick.get(
-						"phase", GameEnums.PlanningAwaitingPhase.GENERIC,
-					)
-					if await_phase == GameEnums.PlanningAwaitingPhase.TARGET_PICK:
-						if _can_target_unit_with_selected_ability(p_unit, hover_unit):
-							return hover_unit.id
-						return -1
+			var ability: AbilityData = _awaiting_ability_for(p_unit)
+			var awaiting: TimelineAction = _awaiting_action_for(p_unit)
+			if awaiting != null and _awaiting_permits_hover_unit_target(p_unit, hover_unit):
+				return hover_unit.id
 			if ability == null or _awaiting_flow_selected(p_unit, ability):
 				return -1
 			if AbilitySystem.ability_uses_attack_animation(ability, p_unit):
@@ -4002,27 +4010,9 @@ func _post_move_basic_planning_open(p_unit: UnitState) -> bool:
 	var timing: int = _director.get_planning_move_timing(p_unit.id)
 	if timing == GameEnums.MoveTiming.POST_ACTION:
 		return true
-	var awaiting: TimelineAction = _director.find_awaiting_action(p_unit.id)
-	if (
-		_director.selected_ability_index < 0
-		and awaiting != null
-		and awaiting.ability != null
-		and AbilitySystem.planning_committed_prefix(awaiting) != null
-	):
+	var awaiting: TimelineAction = _awaiting_action_for(p_unit)
+	if AbilitySystem.planning_modular_post_move_open(p_unit, awaiting):
 		return true
-	if awaiting != null and awaiting.ability != null and awaiting.awaiting_module_index > 0:
-		var open_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
-			p_unit, awaiting.ability, awaiting.awaiting_module_index,
-		)
-		if open_phase != GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT:
-			var prior_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
-				p_unit, awaiting.ability, awaiting.awaiting_module_index - 1,
-			)
-			if (
-				prior_phase == GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
-				and AbilitySystem.planning_committed_prefix(awaiting) != null
-			):
-				return true
 	if (
 		_director.selected_ability_index < 0
 		and _director.unit_has_committed_class_action(p_unit.id)
@@ -6165,8 +6155,18 @@ func awaiting_enemy_pick_active() -> bool:
 	var actor: UnitState = _proj_unit(_director.selected_unit_id)
 	if actor == null:
 		return false
-	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
-	return not AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty()
+	return AbilitySystem.planning_awaiting_enemy_pick_active(
+		actor, _awaiting_action_for(actor),
+	)
+
+
+func awaiting_movement_endpoint_ghost_visible(unit: UnitState) -> bool:
+	if unit == null or not awaiting_targeting_active():
+		return false
+	var ability: AbilityData = _awaiting_ability_for(unit)
+	if ability == null:
+		return false
+	return _is_awaiting_movement_endpoint(unit, ability)
 
 
 func force_basic_suppresses_targeting_arrow() -> bool:
@@ -6206,34 +6206,22 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return cells
+	var awaiting: TimelineAction = _awaiting_action_for(actor)
 	if awaiting_targeting_active():
-		var awaiting_pick: TimelineAction = _director.find_awaiting_action(unit_id)
-		if _append_targeting_arrow_for_awaiting_enemy_pick(cells, actor, awaiting_pick):
+		if _append_targeting_arrow_for_awaiting_enemy_pick(cells, actor, awaiting):
 			return cells
 	if selected_phase_action_exhausted() and not awaiting_targeting_active():
 		return cells
-	var sel_ability: AbilityData = _selected_ability_data(actor)
-	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
-	if sel_ability == null and awaiting != null:
-		sel_ability = awaiting.ability
-	if awaiting != null and sel_ability != null:
-		if _append_targeting_arrow_for_awaiting_enemy_pick(cells, actor, awaiting):
-			return cells
+	var sel_ability: AbilityData = _awaiting_ability_for(actor)
 	if sel_ability != null and AbilitySystem.can_target_self(actor, sel_ability):
 		if awaiting == null:
 			return cells
-		var self_phase: int = AbilitySystem.planning_awaiting_phase_for_module(
-			actor, sel_ability, awaiting.awaiting_module_index,
-		)
-		if self_phase != GameEnums.PlanningAwaitingPhase.TARGET_PICK:
+		if not AbilitySystem.planning_awaiting_target_pick_open(actor, awaiting):
 			return cells
 	if sel_ability != null and AbilitySystem.ability_has_movement_effect(sel_ability, actor):
-		if awaiting != null:
-			if AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty():
-				if _is_awaiting_movement_endpoint(actor, sel_ability):
-					return cells
-		else:
-			return cells
+		if awaiting == null or not AbilitySystem.planning_awaiting_enemy_pick_active(actor, awaiting):
+			if awaiting == null or _is_awaiting_movement_endpoint(actor, sel_ability):
+				return cells
 	var origin: Vector2i = action_range_intent_stand_cell(unit_id)
 	var attack_target_id: int = _hover_attack_target_id()
 	if attack_target_id >= 0:
@@ -6266,7 +6254,7 @@ func _append_targeting_arrow_for_awaiting_enemy_pick(
 ) -> bool:
 	if awaiting == null:
 		return false
-	if AbilitySystem.planning_open_enemy_awaiting_pick(actor, awaiting).is_empty():
+	if not AbilitySystem.planning_awaiting_enemy_pick_active(actor, awaiting):
 		return false
 	var hover_enemy: UnitState = enemy_unit_at_hover_cell()
 	if hover_enemy == null or not hover_enemy.is_enemy():

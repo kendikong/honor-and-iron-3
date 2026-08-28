@@ -2476,7 +2476,7 @@ func _draw_move_ghosts() -> void:
 	if unit == null or not unit.is_alive():
 		return
 	var force_basic: bool = _planning_input.force_basic_movement
-	if not _planning_input.action_range_visible_for_hover():
+	if not _planning_input.awaiting_movement_endpoint_ghost_visible(unit):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
