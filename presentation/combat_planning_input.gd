@@ -3,6 +3,7 @@ extends RefCounted
 
 ## H&I planning semantics ported from board_view — used by TacticalInputController.
 
+const _PlanningRoutePolicy := preload("res://core/systems/planning_route_policy.gd")
 
 var force_basic_movement: bool = false
 var auto_use_skill_after_move: bool = true
@@ -1661,7 +1662,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 		_refresh_drag_preview_now()
 
 
-## Movement corridor paint runs after sim/blue tiles — premove and post-move share one path.
+## Post-sim MOVE-leg resync — runs after _refresh_hover_interaction_preview so composite skills keep frozen landing paths.
 func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	if _director == null or not _director.board.is_in_bounds(cell):
 		return
@@ -1695,7 +1696,6 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	_last_sim_hover_refresh_cell = cell
 
 
-## Sim refresh must not stomp composite skill previews (bash approach, charge DAMAGE).
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
 	if force_basic_movement:
 		return true
@@ -2167,10 +2167,9 @@ func _ally_skill_preview_slots(p_unit: UnitState, cell: Vector2i) -> Dictionary:
 	return {} if _is_invalid_dict(slots) else slots
 
 
-func _refresh_selected_interaction_preview() -> void:
+func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if dragging or _director == null or _director.board == null:
 		return
-	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit != null and painted_move_route_locked(p_unit):
 		_restore_locked_painted_preview_paths(p_unit.id)
@@ -2248,6 +2247,11 @@ func _refresh_selected_interaction_preview() -> void:
 			_refresh_click_target_highlight()
 			return
 	_restore_hover_preview()
+
+
+func _refresh_selected_interaction_preview() -> void:
+	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
+	_refresh_hover_interaction_preview(cell)
 
 
 func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
@@ -6541,50 +6545,33 @@ func _enemy_hover_respects_painted_route(
 	ability: AbilityData,
 	route_waypoints: Array[Vector2i],
 ) -> bool:
-	if actor == null or enemy == null or route_waypoints.is_empty():
-		return false
-	if ability == null:
+	if actor == null or enemy == null or route_waypoints.is_empty() or ability == null:
 		return false
 	var move_origin: Vector2i = _proj_move_origin(actor)
-	var stand: Vector2i = route_waypoints.back()
-	if stand == move_origin:
-		return false
-	var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
 	var stand_in_range: bool = AbilitySystem.planning_target_is_in_range(
-		_proj(), actor, ability, stand, enemy.position,
+		_proj(), actor, ability, route_waypoints.back(), enemy.position,
 	)
-	# Range 2+: respect deliberate premove only when out of range from the live stand.
-	# In-range enemy hover is always a stationary shot — painted corridors are ignored.
-	if ability_range > 1:
-		if _in_ability_range_from(actor, enemy.position, enemy):
-			return false
-		if not stand_in_range:
-			return false
-	if not _can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability):
+	var approach_tile: Vector2i = Vector2i(-999999, -999999)
+	if _director != null:
+		approach_tile = _director.preview_approach_tile(
+			actor.id,
+			enemy.id,
+			_director.selected_ability_index,
+			enemy.position,
+		)
+	if not _PlanningRoutePolicy.enemy_hover_respects_painted_corridor(
+		actor,
+		enemy,
+		ability,
+		route_waypoints,
+		move_origin,
+		_in_ability_range_from(actor, enemy.position, enemy),
+		stand_in_range,
+		approach_tile,
+		dragging,
+		_can_pair_run_move_with_ability(actor, enemy.position, route_waypoints, ability),
+	):
 		return false
-	if not _in_ability_range_from(actor, enemy.position, enemy):
-		if not stand_in_range:
-			if _director != null:
-				var approach: Vector2i = _director.preview_approach_tile(
-					actor.id,
-					enemy.id,
-					_director.selected_ability_index,
-					enemy.position,
-				)
-				if stand != approach:
-					return false
-		elif route_waypoints.size() <= 1 and _director != null:
-			var painted_approach: Vector2i = _director.preview_approach_tile(
-				actor.id,
-				enemy.id,
-				_director.selected_ability_index,
-				enemy.position,
-			)
-			if stand != painted_approach:
-				return false
-	if _in_ability_range_from(actor, enemy.position, enemy):
-		if not dragging and route_waypoints.size() <= 1 and GridSystem.manhattan(move_origin, stand) <= 1:
-			return false
 	if _director == null:
 		return true
 	var slots: Dictionary = _empty_commit_slots()
@@ -6641,7 +6628,9 @@ func _append_move_to_commit_slots(
 				break
 			
 	var safe_waypoints: Array[Vector2i] = waypoints
-	if not is_valid_basic_path:
+	if trust_painted_route:
+		safe_waypoints = waypoints
+	elif not is_valid_basic_path:
 		var mt: int = actor.definition.movement_type if actor.definition != null else GameEnums.MovementType.WALK
 		var budget: int = _move_budget(actor)
 		var move_cost: int = MovementSystem.move_cost_for(actor)

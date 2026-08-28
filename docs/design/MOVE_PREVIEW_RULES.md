@@ -297,6 +297,18 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Blue move-tile extension reads `painted_corridor_waypoints_for_blue_tiles` → `display_move_route_cells` (preview_paths), not `_drag_route` peek.
 - Headless contract `movement_module_hover` extended with live charge-strike MOVE module hover (enemy + dest orbit).
 
+**Pass 17 (hover refresh SSOT + route policy + commit pathfind gate):**
+- `_refresh_hover_interaction_preview(cell)` — sole **full** hover interaction owner; `_refresh_selected_interaction_preview` delegates via `_run_hover_sim_refresh`. `_sync_movement_preview_after_hover_sim` post-sim resyncs MOVE-leg corridor after sim (composite skills). `_refresh_movement_slot_hover_preview` is corridor-only inside those owners.
+- `PlanningRoutePolicy.enemy_hover_respects_painted_corridor` — shared enemy-hover vs painted-corridor geometry; `CombatPlanningInput._enemy_hover_respects_painted_route` adds commit-validity probe only.
+- `_append_move_to_commit_slots` — `trust_painted_route` skips `find_path` rewrite; ratifies painted waypoints.
+- `CombatDirector._finalize_planning_commit_move_event` — `find_path` only when no waypoints and no stashed commit preview path for the actor.
+
+**Pass 17 audit closure (2026-08-27):**
+- **6-row SSOT:** single hover owner (`_refresh_hover_interaction_preview`); one commit ratify path (`trust_painted_route` + director painted-intent gate); no per-skill branches; overlay reads input/display APIs only; `PlanningRoutePolicy` reusable geometry; inline enemy-hover geometry removed from input.
+- **Sequenced hook (not parallel truth):** `_sync_movement_preview_after_hover_sim` runs after sim refresh for composite MOVE-leg corridor — required for charge/bash frozen landing; headless `charge_strike_composite` fails if removed.
+- **Intentional fallback:** `find_path` on commit remains only when no painted waypoints and no stashed preview path (unpainted basic move).
+- **QA:** `run_planning_qa_gate.ps1` PASS · `run_planning_scene_acceptance.ps1` PASS (live bible session).
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

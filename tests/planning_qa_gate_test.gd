@@ -129,6 +129,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_painted_route_then_enemy_hover_click_preserves_intent,
 		_test_range1_painted_route_enemy_hover_respects_waypoints,
 		_test_movement_module_hover_uses_route_not_target_arrow,
+		_test_planning_route_policy_enemy_hover_geometry,
 		_test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost,
 		_test_post_move_after_variety_of_skills_contract,
 		_test_steady_aim_auto_run_parity,
@@ -238,6 +239,7 @@ static func run_all(failures: Array[String]) -> void:
 		"painted_route_enemy_click",
 		"range1_painted_route_enemy_click",
 		"movement_module_hover_route",
+		"planning_route_policy_enemy_hover",
 		"out_of_range_enemy_hover_exhausted",
 		"post_move_after_skills",
 		"steady_aim_auto_run_parity",
@@ -6582,7 +6584,65 @@ static func _test_movement_module_hover_uses_route_not_target_arrow(
 		live_input,
 		live_actor,
 		false,
-	)
+		)
+
+
+static func _test_planning_route_policy_enemy_hover_geometry(failures: Array[String]) -> void:
+	const Policy := preload("res://core/systems/planning_route_policy.gd")
+	var fix: Dictionary = _archer_power_shot_fixture(Vector2i(4, 5), Vector2i(5, 5))
+	var actor: UnitState = fix.archer
+	var enemy: UnitState = fix.enemy
+	var ability: AbilityData = fix.power_shot
+	var move_origin: Vector2i = actor.position
+	var detour: Array[Vector2i] = [Vector2i(4, 4)]
+	if Policy.enemy_hover_respects_painted_corridor(
+		actor,
+		enemy,
+		ability,
+		detour,
+		move_origin,
+		true,
+		false,
+		Vector2i(-999999, -999999),
+		false,
+		true,
+	):
+		failures.append(
+			"PlanningQAGate planning_route_policy: in-range range-2+ must ignore painted corridor",
+		)
+	var approach: Vector2i = Vector2i(6, 5)
+	var approach_route: Array[Vector2i] = [approach]
+	if not Policy.enemy_hover_respects_painted_corridor(
+		actor,
+		enemy,
+		ability,
+		approach_route,
+		move_origin,
+		false,
+		true,
+		approach,
+		false,
+		true,
+	):
+		failures.append(
+			"PlanningQAGate planning_route_policy: out-of-range approach stand must respect corridor",
+		)
+	var stationary: Array[Vector2i] = [move_origin]
+	if Policy.enemy_hover_respects_painted_corridor(
+		actor,
+		enemy,
+		ability,
+		stationary,
+		move_origin,
+		true,
+		true,
+		Vector2i(-999999, -999999),
+		false,
+		true,
+	):
+		failures.append(
+			"PlanningQAGate planning_route_policy: in-range stationary hover must not lock painted corridor",
+		)
 
 
 static func _test_out_of_range_enemy_hover_with_move_exhausted_shows_null_glyph_and_no_ghost(failures: Array[String]) -> void:
