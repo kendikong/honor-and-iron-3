@@ -326,6 +326,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Wave A:** Deleted post-only corridor helpers; unified `_per_hover_walk_corridor_active` for PRE/MOVE/POST orbit.
 - **Wave B:** `_seal_painted_preview_landing_if_needed` seals from drag→preview sync; post-move drag-only `painted_move_route_locked`; `_discard_drag_buffer_when_preview_route_locked`.
 - **Wave C:** Skill-armed premove/MOVE-leg walk hovers use `_movement_slot_hover_preview_applies` → `_hover_paint_waypoints_for_cell`; `_hover_walk_waypoints_for_skill` delegates walk legs to that owner; `preview_waypoints_for_hover` kept for enemy approach commits only.
+- **Wave D:** `_can_move_to` MOVE-module legs use `CombatPlanningPreview.corridor_waypoints_to_cell` (same corridor owner as hover paint); drag-buffer `find_path` sanitize retained until waypoint paint uses corridor repath.
 
 ### Action-range economy gate
 

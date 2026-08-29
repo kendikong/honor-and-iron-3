@@ -6155,6 +6155,20 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 			move_origin, coord, ability, unit, _proj(),
 		):
 			return false
+		var board_leg: BoardState = _proj()
+		if not MovementSystem.can_end_movement_on(board_leg, coord, unit):
+			return false
+		var leg_corridor: Array[Vector2i] = CombatPlanningPreview.corridor_waypoints_to_cell(
+			board_leg,
+			unit,
+			move_origin,
+			coord,
+			budget,
+			_route_pathfinding_ability(unit),
+			_director,
+			unit.id,
+		)
+		return not leg_corridor.is_empty() and leg_corridor.back() == coord
 	elif budget <= 0 and not extended_move_budget_active(unit):
 		return false
 	if (
