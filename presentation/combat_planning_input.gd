@@ -1691,7 +1691,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
-	if force_basic_movement:
+	if _post_move_basic_planning_open(p_unit):
 		return true
 	if _director == null or p_unit == null:
 		return false
@@ -1833,8 +1833,10 @@ func _flush_hover_heavy_sync() -> void:
 	)
 	_sync_movement_preview_after_hover_sim(flush_cell)
 	_refresh_action_range_overlay_when_gate_off()
-	if dragging and force_basic_movement and _drag_unit_id >= 0:
-		_clamp_postmove_drag_for_forbidden_hover(_drag_unit_id)
+	if dragging and _drag_unit_id >= 0:
+		var hover_flush_actor: UnitState = _proj_unit(_drag_unit_id)
+		if hover_flush_actor != null and _post_move_basic_planning_open(hover_flush_actor):
+			_clamp_postmove_drag_for_forbidden_hover(_drag_unit_id)
 
 
 func _run_hover_overlay_refresh() -> void:
@@ -2749,6 +2751,8 @@ func _drag_route_commits_active() -> bool:
 		if p_unit != null:
 			var ability := _selected_ability_data(p_unit)
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
+				if _painted_drag_route_matches_leg(p_unit):
+					return true
 				return false
 			if _per_hover_walk_corridor_active(p_unit):
 				return false
@@ -4113,22 +4117,29 @@ func _move_slot_timing_for_commit(unit_id: int, actor: UnitState, cell: Vector2i
 	return _director.get_planning_move_timing(unit_id)
 
 
-func _basic_move_allowed() -> bool:
+func _voluntary_walk_economy_open(p_unit: UnitState) -> bool:
 	if _awaiting_target_pick_blocks_premove():
 		return false
-	if _director != null and _director.selected_unit_id >= 0:
-		var move_actor: UnitState = _proj_unit(_director.selected_unit_id)
-		if move_actor == null or not _post_move_basic_planning_open(move_actor):
-			if selected_phase_action_exhausted(_director.selected_unit_id):
-				return false
-	return not _movement_blocked_by_dash()
+	if _movement_blocked_by_dash():
+		return false
+	return true
 
 
-## Timeline post-move or modular MOVE-prefix landing ΓÇö basic walk preview/commit may open.
+func _basic_move_allowed() -> bool:
+	if _director == null or _director.selected_unit_id < 0:
+		return _voluntary_walk_economy_open(null)
+	var move_actor: UnitState = _proj_unit(_director.selected_unit_id)
+	if not _voluntary_walk_economy_open(move_actor):
+		return false
+	if move_actor == null or not _post_move_basic_planning_open(move_actor):
+		if selected_phase_action_exhausted(_director.selected_unit_id):
+			return false
+	return true
+
 func _post_move_basic_planning_open(p_unit: UnitState) -> bool:
 	if _director == null or p_unit == null:
 		return false
-	if not _basic_move_allowed():
+	if not _voluntary_walk_economy_open(p_unit):
 		return false
 	if _director.unit_has_move_planned_at_timing(p_unit.id, GameEnums.MoveTiming.POST_ACTION):
 		return false
@@ -4554,6 +4565,11 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	var ability: AbilityData = _route_pathfinding_ability(unit)
 	var budget: int = _drag_max_steps(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
+	var mt: GameEnums.MovementType = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
 	if GridSystem.manhattan(last, cell) != 1:
 		var corridor: Array[Vector2i] = MovementSystem.drag_corridor_path(
 			board, last, cell, budget, mt, move_cost, unit, ability,
@@ -4721,6 +4737,8 @@ func _sync_drag_route_stand() -> void:
 func _basic_walk_pathfinding_active(p_unit: UnitState) -> bool:
 	if p_unit == null or _director == null:
 		return false
+	if preview_state.is_painted_leg_sealed(p_unit.id) and not dragging:
+		return true
 	if _director.selected_ability_index < 0:
 		return true
 	return _post_move_basic_planning_open(p_unit)
@@ -4855,6 +4873,7 @@ func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> 
 	if waypoints.is_empty() and not _can_move_to(p_unit, cell) and (
 		_per_hover_walk_corridor_active(p_unit)
 		or _pre_move_voluntary_walk_corridor_active(p_unit)
+		or _awaiting_voluntary_walk_corridor_active(p_unit)
 	):
 		var stand: Vector2i = _active_move_drag_origin(p_unit)
 		if stand.x > -900000:
@@ -4898,6 +4917,7 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 		_awaiting_voluntary_walk_corridor_active(p_unit)
 		and target_enemy_id < 0
 		and _is_hover_move_cell(p_unit, cell)
+		and _can_move_to(p_unit, cell)
 	):
 		return true
 	if (
@@ -5058,6 +5078,7 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 		_awaiting_voluntary_walk_corridor_active(actor)
 		and _planning != null
 		and _planning.is_hover_move_tile(cell)
+		and _can_move_to(actor, cell)
 	):
 		return _corridor_waypoints_to_cell(actor, cell)
 	if _can_move_to(actor, cell):
@@ -5213,6 +5234,8 @@ func clear_awaiting_targeting() -> void:
 ## Occupancy for painted hover/drag. Unarmed premove uses basic walk; armed awaiting uses the skill.
 func _route_pathfinding_ability(unit: UnitState) -> AbilityData:
 	if unit == null or _director == null:
+		return null
+	if preview_state.is_painted_leg_sealed(unit.id) and not dragging:
 		return null
 	if _basic_walk_pathfinding_active(unit):
 		return null
@@ -6340,6 +6363,11 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		return false
 	var path_ability: AbilityData = _route_pathfinding_ability(unit)
 	var move_cost: int = MovementSystem.move_cost_for(unit)
+	var mt: GameEnums.MovementType = (
+		unit.definition.movement_type
+		if unit.definition != null
+		else GameEnums.MovementType.WALK
+	)
 	var path: Array[Vector2i] = MovementSystem.find_path(
 		board, move_origin, coord, budget, mt, move_cost, path_ability,
 	)

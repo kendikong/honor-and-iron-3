@@ -350,6 +350,19 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Premove orbit guards (`_basic_painted_drag_orbit_guard_active`, `_painted_premove_orbit_sealed`) — unarmed premove only; POST excluded via `_post_move_basic_planning_open`.
 - Drag/hover preview trim, `_set_preview_path`, `_route_pathfinding_ability`, `_should_strip_action_from_basic_postmove_slots` — use POST-open / painted-leg predicates instead of `force_basic_movement`.
 
+**Pass 25 (Wave E6b — compile fix + hover-flush clamp — 2026-08-29):**
+- `_extend_drag_route` / `_can_move_to` — restore `mt` (`unit.definition.movement_type`) removed during E4 sanitize; fixes headless compile cascade (bruiser/swap/CM-11 fixture failures).
+- `_run_hover_sim_refresh` postmove drag clamp uses `_post_move_basic_planning_open` (missed E6 site).
+- `_movement_preview_resync_after_sim_allowed` uses `_post_move_basic_planning_open` instead of `force_basic_movement`.
+
+**Pass 26 (Wave E6b — economy recursion + awaiting corridor legality — 2026-08-29):**
+- `_voluntary_walk_economy_open` — breaks `_basic_move_allowed` ↔ `_post_move_basic_planning_open` stack overflow; economy gate is awaiting-target-pick + dash only.
+- `_awaiting_voluntary_walk_corridor_active` hover paint / applies — require `_can_move_to` before corridor (armed_move_hover stand-only when illegal).
+- `_drag_route_commits_active` — leg-matched sealed painted route stays active during MOVE-module awaiting (painted orbit commit parity).
+- `_route_pathfinding_ability` — sealed painted leg orbit uses basic walk (`null` ability), not trample pathfind, when not dragging.
+- `_refresh_movement_slot_hover_preview` — awaiting stand fallback when `!_can_move_to` (stand tile, not stale corridor).
+- **Open:** `painted_route_premove_vs_move_equivalence` — trample MOVE-module sealed orbit still diverges from premove on some cells; `painted_landing_hover` requires frozen `fixed_route` on the same armed+sealed state (conflicting orbit expectations).
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
