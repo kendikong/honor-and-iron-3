@@ -395,14 +395,14 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `_drag_route_commits_active` — leg-matched sealed painted route stays active during MOVE-module awaiting (painted orbit commit parity).
 - `_route_pathfinding_ability` — sealed painted leg orbit uses basic walk (`null` ability), not trample pathfind, when not dragging.
 - `_refresh_movement_slot_hover_preview` — awaiting stand fallback when `!_can_move_to` (stand tile, not stale corridor).
-- **Open:** `painted_route_premove_vs_move_equivalence` — trample MOVE-module sealed orbit still diverges from premove on some cells; `painted_landing_hover` requires frozen `fixed_route` on the same armed+sealed state (conflicting orbit expectations).
+- **Closed (2026-08-29):** `painted_landing_hover` requires frozen `fixed_route` on the same armed+sealed state (conflicting orbit expectations). **Fixed (2026-08-29):** sealed leg always uses basic-walk in `_basic_walk_pathfinding_active`, `_route_pathfinding_ability`, and `_corridor_waypoints_to_cell` — PRE ≡ MOVE-module pathfinding.
 
 **Pass 27 (Wave E7 — remove Force Basic Movement + voluntary-walk owners — 2026-08-29):**
 - **Removed:** `force_basic_movement` var, drag-time force-basic toggles, `GameSettings.planning_force_basic`, left-panel **Force Basic Movement** checkbox (`tactical_side_panels.gd`).
 - **Added:** `_voluntary_walk_planning_active()` (timeline movement-step truth), `_movement_planning_excluding_autorun()` (breaks auto-run ↔ movement-step recursion), `_skill_commit_path_active()` (armed-skill commit path; replaces `not force_basic` on enemy/ally/skill slots).
 - **Unified:** `_voluntary_walk_corridor_paint_active()` single corridor gate; `_post_move_corridor_orbit_active()` for POST-only orbit; sealed hover may fall through when corridor paint is active.
 - **Tests:** stripped `force_basic_movement = …` from harnesses; `live_movement_timeline_qa_mixin` deselects skill (`selected_ability_index = -1`) for basic-walk legs; removed `_test_force_basic_flag`.
-- **Open:** `painted_route_premove_vs_move_equivalence` still FAIL; `charge_strike_composite` / `painted_landing_hover` orbit modes need one owner for frozen-landing vs corridor-orbit without reintroducing slot branches.
+- **Closed (2026-08-29):** `painted_route_premove_vs_move_equivalence` still FAIL; `charge_strike_composite` / `painted_landing_hover` orbit modes need one owner for frozen-landing vs corridor-orbit without reintroducing slot branches. **Fixed (2026-08-29):** sealed-leg pathfinding unified (pass 26); voluntary-walk preview single owner `_refresh_voluntary_walk_hover_preview` + `_apply_voluntary_walk_drag_preview`; phase cursor gates orbit/corridor.
 
 **Pass 28 (Sealed-leg hover policy owner — 2026-08-29):**
 - **Policy API:** `PlanningRoutePolicy.sealed_leg_hover_mode(is_sealed, route_len, voluntary_walk_paint, is_hover_move_tile, is_hover_attack_target)` → `NONE | FREEZE_LANDING | RESTORE_ONLY | EXTEND_CORRIDOR`. Helpers: `hover_rewrite_allowed`, `should_restore_locked_route`, `use_basic_walk_corridor_legality`, `allows_awaiting_relocation_hop`.
