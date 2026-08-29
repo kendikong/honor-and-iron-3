@@ -4365,6 +4365,10 @@ func _sealed_leg_hover_mode(p_unit: UnitState, cell: Vector2i) -> int:
 func _sealed_leg_hover_restore_if_blocked(p_unit: UnitState, cell: Vector2i) -> bool:
 	if not _sealed_painted_preview_active(p_unit):
 		return false
+	# Illegal movement-step hover: no preview (never re-show sealed blue path).
+	if active_movement_planning_step(p_unit):
+		if not _can_move_to(p_unit, cell) and not _is_hover_move_cell(p_unit, cell):
+			return false
 	var mode: int = _sealed_leg_hover_mode(p_unit, cell)
 	if not PlanningRoutePolicy.should_restore_locked_route(mode):
 		return false
@@ -5017,9 +5021,6 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		and not _can_move_to(p_unit, cell)
 		and not _is_hover_move_cell(p_unit, cell)
 	):
-		if _sealed_leg_hover_restore_if_blocked(p_unit, cell):
-			_refresh_click_target_highlight()
-			return
 		_clear_stale_painted_preview_route(p_unit.id)
 		_refresh_click_target_highlight()
 		return
@@ -5029,12 +5030,6 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			p_unit.id, p_unit, cell, waypoints,
 		)
 		if probe_path.size() < 2:
-			if (
-				(_can_move_to(p_unit, cell) or _is_hover_move_cell(p_unit, cell))
-				and _sealed_leg_hover_restore_if_blocked(p_unit, cell)
-			):
-				_refresh_click_target_highlight()
-				return
 			_clear_stale_painted_preview_route(p_unit.id)
 			_refresh_click_target_highlight()
 			return
@@ -6650,10 +6645,7 @@ func _proj_unit(unit_id: int) -> UnitState:
 
 
 func _proj_origin(unit: UnitState) -> Vector2i:
-	var pv := _proj_unit(unit.id)
-	if pv != null:
-		return pv.position
-	return unit.position
+	return _phase_entry_stand(unit)
 
 
 ## Forecast stand at current planning phase entry (walk paint, commit, locked tiles).

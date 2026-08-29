@@ -91,6 +91,18 @@ The game knows **which phase is active**. Almost everything is the **same pipeli
 
 **Frozen** = show the locked path, not hidden. Not live from cursor.
 
+### Invalid hover vs sealed-leg restore (§88 + Pass 28)
+
+These are **different** situations — do not conflate them:
+
+| Situation | Movement step? | Hover legality | What you see |
+|-----------|----------------|----------------|--------------|
+| **Invalid movement-step hover** | Yes | Illegal tile (`!can_move_to` and not a move-tile intent) | **No** blue path — clear live preview; sealed restore **must not** run |
+| **Sealed restore (RESTORE_ONLY)** | No (skill/attack step) or legal hover | Enemy under cursor on a non-corridor-extend hover | **Frozen** sealed path re-shown — not a new live corridor |
+| **Sealed freeze (FREEZE_LANDING)** | Corridor paint off | Non-move-tile hover while sealed | **Frozen** landing path — not live from cursor |
+
+**Rule:** `PlanningRoutePolicy.should_restore_locked_route` may only restore when hover is **not** an illegal movement-step walk tile. Input owner: `_sealed_leg_hover_restore_if_blocked` gates restore before policy mode check on movement steps.
+
 ---
 
 ## When previews clear
