@@ -322,6 +322,11 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - Drag illegal walk: `_sanitize_drag_route_context` corrects via `find_path` to painted destination when the leg is illegal, else trims tail (no commit-time invent).
 - `_can_move_to` — legality probe only (`find_path` + forbidden trim); preview paint uses `_assemble_voluntary_walk_preview_path`.
 
+**Pass 20 (MOVE preview waves A–C — 2026-08-28):**
+- **Wave A:** Deleted post-only corridor helpers; unified `_per_hover_walk_corridor_active` for PRE/MOVE/POST orbit.
+- **Wave B:** `_seal_painted_preview_landing_if_needed` seals from drag→preview sync; post-move drag-only `painted_move_route_locked`; `_discard_drag_buffer_when_preview_route_locked`.
+- **Wave C:** Skill-armed premove/MOVE-leg walk hovers use `_movement_slot_hover_preview_applies` → `_hover_paint_waypoints_for_cell`; `_hover_walk_waypoints_for_skill` delegates walk legs to that owner; `preview_waypoints_for_hover` kept for enemy approach commits only.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

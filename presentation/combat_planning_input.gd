@@ -2692,11 +2692,14 @@ func _drag_route_commits_active() -> bool:
 	return _selection_hover_corridor_paint_active()
 
 
-## Painted route drives commit/slots; live preview uses drag buffer while dragging or selection-sweep painting.
+## Painted route drives commit/slots; live preview uses drag buffer while dragging or after leg-matched paint.
 func _painted_drag_route_drives_live_preview() -> bool:
 	if not _drag_route_commits_active():
 		return false
 	if dragging:
+		return true
+	var actor: UnitState = _proj_unit(_drag_unit_id) if _drag_unit_id >= 0 else null
+	if actor != null and _painted_drag_route_matches_leg(actor):
 		return true
 	return _selection_hover_corridor_paint_active() and _drag_route.size() >= 2
 
@@ -4755,9 +4758,18 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 		return true
 	if painted_move_route_locked(p_unit):
 		return false
+	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
+	if (
+		target_enemy_id < 0
+		and _is_hover_move_cell(p_unit, cell)
+		and _movement_route_paint_allowed()
+		and not _awaiting_target_pick_blocks_premove()
+	):
+		var move_timing: int = _director.get_planning_move_timing(p_unit.id)
+		if move_timing < 0 or not _director.unit_has_move_planned_at_timing(p_unit.id, move_timing):
+			return true
 	if not live_move_hover_rewrite_applies(p_unit, cell):
 		return false
-	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 	if (
 		target_enemy_id < 0
 		and not _awaiting_target_pick_blocks_premove()
@@ -8155,9 +8167,7 @@ func _hover_walk_waypoints_for_skill(
 				)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
-		if not _can_move_to(actor, cell):
-			return []
-		return _corridor_waypoints_to_cell(actor, cell)
+		return _hover_paint_waypoints_for_cell(actor, cell)
 	var empty: Array[Vector2i] = []
 	if not _is_hover_move_cell(actor, cell):
 		return empty
@@ -8165,9 +8175,7 @@ func _hover_walk_waypoints_for_skill(
 		return empty
 	if _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
 		return empty
-	if not _can_move_to(actor, cell):
-		return empty
-	return _corridor_waypoints_to_cell(actor, cell)
+	return _hover_paint_waypoints_for_cell(actor, cell)
 
 
 func _skill_takes_priority_over_basic_move() -> bool:
