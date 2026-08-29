@@ -334,6 +334,10 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Wave E3:** `_awaiting_voluntary_walk_corridor_active` — armed MOVE-module voluntary-walk corridor owner; skill hover delegates to `_refresh_movement_slot_hover_preview`; `_hover_paint_waypoints_for_cell` paints corridor on `is_hover_move_tile` for awaiting legs; authoritative movement hover skips sim stomp when `_movement_hover_path_authoritative`.
 - **Gate:** `painted_route_premove_vs_move_equivalence` re-enabled in `planning_qa_gate_test.gd`.
 
+**Pass 22 (Wave E4 — drag sanitize corridor SSOT — 2026-08-29):**
+- `_sanitize_drag_route_context` — illegal painted drag repaths via `CombatPlanningPreview.corridor_waypoints_to_cell` (axis-first corridor owner); `MovementSystem.find_path` band-aid removed from drag sanitize.
+- `_voluntary_walk_corridor_paint_active` — single predicate for PRE/POST orbit + MOVE-module awaiting corridor paint; `_corridor_waypoints_to_cell` painted-drag peek uses it.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
