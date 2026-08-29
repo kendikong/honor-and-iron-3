@@ -1093,13 +1093,23 @@ func _restore_drag_force_basic() -> void:
 
 
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
+	var sealed_unit_id: int = -1
+	if _drag_unit_id >= 0 and not snap_back:
+		var drag_actor: UnitState = _proj_unit(_drag_unit_id)
+		if drag_actor != null and _painted_drag_route_matches_leg(drag_actor):
+			_sync_painted_drag_route_to_preview_paths(_drag_unit_id, true)
+			_seal_painted_preview_landing_if_needed(drag_actor)
+			if preview_state.is_painted_leg_sealed(_drag_unit_id):
+				sealed_unit_id = _drag_unit_id
 	_restore_drag_force_basic()
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	if _drag_unit_id >= 0:
-		_clear_frozen_painted_leg(_drag_unit_id)
+		if _drag_unit_id != sealed_unit_id:
+			_clear_frozen_painted_leg(_drag_unit_id)
 	elif _director != null and _director.selected_unit_id >= 0:
-		_clear_frozen_painted_leg(_director.selected_unit_id)
+		if _director.selected_unit_id != sealed_unit_id:
+			_clear_frozen_painted_leg(_director.selected_unit_id)
 	_drag_route.clear()
 	drag_preview_failed = false
 	preview_state.clear_interaction()
@@ -1512,25 +1522,29 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_discard_stale_drag_route_for_leg(p_unit)
 			var ability := _selected_ability_data(p_unit)
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
-			if _post_move_basic_planning_open(p_unit):
-				var post_origin: Vector2i = _active_move_drag_origin(p_unit)
+			if active_movement_planning_step(p_unit):
+				var leg_origin: Vector2i = _active_move_drag_origin(p_unit)
 				if preview_state.is_painted_leg_sealed(p_unit.id):
 					var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
 					if (
 						sealed_route.size() >= 2
-						and post_origin.x > -900000
-						and (sealed_route[0] as Vector2i) != post_origin
+						and leg_origin.x > -900000
+						and (sealed_route[0] as Vector2i) != leg_origin
 					):
 						_clear_frozen_painted_leg(p_unit.id)
 				if (
 					_drag_route_commits_active()
 					and _drag_unit_id == p_unit.id
 					and not _drag_route.is_empty()
-					and post_origin.x > -900000
-					and (_drag_route[0] as Vector2i) != post_origin
+					and leg_origin.x > -900000
+					and (_drag_route[0] as Vector2i) != leg_origin
 				):
 					_clear_hover_drag_route()
-				if not dragging and not _per_hover_walk_corridor_active(p_unit):
+				if (
+					_post_move_basic_planning_open(p_unit)
+					and not dragging
+					and not _per_hover_walk_corridor_active(p_unit)
+				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			if painted_move_route_locked(p_unit):
 				_restore_locked_painted_preview_paths(p_unit.id)
@@ -4151,29 +4165,17 @@ func painted_move_route_locked(p_unit: UnitState) -> bool:
 		return false
 	if not active_movement_planning_step(p_unit):
 		return false
-	if preview_state.is_painted_leg_sealed(p_unit.id):
-		var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
-		if sealed_route.size() < 2:
-			_clear_frozen_painted_leg(p_unit.id)
-		else:
-			var origin: Vector2i = _active_move_drag_origin(p_unit)
-			if origin.x <= -900000 or (sealed_route[0] as Vector2i) != origin:
-				_clear_frozen_painted_leg(p_unit.id)
-			else:
-				return true
-	if _per_hover_walk_corridor_active(p_unit):
+	if not preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
-	if _post_move_basic_planning_open(p_unit) and _painted_drag_route_matches_leg(p_unit):
-		return true
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	if (
-		ability != null
-		and _is_awaiting_movement_endpoint(p_unit, ability)
-		and _painted_preview_route_matches_leg(p_unit)
-		and _painted_drag_route_matches_leg(p_unit)
-	):
-		return true
-	return false
+	var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+	if sealed_route.size() < 2:
+		_clear_frozen_painted_leg(p_unit.id)
+		return false
+	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	if origin.x <= -900000 or (sealed_route[0] as Vector2i) != origin:
+		_clear_frozen_painted_leg(p_unit.id)
+		return false
+	return true
 
 
 ## True when hover may rewrite preview_paths / live corridor for this cell.

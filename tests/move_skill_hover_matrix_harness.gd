@@ -389,3 +389,73 @@ static func _sort_cells(a: Vector2i, b: Vector2i) -> bool:
 	if a.x == b.x:
 		return a.y < b.y
 	return a.x < b.x
+
+
+const TrampleE2E := preload("res://tests/trampling_advance_e2e_test.gd")
+
+
+static func capture_painted_leg_hover_layers(
+	fix: Dictionary,
+	unit: UnitState,
+	hover_cell: Vector2i,
+	previous: Vector2i,
+) -> Dictionary:
+	PlanningChecklistHarness.sweep_to_cell(fix, hover_cell, previous)
+	fix.input._flush_hover_heavy_sync()
+	fix.input.call("_run_ability_settled_refresh")
+	PlanningChecklistHarness.flush_planning(fix)
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	var live: CombatPlanningPreview = overlay.get_live_preview() if overlay != null else null
+	var preview_path: Array = live.preview_paths.get(unit.id, []) if live != null else []
+	var draw_route: Array = (
+		overlay._interaction_move_route(unit.id, live, preview_path)
+		if live != null and overlay != null else []
+	)
+	return {
+		"preview_paths": preview_path.duplicate(),
+		"draw_route": draw_route.duplicate(),
+	}
+
+
+static func assert_two_leg_painted_route_equivalence(
+	failures: Array[String],
+	label_prefix: String,
+	fix: Dictionary,
+	unit: UnitState,
+	painted_route: Array[Vector2i],
+	orbit_cells: Array[Vector2i],
+	baseline_setup: Callable,
+	compare_setup: Callable,
+) -> void:
+	var reference_by_cell: Dictionary = {}
+	baseline_setup.call(fix)
+	var previous: Vector2i = painted_route[0]
+	for cell: Vector2i in orbit_cells:
+		reference_by_cell[cell] = capture_painted_leg_hover_layers(fix, unit, cell, previous)
+		previous = cell
+	compare_setup.call(fix)
+	previous = painted_route[0]
+	for cell: Vector2i in orbit_cells:
+		var snap: Dictionary = capture_painted_leg_hover_layers(fix, unit, cell, previous)
+		var baseline: Dictionary = reference_by_cell.get(cell, {}) as Dictionary
+		if snap.get("preview_paths", []) != baseline.get("preview_paths", []):
+			failures.append(
+				"%s: preview_paths %s != baseline %s @%s"
+				% [
+					label_prefix,
+					str(snap.get("preview_paths", [])),
+					str(baseline.get("preview_paths", [])),
+					cell,
+				],
+			)
+		if snap.get("draw_route", []) != baseline.get("draw_route", []):
+			failures.append(
+				"%s: draw_route %s != baseline %s @%s"
+				% [
+					label_prefix,
+					str(snap.get("draw_route", [])),
+					str(baseline.get("draw_route", [])),
+					cell,
+				],
+			)
+		previous = cell
