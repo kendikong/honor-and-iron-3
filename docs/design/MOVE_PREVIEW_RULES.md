@@ -234,11 +234,11 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Planning phase kind (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
 | Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
 | Voluntary walk pipeline (preview → commit) | One path: hover paint → `_try_commit_voluntary_walk` → `commit_from_slots` → `_plan_for_timing` / `timeline_column` metadata only |
-| Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` → `CombatPlanningPreview.set_unit_preview_path` |
+| Voluntary walk path write (hover) | `CombatPlanningInput._write_voluntary_walk_preview_path` → `CombatPlanningPreview.set_unit_preview_path` |
 | Sealed-leg hover policy | `PlanningRoutePolicy` (no PRE/MOVE/POST labels) |
 | Painted leg seal | `CombatPlanningPreview.painted_leg_sealed` / `seal_painted_leg` |
 | Route read (live + frozen + committed legs) | `CombatPlanningInput.display_*_route_cells` / `preview_board_for_display` |
-| Painted drag → `preview_paths` | `_sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
+| Painted drag → `preview_paths` | `_apply_voluntary_walk_drag_preview` → `_write_voluntary_walk_preview_path` |
 | Sim / commit path merge | `apply_result`: `build_preview_paths` (sim events) + `ensure_movement_intent_from_actions` via `_commit_preview_path`; hover authoritative restore via `authoritative_paths` |
 | Movement-step authority gate | `CombatPlanningInput._movement_hover_path_authoritative` |
 | Painted route lock predicate | `CombatPlanningInput._painted_drag_route_matches_leg` |
@@ -253,7 +253,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 ### Architecture audit (2026-08-26 pass 5)
 
 **Write paths (honest):**
-- Live hover/drag/stand-stub (input): `_set_preview_path` → `set_unit_preview_path` + overlay sync.
+- Live hover/drag/stand-stub (input): `_write_voluntary_walk_preview_path` → `set_unit_preview_path` + overlay sync.
 - Intent/swap/anchor merge (preview): `_commit_preview_path` → `set_unit_preview_path` only.
 - Sim timeline (preview): `build_preview_paths` from `UNIT_MOVED` events (rebuilds dict; not hover intent).
 - Post-commit trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` → `set_unit_preview_path`.
@@ -276,7 +276,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 
 **Pass 9 (gauntlet loop — cold-audit response):**
 - Removed duplicate merge/anchor/swap from `_ensure_live_movement_intent_from_preview_actions` (merge owner is `apply_result` only).
-- `_set_preview_path` always syncs overlay (`_live_preview` mirror).
+- `_write_voluntary_walk_preview_path` always syncs overlay (`_live_preview` mirror).
 - Committed ability route draw uses `display_route_cells_from_preview` first.
 - Side panel tile refresh: `on_hover_moved` only (no double recompute).
 
@@ -382,7 +382,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `_basic_walk_pathfinding_active` / `_postmove_painted_drag_trim_active` — timeline-based helpers replace `force_basic_movement` in corridor pathfinding, postmove prior-leg trim, and drag preview snap.
 - `_basic_move_allowed` — phase-exhaustion skip uses `_post_move_basic_planning_open`, not `force_basic_movement`.
 - Premove orbit guards (`_basic_painted_drag_orbit_guard_active`, `_painted_premove_orbit_sealed`) — unarmed premove only; POST excluded via `_post_move_basic_planning_open`.
-- Drag/hover preview trim, `_set_preview_path`, `_route_pathfinding_ability`, `_should_strip_action_from_basic_postmove_slots` — use POST-open / painted-leg predicates instead of `force_basic_movement`.
+- Drag/hover preview trim, `_write_voluntary_walk_preview_path`, `_route_pathfinding_ability`, `_should_strip_action_from_basic_postmove_slots` — use POST-open / painted-leg predicates instead of `force_basic_movement`.
 
 **Pass 25 (Wave E6b — compile fix + hover-flush clamp — 2026-08-29):**
 - `_extend_drag_route` / `_can_move_to` — restore `mt` (`unit.definition.movement_type`) removed during E4 sanitize; fixes headless compile cascade (bruiser/swap/CM-11 fixture failures).

@@ -595,11 +595,7 @@ func _refresh_drag_preview_now() -> void:
 				if trimmed_live != live_path:
 					var leg_origin: Vector2i = trimmed_live[0] as Vector2i
 					_apply_trimmed_drag_route(trimmed_live, leg_origin)
-					CombatPlanningPreview.set_unit_preview_path(
-						preview_state, _drag_unit_id, trimmed_live,
-					)
-					if _planning != null:
-						_planning.apply_preview_paths_only(preview_state, _drag_unit_id)
+					_write_voluntary_walk_preview_path(_drag_unit_id, trimmed_live)
 			var post_trim_actor: UnitState = _proj_unit(_drag_unit_id)
 			if post_trim_actor != null:
 				var leg_origin: Vector2i = _phase_entry_stand(post_trim_actor)
@@ -793,11 +789,7 @@ func _clamp_postmove_drag_for_forbidden_hover(unit_id: int) -> void:
 		)
 		if trimmed_preview != live_path:
 			_apply_trimmed_drag_route(trimmed_preview, leg_origin)
-			CombatPlanningPreview.set_unit_preview_path(
-				preview_state, unit_id, trimmed_preview,
-			)
-			if _planning != null:
-				_planning.apply_preview_paths_only(preview_state, unit_id)
+		_write_voluntary_walk_preview_path(unit_id, trimmed_preview)
 
 
 func _authoritative_move_hover_paths_payload() -> Dictionary:
@@ -885,7 +877,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		preview_state.clear_all()
 		for unit_id: Variant in preserved_sealed_paths.keys():
 			var path: Array = preserved_sealed_paths[unit_id] as Array
-			preview_state.preview_paths[unit_id] = path
+			_write_voluntary_walk_preview_path(int(unit_id), path)
 			preview_state.seal_painted_leg(int(unit_id))
 		if preserved_sealed_paths.is_empty():
 			if _planning != null:
@@ -2432,7 +2424,9 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 				var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
 				if sealed_route != _drag_route:
 					_clear_frozen_painted_leg(unit_id)
-			_apply_voluntary_walk_drag_preview(unit_id, true)
+			var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
+			if sealed_route.size() >= 2:
+				_write_voluntary_walk_preview_path(unit_id, sealed_route)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
 ## Preview_paths is the painted landing SSOT ΓÇö seal when it matches the active leg, then drop drag buffer.
@@ -4382,7 +4376,7 @@ func clear_hover_route_preview() -> void:
 	preview_state.clear_route_geometry()
 	for unit_id: Variant in preserved_paths.keys():
 		var path: Array = preserved_paths[unit_id] as Array
-		preview_state.preview_paths[unit_id] = path
+		_write_voluntary_walk_preview_path(int(unit_id), path)
 		preview_state.seal_painted_leg(int(unit_id))
 
 
