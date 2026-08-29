@@ -1530,17 +1530,15 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and (_drag_route[0] as Vector2i) != post_origin
 				):
 					_clear_hover_drag_route()
-				if not dragging and not _per_hover_walk_corridor_active(p_unit) and _painted_drag_route_matches_leg(p_unit):
-					_seal_painted_drag_buffer_if_leg_matches(p_unit)
+				if not dragging and not _per_hover_walk_corridor_active(p_unit):
+					_seal_painted_preview_landing_if_needed(p_unit)
 			if painted_move_route_locked(p_unit):
 				_restore_locked_painted_preview_paths(p_unit.id)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
 			)
-			if awaiting_move_leg and not dragging and planning_cell_changed and not _drag_route.is_empty():
-				_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
-				_seal_painted_leg_from_drag(p_unit.id)
-				_clear_hover_drag_route()
+			if awaiting_move_leg and not dragging and planning_cell_changed:
+				_seal_painted_preview_landing_if_needed(p_unit)
 			var current_timing: int = _director.get_planning_move_timing(p_unit.id)
 			var move_already_planned: bool = (
 				current_timing < 0
@@ -2366,42 +2364,46 @@ func _clear_frozen_painted_leg(unit_id: int) -> void:
 	preview_state.clear_sealed_painted_leg(unit_id)
 
 
-func _seal_painted_leg_from_drag(unit_id: int) -> void:
-	if unit_id < 0 or _drag_route.size() < 2:
-		return
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null and _director != null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null or not _painted_drag_route_matches_leg(actor):
-		return
-	_sync_painted_drag_route_to_preview_paths(unit_id, true)
-	preview_state.seal_painted_leg(unit_id)
-
-
 func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 	if unit_id < 0:
 		return
 	var actor: UnitState = _proj_unit(unit_id)
-	if actor != null and active_movement_planning_step(actor) and not preview_state.is_painted_leg_sealed(unit_id):
-		_seal_painted_drag_buffer_if_leg_matches(actor)
+	if actor != null:
+		if _painted_drag_route_matches_leg(actor) and _drag_route.size() >= 2:
+			if preview_state.is_painted_leg_sealed(unit_id):
+				var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
+				if sealed_route != _drag_route:
+					_clear_frozen_painted_leg(unit_id)
+			_sync_painted_drag_route_to_preview_paths(unit_id, true)
+		_seal_painted_preview_landing_if_needed(actor)
+		_discard_drag_buffer_when_preview_route_locked(actor)
 	var route: Array = preview_state.preview_paths.get(unit_id, [])
-	if route.is_empty() and _drag_route.size() >= 2 and _drag_unit_id == unit_id:
-		route = _drag_route
 	if route.size() >= 2:
 		_set_preview_path(unit_id, route)
 
 
-func _seal_painted_drag_buffer_if_leg_matches(p_unit: UnitState) -> void:
+## Preview_paths is the painted landing SSOT — seal when it matches the active leg, then drop drag buffer.
+func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
+		return
+	if _per_hover_walk_corridor_active(p_unit):
 		return
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return
-	if not _painted_drag_route_matches_leg(p_unit):
-		return
 	if not active_movement_planning_step(p_unit):
 		return
+	if not _painted_drag_route_matches_leg(p_unit):
+		return
 	_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
-	_seal_painted_leg_from_drag(p_unit.id)
+	preview_state.seal_painted_leg(p_unit.id)
+	_discard_drag_buffer_when_preview_route_locked(p_unit)
+
+
+func _discard_drag_buffer_when_preview_route_locked(p_unit: UnitState) -> void:
+	if p_unit == null or not painted_move_route_locked(p_unit):
+		return
+	if _drag_unit_id == p_unit.id and not _drag_route.is_empty():
+		_clear_hover_drag_route()
 
 
 func _discard_enemy_hover_painted_buffers_if_needed(
@@ -4156,7 +4158,17 @@ func painted_move_route_locked(p_unit: UnitState) -> bool:
 				_clear_frozen_painted_leg(p_unit.id)
 			else:
 				return true
+	if _per_hover_walk_corridor_active(p_unit):
+		return false
 	if _post_move_basic_planning_open(p_unit) and _painted_drag_route_matches_leg(p_unit):
+		return true
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if (
+		ability != null
+		and _is_awaiting_movement_endpoint(p_unit, ability)
+		and _painted_preview_route_matches_leg(p_unit)
+		and _painted_drag_route_matches_leg(p_unit)
+	):
 		return true
 	return false
 
