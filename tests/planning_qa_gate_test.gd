@@ -63,6 +63,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_post_move_preview_commit_sim,
 		_test_trample_full_preview_truth_click,
 		_test_trample_full_phase_hover_matrix,
+		_test_painted_route_premove_vs_move_equivalence,
 		_test_teleport_full_preview_truth_click,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
@@ -174,6 +175,7 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_post_move_truth",
 		"trample_full_preview_truth_click",
 		"trample_full_phase_hover_matrix",
+		"painted_route_premove_vs_move_equivalence",
 		"teleport_full_preview_truth_click",
 		"bash_preview_board_parity",
 		"hover_click_drop_parity",
@@ -1503,6 +1505,72 @@ static func _test_trample_full_phase_hover_matrix(failures: Array[String]) -> vo
 		"fixed_route": post_route,
 		"suppress_target_arrow": true,
 	})
+
+
+static func _rewire_trample_fixture(fix: Dictionary) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fresh: Dictionary = PlanningDragE2EHarness.wire_fixture(
+		TramplingAdvanceE2ETest._knight_fixture(TramplingAdvanceE2ETest.START_CELL),
+	)
+	_wire_overlay(fresh)
+	for key: Variant in fresh.keys():
+		fix[key] = fresh[key]
+	fix["unit"] = fix.knight
+
+
+static func _setup_unarmed_painted_premove(fix: Dictionary) -> void:
+	_rewire_trample_fixture(fix)
+	fix.director.selected_ability_index = -1
+	fix.input.force_basic_movement = false
+	fix.input._clear_hover_drag_route()
+	PlanningChecklistHarness.flush_planning(fix)
+
+
+static func _setup_trample_move_painted(fix: Dictionary) -> void:
+	_rewire_trample_fixture(fix)
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(fix.input, fix.director, fix.unit):
+		return
+	fix.input._clear_hover_drag_route()
+	PlanningChecklistHarness.flush_planning(fix)
+
+
+static func _paint_sealed_route(fix: Dictionary, route: Array[Vector2i]) -> void:
+	TramplingAdvanceE2ETest._paint_drag_route(
+		fix.input, fix.unit, route, route.back(),
+	)
+	fix.input._end_drag_interaction(false, false)
+	PlanningChecklistHarness.hover(fix, route.back())
+	PlanningChecklistHarness.flush_planning(fix)
+
+
+static func _test_painted_route_premove_vs_move_equivalence(failures: Array[String]) -> void:
+	const LABEL := "PlanningQAGate painted_route_equivalence"
+	var seed_fix: Dictionary = PlanningDragE2EHarness.wire_fixture(
+		TramplingAdvanceE2ETest._knight_fixture(TramplingAdvanceE2ETest.START_CELL),
+	)
+	_wire_overlay(seed_fix)
+	var stand: Vector2i = TramplingAdvanceE2ETest.START_CELL
+	var full_route: Array[Vector2i] = [
+		stand, TramplingAdvanceE2ETest.EAST_THEN_NORTH[0], TramplingAdvanceE2ETest.END_CELL,
+	]
+	var orbit: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		seed_fix.board, [stand, full_route.back()], HoverMatrix.ORBIT_RADIUS, true,
+	)
+	var fix: Dictionary = seed_fix.duplicate()
+	HoverMatrix.assert_two_leg_painted_route_equivalence(
+		failures,
+		LABEL,
+		fix,
+		fix.unit,
+		full_route,
+		orbit,
+		func(setup_fix: Dictionary) -> void:
+			_setup_unarmed_painted_premove(setup_fix)
+			_paint_sealed_route(setup_fix, full_route),
+		func(setup_fix: Dictionary) -> void:
+			_setup_trample_move_painted(setup_fix)
+			_paint_sealed_route(setup_fix, full_route),
+	)
 
 
 static func _test_waypoint_paint_order_preserved_on_tile_drag(failures: Array[String]) -> void:
