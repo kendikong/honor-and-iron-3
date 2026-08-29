@@ -2812,16 +2812,11 @@ func _selection_hover_corridor_paint_active() -> bool:
 		return false
 	if not _basic_move_allowed():
 		return false
-	## Basic premove waypoint paint (ability index -1, force_basic on).
-	if force_basic_movement and _director.selected_ability_index < 0:
-		return true
-	if force_basic_movement:
-		return false
-	if _director.selected_ability_index < 0:
-		return false
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit == null:
 		return false
+	if _director.selected_ability_index < 0:
+		return active_movement_planning_step(p_unit)
 	var ability := _selected_ability_data(p_unit)
 	if ability == null:
 		return false
@@ -4126,7 +4121,7 @@ func _basic_move_allowed() -> bool:
 
 ## Timeline post-move or modular MOVE-prefix landing ΓÇö basic walk preview/commit may open.
 func _post_move_basic_planning_open(p_unit: UnitState) -> bool:
-	if _director == null or p_unit == null or not force_basic_movement:
+	if _director == null or p_unit == null:
 		return false
 	if not _basic_move_allowed():
 		return false
@@ -4185,7 +4180,7 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 	if _director.unit_has_move_planned_at_timing(p_unit.id, move_timing):
 		return false
 	if move_timing == GameEnums.MoveTiming.POST_ACTION:
-		return force_basic_movement and _basic_move_allowed()
+		return _post_move_basic_planning_open(p_unit) and _basic_move_allowed()
 	if ability != null and _director.selected_ability_index >= 0:
 		if _is_awaiting_movement_endpoint(p_unit, ability):
 			return true
@@ -4200,7 +4195,7 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 			return _basic_move_allowed()
 		if auto_run_movement_active(p_unit):
 			return _basic_move_allowed()
-		return force_basic_movement and _basic_move_allowed()
+		return _post_move_basic_planning_open(p_unit) and _basic_move_allowed()
 	return _basic_move_allowed()
 
 
@@ -4723,11 +4718,36 @@ func _sync_drag_route_stand() -> void:
 ## Voluntary-walk per-hover corridor (POST landing orbit) ΓÇö not sealed/painted drag legs or MOVE-module paint.
 ## Voluntary-walk per-hover corridor paint (PRE/POST orbit + MOVE-module awaiting).
 func _voluntary_walk_corridor_paint_active(p_unit: UnitState) -> bool:
-	return _per_hover_walk_corridor_active(p_unit) or _awaiting_voluntary_walk_corridor_active(p_unit)
+	return (
+		_per_hover_walk_corridor_active(p_unit)
+		or _pre_move_voluntary_walk_corridor_active(p_unit)
+		or _awaiting_voluntary_walk_corridor_active(p_unit)
+	)
+
+
+func _pre_move_voluntary_walk_corridor_active(p_unit: UnitState) -> bool:
+	if p_unit == null or _director == null:
+		return false
+	if not _basic_move_allowed():
+		return false
+	if _post_move_basic_planning_open(p_unit):
+		return false
+	if preview_state.is_painted_leg_sealed(p_unit.id):
+		return false
+	if _painted_drag_route_matches_leg(p_unit):
+		return false
+	if _director.find_awaiting_action(p_unit.id) != null:
+		return false
+	var move_timing: int = _director.get_planning_move_timing(p_unit.id)
+	if move_timing == GameEnums.MoveTiming.PRE_ACTION:
+		return active_movement_planning_step(p_unit)
+	if _director.selected_ability_index < 0:
+		return active_movement_planning_step(p_unit)
+	return false
 
 
 func _per_hover_walk_corridor_active(p_unit: UnitState) -> bool:
-	if p_unit == null or _director == null or not force_basic_movement:
+	if p_unit == null or _director == null:
 		return false
 	if not _post_move_basic_planning_open(p_unit):
 		return false
@@ -4816,7 +4836,10 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 ## PRE / ACTION (move module) / POST ΓÇö one corridor preview owner for all move slots.
 func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
-	if waypoints.is_empty() and not _can_move_to(p_unit, cell) and _per_hover_walk_corridor_active(p_unit):
+	if waypoints.is_empty() and not _can_move_to(p_unit, cell) and (
+		_per_hover_walk_corridor_active(p_unit)
+		or _pre_move_voluntary_walk_corridor_active(p_unit)
+	):
 		var stand: Vector2i = _active_move_drag_origin(p_unit)
 		if stand.x > -900000:
 			_set_preview_path(p_unit.id, [stand])
@@ -4846,7 +4869,11 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 		return false
 	if _director == null or not _director.board.is_in_bounds(cell):
 		return false
-	if _per_hover_walk_corridor_active(p_unit) and _attack_target_id_at_cell(p_unit, cell) < 0:
+	if (
+		_voluntary_walk_corridor_paint_active(p_unit)
+		and not _awaiting_voluntary_walk_corridor_active(p_unit)
+		and _attack_target_id_at_cell(p_unit, cell) < 0
+	):
 		return true
 	if painted_move_route_locked(p_unit):
 		return false

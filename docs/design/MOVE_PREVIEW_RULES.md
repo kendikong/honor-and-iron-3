@@ -338,6 +338,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `_sanitize_drag_route_context` — illegal painted drag repaths via `CombatPlanningPreview.corridor_waypoints_to_cell` (axis-first corridor owner); `MovementSystem.find_path` band-aid removed from drag sanitize.
 - `_voluntary_walk_corridor_paint_active` — single predicate for PRE/POST orbit + MOVE-module awaiting corridor paint; `_corridor_waypoints_to_cell` painted-drag peek uses it.
 
+**Pass 23 (Wave E5 — PRE corridor unification, drop force_basic paint gates — 2026-08-29):**
+- `_post_move_basic_planning_open` / `_per_hover_walk_corridor_active` — no longer gated on `force_basic_movement`; POST openness uses timeline/modular checks only.
+- `_pre_move_voluntary_walk_corridor_active` — PRE open-leg orbit corridor owner (unarmed premove + `PRE_ACTION` timing); folded into `_voluntary_walk_corridor_paint_active`.
+- `active_movement_planning_step` — POST armed fallback uses `_post_move_basic_planning_open` instead of `force_basic_movement`.
+- `_selection_hover_corridor_paint_active` — unarmed premove corridor via `active_movement_planning_step`, not `force_basic_movement`.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
