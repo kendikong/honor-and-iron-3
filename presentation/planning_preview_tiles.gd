@@ -74,12 +74,16 @@ static func resolve_layer_origins(
 		and planning_input.action_range_visible_for_hover()
 	)
 	plan["show_action_range"] = show_action_range
-	var locked_move: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
-		director, board, unit.id,
-	)
+	var locked_stand: Vector2i = none
+	if planning_input != null:
+		locked_stand = planning_input.phase_entry_stand_cell(unit.id)
+	else:
+		locked_stand = CombatPlanningPreview.forecast_stand_at_phase_entry(
+			director, board, unit.id, null,
+		)
 	match phase:
 		PhaseKind.MOVEMENT:
-			plan["locked_move_origin"] = locked_move if locked_move.x > -900000 else none
+			plan["locked_move_origin"] = locked_stand if locked_stand.x > -900000 else none
 			if show_action_range:
 				var predicted: Vector2i = planning_input.predicted_stand_at_hover(
 					unit.id, hover_coord,
@@ -106,8 +110,8 @@ static func resolve_layer_origins(
 				and planning_input.action_range_stand_locked_to_projection(unit.id)
 			)
 		PhaseKind.NON_MOVEMENT:
-			if planning_input != null:
-				plan["locked_aim_origin"] = planning_input.action_range_intent_stand_cell(unit.id)
+			if locked_stand.x > -900000:
+				plan["locked_aim_origin"] = locked_stand
 			var post_timing: int = director.get_planning_move_timing(unit.id)
 			if (
 				post_timing == GameEnums.MoveTiming.POST_ACTION

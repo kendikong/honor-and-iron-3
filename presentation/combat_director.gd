@@ -596,6 +596,32 @@ func get_planning_move_timing(unit_id: int) -> int:
 	return _get_move_timing(unit_id)
 
 
+enum PlanningTimelinePhaseKind {
+	WAIT = 0,
+	PREMOVE_MOVEMENT = 1,
+	SKILL_AWAITING = 2,
+	POSTMOVE_MOVEMENT = 3,
+	NON_MOVEMENT = 4,
+	IDLE = 5,
+}
+
+
+## Single read API: where the unit is on the planning timeline (not paint/commit forks).
+func planning_timeline_phase_kind(unit_id: int) -> int:
+	if unit_id < 0:
+		return PlanningTimelinePhaseKind.IDLE
+	if unit_has_wait_planned(unit_id):
+		return PlanningTimelinePhaseKind.WAIT
+	if find_awaiting_action(unit_id) != null:
+		return PlanningTimelinePhaseKind.SKILL_AWAITING
+	var timing: int = get_planning_move_timing(unit_id)
+	if timing == GameEnums.MoveTiming.PRE_ACTION:
+		return PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+	if timing == GameEnums.MoveTiming.POST_ACTION:
+		return PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+	return PlanningTimelinePhaseKind.NON_MOVEMENT
+
+
 func unit_action_column_spent_for_movement(unit_id: int) -> bool:
 	## Timeline post-move unlocks only after the class action is fully committed.
 	## Modular skills (Parting Shot retreat, Charge Strike move leg, …) stay

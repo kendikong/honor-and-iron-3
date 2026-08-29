@@ -602,7 +602,7 @@ func _refresh_drag_preview_now() -> void:
 						_planning.apply_preview_paths_only(preview_state, _drag_unit_id)
 			var post_trim_actor: UnitState = _proj_unit(_drag_unit_id)
 			if post_trim_actor != null:
-				var leg_origin: Vector2i = _active_move_drag_origin(post_trim_actor)
+				var leg_origin: Vector2i = _phase_entry_stand(post_trim_actor)
 				var hover_cell: Vector2i = _active_hover_cell()
 				var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 					_director, _drag_unit_id, leg_origin,
@@ -665,7 +665,7 @@ func _refresh_drag_preview_now() -> void:
 		if _drag_route.size() >= 2:
 			_sync_drag_route_stand()
 		else:
-			var post_stand: Vector2i = _active_move_drag_origin(drag_actor)
+			var post_stand: Vector2i = _phase_entry_stand(drag_actor)
 			_set_preview_path(_drag_unit_id, [post_stand])
 	_refresh_action_range_overlay_when_gate_off()
 
@@ -759,7 +759,7 @@ func _clamp_postmove_drag_for_forbidden_hover(unit_id: int) -> void:
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null or not _post_move_basic_planning_open(actor):
 		return
-	var leg_origin: Vector2i = _active_move_drag_origin(actor)
+	var leg_origin: Vector2i = _phase_entry_stand(actor)
 	if leg_origin.x <= -900000:
 		return
 	var hover_cell: Vector2i = _active_hover_cell()
@@ -1544,7 +1544,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var ability := _selected_ability_data(p_unit)
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
 			if active_movement_planning_step(p_unit):
-				var leg_origin: Vector2i = _active_move_drag_origin(p_unit)
+				var leg_origin: Vector2i = _phase_entry_stand(p_unit)
 				if preview_state.is_painted_leg_sealed(p_unit.id):
 					var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
 					if (
@@ -1624,7 +1624,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 					if enemy_unit != null and not _enemy_hover_respects_painted_route(p_unit, enemy_unit, ability, _route_waypoints()):
 						should_extend_route = false
 				if should_extend_route:
-					var paint_origin: Vector2i = _active_move_drag_origin(p_unit)
+					var paint_origin: Vector2i = _phase_entry_stand(p_unit)
 					if paint_origin.x > -900000:
 						var paint_forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 							_director, p_unit.id, paint_origin,
@@ -1634,7 +1634,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 				if should_extend_route:
 					if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
 						_drag_unit_id = p_unit.id
-						_drag_route = [_active_move_drag_origin(p_unit)]
+						_drag_route = [_phase_entry_stand(p_unit)]
 						_drag_last_free = _drag_route[0]
 					_extend_drag_route(cell)
 			elif (
@@ -2266,7 +2266,7 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	if hover_unit == null:
 		return
 	if dragging and _post_move_basic_planning_open(hover_unit):
-		var leg_origin: Vector2i = _active_move_drag_origin(hover_unit)
+		var leg_origin: Vector2i = _phase_entry_stand(hover_unit)
 		if leg_origin.x > -900000:
 			var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 				_director, hover_unit.id, leg_origin,
@@ -2516,7 +2516,7 @@ func _stationary_ranged_enemy_hover_suppresses_move_preview(
 	var enemy: UnitState = _director.board.get_unit_by_id(enemy_id)
 	if enemy == null:
 		return false
-	var stand: Vector2i = _proj_move_origin(actor)
+	var stand: Vector2i = _phase_entry_stand(actor)
 	return AbilitySystem.planning_is_valid_awaiting_endpoint(
 		stand, enemy.position, ability, actor, _proj(),
 	)
@@ -2543,7 +2543,7 @@ func _update_hover_attack_preview() -> void:
 	if (
 		_should_use_awaiting_endpoint_on_input(endpoint_ability)
 		and AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_awaiting_endpoint_origin(p_unit), cell, endpoint_ability, p_unit, _proj(),
+			_phase_entry_stand(p_unit), cell, endpoint_ability, p_unit, _proj(),
 		)
 	):
 		var dash_res: Dictionary = _preview_from_commit_slots_at_cell(_director.selected_unit_id, cell)
@@ -2782,16 +2782,7 @@ func _painted_drag_route_drives_live_preview() -> bool:
 
 
 func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
-	if p_unit == null or _director == null:
-		return Vector2i(-999999, -999999)
-	var sealed_origin: Vector2i = _sealed_painted_leg_origin(p_unit)
-	if sealed_origin.x > -900000:
-		return sealed_origin
-	if _director.base_board != null:
-		var base_unit: UnitState = _director.base_board.get_unit_by_id(p_unit.id)
-		if base_unit != null:
-			return base_unit.position
-	return _proj_move_origin(p_unit)
+	return _phase_entry_stand(p_unit)
 
 
 func _painted_drag_route_matches_leg(p_unit: UnitState) -> bool:
@@ -2812,7 +2803,7 @@ func _painted_preview_route_matches_leg(p_unit: UnitState) -> bool:
 	var route: Array = preview_state.preview_paths.get(p_unit.id, [])
 	if route.size() < 2:
 		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	var origin: Vector2i = _phase_entry_stand(p_unit)
 	if origin.x <= -900000:
 		return false
 	return route[0] is Vector2i and (route[0] as Vector2i) == origin
@@ -3268,7 +3259,7 @@ func _ensure_move_waypoints_on_commit_slots(unit_id: int, slots: Dictionary) -> 
 			if not act.waypoints.is_empty():
 				continue
 			var dest: Vector2i = act.target_coord
-			if dest == _proj_move_origin(actor):
+			if dest == _phase_entry_stand(actor):
 				continue
 			var leg: Array[Vector2i] = _resolve_commit_move_waypoints(unit_id, actor, dest)
 			if leg.is_empty() or leg.back() != dest:
@@ -3502,7 +3493,7 @@ func _move_origin_for_commit_facing(unit_id: int, move_action: TimelineAction) -
 		)
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor != null:
-		return _proj_move_origin(actor)
+		return _phase_entry_stand(actor)
 	var board: BoardState = _director.base_board if _director.base_board != null else _director.board
 	var unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
 	return unit.position if unit != null else Vector2i.ZERO
@@ -4482,7 +4473,7 @@ func predicted_stand_at_hover(unit_id: int, hover_coord: Vector2i) -> Vector2i:
 	if active_movement_planning_step(actor):
 		if _director.board.is_in_bounds(hover_coord) and _is_hover_move_cell(actor, hover_coord):
 			return hover_coord
-		return _active_move_drag_origin(actor)
+		return _phase_entry_stand(actor)
 	return action_range_intent_stand_cell(unit_id)
 
 
@@ -4507,7 +4498,7 @@ func _typed_route_cells(route: Array) -> Array[Vector2i]:
 func _discard_stale_drag_route_for_leg(p_unit: UnitState) -> void:
 	if p_unit == null or _drag_route.is_empty():
 		return
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
+	var origin: Vector2i = _phase_entry_stand(p_unit)
 	if origin.x <= -900000:
 		return
 	if (_drag_route[0] as Vector2i) != origin:
@@ -4577,7 +4568,7 @@ func _basic_painted_drag_orbit_guard_active() -> bool:
 		return false
 	if _post_move_basic_planning_open(actor):
 		return false
-	var move_origin: Vector2i = _active_move_drag_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 	var cell: Vector2i = _pointer_grid_cell()
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	if _drag_route.find(cell) >= 0:
@@ -4598,7 +4589,7 @@ func _painted_premove_orbit_sealed() -> bool:
 		return false
 	if not _painted_drag_route_matches_leg(actor) or _drag_route.size() < 2:
 		return false
-	var move_origin: Vector2i = _active_move_drag_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 	return move_origin.x > -900000 and _route_has_left_origin_ring(move_origin)
 
 
@@ -4619,7 +4610,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		return
 	if _basic_painted_drag_orbit_guard_active():
 		return
-	var move_origin: Vector2i = _active_move_drag_origin(unit)
+	var move_origin: Vector2i = _phase_entry_stand(unit)
 	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
 	# Keep this when a skill is armed / auto-run is on ΓÇö circling is not a painted path.
 	# Once the route has left the origin ring (manhattan > 1), keep corridor paint
@@ -4673,7 +4664,7 @@ func _repath_drag_route_to(
 	move_cost: int,
 	ability: AbilityData,
 ) -> void:
-	var move_origin: Vector2i = _active_move_drag_origin(unit)
+	var move_origin: Vector2i = _phase_entry_stand(unit)
 	var path: Array[Vector2i] = MovementSystem.drag_corridor_path(
 		board, move_origin, cell, budget, mt, move_cost, unit, ability,
 	)
@@ -4898,7 +4889,7 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 		return
 	if _drag_route.size() < 2:
 		if actor != null:
-			var stand_only: Vector2i = _active_move_drag_origin(actor)
+			var stand_only: Vector2i = _phase_entry_stand(actor)
 			if stand_only.x > -900000:
 				_set_preview_path(unit_id, [stand_only])
 		return
@@ -4914,7 +4905,7 @@ func _sync_painted_drag_route_to_preview_paths(unit_id: int, require_leg_match: 
 func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
 	if waypoints.is_empty() and not _can_move_to(p_unit, cell) and _voluntary_walk_corridor_paint_active(p_unit):
-		var stand: Vector2i = _active_move_drag_origin(p_unit)
+		var stand: Vector2i = _phase_entry_stand(p_unit)
 		if stand.x > -900000:
 			_set_preview_path(p_unit.id, [stand])
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
@@ -4993,7 +4984,7 @@ func _write_movement_hover_preview_paths(
 			_sealed_leg_hover_mode(actor, hover_cell),
 		)
 	):
-		var hop_origin: Vector2i = _awaiting_endpoint_origin(actor)
+		var hop_origin: Vector2i = _phase_entry_stand(actor)
 		if (
 			hop_origin.x > -900000
 			and _director != null
@@ -5042,9 +5033,9 @@ func _assemble_voluntary_walk_preview_path(
 ) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
-	var origin: Vector2i = _active_move_drag_origin(actor)
+	var origin: Vector2i = _phase_entry_stand(actor)
 	if origin.x <= -900000:
-		origin = _awaiting_endpoint_origin(actor)
+		origin = _phase_entry_stand(actor)
 	if origin.x <= -900000:
 		return []
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
@@ -5163,7 +5154,7 @@ func _route_waypoints_for_commit(dest_cell: Vector2i = Vector2i(-999999, -999999
 func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
-	var move_origin: Vector2i = _proj_move_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 	if cell == move_origin:
 		return []
 	if _drag_route.size() >= 2:
@@ -5197,7 +5188,7 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				return painted
-	var origin: Vector2i = _active_move_drag_origin(actor)
+	var origin: Vector2i = _phase_entry_stand(actor)
 	if origin.x <= -900000:
 		return []
 	var sealed_mode: int = _sealed_leg_hover_mode(actor, cell)
@@ -5249,7 +5240,7 @@ func is_skill_aim_hover_at(cell: Vector2i) -> bool:
 		return false
 	if awaiting_targeting_active() and _is_awaiting_movement_endpoint(actor, ability):
 		return AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_awaiting_endpoint_origin(actor), cell, ability, actor, _proj(),
+			_phase_entry_stand(actor), cell, ability, actor, _proj(),
 		)
 	return _is_in_range_tile_skill_aim(actor, cell)
 
@@ -5403,7 +5394,7 @@ func _movement_skill_commits_tile_endpoint(
 	if not AbilitySystem.ability_has_movement_effect(ability, actor):
 		return false
 	return AbilitySystem.planning_is_valid_awaiting_endpoint(
-		_awaiting_endpoint_origin(actor), cell, ability, actor, _proj(),
+		_phase_entry_stand(actor), cell, ability, actor, _proj(),
 	)
 
 
@@ -5414,7 +5405,7 @@ func _cell_on_dash_line_from_stand(
 ) -> bool:
 	if actor == null or ability == null:
 		return false
-	var origin: Vector2i = _awaiting_endpoint_origin(actor)
+	var origin: Vector2i = _phase_entry_stand(actor)
 	if cell == origin:
 		return true
 	var delta: Vector2i = cell - origin
@@ -5458,7 +5449,7 @@ func _tile_target_movement_skill_commits_at_cell(
 		if (
 			_drag_route_commits_active()
 			and _drag_unit_id == actor.id
-			and _route_has_left_origin_ring(_proj_move_origin(actor))
+			and _route_has_left_origin_ring(_phase_entry_stand(actor))
 		):
 			return false
 		if (
@@ -5712,46 +5703,28 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return Vector2i(-999999, -999999)
+	var stand: Vector2i = phase_entry_stand_cell(unit_id)
 	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
-	if awaiting != null:
-		if awaiting.awaiting_module_index > 0:
-			var prior_stand: Vector2i = AbilitySystem.module_target_coord(
-				awaiting, awaiting.awaiting_module_index - 1,
-			)
-			if _director.board.is_in_bounds(prior_stand):
-				return prior_stand
-		else:
-			if _director.projected_state != null:
-				var projected_unit: UnitState = _director.projected_state.get_unit_by_id(unit_id)
-				if projected_unit != null:
-					return projected_unit.position
-			var module_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
-				_director, _proj(), unit_id,
-			)
-			if module_origin.x > -900000:
-				return module_origin
+	if awaiting != null and awaiting.awaiting_module_index > 0:
+		var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+			awaiting, awaiting.awaiting_module_index - 1,
+		)
+		if _director.board.is_in_bounds(prior_stand):
+			stand = prior_stand
 	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
 	if planned_move != null:
 		return planned_move.target_coord
-	var post_timing: int = _director.get_planning_move_timing(unit_id)
-	if post_timing == GameEnums.MoveTiming.POST_ACTION:
-		var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
-			_director, _proj(), unit_id,
-		)
-		if _director.board.is_in_bounds(action_end):
-			return action_end
-	var projected: Vector2i = _proj_move_origin(actor)
-	if _action_range_locked_to_projected_stand(unit_id, actor, projected):
+	if _action_range_locked_to_projected_stand(unit_id, actor, stand):
 		if _director.projected_state != null:
 			var projected_unit: UnitState = _director.projected_state.get_unit_by_id(unit_id)
 			if projected_unit != null:
 				return projected_unit.position
-		return projected
+		return stand
 	var ability: AbilityData = null
 	if unit_id == _director.selected_unit_id:
 		ability = _selected_ability_data(actor)
 	if _armed_tile_target_locks_action_range(actor):
-		return projected
+		return stand
 	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
 		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
 		if _director.board.is_in_bounds(hover):
@@ -5760,27 +5733,25 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 				hover_unit != null
 				and hover_unit.is_enemy()
 				and AbilitySystem.planning_is_valid_awaiting_endpoint(
-					projected, hover, ability, actor, _proj(),
+					stand, hover, ability, actor, _proj(),
 				)
 			):
-				return projected
+				return stand
 	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-	if live_path.size() >= 2:
+	if live_path.size() >= 2 and active_movement_planning_step(actor):
 		return live_path[live_path.size() - 1] as Vector2i
 	var hover_target_id: int = _hover_attack_target_id()
 	if hover_target_id >= 0:
-		return projected
+		return stand
 	var dest: Vector2i = move_intent_destination(unit_id)
-	if _director.board.is_in_bounds(dest) and dest != projected and _is_hover_move_cell(actor, dest):
+	if _director.board.is_in_bounds(dest) and dest != stand and _is_hover_move_cell(actor, dest):
 		return dest
 	if is_live_preview_active() and preview_state.preview_board != null:
 		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
 		if live_unit != null:
 			return live_unit.position
-	return projected
+	return stand
 
-
-## Post-move walk hover (action spent): red range stays on latest committed stand ΓÇö not live ghost cell.
 func _action_range_locked_to_projected_stand(
 	unit_id: int,
 	actor: UnitState,
@@ -5825,7 +5796,7 @@ func action_range_stand_locked_to_projection(unit_id: int = -1) -> bool:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return false
-	return _action_range_locked_to_projected_stand(unit_id, actor, _proj_move_origin(actor))
+	return _action_range_locked_to_projected_stand(unit_id, actor, _phase_entry_stand(actor))
 
 
 func _preview_dict_is_move_only_intent(preview: Dictionary) -> bool:
@@ -6347,7 +6318,7 @@ func _ability_range_origin(actor: UnitState) -> Vector2i:
 			var stand: Vector2i = _drag_route_stand_cell()
 			if _director.board != null and _director.board.is_in_bounds(stand):
 				return stand
-	return _proj_move_origin(actor)
+	return _phase_entry_stand(actor)
 
 
 func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:
@@ -6383,7 +6354,7 @@ func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState)
 func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if unit == null:
 		return false
-	var move_origin: Vector2i = _active_move_drag_origin(unit)
+	var move_origin: Vector2i = _phase_entry_stand(unit)
 	if move_origin.x <= -900000 or coord == move_origin:
 		return false
 	var ability: AbilityData = _selected_ability_data(unit)
@@ -6404,7 +6375,7 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		var sealed_corridor: Array[Vector2i] = CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 			sealed_board,
 			unit,
-			_active_move_drag_origin(unit),
+			_phase_entry_stand(unit),
 			coord,
 			sealed_budget,
 			_director,
@@ -6486,7 +6457,7 @@ func _drop_allows_move_tile(
 ) -> bool:
 	if actor == null or cell == actor.position:
 		return false
-	var move_origin: Vector2i = _active_move_drag_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 	if move_origin.x <= -900000 or cell == move_origin:
 		return false
 	var effective_legal: Array[Vector2i] = legal_move_tiles
@@ -6580,74 +6551,31 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return unit.position
 
 
-## Pathfinding / drop origin ΓÇö projected stand, or action end during post-move.
-func _proj_move_origin(unit: UnitState) -> Vector2i:
-	if _director == null or unit == null:
-		return _proj_origin(unit)
-	return CombatPlanningPreview.planning_latest_stand_cell(_director, _proj(), unit.id)
-
-
-func _awaiting_endpoint_origin(actor: UnitState) -> Vector2i:
-	if actor == null:
+## Forecast stand at current planning phase entry (walk paint, commit, locked tiles).
+func phase_entry_stand_cell(unit_id: int) -> Vector2i:
+	if unit_id < 0:
 		return Vector2i(-999999, -999999)
-	if _director != null:
-		var ability: AbilityData = _selected_ability_data(actor)
-		if ability != null and _is_awaiting_movement_endpoint(actor, ability):
-			var leg_origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(
-				_director, _proj(), actor.id,
-			)
-			if leg_origin.x > -900000:
-				return leg_origin
-	var projected: UnitState = _proj_unit(actor.id)
-	if projected != null:
-		return projected.position
-	return actor.position
+	var unit: UnitState = _proj_unit(unit_id)
+	if unit == null and _director != null and _director.board != null:
+		unit = _director.board.get_unit_by_id(unit_id)
+	if unit == null:
+		return Vector2i(-999999, -999999)
+	return _phase_entry_stand(unit)
+
+
+func _phase_entry_stand(unit: UnitState) -> Vector2i:
+	if unit == null or _director == null:
+		return Vector2i(-999999, -999999)
+	return CombatPlanningPreview.forecast_stand_at_phase_entry(
+		_director, _proj(), unit.id, preview_state,
+	)
 
 
 func _planning_drag_origin(unit_id: int) -> Vector2i:
 	var unit: UnitState = _proj_unit(unit_id)
 	if unit == null:
 		return Vector2i(-999999, -999999)
-	return _active_move_drag_origin(unit)
-
-
-func _sealed_painted_leg_origin(unit: UnitState) -> Vector2i:
-	if unit == null or not preview_state.is_painted_leg_sealed(unit.id):
-		return Vector2i(-999999, -999999)
-	var sealed_route: Array = preview_state.preview_paths.get(unit.id, [])
-	if sealed_route.is_empty() or not (sealed_route[0] is Vector2i):
-		return Vector2i(-999999, -999999)
-	return sealed_route[0] as Vector2i
-
-
-func _active_move_drag_origin(unit: UnitState) -> Vector2i:
-	if unit == null:
-		return Vector2i(-999999, -999999)
-	var sealed_origin: Vector2i = _sealed_painted_leg_origin(unit)
-	if sealed_origin.x > -900000:
-		return sealed_origin
-	var ability: AbilityData = _selected_ability_data(unit)
-	if _is_awaiting_movement_endpoint(unit, ability):
-		return _awaiting_endpoint_origin(unit)
-	if _director != null and _post_move_basic_planning_open(unit):
-		var board: BoardState = _proj()
-		var landing: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
-			_director, board, unit.id,
-		)
-		if board != null and board.is_in_bounds(landing):
-			var projected: UnitState = board.get_unit_by_id(unit.id)
-			if projected != null and projected.position == landing:
-				return landing
-	if _director != null:
-		var timing: int = _director.get_planning_move_timing(unit.id)
-		if timing == GameEnums.MoveTiming.POST_ACTION:
-			var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
-				_director, _proj(), unit.id,
-			)
-			if _director.board != null and _director.board.is_in_bounds(action_end):
-				return action_end
-	return _proj_move_origin(unit)
-
+	return _phase_entry_stand(unit)
 
 func _aim_enemy_pos(unit_id: int) -> Vector2i:
 	var live := _director.board.get_unit_by_id(unit_id) if _director.board != null else null
@@ -6897,7 +6825,7 @@ func _enemy_hover_respects_painted_route(
 ) -> bool:
 	if actor == null or enemy == null or route_waypoints.is_empty() or ability == null:
 		return false
-	var move_origin: Vector2i = _proj_move_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 	var stand_in_range: bool = AbilitySystem.planning_target_is_in_range(
 		_proj(), actor, ability, route_waypoints.back(), enemy.position,
 	)
@@ -6989,7 +6917,7 @@ func _append_move_to_commit_slots(
 	var timing: int = _move_slot_timing_for_commit(unit_id, actor, cell)
 	if timing < 0:
 		return
-	var move_origin: Vector2i = _proj_move_origin(actor)
+	var move_origin: Vector2i = _phase_entry_stand(actor)
 
 	var safe_waypoints: Array[Vector2i] = waypoints.duplicate()
 	if safe_waypoints.is_empty() and cell != move_origin:
@@ -7240,11 +7168,11 @@ func _build_commit_slots_at_cell(
 		if (
 			not has_awaiting_action
 			and AbilitySystem.planning_arms_on_self_tile(actor, ability)
-			and (cell == _awaiting_endpoint_origin(actor) or (hover_unit != null and hover_unit.id == actor.id))
+			and (cell == _phase_entry_stand(actor) or (hover_unit != null and hover_unit.id == actor.id))
 		):
 			slots[_ability_plan_column(ability)].append(
 				TimelineAction.make_ability_awaiting(
-					unit_id, ability, _awaiting_endpoint_origin(actor), effective_waypoints,
+					unit_id, ability, _phase_entry_stand(actor), effective_waypoints,
 				),
 			)
 			return slots
@@ -7272,7 +7200,7 @@ func _build_commit_slots_at_cell(
 			)
 		):
 			if awaiting_targeting_active() or has_awaiting_action:
-				var awaiting_origin := _awaiting_endpoint_origin(actor)
+				var awaiting_origin := _phase_entry_stand(actor)
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					awaiting_origin, cell, ability, actor, _proj(),
 				):
@@ -7495,7 +7423,7 @@ func _ally_hover_respects_painted_route(
 	if not AbilitySystem.target_passes_mode(actor, ability, ally):
 		return false
 	var slots: Dictionary = _empty_commit_slots()
-	if stand_cell != _proj_move_origin(actor):
+	if stand_cell != _phase_entry_stand(actor):
 		slots["pre"].append(
 			_director.make_planning_move_action(
 				actor.id,
@@ -7584,14 +7512,14 @@ func _build_ally_commit_slots(
 		return slots
 	var board: BoardState = _proj()
 	var move_wps: Array[Vector2i] = waypoints.duplicate()
-	var move_dest: Vector2i = _proj_move_origin(actor)
+	var move_dest: Vector2i = _phase_entry_stand(actor)
 	if not move_wps.is_empty():
 		move_dest = move_wps[move_wps.size() - 1]
 		if _drag_route_commits_active() and _director.board.is_in_bounds(_drag_route_stand_cell()):
 			move_dest = _drag_route_stand_cell()
 	if move_wps.is_empty():
 		var swap_range: int = _ability_range(actor)
-		var live_origin: Vector2i = _proj_move_origin(actor)
+		var live_origin: Vector2i = _phase_entry_stand(actor)
 		if _director != null:
 			var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
 			if live_unit != null:
@@ -7608,7 +7536,7 @@ func _build_ally_commit_slots(
 	):
 		if (
 			_unit_move_slot_open(unit_id, move_dest)
-			and move_dest != _proj_move_origin(actor)
+			and move_dest != _phase_entry_stand(actor)
 		):
 			_append_move_to_commit_slots(slots, unit_id, move_dest, move_wps, actor)
 		_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
@@ -7619,7 +7547,7 @@ func _build_ally_commit_slots(
 	var approach: Vector2i = _director.preview_approach_tile(
 		unit_id, ally.id, ability_index, approach_hint,
 	)
-	var live_origin: Vector2i = _proj_move_origin(actor)
+	var live_origin: Vector2i = _phase_entry_stand(actor)
 	if _director != null:
 		var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
 		if live_unit != null:
@@ -7728,7 +7656,7 @@ func _build_enemy_commit_slots(
 		return slots
 	if use_skill and _is_awaiting_movement_endpoint(actor, ability):
 		if AbilitySystem.planning_is_valid_awaiting_endpoint(
-			_awaiting_endpoint_origin(actor), enemy.position, ability, actor, _proj(),
+			_phase_entry_stand(actor), enemy.position, ability, actor, _proj(),
 		):
 			var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 				ability, enemy.id,
@@ -8665,10 +8593,10 @@ func _update_drag_sprite(local: Vector2, cell: Vector2i, preview: Dictionary) ->
 			and _awaiting_flow_selected(actor, endpoint_ability)
 			and awaiting_targeting_active()
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
-				_awaiting_endpoint_origin(actor), cell, endpoint_ability, actor, _proj(),
+				_phase_entry_stand(actor), cell, endpoint_ability, actor, _proj(),
 			)
 		):
-			var dash_face: int = _facing_toward(_awaiting_endpoint_origin(actor), cell)
+			var dash_face: int = _facing_toward(_phase_entry_stand(actor), cell)
 			var mode: int = _drag_ability_preview_mode(endpoint_ability, actor, false)
 			var dash_target := _director.board.get_unit_at(cell)
 			if dash_target != null and dash_target.is_enemy():

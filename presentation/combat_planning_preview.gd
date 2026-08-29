@@ -912,6 +912,23 @@ static func planning_move_origin_cell(
 	return planning_move_origin_cell_for_timing(director, fallback_board, unit_id, timing)
 
 
+## Forecast stand at the start of the current planning phase (walk + locked tiles SSOT).
+## Sealed voluntary-walk leg locks `preview_paths[unit][0]` so hover cannot drift the anchor.
+static func forecast_stand_at_phase_entry(
+	director: CombatDirector,
+	fallback_board: BoardState,
+	unit_id: int,
+	preview: CombatPlanningPreview = null,
+) -> Vector2i:
+	if director == null or unit_id < 0:
+		return Vector2i(-999999, -999999)
+	if preview != null and preview.is_painted_leg_sealed(unit_id):
+		var sealed_route: Array = preview.preview_paths.get(unit_id, [])
+		if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
+			return sealed_route[0] as Vector2i
+	return planning_move_origin_cell(director, fallback_board, unit_id)
+
+
 ## Move-leg anchor for a specific timing slot (pre = projected stand, post = action end).
 static func planning_move_origin_cell_for_timing(
 	director: CombatDirector,
