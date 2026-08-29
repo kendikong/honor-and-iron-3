@@ -344,6 +344,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `active_movement_planning_step` — POST armed fallback uses `_post_move_basic_planning_open` instead of `force_basic_movement`.
 - `_selection_hover_corridor_paint_active` — unarmed premove corridor via `active_movement_planning_step`, not `force_basic_movement`.
 
+**Pass 24 (Wave E6 — preview paint no longer gated on force_basic — 2026-08-29):**
+- `_basic_walk_pathfinding_active` / `_postmove_painted_drag_trim_active` — timeline-based helpers replace `force_basic_movement` in corridor pathfinding, postmove prior-leg trim, and drag preview snap.
+- `_basic_move_allowed` — phase-exhaustion skip uses `_post_move_basic_planning_open`, not `force_basic_movement`.
+- Premove orbit guards (`_basic_painted_drag_orbit_guard_active`, `_painted_premove_orbit_sealed`) — unarmed premove only; POST excluded via `_post_move_basic_planning_open`.
+- Drag/hover preview trim, `_set_preview_path`, `_route_pathfinding_ability`, `_should_strip_action_from_basic_postmove_slots` — use POST-open / painted-leg predicates instead of `force_basic_movement`.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
