@@ -105,6 +105,8 @@ func setup(
 ) -> void:
 	_map_view = map_view
 	_director = director
+	if director != null:
+		director.planning_live_preview = preview_state
 	_planning = planning
 	_intent_state = intent_state
 	_sfx = sfx

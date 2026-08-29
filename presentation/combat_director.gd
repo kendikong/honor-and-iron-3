@@ -84,6 +84,8 @@ var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
 var _commit_intent_preview_paths: Dictionary = {}
+## Live planning preview SSOT for sealed-leg origin lock (set by CombatPlanningInput.setup).
+var planning_live_preview: CombatPlanningPreview = null
 ## Autobattler batches rpc_plan_move commits; one parallel planning walk plays at batch end.
 var _autobattler_plan_batch: bool = false
 ## When this returns true, default victory/defeat checks are skipped (battle continues).
@@ -458,11 +460,11 @@ func _fill_missing_movement_waypoints_on_action(actor: UnitState, action: Timeli
 		return
 	if AbilitySystem.ability_has_dash(action.ability, actor):
 		action.waypoints = preview_waypoints_for_hover(
-			board, actor, action.target_coord, [], action.ability, true,
+			board, actor, action.target_coord, [], action.ability, true, planning_live_preview,
 		)
 	else:
 		action.waypoints = preview_waypoints_for_hover(
-			board, actor, action.target_coord, [], action.ability, false,
+			board, actor, action.target_coord, [], action.ability, false, planning_live_preview,
 		)
 
 
@@ -1641,6 +1643,8 @@ func preview_drag(unit_id: int, coord: Vector2i, attack_target_id: int = -1, way
 		coord,
 		waypoints,
 		selected_ability,
+		false,
+		planning_live_preview,
 	)
 	var new_actions: Array[TimelineAction] = []
 	if attack_target_id >= 0:

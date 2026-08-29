@@ -433,13 +433,14 @@ static func facing_along_last_planned_step(
 static func _seed_movement_origins(
 	director: CombatDirector,
 	start_board: BoardState,
+	preview: CombatPlanningPreview = null,
 ) -> Dictionary:
 	var origins: Dictionary = {}
 	if start_board == null:
 		return origins
 	if director != null:
 		for unit: UnitState in start_board.units:
-			var stand: Vector2i = planning_latest_stand_cell(director, start_board, unit.id)
+			var stand: Vector2i = planning_latest_stand_cell(director, start_board, unit.id, preview)
 			if stand.x <= -900000:
 				var live: BoardState = director.live_planning_board()
 				var live_unit: UnitState = live.get_unit_by_id(unit.id) if live != null else null
@@ -484,7 +485,7 @@ func ensure_movement_intent_from_actions(
 ) -> void:
 	if start_board == null or actions.is_empty():
 		return
-	var origins: Dictionary = _seed_movement_origins(director, start_board)
+	var origins: Dictionary = _seed_movement_origins(director, start_board, self)
 	var move_actors: Dictionary = {}
 	var movement_intents: Dictionary = {}
 	for raw: Variant in actions:
@@ -1456,7 +1457,7 @@ static func anchor_preview_paths_to_latest_stand(
 	if director == null or preview == null or unit_id < 0:
 		return
 	var stand: Vector2i = forecast_stand_at_phase_entry(director, fallback_board, unit_id, preview)
-	if director.projected_state != null:
+	if not preview.is_painted_leg_sealed(unit_id) and director.projected_state != null:
 		var projected_unit: UnitState = director.projected_state.get_unit_by_id(unit_id)
 		if projected_unit != null:
 			stand = projected_unit.position
