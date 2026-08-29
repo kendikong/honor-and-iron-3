@@ -66,7 +66,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | 26 | `006631aca` | FIX-* not formalized | fresh audit | 52 FAIL | Seeded GAP-001–004; loop method flawed |
 | 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass |
 | 28 | `edb324bdb` | GAP-005 REGRESSED | GAP-006–008 HIGH new | 72 FAIL | Origin API unified; merge paths still leaked |
-| 29 | `3ddabb40f` | all GAP/FIX PASS | no new HIGH | 84 FAIL | Score 1pt below threshold; stale docs + `move_leg_origin_cell` |
+| 30 | `0942e736` | all GAP/FIX PASS | no new HIGH | 86 PASS | `move_leg_origin_cell` SSOT; backlog/matrix synced |
 
 ---
 

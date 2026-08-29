@@ -978,7 +978,7 @@ static func committed_move_action(
 	return found
 
 
-## Origin cell for a move leg — turn-start walk for pre, action end for post.
+## Origin cell for a move leg — delegates planning_move_origin_cell (pre) or action end (post).
 static func move_leg_origin_cell(
 	director: CombatDirector,
 	board: BoardState,
