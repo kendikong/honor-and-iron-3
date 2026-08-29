@@ -26,10 +26,11 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Bible / matrix ref | Gap | Status | Evidence (file:line) | Fixed commit | Verified round |
 |----|----------|-------------------|-----|--------|----------------------|--------------|----------------|
-| GAP-001 | HIGH | MOVE_PREVIEW_RULES §88 (L88); Live vs frozen table | On **illegal movement-step hover**, sealed-leg restore (`_sealed_leg_hover_restore_if_blocked` / `should_restore_locked_route`) can **re-show blue walk path** instead of **no preview** | FIXED | `combat_planning_input.gd` `_sealed_leg_hover_restore_if_blocked` ~4368+; illegal-clear paths ~5015+ | pending | 27 |
-| GAP-002 | HIGH | MOVE_PREVIEW_RULES § Stand/origin (L36–46); matrix R1 | Parallel walk-related origin stack: `_proj_origin()` in input (skill/awaiting geometry) vs canonical `_phase_entry_stand` / `forecast_stand_at_phase_entry` | FIXED | `_proj_origin` delegates `_phase_entry_stand` ~6647 | pending | 27 |
-| GAP-003 | MED | MOVE_PREVIEW_RULES architecture table (L250); matrix R1/R3 | Overlay `_proj_origin` uses `planning_latest_stand_cell` — can diverge from `phase_entry_stand_cell` when sealed leg exists | FIXED | `tactical_planning_overlay.gd` `_proj_origin` ~2545 delegates `phase_entry_stand_cell` | pending | 27 |
-| GAP-004 | MED | MOVE_PREVIEW_RULES §88 vs Pass 28 sealed survival | Doc tension: §88 says invalid hover = no preview; Pass 28 / sealed policy allows restore on non-extend hovers — **owner must pick one rule** or split “frozen sealed” vs “illegal hover” explicitly in bible | FIXED | `MOVE_PREVIEW_RULES.md` “Invalid hover vs sealed-leg restore” subsection | pending | 27 |
+| GAP-001 | HIGH | MOVE_PREVIEW_RULES §88 (L88); Live vs frozen table | On **illegal movement-step hover**, sealed-leg restore (`_sealed_leg_hover_restore_if_blocked` / `should_restore_locked_route`) can **re-show blue walk path** instead of **no preview** | FIXED | `combat_planning_input.gd` `_sealed_leg_hover_restore_if_blocked` ~4368+; illegal-clear paths ~5015+ | `6aecc295e` | 27 |
+| GAP-002 | HIGH | MOVE_PREVIEW_RULES § Stand/origin (L36–46); matrix R1 | Parallel walk-related origin stack: `_proj_origin()` in input (skill/awaiting geometry) vs canonical `_phase_entry_stand` / `forecast_stand_at_phase_entry` | FIXED | `_proj_origin` delegates `_phase_entry_stand` ~6647 | `6aecc295e` | 27 |
+| GAP-003 | MED | MOVE_PREVIEW_RULES architecture table (L250); matrix R1/R3 | Overlay `_proj_origin` uses `planning_latest_stand_cell` — can diverge from `phase_entry_stand_cell` when sealed leg exists | FIXED | `tactical_planning_overlay.gd` `_proj_origin` ~2545 delegates `forecast_stand_at_phase_entry` | pending | 28 |
+| GAP-004 | MED | MOVE_PREVIEW_RULES §88 vs Pass 28 sealed survival | Doc tension: §88 says invalid hover = no preview; Pass 28 / sealed policy allows restore on non-extend hovers — **owner must pick one rule** or split “frozen sealed” vs “illegal hover” explicitly in bible | FIXED | `MOVE_PREVIEW_RULES.md` “Invalid hover vs sealed-leg restore” subsection | `6aecc295e` | 27 |
+| GAP-005 | HIGH | MOVE_PREVIEW_RULES §37-47; matrix R1/R2 | Parallel origin APIs `planning_latest_stand_cell` / `planning_move_origin_cell` bypass sealed `route[0]` lock | FIXED | `sealed_phase_entry_anchor`; unified `planning_move_origin_cell`; overlay/director pass preview | pending | 28 |
 
 ---
 
@@ -54,7 +55,8 @@ Rows that a prior round claimed fixed. Pass A must confirm still true; mark `REG
 |-------|--------|---------------------|----------------|---------|-------|
 | 25 | `006631aca` | not run as backlog | partial static grep only | 87 | **Invalid as full loop** — narrow BAR, no Pass B |
 | 26 | `006631aca` | FIX-* not formalized | fresh audit | 52 FAIL | Seeded GAP-001–004; loop method flawed |
-| 27 | pending | GAP-001–004 targeted | pending | — | Illegal-hover sealed gate; `_proj_origin` SSOT; bible §88 split |
+| 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass; origin API drift |
+| 28 | pending | GAP-005 targeted | pending | — | Unified origin APIs + preview pass-through |
 
 ---
 

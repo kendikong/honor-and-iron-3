@@ -2917,7 +2917,7 @@ func _commit_interaction_params(
 						if approach != actor.position:
 							waypoints = _director.preview_waypoints_for_hover(
 								board, actor, approach, [], ability,
-							)
+							, false, preview_state)
 				elif (
 					actor != null
 					and ability != null
@@ -2949,7 +2949,7 @@ func _commit_interaction_params(
 					if approach != actor.position:
 						waypoints = _director.preview_waypoints_for_hover(
 							board, actor, approach, [], ability,
-						)
+						, false, preview_state)
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints_for_commit()
 		legal_moves = _snapshot_drag_legal_move_tiles()
@@ -2964,7 +2964,7 @@ func _commit_interaction_params(
 				waypoints = walk_wps
 			elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
 				waypoints = _director.preview_waypoints_for_hover(
-					_proj(), actor, hover_cell, [], ability, true,
+					_proj(, false, preview_state), actor, hover_cell, [], ability, true,
 				)
 	var face_dir: int = -1
 	if _map_view != null:
@@ -3310,7 +3310,7 @@ func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary)
 				continue
 			if AbilitySystem.ability_has_dash(act.ability, actor):
 				act.waypoints = _director.preview_waypoints_for_hover(
-					_proj(), actor, act.target_coord, [], act.ability, true,
+					_proj(, false, preview_state), actor, act.target_coord, [], act.ability, true,
 				)
 			else:
 				act.waypoints = _corridor_waypoints_to_cell(actor, act.target_coord)
@@ -7252,7 +7252,7 @@ func _build_commit_slots_at_cell(
 			and _dash_tile_endpoint_one_click_commit(actor, ability, cell)
 		):
 			effective_waypoints = _director.preview_waypoints_for_hover(
-				_proj(), actor, cell, effective_waypoints, ability, true,
+				_proj(, false, preview_state), actor, cell, effective_waypoints, ability, true, preview_state,
 			)
 
 		if (
@@ -7365,13 +7365,13 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.is_run_ability(ability):
 					if effective_waypoints.is_empty():
 						effective_waypoints = _director.preview_waypoints_for_hover(
-							_proj(), actor, cell, effective_waypoints, ability,
+							_proj(, false, preview_state), actor, cell, effective_waypoints, ability,
 						)
 					_try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles)
 					return slots
 				if effective_waypoints.is_empty():
 					effective_waypoints = _director.preview_waypoints_for_hover(
-						_proj(), actor, cell, effective_waypoints, ability,
+						_proj(, false, preview_state), actor, cell, effective_waypoints, ability,
 					)
 				if _try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles):
 					_maybe_append_premove_action_pair(
@@ -7842,7 +7842,7 @@ func _build_enemy_commit_slots(
 			else:
 				approach_path = _director.preview_waypoints_for_hover(
 					board, actor, approach, [], ability,
-				)
+				, false, preview_state)
 			var rng: int = _ability_range(actor)
 			if rng >= 0 and GridSystem.manhattan(approach, enemy.position) > rng:
 				slots["invalid"] = "Target is out of range."
@@ -7953,7 +7953,7 @@ func _append_module_awaiting_target(
 		if wps.is_empty() and AbilitySystem.ability_has_movement_effect(committed.ability, actor):
 			if AbilitySystem.ability_has_dash(committed.ability, actor):
 				wps = _director.preview_waypoints_for_hover(
-					_proj(), actor, cell, [], committed.ability, true,
+					_proj(, false, preview_state), actor, cell, [], committed.ability, true,
 				)
 			else:
 				wps = _corridor_waypoints_to_cell(actor, cell)
@@ -8437,8 +8437,8 @@ func _hover_walk_waypoints_for_skill(
 			var origin: Vector2i = _proj_origin(actor)
 			if approach != origin:
 				return _director.preview_waypoints_for_hover(
-					_proj(), actor, approach, [], ability,
-				)
+					_proj(, false, preview_state), actor, approach, [], ability,
+				, false, preview_state)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
 		return _hover_paint_waypoints_for_cell(actor, cell)

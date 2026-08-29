@@ -877,22 +877,26 @@ static func planning_projection_board(director: CombatDirector, fallback: BoardS
 	return fallback
 
 
+## Sealed voluntary-walk leg locks preview_paths[unit][0] as phase-entry anchor.
+static func sealed_phase_entry_anchor(
+	preview: CombatPlanningPreview,
+	unit_id: int,
+) -> Vector2i:
+	if preview != null and preview.is_painted_leg_sealed(unit_id):
+		var sealed_route: Array = preview.preview_paths.get(unit_id, [])
+		if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
+			return sealed_route[0] as Vector2i
+	return Vector2i(-999999, -999999)
+
+
 ## Canonical stand cell for the next move preview leg (pre = live board, post = action end).
 static func planning_latest_stand_cell(
 	director: CombatDirector,
 	fallback_board: BoardState,
 	unit_id: int,
+	preview: CombatPlanningPreview = null,
 ) -> Vector2i:
-	if director == null or unit_id < 0:
-		return Vector2i(-999999, -999999)
-	var timing: int = director.get_planning_move_timing(unit_id)
-	if timing < 0:
-		var idle_board: BoardState = planning_projection_board(director, fallback_board)
-		var idle_unit: UnitState = idle_board.get_unit_by_id(unit_id) if idle_board != null else null
-		if idle_unit != null:
-			return idle_unit.position
-		return Vector2i(-999999, -999999)
-	return planning_move_origin_cell_for_timing(director, fallback_board, unit_id, timing)
+	return planning_move_origin_cell(director, fallback_board, unit_id, preview)
 
 
 ## Where the active planning move starts (projected stand, or action end for post-move).
@@ -900,9 +904,13 @@ static func planning_move_origin_cell(
 	director: CombatDirector,
 	fallback_board: BoardState,
 	unit_id: int,
+	preview: CombatPlanningPreview = null,
 ) -> Vector2i:
 	if director == null or unit_id < 0:
 		return Vector2i(-999999, -999999)
+	var sealed: Vector2i = sealed_phase_entry_anchor(preview, unit_id)
+	if sealed.x > -900000:
+		return sealed
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
 		var idle_board: BoardState = planning_projection_board(director, fallback_board)
@@ -921,13 +929,7 @@ static func forecast_stand_at_phase_entry(
 	unit_id: int,
 	preview: CombatPlanningPreview = null,
 ) -> Vector2i:
-	if director == null or unit_id < 0:
-		return Vector2i(-999999, -999999)
-	if preview != null and preview.is_painted_leg_sealed(unit_id):
-		var sealed_route: Array = preview.preview_paths.get(unit_id, [])
-		if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
-			return sealed_route[0] as Vector2i
-	return planning_move_origin_cell(director, fallback_board, unit_id)
+	return planning_move_origin_cell(director, fallback_board, unit_id, preview)
 
 
 ## Move-leg anchor for a specific timing slot (pre = projected stand, post = action end).
@@ -1453,7 +1455,7 @@ static func anchor_preview_paths_to_latest_stand(
 ) -> void:
 	if director == null or preview == null or unit_id < 0:
 		return
-	var stand: Vector2i = planning_latest_stand_cell(director, fallback_board, unit_id)
+	var stand: Vector2i = forecast_stand_at_phase_entry(director, fallback_board, unit_id, preview)
 	if director.projected_state != null:
 		var projected_unit: UnitState = director.projected_state.get_unit_by_id(unit_id)
 		if projected_unit != null:

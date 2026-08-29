@@ -1595,10 +1595,11 @@ func preview_waypoints_for_hover(
 	waypoints: Array[Vector2i],
 	ability: AbilityData,
 	direct_dash_endpoint: bool = false,
+	preview: CombatPlanningPreview = null,
 ) -> Array[Vector2i]:
 	if actor == null or not waypoints.is_empty() or target == actor.position:
 		return waypoints.duplicate()
-	var origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(self, board, actor.id)
+	var origin: Vector2i = CombatPlanningPreview.planning_move_origin_cell(self, board, actor.id, preview)
 	if origin.x <= -900000:
 		origin = actor.position
 	if (

@@ -2545,11 +2545,8 @@ func _draw_facing_wedge(center: Vector2, facing: int, color: Color) -> void:
 func _proj_origin(unit: UnitState) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
-	if _planning_input != null and _is_selected_player_unit(unit):
-		var stand: Vector2i = _planning_input.phase_entry_stand_cell(unit.id)
-		if stand.x > -900000:
-			return stand
-	return CombatPlanningPreview.planning_latest_stand_cell(_director, _board, unit.id)
+	var preview: CombatPlanningPreview = _planning_input.preview_state if _planning_input != null else null
+	return CombatPlanningPreview.forecast_stand_at_phase_entry(_director, _board, unit.id, preview)
 
 
 ## Action-range anchor: delegates to CombatPlanningInput stand SSOT.
