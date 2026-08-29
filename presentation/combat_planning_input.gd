@@ -1642,7 +1642,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and (_drag_route[0] as Vector2i) != leg_origin
 				):
 					_clear_hover_drag_route()
-				if (`r`n`t`t`t`t_director.planning_timeline_phase_kind(p_unit.id)`r`n`t`t`t`t== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT`r`n`t`t`t`tand not dragging`r`n`t`t`t):
+				if (
+					_director.planning_timeline_phase_kind(p_unit.id)
+					== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+					and not dragging
+				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
@@ -6872,17 +6876,9 @@ func _enemy_hover_respects_painted_route(
 	if _director == null:
 		return true
 	var slots: Dictionary = _empty_commit_slots()
-	var timing: int = GameEnums.MoveTiming.PRE_ACTION
-	slots["pre"].append(
-		_director.make_planning_move_action(
-			actor.id,
-			route_waypoints.back(),
-			_proj(),
-			actor,
-			route_waypoints,
-			timing,
-		),
-	)
+	var dest: Vector2i = route_waypoints.back()
+	if not _try_commit_voluntary_walk(slots, actor.id, actor, dest, route_waypoints, [dest]):
+		return false
 	if ability != null and not AbilitySystem.is_movement_skill(ability):
 		slots["action"].append(
 			TimelineAction.make_ability(
@@ -6924,6 +6920,7 @@ func _try_commit_voluntary_walk(
 	return not _is_invalid_dict(slots)
 
 
+## R8 internal — only _try_commit_voluntary_walk appends voluntary-walk timeline actions.
 func _append_move_to_commit_slots(
 	slots: Dictionary,
 	unit_id: int,
@@ -7263,15 +7260,15 @@ func _build_commit_slots_at_cell(
 				and not _movement_skill_commits_tile_endpoint(actor, ability, cell)
 				and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, effective_waypoints)
 			):
-				_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
-				if not AbilitySystem.ability_has_movement_effect(ability):
-					_maybe_append_premove_action_pair(
-						slots, unit_id, actor, cell, ability, effective_waypoints,
-					)
-				elif not _is_awaiting_movement_endpoint(actor, ability):
-					_maybe_append_premove_action_pair(
-						slots, unit_id, actor, cell, ability, effective_waypoints,
-					)
+				if _try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles):
+					if not AbilitySystem.ability_has_movement_effect(ability):
+						_maybe_append_premove_action_pair(
+							slots, unit_id, actor, cell, ability, effective_waypoints,
+						)
+					elif not _is_awaiting_movement_endpoint(actor, ability):
+						_maybe_append_premove_action_pair(
+							slots, unit_id, actor, cell, ability, effective_waypoints,
+						)
 				return slots
 			if (
 				hover_unit == null
@@ -7285,33 +7282,28 @@ func _build_commit_slots_at_cell(
 				if walk_waypoints.is_empty():
 					walk_waypoints = _resolve_commit_move_waypoints(unit_id, actor, cell)
 				if not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, walk_waypoints):
-					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-						_append_move_to_commit_slots(slots, unit_id, cell, walk_waypoints, actor)
-					_maybe_append_premove_action_pair(
-						slots, unit_id, actor, cell, ability, walk_waypoints,
-					)
+					if _try_commit_voluntary_walk(slots, unit_id, actor, cell, walk_waypoints, legal_move_tiles):
+						_maybe_append_premove_action_pair(
+							slots, unit_id, actor, cell, ability, walk_waypoints,
+						)
 					return slots
 			if AbilitySystem.can_target_self(actor, ability) and not _tile_target_movement_skill_commits_at_cell(actor, ability, cell, effective_waypoints):
 				if AbilitySystem.is_run_ability(ability):
-					if _drop_allows_move_tile(cell, legal_move_tiles, actor):
-						if effective_waypoints.is_empty():
-							effective_waypoints = _director.preview_waypoints_for_hover(
-								_proj(), actor, cell, effective_waypoints, ability,
-							)
-						if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-							_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
-					return slots
-				if _drop_allows_move_tile(cell, legal_move_tiles, actor):
 					if effective_waypoints.is_empty():
 						effective_waypoints = _director.preview_waypoints_for_hover(
 							_proj(), actor, cell, effective_waypoints, ability,
 						)
-					if move_timing >= 0 and not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-						_append_move_to_commit_slots(slots, unit_id, cell, effective_waypoints, actor)
+					_try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles)
+					return slots
+				if effective_waypoints.is_empty():
+					effective_waypoints = _director.preview_waypoints_for_hover(
+						_proj(), actor, cell, effective_waypoints, ability,
+					)
+				if _try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles):
 					_maybe_append_premove_action_pair(
 						slots, unit_id, actor, cell, ability, effective_waypoints,
 					)
-					return slots
+				return slots
 
 			if (
 				hover_unit != null
@@ -7443,16 +7435,8 @@ func _ally_hover_respects_painted_route(
 		return false
 	var slots: Dictionary = _empty_commit_slots()
 	if stand_cell != _phase_entry_stand(actor):
-		slots["pre"].append(
-			_director.make_planning_move_action(
-				actor.id,
-				stand_cell,
-				_proj(),
-				actor,
-				route_waypoints,
-				GameEnums.MoveTiming.PRE_ACTION,
-			),
-		)
+		if not _try_commit_voluntary_walk(slots, actor.id, actor, stand_cell, route_waypoints, [stand_cell]):
+			return false
 	_append_movement_skill_to_premove_slots(slots, actor.id, ability, ally, [])
 	if _director == null:
 		return true
@@ -7557,7 +7541,7 @@ func _build_ally_commit_slots(
 			_unit_move_slot_open(unit_id, move_dest)
 			and move_dest != _phase_entry_stand(actor)
 		):
-			_append_move_to_commit_slots(slots, unit_id, move_dest, move_wps, actor)
+			_try_commit_voluntary_walk(slots, unit_id, actor, move_dest, move_wps, legal_move_tiles)
 		_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
 		return slots
 	var approach_hint: Vector2i = ally.position
@@ -7578,16 +7562,7 @@ func _build_ally_commit_slots(
 		var approach_path: Array[Vector2i] = []
 		if _ally_hover_respects_painted_route(actor, ally, ability, move_wps, move_dest):
 			approach_path = move_wps
-		slots["pre"].append(
-			_director.make_planning_move_action(
-				unit_id,
-				approach,
-				board,
-				actor,
-				approach_path,
-				GameEnums.MoveTiming.PRE_ACTION,
-			),
-		)
+		_try_commit_voluntary_walk(slots, unit_id, actor, approach, approach_path, legal_move_tiles)
 	_append_movement_skill_to_premove_slots(slots, unit_id, ability, ally, [])
 	return slots
 
@@ -7719,16 +7694,11 @@ func _build_enemy_commit_slots(
 			if needs_run and not AbilitySystem.can_afford_run_for_commit(actor, ability):
 				slots["invalid"] = "Not enough AP to run and use this skill."
 				return slots
-			slots["pre"].append(
-				_director.make_planning_move_action(
-					unit_id,
-					stand_cell,
-					_proj(),
-					actor,
-					effective_waypoints,
-					GameEnums.MoveTiming.PRE_ACTION,
-				),
-			)
+			if not _try_commit_voluntary_walk(
+				slots, unit_id, actor, stand_cell, effective_waypoints, legal_move_tiles,
+			):
+				slots["invalid"] = "Cannot commit approach move."
+				return slots
 			slots["action"].append(
 				TimelineAction.make_ability(
 					unit_id,
@@ -7765,8 +7735,8 @@ func _build_enemy_commit_slots(
 			and AbilitySystem.ability_is_offensive_dash(ability)
 		)
 	):
-		_append_move_to_commit_slots(slots, unit_id, enemy.position, waypoints, actor)
-		return slots
+		if _try_commit_voluntary_walk(slots, unit_id, actor, enemy.position, waypoints, legal_move_tiles):
+			return slots
 	elif not _enemy_attackable_from_legal_tiles(actor, enemy, legal_move_tiles):
 		slots["invalid"] = "Enemy is not attackable from legal move tiles."
 		return slots
@@ -7809,16 +7779,11 @@ func _build_enemy_commit_slots(
 			if needs_run and not AbilitySystem.can_afford_run_for_commit(actor, ability):
 				slots["invalid"] = "Not enough AP to run and use this skill."
 				return slots
-			slots["pre"].append(
-				_director.make_planning_move_action(
-					unit_id,
-					approach,
-					board,
-					actor,
-					approach_path,
-					GameEnums.MoveTiming.PRE_ACTION,
-				),
-			)
+			if not _try_commit_voluntary_walk(
+				slots, unit_id, actor, approach, approach_path, legal_move_tiles,
+			):
+				slots["invalid"] = "Cannot commit approach move."
+				return slots
 			slots["action"].append(
 				_prepare_and_make_ability(
 					unit_id,
@@ -7841,8 +7806,7 @@ func _build_enemy_commit_slots(
 			),
 		)
 		return slots
-	if _can_move_to(actor, cell):
-		_append_move_to_commit_slots(slots, unit_id, cell, waypoints, actor)
+	if _try_commit_voluntary_walk(slots, unit_id, actor, cell, waypoints, legal_move_tiles):
 		return slots
 	slots["invalid"] = "Tile is not reachable."
 	return slots

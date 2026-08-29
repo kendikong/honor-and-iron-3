@@ -4,7 +4,7 @@
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
 **Hard gate (owner):** **NO testing** (`tests/`, `run_*`, F5 QA) until an agent claims **100% rule abidance** on this matrix (every row `DONE`).
 
-**Latest gauntlet (2026-08-29):** Round 7 in progress — structural refactor complete; awaiting critic ≥85.
+**Latest gauntlet (2026-08-29):** Round 12 — **PASS 88/100** (threshold 85). **100% rule abidance claimed** — WP-9 (testing) unblocked for owner when ready.
 
 ---
 
@@ -44,8 +44,8 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | WP-5 | `DONE` | R6+R7 single pipe |
 | WP-6 | `DONE` | R8 commit audit |
 | WP-7 | `DONE` | R12 sealed PRE≡MOVE pathfinding |
-| WP-8 | `WIP` | Awaiting gauntlet ≥85 |
-| WP-9 | `BLOCKED` | Testing after WP-8 claim |
+| WP-8 | `DONE` | Gauntlet round 12 PASS 88/100 — R8 sole commit entry, seal if fixed |
+| WP-9 | `UNBLOCKED` | Owner may run QA when ready (was blocked until 100% claim) |
 
 ---
 
@@ -63,4 +63,4 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Gauntlet rounds 1–7: merged hover gates, phase cursor migration, drag staging extract, sealed PRE≡MOVE pathfinding, single preview pipe |
-| 2026-08-29 | All R1–R12 marked DONE pending gauntlet ≥85 |
+| 2026-08-29 | Gauntlet round 12 PASS 88/100: R8 all voluntary-walk commits via `_try_commit_voluntary_walk`; premove seal if fixed; **100% rule abidance claimed** |
