@@ -1333,6 +1333,27 @@ static func corridor_waypoints_to_cell(
 	return corridor
 
 
+## Voluntary-walk corridor extend — PRE unarmed premove and MOVE-module awaiting share this builder.
+static func voluntary_walk_corridor_waypoints(
+	board: BoardState,
+	unit: UnitState,
+	leg_origin: Vector2i,
+	hover_cell: Vector2i,
+	budget: int,
+	director: CombatDirector,
+) -> Array[Vector2i]:
+	return corridor_waypoints_to_cell(
+		board,
+		unit,
+		leg_origin,
+		hover_cell,
+		budget,
+		null,
+		director,
+		unit.id,
+	)
+
+
 ## Full route cells (origin + corridor) for committed/sim rebuild — corridor only, no pathfind invent.
 static func corridor_route_cells(
 	board: BoardState,

@@ -1,7 +1,7 @@
 class_name PlanningRoutePolicy
 extends RefCounted
 
-## Shared geometry for enemy-hover vs painted-corridor policy (presentation commit probe stays in CombatPlanningInput).
+## Sealed-leg hover + voluntary-walk corridor policy (presentation commit probe stays in CombatPlanningInput).
 
 enum SealedLegHoverMode {
 	NONE = 0,
@@ -11,22 +11,24 @@ enum SealedLegHoverMode {
 }
 
 
-## Sealed painted leg + hover: one owner for extend vs freeze vs restore (not slot or ability id).
+## Sealed painted leg + hover intent — no ability id, skill names, or timeline slot labels.
+## voluntary_walk_corridor_paint: movement-step voluntary-walk corridor paint is active.
+## is_hover_move_tile: hover extends walk geometry (premove blue, MOVE-module dest, postmove orbit).
+## is_hover_attack_target: enemy under cursor — restore sealed route, do not corridor-extend.
 static func sealed_leg_hover_mode(
 	is_painted_leg_sealed: bool,
 	sealed_route_len: int,
 	voluntary_walk_corridor_paint: bool,
 	is_hover_move_tile: bool,
-	hover_attack_target: bool,
-	frozen_landing_required: bool,
+	is_hover_attack_target: bool,
 ) -> int:
 	if not is_painted_leg_sealed or sealed_route_len < 2:
 		return SealedLegHoverMode.NONE
-	if frozen_landing_required:
+	if not voluntary_walk_corridor_paint:
 		return SealedLegHoverMode.FREEZE_LANDING
-	if voluntary_walk_corridor_paint and not hover_attack_target:
+	if is_hover_move_tile:
 		return SealedLegHoverMode.EXTEND_CORRIDOR
-	if voluntary_walk_corridor_paint:
+	if is_hover_attack_target:
 		return SealedLegHoverMode.RESTORE_ONLY
 	return SealedLegHoverMode.RESTORE_ONLY
 
@@ -35,9 +37,21 @@ static func hover_rewrite_allowed(mode: int) -> bool:
 	return mode == SealedLegHoverMode.EXTEND_CORRIDOR
 
 
+static func should_restore_locked_route(mode: int) -> bool:
+	return (
+		mode == SealedLegHoverMode.FREEZE_LANDING
+		or mode == SealedLegHoverMode.RESTORE_ONLY
+	)
+
+
 ## Sealed-leg orbit extension uses basic-walk corridor legality, not armed MOVE-endpoint probes.
 static func use_basic_walk_corridor_legality(mode: int) -> bool:
 	return mode == SealedLegHoverMode.EXTEND_CORRIDOR
+
+
+## Awaiting direct-relocation hop is allowed only when policy is not corridor-extend.
+static func allows_awaiting_relocation_hop(mode: int) -> bool:
+	return mode != SealedLegHoverMode.EXTEND_CORRIDOR
 
 
 static func enemy_hover_respects_painted_corridor(

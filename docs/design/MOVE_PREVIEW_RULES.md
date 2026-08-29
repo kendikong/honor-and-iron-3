@@ -370,6 +370,14 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Tests:** stripped `force_basic_movement = …` from harnesses; `live_movement_timeline_qa_mixin` deselects skill (`selected_ability_index = -1`) for basic-walk legs; removed `_test_force_basic_flag`.
 - **Open:** `painted_route_premove_vs_move_equivalence` still FAIL; `charge_strike_composite` / `painted_landing_hover` orbit modes need one owner for frozen-landing vs corridor-orbit without reintroducing slot branches.
 
+**Pass 28 (Sealed-leg hover policy owner — 2026-08-29):**
+- **Policy API:** `PlanningRoutePolicy.sealed_leg_hover_mode(is_sealed, route_len, voluntary_walk_paint, is_hover_move_tile, is_hover_attack_target)` → `NONE | FREEZE_LANDING | RESTORE_ONLY | EXTEND_CORRIDOR`. Helpers: `hover_rewrite_allowed`, `should_restore_locked_route`, `use_basic_walk_corridor_legality`, `allows_awaiting_relocation_hop`.
+- **Inputs only:** sealed route length, voluntary-walk corridor paint active (`_voluntary_walk_corridor_paint_active`), move-tile intent (`_is_hover_move_cell`), enemy-at-cell intent. No ability id, skill names, or PRE/MOVE/POST slot labels.
+- **Geometry SSOT:** `CombatPlanningPreview.voluntary_walk_corridor_waypoints` — PRE unarmed premove and MOVE-module awaiting share one `corridor_waypoints_to_cell` builder (basic walk, `ability = null`).
+- **Wired:** `_sealed_leg_hover_mode`, `_sealed_leg_hover_restore_if_blocked`, `live_move_hover_rewrite_applies`, `_refresh_hover_interaction_preview`, `_sync_movement_preview_after_hover_sim`, `on_hover_moved` (cell-changed paint/restore), `_refresh_movement_slot_hover_preview` / `_movement_slot_hover_preview_applies`, `_write_movement_hover_preview_paths` (relocation hop), `_assemble_voluntary_walk_preview_path`, `_corridor_waypoints_to_cell`, `_route_pathfinding_ability`, `_can_move_to` sealed-orbit legality.
+- **Removed:** sealed-orbit `MovementSystem.find_path` shortcut in `_corridor_waypoints_to_cell`; E7 band-aids (`not voluntary_walk` + sealed-route-size checks blocking relocation hop); duplicate restore blocks (`painted_move_route_locked` + `_sealed_painted_preview_active` parallel paths); `live_move_hover_rewrite_applies` unconditional sealed+voluntary_walk `return true`; `frozen_landing_required` policy parameter (folded into `not voluntary_walk_corridor_paint` → `FREEZE_LANDING`).
+- **PRE ≡ MOVE-module:** by construction — same policy mode + same `voluntary_walk_corridor_waypoints` for corridor extend; timeline/slot only changes execution order.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
