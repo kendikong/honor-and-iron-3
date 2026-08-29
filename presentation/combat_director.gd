@@ -768,6 +768,8 @@ func _unit_can_post_move(unit_id: int, p_unit: UnitState) -> bool:
 		return false
 	return true
 
+## Network/autobattler move commit — not player voluntary-walk SSOT (R8).
+## Player planning walk ratifies preview via CombatPlanningInput._try_commit_voluntary_walk → commit_from_slots.
 @rpc("any_peer", "call_local", "reliable")
 func rpc_plan_move(unit_id: int, coord: Vector2i, face_dir: int, waypoints: Array[Vector2i]) -> void:
 	if NetworkManager != null and NetworkManager.is_multiplayer:
