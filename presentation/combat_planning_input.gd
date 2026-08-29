@@ -595,7 +595,7 @@ func _refresh_drag_preview_now() -> void:
 				if trimmed_live != live_path:
 					var leg_origin: Vector2i = trimmed_live[0] as Vector2i
 					_apply_trimmed_drag_route(trimmed_live, leg_origin)
-					_write_voluntary_walk_preview_path(_drag_unit_id, trimmed_live)
+					_apply_voluntary_walk_drag_preview(_drag_unit_id, false)
 			var post_trim_actor: UnitState = _proj_unit(_drag_unit_id)
 			if post_trim_actor != null:
 				var leg_origin: Vector2i = _phase_entry_stand(post_trim_actor)
@@ -661,8 +661,7 @@ func _refresh_drag_preview_now() -> void:
 		if _drag_route.size() >= 2:
 			_sync_drag_route_stand()
 		else:
-			var post_stand: Vector2i = _phase_entry_stand(drag_actor)
-			_write_voluntary_walk_preview_path(_drag_unit_id, [post_stand])
+			_apply_voluntary_walk_drag_preview(_drag_unit_id, false)
 	_refresh_action_range_overlay_when_gate_off()
 
 
@@ -789,7 +788,7 @@ func _clamp_postmove_drag_for_forbidden_hover(unit_id: int) -> void:
 		)
 		if trimmed_preview != live_path:
 			_apply_trimmed_drag_route(trimmed_preview, leg_origin)
-		_write_voluntary_walk_preview_path(unit_id, trimmed_preview)
+		_apply_voluntary_walk_drag_preview(unit_id, false)
 
 
 func _authoritative_move_hover_paths_payload() -> Dictionary:
@@ -877,8 +876,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		preview_state.clear_all()
 		for unit_id: Variant in preserved_sealed_paths.keys():
 			var path: Array = preserved_sealed_paths[unit_id] as Array
-			_write_voluntary_walk_preview_path(int(unit_id), path)
-			preview_state.seal_painted_leg(int(unit_id))
+			_restore_sealed_voluntary_walk_preview(int(unit_id), path, true)
 		if preserved_sealed_paths.is_empty():
 			if _planning != null:
 				_planning.restore_committed_display()
@@ -988,7 +986,7 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
 	if stand.x <= -900000:
 		return
-	_write_voluntary_walk_preview_path(unit_id, [stand])
+	_restore_sealed_voluntary_walk_preview(unit_id, [stand], false)
 	preview_state.action_splits[unit_id] = 0
 
 
@@ -2430,7 +2428,7 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 					_clear_frozen_painted_leg(unit_id)
 			var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
 			if sealed_route.size() >= 2:
-				_write_voluntary_walk_preview_path(unit_id, sealed_route)
+				_restore_sealed_voluntary_walk_preview(unit_id, sealed_route, false)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
 ## Preview_paths is the painted landing SSOT ΓÇö seal when it matches the active leg, then drop drag buffer.
@@ -4118,7 +4116,8 @@ func _basic_move_allowed() -> bool:
 		return false
 	return true
 
-func _post_move_basic_planning_open(p_unit: UnitState) -> bool:
+## R5 modular-post / POSTMOVE exception — keyed on planning_timeline_phase_kind.
+func _voluntary_walk_postmove_slot_open(p_unit: UnitState) -> bool:
 	if _director == null or p_unit == null:
 		return false
 	if not _voluntary_walk_economy_open(p_unit):
@@ -4168,13 +4167,13 @@ func _movement_planning_excluding_autorun(p_unit: UnitState) -> bool:
 	if phase_kind == CombatDirector.PlanningTimelinePhaseKind.SKILL_AWAITING:
 		if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
 			return true
-		if _post_move_basic_planning_open(p_unit):
+		if AbilitySystem.planning_modular_post_move_open(p_unit, _awaiting_action_for(p_unit)):
 			return true
 		return false
 	if phase_kind == CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT:
 		if _director.unit_has_move_planned_at_timing(p_unit.id, GameEnums.MoveTiming.POST_ACTION):
 			return false
-		return _post_move_basic_planning_open(p_unit) and _basic_move_allowed()
+		return _voluntary_walk_postmove_slot_open(p_unit) and _basic_move_allowed()
 	if phase_kind == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT:
 		if _director.unit_has_move_planned_at_timing(p_unit.id, GameEnums.MoveTiming.PRE_ACTION):
 			return false
@@ -4191,8 +4190,8 @@ func _movement_planning_excluding_autorun(p_unit: UnitState) -> bool:
 			):
 				return _basic_move_allowed()
 		return _basic_move_allowed()
-	if _post_move_basic_planning_open(p_unit):
-		return true
+	if phase_kind == CombatDirector.PlanningTimelinePhaseKind.NON_MOVEMENT:
+		return _voluntary_walk_postmove_slot_open(p_unit) and _basic_move_allowed()
 	return false
 
 
@@ -4380,8 +4379,7 @@ func clear_hover_route_preview() -> void:
 	preview_state.clear_route_geometry()
 	for unit_id: Variant in preserved_paths.keys():
 		var path: Array = preserved_paths[unit_id] as Array
-		_write_voluntary_walk_preview_path(int(unit_id), path)
-		preview_state.seal_painted_leg(int(unit_id))
+		_restore_sealed_voluntary_walk_preview(int(unit_id), path, true)
 
 
 func committed_route_preview() -> CombatPlanningPreview:
@@ -4904,6 +4902,17 @@ func _voluntary_walk_orbit_overrides_drag_paint(unit_id: int) -> bool:
 	return actor != null and _voluntary_walk_orbit_phase_open(actor)
 
 
+## R6 restore entry — sealed/failure preserve; no sim merge.
+func _restore_sealed_voluntary_walk_preview(
+	unit_id: int, path: Array, seal_leg: bool,
+) -> void:
+	if unit_id < 0 or path.is_empty():
+		return
+	_write_voluntary_walk_preview_path(unit_id, path)
+	if seal_leg:
+		preview_state.seal_painted_leg(unit_id)
+
+
 ## Single live preview_paths write owner for hover/drag/stand-stub routes.
 func _write_voluntary_walk_preview_path(unit_id: int, path: Array) -> void:
 	if unit_id < 0 or path.is_empty():
@@ -4958,7 +4967,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		var stand: Vector2i = _phase_entry_stand(p_unit)
 		if stand.x > -900000:
 			_write_voluntary_walk_preview_path(p_unit.id, [stand])
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
+			_sync_movement_hover_paths_to_overlay(p_unit.id)
 			_refresh_click_target_highlight()
 			return
 	## Paint preview_paths in memory first ΓÇö live sim must not merge a second corridor on top.
@@ -5284,6 +5293,14 @@ func clear_awaiting_targeting() -> void:
 
 
 ## Occupancy for painted hover/drag. Unarmed premove uses basic walk; armed awaiting uses the skill.
+## Overlay/legal-tile read API — delegates to corridor pathfinding owner.
+func route_pathfinding_ability_for_hover(
+	unit: UnitState,
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
+) -> AbilityData:
+	return _route_pathfinding_ability(unit, hover_cell)
+
+
 func _route_pathfinding_ability(
 	unit: UnitState,
 	hover_cell: Vector2i = Vector2i(-999999, -999999),

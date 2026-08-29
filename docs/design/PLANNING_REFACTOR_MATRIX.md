@@ -4,7 +4,7 @@
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
 **Hard gate (owner):** **NO testing** (`tests/`, `run_*`, F5 QA) until an agent claims **100% rule abidance** on this matrix (every row `DONE`).
 
-**Latest gauntlet (2026-08-29):** Round 12 — **PASS 88/100** (threshold 85). **100% rule abidance claimed** — WP-9 (testing) unblocked for owner when ready.
+**Latest gauntlet (2026-08-29):** Round 13 — **PASS 87/100** (threshold 85). Code-audit R5/R6 fixes applied. **100% structural rule abidance claimed** — WP-9 QA still owner-run.
 
 ---
 
@@ -22,8 +22,8 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | R2 | Sealed leg = **lock** phase-entry anchor (`route[0]`) | R1 sealed branch | `DONE` | `is_painted_leg_sealed` + `route[0]` via R1 |
 | R3 | Action range **delegates** to R1 (+ documented exceptions) | `action_range_intent_stand_cell` | `DONE` | No `live_path[-1]`; hover extend via `move_intent_destination`; module handoff + armed-tile lock documented |
 | R4 | **Intent truth:** preview origin + path = commit origin + path | `_resolve_commit_move_waypoints` + `_append_move_to_commit_slots` | `DONE` | `_phase_entry_stand` at paint and commit |
-| R5 | **One timeline phase cursor** | `CombatDirector.planning_timeline_phase_kind` | `DONE` | Gates: `_movement_planning_excluding_autorun`, `_voluntary_walk_corridor_paint_active`, `_voluntary_walk_orbit_phase_open`, `_voluntary_walk_drag_trim_active`, `_stage_voluntary_walk_drag_input`, `_planning_phase_allows_live_path_stand`; `_post_move_basic_planning_open` internal modular-post exception only |
-| R6 | **One voluntary-walk hover pipe** | `_refresh_voluntary_walk_hover_preview` | `DONE` | `_stage_voluntary_walk_drag_input` (buffer only); `_apply_voluntary_walk_drag_preview` → refresh; `_voluntary_walk_preview_refresh_needed` gate |
+| R5 | **One timeline phase cursor** | `CombatDirector.planning_timeline_phase_kind` | `DONE` | `_movement_planning_excluding_autorun` branches on `phase_kind`; `_voluntary_walk_postmove_slot_open` = POSTMOVE/modular exception only; overlay uses `route_pathfinding_ability_for_hover` |
+| R6 | **One voluntary-walk hover pipe** | `_refresh_voluntary_walk_hover_preview` | `DONE` | Entries: refresh (hover), `_apply_voluntary_walk_drag_preview` (drag), `_restore_sealed_voluntary_walk_preview` (sealed preserve); `_write_*` internal only |
 | R7 | **One corridor / paint geometry** | `voluntary_walk_corridor_waypoints` + `PlanningRoutePolicy` | `DONE` | `_corridor_waypoints_to_cell`; sealed → basic-walk; orbit via `_voluntary_walk_orbit_phase_open` (phase cursor) |
 | R8 | **One voluntary-walk commit entry** | `_try_commit_voluntary_walk` → `commit_from_slots` | `DONE` | `TimelineAction.make_move` only in `_append_move_to_commit_slots`; player never calls `rpc_plan_move` (autobattler only) |
 | R9 | Commit **metadata only** | `TimelineAction` + `_plan_for_timing` | `DONE` | No new PRE/POST commit forks |
@@ -44,7 +44,7 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | WP-5 | `DONE` | R6+R7 single pipe |
 | WP-6 | `DONE` | R8 commit audit |
 | WP-7 | `DONE` | R12 sealed PRE≡MOVE pathfinding |
-| WP-8 | `DONE` | Gauntlet round 12 PASS 88/100 — R8 sole commit entry, seal if fixed |
+| WP-8 | `DONE` | Gauntlet round 13 PASS 87/100 — R5/R6 audit gaps closed |
 | WP-9 | `UNBLOCKED` | Owner may run QA when ready (was blocked until 100% claim) |
 
 ---
@@ -63,4 +63,4 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Gauntlet rounds 1–7: merged hover gates, phase cursor migration, drag staging extract, sealed PRE≡MOVE pathfinding, single preview pipe |
-| 2026-08-29 | Gauntlet round 12 PASS 88/100: R8 all voluntary-walk commits via `_try_commit_voluntary_walk`; premove seal if fixed; **100% rule abidance claimed** |
+| 2026-08-29 | Round 13: R5 postmove slot rename + overlay public API; R6 restore/drag entries, stand-stub skips sim |

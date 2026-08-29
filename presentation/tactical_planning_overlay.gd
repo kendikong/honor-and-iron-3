@@ -1060,7 +1060,7 @@ func _reachable_move_tiles_for_origin(
 		return []
 	var move_ability: AbilityData = null
 	if is_selected_player and p_unit != null and _planning_input != null:
-		move_ability = _planning_input._route_pathfinding_ability(p_unit)
+		move_ability = _planning_input.route_pathfinding_ability_for_hover(p_unit)
 	return MovementSystem.get_reachable_tiles(
 		move_board, move_from, move_budget, mt, move_cost, move_ability,
 	)
