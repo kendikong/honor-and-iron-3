@@ -40,7 +40,7 @@ static func assign_preview_path_dict(
 	unit_id: int,
 	path: Array,
 ) -> void:
-	if unit_id < 0 or path.is_empty():
+	if unit_id < 0 or path.is_empty() or path.size() < 2:
 		return
 	paths[unit_id] = path.duplicate()
 	splits[unit_id] = path.size()
@@ -48,6 +48,10 @@ static func assign_preview_path_dict(
 
 static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
 	if preview == null:
+		return
+	if unit_id < 0 or path.is_empty() or path.size() < 2:
+		if unit_id >= 0:
+			clear_unit_preview_path(preview, unit_id)
 		return
 	## Post-move split index is owned by build_preview_paths (sim POST_ACTION); do not clobber on intent writes.
 	assign_preview_path_dict(
@@ -748,9 +752,6 @@ static func build_preview_paths(
 	var post_move_marked: Dictionary = {}
 	if start_board != null:
 		for unit: UnitState in start_board.units:
-			paths[unit.id] = [unit.position]
-			splits[unit.id] = 1
-			post_splits[unit.id] = 1
 			pushes[unit.id] = []
 			current_positions[unit.id] = unit.position
 	var enemy_phase: bool = false
@@ -1383,7 +1384,7 @@ static func corridor_route_cells(
 	if board == null or unit == null:
 		return []
 	if origin == target:
-		return [origin]
+		return []
 	var budget: int = unit.movement.points_left
 	var wps: Array[Vector2i] = corridor_waypoints_to_cell(
 		board, unit, origin, target, budget, ability, director, unit.id,
@@ -1461,13 +1462,17 @@ static func anchor_preview_paths_to_latest_stand(
 		return
 	var route: Array = preview.preview_paths.get(unit_id, [])
 	if route.is_empty():
-		set_unit_preview_path(preview, unit_id, [stand])
-	else:
-		var start_idx: int = _last_route_index(route, stand)
-		if start_idx >= 0:
-			set_unit_preview_path(preview, unit_id, route.slice(start_idx))
-		else:
-			set_unit_preview_path(preview, unit_id, [stand])
+		clear_unit_preview_path(preview, unit_id)
+		return
+	var start_idx: int = _last_route_index(route, stand)
+	if start_idx < 0:
+		clear_unit_preview_path(preview, unit_id)
+		return
+	var trimmed: Array = route.slice(start_idx)
+	if trimmed.size() < 2:
+		clear_unit_preview_path(preview, unit_id)
+		return
+	set_unit_preview_path(preview, unit_id, trimmed)
 
 
 ## Post-commit ratify trim — sole caller after slot promote (not sim apply_result merge).
@@ -1604,7 +1609,10 @@ static func display_route_cells_from_preview(
 		var leg: Array = pending_move_route_leg(unit_id, preview, director, board)
 		if leg.size() >= 2:
 			return frozen_move_route_cells_from_array(leg)
-		return frozen_move_route_cells_from_array(preview.preview_paths.get(unit_id, []))
+		var fallback: Array = preview.preview_paths.get(unit_id, [])
+		if fallback.size() >= 2:
+			return frozen_move_route_cells_from_array(fallback)
+		return []
 	return frozen_move_route_cells(unit_id, preview)
 
 

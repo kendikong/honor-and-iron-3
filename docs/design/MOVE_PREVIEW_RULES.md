@@ -253,7 +253,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 ### Architecture audit (2026-08-26 pass 5)
 
 **Write paths (honest):**
-- Live hover/drag/stand-stub (input): `_write_voluntary_walk_preview_path` → `set_unit_preview_path` + overlay sync.
+- Live hover/drag voluntary-walk (input): `_write_voluntary_walk_preview_path` → `set_unit_preview_path` (paths require size≥2; illegal hover clears) + overlay sync.
 - Intent/swap/anchor merge (preview): `_commit_preview_path` → `set_unit_preview_path` only.
 - Sim timeline (preview): `build_preview_paths` from `UNIT_MOVED` events (rebuilds dict; not hover intent).
 - Post-commit trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` → `set_unit_preview_path`.
