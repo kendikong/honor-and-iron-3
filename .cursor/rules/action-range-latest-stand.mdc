@@ -12,15 +12,18 @@ globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_di
 
 The owner has seen red tiles on the **old** cell after a committed pre-move (or MOVE prefix) **many times**. Do not “rediscover” this. Do not invent a new origin. Read the log, then extend the **one** stand owner.
 
+**Canonical model:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model** — forecast stand at **phase entry**; one pipeline; slot/timing are action metadata only.
+
 ## Mandate
 
-Red action-range tiles (and any overlay that claims to show skill range) **always** originate from the **latest committed stand**:
+Red action-range tiles (and any overlay that claims to show skill range) **always** originate from **forecast stand at the start of the current planning phase** (same as latest predicted stand / stand when this phase started):
 
-1. After a committed pre-move: the pre-move landing.
-2. After a committed MOVE / JUMP / TELEPORT prefix while a later module awaits: the prefix landing.
-3. While dragging / live move preview: the live hover stand (same cell as the unit ghost).
+1. After a committed pre-move: forecast at premove-phase entry for the **current** module (the pre-move landing when the next phase opened).
+2. After a committed MOVE / JUMP / TELEPORT prefix while a later module awaits: forecast at that module’s phase entry (prefix landing).
+3. Locked current-phase tiles: phase-entry stand — does not follow the mouse.
+4. Next-phase hover preview: forecast at **next** phase entry from predicted stand at hover — not a second origin system.
 
-That cell is the same one `CombatPlanningPreview.planning_latest_stand_cell` / overlay `_intent_stand_origin` / `CombatPlanningInput.action_range_intent_stand_cell` already compute. **Pass that origin into range math.** Do not recompute a second origin from a different board.
+Delegate to `CombatPlanningPreview.planning_move_origin_cell` / `planning_latest_stand_cell`. Overlay `_intent_stand_origin` and `action_range_intent_stand_cell` must match. **Pass that origin into range math.** Do not recompute from `base_board` or live board.
 
 ## Forbidden (these are how previous “fixes” failed)
 
@@ -38,6 +41,6 @@ That cell is the same one `CombatPlanningPreview.planning_latest_stand_cell` / o
 
 ## Canonical owner
 
-`CombatPlanningPreview.planning_latest_stand_cell` → overlay `_intent_stand_origin` → `AbilitySystem.planning_module_range_tiles(..., stand_origin)` / `planning_action_range_tiles(..., origin)`.
+`CombatPlanningPreview.planning_move_origin_cell` / `planning_latest_stand_cell` (forecast at **phase entry**) → overlay `_intent_stand_origin` → `AbilitySystem.planning_module_range_tiles(..., stand_origin)` / `planning_action_range_tiles(..., origin)`. `CombatPlanningInput.action_range_intent_stand_cell` must delegate to the same forecast — no parallel stack.
 
 Prefix occupancy uses **projected / live** board. Never substitute `base_board` as a “safer” range board.

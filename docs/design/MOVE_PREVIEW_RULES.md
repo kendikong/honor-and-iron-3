@@ -18,6 +18,34 @@ Plain-language rules. No parallel preview logic.
 
 ---
 
+## Timeline model (canonical — do not drift)
+
+**A turn is a timeline of phases:** premove → skill module 1 → module 2 → … → postmove → wait → Execute.
+
+The game knows **which phase is active**. Almost everything is the **same pipeline**; only **metadata on the committed action** changes:
+
+| Output field | Meaning |
+|--------------|---------|
+| Timeline column / slot | `pre` · `action` · `post` — where the move is stored |
+| `move_timing` | PRE_ACTION vs POST_ACTION |
+| Animate on commit | PRE voluntary walk plays during planning; POST waits for Execute |
+
+**Do not** build separate preview, origin, or corridor systems per phase label. PRE, MOVE module, and postmove are **movement phases** — same blue preview, same paint, same path truth, same commit shape.
+
+### Stand / origin (one rule)
+
+**Forecast stand at the start of the current planning phase** = walk origin, blue range origin, and red range origin for that phase.
+
+- Same words in this doc: **latest predicted stand** (walk preview) = **stand when this phase started** (locked tiles) = **forecast at phase entry**.
+- **Next phase on hover:** forecast stand at the **next** phase’s entry **if** the hover outcome happened — still forecast, not a second origin system.
+- **Sealed painted leg:** same rule — lock the phase-entry anchor (`route[0]`) so hover cannot drift off forecast.
+
+**Forbidden:** `base_board` / live-board / turn-start as range or walk origin after a committed step; per-PRE / per-POST / per-skill origin stacks in input; treating slot or timing as a reason to fork the walk pipeline.
+
+**Target code owner (consolidate here):** `CombatPlanningPreview.planning_move_origin_cell` (+ phase context / sealed leg) — input delegates; no parallel `_active_move_drag_origin` logic long-term.
+
+---
+
 ## What move preview is
 
 **Move preview** = the path this character **walks** (tile to tile) to reach their **chosen destination**.
@@ -96,7 +124,9 @@ Do not add extra clear rules beyond this.
 
 ## Latest predicted stand
 
-Where the unit stands **after everything already committed** this turn — not necessarily turn-start. Walk preview, **blue tiles**, and **red tiles** all measure from this stand unless a rule below says otherwise.
+**Forecast stand at the start of the current planning phase** — after everything earlier on the timeline is applied; not turn-start, not live board.
+
+Same as **stand when this phase started** (locked tiles below). Walk preview, **blue tiles**, and **red tiles** for the **current** phase all use this cell.
 
 ---
 
@@ -199,9 +229,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 
 | Concern | Owner |
 |---------|--------|
-| Planning phase (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
+| **Timeline phase + forecast stand at phase entry** | `CombatPlanningPreview.planning_move_origin_cell` / `planning_move_origin_cell_for_timing` (+ sealed leg `preview_paths[unit][0]`). Input/overlay **delegate** — no second origin stack. |
+| Planning phase kind (movement / non-move / wait) | `PlanningPreviewTiles.planning_phase` |
 | Two-range tile origins + yellow blast | `PlanningPreviewTiles.resolve_layer_origins` (`show_action_range` gates red/yellow once) |
+| Voluntary walk pipeline (preview → commit) | One path: hover paint → `_try_commit_voluntary_walk` → `commit_from_slots` → `_plan_for_timing` / `timeline_column` metadata only |
 | Voluntary walk path write (hover) | `CombatPlanningInput._set_preview_path` → `CombatPlanningPreview.set_unit_preview_path` |
+| Sealed-leg hover policy | `PlanningRoutePolicy` (no PRE/MOVE/POST labels) |
 | Painted leg seal | `CombatPlanningPreview.painted_leg_sealed` / `seal_painted_leg` |
 | Route read (live + frozen + committed legs) | `CombatPlanningInput.display_*_route_cells` / `preview_board_for_display` |
 | Painted drag → `preview_paths` | `_sync_painted_drag_route_to_preview_paths` → `_set_preview_path` |
@@ -213,7 +246,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Bulk route geometry copy | `CombatPlanningPreview.sync_route_geometry_from` |
 | Commit-animation path read stub | `CombatPlanningPreview.preview_read_stub` |
 | Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
-| Action-range stand (aim origin) | `CombatPlanningInput.action_range_intent_stand_cell` (overlay `_intent_stand_origin` delegates) |
+| Action-range stand (aim origin) | Delegates to **Timeline phase + forecast stand** row — `action_range_intent_stand_cell` / `_intent_stand_origin` must not fork origin logic |
 | Targeting intent arrow (live hover) | `CombatPlanningInput.targeting_intent_arrow_cells` (overlay delegates) |
 
 ### Architecture audit (2026-08-26 pass 5)

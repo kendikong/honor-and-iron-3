@@ -10,6 +10,8 @@ globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_di
 
 **Owner philosophy (do not make the project owner re-explain this).**
 
+**Timeline:** premove → skill modules → postmove. Voluntary walk uses **one pipeline** for every movement phase; only commit slot / `move_timing` / animate-on-commit differ (`docs/design/MOVE_PREVIEW_RULES.md` § Timeline model). Do not fork preview or origin per PRE / MOVE / POST label.
+
 The on-screen **move preview** (hover / drag / aim ghosts, path, facing, approach, paired skill markers — everything the intent UI renders before confirm) is the **single source of truth** for planning intent.
 
 It is not a hint. It is the intent system.
