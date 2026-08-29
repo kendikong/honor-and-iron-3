@@ -44,8 +44,8 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | WP-5 | `DONE` | R6+R7 single pipe |
 | WP-6 | `DONE` | R8 commit audit |
 | WP-7 | `DONE` | R12 sealed PRE≡MOVE pathfinding |
-| WP-8 | `IN_PROGRESS` | Two-pass gauntlet loop live; backlog GAP-001–004 OPEN — see `PLANNING_GAUNTLET_BACKLOG.md` |
-| WP-9 | `BLOCKED` | Runtime QA after backlog zero HIGH + critic `REGRESSION_PASS` + `BIBLE_PASS` both PASS |
+| WP-8 | `DONE` | Two-pass gauntlet loop; GAP-001–008 closed through round 29 (`PLANNING_GAUNTLET_BACKLOG.md`) |
+| WP-9 | `BLOCKED` | Runtime QA after critic `RESULT: PASS` (score ≥85) — owner-run |
 
 ---
 
@@ -65,3 +65,4 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | 2026-08-29 | Gauntlet rounds 1–7: merged hover gates, phase cursor migration, drag staging extract, sealed PRE≡MOVE pathfinding, single preview pipe |
 | 2026-08-29 | Round 24–25: code fixes (§88 clear, unified orbit/trim, sim gates) — round 25 PASS retracted |
 | 2026-08-29 | Round 26: fresh bible FAIL; seeded backlog; added `PLANNING_GAUNTLET_LOOP.md` two-pass contract (Rule 4d) |
+| 2026-08-29 | Rounds 27–29: closed GAP-001–008; `move_leg_origin_cell` delegates `planning_move_origin_cell` |

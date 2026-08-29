@@ -985,24 +985,21 @@ static func move_leg_origin_cell(
 	unit_id: int,
 	timing: int,
 	move_action: TimelineAction = null,
+	preview: CombatPlanningPreview = null,
 ) -> Vector2i:
 	if timing == GameEnums.MoveTiming.POST_ACTION:
 		var plan_board: BoardState = planning_projection_board(director, board)
 		return committed_plan_action_end_cell(director, plan_board, unit_id)
-	var start_board: BoardState = board
-	if director != null and director.base_board != null:
-		start_board = director.base_board
-	var unit: UnitState = start_board.get_unit_by_id(unit_id) if start_board != null else null
-	if move_action != null and start_board != null:
+	if move_action != null and director != null:
+		var plan_board: BoardState = planning_projection_board(director, board)
+		var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
 		return CombatUiFormatters.plan_action_origin_cell(
-			start_board,
-			director.get_player_plan() if director != null else null,
+			plan_board,
+			director.get_player_plan(),
 			move_action,
 			unit,
 		)
-	if unit != null:
-		return unit.position
-	return Vector2i(-999999, -999999)
+	return planning_move_origin_cell(director, board, unit_id, preview)
 
 
 ## Route leg for the current planning move — same slice as overlay arrow drawing.

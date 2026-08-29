@@ -26,26 +26,35 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Bible / matrix ref | Gap | Status | Evidence (file:line) | Fixed commit | Verified round |
 |----|----------|-------------------|-----|--------|----------------------|--------------|----------------|
-| GAP-001 | HIGH | MOVE_PREVIEW_RULES §88 (L88); Live vs frozen table | On **illegal movement-step hover**, sealed-leg restore (`_sealed_leg_hover_restore_if_blocked` / `should_restore_locked_route`) can **re-show blue walk path** instead of **no preview** | FIXED | `combat_planning_input.gd` `_sealed_leg_hover_restore_if_blocked` ~4368+; illegal-clear paths ~5015+ | `6aecc295e` | 27 |
-| GAP-002 | HIGH | MOVE_PREVIEW_RULES § Stand/origin (L36–46); matrix R1 | Parallel walk-related origin stack: `_proj_origin()` in input (skill/awaiting geometry) vs canonical `_phase_entry_stand` / `forecast_stand_at_phase_entry` | FIXED | `_proj_origin` delegates `_phase_entry_stand` ~6647 | `6aecc295e` | 27 |
-| GAP-003 | MED | MOVE_PREVIEW_RULES architecture table (L250); matrix R1/R3 | Overlay `_proj_origin` uses `planning_latest_stand_cell` — can diverge from `phase_entry_stand_cell` when sealed leg exists | FIXED | `tactical_planning_overlay.gd` `_proj_origin` ~2545 delegates `forecast_stand_at_phase_entry` | pending | 28 |
-| GAP-004 | MED | MOVE_PREVIEW_RULES §88 vs Pass 28 sealed survival | Doc tension: §88 says invalid hover = no preview; Pass 28 / sealed policy allows restore on non-extend hovers — **owner must pick one rule** or split “frozen sealed” vs “illegal hover” explicitly in bible | FIXED | `MOVE_PREVIEW_RULES.md` “Invalid hover vs sealed-leg restore” subsection | `6aecc295e` | 27 |
-| GAP-005 | HIGH | MOVE_PREVIEW_RULES §37-47; matrix R1/R2 | Parallel origin APIs `planning_latest_stand_cell` / `planning_move_origin_cell` bypass sealed `route[0]` lock | FIXED | `sealed_phase_entry_anchor`; unified `planning_move_origin_cell`; overlay/director pass preview | pending | 28 |
+| *(none — all HIGH/MED gaps closed through round 29)* |
+
+---
+
+## Closed gaps (reference)
+
+| ID | Severity | Summary | Fixed commit | Verified round |
+|----|----------|---------|--------------|----------------|
+| GAP-001 | HIGH | Illegal movement-step hover must not sealed-restore blue path | `6aecc295e` | 27 |
+| GAP-002 | HIGH | Input `_proj_origin` delegates `_phase_entry_stand` | `6aecc295e` | 27 |
+| GAP-003 | MED | Overlay `_proj_origin` uses `forecast_stand_at_phase_entry` + preview | `edb324bdb` | 29 |
+| GAP-004 | MED | Bible § invalid hover vs sealed restore | `6aecc295e` | 27 |
+| GAP-005 | HIGH | Unified `planning_move_origin_cell` + `sealed_phase_entry_anchor` | `edb324bdb` | 29 |
+| GAP-006 | HIGH | `anchor_preview_paths_to_latest_stand` sealed overwrite | `3ddabb40f` | 29 |
+| GAP-007 | HIGH | `_seed_movement_origins` passes preview | `3ddabb40f` | 29 |
+| GAP-008 | HIGH | Director `planning_live_preview` + waypoint pass-through | `3ddabb40f` | 29 |
 
 ---
 
 ## Verify queue (prior fixes — must re-prove each round)
 
-Rows that a prior round claimed fixed. Pass A must confirm still true; mark `REGRESSED` if not.
-
 | ID | Bible / matrix ref | Claimed fix | Status | Evidence | Verified round |
 |----|-------------------|-------------|--------|----------|----------------|
-| FIX-001 | Matrix symbols eliminated | Retired symbol names absent from `presentation/` | VERIFY | grep matrix symbol list → 0 hits | 26 |
-| FIX-002 | §88; size≥2 writes | `set_unit_preview_path` / `assign_preview_path_dict` reject `path.size() < 2`; illegal hover entry clear in `_refresh_voluntary_walk_hover_preview` | VERIFY | `combat_planning_preview.gd` ~43–55; `combat_planning_input.gd` ~5015+ | 26 |
-| FIX-003 | PRE≡MOVE≡POST; matrix R7 | Orbit/trim/clamp use `active_movement_planning_step` + `get_planning_move_timing`, not POST-only | VERIFY | `_voluntary_walk_orbit_phase_open` ~4930+; `_voluntary_walk_drag_trim_active` ~4879+ | 26 |
-| FIX-004 | R6; movement-step sole owner | Sim paint gated on movement step: `_apply_live_preview`, `_refresh_drag_preview_now`, `refresh_live_preview`, `_refresh_live_interaction_preview`, `on_hover_moved`, `_flush_hover_heavy_sync`, `_should_run_hover_sim_sync` | VERIFY | `combat_planning_input.gd` movement-step early returns | 26 |
-| FIX-005 | R8 | Player voluntary walk commit only via `_try_commit_voluntary_walk` → `_append_move_to_commit_slots` | VERIFY | `TimelineAction.make_move` in input only at `_append_move_to_commit_slots` | 26 |
-| FIX-006 | R1/R4 paint+commit | Voluntary walk paint/commit use `_phase_entry_stand` at assembler and commit | VERIFY | `_assemble_voluntary_walk_preview_path`, `_append_move_to_commit_slots` | 26 |
+| FIX-001 | Matrix symbols eliminated | Retired symbol names absent from `presentation/` | VERIFY | grep matrix symbol list → 0 hits | 29 |
+| FIX-002 | §88; size≥2 writes | `set_unit_preview_path` / `assign_preview_path_dict` reject `path.size() < 2`; illegal hover entry clear | VERIFY | `combat_planning_preview.gd` ~43–55; `combat_planning_input.gd` ~5020+ | 29 |
+| FIX-003 | PRE≡MOVE≡POST; matrix R7 | Orbit/trim/clamp use `active_movement_planning_step` + `get_planning_move_timing` | VERIFY | `_voluntary_walk_orbit_phase_open` ~4936+; `_voluntary_walk_drag_trim_active` ~4885+ | 29 |
+| FIX-004 | R6; movement-step sole owner | Sim paint gated on movement step | VERIFY | `combat_planning_input.gd` movement-step early returns | 29 |
+| FIX-005 | R8 | Player voluntary walk commit only via `_try_commit_voluntary_walk` → `_append_move_to_commit_slots` | VERIFY | `TimelineAction.make_move` in input only at `_append_move_to_commit_slots` | 29 |
+| FIX-006 | R1/R4 paint+commit | Voluntary walk paint/commit use `_phase_entry_stand` | VERIFY | `_assemble_voluntary_walk_preview_path`, `_append_move_to_commit_slots` | 29 |
 
 ---
 
@@ -55,8 +64,9 @@ Rows that a prior round claimed fixed. Pass A must confirm still true; mark `REG
 |-------|--------|---------------------|----------------|---------|-------|
 | 25 | `006631aca` | not run as backlog | partial static grep only | 87 | **Invalid as full loop** — narrow BAR, no Pass B |
 | 26 | `006631aca` | FIX-* not formalized | fresh audit | 52 FAIL | Seeded GAP-001–004; loop method flawed |
-| 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass; origin API drift |
-| 28 | pending | GAP-005 targeted | pending | — | Unified origin APIs + preview pass-through |
+| 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass |
+| 28 | `edb324bdb` | GAP-005 REGRESSED | GAP-006–008 HIGH new | 72 FAIL | Origin API unified; merge paths still leaked |
+| 29 | `3ddabb40f` | all GAP/FIX PASS | no new HIGH | 84 FAIL | Score 1pt below threshold; stale docs + `move_leg_origin_cell` |
 
 ---
 
@@ -65,3 +75,4 @@ Rows that a prior round claimed fixed. Pass A must confirm still true; mark `REG
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Created backlog; seeded from round 26 fresh audit; retracted round 25 as non-conforming loop |
+| 2026-08-29 | Rounds 27–29: closed GAP-001–008; round 29 REGRESSION+BIBLE PASS at score 84 |
