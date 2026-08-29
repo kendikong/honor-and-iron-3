@@ -156,6 +156,23 @@ Critics **do not** implement infrastructure; they **name** what’s missing. See
 
 Lead logs **Infrastructure** verdict in `workbench.md` wave notes when `INADEQUATE`.
 
+### Rule 4d — Two-pass bible loop (owner-rules pieces — mandatory)
+
+When the piece is judged against an **owner bible** (e.g. `MOVE_PREVIEW_RULES.md`, class matrix, pillar spec), **every critic round** runs **both** passes in one invocation:
+
+1. **Pass A — Regression:** Verify every open row in the piece’s **gauntlet backlog** (fixes from the prior loop). Mark `FIXED` / `STILL_OPEN` / `REGRESSED` with file:line evidence.
+2. **Pass B — Fresh bible:** Re-read the bible **line by line** as if the codebase were new. Append new HIGH gaps to the backlog.
+
+**Planning voluntary-walk:** backlog = [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md) · contract = [`PLANNING_GAUNTLET_LOOP.md`](PLANNING_GAUNTLET_LOOP.md).
+
+| Forbidden | Why |
+|-----------|-----|
+| BAR that is **only** a narrow static grep checklist | Hides bible failures (round 25 vs 26) |
+| Pass B skipped because last round PASS | “Fresh” means new bible read, not new rubric |
+| Single blended PASS without `REGRESSION_PASS` + `BIBLE_PASS` | Score 85+ on grep while §88 still fails |
+
+**RESULT: PASS** only when **both** `REGRESSION_PASS` and `BIBLE_PASS` are PASS (and score + infrastructure gates). Critic output format: [`.cursor/agents/gauntlet-critic.md`](../../.cursor/agents/gauntlet-critic.md) § Two-pass bible loop.
+
 ### Rule 5 — Keep looping
 
 Do not cap at “3 rounds” as the primary stop condition. Use:

@@ -97,9 +97,29 @@ Default **PASS_THRESHOLD** when omitted:
 
 Lead may set **PASS_THRESHOLD** in handoff to override.
 
+## Two-pass bible loop (mandatory — owner-rules / bible pieces)
+
+When **RULES** or **GOAL** includes `MOVE_PREVIEW_RULES.md`, `PLANNING_REFACTOR_MATRIX.md`, or handoff names `PLANNING_GAUNTLET_BACKLOG.md`, you **must** run **both** passes in order before scoring. **Forbidden:** BAR that is only a narrow static grep checklist without Pass B.
+
+**Authority:** `docs/design/PLANNING_GAUNTLET_LOOP.md`
+
+| Pass | What | PASS means |
+|------|------|------------|
+| **A — Regression** | Verify every `OPEN` / `VERIFY` row in `docs/design/PLANNING_GAUNTLET_BACKLOG.md` | All rows `FIXED`; none `STILL_OPEN` / `REGRESSED` |
+| **B — Fresh bible** | Read `MOVE_PREVIEW_RULES.md` (full) + matrix R1–R12 line by line | Zero **new HIGH** gaps; append new rows to backlog |
+
+**Overall RESULT:** `PASS` only if **REGRESSION_PASS** and **BIBLE_PASS** are both `PASS` **and** `SCORE ≥ PASS_THRESHOLD` **and** infrastructure `ADEQUATE`.
+
+A high score on grep-only checks **cannot** yield `RESULT: PASS` if Pass B finds a HIGH bible gap or Pass A has open backlog rows.
+
+Output must include **`REGRESSION_PASS:`** and **`BIBLE_PASS:`** lines (before or inside the score banner block).
+
+When **NO_QA** is set in handoff, do **not** cap Bible PASS or score for missing runtime tests — static read/grep is adequate.
+
 ## Procedure
 
 0. **Infrastructure adequacy** — verdict `ADEQUATE` or `INADEQUATE`. If `INADEQUATE`, skip to output (FAIL + Proposed infrastructure); do not inflate other subscores.
+0b. **Two-pass bible loop** (when applicable) — Pass A backlog regression, then Pass B fresh bible read — before generic BAR.
 1. Execute or verify every item in **BAR** (do not assume PASS).
 2. Inspect **real artifacts** only — stdout, diffs, files on disk, images.
 3. **Visual pieces:** if **REFERENCE** is provided, compare output to reference. FAIL comparison if files missing. Deduct heavily for compositor/z_index/blend/shader errors.
@@ -112,11 +132,14 @@ Lead may set **PASS_THRESHOLD** in handoff to override.
 ══════════════════════════════════════
 GAUNTLET SCORE │ <PIECE> │ Round <n> │ SELF-GRADED: no (subagent)
 SCORE: <total>/100 │ THRESHOLD: <PASS_THRESHOLD> │ <RESULT>
+REGRESSION_PASS: PASS | FAIL │ BIBLE_PASS: PASS | FAIL
 DELTA: <+N | −N | first round> vs prior round
 SUBSCORES: BAR=<n> Goal=<n> Rules=<n> Artifact=<n> Quality=<n> Bonus=<n>
 ══════════════════════════════════════
 
 RESULT: PASS | FAIL
+REGRESSION_PASS: PASS | FAIL
+BIBLE_PASS: PASS | FAIL
 SCORE: <total>/100 (threshold: <PASS_THRESHOLD>)
 Subscores: BAR=<n>/30 Goal=<n>/25 Rules=<n>/20 Artifact=<n>/15 Quality=<n>/10 Bonus=<n>
 

@@ -4,7 +4,7 @@
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
 **Hard gate (owner):** **NO testing** (`tests/`, `run_*`, F5 QA) until an agent claims **100% rule abidance** on this matrix (every row `DONE`).
 
-**Latest gauntlet (2026-08-29):** Round 25 — **PASS 87/100** (threshold 85). Owner-rule §88 static closure. **Static rule abidance claimed** — WP-9 runtime QA still owner-run.
+**Latest gauntlet (2026-08-29):** Round 26 — **FAIL** (two-pass audit). **100% rule abidance NOT claimed.** See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md) + [`PLANNING_GAUNTLET_LOOP.md`](PLANNING_GAUNTLET_LOOP.md). Round 25 single-score PASS retracted (narrow BAR only). WP-9 runtime QA owner-run when ready.
 
 ---
 
@@ -44,8 +44,8 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | WP-5 | `DONE` | R6+R7 single pipe |
 | WP-6 | `DONE` | R8 commit audit |
 | WP-7 | `DONE` | R12 sealed PRE≡MOVE pathfinding |
-| WP-8 | `DONE` | Gauntlet round 24 — §88 illegal-hover clear, movement-step sole voluntary-walk owner |
-| WP-9 | `UNBLOCKED` | Owner may run QA when ready (static gauntlet PASS; runtime QA not run per owner policy) |
+| WP-8 | `IN_PROGRESS` | Two-pass gauntlet loop live; backlog GAP-001–004 OPEN — see `PLANNING_GAUNTLET_BACKLOG.md` |
+| WP-9 | `BLOCKED` | Runtime QA after backlog zero HIGH + critic `REGRESSION_PASS` + `BIBLE_PASS` both PASS |
 
 ---
 
@@ -63,4 +63,5 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Gauntlet rounds 1–7: merged hover gates, phase cursor migration, drag staging extract, sealed PRE≡MOVE pathfinding, single preview pipe |
-| 2026-08-29 | Round 24: §88 illegal-hover clear; unified orbit/trim; preview SSOT size>=2; movement-step voluntary-walk sole owner (no parallel sim paint) |
+| 2026-08-29 | Round 24–25: code fixes (§88 clear, unified orbit/trim, sim gates) — round 25 PASS retracted |
+| 2026-08-29 | Round 26: fresh bible FAIL; seeded backlog; added `PLANNING_GAUNTLET_LOOP.md` two-pass contract (Rule 4d) |

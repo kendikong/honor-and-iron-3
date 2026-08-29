@@ -2,6 +2,7 @@
 
 **Status:** ACTIVE — canonical player-facing behavior for planning overlays (paths, tiles, lines).  
 **Refactor tracker (agents):** `docs/design/PLANNING_REFACTOR_MATRIX.md` — rule rows, work packages, **no testing until 100% claim**.  
+**Gauntlet loop (agents):** `docs/design/PLANNING_GAUNTLET_LOOP.md` + backlog `docs/design/PLANNING_GAUNTLET_BACKLOG.md` — **two-pass every round** (regression + fresh bible).  
 **Related:** `class_abilities.txt`, `PLANNING_SKILL_QA_CHECKLIST.md`, `ACTION_RANGE_LATEST_STAND.md`.
 
 Plain-language rules. No parallel preview logic.

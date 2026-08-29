@@ -9,6 +9,8 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | [`00-remaining-work-suite-plan.md`](00-remaining-work-suite-plan.md) | How to create this suite (W1–W4) | POLISHED (C6=91) |
 | [`REMAINING_WORK_MAP.md`](REMAINING_WORK_MAP.md) | What to build — milestone index | LOOP_READY |
 | [`00-gauntlet-loop-cursor.md`](00-gauntlet-loop-cursor.md) | Builder/critic loops | ACTIVE |
+| [`PLANNING_GAUNTLET_LOOP.md`](PLANNING_GAUNTLET_LOOP.md) | Planning preview two-pass gauntlet | ACTIVE |
+| [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md) | Planning gauntlet open gaps | ACTIVE |
 | [`01-doc-polish-protocol.md`](01-doc-polish-protocol.md) | Doc polish process (P1) | POLISHED |
 | [`verification-matrix.md`](verification-matrix.md) | Machine bar per domain (P9) | LOOP_READY |
 | [`workbench.md`](workbench.md) | Live gauntlet scores | — |
