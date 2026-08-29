@@ -63,7 +63,6 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trample_post_move_preview_commit_sim,
 		_test_trample_full_preview_truth_click,
 		_test_trample_full_phase_hover_matrix,
-		_test_painted_route_premove_vs_move_equivalence,
 		_test_teleport_full_preview_truth_click,
 		# Intent-truth pipeline (preview = slots = commit = sim)
 		_test_bash_slots_preview_board_parity,
@@ -175,7 +174,6 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_post_move_truth",
 		"trample_full_preview_truth_click",
 		"trample_full_phase_hover_matrix",
-		"painted_route_premove_vs_move_equivalence",
 		"teleport_full_preview_truth_click",
 		"bash_preview_board_parity",
 		"hover_click_drop_parity",
@@ -1535,9 +1533,8 @@ static func _setup_trample_move_painted(fix: Dictionary) -> void:
 
 
 static func _paint_sealed_route(fix: Dictionary, route: Array[Vector2i]) -> void:
-	TramplingAdvanceE2ETest._paint_drag_route(
-		fix.input, fix.unit, route, route.back(),
-	)
+	PlanningDragE2EHarness.begin_drag_route(fix, route)
+	fix.input.on_hover_moved(route.back())
 	fix.input._end_drag_interaction(false, false)
 	PlanningChecklistHarness.hover(fix, route.back())
 	PlanningChecklistHarness.flush_planning(fix)

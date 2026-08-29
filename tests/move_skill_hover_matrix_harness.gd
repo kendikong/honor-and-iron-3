@@ -402,7 +402,6 @@ static func capture_painted_leg_hover_layers(
 ) -> Dictionary:
 	PlanningChecklistHarness.sweep_to_cell(fix, hover_cell, previous)
 	fix.input._flush_hover_heavy_sync()
-	fix.input.call("_run_ability_settled_refresh")
 	PlanningChecklistHarness.flush_planning(fix)
 	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
 	var live: CombatPlanningPreview = overlay.get_live_preview() if overlay != null else null

@@ -860,9 +860,25 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_preview_failed = true
 		_hover_preview_cache_key = ""
 		_last_hover_move_intent_preview = false
+		var preserved_sealed_paths: Dictionary = {}
+		if _director != null and _director.selected_unit_id >= 0:
+			var actor: UnitState = _proj_unit(_director.selected_unit_id)
+			if actor != null and preview_state.is_painted_leg_sealed(actor.id):
+				var sealed_path: Array = preview_state.preview_paths.get(actor.id, [])
+				if sealed_path.size() >= 2:
+					preserved_sealed_paths[actor.id] = sealed_path.duplicate()
 		preview_state.clear_all()
-		if _planning != null:
-			_planning.restore_committed_display()
+		for unit_id: Variant in preserved_sealed_paths.keys():
+			var path: Array = preserved_sealed_paths[unit_id] as Array
+			preview_state.preview_paths[unit_id] = path
+			preview_state.seal_painted_leg(int(unit_id))
+		if preserved_sealed_paths.is_empty():
+			if _planning != null:
+				_planning.restore_committed_display()
+		else:
+			if _planning != null:
+				for unit_id: Variant in preserved_sealed_paths.keys():
+					_planning.apply_preview_paths_only(preview_state, int(unit_id))
 		_sync_intent_live_board()
 		return
 	_apply_preview_result_preserving_hover_paths(preview)
@@ -1093,6 +1109,7 @@ func _restore_drag_force_basic() -> void:
 
 
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
+	dragging = false
 	var sealed_unit_id: int = -1
 	if _drag_unit_id >= 0 and not snap_back:
 		var drag_actor: UnitState = _proj_unit(_drag_unit_id)
@@ -1125,6 +1142,8 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 		_drag_saved_preview = null
 		if _planning != null:
 			_planning.restore_committed_display()
+			if sealed_unit_id >= 0:
+				_planning.apply_preview_paths_only(preview_state, sealed_unit_id)
 	_sync_intent_live_board()
 	_sync_intent_skill_mode()
 	if _intent_state != null:
@@ -2140,7 +2159,9 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if dragging or _director == null or _director.board == null:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
-	if p_unit != null and painted_move_route_locked(p_unit):
+	if p_unit != null and (
+		painted_move_route_locked(p_unit) or _sealed_painted_preview_active(p_unit)
+	):
 		_restore_locked_painted_preview_paths(p_unit.id)
 		return
 	if _should_restore_stand_hover_preview(cell):
@@ -2191,6 +2212,15 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		_refresh_click_target_highlight()
 		return
 	if not p_unit.active_abilities.is_empty() and _director.selected_ability_index >= 0:
+		var armed_ability: AbilityData = _selected_ability_data(p_unit)
+		if (
+			armed_ability != null
+			and _is_awaiting_movement_endpoint(p_unit, armed_ability)
+			and _sealed_painted_preview_active(p_unit)
+		):
+			_restore_locked_painted_preview_paths(p_unit.id)
+			_refresh_click_target_highlight()
+			return
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			var hover_waypoints: Array[Vector2i] = []
@@ -2215,6 +2245,10 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			_refresh_movement_slot_hover_preview(corridor_unit, cell)
 			_refresh_click_target_highlight()
 			return
+	if p_unit != null and _sealed_painted_preview_active(p_unit):
+		_restore_locked_painted_preview_paths(p_unit.id)
+		_refresh_click_target_highlight()
+		return
 	_restore_hover_preview()
 
 
@@ -2240,7 +2274,7 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 				return
 	if dragging and not _per_hover_walk_corridor_active(hover_unit):
 		return
-	if painted_move_route_locked(hover_unit):
+	if painted_move_route_locked(hover_unit) or _sealed_painted_preview_active(hover_unit):
 		_restore_locked_painted_preview_paths(hover_unit.id)
 		return
 	if not active_movement_planning_step(hover_unit):
@@ -4178,6 +4212,15 @@ func painted_move_route_locked(p_unit: UnitState) -> bool:
 	return true
 
 
+## Sealed painted leg with preview geometry — restore path even when lock origin check fails.
+func _sealed_painted_preview_active(p_unit: UnitState) -> bool:
+	if p_unit == null:
+		return false
+	if not preview_state.is_painted_leg_sealed(p_unit.id):
+		return false
+	return (preview_state.preview_paths.get(p_unit.id, []) as Array).size() >= 2
+
+
 ## True when hover may rewrite preview_paths / live corridor for this cell.
 func live_move_hover_rewrite_applies(p_unit: UnitState, _cell: Vector2i) -> bool:
 	if not active_movement_planning_step(p_unit):
@@ -4225,7 +4268,19 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 
 
 func clear_hover_route_preview() -> void:
+	var preserved_paths: Dictionary = {}
+	for uid: Variant in preview_state.painted_leg_sealed.keys():
+		var unit_id: int = int(uid)
+		if not preview_state.is_painted_leg_sealed(unit_id):
+			continue
+		var path: Array = preview_state.preview_paths.get(unit_id, [])
+		if path.size() >= 2:
+			preserved_paths[unit_id] = path.duplicate()
 	preview_state.clear_route_geometry()
+	for unit_id: Variant in preserved_paths.keys():
+		var path: Array = preserved_paths[unit_id] as Array
+		preview_state.preview_paths[unit_id] = path
+		preview_state.seal_painted_leg(int(unit_id))
 
 
 func committed_route_preview() -> CombatPlanningPreview:
