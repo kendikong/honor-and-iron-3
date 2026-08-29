@@ -860,7 +860,7 @@ func _movement_hover_path_authoritative(unit_id: int) -> bool:
 		return true
 	if not active_movement_planning_step(actor):
 		return false
-	if painted_move_route_locked(actor):
+	if _sealed_leg_structurally_locked(actor):
 		return true
 	var hover_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
@@ -1567,8 +1567,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and not _post_move_corridor_orbit_active(p_unit)
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
-			if _sealed_leg_hover_restore_if_blocked(p_unit, cell):
-				pass
+			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
 			)
@@ -1606,9 +1605,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 					)
 				)
 			)
-			if allow_hover_paint and painted_move_route_locked(p_unit):
-				if not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell)):
-					allow_hover_paint = false
+			if allow_hover_paint and painted_move_route_locked(p_unit, cell):
+				allow_hover_paint = false
 			var per_hover_corridor: bool = _post_move_corridor_orbit_active(p_unit)
 			var should_extend_route: bool = planning_cell_changed
 			if (
@@ -2229,12 +2227,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			var hover_waypoints: Array[Vector2i] = []
 			var ability: AbilityData = _selected_ability_data(p_unit)
-			if (
-				ability != null
-				and _voluntary_walk_corridor_paint_active(p_unit)
-				and target_id < 0
-				and _is_hover_move_cell(p_unit, cell)
-			):
+			if _voluntary_walk_hover_paint_applies(p_unit, cell):
 				_refresh_movement_slot_hover_preview(p_unit, cell)
 				_refresh_click_target_highlight()
 				return
@@ -4243,8 +4236,8 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 		return _basic_move_allowed()
 	return false
 
-## Painted drag route is locked for the current move leg ΓÇö hover must not rewrite it.
-func painted_move_route_locked(p_unit: UnitState) -> bool:
+## Sealed leg anchor matches active leg (structural). Per-cell block: painted_move_route_locked(unit, cell).
+func _sealed_leg_structurally_locked(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
 	if not active_movement_planning_step(p_unit):
@@ -4262,7 +4255,34 @@ func painted_move_route_locked(p_unit: UnitState) -> bool:
 	return true
 
 
-## Sealed painted leg with preview geometry ΓÇö restore path even when lock origin check fails.
+func painted_move_route_locked(
+	p_unit: UnitState,
+	hover_cell: Vector2i = Vector2i(-999999, -999999),
+) -> bool:
+	if not _sealed_leg_structurally_locked(p_unit):
+		return false
+	if hover_cell.x > -900000:
+		return not PlanningRoutePolicy.hover_rewrite_allowed(
+			_sealed_leg_hover_mode(p_unit, hover_cell),
+		)
+	return true
+
+
+## PRE / MOVE-module / POST — one voluntary-walk hover paint gate (policy + move-tile intent).
+func _voluntary_walk_hover_paint_applies(p_unit: UnitState, cell: Vector2i) -> bool:
+	if p_unit == null or _director == null or not _director.board.is_in_bounds(cell):
+		return false
+	if _attack_target_id_at_cell(p_unit, cell) >= 0:
+		return false
+	if not _voluntary_walk_corridor_paint_active(p_unit):
+		return false
+	if not _is_hover_move_cell(p_unit, cell):
+		return false
+	if _sealed_leg_structurally_locked(p_unit):
+		return PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell))
+	return live_move_hover_rewrite_applies(p_unit, cell)
+
+
 func _sealed_painted_preview_active(p_unit: UnitState) -> bool:
 	if p_unit == null:
 		return false
@@ -4923,14 +4943,10 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 		return false
 	if _director == null or not _director.board.is_in_bounds(cell):
 		return false
-	if (
-		_voluntary_walk_corridor_paint_active(p_unit)
-		
-		and _attack_target_id_at_cell(p_unit, cell) < 0
-	):
+	if _voluntary_walk_hover_paint_applies(p_unit, cell):
 		return true
-	if painted_move_route_locked(p_unit):
-		return PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell))
+	if painted_move_route_locked(p_unit, cell):
+		return false
 	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 	if (
 		target_enemy_id < 0
