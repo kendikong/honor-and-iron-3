@@ -157,13 +157,10 @@ static func commit_run_postmove_headless(
 		return
 	var input: CombatPlanningInput = fix.input as CombatPlanningInput
 	if input != null:
-		input.force_basic_movement = true
 		input.auto_use_skill_after_move = false
 	director.select_unit(unit_id)
 	director.select_ability(-1)
 	var slots: Dictionary = _PLANNING_CHECKLIST.commit_production(fix, postmove_cell)
-	if input != null:
-		input.force_basic_movement = false
 	_PLANNING_CHECKLIST.assert_true(
 		failures,
 		"%s/planning/postmove_run" % tag,

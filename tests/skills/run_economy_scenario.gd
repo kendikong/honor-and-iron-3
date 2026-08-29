@@ -14,7 +14,6 @@ static func run_all(failures: Array[String]) -> void:
 static func _walk_adjacent_keeps_ap(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	fix.director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	fix.input.auto_use_skill_after_move = false
 	var dest: Vector2i = Vector2i(5, 5)
 	PlanningChecklistHarness.hover(fix, dest)

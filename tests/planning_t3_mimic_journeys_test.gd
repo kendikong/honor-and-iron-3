@@ -37,7 +37,6 @@ static func _test_undo_drag_premove_clears(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	var dest: Vector2i = PlanningChecklistHarness.BASH_HOVER_WALK
 	PlanningDragE2EHarness.paint_and_release(
 		fix,

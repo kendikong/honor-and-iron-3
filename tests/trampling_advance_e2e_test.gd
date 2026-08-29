@@ -613,7 +613,6 @@ static func _commit_trample_then_post_move(
 	_paint_drag_route(input, unit, trample_route, END_CELL)
 	_commit_drag_route(input, director, END_CELL)
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	var post_dest := Vector2i(8, 2)
 	var post_route: Array[Vector2i] = [END_CELL, Vector2i(7, 3), Vector2i(8, 3), post_dest]
 	input._drag_route = post_route.duplicate()

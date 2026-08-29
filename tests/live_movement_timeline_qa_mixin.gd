@@ -146,7 +146,8 @@ static func commit_universal_run(
 		director.select_ability(run_idx)
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	director.select_unit(actor_id)
-	input.force_basic_movement = use_basic_move
+	if use_basic_move:
+		director.selected_ability_index = -1
 	input.auto_use_skill_after_move = false
 	input.set_qa_pointer_grid_cell(dest)
 	if input._intent_state != null:
@@ -154,7 +155,6 @@ static func commit_universal_run(
 	var slots: Dictionary = input._final_commit_slots_for_click_at_cell(
 		actor_id, dest, Vector2.ZERO,
 	)
-	input.force_basic_movement = false
 	test_suite.assert_bool(not _slots_invalid(slots)).override_failure_message(
 		"movement timeline Run leg invalid at %s: %s" % [dest, str(slots)],
 	).is_true()

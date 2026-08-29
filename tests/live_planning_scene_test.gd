@@ -1381,14 +1381,12 @@ func _assert_k3_post_move_committed(ctx: Dictionary, k3_id: int, label: String) 
 func _enter_basic_movement_mode(ctx: Dictionary, unit_id: int) -> void:
 	ctx.director.select_unit(unit_id)
 	ctx.director.select_ability(-1)
-	ctx.input.force_basic_movement = true
 	await _wait_ability_settle(ctx)
 
 
 ## K4 F5 parity: keep selected skill armed; auto_run extended move budget (force_basic blocks run).
 func _enter_k4_auto_run_paint_mode(ctx: Dictionary, unit_id: int) -> void:
 	ctx.director.select_unit(unit_id)
-	ctx.input.force_basic_movement = false
 	await _wait_ability_settle(ctx)
 
 

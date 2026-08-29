@@ -221,7 +221,6 @@ static func _attach_to_host(node: Node) -> void:
 
 static func prepare_basic_walk(fix: Dictionary) -> void:
 	fix.director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	fix.input.auto_use_skill_after_move = false
 
 

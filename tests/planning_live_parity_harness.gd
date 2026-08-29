@@ -160,7 +160,6 @@ static func run_k4_run_live_parity(
 
 static func enter_k4_auto_run_paint_mode(fix: Dictionary, unit_id: int) -> void:
 	fix.director.select_unit(unit_id)
-	fix.input.force_basic_movement = false
 	PlanningChecklistHarness.wait_ability_settle_sync(fix)
 
 
@@ -935,7 +934,6 @@ static func run_swap_walk_then_swap_mirror(failures: Array[String]) -> void:
 static func run_undo_sprite_smoke(fix: Dictionary, failures: Array[String], k1_id: int) -> void:
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	var home: Vector2i = PlanningChecklistHarness.KNIGHT_START
 	var dest: Vector2i = PlanningChecklistHarness.BASH_HOVER_WALK
 	PlanningDragE2EHarness.paint_and_release(fix, [home, dest], dest)

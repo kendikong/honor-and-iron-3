@@ -363,6 +363,13 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - `_refresh_movement_slot_hover_preview` — awaiting stand fallback when `!_can_move_to` (stand tile, not stale corridor).
 - **Open:** `painted_route_premove_vs_move_equivalence` — trample MOVE-module sealed orbit still diverges from premove on some cells; `painted_landing_hover` requires frozen `fixed_route` on the same armed+sealed state (conflicting orbit expectations).
 
+**Pass 27 (Wave E7 — remove Force Basic Movement + voluntary-walk owners — 2026-08-29):**
+- **Removed:** `force_basic_movement` var, drag-time force-basic toggles, `GameSettings.planning_force_basic`, left-panel **Force Basic Movement** checkbox (`tactical_side_panels.gd`).
+- **Added:** `_voluntary_walk_planning_active()` (timeline movement-step truth), `_movement_planning_excluding_autorun()` (breaks auto-run ↔ movement-step recursion), `_skill_commit_path_active()` (armed-skill commit path; replaces `not force_basic` on enemy/ally/skill slots).
+- **Unified:** `_voluntary_walk_corridor_paint_active()` single corridor gate; `_post_move_corridor_orbit_active()` for POST-only orbit; sealed hover may fall through when corridor paint is active.
+- **Tests:** stripped `force_basic_movement = …` from harnesses; `live_movement_timeline_qa_mixin` deselects skill (`selected_ability_index = -1`) for basic-walk legs; removed `_test_force_basic_flag`.
+- **Open:** `painted_route_premove_vs_move_equivalence` still FAIL; `charge_strike_composite` / `painted_landing_hover` orbit modes need one owner for frozen-landing vs corridor-orbit without reintroducing slot branches.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.

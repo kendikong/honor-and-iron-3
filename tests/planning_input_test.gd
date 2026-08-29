@@ -8,7 +8,6 @@ static func run_all(failures: Array[String]) -> void:
 	## the production-fixture suites run by PlanningQaGate: skill scenarios,
 	## action-range regression, trample E2E, and the checklist gate.
 	var tests: Array[Callable] = [
-		_test_force_basic_flag,
 		_test_undoable_action_director,
 		_test_wait_blocks_move_commit,
 		_test_planning_action_range_tiles,
@@ -89,13 +88,6 @@ static func _bowling_charge_arm_fixture() -> Dictionary:
 	input._director = director
 	_register_fixture(input, director)
 	return {"input": input, "director": director, "board": board, "unit": unit, "dash": dash}
-
-
-static func _test_force_basic_flag(failures: Array[String]) -> void:
-	var input := CombatPlanningInput.new()
-	input.force_basic_movement = true
-	if not input.force_basic_movement:
-		failures.append("PlanningInputTest: force_basic_movement should persist when set")
 
 
 static func _test_undoable_action_director(failures: Array[String]) -> void:

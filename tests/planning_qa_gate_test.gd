@@ -1448,7 +1448,6 @@ static func _test_trample_full_phase_hover_matrix(failures: Array[String]) -> vo
 		failures.append("%s: trample commit failed" % LABEL)
 		return
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	input._clear_hover_drag_route()
 	var post_start: Vector2i = end_cell
 	var post_dest: Vector2i = PlanningChecklistHarness.TRAMPLE_POST_DEST
@@ -1521,7 +1520,6 @@ static func _rewire_trample_fixture(fix: Dictionary) -> void:
 static func _setup_unarmed_painted_premove(fix: Dictionary) -> void:
 	_rewire_trample_fixture(fix)
 	fix.director.selected_ability_index = -1
-	fix.input.force_basic_movement = false
 	fix.input._clear_hover_drag_route()
 	PlanningChecklistHarness.flush_planning(fix)
 
@@ -1676,7 +1674,6 @@ static func _test_blue_move_tiles_on_walk_select(failures: Array[String]) -> voi
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	PlanningChecklistHarness.hover(fix, KNIGHT_START)
 	var blue: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
 	if blue.is_empty():
@@ -1769,7 +1766,6 @@ static func _test_committed_walk_preview_matches_sim_path(failures: Array[String
 	director.selected_ability_index = -1
 	var input := CombatPlanningInput.new()
 	input._director = director
-	input.force_basic_movement = true
 	var dest := Vector2i(2, 2)
 	var slots: Dictionary = _commit_slots_at(input, 1, dest)
 	if bool(slots.get("invalid", true)):
@@ -2065,7 +2061,6 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 	if fix.trample_idx < 0:
 		failures.append("PlanningQAGate Trampling 2C: missing Trampling Advance")
 		return
-	input.force_basic_movement = true
 	director.selected_ability_index = -1
 	var pre_dest := Vector2i(6, 4)
 	var trample_end := Vector2i(6, 3)
@@ -2079,7 +2074,6 @@ static func _test_trampling_premove_then_arm_commit_flow(failures: Array[String]
 	director.flush_plan_refresh_signals_if_pending()
 	if director.plan_pre_move.entries.is_empty():
 		failures.append("PlanningQAGate Trampling 2C: pre-move must stay on timeline")
-	input.force_basic_movement = false
 	director.selected_ability_index = fix.trample_idx
 	var stand: Vector2i = director.projected_state.get_unit_by_id(1).position
 	if not _arm_awaiting_at(input, director, stand):
@@ -3677,7 +3671,6 @@ static func _test_click_drop_parity_walk_adjacent(failures: Array[String]) -> vo
 	_wire_click_drop_context(fix)
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	_clear_drag_state(fix.input)
 	_assert_click_drop_signature_parity(failures, "walk adjacent", fix.input, 1, Vector2i(5, 5))
 
@@ -3749,7 +3742,6 @@ static func _test_click_drop_cursor_parity_walk(failures: Array[String]) -> void
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	_clear_drag_state(input)
 	var dest := Vector2i(5, 5)
 	var click_slots: Dictionary = _click_slots_at(input, 1, dest)
@@ -3808,7 +3800,6 @@ static func _test_click_drop_commit_sim_walk(failures: Array[String]) -> void:
 	var click_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	_wire_click_drop_context(click_fix)
 	click_fix.director.selected_ability_index = -1
-	click_fix.input.force_basic_movement = true
 	_clear_drag_state(click_fix.input)
 	var click_slots: Dictionary = _click_slots_at(click_fix.input, 1, dest)
 	if _slots_invalid(click_slots):
@@ -3826,7 +3817,6 @@ static func _test_click_drop_commit_sim_walk(failures: Array[String]) -> void:
 	var drop_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	_wire_click_drop_context(drop_fix)
 	drop_fix.director.selected_ability_index = -1
-	drop_fix.input.force_basic_movement = true
 	_clear_drag_state(drop_fix.input)
 	var drop_slots: Dictionary = _drop_slots_at(drop_fix.input, 1, dest)
 	if _slots_invalid(drop_slots):
@@ -3847,7 +3837,6 @@ static func _test_click_drop_drag_walk_sim_parity(failures: Array[String]) -> vo
 	var click_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	_wire_click_drop_context(click_fix)
 	click_fix.director.selected_ability_index = -1
-	click_fix.input.force_basic_movement = true
 	_clear_drag_state(click_fix.input)
 	var click_slots: Dictionary = _click_slots_at(click_fix.input, 1, dest)
 	var click_pos: Vector2i = _sim_unit_position_after_slots_commit(click_fix.director, 1, click_slots)
@@ -3860,7 +3849,6 @@ static func _test_click_drop_drag_walk_sim_parity(failures: Array[String]) -> vo
 	var drop_fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	_wire_click_drop_context(drop_fix)
 	drop_fix.director.selected_ability_index = -1
-	drop_fix.input.force_basic_movement = true
 	var route: Array[Vector2i] = [KNIGHT_START, dest]
 	TramplingAdvanceE2ETest._paint_drag_route(drop_fix.input, drop_fix.knight, route, dest)
 	var drop_slots: Dictionary = _drop_slots_at(drop_fix.input, 1, dest)
@@ -3995,7 +3983,6 @@ static func _test_drag_drop_commit_undo_clears_plan(failures: Array[String]) -> 
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	var dest := Vector2i(5, 5)
 	input._begin_drag(fix.knight, Vector2.ZERO, true)
 	var route: Array[Vector2i] = [KNIGHT_START, dest]
@@ -4057,7 +4044,6 @@ static func _test_cursor_equals_slots_on_hover(failures: Array[String]) -> void:
 			% [bash_icon_hover, bash_icon_slots],
 		)
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	var walk_dest := Vector2i(5, 5)
 	var walk_slots: Dictionary = _commit_slots_at(input, 1, walk_dest)
 	if _slots_invalid(walk_slots):
@@ -4429,7 +4415,6 @@ static func _test_timeline_ghost_clears_when_committed(failures: Array[String]) 
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
 	director.selected_ability_index = -1
-	input.force_basic_movement = true
 	var dest := Vector2i(5, 5)
 	var move: TimelineAction = TimelineAction.make_move(
 		1, dest, -1, [], GameEnums.MoveTiming.PRE_ACTION,
@@ -6146,7 +6131,6 @@ static func _commit_archer_waypoint_premove(
 		map_stub = QaPlanningMapStub.new()
 		fix["map_stub"] = map_stub
 		input._map_view = map_stub
-	input.force_basic_movement = true
 	director.selected_ability_index = -1
 	input._on_ability_selected(-1)
 	PlanningChecklistHarness.hover(fix, route[0])
@@ -6158,11 +6142,9 @@ static func _commit_archer_waypoint_premove(
 		failures.append("%s: painted premove route %s != %s" % [
 			label, str(input._drag_route), str(route),
 		])
-		input.force_basic_movement = false
 		return false
 	input.set_qa_pointer_grid_cell(route.back())
 	input.on_left_press(map_stub.grid_to_local(route.back()))
-	input.force_basic_movement = false
 	director.flush_plan_refresh_signals_if_pending()
 	var committed_move: TimelineAction = null
 	for action: TimelineAction in director.get_player_plan().entries:

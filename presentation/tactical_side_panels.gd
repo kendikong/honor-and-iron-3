@@ -32,7 +32,6 @@ var _skill_scroll: ScrollContainer
 var _log_label: RichTextLabel
 var _warn_label: RichTextLabel
 var _warn_panel: PanelContainer
-var _force_basic_check: CheckBox
 var _auto_run_check: CheckBox
 var _auto_use_skill_check: CheckBox
 var _danger_area_check: CheckBox
@@ -67,8 +66,6 @@ func apply_settings(settings: GameSettings) -> void:
 		rich.add_theme_font_size_override("normal_font_size", body_sz)
 	if _log_label != null:
 		_log_label.add_theme_font_size_override("normal_font_size", CombatUiFormatters.scaled_font_size(LOG_FONT_SIZE))
-	if _force_basic_check != null:
-		_force_basic_check.add_theme_font_size_override("font_size", hint_sz)
 	if _auto_run_check != null:
 		_auto_run_check.add_theme_font_size_override("font_size", hint_sz)
 	if _auto_use_skill_check != null:
@@ -198,12 +195,6 @@ func _add_planning_controls(parent: VBoxContainer) -> void:
 	_wait_btn.tooltip_text = "Turn modifier: skip Action and Post-Move for this unit. Click again to cancel."
 	_wait_btn.pressed.connect(_on_wait_pressed)
 	row.add_child(_wait_btn)
-
-	_force_basic_check = CheckBox.new()
-	_force_basic_check.text = "Force Basic Movement"
-	_force_basic_check.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_force_basic_check.toggled.connect(_on_force_basic_toggled)
-	row.add_child(_force_basic_check)
 
 	var auto_row := HBoxContainer.new()
 	auto_row.add_theme_constant_override("separation", 8)
@@ -338,8 +329,6 @@ func _on_viewport_resized() -> void:
 func _apply_planning_prefs() -> void:
 	if _settings == null:
 		return
-	if _force_basic_check != null:
-		_force_basic_check.set_pressed_no_signal(_settings.planning_force_basic)
 	if _auto_run_check != null:
 		_auto_run_check.set_pressed_no_signal(_settings.planning_auto_run)
 	if _auto_use_skill_check != null:
@@ -347,7 +336,6 @@ func _apply_planning_prefs() -> void:
 	if _danger_area_check != null:
 		_danger_area_check.set_pressed_no_signal(_settings.planning_danger_area)
 	if _planning_input != null:
-		_planning_input.force_basic_movement = _settings.planning_force_basic
 		_planning_input.auto_run = _settings.planning_auto_run
 		_planning_input.auto_use_skill_after_move = _settings.planning_auto_use_skill_after_move
 	if _planning_overlay != null:
@@ -358,8 +346,6 @@ func _apply_planning_prefs() -> void:
 func _save_planning_prefs() -> void:
 	if _settings == null:
 		return
-	if _force_basic_check != null:
-		_settings.planning_force_basic = _force_basic_check.button_pressed
 	if _auto_run_check != null:
 		_settings.planning_auto_run = _auto_run_check.button_pressed
 	if _auto_use_skill_check != null:
@@ -369,22 +355,7 @@ func _save_planning_prefs() -> void:
 	_settings.save_to_disk()
 
 
-func _on_force_basic_toggled(pressed: bool) -> void:
-	if pressed and _auto_run_check != null and _auto_run_check.button_pressed:
-		_auto_run_check.set_pressed_no_signal(false)
-		if _planning_input != null:
-			_planning_input.auto_run = false
-	if _planning_input != null:
-		_planning_input.force_basic_movement = pressed
-	_save_planning_prefs()
-	_refresh_planning_move_overlay()
-
-
 func _on_auto_run_toggled(pressed: bool) -> void:
-	if pressed and _force_basic_check != null and _force_basic_check.button_pressed:
-		_force_basic_check.set_pressed_no_signal(false)
-		if _planning_input != null:
-			_planning_input.force_basic_movement = false
 	if _planning_input != null:
 		_planning_input.auto_run = pressed
 		_director.sync_selected_ability_if_invalid()
@@ -518,12 +489,6 @@ func _clear_skill_buttons() -> void:
 
 func _on_ability_selected(index: int) -> void:
 	_selected_ability = index
-	if index >= 0 and _force_basic_check != null and _force_basic_check.button_pressed:
-		_force_basic_check.set_pressed_no_signal(false)
-		if _planning_input != null:
-			_planning_input.force_basic_movement = false
-		if _settings != null:
-			_settings.planning_force_basic = false
 	if _skill_ui_lock:
 		return
 	if _skill_list != null and _skill_list.get_child_count() > 0:

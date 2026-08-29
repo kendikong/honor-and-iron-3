@@ -299,7 +299,6 @@ static func _phase6_execute(failures: Array[String]) -> void:
 
 static func _phase7_premove_then_trample(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
-	fix.input.force_basic_movement = true
 	fix.director.selected_ability_index = -1
 	var pre_dest: Vector2i = PlanningChecklistHarness.TRAMPLE_ROUTE[0]
 	PlanningChecklistHarness.commit_production(fix, pre_dest)

@@ -63,7 +63,6 @@ var show_team_outlines: bool = false
 var dev_tile_labels: bool = false
 var dev_boredom_atmosphere: bool = false
 var dev_boredom_water: bool = false
-var planning_force_basic: bool = false
 var planning_auto_run: bool = false
 var planning_danger_area: bool = false
 var planning_auto_use_skill_after_move: bool = true
@@ -140,7 +139,6 @@ func load_from_disk() -> void:
 	dev_tile_labels = bool(cfg.get_value("developer", "tile_labels", dev_tile_labels))
 	dev_boredom_atmosphere = bool(cfg.get_value("developer", "boredom_atmosphere", dev_boredom_atmosphere))
 	dev_boredom_water = bool(cfg.get_value("developer", "boredom_water", dev_boredom_water))
-	planning_force_basic = bool(cfg.get_value("planning", "force_basic_movement", planning_force_basic))
 	planning_auto_run = bool(cfg.get_value("planning", "auto_run", planning_auto_run))
 	planning_danger_area = bool(cfg.get_value("planning", "danger_area", planning_danger_area))
 	planning_auto_use_skill_after_move = bool(
@@ -242,7 +240,6 @@ func save_to_disk() -> void:
 	cfg.set_value("developer", "tile_labels", dev_tile_labels)
 	cfg.set_value("developer", "boredom_atmosphere", dev_boredom_atmosphere)
 	cfg.set_value("developer", "boredom_water", dev_boredom_water)
-	cfg.set_value("planning", "force_basic_movement", planning_force_basic)
 	cfg.set_value("planning", "auto_run", planning_auto_run)
 	cfg.set_value("planning", "danger_area", planning_danger_area)
 	cfg.set_value("planning", "auto_use_skill_after_move", planning_auto_use_skill_after_move)

@@ -500,10 +500,13 @@ func _compute_hover_blast_action_range_tiles(
 func _recompute_hover_ranges_from_inputs() -> void:
 	if _director == null:
 		return
-	var force_basic: bool = _planning_input.force_basic_movement if _planning_input != null else false
+	var voluntary_walk: bool = (
+		_planning_input._voluntary_walk_planning_active()
+		if _planning_input != null else false
+	)
 	var dragging: bool = _planning_input.dragging if _planning_input != null else false
 	var drag_id: int = _planning_input.get_drag_unit_id() if _planning_input != null else -1
-	recompute_hover_ranges(force_basic, _director.selected_ability_index, dragging, drag_id)
+	recompute_hover_ranges(voluntary_walk, _director.selected_ability_index, dragging, drag_id)
 
 
 func get_preview_board() -> BoardState:
@@ -939,7 +942,7 @@ func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 
 
 func recompute_hover_ranges(
-	force_basic: bool,
+	voluntary_walk: bool,
 	selected_ability: int,
 	dragging: bool,
 	drag_unit_id: int,
@@ -959,7 +962,7 @@ func recompute_hover_ranges(
 		_clear_hover_skill_tiles()
 		_queue_static_tiles_redraw()
 		return
-	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
+	var cache_force: bool = voluntary_walk if unit.id == _director.selected_unit_id else false
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()
 	_apply_planning_tile_layers(unit, cache_force, selected_ability, dragging)
@@ -969,7 +972,7 @@ func recompute_hover_ranges(
 ## MOVE_PREVIEW_RULES tile SSOT — one apply path (two-range model via PlanningPreviewTiles).
 func _apply_planning_tile_layers(
 	unit: UnitState,
-	force_basic: bool,
+	voluntary_walk: bool,
 	selected_ability: int,
 	dragging: bool,
 ) -> void:
@@ -977,7 +980,7 @@ func _apply_planning_tile_layers(
 		return
 	var is_selected_player: bool = _is_selected_player_unit(unit)
 	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
-	var cache_force: bool = force_basic if unit.id == _director.selected_unit_id else false
+	var cache_force: bool = voluntary_walk if unit.id == _director.selected_unit_id else false
 	if PlanningPreviewTiles.tiles_blocked(
 		_director, unit, selected_ability, _planning_input, is_selected_player,
 	):
@@ -1469,7 +1472,7 @@ func _should_draw_interaction_overlay() -> bool:
 	if (
 		_planning_input.skill_interaction_active()
 		or _planning_input.aiming
-		or _planning_input.force_basic_movement
+		or _planning_input._voluntary_walk_planning_active()
 		or _planning_input.run_mode_selected()
 		or _planning_input.is_live_preview_active()
 	):
@@ -2437,7 +2440,6 @@ func _draw_move_ghosts() -> void:
 	var unit := _proj_unit(_director.selected_unit_id)
 	if unit == null or not unit.is_alive():
 		return
-	var force_basic: bool = _planning_input.force_basic_movement
 	if not _planning_input.awaiting_movement_endpoint_ghost_visible(unit):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)

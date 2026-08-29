@@ -1,4 +1,4 @@
-﻿class_name ChainHookScenarioTest
+class_name ChainHookScenarioTest
 extends RefCounted
 
 const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
@@ -188,7 +188,6 @@ static func _phase6_execute(failures: Array[String]) -> void:
 static func _phase7_committed_premove(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_hook_board()
 	fix.director.selected_ability_index = -1
-	fix.input.force_basic_movement = true
 	fix.input.auto_use_skill_after_move = false
 	var walk_dest: Vector2i = Vector2i(2, 3)
 	PlanningChecklistHarness.commit_production(fix, walk_dest)
