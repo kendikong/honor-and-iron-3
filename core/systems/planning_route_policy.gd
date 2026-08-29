@@ -3,6 +3,42 @@ extends RefCounted
 
 ## Shared geometry for enemy-hover vs painted-corridor policy (presentation commit probe stays in CombatPlanningInput).
 
+enum SealedLegHoverMode {
+	NONE = 0,
+	RESTORE_ONLY = 1,
+	FREEZE_LANDING = 2,
+	EXTEND_CORRIDOR = 3,
+}
+
+
+## Sealed painted leg + hover: one owner for extend vs freeze vs restore (not slot or ability id).
+static func sealed_leg_hover_mode(
+	is_painted_leg_sealed: bool,
+	sealed_route_len: int,
+	voluntary_walk_corridor_paint: bool,
+	is_hover_move_tile: bool,
+	hover_attack_target: bool,
+	frozen_landing_required: bool,
+) -> int:
+	if not is_painted_leg_sealed or sealed_route_len < 2:
+		return SealedLegHoverMode.NONE
+	if frozen_landing_required:
+		return SealedLegHoverMode.FREEZE_LANDING
+	if voluntary_walk_corridor_paint and not hover_attack_target:
+		return SealedLegHoverMode.EXTEND_CORRIDOR
+	if voluntary_walk_corridor_paint:
+		return SealedLegHoverMode.RESTORE_ONLY
+	return SealedLegHoverMode.RESTORE_ONLY
+
+
+static func hover_rewrite_allowed(mode: int) -> bool:
+	return mode == SealedLegHoverMode.EXTEND_CORRIDOR
+
+
+## Sealed-leg orbit extension uses basic-walk corridor legality, not armed MOVE-endpoint probes.
+static func use_basic_walk_corridor_legality(mode: int) -> bool:
+	return mode == SealedLegHoverMode.EXTEND_CORRIDOR
+
 
 static func enemy_hover_respects_painted_corridor(
 	actor: UnitState,

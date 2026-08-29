@@ -1121,6 +1121,7 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 			_seal_painted_preview_landing_if_needed(drag_actor)
 			if preview_state.is_painted_leg_sealed(_drag_unit_id):
 				sealed_unit_id = _drag_unit_id
+				_sync_preview_board_to_sealed_landing(sealed_unit_id)
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
 	if _drag_unit_id >= 0:
@@ -2163,7 +2164,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit != null and painted_move_route_locked(p_unit):
-		if not _voluntary_walk_corridor_paint_active(p_unit):
+		if not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell)):
 			_restore_locked_painted_preview_paths(p_unit.id)
 			return
 	if _should_restore_stand_hover_preview(cell):
@@ -2190,9 +2191,14 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		and _director.board.is_in_bounds(cell)
 	):
 		var dash_ab := _selected_ability_data(p_unit)
+		var sealed_orbit_extend: bool = (
+			preview_state.is_painted_leg_sealed(p_unit.id)
+			and PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell))
+		)
 		if (
 			dash_ab != null
 			and _awaiting_flow_selected(p_unit, dash_ab)
+			and not sealed_orbit_extend
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
 				_proj_origin(p_unit), cell, dash_ab, p_unit, _proj(),
 			)
@@ -2257,10 +2263,11 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			_refresh_movement_slot_hover_preview(corridor_unit, cell)
 			_refresh_click_target_highlight()
 			return
-	if p_unit != null and _sealed_painted_preview_active(p_unit) and not _voluntary_walk_corridor_paint_active(p_unit):
-		_restore_locked_painted_preview_paths(p_unit.id)
-		_refresh_click_target_highlight()
-		return
+	if p_unit != null and _sealed_painted_preview_active(p_unit):
+		if not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell)):
+			_restore_locked_painted_preview_paths(p_unit.id)
+			_refresh_click_target_highlight()
+			return
 	_restore_hover_preview()
 
 
@@ -2287,12 +2294,13 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	if dragging and not _post_move_corridor_orbit_active(hover_unit):
 		return
 	if painted_move_route_locked(hover_unit):
-		if not _voluntary_walk_corridor_paint_active(hover_unit):
+		if not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(hover_unit, cell)):
 			_restore_locked_painted_preview_paths(hover_unit.id)
 			return
-	elif _sealed_painted_preview_active(hover_unit) and not _voluntary_walk_corridor_paint_active(hover_unit):
-		_restore_locked_painted_preview_paths(hover_unit.id)
-		return
+	elif _sealed_painted_preview_active(hover_unit):
+		if not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(hover_unit, cell)):
+			_restore_locked_painted_preview_paths(hover_unit.id)
+			return
 	if not active_movement_planning_step(hover_unit):
 		return
 	if not _movement_preview_resync_after_sim_allowed(hover_unit):
@@ -2449,6 +2457,25 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 
 
 ## Preview_paths is the painted landing SSOT ΓÇö seal when it matches the active leg, then drop drag buffer.
+func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
+	if unit_id < 0 or _director == null:
+		return
+	var route: Array = preview_state.preview_paths.get(unit_id, [])
+	if route.size() < 2:
+		return
+	var board: BoardState = _proj().clone()
+	var unit: UnitState = board.get_unit_by_id(unit_id)
+	if unit == null:
+		return
+	GridSystem.set_occupant(board, unit.position, -1)
+	for i: int in range(1, route.size()):
+		var step: Variant = route[i]
+		if step is Vector2i:
+			var step_cell: Vector2i = step as Vector2i
+			unit.position = step_cell
+			GridSystem.set_occupant(board, step_cell, unit_id)
+	preview_state.preview_board = board
+
 func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
 		return
@@ -2462,6 +2489,7 @@ func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 		return
 	_sync_painted_drag_route_to_preview_paths(p_unit.id, true)
 	preview_state.seal_painted_leg(p_unit.id)
+	_sync_preview_board_to_sealed_landing(p_unit.id)
 	_discard_drag_buffer_when_preview_route_locked(p_unit)
 
 
@@ -2772,15 +2800,30 @@ func _painted_drag_route_drives_live_preview() -> bool:
 	return _selection_hover_corridor_paint_active() and _drag_route.size() >= 2
 
 
+
+func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
+	if p_unit == null or _director == null:
+		return Vector2i(-999999, -999999)
+	var sealed_origin: Vector2i = _sealed_painted_leg_origin(p_unit)
+	if sealed_origin.x > -900000:
+		return sealed_origin
+	if _director.base_board != null:
+		var base_unit: UnitState = _director.base_board.get_unit_by_id(p_unit.id)
+		if base_unit != null:
+			return base_unit.position
+	return _proj_move_origin(p_unit)
+
+
 func _painted_drag_route_matches_leg(p_unit: UnitState) -> bool:
 	if p_unit == null or _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
 		return false
 	if not _movement_route_paint_allowed():
 		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
-	if origin.x <= -900000:
+	var painted_origin: Vector2i = _drag_route[0] as Vector2i
+	var leg_anchor: Vector2i = _leg_anchor_for_painted_drag(p_unit)
+	if leg_anchor.x <= -900000:
 		return false
-	return (_drag_route[0] as Vector2i) == origin
+	return painted_origin == leg_anchor
 
 
 func _painted_preview_route_matches_leg(p_unit: UnitState) -> bool:
@@ -3052,16 +3095,6 @@ func _strip_unaffordable_premove_pairs(
 				continue
 		kept.append(raw)
 	slots["action"] = kept
-	if stripped_pair and kept.is_empty():
-		var had_premove: bool = (
-			not (slots.get("pre", []) as Array).is_empty()
-			or not (slots.get("post", []) as Array).is_empty()
-		)
-		if had_premove:
-			slots["pre"] = []
-			slots["post"] = []
-			if not _is_invalid_dict(slots):
-				slots["invalid"] = "Not enough AP to run and use this skill."
 
 
 func _reject_orphan_skill_premove(slots: Dictionary, unit_id: int, cell: Vector2i) -> void:
@@ -4235,8 +4268,8 @@ func painted_move_route_locked(p_unit: UnitState) -> bool:
 	if sealed_route.size() < 2:
 		_clear_frozen_painted_leg(p_unit.id)
 		return false
-	var origin: Vector2i = _active_move_drag_origin(p_unit)
-	if origin.x <= -900000 or (sealed_route[0] as Vector2i) != origin:
+	var leg_anchor: Vector2i = _leg_anchor_for_painted_drag(p_unit)
+	if leg_anchor.x <= -900000 or (sealed_route[0] as Vector2i) != leg_anchor:
 		_clear_frozen_painted_leg(p_unit.id)
 		return false
 	return true
@@ -4252,9 +4285,38 @@ func _sealed_painted_preview_active(p_unit: UnitState) -> bool:
 
 
 ## True when hover may rewrite preview_paths / live corridor for this cell.
-func live_move_hover_rewrite_applies(p_unit: UnitState, _cell: Vector2i) -> bool:
+func _sealed_leg_hover_mode(p_unit: UnitState, cell: Vector2i) -> int:
+	if p_unit == null or _director == null or not _director.board.is_in_bounds(cell):
+		return PlanningRoutePolicy.SealedLegHoverMode.NONE
+	var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+	var is_move_tile: bool = (
+		_planning != null and _planning.is_hover_move_tile(cell)
+	)
+	if not is_move_tile and cell != p_unit.position:
+		is_move_tile = _attack_target_id_at_cell(p_unit, cell) < 0
+	var frozen_landing: bool = (
+		_sealed_painted_preview_active(p_unit)
+		and not _voluntary_walk_corridor_paint_active(p_unit)
+	)
+	return PlanningRoutePolicy.sealed_leg_hover_mode(
+		preview_state.is_painted_leg_sealed(p_unit.id),
+		sealed_route.size(),
+		_voluntary_walk_corridor_paint_active(p_unit),
+		is_move_tile,
+		_attack_target_id_at_cell(p_unit, cell) >= 0,
+		frozen_landing,
+	)
+
+
+## True when hover may rewrite preview_paths / live corridor for this cell.
+func live_move_hover_rewrite_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	if not active_movement_planning_step(p_unit):
 		return false
+	if preview_state.is_painted_leg_sealed(p_unit.id) and _voluntary_walk_corridor_paint_active(p_unit):
+		return true
+	var mode: int = _sealed_leg_hover_mode(p_unit, cell)
+	if mode != PlanningRoutePolicy.SealedLegHoverMode.NONE:
+		return PlanningRoutePolicy.hover_rewrite_allowed(mode)
 	if painted_move_route_locked(p_unit):
 		return false
 	return true
@@ -4763,12 +4825,19 @@ func _postmove_painted_drag_trim_active(p_unit: UnitState) -> bool:
 func _voluntary_walk_corridor_paint_active(p_unit: UnitState) -> bool:
 	if p_unit == null or _director == null:
 		return false
-	if not _basic_move_allowed():
-		return false
 	if not active_movement_planning_step(p_unit):
 		return false
 	var ability: AbilityData = _selected_ability_data(p_unit)
+	# MOVE-module awaiting + sealed-leg orbit share basic-walk corridor, not relocation hop.
+	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
+		return _voluntary_walk_economy_open(p_unit)
+	if preview_state.is_painted_leg_sealed(p_unit.id) and ability == null:
+		if not _basic_move_allowed():
+			return false
+		return true
 	if ability != null and AbilitySystem.ability_uses_direct_relocation(ability, p_unit):
+		return false
+	if not _basic_move_allowed():
 		return false
 	return true
 
@@ -4921,6 +4990,11 @@ func _write_movement_hover_preview_paths(
 		and ability != null
 		and AbilitySystem.ability_uses_direct_relocation(ability, actor)
 		and _is_awaiting_movement_endpoint(actor, ability)
+		and not _voluntary_walk_corridor_paint_active(actor)
+		and not (
+			preview_state.is_painted_leg_sealed(unit_id)
+			or (preview_state.preview_paths.get(unit_id, []) as Array).size() >= 2
+		)
 	):
 		var hop_origin: Vector2i = _awaiting_endpoint_origin(actor)
 		if (
@@ -5034,7 +5108,7 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty():
 				return painted
-	if _can_move_to(actor, cell):
+	if _can_move_to(actor, cell) or _voluntary_walk_corridor_paint_active(actor):
 		return _corridor_waypoints_to_cell(actor, cell)
 	return []
 
@@ -5106,6 +5180,14 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 
 
 ## Global corridor paint: premove and MOVE module legs share MovementSystem + forbidden trim.
+## Voluntary-walk corridor prefers live preview_board so premove and MOVE-module share occupancy.
+func _corridor_board_for_voluntary_walk(actor: UnitState) -> BoardState:
+	if actor == null or not _voluntary_walk_corridor_paint_active(actor):
+		return _proj()
+	if preview_state.preview_board != null:
+		return preview_state.preview_board
+	return _proj()
+
 func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
@@ -5117,13 +5199,37 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var origin: Vector2i = _active_move_drag_origin(actor)
 	if origin.x <= -900000:
 		return []
+	var corridor_budget: int = _drag_max_steps(actor)
+	var corridor_ability: AbilityData = _route_pathfinding_ability(actor)
+	if _voluntary_walk_corridor_paint_active(actor):
+		corridor_budget = _move_budget(actor)
+		corridor_ability = null
+	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
+	if _voluntary_walk_corridor_paint_active(actor) and preview_state.is_painted_leg_sealed(actor.id):
+		var movement_type: GameEnums.MovementType = (
+			actor.definition.movement_type
+			if actor.definition != null
+			else GameEnums.MovementType.WALK
+		)
+		var move_cost: int = MovementSystem.move_cost_for(actor)
+		var orbit_path: Array[Vector2i] = MovementSystem.find_path(
+			corridor_board,
+			origin,
+			cell,
+			corridor_budget,
+			movement_type,
+			move_cost,
+			null,
+		)
+		if not orbit_path.is_empty():
+			return orbit_path
 	return CombatPlanningPreview.corridor_waypoints_to_cell(
-		_proj(),
+		corridor_board,
 		actor,
 		origin,
 		cell,
-		_drag_max_steps(actor),
-		_route_pathfinding_ability(actor),
+		corridor_budget,
+		corridor_ability,
 		_director,
 		actor.id,
 	)
@@ -5547,7 +5653,11 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 	if _director == null or not _director.auto_run:
 		return false
 	var guard_actor: UnitState = _proj_unit(_director.selected_unit_id)
-	if guard_actor != null and _movement_planning_excluding_autorun(guard_actor):
+	if (
+		guard_actor != null
+		and awaiting_targeting_active()
+		and _movement_planning_excluding_autorun(guard_actor)
+	):
 		return false
 	var actor := unit if unit != null else _proj_unit(_director.selected_unit_id)
 	if actor == null and _director.board != null:
@@ -5872,6 +5982,13 @@ func action_range_visible_for_hover() -> bool:
 			return false
 		return AbilitySystem.can_plan(after_intent, ability, board)
 	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
+	var hover: Vector2i = get_hover_tile_for_ui()
+	if (
+		board.is_in_bounds(hover)
+		and hover != actor.position
+		and unit_move_requires_run(unit_id)
+	):
+		stand = hover
 	return AbilitySystem.can_show_planning_action_range_after_premove(
 		board, actor, ability, stand, auto_run_move,
 	)
@@ -6275,7 +6392,26 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		return false
 	var ability: AbilityData = _selected_ability_data(unit)
 	var skill_move_leg: bool = ability != null and _is_awaiting_movement_endpoint(unit, ability)
+	var sealed_hover_mode: int = _sealed_leg_hover_mode(unit, coord)
+	if _voluntary_walk_corridor_paint_active(unit):
+		skill_move_leg = false
 	var budget: int = _drag_max_steps(unit)
+	if _voluntary_walk_corridor_paint_active(unit) and preview_state.is_painted_leg_sealed(unit.id):
+		var sealed_board: BoardState = _corridor_board_for_voluntary_walk(unit)
+		if not MovementSystem.can_end_movement_on(sealed_board, coord, unit):
+			return false
+		var sealed_budget: int = _move_budget(unit)
+		var sealed_corridor: Array[Vector2i] = CombatPlanningPreview.corridor_waypoints_to_cell(
+			sealed_board,
+			unit,
+			_active_move_drag_origin(unit),
+			coord,
+			sealed_budget,
+			null,
+			_director,
+			unit.id,
+		)
+		return not sealed_corridor.is_empty() and sealed_corridor.back() == coord
 	if skill_move_leg:
 		if not AbilitySystem.planning_is_valid_awaiting_endpoint(
 			move_origin, coord, ability, unit, _proj(),
@@ -6477,9 +6613,21 @@ func _planning_drag_origin(unit_id: int) -> Vector2i:
 	return _active_move_drag_origin(unit)
 
 
+func _sealed_painted_leg_origin(unit: UnitState) -> Vector2i:
+	if unit == null or not preview_state.is_painted_leg_sealed(unit.id):
+		return Vector2i(-999999, -999999)
+	var sealed_route: Array = preview_state.preview_paths.get(unit.id, [])
+	if sealed_route.is_empty() or not (sealed_route[0] is Vector2i):
+		return Vector2i(-999999, -999999)
+	return sealed_route[0] as Vector2i
+
+
 func _active_move_drag_origin(unit: UnitState) -> Vector2i:
 	if unit == null:
 		return Vector2i(-999999, -999999)
+	var sealed_origin: Vector2i = _sealed_painted_leg_origin(unit)
+	if sealed_origin.x > -900000:
+		return sealed_origin
 	var ability: AbilityData = _selected_ability_data(unit)
 	if _is_awaiting_movement_endpoint(unit, ability):
 		return _awaiting_endpoint_origin(unit)
