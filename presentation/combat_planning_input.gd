@@ -2225,6 +2225,15 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			var hover_waypoints: Array[Vector2i] = []
 			var ability: AbilityData = _selected_ability_data(p_unit)
+			if (
+				ability != null
+				and _awaiting_voluntary_walk_corridor_active(p_unit)
+				and target_id < 0
+				and _is_hover_move_cell(p_unit, cell)
+			):
+				_refresh_movement_slot_hover_preview(p_unit, cell)
+				_refresh_click_target_highlight()
+				return
 			if _drag_route_commits_active():
 				var route_waypoints: Array[Vector2i] = _route_waypoints()
 				var enemy: UnitState = _director.board.get_unit_by_id(target_id) if (target_id >= 0 and _director != null and _director.board != null) else null
@@ -2302,6 +2311,8 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 	if _skill_interaction_active():
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and _is_awaiting_movement_endpoint(p_unit, selected_ability):
+			if _planning != null and _planning.is_hover_move_tile(cell):
+				return true
 			return _can_move_to(p_unit, cell)
 		## Armed TARGET_PICK (Volley, traps): in-range hover is the blast cell, not a walk.
 		## Unarmed TILE skills still premove — range often covers every walk tile.
@@ -4729,6 +4740,20 @@ func _per_hover_walk_corridor_active(p_unit: UnitState) -> bool:
 	return true
 
 
+## Armed MOVE-module voluntary walk (Trample corridor) — not teleport hops or TARGET_PICK.
+func _awaiting_voluntary_walk_corridor_active(p_unit: UnitState) -> bool:
+	if p_unit == null or _director == null:
+		return false
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null:
+		return false
+	if not _is_awaiting_movement_endpoint(p_unit, ability):
+		return false
+	if AbilitySystem.ability_uses_direct_relocation(ability, p_unit):
+		return false
+	return active_movement_planning_step(p_unit)
+
+
 func _per_hover_corridor_overrides_drag_paint(unit_id: int) -> bool:
 	if not dragging or unit_id < 0:
 		return false
@@ -4797,6 +4822,13 @@ func _refresh_movement_slot_hover_preview(p_unit: UnitState, cell: Vector2i) -> 
 			return
 	## Paint preview_paths in memory first — live sim must not merge a second corridor on top.
 	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
+	if (
+		_awaiting_voluntary_walk_corridor_active(p_unit)
+		and _movement_hover_path_authoritative(p_unit.id)
+	):
+		_sync_movement_hover_paths_to_overlay(p_unit.id)
+		_refresh_click_target_highlight()
+		return
 	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)
 	_refresh_click_target_highlight()
 
@@ -4816,6 +4848,12 @@ func _movement_slot_hover_preview_applies(p_unit: UnitState, cell: Vector2i) -> 
 	if painted_move_route_locked(p_unit):
 		return false
 	var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
+	if (
+		_awaiting_voluntary_walk_corridor_active(p_unit)
+		and target_enemy_id < 0
+		and _is_hover_move_cell(p_unit, cell)
+	):
+		return true
 	if (
 		target_enemy_id < 0
 		and _is_hover_move_cell(p_unit, cell)
@@ -4970,6 +5008,12 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty():
 				return painted
+	if (
+		_awaiting_voluntary_walk_corridor_active(actor)
+		and _planning != null
+		and _planning.is_hover_move_tile(cell)
+	):
+		return _corridor_waypoints_to_cell(actor, cell)
 	if _can_move_to(actor, cell):
 		return _corridor_waypoints_to_cell(actor, cell)
 	return []
