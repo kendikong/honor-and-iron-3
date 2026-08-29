@@ -328,6 +328,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Wave C:** Skill-armed premove/MOVE-leg walk hovers use `_movement_slot_hover_preview_applies` → `_hover_paint_waypoints_for_cell`; `_hover_walk_waypoints_for_skill` delegates walk legs to that owner; `preview_waypoints_for_hover` kept for enemy approach commits only.
 - **Wave D:** `_can_move_to` MOVE-module legs use `CombatPlanningPreview.corridor_waypoints_to_cell` (same corridor owner as hover paint); drag-buffer `find_path` sanitize retained until waypoint paint uses corridor repath.
 
+**Pass 21 (Wave E — premove/MOVE-module painted orbit parity — 2026-08-29):**
+- **Wave E1:** `painted_move_route_locked` — sealed-leg only (not open-drag paint).
+- **Wave E2:** Sealed painted leg survives `_end_drag_interaction` / `clear_hover_route_preview` / invalid sim preview; `_sealed_painted_preview_active` restore hooks.
+- **Wave E3:** `_awaiting_voluntary_walk_corridor_active` — armed MOVE-module voluntary-walk corridor owner; skill hover delegates to `_refresh_movement_slot_hover_preview`; `_hover_paint_waypoints_for_cell` paints corridor on `is_hover_move_tile` for awaiting legs; authoritative movement hover skips sim stomp when `_movement_hover_path_authoritative`.
+- **Gate:** `painted_route_premove_vs_move_equivalence` re-enabled in `planning_qa_gate_test.gd`.
+
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
