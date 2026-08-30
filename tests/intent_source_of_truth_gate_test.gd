@@ -57,11 +57,19 @@ static func _test_move_skill_01(failures: Array[String]) -> void:
 	PlanningDragE2EHarness.cleanup_all()
 
 
-static func _run_cm11_timing(failures: Array[String], fix: Dictionary) -> void:
+static func _run_cm11_timing(failures: Array[String], _fix: Dictionary) -> void:
+	PlanningDragE2EHarness.cleanup_all()
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.SHIELD_BASH_ID) < 0:
+		PlanningChecklistHarness.assert_fail(failures, "CM-11", "Shield Bash missing")
+		PlanningDragE2EHarness.cleanup_all()
+		return
 	var cell: Vector2i = PlanningChecklistHarness.ENEMY_POS
+	PlanningChecklistHarness.hover(fix, cell)
 	var before_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
 	if before_slots.is_empty() or PlanningChecklistHarness.slots_invalid(before_slots):
 		PlanningChecklistHarness.assert_fail(failures, "CM-11", "baseline hover slots invalid before timing loop")
+		PlanningDragE2EHarness.cleanup_all()
 		return
 	var before_sig: String = PlanningQAGateTest._intent_slot_signature(before_slots)
 	const HOVER_N: int = 40
@@ -86,9 +94,11 @@ static func _run_cm11_timing(failures: Array[String], fix: Dictionary) -> void:
 			"hover/slot timing loop changed slot signature %s vs %s"
 			% [after_loop_sig, before_sig],
 		)
+		PlanningDragE2EHarness.cleanup_all()
 		return
 	if not PlanningChecklistHarness.commit_slots_production(fix, before_slots):
 		PlanningChecklistHarness.assert_fail(failures, "CM-11", "commit failed before sim timing")
+		PlanningDragE2EHarness.cleanup_all()
 		return
 	const SIM_N: int = 12
 	t0 = Time.get_ticks_usec()
@@ -100,6 +110,7 @@ static func _run_cm11_timing(failures: Array[String], fix: Dictionary) -> void:
 	]
 	print("[SOT-PERF] %s" % line)
 	_record_sot("CM-11", before_sig, before_sig, "(timing only; no optimize)", line)
+	PlanningDragE2EHarness.cleanup_all()
 
 
 static func _test_push_pull_01(failures: Array[String]) -> void:

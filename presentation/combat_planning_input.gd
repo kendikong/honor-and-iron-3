@@ -165,8 +165,8 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_drag_last_free = Vector2i(-1, -1)
 	if not _suppress_post_commit_hover_refresh:
 		preview_state.clear_interaction()
-		if _planning != null:
-			_planning.restore_committed_display()
+	if _planning != null:
+		_planning.restore_committed_display()
 	if _drag_unit_id >= 0 and selected_phase_action_exhausted(_drag_unit_id):
 		_cancel_drag_if_exhausted()
 
@@ -833,6 +833,11 @@ func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) ->
 		)
 		var stand: Vector2i = _proj_origin(p_unit)
 		if approach == stand:
+			if target.is_enemy() and _in_ability_range(p_unit, target):
+				CombatPlanningPreview.set_unit_stand_anchor_path(
+					preview_state, p_unit.id, stand,
+				)
+				_sync_movement_hover_paths_to_overlay(p_unit.id)
 			return
 		waypoints = [approach]
 	var stand: Vector2i = _proj_origin(p_unit)
@@ -1327,6 +1332,7 @@ func _restore_committed_preview() -> void:
 func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
+	_suppress_post_commit_hover_refresh = false
 	if unit_id < 0:
 		clear_awaiting_targeting()
 		_invalidate_planning_hover_cache()
@@ -1366,6 +1372,8 @@ func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
 
 func _run_planning_selection_refresh() -> void:
 	_selection_refresh_pending = false
+	_suppress_post_commit_hover_refresh = false
+	_ability_hover_settle_pending = false
 	_refresh_planning_hover_at_current_cell(true)
 
 
@@ -1378,6 +1386,7 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
+	_suppress_post_commit_hover_refresh = false
 	if index >= 0:
 		pass
 	else:
@@ -1655,7 +1664,7 @@ func _stage_voluntary_walk_drag_input(
 		and _voluntary_walk_can_paint_cell(p_unit, cell)
 	):
 		should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
-	if allow_hover_paint and not orbit_phase_corridor:
+	if allow_hover_paint and (not orbit_phase_corridor or _voluntary_walk_corridor_paint_active(p_unit)):
 		var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if target_enemy_id >= 0:
 			var enemy_unit: UnitState = (
@@ -1744,6 +1753,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 					_director.planning_timeline_phase_kind(p_unit.id)
 					== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
 					and not dragging
+					and not _selection_corridor_route_staging_active(p_unit)
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			if planning_cell_changed and _hover_preserves_action_range_at_phase_entry(p_unit, cell):
@@ -1761,7 +1771,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
 			)
-			if awaiting_move_leg and not dragging and planning_cell_changed:
+			if (
+				awaiting_move_leg
+				and not dragging
+				and planning_cell_changed
+				and not _selection_corridor_route_staging_active(p_unit)
+			):
 				_seal_painted_preview_landing_if_needed(p_unit)
 			_stage_voluntary_walk_drag_input(p_unit, cell, ability, planning_cell_changed, awaiting_move_leg)
 	if (
@@ -3013,6 +3028,13 @@ func _drag_route_commits_active() -> bool:
 			if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
 				if _painted_drag_route_matches_leg(p_unit):
 					return true
+				if (
+					not dragging
+					and _voluntary_walk_corridor_paint_active()
+					and _drag_route.size() >= 2
+					and _drag_unit_id == p_unit.id
+				):
+					return true
 				return false
 			if _voluntary_walk_orbit_phase_open(p_unit) and not _painted_drag_route_matches_leg(p_unit):
 				return false
@@ -3192,6 +3214,13 @@ func _final_commit_slots_for_interaction(
 	face_dir: int = -1,
 	sim_validate: bool = true,
 ) -> Dictionary:
+	if _suppress_post_commit_hover_refresh and _director != null:
+		_suppress_post_commit_hover_refresh = false
+		if _intent_state != null:
+			_intent_state.set_hover_coord(cell)
+		if _planning != null and _director.board.is_in_bounds(cell):
+			_planning.set_hover_coord(cell, true)
+			_refresh_selected_interaction_preview()
 	var slots: Dictionary = _build_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
@@ -3573,6 +3602,7 @@ func _promote_intent_preview_after_commit() -> void:
 		)
 	preview_state.sync_route_geometry_from(committed)
 	preview_state.clear_interaction()
+	preview_state.preview_board = null
 	_sync_intent_live_board()
 
 
@@ -5189,6 +5219,18 @@ func _hover_preserves_action_range_at_phase_entry(actor: UnitState, hover: Vecto
 	if active_movement_planning_step(actor) and _voluntary_walk_can_paint_cell(actor, hover):
 		return false
 	return not _is_hover_move_cell(actor, hover)
+
+
+func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
+	if dragging or p_unit == null:
+		return false
+	if not _voluntary_walk_corridor_paint_active(p_unit):
+		return false
+	if not _movement_route_paint_allowed():
+		return false
+	if _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+		return _voluntary_walk_hover_paint_applies(p_unit, _active_hover_cell())
+	return true
 
 
 func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:

@@ -71,6 +71,17 @@ static func clear_unit_preview_path(preview: CombatPlanningPreview, unit_id: int
 	preview.clear_sealed_painted_leg(unit_id)
 
 
+## In-range attack hover with no approach step: one-cell stand anchor (not a walk route).
+static func set_unit_stand_anchor_path(
+	preview: CombatPlanningPreview, unit_id: int, stand: Vector2i,
+) -> void:
+	if preview == null or unit_id < 0:
+		return
+	preview.preview_paths[unit_id] = [stand]
+	preview.preview_splits.erase(unit_id)
+	preview.preview_post_splits.erase(unit_id)
+
+
 func _commit_preview_path(actor_id: int, path: Array) -> void:
 	set_unit_preview_path(self, actor_id, path)
 

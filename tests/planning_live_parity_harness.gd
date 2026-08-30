@@ -118,6 +118,21 @@ static func run_k1_bash_live_parity(
 			"%s/waypoint/preview_push" % label_prefix,
 			"projected enemy must show bash push (got %s)" % bashed.position,
 		)
+	reset_planning_interaction_layers(fix)
+
+
+static func reset_planning_interaction_layers(fix: Dictionary) -> void:
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	if input != null:
+		input.cancel_drag()
+		input.preview_state.clear_interaction()
+		input.preview_state.preview_board = null
+		input.call("_restore_hover_preview")
+	if director != null:
+		director.plan_refresh_defer_overlay = false
+		director.flush_plan_refresh_signals_if_pending()
+	PlanningChecklistHarness.flush_planning(fix)
 
 
 static func run_k4_run_live_parity(
@@ -342,8 +357,9 @@ static func commit_from_preview_intent(
 	if not PlanningChecklistHarness.commit_slots_production(fix, slots):
 		PlanningChecklistHarness.assert_fail(failures, label, "commit_from_slots failed")
 		return false
+	var failures_before_ratify: int = failures.size()
 	assert_commit_ratifies_preview(fix, failures, unit_id, pre_intent, label)
-	return failures.is_empty()
+	return failures.size() == failures_before_ratify
 
 
 static func assert_commit_ratifies_preview(
@@ -698,6 +714,7 @@ static func run_bible_multi_knight_session(failures: Array[String]) -> void:
 	fix.input.auto_use_skill_after_move = true
 	run_undo_sprite_smoke(fix, failures, k1_id)
 	run_k1_journey_mirror(fix, failures, k1_id, e_bash_id, expect)
+	reset_planning_interaction_layers(fix)
 	run_k2_journey_mirror(fix, failures, k2_id, e_hook_id, expect)
 	run_k3_journey_mirror(fix, failures, k3_id, expect)
 	run_k4_journey_mirror(fix, failures, k4_id, expect)
@@ -911,6 +928,7 @@ static func run_swap_walk_then_swap_mirror(failures: Array[String]) -> void:
 	)
 	if not commit_from_preview_intent(fix, k1_id, swap_pre, "SWAP-12/release", failures):
 		return
+	reset_planning_interaction_layers(fix)
 	var pre_moves: Array[TimelineAction] = pre_moves_for_unit(director, k1_id)
 	assert_pre_move_walk_swap_shape(
 		failures,
@@ -1078,6 +1096,7 @@ static func run_k2_journey_mirror(
 	var hook_idx: int = PlanningChecklistHarness.select_ability_for_unit(
 		fix, k2_id, PlanningChecklistHarness.CHAIN_HOOK_ID,
 	)
+	PlanningChecklistHarness.refresh_attack_hover(fix, PlanningChecklistHarness.K2_CELL)
 	var hook: AbilityData = null
 	if hook_idx >= 0:
 		hook = fix.board.get_unit_by_id(k2_id).active_abilities[hook_idx]
