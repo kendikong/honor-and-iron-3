@@ -1,7 +1,7 @@
 # Hover Preview Carried SSOT — Plan & Goals
 
 **Date:** 2026-08-30  
-**Status:** ACTIVE — Phase 2 complete (settle-only + structural gate + step-6 regression run)  
+**Status:** IMPLEMENTED — ratify-only commit, structural gate enforced  
 **Rules:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md)  
 **Gate:** `.\scripts\run_hover_preview_ssot_gate.ps1` (first step before planning QA)
 
@@ -49,6 +49,8 @@ Public read API: `CombatPlanningInput.get_settled_hover_preview()`.
 
 Settle builds matching `preview_paths` via `_preview_paths_snapshot_for_settle` before seal (same owner as slots — not paint-first).
 
+Click path: `_commit_at_interaction_cell` calls `on_hover_moved(commit_cell)` then `_commit_at_cell` ratifies bundle only.
+
 ---
 
 ## Settle modes
@@ -67,9 +69,9 @@ Exceptions (separate UI, not voluntary-walk settle): teleport hop, forced push/p
 
 1. **Tiny ratify** — `_commit_at_cell` rejects if no sealed bundle (no rebuild `else`)
 2. **One settle owner** — all hover paths → `_preview_from_commit_slots_at_cell`
-3. **Grep gate** — CI fails on forbidden symbols + paint-before-settle comment
+3. **Grep gate** — CI fails on forbidden symbols + paint-before-settle comment + click rebuild
 4. **Loud geometry assert** — `SSOT BREAK: preview_paths leg … != slots waypoints …`
-5. **Harness reads bundle** — `slots_for_hover` uses `get_settled_hover_preview()`, not `[]` waypoints rebuild
+5. **Harness reads bundle** — `slots_for_hover` / `slots_for_click` use `get_settled_hover_preview()` only
 6. **Dead commit mutators deleted** — no `_ensure_move_*` / `_ratify_painted_route_*` at commit
 
 ---
@@ -78,11 +80,12 @@ Exceptions (separate UI, not voluntary-walk settle): teleport hop, forced push/p
 
 - Paint-before-settle in voluntary walk (`## Paint preview_paths in memory first`)
 - `_apply_preview_result_preserving_hover_paths` / `_authoritative_move_hover_paths_payload`
-- Commit rebuild on click (`_final_commit_slots_for_interaction` in `_commit_at_cell`)
+- Commit rebuild on click (`_final_commit_slots_for_interaction` in `_commit_at_cell` or `_commit_at_interaction_cell`)
 - `_ensure_move_waypoints_on_commit_slots` / `_ensure_movement_waypoints_on_commit_slots`
 - `_ratify_painted_route_on_commit_slots`
 - `_apply_facing_to_slots` on click (facing sealed at settle)
 - Post-click geometry refresh (`_refresh_hover_interaction_preview` after commit)
+- Harness `[]` waypoints rebuild fallback
 
 ---
 
@@ -95,28 +98,7 @@ Exceptions (separate UI, not voluntary-walk settle): teleport hop, forced push/p
 | 3. Voluntary walk settle-only (no paint-first) | ✅ |
 | 4. Harness → `get_settled_hover_preview()` | ✅ |
 | 5. SOT geometry row in `intent_source_of_truth_gate_test.gd` | ✅ |
-| 6. Full planning gate once | ✅ run 2026-08-30 — see results below |
-
-**Scope freeze lifted** for WALK-01 / MOVE-SKILL-01 (intent SOT signatures green). Remaining T3 parity fails are tracked separately — not commit-fallback scope.
-
-### Step 6 gate results (2026-08-30)
-
-| Suite | Result |
-|-------|--------|
-| `run_hover_preview_ssot_gate.ps1` | **PASS** |
-| AOE footprint contract | **PASS** |
-| Intent SOT — WALK-01, MOVE-SKILL-01, PUSH-PULL, SWAP, AWAIT, TRAMPLE, STALE | **PASS** (SOT-SIG rows) |
-| T3 mimic fixture parity | **FAIL** — 5 rows (pre-existing / ratify-only fallout; no SSOT BREAK spam after settle-path fix) |
-
-T3 `[FAIL]` lines (fix in follow-up — do **not** add commit rebuild):
-
-- `ActionRangeRegression bowling_awaiting_occupied_end`
-- `ActionRangeRegression awaiting_module_range_after_premove`
-- `PlanningQAGate drag_drop_undo`
-- `PlanningQAGate hover order`
-- `PlanningQAGate move_preview_origin`
-
-CM-08 stale-waypoints harness hits script OOB at `planning_qa_gate_test.gd:1642` when bundle ratify rejects stale hover — harness must read bundle, not assume rebuild.
+| 6. Click path finish — no rebuild at `_commit_at_interaction_cell` | ✅ |
 
 ---
 
@@ -124,6 +106,6 @@ CM-08 stale-waypoints harness hits script OOB at `planning_qa_gate_test.gd:1642`
 
 1. `run_hover_preview_ssot_gate.ps1` — structural
 2. `intent_source_of_truth_gate_test` — geometry + four-way
-3. `run_planning_qa_gate.ps1` — once, regression alarm only
+3. `run_planning_qa_gate.ps1` — regression alarm only
 
 On FAIL after (1–2) green: **delete branch or fix toxic test** — never commit fallback.

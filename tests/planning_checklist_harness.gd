@@ -227,9 +227,7 @@ static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
 	if bundle != null and bundle.can_ratify_at(cell, fix.director.selected_unit_id):
 		return bundle.duplicate_slots()
-	return input._final_commit_slots_for_click_at_cell(
-		fix.director.selected_unit_id, cell, Vector2.ZERO,
-	)
+	return {"invalid": "SSOT: no sealed hover preview for click"}
 
 
 static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
@@ -238,15 +236,7 @@ static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
 	if bundle != null and bundle.valid and bundle.is_sealed:
 		return bundle.duplicate_slots()
-	var empty_wps: Array[Vector2i] = []
-	var empty_legal: Array[Vector2i] = []
-	return input._final_commit_slots_for_interaction(
-		fix.director.selected_unit_id,
-		cell,
-		empty_wps,
-		empty_legal,
-		Vector2i(-999999, -999999),
-	)
+	return {"invalid": "SSOT: no sealed hover preview for hover"}
 
 
 static func assert_execute_spends_ap(
@@ -573,16 +563,12 @@ static func blue_tile_near_stand(
 
 
 static func slots_for_painted_hover(fix: Dictionary, dest: Vector2i) -> Dictionary:
+	hover(fix, dest)
 	var input: CombatPlanningInput = fix.input
-	var params: Dictionary = input._commit_interaction_params(dest, -1)
-	return input._final_commit_slots_for_interaction(
-		fix.director.selected_unit_id,
-		params.cell as Vector2i,
-		params.waypoints as Array[Vector2i],
-		params.legal_move_tiles as Array[Vector2i],
-		params.preferred as Vector2i,
-		params.face_dir as int,
-	)
+	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
+	if bundle != null and bundle.valid and bundle.is_sealed:
+		return bundle.duplicate_slots()
+	return {"invalid": "SSOT: no sealed hover preview for painted hover"}
 
 
 static func commit_painted_run_route(

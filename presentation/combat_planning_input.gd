@@ -227,15 +227,6 @@ func on_left_press(local: Vector2) -> void:
 			and awaiting_ability != null
 			and _is_awaiting_movement_endpoint(awaiting_actor, awaiting_ability)
 		):
-			if _intent_snapshot_matches_interaction(selected_id, cell):
-				var painted_slots: Dictionary = _duplicate_commit_slots(_intent_snapshot_slots)
-				if not _is_invalid_dict(painted_slots):
-					if _commit_at_cell(
-						selected_id, cell, local, [], [], _NO_PREFERRED_APPROACH, -1, painted_slots,
-					):
-						return
-					_play_sfx("invalid")
-					return
 			if _movement_skill_commits_tile_endpoint(awaiting_actor, awaiting_ability, cell):
 				if not _commit_at_interaction_cell(selected_id, cell, local):
 					_play_sfx("invalid")
@@ -620,7 +611,7 @@ func _refresh_drag_preview_now() -> void:
 		var snap_actor: UnitState = _proj_unit(_drag_unit_id)
 		if snap_actor != null and _voluntary_walk_orbit_phase_open(snap_actor):
 			var drop_params: Dictionary = _commit_interaction_params(cell, -1)
-			var snap_slots: Dictionary = _final_commit_slots_for_interaction(
+			var snap_res: Dictionary = _preview_from_commit_slots_at_cell(
 				_drag_unit_id,
 				drop_params.cell as Vector2i,
 				preview_waypoints,
@@ -628,6 +619,8 @@ func _refresh_drag_preview_now() -> void:
 				drop_params.preferred as Vector2i,
 				int(drop_params.get("face_dir", -1)),
 			)
+			if not _is_invalid_dict(snap_res):
+				_apply_settled_preview_result(snap_res)
 			if not _is_invalid_dict(snap_slots):
 				var wp_key: Array[Vector2i] = _waypoints_for_snapshot_key_from_slots(snap_slots)
 				if wp_key.is_empty():
@@ -2291,34 +2284,12 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			var endpoint_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
 				p_unit, cell, step_ability,
 			)
-			_write_movement_hover_preview_paths(p_unit.id, cell, endpoint_wps)
-			var painted_await: Array = preview_state.preview_paths.get(p_unit.id, [])
-			if (
-				dragging
-				and _painted_drag_route_drives_live_preview()
-				and painted_await.size() >= 2
-			):
-				_refresh_click_target_highlight()
-				return
-			var await_res: Dictionary = _preview_at_interaction_cell(
-				p_unit.id,
-				cell,
-				cell,
-				-1,
-				endpoint_wps,
-				_snapshot_drag_legal_move_tiles(),
-			)
-			if not _is_invalid_dict(await_res):
-				_apply_settled_preview_result(await_res)
-			_refresh_click_target_highlight()
-			return
 		var step_target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if step_ability != null and step_target_id >= 0:
 			var approach_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
 				p_unit, cell, step_ability,
 			)
 			if not approach_wps.is_empty():
-				_write_movement_hover_preview_paths(p_unit.id, cell, approach_wps)
 				var approach_res: Dictionary = _preview_at_interaction_cell(
 					p_unit.id,
 					cell,
@@ -2353,7 +2324,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			if step_ability != null:
 				step_ally_wps = _hover_walk_waypoints_for_skill(p_unit, cell, step_ability)
 			if not step_ally_wps.is_empty():
-				_write_movement_hover_preview_paths(p_unit.id, cell, step_ally_wps)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, step_ally.id, step_ally_wps)
 			_refresh_click_target_highlight()
 			return
@@ -2438,8 +2408,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 						hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			elif ability != null:
 				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
-			if not hover_waypoints.is_empty():
-				_write_movement_hover_preview_paths(p_unit.id, cell, hover_waypoints)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return
@@ -3282,36 +3250,7 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
-	var intent_slots: Dictionary = {}
-	if _intent_snapshot_matches_interaction(unit_id, cell):
-		intent_slots = _duplicate_commit_slots(_intent_snapshot_slots)
-	elif attack_target_id >= 0:
-		var pre_params: Dictionary = _commit_interaction_params(cell, attack_target_id)
-		intent_slots = _slots_with_facing_for_commit(
-			unit_id,
-			pre_params.cell,
-			local,
-			pre_params.waypoints,
-			pre_params.legal_move_tiles,
-			pre_params.preferred,
-			int(pre_params.get("face_dir", -1)),
-		)
-	else:
-		intent_slots = _final_commit_slots_for_click_at_cell(unit_id, cell, local)
-	_flush_hover_heavy_sync()
 	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
-	if _drag_route_commits_active():
-		var painted_waypoints: Array[Vector2i] = params.waypoints as Array[Vector2i]
-		if not painted_waypoints.is_empty():
-			intent_slots = _slots_with_facing_for_commit(
-				unit_id,
-				params.cell,
-				local,
-				painted_waypoints,
-				params.legal_move_tiles,
-				params.preferred,
-				int(params.get("face_dir", -1)),
-			)
 	return _commit_at_cell(
 		unit_id,
 		params.cell,
@@ -3320,9 +3259,7 @@ func _commit_at_interaction_cell(
 		params.legal_move_tiles,
 		params.preferred,
 		int(params.get("face_dir", -1)),
-		intent_slots if not _is_invalid_dict(intent_slots) else {},
 	)
-
 
 func _commit_at_cell(
 	unit_id: int,
@@ -3332,34 +3269,19 @@ func _commit_at_cell(
 	legal_move_tiles: Array[Vector2i] = [],
 	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
 	face_dir: int = -1,
-	intent_slots: Dictionary = {},
+	_intent_slots_unused: Dictionary = {},
 ) -> bool:
-	if intent_slots.is_empty():
-		_flush_hover_heavy_sync()
+	_flush_hover_heavy_sync()
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
-	var effective_face: int = face_dir
-	if effective_face < 0:
-		effective_face = _facing_from_drop(local, cell)
-	var slots: Dictionary = _duplicate_commit_slots(intent_slots) if not intent_slots.is_empty() else {}
-	var actor := _proj_unit(unit_id)
-	var ability: AbilityData = _selected_ability_data(actor)
-	if slots.is_empty():
-		if _settled_hover_preview != null and _settled_hover_preview.can_ratify_at(cell, unit_id):
-			slots = _settled_hover_preview.duplicate_slots()
-		elif _intent_snapshot_matches_interaction(unit_id, cell):
-			slots = _duplicate_commit_slots(_intent_snapshot_slots)
-		else:
-			push_warning("SSOT: commit rejected Ã¢â‚¬â€ no sealed hover preview for unit %d at %s" % [unit_id, cell])
-			_play_sfx("invalid")
-			return false
+	var slots: Dictionary = {}
+	if _settled_hover_preview != null and _settled_hover_preview.can_ratify_at(cell, unit_id):
+		slots = _settled_hover_preview.duplicate_slots()
 	else:
-		pass
-		if not _is_invalid_dict(slots) and slots.get("_noop", false) != true:
-			_paint_intent_slots_before_commit(unit_id, slots)
-			if slots.get("_preview_validated", false) != true:
-				slots = _finalize_commit_slots(slots, unit_id, true)
+		push_warning("SSOT: commit rejected - no sealed hover preview for unit %d at %s" % [unit_id, cell])
+		_play_sfx("invalid")
+		return false
 	if slots.get("_noop", false) == true:
 		_play_sfx("ability")
 		return true
@@ -3381,10 +3303,6 @@ func _commit_at_cell(
 	_clear_hover_drag_route()
 	_clear_intent_snapshot()
 	return true
-
-
-
-
 
 func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
 	if _director == null:

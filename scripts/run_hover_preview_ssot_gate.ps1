@@ -66,8 +66,34 @@ if ($commitMatch.Success) {
 	if ($commitBody -match "_ensure_move_waypoints_on_commit_slots|_ratify_painted_route_on_commit_slots") {
 		$failures.Add("[FAIL] _commit_at_cell still calls commit-time waypoint invent")
 	}
+	if ($commitBody -match "_intent_snapshot_matches_interaction|_finalize_commit_slots|_paint_intent_slots_before_commit") {
+		$failures.Add("[FAIL] _commit_at_cell still has snapshot/finalize commit rebuild")
+	}
 } else {
 	$failures.Add("[FAIL] could not parse _commit_at_cell for structural audit")
+}
+
+$interactMatch = [regex]::Match($text, "func _commit_at_interaction_cell\([\s\S]*?\nfunc ")
+if ($interactMatch.Success) {
+	$interactBody = $interactMatch.Value
+	if ($interactBody -match "_final_commit_slots_for_click|_slots_with_facing_for_commit|_intent_snapshot_matches_interaction") {
+		$failures.Add("[FAIL] _commit_at_interaction_cell still rebuilds slots at click")
+	}
+} else {
+	$failures.Add("[FAIL] could not parse _commit_at_interaction_cell for structural audit")
+}
+
+$harnessPath = Join-Path $projectRoot "tests\planning_checklist_harness.gd"
+	if (Test-Path -LiteralPath $harnessPath) {
+	$harnessText = Get-Content -LiteralPath $harnessPath -Raw
+	$hoverFn = [regex]::Match($harnessText, 'static func slots_for_hover\([\s\S]*?\n\n')
+	if ($hoverFn.Success -and $hoverFn.Value -match '_final_commit_slots_for_interaction\(') {
+		$failures.Add("[FAIL] planning_checklist_harness slots_for_hover still rebuilds with empty waypoints")
+	}
+	$clickFn = [regex]::Match($harnessText, 'static func slots_for_click\([\s\S]*?\n\n')
+	if ($clickFn.Success -and $clickFn.Value -match '_final_commit_slots_for_click') {
+		$failures.Add("[FAIL] planning_checklist_harness slots_for_click still rebuilds at click")
+	}
 }
 
 if ($failures.Count -gt 0) {
