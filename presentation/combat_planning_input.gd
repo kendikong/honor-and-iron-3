@@ -817,7 +817,12 @@ func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) ->
 		if target_id < 0:
 			return
 		var target: UnitState = _director.board.get_unit_by_id(target_id)
-		if target == null or not _in_ability_range(p_unit, target):
+		if target == null:
+			return
+		var stand_seed: Vector2i = _proj_origin(p_unit)
+		if _in_ability_range(p_unit, target):
+			if stand_seed != target.position:
+				_write_voluntary_walk_preview_path(p_unit.id, [stand_seed, target.position])
 			return
 		var approach: Vector2i = _director.preview_approach_tile(
 			p_unit.id, target_id, _director.selected_ability_index, target.position,
@@ -2240,6 +2245,10 @@ func _attack_target_id_at_cell(p_unit: UnitState, cell: Vector2i) -> int:
 	var hover_unit: UnitState = _director.board.get_unit_at(cell)
 	if hover_unit == null:
 		return -1
+	if _director.selected_ability_index >= 0:
+		var skill_target_id: int = _skill_hover_unit_target_id(p_unit, hover_unit)
+		if skill_target_id >= 0:
+			return skill_target_id
 	return _resolve_hover_attack_target(p_unit, hover_unit)
 
 
@@ -2350,6 +2359,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if not ally_slots.is_empty():
 		var ally: UnitState = _director.board.get_unit_at(cell)
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
+		_seed_unit_target_hover_path_if_empty(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if _voluntary_walk_hover_paint_applies(p_unit, cell):
@@ -2848,6 +2858,25 @@ func _awaiting_permits_hover_unit_target(actor: UnitState, hover_unit: UnitState
 	if AbilitySystem.planning_awaiting_target_pick_open(actor, awaiting):
 		return _can_target_unit_with_selected_ability(actor, hover_unit)
 	return false
+
+
+func _skill_hover_unit_target_id(p_unit: UnitState, hover_unit: UnitState) -> int:
+	if p_unit == null or hover_unit == null or not hover_unit.is_alive():
+		return -1
+	if _director == null or _director.selected_ability_index < 0:
+		return -1
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null or AbilitySystem.is_run_ability(ability):
+		return -1
+	if hover_unit.id == p_unit.id:
+		if AbilitySystem.can_target_self(p_unit, ability):
+			return p_unit.id
+		return -1
+	if hover_unit.is_enemy():
+		return _resolve_hover_attack_target(p_unit, hover_unit)
+	if not AbilitySystem.target_passes_mode(p_unit, ability, hover_unit):
+		return -1
+	return hover_unit.id
 
 
 func _resolve_hover_attack_target(p_unit: UnitState, hover_unit: UnitState) -> int:
@@ -6604,7 +6633,7 @@ func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:
 func _can_target_unit_with_selected_ability(actor: UnitState, target: UnitState) -> bool:
 	if actor == null or target == null or not target.is_alive():
 		return false
-	if _voluntary_walk_planning_active() or _director == null or _director.selected_ability_index < 0:
+	if _director == null or _director.selected_ability_index < 0:
 		return false
 	var ability := _selected_ability_data(actor)
 	if ability == null or AbilitySystem.is_run_ability(ability):
@@ -8614,6 +8643,11 @@ func _hover_walk_waypoints_for_skill(
 					_proj(), actor, approach, [], ability, false, preview_state)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
+		var skill_path: Array[Vector2i] = _director.preview_waypoints_for_hover(
+			_proj(), actor, cell, [], ability, true, preview_state,
+		)
+		if not skill_path.is_empty():
+			return skill_path
 		return _hover_paint_waypoints_for_cell(actor, cell)
 	var empty: Array[Vector2i] = []
 	if not _is_hover_move_cell(actor, cell):
