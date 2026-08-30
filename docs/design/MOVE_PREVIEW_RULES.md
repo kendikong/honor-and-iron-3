@@ -29,6 +29,8 @@ Plain-language rules. One pipeline. No parallel preview logic.
 
 If commit would need geometry the hover did not show, the hover preview was incomplete — fix hover paint, do not patch at commit.
 
+**Structural protection:** [`HOVER_PREVIEW_CARRIED_SSOT_PLAN.md`](HOVER_PREVIEW_CARRIED_SSOT_PLAN.md) · gate `.\scripts\run_hover_preview_ssot_gate.ps1` — sealed `PlanningHoverPreview` bundle, ratify-only commit, no paint-before-settle.
+
 ---
 
 ## Timeline

@@ -58,6 +58,16 @@ if ($IncludeLegacyTier12) {
 }
 
 Write-Output ""
+Write-Output "=== Hover Preview Carried SSOT (structural) ==="
+$ssotGate = Join-Path $PSScriptRoot "run_hover_preview_ssot_gate.ps1"
+& $ssotGate
+if ($LASTEXITCODE -ne 0) {
+	Write-Output "--- Hover Preview Carried SSOT: FAIL ---"
+	exit 1
+}
+Write-Output "--- Hover Preview Carried SSOT: PASS ---"
+Write-Output ""
+
 Write-Output "=== AOE footprint contract (geometry + scenario/live audits) ==="
 $aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
 & $aoeGate -GodotPath $GodotPath
@@ -94,25 +104,14 @@ if ($LiveTier3) {
 	}
 	$tier3Label = if ($tier3Incomplete) { "INCOMPLETE (live)" } elseif ($tier3Pass) { "PASS (live)" } else { "FAIL (live)" }
 } else {
-	Write-Output "=== Tier 3: headless fixture suites (PlanningQaGate + T3 mimic) ==="
+	Write-Output "=== Tier 3: headless fixture parity (T3 mimic - NOT legacy PlanningQaGate) ==="
 	Write-Output "Use -LiveTier3 for GdUnit TestBattle acceptance (owner F5 parity)."
-	$headlessGate = Join-Path $PSScriptRoot "run_planning_headless_contracts.ps1"
+	Write-Output "Use -IncludeLegacyTier12 for archaeology (PlanningQaGate.tscn - failures ignored)."
 	$mimicGate = Join-Path $PSScriptRoot "run_t3_mimic_headless.ps1"
-	if (-not (Test-Path $headlessGate)) {
-		Write-Error "[INCOMPLETE] Headless planning contracts runner missing: $headlessGate"
-		exit 2
-	}
 	if (-not (Test-Path $mimicGate)) {
 		Write-Error "[INCOMPLETE] T3 mimic headless runner missing: $mimicGate"
 		exit 2
 	}
-	& $headlessGate -GodotPath $GodotPath
-	if ($LASTEXITCODE -ne 0) {
-		Write-Output "--- Tier 3 headless contracts: FAIL ---"
-		exit 1
-	}
-	Write-Output "--- Tier 3 headless contracts: PASS ---"
-	Write-Output ""
 	& $mimicGate -GodotPath $GodotPath
 	if ($LASTEXITCODE -ne 0) {
 		Write-Output "--- Tier 3 fixture parity: FAIL ---"

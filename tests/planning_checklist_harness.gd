@@ -220,15 +220,25 @@ static func refresh_attack_hover(fix: Dictionary, cell: Vector2i) -> void:
 
 
 static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
-	return fix.input._final_commit_slots_for_click_at_cell(
+	hover(fix, cell)
+	var input: CombatPlanningInput = fix.input
+	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
+	if bundle != null and bundle.can_ratify_at(cell, fix.director.selected_unit_id):
+		return bundle.duplicate_slots()
+	return input._final_commit_slots_for_click_at_cell(
 		fix.director.selected_unit_id, cell, Vector2.ZERO,
 	)
 
 
 static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
+	hover(fix, cell)
+	var input: CombatPlanningInput = fix.input
+	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
+	if bundle != null and bundle.valid and bundle.sealed:
+		return bundle.duplicate_slots()
 	var empty_wps: Array[Vector2i] = []
 	var empty_legal: Array[Vector2i] = []
-	return fix.input._final_commit_slots_for_interaction(
+	return input._final_commit_slots_for_interaction(
 		fix.director.selected_unit_id,
 		cell,
 		empty_wps,
