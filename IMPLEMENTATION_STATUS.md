@@ -3,8 +3,25 @@
 **Current phase:** P3 Knight QA **PASS** · P6+ classes **automated gauntlet PASS (2026-08-10)** · **owner sign-off NOT PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md)  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
 **Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
-**Last updated:** 2026-08-10  
+**Last updated:** 2026-08-30  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
+
+---
+
+## Core milestone — Planning voluntary-walk refactor ✅
+
+**Closed:** 2026-08-30 · pin `0b610706be236ddbfebc1c1556fae27d91689f1d`  
+**Owner reference (read if you suspect missed work):** [`docs/design/PLANNING_VOLUNTARY_WALK_MILESTONE.md`](docs/design/PLANNING_VOLUNTARY_WALK_MILESTONE.md)
+
+| Item | Status |
+|------|--------|
+| Gauntlet round 31 (static two-pass, NO_QA) | **PASS** score 88 — [`PLANNING_GAUNTLET_ROUND31.md`](docs/design/PLANNING_GAUNTLET_ROUND31.md) |
+| Gauntlet round 32 (post-audit MED fixes) | **PASS** — GAP-010–012 at `39aea42b3` |
+| Matrix R1–R12 | **DONE** — [`PLANNING_REFACTOR_MATRIX.md`](docs/design/PLANNING_REFACTOR_MATRIX.md) |
+| Backlog GAP-001–012 | **Closed** — [`PLANNING_GAUNTLET_BACKLOG.md`](docs/design/PLANNING_GAUNTLET_BACKLOG.md) |
+| Runtime F5 proof (WP-9) | **Not run** at milestone close — owner optional |
+
+**Not claimed at close:** full class QA LOCK, legacy `PlanningQaGate.tscn` green, live Tier 3 F5 session. See milestone doc § “What was NOT claimed.”
 
 ---
 

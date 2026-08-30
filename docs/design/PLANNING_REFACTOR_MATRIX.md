@@ -2,7 +2,7 @@
 
 **Status:** ACTIVE — read this **first** after any chat summarization before planning or combat input work.  
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
-**Hard gate (owner):** Matrix R1–R12 `DONE`; gauntlet round 31 **PASS** (score 88). Automated planning gate: `run_planning_qa_gate.ps1` (T3 mimic + AOE). Owner F5 spot-check: WP-9.
+**Hard gate (owner):** Matrix R1–R12 `DONE`; gauntlet rounds 31–32 **PASS** (score 88). **Milestone record:** [`PLANNING_VOLUNTARY_WALK_MILESTONE.md`](PLANNING_VOLUNTARY_WALK_MILESTONE.md). Automated planning gate: `run_planning_qa_gate.ps1` (T3 mimic + AOE). Owner F5 spot-check: WP-9.
 
 **Latest gauntlet (2026-08-30):** Round 32 — GAP-010–012 closed (movement-step economy, swap board, action-range guard). Round 31 PASS score 88. See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md).
 

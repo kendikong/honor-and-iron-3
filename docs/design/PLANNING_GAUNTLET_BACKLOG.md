@@ -1,6 +1,7 @@
 # Planning voluntary-walk gauntlet backlog
 
-**Status:** RULE ABIDANCE COMPLETE (gauntlet round 31) — reopen only on regression or new bible gap.  
+**Status:** RULE ABIDANCE COMPLETE (gauntlet rounds 31–32) — reopen only on regression or new bible gap.  
+**Milestone record (owner):** [`PLANNING_VOLUNTARY_WALK_MILESTONE.md`](PLANNING_VOLUNTARY_WALK_MILESTONE.md)  
 **Loop contract:** `docs/design/PLANNING_GAUNTLET_LOOP.md`  
 **Owner bible:** `docs/design/MOVE_PREVIEW_RULES.md` · **Matrix:** `docs/design/PLANNING_REFACTOR_MATRIX.md`  
 **Critic agent:** `.cursor/agents/gauntlet-critic.md` § Two-pass bible loop
@@ -26,7 +27,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Bible / matrix ref | Gap | Status | Evidence (file:line) | Fixed commit | Verified round |
 |----|----------|-------------------|-----|--------|----------------------|--------------|----------------|
-| *(none — all HIGH/MED gaps closed through round 31)* |
+| *(none — all HIGH/MED gaps closed through round 32)* |
 
 ---
 
