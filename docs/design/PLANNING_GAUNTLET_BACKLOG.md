@@ -3,7 +3,7 @@
 **Status:** RULE ABIDANCE COMPLETE (gauntlet rounds 31–32) — reopen only on regression or new bible gap.  
 **Milestone record (owner):** [`PLANNING_VOLUNTARY_WALK_MILESTONE.md`](PLANNING_VOLUNTARY_WALK_MILESTONE.md)  
 **Loop contract:** `docs/design/PLANNING_GAUNTLET_LOOP.md`  
-**Owner bible:** `docs/design/MOVE_PREVIEW_RULES.md` · **Matrix:** `docs/design/PLANNING_REFACTOR_MATRIX.md`  
+**Owner rules:** `docs/design/MOVE_PREVIEW_RULES.md` · **Agent log:** `docs/design/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` · **Matrix:** `docs/design/PLANNING_REFACTOR_MATRIX.md`  
 **Critic agent:** `.cursor/agents/gauntlet-critic.md` § Two-pass bible loop
 
 Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B** (fresh line-by-line bible audit). New Pass B gaps are appended with new IDs.
@@ -15,7 +15,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | Pass | Critic must |
 |------|-------------|
 | **A — Regression** | For each row with `Status: OPEN` or `VERIFY`, read code and mark `FIXED` / `STILL_OPEN` / `REGRESSED` with file:line evidence. |
-| **B — Fresh bible** | Re-read `MOVE_PREVIEW_RULES.md` (full) + matrix R1–R12. Any new HIGH gap → new row, `Status: OPEN`. |
+| **B — Fresh bible** | Re-read `MOVE_PREVIEW_RULES.md` (rules only) + matrix R1–R12. Any new HIGH gap → new row, `Status: OPEN`. |
 
 **Overall RESULT:** `PASS` only when Pass A has **zero** `OPEN`/`STILL_OPEN`/`REGRESSED` **and** Pass B adds **zero** new HIGH gaps.
 

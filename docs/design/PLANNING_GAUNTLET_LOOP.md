@@ -39,7 +39,7 @@ Both passes run **in the same critic invocation**, in order. Neither is optional
 
 **Input (read in full, every round):**
 
-- `docs/design/MOVE_PREVIEW_RULES.md` — especially § Timeline model, § The one rule, § Live vs frozen (§88 invalid hover), § Movement steps, § Stand/origin, architecture audit table.
+- `docs/design/MOVE_PREVIEW_RULES.md` — owner rules only (short). **Not** `MOVE_PREVIEW_IMPLEMENTATION_LOG.md` (agent diary).
 - `docs/design/PLANNING_REFACTOR_MATRIX.md` — rows R1–R12.
 
 **Critic must:**
@@ -82,7 +82,7 @@ PASS A — Regression:
   Verify every OPEN and VERIFY row.
 
 PASS B — Fresh bible:
-  Read MOVE_PREVIEW_RULES.md (full) + PLANNING_REFACTOR_MATRIX R1–R12
+  Read MOVE_PREVIEW_RULES.md (rules only — not implementation log) + PLANNING_REFACTOR_MATRIX R1–R12
   Line-by-line; append new HIGH gaps to backlog.
 
 OUTPUT (required):

@@ -42,7 +42,8 @@ Agent-ready design layer between vision (`ROADMAP.md`, `class_abilities.txt`) an
 | Doc | Purpose |
 |-----|---------|
 | [`ability-data.md`](ability-data.md) | Modular AbilityData bible — **ACTIVE** (start at §0). Extra Rules conversion in progress. |
-| [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) | **ACTIVE** Owner spec — paths, blue/red/yellow tiles, planning overlay |
+| [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) | **ACTIVE** Owner rules — short global planning behavior |
+| [`MOVE_PREVIEW_IMPLEMENTATION_LOG.md`](MOVE_PREVIEW_IMPLEMENTATION_LOG.md) | Agent build diary — pass history (not rules) |
 | [`ACTION_RANGE_LATEST_STAND.md`](ACTION_RANGE_LATEST_STAND.md) | Red tiles from latest stand — failure log |
 | [`EXTRA_RULES_TO_MODULES_PLAN.md`](EXTRA_RULES_TO_MODULES_PLAN.md) | **ACTIVE** Extra Rules → modules/layers conversion (binding matrix) |
 | [`_TEMPLATE.md`](_TEMPLATE.md) | Copy for new pillar files |

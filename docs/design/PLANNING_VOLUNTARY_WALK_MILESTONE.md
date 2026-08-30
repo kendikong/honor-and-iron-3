@@ -33,7 +33,7 @@ The **planning voluntary-walk stack** (premove, MOVE-module walk legs, postmove)
 | **Legacy `PlanningQaGate.tscn`** | ~300+ headless fixture failures expected; **demoted archaeology**. Default gate = T3 mimic + AOE only (`run_planning_qa_gate.ps1`). |
 | **Round 31 self-grade** | Independent harsh re-critique (before round 32 fixes) scored **79/100** and called “100%” **overstated** due to label forks — those forks were then closed in round 32. |
 | **Class kits** | This milestone is **planning voluntary-walk only**, not full class QA / Bible LOCK. |
-| **Historical bible notes** | Older `MOVE_PREVIEW_RULES.md` pass sections may name removed symbols; **Pass 32** section is the current truth. |
+| **Historical pass notes** | Archived in `MOVE_PREVIEW_IMPLEMENTATION_LOG.md` — not owner rules. |
 
 If gameplay feels wrong in F5, that is **not** disproven by this milestone — it was never runtime-proven at close.
 
@@ -43,7 +43,8 @@ If gameplay feels wrong in F5, that is **not** disproven by this milestone — i
 
 | Artifact | Role |
 |----------|------|
-| [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) | Owner bible — timeline, tile colors, movement steps, pass history |
+| [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) | Owner rules — short global behavior spec |
+| [`MOVE_PREVIEW_IMPLEMENTATION_LOG.md`](MOVE_PREVIEW_IMPLEMENTATION_LOG.md) | Agent build diary — pass history, symbol tables (not rules) |
 | [`PLANNING_REFACTOR_MATRIX.md`](PLANNING_REFACTOR_MATRIX.md) | R1–R12 rule matrix (survives chat summarization) |
 | [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md) | Every gap ID, fix commit, round history |
 | [`PLANNING_GAUNTLET_LOOP.md`](PLANNING_GAUNTLET_LOOP.md) | Two-pass critic contract (regression + fresh bible) |

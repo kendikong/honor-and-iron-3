@@ -106,7 +106,7 @@ When **RULES** or **GOAL** includes `MOVE_PREVIEW_RULES.md`, `PLANNING_REFACTOR_
 | Pass | What | PASS means |
 |------|------|------------|
 | **A — Regression** | Verify every `OPEN` / `VERIFY` row in `docs/design/PLANNING_GAUNTLET_BACKLOG.md` | All rows `FIXED`; none `STILL_OPEN` / `REGRESSED` |
-| **B — Fresh bible** | Read `MOVE_PREVIEW_RULES.md` (full) + matrix R1–R12 line by line | Zero **new HIGH** gaps; append new rows to backlog |
+| **B — Fresh bible** | Read `MOVE_PREVIEW_RULES.md` (rules only — **not** `MOVE_PREVIEW_IMPLEMENTATION_LOG.md`) + matrix R1–R12 | Zero **new HIGH** gaps; append new rows to backlog |
 
 **Overall RESULT:** `PASS` only if **REGRESSION_PASS** and **BIBLE_PASS** are both `PASS` **and** `SCORE ≥ PASS_THRESHOLD` **and** infrastructure `ADEQUATE`.
 
