@@ -4,7 +4,7 @@
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
 **Hard gate (owner):** **NO testing** (`tests/`, `run_*`, F5 QA) until an agent claims **100% rule abidance** on this matrix (every row `DONE`).
 
-**Latest gauntlet (2026-08-29):** Round 30 — **PASS** (score 86, `REGRESSION_PASS` + `BIBLE_PASS`). GAP-001–008 closed. See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md). WP-9 runtime QA owner-run when ready.
+**Latest gauntlet (2026-08-29):** Round 30 — **PASS** (score 86, `REGRESSION_PASS` + `BIBLE_PASS`). GAP-001–009 closed (GAP-009: unified basic-walk pathfinding). See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md). WP-9 runtime QA owner-run when ready.
 
 ---
 

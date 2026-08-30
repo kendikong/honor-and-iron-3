@@ -4606,7 +4606,11 @@ func _movement_blocked_by_dash() -> bool:
 
 func _drag_max_steps(unit: UnitState) -> int:
 	var ability: AbilityData = _selected_ability_data(unit)
-	if ability != null and _is_awaiting_movement_endpoint(unit, ability):
+	if (
+		ability != null
+		and _is_awaiting_movement_endpoint(unit, ability)
+		and not _basic_walk_pathfinding_active(unit)
+	):
 		return AbilitySystem.active_motion_max_range(unit, ability)
 	var max_steps: int = _move_budget(unit)
 	if _skill_commit_path_active():
@@ -4868,18 +4872,24 @@ func _sync_drag_route_stand() -> void:
 
 ## Voluntary-walk per-hover corridor (POST landing orbit) ΓÇö not sealed/painted drag legs or MOVE-module paint.
 ## Voluntary-walk per-hover corridor paint (PRE/POST orbit + MOVE-module awaiting).
+## Voluntary-walk pathfinding uses basic walk (null ability) on every movement step — not PRE/POST labels.
 func _basic_walk_pathfinding_active(p_unit: UnitState) -> bool:
 	if p_unit == null or _director == null:
 		return false
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return true
-	if _director.selected_ability_index < 0:
-		return true
-	var pk: int = _director.planning_timeline_phase_kind(p_unit.id)
-	return (
-		pk == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
-		or pk == CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-	)
+	if not active_movement_planning_step(p_unit):
+		return false
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability != null:
+		if AbilitySystem.ability_uses_direct_relocation(ability, p_unit):
+			return false
+		if (
+			AbilitySystem.ability_has_dash(ability, p_unit)
+			and _is_awaiting_movement_endpoint(p_unit, ability)
+		):
+			return false
+	return true
 
 
 func _voluntary_walk_drag_trim_active(p_unit: UnitState) -> bool:
@@ -4915,12 +4925,7 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		):
 			return true
 		return auto_run_movement_active(p_unit)
-	var walk_phase: int = _director.planning_timeline_phase_kind(p_unit.id)
-	if (
-		walk_phase != CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
-		and walk_phase != CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-		and walk_phase != CombatDirector.PlanningTimelinePhaseKind.SKILL_AWAITING
-	):
+	if not active_movement_planning_step(p_unit):
 		return false
 	var ability: AbilityData = _selected_ability_data(p_unit)
 	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):

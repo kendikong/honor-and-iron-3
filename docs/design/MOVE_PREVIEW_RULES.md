@@ -128,6 +128,8 @@ Do not add extra clear rules beyond this.
 | **MOVE module** | Same preview | Commits to the skill's MOVE leg; stand/handoff for next module |
 | **Postmove** | **Exactly like premove** | Commits to POST slot; runs after the action |
 
+**Pathfinding / blue flood / corridor:** one gate — `active_movement_planning_step` + `_basic_walk_pathfinding_active` (not PRE/POST/SKILL_AWAITING labels). MOVE-module walk-only legs use the same basic-walk path as premove and postmove; dash/teleport/relocation keep their own geometry.
+
 **Painted routes:** Drag through blue tiles to build a path; preview follows that route to the hover tile.
 
 **Run:** No change to current behavior — run icon already signals when Run is used.
