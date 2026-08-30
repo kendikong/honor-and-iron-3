@@ -143,36 +143,32 @@ static func _planning_fixture(
 		"enemy": units[1] if units.size() > 1 else null,
 	}
 
-static func wire_bruiser_fixture(
+static func wire_bruiser_solo_fixture(
 	bruiser_pos: Vector2i,
 	ability_id: StringName = &"bruiser_charge_strike",
 ) -> Dictionary:
 	cleanup_all()
-	return wire_fixture(_bruiser_planning_fixture(bruiser_pos, ability_id))
-
-
-static func _bruiser_planning_fixture(
-	bruiser_pos: Vector2i,
-	ability_id: StringName,
-) -> Dictionary:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	director.plan_pre_move = Timeline.new()
-	director.plan_action = Timeline.new()
-	director.plan_post_move = Timeline.new()
 	var def: UnitData = FactoryTestHelpers.build_unit(&"bruiser")
 	if def == null:
 		def = DataLibrary.get_unit(&"bruiser")
-	assert(def != null, "PlanningDragE2E: bruiser definition missing")
+	if def == null:
+		return {"error": "bruiser_def_missing"}
 	var abilities: Array[AbilityData] = []
 	if ability_id != &"":
 		for ab: AbilityData in def.abilities:
 			if ab != null and ab.id == ability_id:
 				abilities.append(ab.duplicate(true) as AbilityData)
 				break
+	if abilities.is_empty():
+		return {"error": "charge_strike_missing"}
 	var run: AbilityData = DataLibrary.get_universal_run()
 	if run != null:
 		abilities.append(run)
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
 	var bruiser: UnitState = UnitState.create(
 		1, def, GameEnums.Team.PLAYER, bruiser_pos, {"active_abilities": abilities},
 	)
@@ -180,7 +176,7 @@ static func _bruiser_planning_fixture(
 	bruiser.movement.max_points = maxi(bruiser.movement.max_points, 8)
 	bruiser.ability.points_left = maxi(bruiser.ability.max_points, 1)
 	bruiser.ability.max_points = maxi(bruiser.ability.max_points, 1)
-	var board := _plain_board(Vector2i(12, 12), [bruiser])
+	var board: BoardState = _plain_board(Vector2i(12, 12), [bruiser])
 	director.board = board
 	director.base_board = board.clone()
 	director.projected_state = board.clone()
@@ -188,16 +184,34 @@ static func _bruiser_planning_fixture(
 	director.selected_unit_id = bruiser.id
 	input._director = director
 	input.auto_use_skill_after_move = true
-	return {
+	var fix: Dictionary = {
 		"input": input,
 		"director": director,
 		"board": board,
 		"knight": bruiser,
 		"bruiser": bruiser,
 		"actor": bruiser,
-		"enemy": null,
 	}
+	track_raw_fixture(fix)
+	var overlay: TacticalPlanningOverlay = _wire_solo_overlay(fix)
+	fix["overlay"] = overlay
+	return fix
 
+
+static func _wire_solo_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
+	var intent := CombatIntentState.new()
+	intent.bind(fix.director)
+	var overlay := TacticalPlanningOverlay.new()
+	_attach_to_host(overlay)
+	overlay.setup(null, fix.director, intent)
+	overlay.qa_static_overlay = true
+	overlay.set_board(fix.board)
+	fix.input._planning = overlay
+	fix.input._intent_state = intent
+	overlay.bind_planning_input(fix.input)
+	fix["intent"] = intent
+	track_overlay_fixture(fix, overlay)
+	return overlay
 
 
 static func wire_fixture(fix: Dictionary) -> Dictionary:

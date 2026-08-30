@@ -876,57 +876,6 @@ static func _test_hover_step_updates_stand_and_red_tiles(failures: Array[String]
 		)
 
 
-static func _bruiser_awaiting_fixture(start: Vector2i) -> Dictionary:
-	PlanningDragE2EHarness.cleanup_all()
-	var def: UnitData = FactoryTestHelpers.build_unit(&"bruiser")
-	if def == null:
-		def = DataLibrary.get_unit(&"bruiser")
-	if def == null:
-		return {"error": "bruiser_def_missing"}
-	var abilities: Array[AbilityData] = []
-	for ab: AbilityData in def.abilities:
-		if ab != null and ab.id == &"bruiser_charge_strike":
-			abilities.append(ab.duplicate(true) as AbilityData)
-			break
-	if abilities.is_empty():
-		return {"error": "charge_strike_missing"}
-	var run: AbilityData = DataLibrary.get_universal_run()
-	if run != null:
-		abilities.append(run)
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	director.plan_pre_move = Timeline.new()
-	director.plan_action = Timeline.new()
-	director.plan_post_move = Timeline.new()
-	var bruiser: UnitState = UnitState.create(
-		1, def, GameEnums.Team.PLAYER, start, {"active_abilities": abilities},
-	)
-	bruiser.movement.points_left = maxi(bruiser.movement.max_points, 8)
-	bruiser.movement.max_points = maxi(bruiser.movement.max_points, 8)
-	bruiser.ability.points_left = maxi(bruiser.ability.max_points, 1)
-	bruiser.ability.max_points = maxi(bruiser.ability.max_points, 1)
-	var board: BoardState = PlanningDragE2EHarness._plain_board(Vector2i(12, 12), [bruiser])
-	director.board = board
-	director.base_board = board.clone()
-	director.projected_state = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = bruiser.id
-	input._director = director
-	input.auto_use_skill_after_move = true
-	var fix: Dictionary = {
-		"input": input,
-		"director": director,
-		"board": board,
-		"knight": bruiser,
-		"bruiser": bruiser,
-		"actor": bruiser,
-	}
-	PlanningDragE2EHarness.track_raw_fixture(fix)
-	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
-	fix["overlay"] = overlay
-	return fix
-
-
 ## Would have failed 37b3879 — awaiting module range used base_board (turn start).
 ## BUG-20260815T183841-612: pre-move (5,3)→(7,3), arm Charge Strike, red still on (5,3).
 static func _test_awaiting_module_range_after_committed_premove(failures: Array[String]) -> void:
@@ -935,7 +884,9 @@ static func _test_awaiting_module_range_after_committed_premove(failures: Array[
 	const ONLY_FROM_LANDING := Vector2i(7, 5)
 	const ONLY_FROM_START := Vector2i(3, 3)
 	const Checklist := preload("res://tests/planning_checklist_harness.gd")
-	var fix: Dictionary = _bruiser_awaiting_fixture(START)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_bruiser_solo_fixture(
+		START, &"bruiser_charge_strike",
+	)
 	if fix.has("error"):
 		failures.append(
 			"ActionRangeRegression awaiting_module_range_after_premove: bruiser fixture %s"
