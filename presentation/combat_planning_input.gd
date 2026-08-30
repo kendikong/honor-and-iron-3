@@ -1,7 +1,7 @@
-class_name CombatPlanningInput
+﻿class_name CombatPlanningInput
 extends RefCounted
 
-## H&I planning semantics ported from board_view ΓÇö used by TacticalInputController.
+## H&I planning semantics ported from board_view ╬ô├ç├╢ used by TacticalInputController.
 
 const _PlanningRoutePolicy := preload("res://core/systems/planning_route_policy.gd")
 
@@ -44,7 +44,7 @@ func _voluntary_walk_planning_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
 	var actor: UnitState = _proj_unit(_director.selected_unit_id)
-	return actor != null and active_movement_planning_step(actor)
+	return actor != null and _planning_phase_allows_live_path_stand(actor.id) and active_movement_planning_step(actor)
 
 func _skill_commit_path_active() -> bool:
 	if _director == null:
@@ -82,14 +82,14 @@ var _drag_preview_refresh_pending: bool = false
 var _drag_preview_last_flush_usec: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
-## Last painted intent (move-preview truth) ΓÇö commit ratifies these slots, does not rebuild.
+## Last painted intent (move-preview truth) ╬ô├ç├╢ commit ratifies these slots, does not rebuild.
 var _intent_snapshot_slots: Dictionary = {}
 var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
 var _intent_snapshot_unit_id: int = -1
 var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _suppress_post_commit_hover_refresh: bool = false
-## Settled hover used projected-delta move-only preview ΓÇö overlay range already correct at stand.
+## Settled hover used projected-delta move-only preview ╬ô├ç├╢ overlay range already correct at stand.
 var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
 var _hover_preview_lru: Dictionary = {}
@@ -925,7 +925,7 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_sim_actor_pos = _drag_last_free
 	if preview.has("temp_board") and _planning != null:
 		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
-		## Preview board moved stand ΓÇö refresh locked/next range fields (MOVE_PREVIEW_RULES two-range).
+		## Preview board moved stand ╬ô├ç├╢ refresh locked/next range fields (MOVE_PREVIEW_RULES two-range).
 		_planning._recompute_hover_ranges_from_inputs()
 	_refresh_action_range_overlay_when_gate_off()
 	_sync_intent_live_board()
@@ -987,7 +987,7 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 		return
 	var stand: Vector2i = Vector2i(-999999, -999999)
 	var ability: AbilityData = _selected_ability_data(actor)
-	## MOVE module legs use the same painted-route path as premove ΓÇö do not collapse here.
+	## MOVE module legs use the same painted-route path as premove ╬ô├ç├╢ do not collapse here.
 	if _is_awaiting_movement_endpoint(actor, ability):
 		return
 	elif _voluntary_walk_planning_active() and not awaiting_targeting_active():
@@ -1001,7 +1001,7 @@ func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardSt
 			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
 	if stand.x <= -900000:
 		return
-	## No stand-stub preview — live walk paint is hover/drag only (MOVE_PREVIEW_RULES).
+	## No stand-stub preview ΓÇö live walk paint is hover/drag only (MOVE_PREVIEW_RULES).
 	preview_state.action_splits[unit_id] = 0
 
 
@@ -1180,7 +1180,7 @@ func _on_board_changed(board: BoardState) -> void:
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
-		# Snap undo/move refresh emits preview_updated in the same flush ΓÇö skip duplicate danger pass.
+		# Snap undo/move refresh emits preview_updated in the same flush ╬ô├ç├╢ skip duplicate danger pass.
 		if _planning != null and not _director.plan_refresh_snap_units:
 			_planning.mark_danger_dirty()
 		if not _director.plan_refresh_snap_units:
@@ -1655,7 +1655,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and (_drag_route[0] as Vector2i) != leg_origin
 				):
 					_clear_hover_drag_route()
-				if not dragging:
+				if (
+					_director.planning_timeline_phase_kind(p_unit.id)
+					== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+					and not dragging
+				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
@@ -1714,7 +1718,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
-	if active_movement_planning_step(p_unit):
+	if _voluntary_walk_orbit_phase_open(p_unit) or _planning_phase_allows_live_path_stand(p_unit.id):
 		return true
 	if _director == null or p_unit == null:
 		return false
@@ -1804,7 +1808,7 @@ func _begin_hover_sim_throttled_flush() -> void:
 		return
 	## Settle on the current tile before the expensive replay. Circling cancels
 	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
-	## If the pointer is still moving inside the tile, skip leftover replay ΓÇö
+	## If the pointer is still moving inside the tile, skip leftover replay ╬ô├ç├╢
 	## red tiles already follow via overlay _recompute_hover_ranges_from_inputs.
 	_hover_sim_throttle_gen += 1
 	var gen: int = _hover_sim_throttle_gen
@@ -2350,7 +2354,7 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 		if selected_ability != null and _is_awaiting_movement_endpoint(p_unit, selected_ability):
 			return _can_move_to(p_unit, cell)
 		## Armed TARGET_PICK (Volley, traps): in-range hover is the blast cell, not a walk.
-		## Unarmed TILE skills still premove ΓÇö range often covers every walk tile.
+		## Unarmed TILE skills still premove ╬ô├ç├╢ range often covers every walk tile.
 		if _is_armed_tile_skill_aim_cell(p_unit, cell, selected_ability):
 			return false
 		if selected_ability != null and AbilitySystem.planning_allows_paired_premove(selected_ability):
@@ -2477,7 +2481,7 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 				_restore_sealed_voluntary_walk_preview(unit_id, sealed_route, false)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
-## Preview_paths is the painted landing SSOT ΓÇö seal when it matches the active leg, then drop drag buffer.
+## Preview_paths is the painted landing SSOT ╬ô├ç├╢ seal when it matches the active leg, then drop drag buffer.
 func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
 	if unit_id < 0 or _director == null:
 		return
@@ -2788,7 +2792,7 @@ func _plan_approach_or_trample_on_enemy(
 const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 
-## Single source for commit cell, waypoints, and approach hint ΓÇö cursor, preview, and drop must match.
+## Single source for commit cell, waypoints, and approach hint ╬ô├ç├╢ cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
 	if _drag_drop_finishing and _drag_route.size() >= 2:
 		return true
@@ -2914,8 +2918,7 @@ func _commit_interaction_params(
 						)
 						if approach != actor.position:
 							waypoints = _director.preview_waypoints_for_hover(
-								board, actor, approach, [], ability,
-							, false, preview_state)
+								board, actor, approach, [], ability, false, preview_state)
 				elif (
 					actor != null
 					and ability != null
@@ -2946,8 +2949,7 @@ func _commit_interaction_params(
 					)
 					if approach != actor.position:
 						waypoints = _director.preview_waypoints_for_hover(
-							board, actor, approach, [], ability,
-						, false, preview_state)
+							board, actor, approach, [], ability, false, preview_state)
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints_for_commit()
 		legal_moves = _snapshot_drag_legal_move_tiles()
@@ -2962,7 +2964,7 @@ func _commit_interaction_params(
 				waypoints = walk_wps
 			elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
 				waypoints = _director.preview_waypoints_for_hover(
-					_proj(, false, preview_state), actor, hover_cell, [], ability, true,
+					_proj(), actor, hover_cell, [], ability, true, preview_state,
 				)
 	var face_dir: int = -1
 	if _map_view != null:
@@ -3308,7 +3310,7 @@ func _ensure_movement_waypoints_on_commit_slots(unit_id: int, slots: Dictionary)
 				continue
 			if AbilitySystem.ability_has_dash(act.ability, actor):
 				act.waypoints = _director.preview_waypoints_for_hover(
-					_proj(, false, preview_state), actor, act.target_coord, [], act.ability, true,
+					_proj(), actor, act.target_coord, [], act.ability, true, preview_state,
 				)
 			else:
 				act.waypoints = _corridor_waypoints_to_cell(actor, act.target_coord)
@@ -3541,7 +3543,7 @@ func _apply_facing_to_slots(
 				and (cells[0] as Vector2i) != (cells[cells.size() - 1] as Vector2i)
 			)
 			if displaces:
-				## Path-based facing in MovementSystem ΓÇö mouse quadrant must not override travel.
+				## Path-based facing in MovementSystem ╬ô├ç├╢ mouse quadrant must not override travel.
 				move_action.face_dir = -1
 				continue
 			var drop_face: int = _facing_from_drop(local, cell)
@@ -3972,7 +3974,7 @@ func _prefer_approach_over_trample_move(actor: UnitState, enemy: UnitState) -> b
 
 
 func _notify_drag_plan_move_committed(_unit_id: int) -> void:
-	## Premove walk animation is owned by planning_commit_events ΓÇö do not mark instant.
+	## Premove walk animation is owned by planning_commit_events ╬ô├ç├╢ do not mark instant.
 	pass
 
 
@@ -3991,7 +3993,7 @@ func _unit_move_slot_open(unit_id: int, cell: Vector2i = Vector2i(-999999, -9999
 	return not _director.unit_has_move_planned_at_timing(unit_id, move_timing)
 
 
-## Post-move hover/commit ΓÇö action column already spent; never re-pair selected skill.
+## Post-move hover/commit ╬ô├ç├╢ action column already spent; never re-pair selected skill.
 ## Exception: committed action with an open pre-move slot still uses enemy/tile approach
 ## commit slots (pre + action), not post-move-only placement.
 func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) -> bool:
@@ -4009,7 +4011,7 @@ func _planning_post_move_only(actor: UnitState, unit_id: int, cell: Vector2i) ->
 	return true
 
 
-## Reposition already locked on timeline ΓÇö armed icon is cosmetic; walk hover is move-only.
+## Reposition already locked on timeline ╬ô├ç├╢ armed icon is cosmetic; walk hover is move-only.
 func _hover_commit_slots_are_post_reposition_walk_only(
 	actor: UnitState,
 	unit_id: int,
@@ -4154,7 +4156,9 @@ func _basic_move_allowed() -> bool:
 		return false
 	if move_actor == null:
 		return false
-	if active_movement_planning_step(move_actor):
+	if _planning_phase_allows_live_path_stand(move_actor.id):
+		return true
+	if _voluntary_walk_orbit_phase_open(move_actor):
 		return true
 	var awaiting: TimelineAction = _awaiting_action_for(move_actor)
 	if AbilitySystem.planning_modular_post_move_open(move_actor, awaiting):
@@ -4163,7 +4167,7 @@ func _basic_move_allowed() -> bool:
 		return false
 	return true
 
-## R5 modular-post / POSTMOVE exception — keyed on planning_timeline_phase_kind.
+## R5 modular-post / POSTMOVE exception ΓÇö keyed on planning_timeline_phase_kind.
 func _voluntary_walk_postmove_slot_open(p_unit: UnitState) -> bool:
 	if _director == null or p_unit == null:
 		return false
@@ -4201,7 +4205,7 @@ func _voluntary_walk_postmove_slot_open(p_unit: UnitState) -> bool:
 	return false
 
 
-## MOVE_PREVIEW_RULES SSOT — true only while the player is choosing a voluntary walk leg.
+## MOVE_PREVIEW_RULES SSOT ΓÇö true only while the player is choosing a voluntary walk leg.
 func _movement_planning_excluding_autorun(p_unit: UnitState) -> bool:
 	if _director == null or p_unit == null:
 		return false
@@ -4285,7 +4289,7 @@ func painted_move_route_locked(
 	return true
 
 
-## PRE / MOVE-module / POST — single voluntary-walk hover paint gate (R6).
+## PRE / MOVE-module / POST ΓÇö single voluntary-walk hover paint gate (R6).
 func _voluntary_walk_hover_paint_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	if dragging:
 		return false
@@ -4352,7 +4356,7 @@ func _sealed_leg_hover_mode(p_unit: UnitState, cell: Vector2i) -> int:
 		preview_state.is_painted_leg_sealed(p_unit.id),
 		sealed_route.size(),
 		_voluntary_walk_corridor_paint_active(p_unit),
-		_is_hover_move_cell(p_unit, cell),
+		_hover_extends_walk_geometry(p_unit, cell),
 		_attack_target_id_at_cell(p_unit, cell) >= 0,
 	)
 
@@ -4372,6 +4376,32 @@ func _sealed_leg_hover_restore_if_blocked(p_unit: UnitState, cell: Vector2i) -> 
 	return true
 
 
+## Policy geometry only: hover extends walk (not legality). Used by sealed-leg mode; must not call _can_move_to.
+func _hover_extends_walk_geometry(p_unit: UnitState, cell: Vector2i) -> bool:
+	if p_unit == null or cell == p_unit.position:
+		return false
+	if _awaiting_target_pick_blocks_premove():
+		return false
+	if _attack_target_id_at_cell(p_unit, cell) >= 0:
+		return false
+	if _skill_interaction_active():
+		var selected_ability := _selected_ability_data(p_unit)
+		if selected_ability != null and _is_awaiting_movement_endpoint(p_unit, selected_ability):
+			return active_movement_planning_step(p_unit)
+		if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
+			if not _drag_route.is_empty() and _drag_route.has(cell):
+				var route_idx: int = _drag_route.find(cell)
+				if route_idx > 0:
+					return true
+	if _planning != null and _planning.is_hover_move_tile(cell):
+		return true
+	if _director != null and _director.board != null:
+		var occ: UnitState = _director.board.get_unit_at(cell)
+		if occ != null and occ.is_enemy() and MovementSystem.has_trample(p_unit):
+			return active_movement_planning_step(p_unit)
+	return false
+
+
 ## True when hover may rewrite preview_paths / live corridor for this cell.
 func live_move_hover_rewrite_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	if not active_movement_planning_step(p_unit):
@@ -4381,8 +4411,8 @@ func live_move_hover_rewrite_applies(p_unit: UnitState, cell: Vector2i) -> bool:
 	return PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell))
 
 
-## Live hover corridor ΓÇö preview_state only; non-move steps return frozen slice without committed bleed.
-## Painted corridor waypoints for blue move-tile extension ΓÇö preview_paths SSOT, not _drag_route peek.
+## Live hover corridor ╬ô├ç├╢ preview_state only; non-move steps return frozen slice without committed bleed.
+## Painted corridor waypoints for blue move-tile extension ╬ô├ç├╢ preview_paths SSOT, not _drag_route peek.
 func painted_corridor_waypoints_for_blue_tiles(unit_id: int) -> Array[Vector2i]:
 	if not _drag_route_commits_active() or _drag_unit_id != unit_id:
 		return []
@@ -4541,7 +4571,7 @@ func predicted_stand_at_hover(unit_id: int, hover_coord: Vector2i) -> Vector2i:
 	return action_range_intent_stand_cell(unit_id)
 
 
-## Walk-only hover orbit ΓÇö no yellow blast, no next-phase aim field.
+## Walk-only hover orbit ╬ô├ç├╢ no yellow blast, no next-phase aim field.
 func is_walk_only_hover_move(unit: UnitState, hover_coord: Vector2i) -> bool:
 	if unit == null or _director == null or not _director.board.is_in_bounds(hover_coord):
 		return false
@@ -4600,11 +4630,7 @@ func _movement_blocked_by_dash() -> bool:
 
 func _drag_max_steps(unit: UnitState) -> int:
 	var ability: AbilityData = _selected_ability_data(unit)
-	if (
-		ability != null
-		and _is_awaiting_movement_endpoint(unit, ability)
-		and not _basic_walk_pathfinding_active(unit)
-	):
+	if ability != null and _is_awaiting_movement_endpoint(unit, ability):
 		return AbilitySystem.active_motion_max_range(unit, ability)
 	var max_steps: int = _move_budget(unit)
 	if _skill_commit_path_active():
@@ -4641,7 +4667,7 @@ func _basic_painted_drag_orbit_guard_active() -> bool:
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	if _drag_route.find(cell) >= 0:
 		return false
-	# Multi-step premove paint sealed ΓÇö orbit may backtrack only, not extend the tail.
+	# Multi-step premove paint sealed ╬ô├ç├╢ orbit may backtrack only, not extend the tail.
 	if move_origin.x > -900000 and _route_has_left_origin_ring(move_origin):
 		return true
 	if GridSystem.manhattan(last, cell) == 1:
@@ -4680,7 +4706,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 		return
 	var move_origin: Vector2i = _phase_entry_stand(unit)
 	# Orbit-hover around stand: hop between origin-adjacent tiles without corridor repath.
-	# Keep this when a skill is armed / auto-run is on ΓÇö circling is not a painted path.
+	# Keep this when a skill is armed / auto-run is on ╬ô├ç├╢ circling is not a painted path.
 	# Once the route has left the origin ring (manhattan > 1), keep corridor paint
 	# so U-shaped selection paths (K4 east-then-south) still extend.
 	if (
@@ -4864,26 +4890,20 @@ func _sync_drag_route_stand() -> void:
 		_clear_stale_painted_preview_route(_drag_unit_id)
 
 
-## Voluntary-walk per-hover corridor (POST landing orbit) ΓÇö not sealed/painted drag legs or MOVE-module paint.
+## Voluntary-walk per-hover corridor (POST landing orbit) ╬ô├ç├╢ not sealed/painted drag legs or MOVE-module paint.
 ## Voluntary-walk per-hover corridor paint (PRE/POST orbit + MOVE-module awaiting).
-## Voluntary-walk pathfinding uses basic walk (null ability) on every movement step — not PRE/POST labels.
 func _basic_walk_pathfinding_active(p_unit: UnitState) -> bool:
 	if p_unit == null or _director == null:
 		return false
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return true
-	if not active_movement_planning_step(p_unit):
-		return false
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	if ability != null:
-		if AbilitySystem.ability_uses_direct_relocation(ability, p_unit):
-			return false
-		if (
-			AbilitySystem.ability_has_dash(ability, p_unit)
-			and _is_awaiting_movement_endpoint(p_unit, ability)
-		):
-			return false
-	return true
+	if _director.selected_ability_index < 0:
+		return true
+	var pk: int = _director.planning_timeline_phase_kind(p_unit.id)
+	return (
+		pk == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+		or pk == CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+	)
 
 
 func _voluntary_walk_drag_trim_active(p_unit: UnitState) -> bool:
@@ -4919,7 +4939,12 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		):
 			return true
 		return auto_run_movement_active(p_unit)
-	if not active_movement_planning_step(p_unit):
+	var walk_phase: int = _director.planning_timeline_phase_kind(p_unit.id)
+	if (
+		walk_phase != CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+		and walk_phase != CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+		and walk_phase != CombatDirector.PlanningTimelinePhaseKind.SKILL_AWAITING
+	):
 		return false
 	var ability: AbilityData = _selected_ability_data(p_unit)
 	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability):
@@ -4951,7 +4976,7 @@ func _voluntary_walk_orbit_overrides_drag_paint(unit_id: int) -> bool:
 	return actor != null and _voluntary_walk_orbit_phase_open(actor)
 
 
-## R6 restore entry — sealed/failure preserve; no sim merge.
+## R6 restore entry ΓÇö sealed/failure preserve; no sim merge.
 func _restore_sealed_voluntary_walk_preview(
 	unit_id: int, path: Array, seal_leg: bool,
 ) -> void:
@@ -4988,12 +5013,12 @@ func _write_voluntary_walk_preview_path(unit_id: int, path: Array) -> void:
 		_planning.apply_preview_paths_only(preview_state, unit_id)
 
 
-## Movement-step hover path is authoritative ΓÇö sim merge must not stomp it.
+## Movement-step hover path is authoritative ╬ô├ç├╢ sim merge must not stomp it.
 func _movement_hover_path_blocks_sim_merge(unit_id: int) -> bool:
 	return _movement_hover_path_authoritative(unit_id)
 
 
-## Single painted-route ΓåÆ preview_paths writer (drag buffer ΓåÆ route truth).
+## Single painted-route ╬ô├Ñ├å preview_paths writer (drag buffer ╬ô├Ñ├å route truth).
 func _apply_voluntary_walk_drag_preview(unit_id: int, require_leg_match: bool) -> void:
 	## Drag buffer staging may precede this call; preview write is voluntary-walk refresh only (R6).
 	var actor: UnitState = _proj_unit(unit_id) if unit_id >= 0 else null
@@ -5007,7 +5032,7 @@ func _apply_voluntary_walk_drag_preview(unit_id: int, require_leg_match: bool) -
 	_refresh_voluntary_walk_hover_preview(actor, cell)
 
 
-## R6 — single gate for hover + drag voluntary-walk preview refresh.
+## R6 ΓÇö single gate for hover + drag voluntary-walk preview refresh.
 func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -> bool:
 	if p_unit == null or _director == null:
 		return false
@@ -5015,7 +5040,7 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 		return _movement_route_paint_allowed() or _drag_route.size() >= 2
 	return _voluntary_walk_hover_paint_applies(p_unit, cell)
 
-## PRE / ACTION (move module) / POST ΓÇö one corridor preview owner for all move slots.
+## PRE / ACTION (move module) / POST ╬ô├ç├╢ one corridor preview owner for all move slots.
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if (
 		active_movement_planning_step(p_unit)
@@ -5034,7 +5059,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			_clear_stale_painted_preview_route(p_unit.id)
 			_refresh_click_target_highlight()
 			return
-	## Paint preview_paths in memory first ΓÇö live sim must not merge a second corridor on top.
+	## Paint preview_paths in memory first ╬ô├ç├╢ live sim must not merge a second corridor on top.
 	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
 	if active_movement_planning_step(p_unit):
 		_sync_movement_hover_paths_to_overlay(p_unit.id)
@@ -5107,7 +5132,7 @@ func _voluntary_walk_hover_extends_preview_path(actor: UnitState, hover_cell: Ve
 	return live_move_hover_rewrite_applies(actor, hover_cell)
 
 
-## PRE / MOVE module / POST ΓÇö one standΓåÆhover path assembler (forbidden trim + adjacent hop).
+## PRE / MOVE module / POST ╬ô├ç├╢ one stand╬ô├Ñ├åhover path assembler (forbidden trim + adjacent hop).
 func _assemble_voluntary_walk_preview_path(
 	unit_id: int,
 	actor: UnitState,
@@ -5231,7 +5256,7 @@ func _route_waypoints_for_commit(dest_cell: Vector2i = Vector2i(-999999, -999999
 	return _resolve_commit_move_waypoints(unit_id, actor, dest_cell)
 
 
-## Commit MOVE waypoints ΓÇö leg from latest stand to destination only (never full stale preview tail).
+## Commit MOVE waypoints ╬ô├ç├╢ leg from latest stand to destination only (never full stale preview tail).
 func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
@@ -5308,7 +5333,7 @@ func _normalize_adjacent_single_step_waypoints(
 
 
 ## True when the hover cell is a live skill aim (TILE/AOE in range, or dash endpoint).
-## Restore must not wipe this ΓÇö HP forecast and targeting arrows both need the live sim.
+## Restore must not wipe this ╬ô├ç├╢ HP forecast and targeting arrows both need the live sim.
 func is_skill_aim_hover_at(cell: Vector2i) -> bool:
 	if _director == null or _director.board == null or _director.selected_unit_id < 0:
 		return false
@@ -5354,7 +5379,7 @@ func clear_awaiting_targeting() -> void:
 
 
 ## Occupancy for painted hover/drag. Unarmed premove uses basic walk; armed awaiting uses the skill.
-## Overlay/legal-tile read API — delegates to corridor pathfinding owner.
+## Overlay/legal-tile read API ΓÇö delegates to corridor pathfinding owner.
 func route_pathfinding_ability_for_hover(
 	unit: UnitState,
 	hover_cell: Vector2i = Vector2i(-999999, -999999),
@@ -5531,7 +5556,7 @@ func _tile_target_movement_skill_commits_at_cell(
 		return false
 	var motion: AbilityModule = AbilitySystem.active_motion_module(actor, ability)
 	if motion != null and motion.primary_type == GameEnums.EffectType.DASH:
-		## Painted move waypoints (selection/drag route) are pre-move intent ΓÇö not dash pickup.
+		## Painted move waypoints (selection/drag route) are pre-move intent ╬ô├ç├╢ not dash pickup.
 		if (
 			not painted_waypoints.is_empty()
 			and not _is_awaiting_movement_endpoint(actor, ability)
@@ -5783,7 +5808,16 @@ func _armed_tile_target_locks_action_range(actor: UnitState) -> bool:
 
 
 
-## Where red action-range tiles anchor — delegates to phase-entry stand (R1/R3).
+func _planning_phase_allows_live_path_stand(unit_id: int) -> bool:
+	if _director == null or unit_id < 0:
+		return false
+	var phase_kind: int = _director.planning_timeline_phase_kind(unit_id)
+	return (
+		phase_kind == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
+		or phase_kind == CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+		or phase_kind == CombatDirector.PlanningTimelinePhaseKind.SKILL_AWAITING
+	)
+## Where red action-range tiles anchor ΓÇö delegates to phase-entry stand (R1/R3).
 ## Exceptions (documented): module handoff prior stand; committed move target;
 ## armed-tile range lock; live_path terminus only during active movement step (not locked red).
 func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
@@ -5836,12 +5870,7 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if hover_target_id >= 0:
 		return stand
 	var dest: Vector2i = move_intent_destination(unit_id)
-	if (
-		active_movement_planning_step(actor)
-		and _director.board.is_in_bounds(dest)
-		and dest != stand
-		and _is_hover_move_cell(actor, dest)
-	):
+	if _director.board.is_in_bounds(dest) and dest != stand and _is_hover_move_cell(actor, dest):
 		return dest
 	if is_live_preview_active() and preview_state.preview_board != null:
 		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
@@ -5914,7 +5943,7 @@ func _preview_dict_is_move_only_intent(preview: Dictionary) -> bool:
 	return has_move
 
 
-## Locked move intent (timeline or painted drag) used for action-range economy ΓÇö not hover stand.
+## Locked move intent (timeline or painted drag) used for action-range economy ╬ô├ç├╢ not hover stand.
 func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
 	if _director == null or unit_id < 0:
 		return null
@@ -6124,7 +6153,7 @@ func move_intent_destination(unit_id: int) -> Vector2i:
 	return Vector2i(-999, -999)
 
 
-## Single AP read for planning UI ΓÇö delegates to AbilitySystem.planning_display_ap_left.
+## Single AP read for planning UI ╬ô├ç├╢ delegates to AbilitySystem.planning_display_ap_left.
 func planning_display_ap_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -6145,7 +6174,7 @@ func planning_display_ap_left(unit_id: int) -> int:
 	var requires_run: bool = unit_move_requires_run(unit_id)
 	var dest: Vector2i = move_intent_destination(unit_id)
 	## auto_use_skill_after_move is the spend flag. A walk hover with it off is
-	## walk economy ΓÇö do not subtract the armed skill on the fallback path.
+	## walk economy ╬ô├ç├╢ do not subtract the armed skill on the fallback path.
 	## Skill-scroll / run-dest with no walk hover still subtracts (F5 stale AP).
 	## Live preview remains AP truth when live_valid.
 	var walk_hover: bool = (
@@ -6181,7 +6210,7 @@ func planning_display_ap_left(unit_id: int) -> int:
 	)
 
 
-## Single MP read for planning UI ΓÇö projected economy; reject overspend display from live sim.
+## Single MP read for planning UI ╬ô├ç├╢ projected economy; reject overspend display from live sim.
 func planning_display_mp_left(unit_id: int) -> int:
 	if _director == null or unit_id < 0:
 		return -1
@@ -6226,7 +6255,7 @@ func timeline_refresh_key(unit_id: int) -> String:
 	return _intent_snapshot_key
 
 
-## Pending plan columns that differ from committed ΓÇö for timeline ghost text.
+## Pending plan columns that differ from committed ╬ô├ç├╢ for timeline ghost text.
 func timeline_ghost_slots(unit_id: int) -> Dictionary:
 	var empty: Dictionary = {"pre": [], "action": [], "post": []}
 	if not _hover_intent_ghost_active(unit_id):
@@ -6566,7 +6595,7 @@ func _drop_allows_move_tile(
 			return _can_move_to(actor, cell)
 		if effective_legal.is_empty():
 			## Awaiting TARGET_PICK hides blue tiles on purpose. Unarmed TILE
-			## skills still walk ΓÇö do not require a populated overlay snapshot.
+			## skills still walk ╬ô├ç├╢ do not require a populated overlay snapshot.
 			if _awaiting_target_pick_blocks_premove():
 				return false
 			if awaiting_targeting_active() or (
@@ -6948,6 +6977,7 @@ func _enemy_hover_respects_painted_route(
 		return true
 	var slots: Dictionary = _empty_commit_slots()
 	var dest: Vector2i = route_waypoints.back()
+	var timing: int = GameEnums.MoveTiming.PRE_ACTION
 	if not _try_commit_voluntary_walk(slots, actor.id, actor, dest, route_waypoints, [dest]):
 		return false
 	if ability != null and not AbilitySystem.is_movement_skill(ability):
@@ -6964,7 +6994,7 @@ func _enemy_hover_respects_painted_route(
 	return _director.preview_commit_valid(actor.id, _actions_from_slots(slots)) == ""
 
 
-## PRE / MOVE module / POST ΓÇö one voluntary-walk commit entry (slot timing differs only).
+## PRE / MOVE module / POST ╬ô├ç├╢ one voluntary-walk commit entry (slot timing differs only).
 func _try_commit_voluntary_walk(
 	slots: Dictionary,
 	unit_id: int,
@@ -6991,7 +7021,7 @@ func _try_commit_voluntary_walk(
 	return not _is_invalid_dict(slots)
 
 
-## R8 internal — only _try_commit_voluntary_walk appends voluntary-walk timeline actions.
+## R8 internal ΓÇö only _try_commit_voluntary_walk appends voluntary-walk timeline actions.
 func _append_move_to_commit_slots(
 	slots: Dictionary,
 	unit_id: int,
@@ -7173,7 +7203,7 @@ func _build_commit_slots_at_cell(
 			slots["invalid"] = "Invalid target."
 		return slots
 
-	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental ΓÇö
+	## Awaiting movement-endpoint skills (DASH etc.) commit a TILE. Occupant is incidental ╬ô├ç├╢
 	## do not divert into enemy/ally unit-target commit slots.
 	## First click on an ALLY-targeted dash (paired charger) still uses ally slots.
 	var awaiting_tile_endpoint: bool = _is_awaiting_movement_endpoint(actor, ability)
@@ -7249,7 +7279,7 @@ func _build_commit_slots_at_cell(
 			and _dash_tile_endpoint_one_click_commit(actor, ability, cell)
 		):
 			effective_waypoints = _director.preview_waypoints_for_hover(
-				_proj(, false, preview_state), actor, cell, effective_waypoints, ability, true, preview_state,
+				_proj(), actor, cell, effective_waypoints, ability, true, preview_state,
 			)
 
 		if (
@@ -7362,13 +7392,13 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.is_run_ability(ability):
 					if effective_waypoints.is_empty():
 						effective_waypoints = _director.preview_waypoints_for_hover(
-							_proj(, false, preview_state), actor, cell, effective_waypoints, ability,
+							_proj(), actor, cell, effective_waypoints, ability, false, preview_state
 						)
 					_try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles)
 					return slots
 				if effective_waypoints.is_empty():
 					effective_waypoints = _director.preview_waypoints_for_hover(
-						_proj(, false, preview_state), actor, cell, effective_waypoints, ability,
+						_proj(), actor, cell, effective_waypoints, ability, false, preview_state
 					)
 				if _try_commit_voluntary_walk(slots, unit_id, actor, cell, effective_waypoints, legal_move_tiles):
 					_maybe_append_premove_action_pair(
@@ -7838,8 +7868,7 @@ func _build_enemy_commit_slots(
 				approach_path = waypoints.duplicate()
 			else:
 				approach_path = _director.preview_waypoints_for_hover(
-					board, actor, approach, [], ability,
-				, false, preview_state)
+					board, actor, approach, [], ability, false, preview_state)
 			var rng: int = _ability_range(actor)
 			if rng >= 0 and GridSystem.manhattan(approach, enemy.position) > rng:
 				slots["invalid"] = "Target is out of range."
@@ -7950,7 +7979,7 @@ func _append_module_awaiting_target(
 		if wps.is_empty() and AbilitySystem.ability_has_movement_effect(committed.ability, actor):
 			if AbilitySystem.ability_has_dash(committed.ability, actor):
 				wps = _director.preview_waypoints_for_hover(
-					_proj(, false, preview_state), actor, cell, [], committed.ability, true,
+					_proj(), actor, cell, [], committed.ability, true, preview_state,
 				)
 			else:
 				wps = _corridor_waypoints_to_cell(actor, cell)
@@ -8258,7 +8287,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if _director == null or _director.board == null or not _director.board.is_in_bounds(cell):
 		return ""
 	if dragging:
-		## F5: drag preview is the unit sprite only ΓÇö hide planning emoji cursor.
+		## F5: drag preview is the unit sprite only ╬ô├ç├╢ hide planning emoji cursor.
 		return ""
 	var sel_id: int = _director.selected_unit_id
 	if sel_id < 0:
@@ -8434,8 +8463,7 @@ func _hover_walk_waypoints_for_skill(
 			var origin: Vector2i = _proj_origin(actor)
 			if approach != origin:
 				return _director.preview_waypoints_for_hover(
-					_proj(, false, preview_state), actor, approach, [], ability,
-				, false, preview_state)
+					_proj(), actor, approach, [], ability, false, preview_state)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
 		return _hover_paint_waypoints_for_cell(actor, cell)
