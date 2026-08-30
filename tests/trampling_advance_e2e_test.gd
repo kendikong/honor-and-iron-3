@@ -764,7 +764,7 @@ static func _expected_hover_move_path(
 	unit: UnitState,
 	cell: Vector2i,
 ) -> Array[Vector2i]:
-	var origin: Vector2i = input._active_move_drag_origin(unit)
+	var origin: Vector2i = input._phase_entry_stand(unit)
 	if origin.x <= -900000:
 		return []
 	if cell == origin:

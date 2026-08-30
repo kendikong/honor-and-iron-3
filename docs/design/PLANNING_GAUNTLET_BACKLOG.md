@@ -43,6 +43,9 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | GAP-007 | HIGH | `_seed_movement_origins` passes preview | `3ddabb40f` | 29 |
 | GAP-008 | HIGH | Director `planning_live_preview` + waypoint pass-through | `3ddabb40f` | 29 |
 | GAP-009 | MED | Blue flood / pathfinding fork: MOVE module used skill pathfinding while PRE/POST used basic walk | `a441018a3` | 31 |
+| GAP-010 | MED | `_planning_phase_allows_live_path_stand` label fork vs movement-step gate | *(this commit)* | 32 |
+| GAP-011 | MED | Swap approach used `base_board` instead of `preview_board` | *(this commit)* | 32 |
+| GAP-012 | MED | Action-range live-path tail without movement-step guard | *(this commit)* | 32 |
 
 ---
 
@@ -69,6 +72,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | 28 | `edb324bdb` | GAP-005 REGRESSED | GAP-006–008 HIGH new | 72 FAIL | Origin API unified; merge paths still leaked |
 | 30 | `0942e736` | all GAP/FIX PASS | no new HIGH | 86 PASS | `move_leg_origin_cell` SSOT; backlog/matrix synced |
 | 31 | `64f67530a` | GAP-009 + FIX-001..006 FIXED | no new HIGH | 88 PASS | Unified pathfinding; gate = T3 mimic only; legacy PlanningQaGate archaeology |
+| 32 | *(this commit)* | GAP-010–012 FIXED | no new HIGH | TBD | Movement-step gates; swap preview_board; action-range guard |
 
 ---
 
@@ -77,4 +81,4 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Created backlog; seeded from round 26 fresh audit; retracted round 25 as non-conforming loop |
-| 2026-08-30 | Round 31: GAP-009 closed; FIX-001–006 re-verified; static two-pass PASS score 88 (`PLANNING_GAUNTLET_ROUND31.md`); legacy PlanningQaGate archaeology |
+| 2026-08-30 | Round 32: GAP-010–012 closed — movement-step gates, swap preview_board, action-range guard |

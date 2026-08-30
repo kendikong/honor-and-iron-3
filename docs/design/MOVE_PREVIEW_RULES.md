@@ -130,6 +130,8 @@ Do not add extra clear rules beyond this.
 
 **Pathfinding / blue flood / corridor:** one gate — `active_movement_planning_step` + `_basic_walk_pathfinding_active` (not PRE/POST/SKILL_AWAITING labels). MOVE-module walk-only legs use the same basic-walk path as premove and postmove; dash/teleport/relocation keep their own geometry.
 
+**Economy / sim-resync / red-range extend:** same movement-step gate — `_basic_move_allowed`, `_movement_preview_resync_after_sim_allowed`, and live-path tail in `action_range_intent_stand_cell` require `active_movement_planning_step` (removed `_planning_phase_allows_live_path_stand` label fork, round 32).
+
 **Painted routes:** Drag through blue tiles to build a path; preview follows that route to the hover tile.
 
 **Run:** No change to current behavior — run icon already signals when Run is used.
@@ -417,7 +419,7 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Added:** `_voluntary_walk_planning_active()` (timeline movement-step truth), `_movement_planning_excluding_autorun()` (breaks auto-run ↔ movement-step recursion), `_skill_commit_path_active()` (armed-skill commit path; replaces `not force_basic` on enemy/ally/skill slots).
 - **Unified:** `_voluntary_walk_corridor_paint_active()` single corridor gate; `_post_move_corridor_orbit_active()` for POST-only orbit; sealed hover may fall through when corridor paint is active.
 - **Tests:** stripped `force_basic_movement = …` from harnesses; `live_movement_timeline_qa_mixin` deselects skill (`selected_ability_index = -1`) for basic-walk legs; removed `_test_force_basic_flag`.
-- **Closed (2026-08-29):** `painted_route_premove_vs_move_equivalence` still FAIL; `charge_strike_composite` / `painted_landing_hover` orbit modes need one owner for frozen-landing vs corridor-orbit without reintroducing slot branches. **Fixed (2026-08-29):** sealed-leg pathfinding unified (pass 26); voluntary-walk preview single owner `_refresh_voluntary_walk_hover_preview` + `_apply_voluntary_walk_drag_preview`; phase cursor gates orbit/corridor.
+- **Closed (2026-08-29):** `charge_strike_composite` / `painted_landing_hover` orbit modes unified under `_refresh_voluntary_walk_hover_preview` + `PlanningRoutePolicy`; sealed-leg pathfinding unified (pass 26–27). Legacy `PlanningQaGate.tscn` checklist rows may still drift — gate uses T3 mimic parity suite only.
 
 **Pass 28 (Sealed-leg hover policy owner — 2026-08-29):**
 - **Policy API:** `PlanningRoutePolicy.sealed_leg_hover_mode(is_sealed, route_len, voluntary_walk_paint, is_hover_move_tile, is_hover_attack_target)` → `NONE | FREEZE_LANDING | RESTORE_ONLY | EXTEND_CORRIDOR`. Helpers: `hover_rewrite_allowed`, `should_restore_locked_route`, `use_basic_walk_corridor_legality`, `allows_awaiting_relocation_hop`.
@@ -426,7 +428,15 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Wired:** `_sealed_leg_hover_mode`, `_sealed_leg_hover_restore_if_blocked`, `live_move_hover_rewrite_applies`, `_refresh_hover_interaction_preview`, `_sync_movement_preview_after_hover_sim`, `on_hover_moved` (cell-changed paint/restore), `_refresh_movement_slot_hover_preview` / `_movement_slot_hover_preview_applies`, `_write_movement_hover_preview_paths` (relocation hop), `_assemble_voluntary_walk_preview_path`, `_corridor_waypoints_to_cell`, `_route_pathfinding_ability`, `_can_move_to` sealed-orbit legality.
 - **Removed:** sealed-orbit `MovementSystem.find_path` shortcut in `_corridor_waypoints_to_cell`; E7 band-aids (`not voluntary_walk` + sealed-route-size checks blocking relocation hop); duplicate restore blocks (`painted_move_route_locked` + `_sealed_painted_preview_active` parallel paths); `live_move_hover_rewrite_applies` unconditional sealed+voluntary_walk `return true`; `frozen_landing_required` policy parameter (folded into `not voluntary_walk_corridor_paint` → `FREEZE_LANDING`).
 - **PRE ≡ MOVE-module:** by construction — same policy mode + same `voluntary_walk_corridor_waypoints` for corridor extend; timeline/slot only changes execution order.
-- **Pass 28b (completion):** `_sealed_leg_structurally_locked` + `painted_move_route_locked(unit, cell)` delegates per-cell block to policy; `_voluntary_walk_hover_paint_applies` unifies PRE/MOVE-module/POST hover paint eligibility; `_movement_slot_hover_preview_applies` and `_refresh_hover_interaction_preview` call it; `on_hover_moved` `allow_hover_paint` uses `painted_move_route_locked(p_unit, cell)`.
+- **Pass 28b (completion):** `_sealed_leg_structurally_locked` + `painted_move_route_locked(unit, cell)` delegates per-cell block to policy; `_voluntary_walk_hover_paint_applies` unifies PRE/MOVE-module/POST hover paint eligibility; `on_hover_moved` `allow_hover_paint` uses `painted_move_route_locked(p_unit, cell)`.
+
+**Pass 32 (final MED gap close — 2026-08-30):**
+- **Removed:** `_planning_phase_allows_live_path_stand` (PRE/POST/SKILL_AWAITING label fork). `_voluntary_walk_planning_active`, `_basic_move_allowed`, `_movement_preview_resync_after_sim_allowed` now gate on `active_movement_planning_step` only.
+- **Fixed:** `action_range_intent_stand_cell` live-path tail (`move_intent_destination`) requires `active_movement_planning_step`.
+- **Fixed:** `adjust_swap_intent_actor_pose` uses `preview_board` for swap approach (not `base_board`).
+- **Unified:** sealed landing on hover uses movement-step gate for all timings (not PREMOVE-only).
+- **Tests:** `trampling_advance_e2e_test` uses `_phase_entry_stand` (retired `_active_move_drag_origin`).
+- **Note:** Historical pass notes above may name removed symbols; current owner is `_refresh_voluntary_walk_hover_preview`.
 
 ### Action-range economy gate
 

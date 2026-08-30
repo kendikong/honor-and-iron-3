@@ -44,7 +44,7 @@ func _voluntary_walk_planning_active() -> bool:
 	if _director == null or _director.selected_unit_id < 0:
 		return false
 	var actor: UnitState = _proj_unit(_director.selected_unit_id)
-	return actor != null and _planning_phase_allows_live_path_stand(actor.id) and active_movement_planning_step(actor)
+	return actor != null and active_movement_planning_step(actor)
 
 func _skill_commit_path_active() -> bool:
 	if _director == null:
@@ -1655,11 +1655,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and (_drag_route[0] as Vector2i) != leg_origin
 				):
 					_clear_hover_drag_route()
-				if (
-					_director.planning_timeline_phase_kind(p_unit.id)
-					== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
-					and not dragging
-				):
+				if not dragging:
 					_seal_painted_preview_landing_if_needed(p_unit)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
@@ -1718,7 +1714,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
-	if _voluntary_walk_orbit_phase_open(p_unit) or _planning_phase_allows_live_path_stand(p_unit.id):
+	if active_movement_planning_step(p_unit):
 		return true
 	if _director == null or p_unit == null:
 		return false
@@ -4158,9 +4154,7 @@ func _basic_move_allowed() -> bool:
 		return false
 	if move_actor == null:
 		return false
-	if _planning_phase_allows_live_path_stand(move_actor.id):
-		return true
-	if _voluntary_walk_orbit_phase_open(move_actor):
+	if active_movement_planning_step(move_actor):
 		return true
 	var awaiting: TimelineAction = _awaiting_action_for(move_actor)
 	if AbilitySystem.planning_modular_post_move_open(move_actor, awaiting):
@@ -5789,15 +5783,6 @@ func _armed_tile_target_locks_action_range(actor: UnitState) -> bool:
 
 
 
-func _planning_phase_allows_live_path_stand(unit_id: int) -> bool:
-	if _director == null or unit_id < 0:
-		return false
-	var phase_kind: int = _director.planning_timeline_phase_kind(unit_id)
-	return (
-		phase_kind == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
-		or phase_kind == CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-		or phase_kind == CombatDirector.PlanningTimelinePhaseKind.SKILL_AWAITING
-	)
 ## Where red action-range tiles anchor — delegates to phase-entry stand (R1/R3).
 ## Exceptions (documented): module handoff prior stand; committed move target;
 ## armed-tile range lock; live_path terminus only during active movement step (not locked red).
@@ -5851,7 +5836,12 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 	if hover_target_id >= 0:
 		return stand
 	var dest: Vector2i = move_intent_destination(unit_id)
-	if _director.board.is_in_bounds(dest) and dest != stand and _is_hover_move_cell(actor, dest):
+	if (
+		active_movement_planning_step(actor)
+		and _director.board.is_in_bounds(dest)
+		and dest != stand
+		and _is_hover_move_cell(actor, dest)
+	):
 		return dest
 	if is_live_preview_active() and preview_state.preview_board != null:
 		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
