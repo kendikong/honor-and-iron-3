@@ -995,6 +995,19 @@ func _apply_planning_tile_layers(
 	)
 	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
+	if _planning_input != null:
+		var settled_paint: PlanningSettledPaint = _planning_input.get_settled_paint()
+		if settled_paint != null and settled_paint.matches_hover(unit.id, _hover_coord):
+			_hover_action_range_tiles = settled_paint.action_range_tiles.duplicate()
+			_hover_blast_tiles = settled_paint.blast_tiles.duplicate()
+			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
+			if _can_show_move_tiles(unit, selected_ability):
+				var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
+				if locked_move.x > -900000:
+					_hover_move_tiles = _reachable_move_tiles_for_origin(
+						unit, p_unit, selected_ability, locked_move, is_selected_player,
+					)
+			return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
@@ -2559,6 +2572,10 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	if unit == null:
 		return Vector2i(-999999, -999999)
 	if _planning_input != null and _is_selected_player_unit(unit):
+		var settled_paint: PlanningSettledPaint = _planning_input.get_settled_paint()
+		if settled_paint != null and settled_paint.is_sealed and settled_paint.unit_id == unit.id:
+			if settled_paint.stand_origin.x > -900000:
+				return settled_paint.stand_origin
 		var stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
 		if stand.x > -900000:
 			return stand

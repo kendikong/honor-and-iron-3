@@ -58,14 +58,14 @@ if ($IncludeLegacyTier12) {
 }
 
 Write-Output ""
-Write-Output "=== Hover Preview Carried SSOT (structural) ==="
-$ssotGate = Join-Path $PSScriptRoot "run_hover_preview_ssot_gate.ps1"
-& $ssotGate
+Write-Output "=== Planning SSOT structural gates ==="
+$ssotGates = Join-Path $PSScriptRoot "run_planning_ssot_gates.ps1"
+& $ssotGates
 if ($LASTEXITCODE -ne 0) {
-	Write-Output "--- Hover Preview Carried SSOT: FAIL ---"
+	Write-Output "--- Planning SSOT structural gates: FAIL ---"
 	exit 1
 }
-Write-Output "--- Hover Preview Carried SSOT: PASS ---"
+Write-Output "--- Planning SSOT structural gates: PASS ---"
 Write-Output ""
 
 Write-Output "=== AOE footprint contract (geometry + scenario/live audits) ==="

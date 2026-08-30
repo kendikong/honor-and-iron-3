@@ -5,6 +5,7 @@ extends RefCounted
 
 const _PlanningRoutePolicy := preload("res://core/systems/planning_route_policy.gd")
 const _HoverPreviewBundle := preload("res://presentation/planning_hover_preview.gd")
+const _SettledPaintBundle := preload("res://presentation/planning_settled_paint.gd")
 
 var auto_use_skill_after_move: bool = true
 
@@ -90,6 +91,7 @@ var _intent_snapshot_valid: bool = false
 var _intent_snapshot_unit_id: int = -1
 var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _settled_hover_preview: _HoverPreviewBundle = null
+var _settled_paint: _SettledPaintBundle = null
 ## Settled hover used projected-delta move-only preview when overlay range already correct at stand.
 var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
@@ -326,6 +328,7 @@ func _try_click_through_drag_armed(local: Vector2) -> bool:
 
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
+	## Drag drop == hover click: settle via on_hover_moved inside _commit_at_interaction_cell.
 	_drag_move_commit_instant = had_movement
 	_flush_drag_preview_refresh()
 	var released_unit_id: int = _drag_unit_id
@@ -342,74 +345,39 @@ func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
 		_play_sfx("invalid")
 		_drag_move_commit_instant = false
 		return false
-	var legal_move_tiles: Array[Vector2i] = _snapshot_drag_legal_move_tiles()
 	var committed: bool = false
 	var board: BoardState = _director.board
 	var actor := board.get_unit_by_id(released_unit_id) if board != null else null
 	var cell: Vector2i = _pointer_grid_cell()
 	if actor == null or board == null or not board.is_in_bounds(cell):
+		_drag_move_commit_instant = false
 		return false
 	var dropped_on := _unit_at_input_cell(cell)
 	if dropped_on != null and dropped_on.id != actor.id:
 		if _is_selectable_player_unit(dropped_on):
 			if _director.selected_ability_index < 0:
 				_director.select_unit(dropped_on.id)
+				_drag_move_commit_instant = false
 				return false
-			var params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
-			var paired_ok: bool = _commit_at_cell(
-				released_unit_id,
-				params.cell,
-				local,
-				params.waypoints,
-				params.legal_move_tiles,
-				params.preferred,
-				int(params.get("face_dir", -1)),
-			)
+			committed = _commit_at_interaction_cell(released_unit_id, cell, local, dropped_on.id)
 			_drag_move_commit_instant = false
-			return paired_ok
+			return committed
 		if selected_phase_action_exhausted(released_unit_id):
 			_play_sfx("invalid")
+			_drag_move_commit_instant = false
 			return false
-		var enemy_params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
-		return _plan_approach_or_trample_on_enemy(
-			released_unit_id,
-			dropped_on,
-			local,
-			enemy_params.preferred,
-			enemy_params.waypoints,
-			enemy_params.legal_move_tiles,
-		)
+		committed = _commit_at_interaction_cell(released_unit_id, cell, local, dropped_on.id)
+		_drag_move_commit_instant = false
+		return committed
 	if cell == _proj_origin(actor):
 		if _drag_unit_was_selected:
-			var origin_params: Dictionary = _commit_interaction_params(cell, -1)
-			committed = _commit_at_cell(
-				released_unit_id,
-				origin_params.cell,
-				local,
-				origin_params.waypoints,
-				origin_params.legal_move_tiles,
-				origin_params.preferred,
-				int(origin_params.get("face_dir", -1)),
-			)
+			committed = _commit_at_interaction_cell(released_unit_id, cell, local)
+		_drag_move_commit_instant = false
 		return committed
 	if dropped_on == null:
-		var params: Dictionary = _commit_interaction_params(cell, -1)
-		if _drag_route_commits_active():
-			var painted_drop: Array[Vector2i] = _route_waypoints_for_commit()
-			if not painted_drop.is_empty():
-				params.waypoints = painted_drop
-		committed = _commit_at_cell(
-			released_unit_id,
-			params.cell,
-			local,
-			params.waypoints,
-			params.legal_move_tiles,
-			params.preferred,
-			int(params.get("face_dir", -1)),
-		)
+		committed = _commit_at_interaction_cell(released_unit_id, cell, local)
 	_drag_move_commit_instant = false
 	return committed
-
 
 func on_right_click() -> void:
 	if aiming:
@@ -706,6 +674,10 @@ func _apply_settled_preview_result(res: Dictionary) -> void:
 
 func get_settled_hover_preview() -> _HoverPreviewBundle:
 	return _settled_hover_preview
+
+
+func get_settled_paint() -> _SettledPaintBundle:
+	return _settled_paint
 
 
 func _active_hover_cell() -> Vector2i:
@@ -2919,9 +2891,8 @@ func _plan_approach_or_trample_on_enemy(
 	legal_move_tiles: Array[Vector2i] = [],
 ) -> bool:
 	var target_cell: Vector2i = enemy.position if enemy != null else preferred_tile
-	return _commit_at_cell(
-		unit_id, target_cell, local, waypoints, legal_move_tiles, preferred_tile,
-	)
+	var attack_id: int = enemy.id if enemy != null else -1
+	return _commit_at_interaction_cell(unit_id, target_cell, local, attack_id)
 
 
 const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
@@ -3463,6 +3434,15 @@ func _store_intent_snapshot(
 		face_dir,
 		move_origin,
 	)
+	if _director != null and _director.board != null:
+		_settled_paint = _SettledPaintBundle.seal(
+			_director,
+			_director.board,
+			self,
+			unit_id,
+			hover_cell,
+			key,
+		)
 
 
 func _preview_paths_snapshot_for_settle(
@@ -3511,6 +3491,7 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_unit_id = -1
 	_intent_snapshot_hover_cell = Vector2i(-999999, -999999)
 	_settled_hover_preview = null
+	_settled_paint = null
 
 
 func _mouse_local_for_facing() -> Vector2:

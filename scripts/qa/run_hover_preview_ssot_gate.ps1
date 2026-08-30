@@ -83,8 +83,27 @@ if ($interactMatch.Success) {
 	$failures.Add("[FAIL] could not parse _commit_at_interaction_cell for structural audit")
 }
 
-$harnessPath = Join-Path $projectRoot "tests\planning_checklist_harness.gd"
-	if (Test-Path -LiteralPath $harnessPath) {
+$dropMatch = [regex]::Match($text, "func _process_unit_drop\([\s\S]*?\nfunc ")
+if ($dropMatch.Success) {
+	$dropBody = $dropMatch.Value
+	if ($dropBody -match "_commit_at_cell\(") {
+		$failures.Add("[FAIL] _process_unit_drop still calls _commit_at_cell (drag must use _commit_at_interaction_cell)")
+	}
+	if ($dropBody -match "_route_waypoints_for_commit\(\)") {
+		$failures.Add("[FAIL] _process_unit_drop still injects drop-time route waypoints")
+	}
+	if ($dropBody -notmatch "_commit_at_interaction_cell\(") {
+		$failures.Add("[FAIL] _process_unit_drop missing _commit_at_interaction_cell (drag == hover)")
+	}
+} else {
+	$failures.Add("[FAIL] could not parse _process_unit_drop for drag/hover parity audit")
+}
+
+$harnessPath = Join-Path $projectRoot "tests\harness\planning_checklist_harness.gd"
+if (-not (Test-Path -LiteralPath $harnessPath)) {
+	$harnessPath = Join-Path $projectRoot "tests\planning_checklist_harness.gd"
+}
+if (Test-Path -LiteralPath $harnessPath) {
 	$harnessText = Get-Content -LiteralPath $harnessPath -Raw
 	$hoverFn = [regex]::Match($harnessText, 'static func slots_for_hover\([\s\S]*?\n\n')
 	if ($hoverFn.Success -and $hoverFn.Value -match '_final_commit_slots_for_interaction\(') {
