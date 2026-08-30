@@ -42,7 +42,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | GAP-006 | HIGH | `anchor_preview_paths_to_latest_stand` sealed overwrite | `3ddabb40f` | 29 |
 | GAP-007 | HIGH | `_seed_movement_origins` passes preview | `3ddabb40f` | 29 |
 | GAP-008 | HIGH | Director `planning_live_preview` + waypoint pass-through | `3ddabb40f` | 29 |
-| GAP-009 | MED | Blue flood / pathfinding fork: MOVE module used skill pathfinding while PRE/POST used basic walk | *(this commit)* | 31 |
+| GAP-009 | MED | Blue flood / pathfinding fork: MOVE module used skill pathfinding while PRE/POST used basic walk | `a441018a3` | 31 |
 
 ---
 
@@ -68,7 +68,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass |
 | 28 | `edb324bdb` | GAP-005 REGRESSED | GAP-006–008 HIGH new | 72 FAIL | Origin API unified; merge paths still leaked |
 | 30 | `0942e736` | all GAP/FIX PASS | no new HIGH | 86 PASS | `move_leg_origin_cell` SSOT; backlog/matrix synced |
-| 31 | *(this commit)* | GAP-009 FIXED | no new HIGH | TBD | Unified basic-walk pathfinding on `active_movement_planning_step` |
+| 31 | `a441018a3` | GAP-009 FIXED | no new HIGH | TBD | Unified basic-walk pathfinding on `active_movement_planning_step` |
 
 ---
 
