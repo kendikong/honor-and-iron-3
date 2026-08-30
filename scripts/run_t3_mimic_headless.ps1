@@ -18,7 +18,7 @@ $reportsDir = Join-Path $projectRoot "reports"
 $latestStdout = Join-Path $reportsDir "t3_mimic_run_latest.txt"
 $latestStderr = Join-Path $reportsDir "t3_mimic_run_latest.stderr.txt"
 $process = Start-Process -FilePath $GodotPath `
-	-ArgumentList "--headless", "--path", $projectRoot, "--script", "res://tests/run_t3_mimic_headless.gd" `
+	-ArgumentList "--headless", "--path", $projectRoot, "res://tests/T3MimicHeadless.tscn" `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `

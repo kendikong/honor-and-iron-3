@@ -217,6 +217,31 @@ static func _wire_solo_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 	return overlay
 
 
+## TestBattle/training board with map_stub + full wire_fixture (swap, bible, bash boards).
+## For solo bruiser action-range tests use wire_bruiser_solo_fixture instead.
+static func wire_training_board_fixture(board: BoardState, selected_id: int) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.turn_start_board = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = selected_id
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var core: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"knight": board.get_unit_by_id(selected_id),
+	}
+	return wire_fixture(core)
+
+
 static func wire_fixture(fix: Dictionary) -> Dictionary:
 	var map_stub := QaPlanningMapStub.new()
 	var intent := CombatIntentState.new()

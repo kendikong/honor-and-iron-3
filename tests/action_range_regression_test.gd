@@ -1008,12 +1008,12 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 	var fix: Dictionary = Checklist.wire_swap_board(Checklist.SWAP_ALLY_CELL)
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
-	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
-	fix["overlay"] = overlay
-	var swap_idx: int = Checklist.select_ability(fix, Checklist.KNIGHT_SWAP_ID)
-	if swap_idx < 0:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	var k1_id: int = int(fix.k1_id)
+	if Checklist.select_ability_for_unit(fix, k1_id, Checklist.KNIGHT_SWAP_ID) < 0:
 		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: knight_swap missing")
 		return
+	Checklist.select_unit(fix, k1_id, Checklist.SWAP_ALLY_CELL)
 	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.SWAP_ALLY_CELL)
 	if swap_slots.get("invalid", false):
 		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: swap commit invalid")
@@ -1059,10 +1059,11 @@ static func _test_premove_swap_committed_orbit_walk_intent(failures: Array[Strin
 	var fix: Dictionary = Checklist.wire_swap_board(Checklist.WALK_SWAP_ALLY_CELL)
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
-	var swap_idx: int = Checklist.select_ability(fix, Checklist.KNIGHT_SWAP_ID)
-	if swap_idx < 0:
+	var k1_id: int = int(fix.k1_id)
+	if Checklist.select_ability_for_unit(fix, k1_id, Checklist.KNIGHT_SWAP_ID) < 0:
 		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: knight_swap missing")
 		return
+	Checklist.select_unit(fix, k1_id, Checklist.WALK_SWAP_ALLY_CELL)
 	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.WALK_SWAP_ALLY_CELL)
 	if swap_slots.get("invalid", false):
 		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: swap commit invalid")

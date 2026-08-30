@@ -347,6 +347,7 @@ static func assert_action_range_hidden(
 
 
 static func commit_production(fix: Dictionary, cell: Vector2i) -> Dictionary:
+	hover(fix, cell)
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
 	var slots: Dictionary = slots_for_click(fix, cell)
@@ -1292,26 +1293,7 @@ static func wire_swap_board(ally_cell: Vector2i) -> Dictionary:
 
 
 static func _wire_board_fixture(board: BoardState, selected_id: int) -> Dictionary:
-	var input := CombatPlanningInput.new()
-	var director := CombatDirector.new()
-	director.plan_pre_move = Timeline.new()
-	director.plan_action = Timeline.new()
-	director.plan_post_move = Timeline.new()
-	director.board = board
-	director.base_board = board.clone()
-	director.projected_state = board.clone()
-	director.turn_start_board = board.clone()
-	director.phase = CombatDirector.Phase.PLANNING
-	director.selected_unit_id = selected_id
-	input._director = director
-	input.auto_use_skill_after_move = true
-	var core: Dictionary = {
-		"input": input,
-		"director": director,
-		"board": board,
-		"knight": board.get_unit_by_id(selected_id),
-	}
-	return PlanningDragE2EHarness.wire_fixture(core)
+	return PlanningDragE2EHarness.wire_training_board_fixture(board, selected_id)
 
 
 static func select_unit(fix: Dictionary, unit_id: int, stand_cell: Vector2i = Vector2i(-999999, -999999)) -> void:
