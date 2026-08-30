@@ -3251,6 +3251,8 @@ func _commit_at_interaction_cell(
 	attack_target_id: int = -1,
 ) -> bool:
 	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
+	var commit_cell: Vector2i = params.cell as Vector2i
+	on_hover_moved(commit_cell)
 	return _commit_at_cell(
 		unit_id,
 		params.cell,
