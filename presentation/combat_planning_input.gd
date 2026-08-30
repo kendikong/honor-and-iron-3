@@ -1892,8 +1892,13 @@ func _flush_hover_heavy_sync() -> void:
 	var flush_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)
-	_run_hover_sim_refresh()
-	_sync_movement_preview_after_hover_sim(flush_cell)
+	if _director != null and _director.selected_ability_index >= 0:
+		_run_hover_sim_refresh()
+		_sync_movement_preview_after_hover_sim(flush_cell)
+	elif _director != null and _director.selected_unit_id >= 0:
+		var flush_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if flush_unit != null and active_movement_planning_step(flush_unit):
+			_refresh_hover_interaction_preview(flush_cell)
 	_run_hover_overlay_refresh()
 	_refresh_action_range_overlay_when_gate_off()
 	if dragging and _drag_unit_id >= 0:
@@ -2242,6 +2247,27 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		return
 	if active_movement_planning_step(p_unit):
 		var step_ability: AbilityData = _selected_ability_data(p_unit)
+		if (
+			step_ability != null
+			and _is_awaiting_movement_endpoint(p_unit, step_ability)
+		):
+			var endpoint_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
+				p_unit, cell, step_ability,
+			)
+			if not endpoint_wps.is_empty():
+				_write_movement_hover_preview_paths(p_unit.id, cell, endpoint_wps)
+			var await_res: Dictionary = _preview_at_interaction_cell(
+				p_unit.id,
+				cell,
+				cell,
+				-1,
+				endpoint_wps,
+				_snapshot_drag_legal_move_tiles(),
+			)
+			if not _is_invalid_dict(await_res):
+				_apply_preview_result_preserving_hover_paths(await_res)
+			_refresh_click_target_highlight()
+			return
 		var step_target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if step_ability != null and step_target_id >= 0:
 			var approach_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
@@ -2262,7 +2288,16 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				_refresh_click_target_highlight()
 				return
 			_clear_stale_painted_preview_route(p_unit.id)
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, step_target_id, [])
+			var in_range_res: Dictionary = _preview_at_interaction_cell(
+				p_unit.id,
+				cell,
+				cell,
+				step_target_id,
+				[],
+				_snapshot_drag_legal_move_tiles(),
+			)
+			if not _is_invalid_dict(in_range_res):
+				_apply_preview_result_preserving_hover_paths(in_range_res)
 			_refresh_click_target_highlight()
 			return
 		var step_ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
@@ -2392,6 +2427,8 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	if _sealed_leg_hover_restore_if_blocked(hover_unit, cell):
 		return
 	if not active_movement_planning_step(hover_unit):
+		return
+	if _director.selected_ability_index < 0:
 		return
 	if not _movement_preview_resync_after_sim_allowed(hover_unit):
 		return
@@ -2710,7 +2747,7 @@ func _refresh_live_interaction_preview(
 	if unit == null:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else move_coord
-	if active_movement_planning_step(unit):
+	if active_movement_planning_step(unit) and attack_target_id < 0 and waypoints.is_empty():
 		_refresh_voluntary_walk_hover_preview(unit, cell)
 		return
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
@@ -4486,6 +4523,20 @@ func painted_corridor_waypoints_for_blue_tiles(unit_id: int) -> Array[Vector2i]:
 	return route.slice(1)
 
 
+func movement_hover_route_display_applies(actor: UnitState, ability: AbilityData) -> bool:
+	if actor == null:
+		return false
+	if ability == null:
+		return active_movement_planning_step(actor)
+	if AbilitySystem.planning_allows_paired_premove(ability):
+		return true
+	if (
+		AbilitySystem.ability_uses_direct_relocation(ability, actor)
+		and _is_awaiting_movement_endpoint(actor, ability)
+	):
+		return true
+	return false
+
 func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _director == null or unit_id < 0:
 		return []
@@ -4495,23 +4546,17 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if actor == null:
 		return []
 	var movement_step: bool = active_movement_planning_step(actor)
-	if not movement_step:
-		return CombatPlanningPreview.display_route_cells_from_preview(
-			unit_id,
-			preview_state,
-			_director,
-			_proj(),
-			false,
-		)
+	if movement_step:
+		var route_ability: AbilityData = _selected_ability_data(actor)
+		if not movement_hover_route_display_applies(actor, route_ability):
+			return []
 	return CombatPlanningPreview.display_route_cells_from_preview(
 		unit_id,
 		preview_state,
 		_director,
 		_proj(),
-		true,
+		movement_step,
 	)
-
-
 func clear_hover_route_preview() -> void:
 	var preserved_paths: Dictionary = {}
 	for uid: Variant in preview_state.painted_leg_sealed.keys():
@@ -8520,17 +8565,16 @@ func _hover_walk_waypoints_for_skill(
 ) -> Array[Vector2i]:
 	if actor == null or ability == null or _director == null:
 		return []
-	var enemy_id: int = _attack_target_id_at_cell(actor, cell)
-	if enemy_id >= 0 and _director.board != null:
-		var enemy: UnitState = _director.board.get_unit_by_id(enemy_id)
+	var target_id: int = _attack_target_id_at_cell(actor, cell)
+	if target_id >= 0 and _director.board != null:
+		var target: UnitState = _director.board.get_unit_by_id(target_id)
 		if (
-			enemy != null
-			and enemy.is_enemy()
+			target != null
 			and not AbilitySystem.is_movement_skill(ability)
-			and not _in_ability_range(actor, enemy)
+			and not _in_ability_range(actor, target)
 		):
 			var approach: Vector2i = _director.preview_approach_tile(
-				actor.id, enemy.id, _director.selected_ability_index, enemy.position,
+				actor.id, target.id, _director.selected_ability_index, target.position,
 			)
 			var origin: Vector2i = _proj_origin(actor)
 			if approach != origin:
@@ -8547,7 +8591,6 @@ func _hover_walk_waypoints_for_skill(
 	if _tile_target_movement_skill_commits_at_cell(actor, ability, cell):
 		return empty
 	return _hover_paint_waypoints_for_cell(actor, cell)
-
 
 func _skill_takes_priority_over_basic_move() -> bool:
 	if _director == null:

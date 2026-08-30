@@ -612,12 +612,7 @@ func _movement_hover_route_cells(unit_id: int = -1) -> Array[Vector2i]:
 func _movement_hover_route_context_active(unit: UnitState, ability: AbilityData) -> bool:
 	if _planning_input == null or unit == null or ability == null:
 		return false
-	if (
-		AbilitySystem.ability_uses_direct_relocation(ability, unit)
-		and _planning_input._is_awaiting_movement_endpoint(unit, ability)
-	):
-		return true
-	return _planning_input.active_movement_planning_step(unit)
+	return _planning_input.movement_hover_route_display_applies(unit, ability)
 
 
 func _display_move_route_cells(unit_id: int) -> Array[Vector2i]:
