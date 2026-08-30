@@ -1,4 +1,4 @@
-﻿class_name CombatPlanningInput
+class_name CombatPlanningInput
 extends RefCounted
 
 ## H&I planning semantics ported from board_view ╬ô├ç├╢ used by TacticalInputController.
@@ -811,6 +811,8 @@ func _authoritative_move_hover_paths_payload() -> Dictionary:
 	var path: Array = preview_state.preview_paths.get(unit_id, [])
 	if path.is_empty():
 		return {}
+	if _paired_premove_approach_hover_authoritative(unit_id):
+		return {unit_id: path.duplicate()}
 	var actor: UnitState = _proj_unit(unit_id)
 	var hover_cell: Vector2i = _active_hover_cell()
 	if actor != null and _director.board != null and _director.board.is_in_bounds(hover_cell):
@@ -827,6 +829,30 @@ func _authoritative_move_hover_paths_payload() -> Dictionary:
 	if path.size() >= 2 and actor != null and _voluntary_walk_drag_trim_active(actor):
 		path = _trim_route_for_prior_forbidden(path, unit_id, _active_hover_cell())
 	return {unit_id: path.duplicate()}
+
+
+func _paired_premove_approach_path_preserve_intent(unit_id: int) -> bool:
+	if _director == null or unit_id < 0 or not _skill_interaction_active():
+		return false
+	if unit_id != _director.selected_unit_id:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	var ability: AbilityData = _selected_ability_data(actor)
+	if actor == null or ability == null:
+		return false
+	if not AbilitySystem.planning_allows_paired_premove(ability):
+		return false
+	var hover_cell: Vector2i = _active_hover_cell()
+	if _attack_target_id_at_cell(actor, hover_cell) < 0:
+		return false
+	return not _hover_walk_waypoints_for_skill(actor, hover_cell, ability).is_empty()
+
+
+func _paired_premove_approach_hover_authoritative(unit_id: int) -> bool:
+	if not _paired_premove_approach_path_preserve_intent(unit_id):
+		return false
+	var path: Array = preview_state.preview_paths.get(unit_id, [])
+	return path.size() >= 2
 
 
 func _movement_hover_path_authoritative(unit_id: int) -> bool:
@@ -860,6 +886,8 @@ func _movement_hover_path_authoritative(unit_id: int) -> bool:
 				return true
 			return false
 		return true
+	if _paired_premove_approach_hover_authoritative(unit_id):
+		return true
 	if not active_movement_planning_step(actor):
 		return false
 	if _sealed_leg_structurally_locked(actor):
@@ -874,6 +902,11 @@ func _apply_live_preview(preview: Dictionary) -> void:
 	if _director != null and _director.selected_unit_id >= 0:
 		var live_unit: UnitState = _proj_unit(_director.selected_unit_id)
 		if live_unit != null and active_movement_planning_step(live_unit):
+			if preview.is_empty() or _is_invalid_dict(preview):
+				return
+			_apply_preview_result_preserving_hover_paths(preview)
+			drag_preview_failed = false
+			_last_hover_move_intent_preview = _preview_dict_is_move_only_intent(preview)
 			return
 	if preview.is_empty():
 		return
@@ -881,23 +914,34 @@ func _apply_live_preview(preview: Dictionary) -> void:
 		drag_preview_failed = true
 		_hover_preview_cache_key = ""
 		_last_hover_move_intent_preview = false
-		var preserved_sealed_paths: Dictionary = {}
+		var preserved_hover_paths: Dictionary = {}
 		if _director != null and _director.selected_unit_id >= 0:
 			var actor: UnitState = _proj_unit(_director.selected_unit_id)
-			if actor != null and preview_state.is_painted_leg_sealed(actor.id):
-				var sealed_path: Array = preview_state.preview_paths.get(actor.id, [])
-				if sealed_path.size() >= 2:
-					preserved_sealed_paths[actor.id] = sealed_path.duplicate()
+			if actor != null:
+				var hover_path: Array = preview_state.preview_paths.get(actor.id, [])
+				if hover_path.size() >= 2:
+					if preview_state.is_painted_leg_sealed(actor.id):
+						preserved_hover_paths[actor.id] = {
+							"path": hover_path.duplicate(),
+							"seal": true,
+						}
+					elif _paired_premove_approach_path_preserve_intent(actor.id):
+						preserved_hover_paths[actor.id] = {
+							"path": hover_path.duplicate(),
+							"seal": false,
+						}
 		preview_state.clear_all()
-		for unit_id: Variant in preserved_sealed_paths.keys():
-			var path: Array = preserved_sealed_paths[unit_id] as Array
-			_restore_sealed_voluntary_walk_preview(int(unit_id), path, true)
-		if preserved_sealed_paths.is_empty():
+		for unit_id: Variant in preserved_hover_paths.keys():
+			var entry: Dictionary = preserved_hover_paths[unit_id] as Dictionary
+			_restore_sealed_voluntary_walk_preview(
+				int(unit_id), entry.get("path", []) as Array, bool(entry.get("seal", false)),
+			)
+		if preserved_hover_paths.is_empty():
 			if _planning != null:
 				_planning.restore_committed_display()
 		else:
 			if _planning != null:
-				for unit_id: Variant in preserved_sealed_paths.keys():
+				for unit_id: Variant in preserved_hover_paths.keys():
 					_planning.apply_preview_paths_only(preview_state, int(unit_id))
 		_sync_intent_live_board()
 		return
@@ -2214,6 +2258,29 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		_restore_hover_preview()
 		return
 	if active_movement_planning_step(p_unit):
+		var step_ability: AbilityData = _selected_ability_data(p_unit)
+		if (
+			step_ability != null
+			and _attack_target_id_at_cell(p_unit, cell) >= 0
+			and AbilitySystem.planning_allows_paired_premove(step_ability)
+		):
+			var approach_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
+				p_unit, cell, step_ability,
+			)
+			if not approach_wps.is_empty():
+				_write_movement_hover_preview_paths(p_unit.id, cell, approach_wps)
+				var approach_res: Dictionary = _preview_at_interaction_cell(
+					p_unit.id,
+					cell,
+					cell,
+					_attack_target_id_at_cell(p_unit, cell),
+					approach_wps,
+					_snapshot_drag_legal_move_tiles(),
+				)
+				if not _is_invalid_dict(approach_res):
+					_apply_preview_result_preserving_hover_paths(approach_res)
+				_refresh_click_target_highlight()
+				return
 		_refresh_voluntary_walk_hover_preview(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
@@ -2294,6 +2361,8 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 						hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			elif ability != null:
 				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
+			if not hover_waypoints.is_empty():
+				_write_movement_hover_preview_paths(p_unit.id, cell, hover_waypoints)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			_refresh_click_target_highlight()
 			return
@@ -5063,6 +5132,11 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
 	if active_movement_planning_step(p_unit):
 		_sync_movement_hover_paths_to_overlay(p_unit.id)
+		var walk_res: Dictionary = _preview_at_interaction_cell(
+			p_unit.id, cell, cell, -1, waypoints, _snapshot_drag_legal_move_tiles(),
+		)
+		if not _is_invalid_dict(walk_res):
+			_apply_preview_result_preserving_hover_paths(walk_res)
 		_refresh_click_target_highlight()
 		return
 	_refresh_live_interaction_preview(_director.selected_unit_id, cell, -1, waypoints)

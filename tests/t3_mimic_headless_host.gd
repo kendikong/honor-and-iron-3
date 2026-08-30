@@ -9,9 +9,8 @@ func _ready() -> void:
 
 func _run() -> void:
 	var failures: Array[String] = []
-	var runner: GDScript = load("res://tests/planning_t3_mimic_runner.gd") as GDScript
 	PlanningDragE2EHarness.set_host(self)
-	runner.run_all(failures)
+	PlanningT3MimicRunner.run_all(failures)
 	PlanningDragE2EHarness.cleanup_all()
 	PlanningDragE2EHarness.set_host(null)
 	if failures.is_empty():
