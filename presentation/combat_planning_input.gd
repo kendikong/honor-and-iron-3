@@ -1618,7 +1618,7 @@ func _stage_voluntary_walk_drag_input(
 		)
 	var open_premove_hover_paint: bool = (
 		not dragging
-		and not awaiting_move_leg
+		and (not awaiting_move_leg or _voluntary_walk_corridor_paint_active(p_unit))
 		and _movement_route_paint_allowed()
 		and not move_already_planned
 	)
@@ -1634,7 +1634,10 @@ func _stage_voluntary_walk_drag_input(
 		and (
 			dragging
 			or (
-				not awaiting_move_leg
+				(
+					not awaiting_move_leg
+					or _voluntary_walk_corridor_paint_active(p_unit)
+				)
 				and _movement_route_paint_allowed()
 				and not move_already_planned
 			)
@@ -1769,7 +1772,10 @@ func on_hover_moved(cell: Vector2i) -> void:
 		if hover_unit != null and active_movement_planning_step(hover_unit):
 			if _planning != null:
 				_planning._recompute_hover_ranges_from_inputs()
-			_refresh_hover_interaction_preview(cell)
+			if _voluntary_walk_corridor_paint_active(hover_unit):
+				_refresh_voluntary_walk_hover_preview(hover_unit, cell)
+			else:
+				_refresh_hover_interaction_preview(cell)
 			_last_sim_hover_refresh_cell = cell
 		elif (
 			planning_cell_changed
