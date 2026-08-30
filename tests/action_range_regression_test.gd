@@ -1015,7 +1015,7 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: knight_swap missing")
 		return
 	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.SWAP_ALLY_CELL)
-	if bool(swap_slots.get("invalid", false)):
+	if swap_slots.get("invalid", false):
 		failures.append("ActionRangeRegression post_swap_post_move_stand_locked: swap commit invalid")
 		return
 	Checklist.flush_planning(fix)
@@ -1037,14 +1037,14 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 			% [stand_after_swap, overlay_stand],
 		)
 	var preview: Dictionary = input._preview_from_commit_slots_at_cell(fix.k1_id, orbit)
-	if not bool(preview.get("intent_preview", false)):
+	if not preview.get("intent_preview", false):
 		failures.append(
 			"ActionRangeRegression post_swap_post_move_stand_locked: orbit hover must use cheap intent_preview",
 		)
 	var orbit_slots: Dictionary = input._final_commit_slots_for_click_at_cell(fix.k1_id, orbit, Vector2.ZERO)
 	var orbit_actions: Array[TimelineAction] = input._actions_from_slots(orbit_slots)
 	var director_preview: Dictionary = director.preview_actions(fix.k1_id, orbit_actions)
-	if not bool(director_preview.get("intent_preview", false)):
+	if not director_preview.get("intent_preview", false):
 		failures.append(
 			"ActionRangeRegression post_swap_post_move_stand_locked: director must preview from projected delta",
 		)
@@ -1064,7 +1064,7 @@ static func _test_premove_swap_committed_orbit_walk_intent(failures: Array[Strin
 		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: knight_swap missing")
 		return
 	var swap_slots: Dictionary = Checklist.commit_production(fix, Checklist.WALK_SWAP_ALLY_CELL)
-	if bool(swap_slots.get("invalid", false)):
+	if swap_slots.get("invalid", false):
 		failures.append("ActionRangeRegression premove_swap_committed_orbit_walk: swap commit invalid")
 		return
 	var pre_moves: Array[TimelineAction] = Checklist.pre_moves_for_unit(director, fix.k1_id)
