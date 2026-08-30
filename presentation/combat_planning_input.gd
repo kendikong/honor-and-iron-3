@@ -1767,6 +1767,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 	):
 		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 		if hover_unit != null and active_movement_planning_step(hover_unit):
+			if _planning != null:
+				_planning._recompute_hover_ranges_from_inputs()
 			_refresh_hover_interaction_preview(cell)
 			_last_sim_hover_refresh_cell = cell
 		elif (
