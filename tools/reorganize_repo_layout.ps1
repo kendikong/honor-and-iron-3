@@ -13,14 +13,38 @@ function Ensure-Dir([string]$Rel) {
 function Move-RepoFile([string]$From, [string]$To) {
 	$src = Join-Path $root $From
 	$dst = Join-Path $root $To
-	if (-not (Test-Path -LiteralPath $src)) { return }
-	Ensure-Dir (Split-Path $To -Parent)
-	if (Test-Path -LiteralPath $dst) { throw "Destination exists: $To" }
-	git mv -- $src $dst 2>$null
-	if ($LASTEXITCODE -ne 0) {
-		Move-Item -LiteralPath $src -Destination $dst -Force
+	if (-not (Test-Path -LiteralPath $src)) {
+		if (Test-Path -LiteralPath $dst) { return }
+		return
 	}
-	Write-Output "moved $From -> $To"
+	Ensure-Dir (Split-Path $To -Parent)
+	if (Test-Path -LiteralPath $dst) { return }
+	$tracked = git ls-files -- "$From" 2>$null
+	if ($tracked) {
+		git mv -- $src $dst 2>&1 | Out-Null
+		if ($LASTEXITCODE -eq 0) {
+			Write-Output "moved $From -> $To"
+			return
+		}
+	}
+	try {
+		Move-Item -LiteralPath $src -Destination $dst -Force -ErrorAction Stop
+		Write-Output "moved $From -> $To"
+	} catch {
+		Write-Output "skip locked $From"
+	}
+}
+
+function Register-PathMove([hashtable]$Map, [string]$From, [string]$To) {
+	$fromNorm = $From -replace '\\', '/'
+	$toNorm = $To -replace '\\', '/'
+	$Map[$fromNorm] = $toNorm
+	if ($fromNorm -match '\.(gd|tscn|md)$') {
+		$leaf = Split-Path $fromNorm -Leaf
+		$Map["res://$fromNorm"] = "res://$toNorm"
+		$Map["tests/$leaf"] = $toNorm
+	}
+	Move-RepoFile $From $To
 }
 
 function Replace-InTree([string[]]$Globs, [hashtable]$Map) {
@@ -36,9 +60,10 @@ function Replace-InTree([string[]]$Globs, [hashtable]$Map) {
 	}
 	$files = $files | Sort-Object FullName -Unique
 	foreach ($f in $files) {
+		if (-not (Test-Path -LiteralPath $f.FullName)) { continue }
 		$text = [System.IO.File]::ReadAllText($f.FullName)
 		$orig = $text
-		foreach ($k in $Map.Keys) {
+		foreach ($k in ($Map.Keys | Sort-Object { $_.Length } -Descending)) {
 			$text = $text.Replace($k, $Map[$k])
 		}
 		if ($text -ne $orig) {
@@ -80,7 +105,7 @@ Get-ChildItem (Join-Path $root "docs") -File -Filter "*_meta_critic_manifest.jso
 	@("docs/bible_alignment_audit.json", "docs/audits/bible_alignment_audit.json"),
 	@("docs/bible_skill_alignment_audit.canvas.tsx", "docs/audits/bible_skill_alignment_audit.canvas.tsx"),
 	@("docs/design/TACTICAL_COMBAT_PARITY_PLAN.md", "docs/design/TACTICAL_COMBAT_PARITY_PLAN.md"),
-	@("sandbox_map_system.md", "docs/design/sandbox_map_system.md"),
+	@("docs/design/sandbox_map_system.md", "docs/design/sandbox_map_system.md"),
 	@("docs/design/logs/PLANNING_GAUNTLET_ROUND31.md", "docs/design/logs/PLANNING_GAUNTLET_ROUND31.md"),
 	@("docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md", "docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md"),
 	@("docs/design/logs/PLANNING_GAUNTLET_LOOP.md", "docs/design/logs/PLANNING_GAUNTLET_LOOP.md"),
@@ -182,7 +207,7 @@ $refMap = [ordered]@{
 	"docs/reference/asset_manifest.md" = "docs/reference/asset_manifest.md"
 	"docs/audits/ARCHER_BIBLE_AUDIT.md" = "docs/audits/ARCHER_BIBLE_AUDIT.md"
 	"docs/design/TACTICAL_COMBAT_PARITY_PLAN.md" = "docs/design/TACTICAL_COMBAT_PARITY_PLAN.md"
-	"sandbox_map_system.md" = "docs/design/sandbox_map_system.md"
+	"docs/design/sandbox_map_system.md" = "docs/design/sandbox_map_system.md"
 	"docs/design/logs/PLANNING_GAUNTLET_ROUND31.md" = "docs/design/logs/PLANNING_GAUNTLET_ROUND31.md"
 	"docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md" = "docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md"
 	"docs/design/logs/PLANNING_GAUNTLET_LOOP.md" = "docs/design/logs/PLANNING_GAUNTLET_LOOP.md"
@@ -223,6 +248,78 @@ Get-ChildItem (Join-Path $root "docs/qa") -Recurse -File -Include "*.md" | ForEa
 		[System.IO.File]::WriteAllText($_.FullName, $text)
 		Write-Output "fixed links in $($_.FullName.Substring($root.Length + 1))"
 	}
+}
+
+Write-Output "=== Phase 2: reports/logs (loose root files) ==="
+Ensure-Dir "reports/logs"
+Get-ChildItem (Join-Path $root "reports") -File -ErrorAction SilentlyContinue |
+	Where-Object { $_.Name -ne "reorganize_layout.log" } |
+	ForEach-Object {
+	Move-RepoFile "reports/$($_.Name)" "reports/logs/$($_.Name)"
+}
+
+Write-Output "=== Phase 2: tests/runners, tests/live, tests/harness ==="
+@("tests/runners", "tests/live", "tests/harness") | ForEach-Object { Ensure-Dir $_ }
+$testMap = [ordered]@{}
+
+Get-ChildItem (Join-Path $root "tests") -File -Filter "run_*.gd" | ForEach-Object {
+	Register-PathMove $testMap "tests/$($_.Name)" "tests/runners/$($_.Name)"
+	$uid = "tests/$($_.BaseName).gd.uid"
+	if (Test-Path (Join-Path $root $uid)) { Register-PathMove $testMap $uid "tests/runners/$($_.BaseName).gd.uid" }
+}
+Get-ChildItem (Join-Path $root "tests") -File -Filter "live_*.gd" | ForEach-Object {
+	Register-PathMove $testMap "tests/$($_.Name)" "tests/live/$($_.Name)"
+	$uid = "tests/$($_.BaseName).gd.uid"
+	if (Test-Path (Join-Path $root $uid)) { Register-PathMove $testMap $uid "tests/live/$($_.BaseName).gd.uid" }
+}
+Get-ChildItem (Join-Path $root "tests") -File -Filter "*.tscn" | ForEach-Object {
+	Register-PathMove $testMap "tests/$($_.Name)" "tests/gates/$($_.Name)"
+}
+Get-ChildItem (Join-Path $root "tests") -File | Where-Object {
+	$_.Name -ne "README.md" -and $_.Extension -in @(".gd", ".uid")
+} | ForEach-Object {
+	Register-PathMove $testMap "tests/$($_.Name)" "tests/harness/$($_.Name)"
+}
+if ($testMap.Count -gt 0) {
+	Replace-InTree @("*.md", "*.mdc", "*.ps1", "*.gd", "*.tscn", "*.json", "*.uid") $testMap
+}
+
+Write-Output "=== Phase 2: docs/design subfolders ==="
+@("docs/design/planning", "docs/design/combat", "docs/design/classes", "docs/design/process") | ForEach-Object { Ensure-Dir $_ }
+$designMap = [ordered]@{}
+@(
+	@("docs/design/HOVER_PREVIEW_CARRIED_SSOT_PLAN.md", "docs/design/planning/HOVER_PREVIEW_CARRIED_SSOT_PLAN.md"),
+	@("docs/design/MOVE_PREVIEW_RULES.md", "docs/design/planning/MOVE_PREVIEW_RULES.md"),
+	@("docs/design/PLANNING_VOLUNTARY_WALK_MILESTONE.md", "docs/design/planning/PLANNING_VOLUNTARY_WALK_MILESTONE.md"),
+	@("docs/design/PLANNING_REFACTOR_MATRIX.md", "docs/design/planning/PLANNING_REFACTOR_MATRIX.md"),
+	@("docs/design/ACTION_RANGE_LATEST_STAND.md", "docs/design/planning/ACTION_RANGE_LATEST_STAND.md"),
+	@("docs/design/intent_architecture_evidence.md", "docs/design/planning/intent_architecture_evidence.md"),
+	@("docs/design/TACTICAL_COMBAT_PARITY_PLAN.md", "docs/design/combat/TACTICAL_COMBAT_PARITY_PLAN.md"),
+	@("docs/design/combat-core-closeout.md", "docs/design/combat/combat-core-closeout.md"),
+	@("docs/design/ability-data.md", "docs/design/combat/ability-data.md"),
+	@("docs/design/enemy-design.md", "docs/design/combat/enemy-design.md"),
+	@("docs/design/roguelike-run.md", "docs/design/combat/roguelike-run.md"),
+	@("docs/design/presentation-audio-ui.md", "docs/design/combat/presentation-audio-ui.md"),
+	@("docs/design/world-assets-and-map.md", "docs/design/combat/world-assets-and-map.md"),
+	@("docs/design/knight-template.md", "docs/design/classes/knight-template.md"),
+	@("docs/design/bruiser-template.md", "docs/design/classes/bruiser-template.md"),
+	@("docs/design/class-rollout.md", "docs/design/classes/class-rollout.md"),
+	@("docs/design/00-gauntlet-loop-cursor.md", "docs/design/process/00-gauntlet-loop-cursor.md"),
+	@("docs/design/00-remaining-work-suite-plan.md", "docs/design/process/00-remaining-work-suite-plan.md"),
+	@("docs/design/GAUNTLET_REVIEW_RESULTS.md", "docs/design/process/GAUNTLET_REVIEW_RESULTS.md"),
+	@("docs/design/LOCAL_CLOUD_SYNC.md", "docs/design/process/LOCAL_CLOUD_SYNC.md"),
+	@("docs/design/UNATTENDED_RUN.md", "docs/design/process/UNATTENDED_RUN.md"),
+	@("docs/design/UNATTENDED_RUN.template.md", "docs/design/process/UNATTENDED_RUN.template.md"),
+	@("docs/design/verification-matrix.md", "docs/design/process/verification-matrix.md"),
+	@("docs/design/REMAINING_WORK_MAP.md", "docs/design/process/REMAINING_WORK_MAP.md"),
+	@("docs/design/workbench.md", "docs/design/process/workbench.md"),
+	@("docs/design/01-doc-polish-protocol.md", "docs/design/process/01-doc-polish-protocol.md"),
+	@("docs/design/EXTRA_RULES_TO_MODULES_PLAN.md", "docs/design/process/EXTRA_RULES_TO_MODULES_PLAN.md"),
+	@("docs/design/LAYER_SHAPE_CONVERSION_GATE.md", "docs/design/process/LAYER_SHAPE_CONVERSION_GATE.md"),
+	@("docs/design/_TEMPLATE.md", "docs/design/process/_TEMPLATE.md")
+) | ForEach-Object { Register-PathMove $designMap $_[0] $_[1] }
+if ($designMap.Count -gt 0) {
+	Replace-InTree @("*.md", "*.mdc", "*.ps1", "*.gd", "*.tscn", "*.json", "*.tsx") $designMap
 }
 
 Write-Output "=== Cleanup scratch files ==="
