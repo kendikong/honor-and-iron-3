@@ -88,8 +88,7 @@ var _intent_snapshot_key: String = ""
 var _intent_snapshot_valid: bool = false
 var _intent_snapshot_unit_id: int = -1
 var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
-var _suppress_post_commit_hover_refresh: bool = false
-## Settled hover used projected-delta move-only preview Ã¢â€¢Â¬ÃƒÂ´Ã¢â€Å“ÃƒÂ§Ã¢â€Å“Ã¢â€¢Â¢ overlay range already correct at stand.
+## Settled hover used projected-delta move-only preview when overlay range already correct at stand.
 var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
 var _hover_preview_lru: Dictionary = {}
@@ -163,8 +162,7 @@ func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void
 	_invalidate_planning_hover_cache()
 	_drag_route.clear()
 	_drag_last_free = Vector2i(-1, -1)
-	if not _suppress_post_commit_hover_refresh:
-		preview_state.clear_interaction()
+	preview_state.clear_interaction()
 	if _planning != null:
 		_planning.restore_committed_display()
 	if _drag_unit_id >= 0 and selected_phase_action_exhausted(_drag_unit_id):
@@ -834,9 +832,7 @@ func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) ->
 		var stand: Vector2i = _proj_origin(p_unit)
 		if approach == stand:
 			if target.is_enemy() and _in_ability_range(p_unit, target):
-				CombatPlanningPreview.set_unit_stand_anchor_path(
-					preview_state, p_unit.id, stand,
-				)
+				CombatPlanningPreview.set_unit_stand_anchor_path(preview_state, p_unit.id, stand)
 				_sync_movement_hover_paths_to_overlay(p_unit.id)
 			return
 		waypoints = [approach]
@@ -1332,7 +1328,6 @@ func _restore_committed_preview() -> void:
 func _on_selection_changed(unit_id: int) -> void:
 	if _director == null:
 		return
-	_suppress_post_commit_hover_refresh = false
 	if unit_id < 0:
 		clear_awaiting_targeting()
 		_invalidate_planning_hover_cache()
@@ -1372,7 +1367,6 @@ func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
 
 func _run_planning_selection_refresh() -> void:
 	_selection_refresh_pending = false
-	_suppress_post_commit_hover_refresh = false
 	_ability_hover_settle_pending = false
 	_refresh_planning_hover_at_current_cell(true)
 
@@ -1386,7 +1380,6 @@ func _finish_selection_changed() -> void:
 func _on_ability_selected(index: int) -> void:
 	if _director == null:
 		return
-	_suppress_post_commit_hover_refresh = false
 	if index >= 0:
 		pass
 	else:
@@ -1482,23 +1475,9 @@ func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
 		return
-	if (
-		_director != null
-		and _director.plan_refresh_defer_overlay
-		and not _suppress_post_commit_hover_refresh
-	):
+	if _director != null and _director.plan_refresh_defer_overlay:
 		return
 	_schedule_plan_refresh_followup()
-	if _suppress_post_commit_hover_refresh:
-		if _result != null and _director != null:
-			CombatPlanningPreview.apply_movement_result(
-				preview_state,
-				_result,
-				_director,
-				_director.base_board,
-			)
-			_sync_intent_live_board()
-		return
 	if _director != null and _director.plan_refresh_snap_units:
 		return
 	_schedule_hover_preview_refresh()
@@ -1537,8 +1516,6 @@ func _flush_hover_preview_refresh() -> void:
 
 func _refresh_hover_if_planning() -> void:
 	if dragging or not _is_planning() or _intent_state == null or _director == null:
-		return
-	if _suppress_post_commit_hover_refresh:
 		return
 	var cell: Vector2i = _intent_state.hover_coord
 	if _director.board == null or not _director.board.is_in_bounds(cell):
@@ -1710,7 +1687,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 	var previous_hover: Vector2i = _last_planning_hover_cell
 	var planning_cell_changed: bool = cell != previous_hover
 	if planning_cell_changed:
-		_suppress_post_commit_hover_refresh = false
 		_last_planning_hover_cell = cell
 		## Drop leftover live path/ghost as soon as the cursor leaves the last
 		## simulated tile. Hover follow-route already moved; the parent overlay
@@ -1947,7 +1923,6 @@ func _begin_hover_sim_throttled_flush() -> void:
 			if not _hover_sim_pointer_is_still():
 				_begin_hover_sim_throttled_flush()
 				return
-			_run_hover_sim_refresh()
 			_run_hover_overlay_refresh()
 			if not dragging:
 				refresh_mouse_cursor(cell),
@@ -2125,8 +2100,6 @@ func live_sim_matches_hover() -> bool:
 
 
 func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) -> bool:
-	if _suppress_post_commit_hover_refresh and not planning_cell_changed:
-		return false
 	if planning_cell_changed:
 		return true
 	if _ability_hover_settle_pending:
@@ -3214,13 +3187,6 @@ func _final_commit_slots_for_interaction(
 	face_dir: int = -1,
 	sim_validate: bool = true,
 ) -> Dictionary:
-	if _suppress_post_commit_hover_refresh and _director != null:
-		_suppress_post_commit_hover_refresh = false
-		if _intent_state != null:
-			_intent_state.set_hover_coord(cell)
-		if _planning != null and _director.board.is_in_bounds(cell):
-			_planning.set_hover_coord(cell, true)
-			_refresh_selected_interaction_preview()
 	var slots: Dictionary = _build_commit_slots_at_cell(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
@@ -3449,12 +3415,10 @@ func _commit_at_cell(
 	_notify_drag_plan_move_committed(unit_id)
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
-	_suppress_post_commit_hover_refresh = true
 	_ratify_painted_route_on_commit_slots(unit_id, slots)
 	_ensure_move_waypoints_on_commit_slots(unit_id, slots)
 	_ensure_movement_waypoints_on_commit_slots(unit_id, slots)
 	if _director == null or not _director.commit_from_slots(unit_id, slots):
-		_suppress_post_commit_hover_refresh = false
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")
@@ -3570,7 +3534,6 @@ func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
 
 
 func _promote_intent_preview_after_commit() -> void:
-	_suppress_post_commit_hover_refresh = true
 	if _planning == null:
 		return
 	var unit_id: int = _director.selected_unit_id if _director != null else -1
@@ -3604,6 +3567,21 @@ func _promote_intent_preview_after_commit() -> void:
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
 	_sync_intent_live_board()
+	_apply_post_commit_hover_truth()
+
+
+func _apply_post_commit_hover_truth() -> void:
+	if _planning == null or _director == null or _intent_state == null:
+		return
+	_planning.restore_committed_display()
+	_planning._recompute_hover_ranges_from_inputs()
+	var cell: Vector2i = _intent_state.hover_coord
+	if _director.selected_unit_id >= 0 and _director.board.is_in_bounds(cell):
+		_invalidate_planning_hover_cache(false)
+		_refresh_hover_interaction_preview(cell)
+		_flush_hover_heavy_sync()
+	refresh_mouse_cursor(cell)
+
 
 
 func _intent_snapshot_key_for(

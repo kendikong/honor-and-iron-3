@@ -127,12 +127,12 @@ static func _spend_ability_cost(actor: UnitState, ability: AbilityData, board: B
 		File = "presentation/combat_planning_input.gd"
 		Old = @"
 func _promote_intent_preview_after_commit() -> void:
-	_suppress_post_commit_hover_refresh = true
+	if _planning == null:
 "@
 		New = @"
 func _promote_intent_preview_after_commit() -> void:
 	return  # QA_MUT
-	_suppress_post_commit_hover_refresh = true
+	if _planning == null:
 "@
 		ExpectMinFails = 1
 	},

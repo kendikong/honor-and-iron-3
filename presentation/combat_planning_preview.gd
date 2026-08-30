@@ -77,6 +77,7 @@ static func set_unit_stand_anchor_path(
 ) -> void:
 	if preview == null or unit_id < 0:
 		return
+	## Not a voluntary-walk route — bypasses set_unit_preview_path size>=2 guard.
 	preview.preview_paths[unit_id] = [stand]
 	preview.preview_splits.erase(unit_id)
 	preview.preview_post_splits.erase(unit_id)

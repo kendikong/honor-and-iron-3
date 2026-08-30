@@ -27,7 +27,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Bible / matrix ref | Gap | Status | Evidence (file:line) | Fixed commit | Verified round |
 |----|----------|-------------------|-----|--------|----------------------|--------------|----------------|
-| *(none — all HIGH/MED gaps closed through round 32)* |
+| *(none — all HIGH/MED gaps closed through round 33)* |
 
 ---
 
@@ -35,6 +35,10 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Summary | Fixed commit | Verified round |
 |----|----------|---------|--------------|----------------|
+| GAP-013 | HIGH | `_suppress_post_commit_hover_refresh` deferred hover truth post-commit | *(pending commit)* | 33 |
+| GAP-014 | MED | `_begin_hover_sim_throttled_flush` timer ran sim on input defer path | *(pending commit)* | 33 |
+| GAP-015 | MED | In-range stand anchor must not paint walk route to enemy cell; dedicated `set_unit_stand_anchor_path` (size-1, not walk) | *(pending commit)* | 33 |
+| GAP-016 | HIGH | Stale parse report; `run_parse_combat_input_only.gd` PASS on current tree | *(pending commit)* | 33 |
 | GAP-001 | HIGH | Illegal movement-step hover must not sealed-restore blue path | `6aecc295e` | 27 |
 | GAP-002 | HIGH | Input `_proj_origin` delegates `_phase_entry_stand` | `6aecc295e` | 27 |
 | GAP-003 | MED | Overlay `_proj_origin` uses `forecast_stand_at_phase_entry` + preview | `edb324bdb` | 29 |
@@ -74,6 +78,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | 30 | `0942e736` | all GAP/FIX PASS | no new HIGH | 86 PASS | `move_leg_origin_cell` SSOT; backlog/matrix synced |
 | 31 | `64f67530a` | GAP-009 + FIX-001..006 FIXED | no new HIGH | 88 PASS | Unified pathfinding; gate = T3 mimic only; legacy PlanningQaGate archaeology |
 | 32 | `39aea42b3` | GAP-010–012 FIXED | no new HIGH | 88 PASS | Movement-step gates; swap preview_board; action-range guard |
+| 33 | *(pending)* | GAP-013–016 FIXED | no new HIGH | TBD | Post-commit hover truth owner; overlay-only throttle defer; stand-anchor SSOT |
 
 ---
 
@@ -83,3 +88,4 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 |------|--------|
 | 2026-08-29 | Created backlog; seeded from round 26 fresh audit; retracted round 25 as non-conforming loop |
 | 2026-08-30 | Round 32: GAP-010–012 closed — movement-step gates, swap preview_board, action-range guard |
+| 2026-08-30 | Round 33: GAP-013–016 closed — suppress flag removed; `_apply_post_commit_hover_truth`; overlay-only sim throttle defer; stand-anchor API restored |
