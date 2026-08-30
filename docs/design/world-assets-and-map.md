@@ -2,7 +2,7 @@
 
 **Status:** `DRAFT` *(doc gauntlet PASS 91/88 — worksheet gates LOOP_READY)*  
 **Pillar ID:** P7  
-**Authority chain:** `ROADMAP.md` · `sandbox_map_system.md` · `docs/asset_manifest.md` · `docs/design/appendices/pixelforge-v14-contract.md`
+**Authority chain:** `ROADMAP.md` · `docs/design/sandbox_map_system.md` · `docs/reference/asset_manifest.md` · `docs/design/appendices/pixelforge-v14-contract.md`
 
 ## Goal
 
@@ -12,7 +12,7 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Manifest | `docs/asset_manifest.md` exists on disk | Art direction |
+| Manifest | `docs/reference/asset_manifest.md` exists on disk | Art direction |
 | Compositor | `PLANNED — F5 compositor gate (.cursor/rules/phase-audit.mdc)` | Boredom test |
 | PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` | Owner CANON promote only |
 | Reference map scene | `scenes/test_map.tscn` on disk | Compositor audit |
@@ -38,8 +38,8 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 
 | Asset | Path |
 |-------|------|
-| Manifest | `docs/asset_manifest.md` |
-| Tile registry | `docs/tile_registry.md` |
+| Manifest | `docs/reference/asset_manifest.md` |
+| Tile registry | `docs/reference/tile_registry.md` |
 | Reference map | `scenes/test_map.tscn` |
 | PixelForge contract | `docs/design/appendices/pixelforge-v14-contract.md` |
 | Compositor rules | `.cursor/rules/phase-audit.mdc` |
@@ -54,7 +54,7 @@ Mana Seed → custom asset path with PixelForge handoff, living-map phase comple
 ## Builder playbook
 
 1. **Stop** if worksheet empty — status stays `DRAFT`.
-2. Read `docs/asset_manifest.md` only.
+2. Read `docs/reference/asset_manifest.md` only.
 3. PixelForge proposes → owner promotes CANON.
 4. Run map scene 10s — no shader errors.
 
@@ -70,10 +70,10 @@ Visual: REFERENCE PNG + capture under `reports/`.
 
 ```text
 GOAL: P7 spec + paths; LOOP_READY requires worksheet filled
-BAR: lint PASS; docs/asset_manifest.md exists
+BAR: lint PASS; docs/reference/asset_manifest.md exists
 PASS_THRESHOLD: 88
 RULES: living-sandbox-architect.mdc, phase-audit.mdc
-ARTIFACT: this file, lint stdout, docs/asset_manifest.md grep
+ARTIFACT: this file, lint stdout, docs/reference/asset_manifest.md grep
 REFERENCE: reports/<capture>.png
 ```
 
@@ -82,7 +82,7 @@ REFERENCE: reports/<capture>.png
 | Input | Output | Consumer |
 |-------|--------|----------|
 | PixelForge ASSET_SPEC | `res://` paths | TileMap layers |
-| `docs/asset_manifest.md` | Disk audit list | All map work |
+| `docs/reference/asset_manifest.md` | Disk audit list | All map work |
 
 ## Exit criteria
 

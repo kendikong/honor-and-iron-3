@@ -12,7 +12,7 @@ Every roadmap phase must pass a **rigorous audit** before it is declared complet
 Cross-check the phase deliverables and exit criteria against:
 
 1. **`ROADMAP.md`** — phase scope, deliverables, exit criteria
-2. **`sandbox_map_system.md`** — Boredom Test, channel audit, constraints (when applicable)
+2. **`docs/design/sandbox_map_system.md`** — Boredom Test, channel audit, constraints (when applicable)
 3. **`.cursor/rules/living-sandbox-architect.mdc`** — architecture, Mana Seed technical constraints
 4. **Actual code and docs on disk** — not the plan alone
 
@@ -84,7 +84,7 @@ Re-audit (increment iteration) after any fix pass or when user requests a comple
 Code review alone is **not sufficient** for shadows, mist, clouds, or any effect that changes how pixels composite. Each audit iteration must explicitly answer:
 
 1. **Draw order** — effect layer `z_index` vs ground / obstacle art (read `scenes/test_map.tscn`, not docs).
-2. **Blend mode** — multiply vs mix vs add; matches `sandbox_map_system.md` §3 (no muddy alpha blobs).
+2. **Blend mode** — multiply vs mix vs add; matches `docs/design/sandbox_map_system.md` §3 (no muddy alpha blobs).
 3. **Sprite authorship** — pause F5: does output look like hand-authored ground darken, or a duplicated/stamped sprite?
 4. **Runtime** — run scene 10s; Godot Output must not accumulate shader/material errors.
 5. **Shader compile** — no errors on first map generate (`_ready` → `_generate_map` path).

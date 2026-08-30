@@ -129,7 +129,7 @@ Any response that **proposes, implements, or summarizes** a code or rule change 
 | Ability legality / range / targeting | `AbilitySystem` + ability data |
 | Turn resolution | `Simulator.simulate` — headless, no Nodes |
 | Skills / economy | Timeline columns, AP/MP, `EffectData` — see `skill-global-rules.mdc` |
-| Living sandbox / map VFX | `sandbox_map_system.md`, `EffectsSettings`, GPU shaders — see `living-sandbox-architect.mdc` |
+| Living sandbox / map VFX | `docs/design/sandbox_map_system.md`, `EffectsSettings`, GPU shaders — see `living-sandbox-architect.mdc` |
 
 When unsure which system owns a behavior → **read and extend that system**; do not add a presentation-only workaround.
 

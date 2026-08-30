@@ -1,8 +1,8 @@
 # Implementation Status — Honor & Iron 3
 
-**Current phase:** P3 Knight QA **PASS** · P6+ classes **automated gauntlet PASS (2026-08-10)** · **owner sign-off NOT PASS** — see [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md)  
+**Current phase:** P3 Knight QA **PASS** · P6+ classes **automated gauntlet PASS (2026-08-10)** · **owner sign-off NOT PASS** — see [`docs/qa/CLASS_QA_SIGNOFF.md`](docs/qa/CLASS_QA_SIGNOFF.md)  
 **Active plan:** `docs/design/` pillar specs + [`verification-matrix.md`](docs/design/verification-matrix.md)  
-**Combat reference:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
+**Combat reference:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` (Ph 10–14 closed; P2 done for now)  
 **Last updated:** 2026-08-30  
 **Audit policy:** Every phase must pass a four-pillar audit (completeness, correct coding, inconsistencies, issues) before close. See `.cursor/rules/phase-audit.mdc`.
 
@@ -15,10 +15,10 @@
 
 | Item | Status |
 |------|--------|
-| Gauntlet round 31 (static two-pass, NO_QA) | **PASS** score 88 — [`PLANNING_GAUNTLET_ROUND31.md`](docs/design/PLANNING_GAUNTLET_ROUND31.md) |
+| Gauntlet round 31 (static two-pass, NO_QA) | **PASS** score 88 — [`PLANNING_GAUNTLET_ROUND31.md`](docs/design/logs/PLANNING_GAUNTLET_ROUND31.md) |
 | Gauntlet round 32 (post-audit MED fixes) | **PASS** — GAP-010–012 at `39aea42b3` |
 | Matrix R1–R12 | **DONE** — [`PLANNING_REFACTOR_MATRIX.md`](docs/design/PLANNING_REFACTOR_MATRIX.md) |
-| Backlog GAP-001–012 | **Closed** — [`PLANNING_GAUNTLET_BACKLOG.md`](docs/design/PLANNING_GAUNTLET_BACKLOG.md) |
+| Backlog GAP-001–012 | **Closed** — [`PLANNING_GAUNTLET_BACKLOG.md`](docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md) |
 | Runtime F5 proof (WP-9) | **Not run** at milestone close — owner optional |
 
 **Not claimed at close:** full class QA LOCK, legacy `PlanningQaGate.tscn` green, live Tier 3 F5 session. See milestone doc § “What was NOT claimed.”
@@ -100,8 +100,8 @@ not owner visual sign-off.
 
 | Class | Owner QA | Gate |
 |-------|----------|------|
-| Knight | **PASS** | [`KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md) |
-| Bruiser, Archer, Lancer, Mage, Cleric | **NOT PASS** (owner) · **gauntlet automated PASS** | [`CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) |
+| Knight | **PASS** | [`KNIGHT_QA_GATE.md`](docs/qa/classes/KNIGHT_QA_GATE.md) |
+| Bruiser, Archer, Lancer, Mage, Cleric | **NOT PASS** (owner) · **gauntlet automated PASS** | [`CLASS_QA_SIGNOFF.md`](docs/qa/CLASS_QA_SIGNOFF.md) |
 
 ### Non-Knight automated gauntlet (2026-08-10)
 
@@ -121,7 +121,7 @@ not owner visual sign-off.
 **Was:** B6-LOCK owner verify 2026-08-06 — **revoked.** Per owner: only Knight passes; Bruiser must be **redone** (Tier 2 live + overlay/AOE footprint asserts per `class-qa-knight-bar.mdc`).
 
 ### Deliverables (implementation — kept)
-- [x] `docs/BRUISER_QA_GATE.md` — 31-row matrix (historical `PASS` claims — **sign-off suspended**)
+- [x] `docs/qa/classes/BRUISER_QA_GATE.md` — 31-row matrix (historical `PASS` claims — **sign-off suspended**)
 - [x] `scripts/run_bruiser_qa_gate.ps1`
 - [x] `tests/bruiser_qa_harness.gd`, `bruiser_scenario_registry.gd`, `bruiser_qa_runner.gd`, `BruiserQaGate.tscn`
 - [x] `docs/design/bruiser-template.md`, `UNATTENDED_RUN.md` (B6-LOCK), `runs/B6-LOCK.md`
@@ -134,7 +134,7 @@ not owner visual sign-off.
 ## P3 — Knight template LOCK (K3-LOCK) — **QA PASS** (only class) ✅
 
 ### Deliverables
-- [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/knight_meta_critic_manifest.json`)
+- [x] 30/30 Knight matrix rows meta-critic `PASS` (`docs/qa/manifests/knight_meta_critic_manifest.json`)
 - [x] `.\scripts\run_knight_qa_gate.ps1` → exit **0**
 - [x] `docs/design/knight-template.md` status → **`LOCKED`**
 - [x] K3-LOCK gauntlet run complete (`docs/design/UNATTENDED_RUN.md`)
@@ -596,7 +596,7 @@ not owner visual sign-off.
 | Bridge stubs complete (7 files) | **PASS** | all `class_name` registered, no duplicates |
 | `TacticalConstants.TILE_PX` = 16 | **PASS** | matches mana-seed + H&I cell |
 | Autoloads merged | **PASS** | `EventBus`, `SkirmishLaunch`, `GlobalTimeline`, buses |
-| `docs/asset_manifest.md` exists | **PASS** | Phase 0 gate |
+| `docs/reference/asset_manifest.md` exists | **PASS** | Phase 0 gate |
 
 **Data flow (verified):**
 
@@ -693,7 +693,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 
 **Started:** 2026-07-16  
 **Closed:** 2026-07-16 — **audit invalid; re-opened as FAIL**  
-**Superseded by:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–16)  
+**Superseded by:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–16)  
 **Scope:** P0–P3 gap plan (bugs, H&I panels, pause/restart, options unification)
 
 ### 9A — P0 bugs & blockers ✅
@@ -811,14 +811,14 @@ BattleSetup → SkirmishLaunch.set_pending()
 | 7 | Dual combat path (`Combat.tscn` vs `TacticalCombat.tscn`) | **MED** | Open → Phase 14–15 |
 
 **Final issue count:** 7 (5 HIGH) — **FAIL** (superseded by Phases 10–14)  
-**Next:** Phase 15 per `docs/TACTICAL_COMBAT_PARITY_PLAN.md`
+**Next:** Phase 15 per `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md`
 
 ---
 
 ## Phase 10 — Foundation & defect repair
 
 **Status:** **PASS**  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 10
+**Plan:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 10
 
 ### Deliverables
 
@@ -867,7 +867,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 ## Phase 11 — Planning input parity
 
 **Status:** **PASS**  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 11
+**Plan:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 11
 
 ### Deliverables
 
@@ -930,7 +930,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 ---
 
 **Status:** **PASS**  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 12
+**Plan:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 12
 
 ### Deliverables
 
@@ -976,7 +976,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 ---
 
 **Status:** **PASS**  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 13
+**Plan:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 13
 
 ### Deliverables
 
@@ -1014,7 +1014,7 @@ BattleSetup → SkirmishLaunch.set_pending()
 ---
 
 **Status:** **PASS**  
-**Plan:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 14
+**Plan:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` § Phase 14
 
 ### Deliverables
 
@@ -1284,13 +1284,13 @@ Phases 1–5: data model, sim economy, `plan_action` timeline, planning validati
 
 ## Archer / Lancer / Cleric — **Owner QA: NOT PASS**
 
-Implementation exists (factories, harness, live tests). **No owner sign-off** — harness-only. See [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md) and per-class gate docs.
+Implementation exists (factories, harness, live tests). **No owner sign-off** — harness-only. See [`docs/qa/CLASS_QA_SIGNOFF.md`](docs/qa/CLASS_QA_SIGNOFF.md) and per-class gate docs.
 
 ---
 
 ## Mage — implementation complete, **Owner QA: NOT PASS** (2026-08-08)
 
-**Owner sign-off:** Factory/sim implementation is largely done; **QA depth is `HARNESS_ONLY`** until matrix matches [`docs/KNIGHT_QA_GATE.md`](docs/KNIGHT_QA_GATE.md). See [`docs/MAGE_QA_GATE.md`](docs/MAGE_QA_GATE.md) · [`docs/CLASS_QA_SIGNOFF.md`](docs/CLASS_QA_SIGNOFF.md).
+**Owner sign-off:** Factory/sim implementation is largely done; **QA depth is `HARNESS_ONLY`** until matrix matches [`docs/qa/classes/KNIGHT_QA_GATE.md`](docs/qa/classes/KNIGHT_QA_GATE.md). See [`docs/qa/classes/MAGE_QA_GATE.md`](docs/qa/classes/MAGE_QA_GATE.md) · [`docs/qa/CLASS_QA_SIGNOFF.md`](docs/qa/CLASS_QA_SIGNOFF.md).
 
 ### Deliverables
 - [x] `MageFactory` registered as the sole Mage data source.
@@ -1298,7 +1298,7 @@ Implementation exists (factories, harness, live tests). **No owner sign-off** �
 - [x] Shared `AbilitySystem`, `CombatSystem`, `MovementSystem`, `Simulator`, terrain, delayed-effect, and AP/MP paths extended without Mage-specific resolution branches.
 - [x] `tests/mage_qa_gate.gd` + `tests/MageQaGate.tscn` — factory, upgrade contracts, skill resolution, and passive trigger coverage.
 - [x] `tests/live_mage_class_test.gd` — all 16 authored abilities through TestBattle preview/commit, base and upgraded variants.
-- [x] `docs/MAGE_QA_GATE.md`, `scripts/run_mage_qa_gate.ps1`, and `scripts/run_mage_live_qa.ps1`.
+- [x] `docs/qa/classes/MAGE_QA_GATE.md`, `scripts/run_mage_qa_gate.ps1`, and `scripts/run_mage_live_qa.ps1`.
 
 ### Mage Audit (iteration 1 — 2026-08-08)
 

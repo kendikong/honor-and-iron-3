@@ -511,8 +511,8 @@ Do not implement. SCORE/100 + PASS or FAIL + Infrastructure + Proposed infrastru
 | Document | Role |
 |----------|------|
 | `ROADMAP.md` | What to build (canonical phases) |
-| `docs/TACTICAL_COMBAT_PARITY_PLAN.md` | Combat path truth |
-| `docs/PLANNING_QA_GATE.md` | Planning bar detail |
+| `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` | Combat path truth |
+| `docs/qa/planning/PLANNING_QA_GATE.md` | Planning bar detail |
 | `docs/design/UNATTENDED_RUN.md` | Per-run scope lock and stop conditions (overnight) — **ACTIVE:** K3-LOCK |
 | `docs/design/runs/K3-LOCK.md` | Knight LOCK run card + `/loop` start prompt |
 | `docs/design/*` pillar specs | Per-domain goals and bars |

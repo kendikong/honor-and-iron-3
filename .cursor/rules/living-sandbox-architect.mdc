@@ -9,7 +9,7 @@ You are building an autonomous "Living Sandbox Map System" using the Mana Seed 1
 
 ## 1. THE BIBLE (CRITICAL REFERENCE)
 
-For all questions regarding visual density, procedural ecosystems, environmental animation, **stillness**, or **pixel integrity**, you MUST refer to `sandbox_map_system.md` in the workspace. Never consider a visual feature complete until it passes the "Battlefield Presence Audit", "Boredom Test", and **Screenshot / Sprite Authorship Test** defined in that document.
+For all questions regarding visual density, procedural ecosystems, environmental animation, **stillness**, or **pixel integrity**, you MUST refer to `docs/design/sandbox_map_system.md` in the workspace. Never consider a visual feature complete until it passes the "Battlefield Presence Audit", "Boredom Test", and **Screenshot / Sprite Authorship Test** defined in that document.
 
 ## 2. TOKEN EFFICIENCY & COMMUNICATION (MANDATORY)
 
@@ -68,7 +68,7 @@ Any response that makes file changes **must** end with a **## Changelog** sectio
 
 ## 5. PIXEL-PERFECT RENDER MANDATE (WORLD ART)
 
-Applies to tiles, sprites, and environmental shaders under the map root — **not** HUD, floaters, or planning UI (`sandbox_map_system.md` §2 World art vs presentation layer).
+Applies to tiles, sprites, and environmental shaders under the map root — **not** HUD, floaters, or planning UI (`docs/design/sandbox_map_system.md` §2 World art vs presentation layer).
 
 - **Quantized Shaders:** Standard vertex displacement causes sub-pixel smearing, destroying the 16×16 retro aesthetic. ALL shader movement (wind sway, water ripples, floating) MUST be quantized/snapped to the nearest whole pixel using `round()` or `floor()`.
 - **Texture Filtering:** World `TileMapLayer` nodes and sprite materials must strictly use **Nearest** texture filtering. Presentation-layer combat floaters and HUD use crisp full-resolution fonts on `CanvasLayer`.

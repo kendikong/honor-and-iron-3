@@ -4,7 +4,7 @@
 **Was:** owner verify 2026-08-06 — B6-LOCK — **suspended** until Knight-bar re-verify (Tier 2 live + overlay footprints)
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(COMPLETE — B6-LOCK)* · **Run card:** [`runs/B6-LOCK.md`](runs/B6-LOCK.md)
 **Pillar ID:** P6 (first class — clones P3)  
-**Authority chain:** `class_abilities.txt` § Bruiser · `docs/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)
+**Authority chain:** `class_abilities.txt` § Bruiser · `docs/qa/classes/BRUISER_QA_GATE.md` · `core/factory/classes/bruiser_factory.gd` · `docs/design/knight-template.md` (P3 LOCKED)
 
 ## Goal
 
@@ -18,7 +18,7 @@ Ship a **perfectly working Bruiser moveset**: every active skill, movement skill
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Bruiser QA spec** | `docs/BRUISER_QA_GATE.md` exists; matrix lists every `bruiser_factory.gd` id | — |
+| **Bruiser QA spec** | `docs/qa/classes/BRUISER_QA_GATE.md` exists; matrix lists every `bruiser_factory.gd` id | — |
 | **Meta-critic contract** | Points to Knight gate § Meta-critic + Global systems fidelity | — |
 | **Planning separation** | Gate doc forbids changing `live_planning_scene_test.gd` | — |
 | **Lint** | `.\scripts\lint_design_doc.ps1` PASS | — |
@@ -30,7 +30,7 @@ Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PA
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Coverage matrix** | `docs/BRUISER_QA_GATE.md` — every row `PASS` (meta-critic approved) | Owner agrees MVP = full factory list |
+| **Coverage matrix** | `docs/qa/classes/BRUISER_QA_GATE.md` — every row `PASS` (meta-critic approved) | Owner agrees MVP = full factory list |
 | **Bruiser QA gate** | `.\scripts\run_bruiser_qa_gate.ps1` → PASS (all rows PASS) | — |
 | **Tier 1 scenarios** | One scenario per matrix row; registry lists actives + passives | Checklist phases 1–7 per **active** where planning applies |
 | **Meta-critic** | Per-row adequacy ≥ 88; names fix `implementation` vs `qa_test` vs `fixture` | — |
@@ -42,7 +42,7 @@ Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PA
 - Using planning QA PASS as Bruiser sign-off
 - Changing `live_planning_scene_test.gd` or `run_planning_qa_gate.ps1`
 - Per-ability `if ability.id` branches in sim/presentation
-- **Misusing global keywords** — see `docs/KNIGHT_QA_GATE.md` § Global systems fidelity (Suplex ≠ SWAP)
+- **Misusing global keywords** — see `docs/qa/classes/KNIGHT_QA_GATE.md` § Global systems fidelity (Suplex ≠ SWAP)
 
 ## Human-only worksheet
 
@@ -65,7 +65,7 @@ N/A — Bible + matrix are authoritative.
 
 ## Builder playbook
 
-1. Read Bible § Bruiser + row in `docs/BRUISER_QA_GATE.md`.
+1. Read Bible § Bruiser + row in `docs/qa/classes/BRUISER_QA_GATE.md`.
 2. **Map Bible → global system:** name exact `EffectType` / passive trigger in scenario header.
 3. **Actives / movement:** copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/bruiser_<id>_scenario.gd` (7-phase where planning applies).
 4. **Passives:** copy `tests/passives/collision_retaliator_scenario.gd` pattern — **must trigger** passive via shared hook.
@@ -78,7 +78,7 @@ N/A — Bible + matrix are authoritative.
 
 ```powershell
 .\scripts\lint_design_doc.ps1
-Test-Path docs/BRUISER_QA_GATE.md
+Test-Path docs/qa/classes/BRUISER_QA_GATE.md
 Test-Path core/factory/classes/bruiser_factory.gd
 Test-Path scripts/run_bruiser_qa_gate.ps1
 .\scripts\run_bruiser_qa_gate.ps1
@@ -90,10 +90,10 @@ Judge per row: global systems fidelity (Rules A/B from Knight gate doc), Bible a
 
 ```text
 GOAL: P6 Bruiser pillar spec — gate doc + honest 31-row matrix; planning QA out-of-scope
-BAR: lint PASS; Test-Path docs/BRUISER_QA_GATE.md, bruiser_factory.gd, scripts/run_bruiser_qa_gate.ps1
+BAR: lint PASS; Test-Path docs/qa/classes/BRUISER_QA_GATE.md, bruiser_factory.gd, scripts/run_bruiser_qa_gate.ps1
 PASS_THRESHOLD: 88
 RULES: skill-global-rules.mdc, global-systems-first.mdc, knight-template.md
-ARTIFACT: this file, docs/BRUISER_QA_GATE.md, bruiser_factory.gd, lint stdout
+ARTIFACT: this file, docs/qa/classes/BRUISER_QA_GATE.md, bruiser_factory.gd, lint stdout
 ```
 
 ## Tooling I/O
@@ -109,7 +109,7 @@ ARTIFACT: this file, docs/BRUISER_QA_GATE.md, bruiser_factory.gd, lint stdout
 
 ### B6-doc (promote to `LOOP_READY`)
 
-- [x] `docs/BRUISER_QA_GATE.md` complete (matrix + meta-critic pointer)
+- [x] `docs/qa/classes/BRUISER_QA_GATE.md` complete (matrix + meta-critic pointer)
 - [x] `scripts/run_bruiser_qa_gate.ps1` on disk
 - [x] Doc gauntlet critic ≥ 88 on B6-doc stub
 - [x] `docs/design/bruiser-template.md` status → `LOOP_READY` (then LOCKED)

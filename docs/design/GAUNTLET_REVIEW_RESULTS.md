@@ -25,7 +25,7 @@
 ## Knight template rerun (K3-doc — 2026-08-01)
 
 - **Scope:** Full moveset + meta-critic spec; planning QA unchanged; P6 clone path at LOCK
-- **New:** `docs/KNIGHT_QA_GATE.md`, `scripts/run_knight_qa_gate.ps1`
+- **New:** `docs/qa/classes/KNIGHT_QA_GATE.md`, `scripts/run_knight_qa_gate.ps1`
 - **Score:** `knight-template.md` **90/88** (K3-r1); companion `KNIGHT_QA_GATE.md` **91/88**
 - **Honest matrix:** 0/30 `PASS`, 3 `HARNESS_ONLY`, 27 `PLANNED` — gates **K3-LOCK**, not K3-doc
 

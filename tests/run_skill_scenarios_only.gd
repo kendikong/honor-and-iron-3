@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Knight QA Tier 1 headless CLI runner.
 ## Run: godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
-## Scene gate (F5 / .tscn): use res://tests/KnightQaGate.tscn → knight_qa_gate_host.gd
+## Scene gate (F5 / .tscn): use res://tests/gates/KnightQaGate.tscn → knight_qa_gate_host.gd
 ## Uses load() so EventBus autoloads exist before planning E2E scripts compile.
 
 

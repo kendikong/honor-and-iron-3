@@ -11,7 +11,7 @@ alwaysApply: true
 
 **Forbidden** (do not say, even as a footer or Changelog note):
 
-- `docs/CLASS_QA_SIGNOFF.md`, owner QA PASS / NOT PASS
+- `docs/qa/CLASS_QA_SIGNOFF.md`, owner QA PASS / NOT PASS
 - class LOCK / “this class is complete”
 - “Knight is the only class with owner sign-off”
 

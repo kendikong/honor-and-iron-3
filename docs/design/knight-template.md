@@ -4,7 +4,7 @@
 **Owner LOCK:** commit `ab8789ee193fdd36d62b88af9972a9823b94c1fa`  
 **Unattended run:** [`UNATTENDED_RUN.md`](UNATTENDED_RUN.md) *(COMPLETE)* · **Run card:** [`runs/K3-LOCK.md`](runs/K3-LOCK.md)
 **Pillar ID:** P3  
-**Authority chain:** `class_abilities.txt` § Knight · `docs/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
+**Authority chain:** `class_abilities.txt` § Knight · `docs/qa/classes/KNIGHT_QA_GATE.md` · `core/factory/classes/knight_factory.gd` · `data/` factories
 
 ## Goal
 
@@ -18,7 +18,7 @@ Ship a **perfectly working Knight moveset**: every active skill, movement skill 
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Knight QA spec** | `docs/KNIGHT_QA_GATE.md` exists; matrix lists every `knight_factory.gd` id | — |
+| **Knight QA spec** | `docs/qa/classes/KNIGHT_QA_GATE.md` exists; matrix lists every `knight_factory.gd` id | — |
 | **Meta-critic contract** | Decision tree + fix-target taxonomy in gate doc | — |
 | **Planning separation** | Both docs forbid changing `live_planning_scene_test.gd` | — |
 | **Lint** | `.\scripts\lint_design_doc.ps1` PASS | — |
@@ -30,13 +30,13 @@ Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PA
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Coverage matrix** | `docs/KNIGHT_QA_GATE.md` — every row `PASS` (meta-critic approved) | Owner agrees MVP = full factory list |
+| **Coverage matrix** | `docs/qa/classes/KNIGHT_QA_GATE.md` — every row `PASS` (meta-critic approved) | Owner agrees MVP = full factory list |
 | **Knight QA gate** | `.\scripts\run_knight_qa_gate.ps1` → PASS (all rows PASS) | — |
 | **Tier 1 scenarios** | One scenario per matrix row; registry lists actives + passives | Checklist phases 1–7 per **active** |
 | **Meta-critic** | Per-row adequacy ≥ 88; names fix `implementation` vs `qa_test` vs `fixture` | — |
 | **Planning QA** (core edits only) | `run_planning_qa_gate.ps1` — **not** Knight LOCK | F5 core parity |
 
-**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` + `Test-Path` on `docs/KNIGHT_QA_GATE.md`, `core/factory/classes/knight_factory.gd`, `scripts/run_knight_qa_gate.ps1`. Unchecked implementation exit criteria, incomplete matrix (`PLANNED` / `HARNESS_ONLY` rows), and **0/31 meta-critic PASS** must **not** FAIL the **K3-doc** critic round. Matrix **100% PASS** gates **`LOCKED`** only — not `LOOP_READY`.
+**Human gate rule:** Doc gauntlet BAR = `lint_design_doc.ps1` + `Test-Path` on `docs/qa/classes/KNIGHT_QA_GATE.md`, `core/factory/classes/knight_factory.gd`, `scripts/run_knight_qa_gate.ps1`. Unchecked implementation exit criteria, incomplete matrix (`PLANNED` / `HARNESS_ONLY` rows), and **0/31 meta-critic PASS** must **not** FAIL the **K3-doc** critic round. Matrix **100% PASS** gates **`LOCKED`** only — not `LOOP_READY`.
 
 ## Non-goals
 
@@ -45,7 +45,7 @@ Doc gauntlet BAR = lint + cited paths + honest matrix — **not** 100% matrix PA
 - Testing non-Knight classes (P6)
 - Per-ability `if ability.id` branches in sim/presentation
 - Critic-only PASS without deterministic scenario asserts
-- **Misusing global keywords** (e.g. SWAP for Bible “behind caster” reposition) — see `docs/KNIGHT_QA_GATE.md` § Global systems fidelity
+- **Misusing global keywords** (e.g. SWAP for Bible “behind caster” reposition) — see `docs/qa/classes/KNIGHT_QA_GATE.md` § Global systems fidelity
 - **Heuristic one-off skill logic** that future abilities cannot reuse without new branches
 
 ## Human-only worksheet
@@ -69,7 +69,7 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 
 ## Builder playbook
 
-1. Read Bible § Knight + row in `docs/KNIGHT_QA_GATE.md`.
+1. Read Bible § Knight + row in `docs/qa/classes/KNIGHT_QA_GATE.md`.
 2. **Map Bible → global system:** name exact `EffectType` / passive trigger in scenario header. If no exact global exists, add canonical effect in shared system (⚠ owner exception) — **never** pick a “close” keyword (see Rule B in gate doc; Suplex ≠ SWAP).
 3. **Actives / swap:** copy `tests/skills/shield_bash_scenario.gd` → `tests/skills/<id>_scenario.gd` (7-phase where planning applies).
 4. **Passives:** copy pattern from collision-style stub (PLANNED) — **must trigger** passive via shared hook (push, hit, lethal, turn start).
@@ -85,7 +85,7 @@ N/A — Bible + matrix are authoritative. Owner defers rows only via explicit `N
 
 ```powershell
 .\scripts\lint_design_doc.ps1
-Test-Path docs/KNIGHT_QA_GATE.md
+Test-Path docs/qa/classes/KNIGHT_QA_GATE.md
 Test-Path core/factory/classes/knight_factory.gd
 Test-Path scripts/run_knight_qa_gate.ps1
 ```
@@ -96,7 +96,7 @@ Judge: matrix completeness vs factory, meta-critic contract, planning≠Knight s
 
 ```powershell
 .\scripts\run_knight_qa_gate.ps1
-# Read docs/KNIGHT_QA_GATE.md row vs tests/skills/ tests/passives/
+# Read docs/qa/classes/KNIGHT_QA_GATE.md row vs tests/skills/ tests/passives/
 ```
 
 Judge per row:
@@ -108,16 +108,16 @@ Judge per row:
 - Recommendations: larger map, multi-knight fixture, packed scenarios
 - **Do not** conflate planning QA results with Knight score
 
-Handoff payload: see `docs/KNIGHT_QA_GATE.md` § Meta-critic and § Global systems fidelity.
+Handoff payload: see `docs/qa/classes/KNIGHT_QA_GATE.md` § Meta-critic and § Global systems fidelity.
 
 ## Gauntlet stub (K3-doc — doc critic only)
 
 ```text
 GOAL: P3 pillar spec — Knight QA gate doc + meta-critic contract + honest matrix; planning QA explicitly out-of-scope; P6-cloneable at LOCK
-BAR: lint PASS; Test-Path docs/KNIGHT_QA_GATE.md, core/factory/classes/knight_factory.gd, scripts/run_knight_qa_gate.ps1; matrix lists all factory ids with honest status legend; unchecked LOCK exit criteria must not FAIL this round
+BAR: lint PASS; Test-Path docs/qa/classes/KNIGHT_QA_GATE.md, core/factory/classes/knight_factory.gd, scripts/run_knight_qa_gate.ps1; matrix lists all factory ids with honest status legend; unchecked LOCK exit criteria must not FAIL this round
 PASS_THRESHOLD: 88
 RULES: skill-global-rules.mdc, global-systems-first.mdc, move-preview-intent-truth.mdc
-ARTIFACT: this file, docs/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Test-Path gate script
+ARTIFACT: this file, docs/qa/classes/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Test-Path gate script
 ```
 
 ## Tooling I/O
@@ -134,7 +134,7 @@ ARTIFACT: this file, docs/KNIGHT_QA_GATE.md, knight_factory.gd, lint stdout, Tes
 
 ### K3-doc (promote to `LOOP_READY`)
 
-- [x] `docs/KNIGHT_QA_GATE.md` complete (matrix + meta-critic + tiers)
+- [x] `docs/qa/classes/KNIGHT_QA_GATE.md` complete (matrix + meta-critic + tiers)
 - [x] `scripts/run_knight_qa_gate.ps1` on disk (may FAIL until matrix complete)
 - [x] Doc gauntlet critic ≥ 88 on K3-doc stub (90/88, round 1)
 - [x] `docs/design/knight-template.md` status → `LOOP_READY`

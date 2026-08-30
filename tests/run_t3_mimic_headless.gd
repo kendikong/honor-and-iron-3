@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Headless CLI runner for fixture parity (NOT Tier 3 LIVE TestBattle).
 ## Run: godot --headless --path <repo> --script res://tests/run_t3_mimic_headless.gd
-## Scene gate: res://tests/T3MimicHeadless.tscn → t3_mimic_headless_host.gd
+## Scene gate: res://tests/gates/T3MimicHeadless.tscn → t3_mimic_headless_host.gd
 
 
 func _initialize() -> void:

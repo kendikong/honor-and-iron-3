@@ -10,11 +10,17 @@ const _MageHarness := preload("res://tests/mage_qa_harness.gd")
 const _ClericUpgrades := preload("res://tests/cleric_qa_harness_upgrades.gd")
 const _MercenaryUpgrades := preload("res://tests/mercenary_qa_harness_upgrades.gd")
 const _MercenaryHarness := preload("res://tests/mercenary_qa_harness.gd")
-const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
+
+
+static func _find_ability(factory_id: StringName) -> AbilityData:
+	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	if harness_script == null:
+		return null
+	return harness_script.call("find_ability_by_id", factory_id) as AbilityData
 
 
 static func run_for_factory(failures: Array[String], factory_id: StringName) -> void:
-	var ability: AbilityData = _AoeHarness.find_ability_by_id(factory_id)
+	var ability: AbilityData = _find_ability(factory_id)
 	if ability != null:
 		if ability.upgraded_modules.is_empty() and ability.upgraded_description.is_empty():
 			return

@@ -61,7 +61,7 @@ When unsure, run **Planning QA gate** at minimum for anything in `presentation/c
 
 **Run QA once per turn.** Re-run only if the suite **FAIL**s and you are fixing toward a new pass.
 
-Authoritative checklist mapping: `docs/PLANNING_QA_GATE.md`.
+Authoritative checklist mapping: `docs/qa/planning/PLANNING_QA_GATE.md`.
 
 ## Agent workflow (every gameplay edit turn)
 

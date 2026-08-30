@@ -58,7 +58,7 @@ If yes to any, optimize **at the owning system** when inputs are unchanged: dirt
 - **No `frame_changed` / `animation_changed` hooks** that trigger full scene sync, material rebuilds, or shadow rebakes — use stable screen-space math or update only on pose/position/epoch change.
 - **Never `material.duplicate()` per layer per frame**; use shared materials + instance uniforms (or one duplicate at compose time only).
 - **Prefer existing autoload buses / composite layers** (e.g. multiply overlays, `EffectsController.process_frame`) over per-node `_process` duplicates.
-- **GPU over CPU** for ambient motion, wind, water, shadows — match `living-sandbox-architect.mdc` and `sandbox_map_system.md`.
+- **GPU over CPU** for ambient motion, wind, water, shadows — match `living-sandbox-architect.mdc` and `docs/design/sandbox_map_system.md`.
 
 ## Acceptable patterns
 

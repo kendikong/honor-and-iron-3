@@ -8,7 +8,7 @@ You are B6-REOPEN lead. Spec: docs/design/00-gauntlet-loop-cursor.md + docs/desi
 GOAL: Bruiser LOCK — 31/31 matrix PASS, gate exit 0, full-matrix gauntlet-critic ≥95, docs/design/bruiser-template.md → LOCKED.
 
 CURRENT STATE (do not regress):
-- Matrix 25/31 PASS in docs/BRUISER_QA_GATE.md + docs/bruiser_meta_critic_manifest.json
+- Matrix 25/31 PASS in docs/qa/classes/BRUISER_QA_GATE.md + docs/qa/manifests/bruiser_meta_critic_manifest.json
 - Remaining HARNESS_ONLY (deepened, harness was green locally):
   bruiser_guttural_roar, bruiser_crimson_whirlwind, blood_for_blood,
   momentum_transfer, battering_ram, unstoppable_force

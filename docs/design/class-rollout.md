@@ -13,7 +13,7 @@ Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, clonin
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
 | Per class | `docs/<CLASS>_QA_GATE.md` from [`_CLASS_QA_GATE_TEMPLATE.md`](../_CLASS_QA_GATE_TEMPLATE.md) + `run_<class>_qa_gate.ps1` + `run_<class>_live_qa.ps1` | Balance taste |
-| Per-class skills | **One** `tests/skills/<id>_scenario.gd` per active (Knight model) — **forbidden:** harness-only sole coverage | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| Per-class skills | **One** `tests/skills/<id>_scenario.gd` per active (Knight model) — **forbidden:** harness-only sole coverage | `docs/qa/planning/PLANNING_SKILL_QA_CHECKLIST.md` |
 | Class LOCK | Matrix **100% `PASS`** per [`KNIGHT_QA_GATE.md`](../KNIGHT_QA_GATE.md); meta-critic ≥ 88 | Owner defers only explicit `N/A` rows |
 | Optional balance | `tests/run_mass_sim_test.gd` | `tests/captures/mass_sim_interpretation.json` review |
 
@@ -29,11 +29,11 @@ Roll out Bible classes Phases 6–21 **one class per gauntlet campaign**, clonin
 
 - Knight re-work (use P3 LOCK)
 - Per-class global rule exceptions without owner approval
-- Misusing global keywords for “close enough” Bible text (clone `docs/KNIGHT_QA_GATE.md` § Global systems fidelity)
+- Misusing global keywords for “close enough” Bible text (clone `docs/qa/classes/KNIGHT_QA_GATE.md` § Global systems fidelity)
 
 ## Global systems fidelity (P6 — clone from P3)
 
-Every shipped class must follow **`docs/KNIGHT_QA_GATE.md` § Global systems fidelity**:
+Every shipped class must follow **`docs/qa/classes/KNIGHT_QA_GATE.md` § Global systems fidelity**:
 
 - **Rule A:** Factory data + shared `EffectType` / passive triggers — no per-skill heuristics.
 - **Rule B:** Bible-exact keywords only (e.g. behind-placement ≠ SWAP).
@@ -55,7 +55,7 @@ N/A
 ## Builder playbook
 
 1. Read class section in `class_abilities.txt`.
-2. Map each skill/passive to **exact** global effect or passive trigger (`docs/KNIGHT_QA_GATE.md` § Global systems fidelity) before writing factory data or scenarios.
+2. Map each skill/passive to **exact** global effect or passive trigger (`docs/qa/classes/KNIGHT_QA_GATE.md` § Global systems fidelity) before writing factory data or scenarios.
 3. Clone `tests/skills/shield_bash_scenario.gd` per skill; register in class scenario registry.
 4. Run class QA gate + `run_skill_scenarios_only.gd` (or per-class runner when split).
 

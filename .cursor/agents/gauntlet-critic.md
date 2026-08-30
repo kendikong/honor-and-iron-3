@@ -101,11 +101,11 @@ Lead may set **PASS_THRESHOLD** in handoff to override.
 
 When **RULES** or **GOAL** includes `MOVE_PREVIEW_RULES.md`, `PLANNING_REFACTOR_MATRIX.md`, or handoff names `PLANNING_GAUNTLET_BACKLOG.md`, you **must** run **both** passes in order before scoring. **Forbidden:** BAR that is only a narrow static grep checklist without Pass B.
 
-**Authority:** `docs/design/PLANNING_GAUNTLET_LOOP.md`
+**Authority:** `docs/design/logs/PLANNING_GAUNTLET_LOOP.md`
 
 | Pass | What | PASS means |
 |------|------|------------|
-| **A — Regression** | Verify every `OPEN` / `VERIFY` row in `docs/design/PLANNING_GAUNTLET_BACKLOG.md` | All rows `FIXED`; none `STILL_OPEN` / `REGRESSED` |
+| **A — Regression** | Verify every `OPEN` / `VERIFY` row in `docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md` | All rows `FIXED`; none `STILL_OPEN` / `REGRESSED` |
 | **B — Fresh bible** | Read `MOVE_PREVIEW_RULES.md` (rules only — **not** `MOVE_PREVIEW_IMPLEMENTATION_LOG.md`) + matrix R1–R12 | Zero **new HIGH** gaps; append new rows to backlog |
 
 **Overall RESULT:** `PASS` only if **REGRESSION_PASS** and **BIBLE_PASS** are both `PASS` **and** `SCORE ≥ PASS_THRESHOLD` **and** infrastructure `ADEQUATE`.

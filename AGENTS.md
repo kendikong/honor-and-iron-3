@@ -20,7 +20,7 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - **QA after gameplay changes (absolute):** Any edit to sim, combat systems, planning/commit, or ability data **must** run the matching headless suite and report PASS or FAIL in Changelog before ending the turn — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
 - **Test execution hierarchy (absolute):** Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) while debugging. When an edit is ready, run **`run_planning_qa_gate.ps1` for regression prevention** and **`run_<class>_qa_gate.ps1` for the specific class edited**. `run_all_background_class_tests.ps1` is heavy master CI only — **never run iteratively**; run only at final milestone completion or upon explicit user request.
 - **Headless `--script` entry points:** Godot requires `extends SceneTree` (or `MainLoop`). Files named `*_runner.gd` / `*_harness.gd` with `extends RefCounted` are **libraries** — load them from a `run_*.gd` wrapper or a `*QaGate.tscn` host. See table below.
-- **Automated QA = two planning suites:** **Tier 3 LIVE** — `run_planning_scene_acceptance.ps1` → `live_planning_scene_test.gd` (GdUnit + TestBattle, hidden window, **not** `--headless`). **Headless contracts** — `run_planning_headless_contracts.ps1` → `PlanningQaGate.tscn` (fixture harness). Do not conflate them with a `-Headless` flag on the live runner.
+- **Automated QA = two planning suites:** **Tier 3 LIVE** — `run_planning_scene_acceptance.ps1` → `live_planning_scene_test.gd` (GdUnit + TestBattle, hidden window, **not** `--headless`). **Default headless gate** — `run_t3_mimic_headless.ps1` (Fixture Parity Suite via `run_planning_qa_gate.ps1`). **Legacy archaeology** — `run_planning_headless_contracts.ps1` / `PlanningQaGate.tscn` (only with `-IncludeLegacyTier12`; drift expected).
 - **Class kits are drafts:** never recite owner QA sign-off / LOCK / “Knight is the only PASS” — `.cursor/rules/skill-lists-are-drafts.mdc`. Still run matching automated class gates when you touch a class — `.cursor/rules/class-qa-knight-bar.mdc` · `.cursor/rules/class-qa-all-classes-mandatory.mdc`
 - One pure `Simulator.simulate(state, timeline)`; preview == execution.
 - Simulation = plain RefCounted state, headless, never references Nodes.
@@ -252,7 +252,7 @@ To keep workspace limits and API usage optimized:
 
 ## Cursor Cloud specific instructions
 
-Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud VM. Standard commands live in `scripts/*.ps1`, `docs/PLANNING_QA_GATE.md`, and `ROADMAP.md` — those are not duplicated here.
+Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud VM. Standard commands live in `scripts/*.ps1`, `docs/qa/planning/PLANNING_QA_GATE.md`, and `ROADMAP.md` — those are not duplicated here.
 
 ### Engine
 - Godot **4.7-stable** is on `PATH` as `godot`. Image build: `.cursor/Dockerfile`. Boot install (`.cursor/environment.json`): reinstall if missing + `godot --headless --import`.

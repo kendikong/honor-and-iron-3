@@ -7,7 +7,7 @@ alwaysApply: true
 
 **The owner must not have to repeat:** class QA must be thorough enough that **green gate = no hand-testing every skill in F5.**
 
-**Authoritative template:** `docs/KNIGHT_QA_GATE.md` (P3 LOCK) · **Clone scaffold:** `docs/_CLASS_QA_GATE_TEMPLATE.md` · **Process:** `docs/design/class-rollout.md` · **Planning overlay bar:** `docs/PLANNING_SKILL_QA_CHECKLIST.md`
+**Authoritative template:** `docs/qa/classes/KNIGHT_QA_GATE.md` (P3 LOCK) · **Clone scaffold:** `docs/qa/_CLASS_QA_GATE_TEMPLATE.md` · **Process:** `docs/design/class-rollout.md` · **Planning overlay bar:** `docs/qa/planning/PLANNING_SKILL_QA_CHECKLIST.md`
 
 **Parent:** `.cursor/rules/qa-after-gameplay-changes.mdc` (which suite to run) · **All classes mandatory:** `.cursor/rules/class-qa-all-classes-mandatory.mdc` (never stop at one class; never ask owner if they want full QA) · **Complements:** `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/skill-global-rules.mdc`, `.cursor/rules/move-preview-intent-truth.mdc`
 
@@ -68,7 +68,7 @@ Shared geometry owner: `GridSystem.get_affected_tiles` — **no** per-skill over
 ## Agent workflow (every class turn)
 
 1. Read `docs/<CLASS>_QA_GATE.md` matrix — know which rows are `HARNESS_ONLY`.
-2. New class: start from `docs/_CLASS_QA_GATE_TEMPLATE.md` (not a blank stub).
+2. New class: start from `docs/qa/_CLASS_QA_GATE_TEMPLATE.md` (not a blank stub).
 3. Per skill wave: add scenario file → register → promote row `HARNESS_ONLY` → `PASS` only after meta-critic adequacy.
 4. Changelog **Class QA** line: suites run and **PASS** / **FAIL**. Do not tell the owner a class is finished.
 5. Run **both** `run_<class>_qa_gate.ps1` and `run_<class>_live_qa.ps1` when class factory/scenarios/live tests change.
@@ -77,7 +77,7 @@ Shared geometry owner: `GridSystem.get_affected_tiles` — **no** per-skill over
 
 ## P6 clone checklist (mandatory for new classes)
 
-1. Copy `docs/_CLASS_QA_GATE_TEMPLATE.md` → `docs/<CLASS>_QA_GATE.md`
+1. Copy `docs/qa/_CLASS_QA_GATE_TEMPLATE.md` → `docs/<CLASS>_QA_GATE.md`
 2. Fill matrix from `<class>_factory.gd` + `class_abilities.txt` — honest `PLANNED` / `HARNESS_ONLY`
 3. Copy `run_knight_qa_gate.ps1` pattern → `run_<class>_qa_gate.ps1`
 4. One `tests/skills/<id>_scenario.gd` per active; `tests/passives/<id>_scenario.gd` per passive

@@ -49,7 +49,7 @@ If gameplay feels wrong in F5, that is **not** disproven by this milestone — i
 | [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md) | Every gap ID, fix commit, round history |
 | [`PLANNING_GAUNTLET_LOOP.md`](PLANNING_GAUNTLET_LOOP.md) | Two-pass critic contract (regression + fresh bible) |
 | [`PLANNING_GAUNTLET_ROUND31.md`](PLANNING_GAUNTLET_ROUND31.md) | Round 31 static critic report (score 88) |
-| [`PLANNING_QA_GATE.md`](../PLANNING_QA_GATE.md) | Which test suites block vs archaeology |
+| [`PLANNING_QA_GATE.md`](../qa/planning/PLANNING_QA_GATE.md) | Which test suites block vs archaeology |
 
 **Primary code owners:**
 

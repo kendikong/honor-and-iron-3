@@ -6,7 +6,20 @@ extends RefCounted
 const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
 const _Checklist := preload("res://tests/planning_checklist_harness.gd")
 const _MovementRegistry := preload("res://tests/movement_planning_smoke_registry.gd")
-const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
+
+
+static func _find_ability(factory_id: StringName) -> AbilityData:
+	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	if harness_script == null:
+		return null
+	return harness_script.call("find_ability_by_id", factory_id) as AbilityData
+
+
+static func _ability_requires_footprint_qa(ability: AbilityData) -> bool:
+	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	if harness_script == null:
+		return false
+	return bool(harness_script.call("ability_requires_footprint_qa", ability))
 
 
 static func run_for_factory(failures: Array[String], factory_id: StringName) -> void:
@@ -24,7 +37,7 @@ static func run_tier_b_commit_smoke(
 	class_id: StringName,
 	factory_id: StringName,
 ) -> void:
-	var ability: AbilityData = _AoeHarness.find_ability_by_id(factory_id)
+	var ability: AbilityData = _find_ability(factory_id)
 	if ability == null:
 		_Checklist.assert_fail(
 			failures, "%s/planning/missing_ability" % factory_id,
@@ -63,7 +76,7 @@ static func run_tier_b_commit_smoke(
 	if select_only:
 		return
 	_Checklist.hover(fix, commit_cell)
-	if _AoeHarness.ability_requires_footprint_qa(ability):
+	if _ability_requires_footprint_qa(ability):
 		_assert_shaped_footprint(failures, factory_id, fix, ability, commit_cell)
 	var hover_slots: Dictionary = _Checklist.slots_for_hover(fix, commit_cell)
 	if _Checklist._slots_invalid(hover_slots):

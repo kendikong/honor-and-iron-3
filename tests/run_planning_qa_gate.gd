@@ -1,11 +1,10 @@
 extends Node
 
-## LEGACY Tier 1/2 — headless fixture contracts (DISABLED from QA gate).
+## LEGACY Tier 1/2 archaeology only — NOT the default planning QA gate.
 ##
-## Not part of run_planning_qa_gate.ps1 unless -IncludeLegacyTier12. Use Tier 3:
-##   .\scripts\run_planning_scene_acceptance.ps1
-## Optional local archaeology:
-##   "<godot.exe>" --headless --path . --script res://tests/run_planning_qa_gate.gd
+## Default gate Tier 3: `.\scripts\run_t3_mimic_headless.ps1` (Fixture Parity Suite).
+## Full legacy bloated suite: `.\scripts\run_planning_qa_gate.ps1 -IncludeLegacyTier12`
+##   or: godot --headless --path . res://tests/gates/PlanningQaGate.tscn
 
 func _ready() -> void:
 	call_deferred("_run")

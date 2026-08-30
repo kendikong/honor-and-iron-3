@@ -2,7 +2,7 @@
 
 **Status:** `LOOP_READY` *(gauntlet C5: 88/88 PASS)*  
 **Pillar ID:** P7 support  
-**Authority chain:** PixelForge v14 Master Implementation Specification (owner `.docx`) · `docs/asset_manifest.md` · `docs/tile_registry.md`
+**Authority chain:** PixelForge v14 Master Implementation Specification (owner `.docx`) · `docs/reference/asset_manifest.md` · `docs/reference/tile_registry.md`
 
 ## Goal
 
@@ -39,9 +39,9 @@ N/A — CANON promote = owner always.
 | Input | Output | Consumer |
 |-------|--------|----------|
 | ASSET_SPECIFICATION | Candidate assets | PixelForge workspace |
-| CANON_BOARD | `res://` exports | `docs/asset_manifest.md` row |
-| `docs/tile_registry.md` | Tile id registry | Map generators / TileMap |
-| `docs/asset_manifest.md` | Disk truth | All map work |
+| CANON_BOARD | `res://` exports | `docs/reference/asset_manifest.md` row |
+| `docs/reference/tile_registry.md` | Tile id registry | Map generators / TileMap |
+| `docs/reference/asset_manifest.md` | Disk truth | All map work |
 
 ## Decomposition
 
@@ -80,10 +80,10 @@ Compare manifest entry vs file on disk; REFERENCE PNG for visual.
 
 ```text
 GOAL: PixelForge contract doc — pipeline + I/O paths (not CANON promote execution)
-BAR: lint PASS; docs/asset_manifest.md + docs/tile_registry.md exist
+BAR: lint PASS; docs/reference/asset_manifest.md + docs/reference/tile_registry.md exist
 PASS_THRESHOLD: 88
 RULES: living-sandbox-architect.mdc, phase-audit.mdc
-ARTIFACT: docs/asset_manifest.md, this file
+ARTIFACT: docs/reference/asset_manifest.md, this file
 REFERENCE: reports/<capture>.png
 ```
 

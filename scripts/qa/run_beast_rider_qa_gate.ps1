@@ -1,0 +1,245 @@
+param(
+	[string]$GodotPath = "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe"
+)
+
+$ErrorActionPreference = "Stop"
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$matrixDoc = Join-Path $projectRoot "docs\BEAST_RIDER_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\beast_rider_meta_critic_manifest.json"
+
+$latestGateLog = Join-Path $projectRoot "qa_beast_rider_gate_latest.txt"
+$canonicalGateLog = Join-Path $projectRoot "qa_beast_rider_gate_canonical.txt"
+$gateLogLines = New-Object System.Collections.Generic.List[string]
+
+function Write-GateLine([string]$Line) {
+	Write-Output $Line
+	[void]$gateLogLines.Add($Line)
+}
+
+function Save-GateLog() {
+	$canonicalTmp = "$canonicalGateLog.tmp"
+	$latestTmp = "$latestGateLog.tmp"
+	$gateLogLines | Set-Content -Path $canonicalTmp -Encoding utf8
+	$gateLogLines | Set-Content -Path $latestTmp -Encoding utf8
+	Move-Item -LiteralPath $canonicalTmp -Destination $canonicalGateLog -Force
+	Move-Item -LiteralPath $latestTmp -Destination $latestGateLog -Force
+}
+
+function Exit-Gate([int]$Code) {
+	Save-GateLog
+	exit $Code
+}
+
+Write-GateLine "=== Beast Rider QA gate (CLASS_QA_BIBLE) ==="
+Write-GateLine "Spec: docs/qa/CLASS_QA_BIBLE.md (instance: docs/qa/classes/BEAST_RIDER_QA_GATE.md)"
+Write-GateLine ""
+
+$requiredFactoryIds = @(
+	"beast_reposition", "beast_pounce", "beast_feral_drag", "beast_maul",
+	"beast_bestial_roar", "beast_raking_claws", "beast_rest_recover",
+	"beast_intimidate", "beast_fetch", "beast_savage_bite", "beast_run_down",
+	"beast_thrash", "beast_defensive_posture", "beast_airlift",
+	"beast_tail_swipe", "beast_gore",
+	"gallop", "isolation_tactics", "terminal_velocity", "snatch_and_grab",
+	"safe_landing", "aerial_superiority", "mount_resilience", "beasts_instinct",
+	"territorial", "intimidating_presence", "dive_bomber", "pack_hunter",
+	"blood_scent", "vantage_striker", "predatory_drive", "furious_charge"
+)
+
+if (-not (Test-Path $matrixDoc)) {
+	Write-Error "[FAIL] Missing matrix doc: $matrixDoc"
+}
+
+$matrixText = Get-Content -Path $matrixDoc -Raw
+$passRows = @()
+$plannedRows = @()
+$harnessRows = @()
+
+foreach ($id in $requiredFactoryIds) {
+	$escaped = [regex]::Escape($id)
+	$tablePattern = '`\s*' + $escaped + '\s*`'
+	$rowLine = (
+		$matrixText -split "`n" |
+		Where-Object {
+			$_ -match $tablePattern -and $_ -match '\|' -and $_ -match '\|\s*(PASS|HARNESS_ONLY|PLANNED|N/A)\s*\|'
+		} |
+		Select-Object -First 1
+	)
+	if ($null -eq $rowLine -or $rowLine.Trim().Length -eq 0) {
+		$plannedRows += $id
+		continue
+	}
+	if ($rowLine -match '\|\s*PASS\s*\|') {
+		$passRows += $id
+	} elseif ($rowLine -match '\|\s*HARNESS_ONLY\s*\|') {
+		$harnessRows += $id
+	} else {
+		$plannedRows += $id
+	}
+}
+
+Write-GateLine "=== Matrix summary (from docs/qa/classes/BEAST_RIDER_QA_GATE.md) ==="
+Write-GateLine ("PASS:          {0}/{1}" -f $passRows.Count, $requiredFactoryIds.Count)
+Write-GateLine ("HARNESS_ONLY:  {0}" -f $harnessRows.Count)
+Write-GateLine ("PLANNED/other: {0}" -f $plannedRows.Count)
+Write-GateLine ""
+
+$manifestApproved = @()
+$manifestThreshold = 88
+if (Test-Path $manifestPath) {
+	$manifest = Get-Content -Path $manifestPath -Raw | ConvertFrom-Json
+	if ($null -ne $manifest.pass_threshold) {
+		$manifestThreshold = [int]$manifest.pass_threshold
+	}
+	foreach ($row in $manifest.approved_rows) {
+		if ($null -ne $row.factory_id) {
+			$manifestApproved += [string]$row.factory_id
+		}
+	}
+	Write-GateLine ("=== Meta-critic manifest ({0} approved, threshold {1}, last_round {2}, last_score {3}, {4}) ===" -f `
+		$manifestApproved.Count, $manifestThreshold, `
+		$manifest.last_critic_round, $manifest.last_score, $manifest.last_result)
+	foreach ($row in $manifest.approved_rows) {
+		Write-GateLine ("  meta-critic/{0}: score {1} round {2}" -f $row.factory_id, $row.score, $row.critic_round)
+	}
+} else {
+	Write-GateLine "[WARN] Missing manifest: docs/qa/manifests/beast_rider_meta_critic_manifest.json"
+}
+
+$unapprovedPass = @($passRows | Where-Object { $manifestApproved -notcontains $_ })
+$matrixPassValid = $true
+if ($unapprovedPass.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS without manifest approval: $($unapprovedPass -join ', ')"
+	$matrixPassValid = $false
+} elseif ($passRows.Count -gt $manifestApproved.Count -and $manifestApproved.Count -gt 0) {
+	Write-GateLine "[FAIL] Matrix PASS count exceeds manifest approved count."
+	$matrixPassValid = $false
+}
+
+Write-GateLine ""
+
+. (Join-Path $PSScriptRoot "qa_gate_matrix_helpers.ps1")
+$scenarioMissing = Test-MatrixScenarioFiles `
+	-ProjectRoot $projectRoot -MatrixDocPath $matrixDoc `
+	-RequiredFactoryIds $requiredFactoryIds
+if ($scenarioMissing.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS matrix rows missing scenario files:"
+	$scenarioMissing | ForEach-Object { Write-Output "  $_" }
+	Exit-Gate 3
+}
+
+$manifestErrors = @()
+if ($manifestApproved.Count -gt 0) {
+	$manifestErrors = Test-ManifestScore -ManifestPath $manifestPath
+} else {
+	Write-GateLine "[WARN] Manifest has no approved_rows - skipping last_score gate until gauntlet-critic >= $manifestThreshold"
+}
+if ($manifestErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] Meta-critic manifest gate:"
+	$manifestErrors | ForEach-Object { Write-Output "  $_" }
+	Exit-Gate 3
+}
+
+$contractErrors = Test-PassRowScenarioContracts -ProjectRoot $projectRoot -MatrixDocPath $matrixDoc
+if ($contractErrors.Count -gt 0) {
+	Write-GateLine "[FAIL] PASS scenario contract shallow (CLASS_QA_BIBLE.md ss8.2):"
+	$contractErrors | ForEach-Object { Write-Output "  $_" }
+	Exit-Gate 3
+}
+
+if (-not (Test-Path $GodotPath)) {
+	Write-GateLine "[SKIP] Godot not found at: $GodotPath - matrix/contract check only."
+	if (-not $matrixPassValid) { Exit-Gate 3 }
+	if ($passRows.Count -lt $requiredFactoryIds.Count) { Exit-Gate 2 }
+	Exit-Gate 0
+}
+
+Write-GateLine "=== Typed module conversion contracts ==="
+foreach ($typedContract in @(
+	"res://tests/run_extra_rules_conversion_contract.gd",
+	"res://tests/run_class_library_schema_typed_fields_test.gd"
+)) {
+	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
+	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-beast-rider-$contractTag.stdout.log")
+	$contractStderr = Join-Path $env:TEMP ("honor-and-iron-beast-rider-$contractTag.stderr.log")
+	$contractProcess = Start-Process -FilePath $GodotPath `
+		-ArgumentList @("--headless", "--path", $projectRoot, "--script", $typedContract) `
+		-RedirectStandardOutput $contractStdout `
+		-RedirectStandardError $contractStderr `
+		-Wait -PassThru
+	$contractExit = $contractProcess.ExitCode
+	if (Test-Path $contractStdout) { Get-Content -Path $contractStdout }
+	if (Test-Path $contractStderr) { Get-Content -Path $contractStderr }
+	if ($contractExit -ne 0) {
+		Write-GateLine "[FAIL] Typed contract failed: $typedContract (exit $contractExit)"
+		Exit-Gate 5
+	}
+}
+Write-GateLine "--- Typed module conversion contracts: PASS ---"
+Write-GateLine ""
+
+Write-GateLine "=== AOE footprint contract (all classes) ==="
+$aoeGate = Join-Path $PSScriptRoot "run_aoe_footprint_qa_gate.ps1"
+& $aoeGate -GodotPath $GodotPath | ForEach-Object { Write-GateLine $_ }
+if ($LASTEXITCODE -ne 0) {
+	Write-GateLine "[FAIL] AOE footprint contract gate exit $LASTEXITCODE"
+	Exit-Gate 5
+}
+Write-GateLine "--- AOE footprint contract: PASS ---"
+Write-GateLine ""
+
+Write-GateLine "=== Tier 1: headless skill scenarios (harness) ==="
+$stdoutPath = Join-Path $env:TEMP "honor-and-iron-beast-rider-tier1.stdout.log"
+$stderrPath = Join-Path $env:TEMP "honor-and-iron-beast-rider-tier1.stderr.log"
+$process = Start-Process -FilePath $GodotPath `
+	-ArgumentList "--headless --path `"$projectRoot`" res://tests/gates/BeastRiderQaGate.tscn" `
+	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `
+	-RedirectStandardError $stderrPath -PassThru -Wait -NoNewWindow
+$process.WaitForExit()
+$process.Refresh()
+$exitCode = [int]$process.ExitCode
+Get-Content $stdoutPath | ForEach-Object { Write-GateLine $_ }
+# Keep diagnostics in the temp stderr log; the canonical gate snapshot is
+# structured stdout while pass/fail evaluation still reads both streams.
+
+$testFailures = @(Select-String -Path $stdoutPath, $stderrPath -Pattern '^\[FAIL\]' | ForEach-Object { $_.Line })
+$scriptErrors = @(Select-String -Path $stdoutPath, $stderrPath -Pattern 'SCRIPT ERROR:' | ForEach-Object { $_.Line })
+$harnessPass = ($exitCode -eq 0 -and $testFailures.Count -eq 0 -and $scriptErrors.Count -eq 0)
+
+if ($harnessPass) {
+	Write-GateLine "--- Tier 1 harness: PASS ---"
+} else {
+	Write-GateLine "--- Tier 1 harness: FAIL ---"
+	if ($testFailures.Count -gt 0) {
+		$testFailures | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
+	}
+	if ($scriptErrors.Count -gt 0) {
+		Write-GateLine "[FAIL] Godot SCRIPT ERROR lines detected ($($scriptErrors.Count)):"
+		$scriptErrors | Select-Object -First 10 | ForEach-Object { Write-Output $_ }
+	}
+	Exit-Gate 1
+}
+
+Write-GateLine ""
+Write-GateLine "=== Tier 2: live Beast Rider acceptance ==="
+$liveScript = Join-Path $PSScriptRoot "run_beast_rider_live_qa.ps1"
+& $liveScript -GodotPath $GodotPath | ForEach-Object { Write-GateLine $_ }
+if ($LASTEXITCODE -ne 0) {
+	Write-GateLine "[FAIL] Beast Rider Tier 2 live gate exit $LASTEXITCODE"
+	Exit-Gate 4
+}
+Write-GateLine "[PASS] Beast Rider Tier 2 live preview/factory gate"
+
+Write-GateLine ""
+Write-GateLine "=== Beast Rider QA gate summary ==="
+if (-not $matrixPassValid) {
+	Write-GateLine "[INCOMPLETE] Harness PASS but matrix PASS rows lack meta-critic manifest approval."
+	Exit-Gate 2
+}
+if ($passRows.Count -eq $requiredFactoryIds.Count) {
+	Write-GateLine "[PASS] Beast Rider QA gate: matrix 32/32 + Tier 1 harness + Tier 2 live + AOE footprint PASS (automated bar; owner sign-off separate per CLASS_QA_SIGNOFF.md)."
+	Exit-Gate 0
+}
+
+Write-GateLine ('[INCOMPLETE] Harness PASS but matrix not LOCK-ready ({0}/{1} PASS rows).' -f $passRows.Count, $requiredFactoryIds.Count)
+Exit-Gate 2

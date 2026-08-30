@@ -92,7 +92,7 @@ flowchart TD
 
 ## Approved rows (30 — manifest complete)
 
-All 30 `knight_factory.gd` rows in `docs/knight_meta_critic_manifest.json`. Full-matrix LOCK critic r37: **92/95 FAIL** — see `workbench.md` planning tiers.
+All 30 `knight_factory.gd` rows in `docs/qa/manifests/knight_meta_critic_manifest.json`. Full-matrix LOCK critic r37: **92/95 FAIL** — see `workbench.md` planning tiers.
 
 ---
 

@@ -50,7 +50,7 @@ This file is the **implementation plan for creating all remaining-work documents
 | 4 | Avoids sprawl / duplication | 8 | Good delta rule; **P0 overlaps** `00-gauntlet-loop-cursor.md` |
 | 5 | Agent-executable | 8 | Gauntlet + critic exist on disk; doc suite had no single plan file |
 | 6 | Human vs agent boundaries | 7 | Roguelike worksheet named but **empty template** missing |
-| 7 | Tooling (PixelForge) | 8 | Appendix correct; needs `docs/asset_manifest.md` + `tile_registry.md` in I/O chain |
+| 7 | Tooling (PixelForge) | 8 | Appendix correct; needs `docs/reference/asset_manifest.md` + `tile_registry.md` in I/O chain |
 | 8 | Loop-polishable | 5 | v2 lived only in chat — **not on disk** |
 
 **Round 2 result: FAIL** (avg 7.1; dimensions 3 and 8 below threshold)
@@ -89,9 +89,9 @@ Layer 2 — APPENDICES       tools, formats, prompt library
 | Keep authoritative | Pillar adds |
 |--------------------|-------------|
 | `ROADMAP.md` | Living-map remaining phases + compositor gates |
-| `docs/TACTICAL_COMBAT_PARITY_PLAN.md` | Open items Phases 10–14 + retirement checklist |
+| `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` | Open items Phases 10–14 + retirement checklist |
 | `class_abilities.txt` | Per-class rollout checklists |
-| `docs/PLANNING_QA_GATE.md` | Pointers only — never duplicate Tier 3 |
+| `docs/qa/planning/PLANNING_QA_GATE.md` | Pointers only — never duplicate Tier 3 |
 | `IMPLEMENTATION_STATUS.md` | Status row per pillar when work starts |
 | `docs/design/00-gauntlet-loop-cursor.md` | **Runtime gauntlet OS** — not duplicated |
 
@@ -178,11 +178,11 @@ Every pillar spec **must** include:
 | Pillar | Primary machine bar | Secondary | Human gate |
 |--------|---------------------|-----------|------------|
 | **P2** combat closeout | `.\scripts\run_regression_tests.ps1` | `.\scripts\run_planning_qa_gate.ps1` | F5 Phase 10–14 manual lists in parity plan |
-| **P3** knight template | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_skill_scenarios_only.gd` | `docs/PLANNING_SKILL_QA_CHECKLIST.md` |
+| **P3** knight template | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_skill_scenarios_only.gd` | `docs/qa/planning/PLANNING_SKILL_QA_CHECKLIST.md` |
 | **P4** roguelike run | `PLANNED — tests/run_state_test.gd` | — | **Worksheet required** (below) |
 | **P5** enemy design | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
 | **P6** class rollout | `.\scripts\run_planning_qa_gate.ps1` | `tests/run_mass_sim_test.gd` | Balance taste |
-| **P7** world/map | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
+| **P7** world/map | `docs/reference/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
 | **P8** presentation | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
 | **P9** matrix | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |
 | **Triage / autobattler** | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
@@ -302,7 +302,7 @@ Checks (PowerShell):
 
 **Owner:** `appendices/pixelforge-v14-contract.md`
 
-- `ASSET_SPECIFICATION` ↔ `docs/asset_manifest.md` + `docs/tile_registry.md`
+- `ASSET_SPECIFICATION` ↔ `docs/reference/asset_manifest.md` + `docs/reference/tile_registry.md`
 - Export paths under `res://` that Godot scenes already reference
 - **Bar:** promoted CANON → manifest row + nearest filter + F5 compositor gate
 - **Agent rule:** propose only; CANON promote = human (v14)

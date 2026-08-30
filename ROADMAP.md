@@ -2,7 +2,7 @@
 
 > **Permanent master plan for this repo.** Do not replace or truncate.  
 > Append phase completion notes to `IMPLEMENTATION_STATUS.md`, not this file.  
-> Visual/ecology bible: `sandbox_map_system.md` (Living Stillness & Pixel Integrity) · Coding guardrails: `.cursor/rules/living-sandbox-architect.mdc`
+> Visual/ecology bible: `docs/design/sandbox_map_system.md` (Living Stillness & Pixel Integrity) · Coding guardrails: `.cursor/rules/living-sandbox-architect.mdc`
 
 **Project:** honor-and-iron-3 (mana-seed-test heritage)  
 **Target:** Godot 4.7  
@@ -84,7 +84,7 @@ Phases ship visible progress with explicit exit criteria. **No phase closes** un
 | Seasonal samples | root `seasonal sample (*.png)` | autumn, summer, winter | Reference only, not full tilesets |
 | `.tsx` definitions | root | v01–**v10** declared | **v04–v10 PNGs missing** — Phase 8 blocked for those until acquired |
 
-**Phase 0 must write `docs/asset_manifest.md`** from this inventory. Do not reference tiles/atlases not on disk.
+**Phase 0 must write `docs/reference/asset_manifest.md`** from this inventory. Do not reference tiles/atlases not on disk.
 
 **Biome note:** Architect rule "Y-offset seasonal swap" applies when a single atlas contains stacked seasons. This pack uses **separate PNG per palette** for v01–v10. `BiomeProfile` must abstract both strategies: `atlas_y_offset` (future seasonal bundle) and `tileset_variant_index` (current Gentle Forest PNG swap).
 
@@ -102,7 +102,7 @@ Phases ship visible progress with explicit exit criteria. **No phase closes** un
 | Animation priority ladder | Palette cycle → occlusion/light → particles → sprite swap → **spring translation (2nd-order, integer snap)** → hierarchical reaction → quantized displacement; UV warp forbidden |
 | Temporal quantization | Stepped shader time (e.g. `floor(TIME * 6.0) / 6.0`); no 60 fps continuous interpolation on environmental motion |
 | Procedural springs | Translation-only Second-Order Dynamics; no squash/stretch/rotation; final output snapped to integer pixels (bible §2 Rule 2 #5) |
-| No hallucination | Only use assets in `docs/asset_manifest.md` |
+| No hallucination | Only use assets in `docs/reference/asset_manifest.md` |
 | Two-grid separation | Player Grid never draws; Auto-Decorator owns all `TileMapLayer` writes |
 | Render Grid | Ephemeral computed tile indices inside Auto-Decorator — not a second persisted array |
 | GPU over CPU | Shaders + `GPUParticles2D`; no `_draw()` or per-tile `_process()` at scale |
@@ -257,8 +257,8 @@ Neighboring systems must not share identical math. Coordinated, never synchroniz
 - **Subpixel Camera Glide** — integer logic camera + fractional display offset on upscale quad/shader (bible §2 Rule 6)
 - **Palette LUT stub** — Mana Seed color-space mapping hook (bible §3 #2)
 - Folders: `scenes/`, `scripts/`, `shaders/`, `resources/`, `docs/`
-- `docs/asset_manifest.md` — every PNG on disk with dimensions
-- `docs/tile_registry.md` — TileID → atlas coords for GRASS, WATER, DIRT, TREE, RUIN, ROCK
+- `docs/reference/asset_manifest.md` — every PNG on disk with dimensions
+- `docs/reference/tile_registry.md` — TileID → atlas coords for GRASS, WATER, DIRT, TREE, RUIN, ROCK
 - `IMPLEMENTATION_STATUS.md` — stub with channel checklist (all unchecked)
 - Import `gentle forest v01` (+ trees, sparkles, 32×32 from sample `.tmx`) → Godot `TileSet` resources
 - Configure Godot **TerrainSet** peering from Wang colors in `gentle forest v01.tsx` (dirt-on-grass, elevation, water-on-grass)
@@ -513,10 +513,10 @@ Neighboring systems must not share identical math. Coordinated, never synchroniz
 
 ### Deliverables
 - `IMPLEMENTATION_STATUS.md` — all channels, archetypes, temporal scales, Always Ask answers
-- Full Battlefield Presence Audit (`sandbox_map_system.md` §7)
-- Final Validation + **Screenshot Test & Sprite Authorship Test** (`sandbox_map_system.md` §8)
+- Full Battlefield Presence Audit (`docs/design/sandbox_map_system.md` §7)
+- Final Validation + **Screenshot Test & Sprite Authorship Test** (`docs/design/sandbox_map_system.md` §8)
 - `scripts/walkability.gd` — WATER, TREE, RUIN block; GRASS, DIRT walkable
-- PlayerGrid export format + `docs/player_grid_api.md`
+- PlayerGrid export format + `docs/reference/player_grid_api.md`
 
 ### Exit Criteria
 - [ ] Every final channel checkbox populated (including Weather/Wind)
@@ -619,7 +619,7 @@ Update `IMPLEMENTATION_STATUS.md`:
 | 4 | Roguelike run v1 | P4 `roguelike-run.md` | `PLANNED — tests/run_state_test.gd` | DRAFT *(worksheet gate)* |
 | 5 | Enemy puzzle kit | P5 `enemy-design.md` | `tests/bridge_test_runner.gd` | DRAFT *(worksheet gate)* |
 | 6 | Class rollout 2+ | P6 `class-rollout.md` | Planning gate + skill scenarios | LOOP_READY |
-| 7 | Map assets + PixelForge MVP | P7 `world-assets-and-map.md` | `docs/asset_manifest.md` | DRAFT *(worksheet gate)* |
+| 7 | Map assets + PixelForge MVP | P7 `world-assets-and-map.md` | `docs/reference/asset_manifest.md` | DRAFT *(worksheet gate)* |
 | 8 | Living map ROADMAP close | P7 | F5 compositor gate | PLANNED |
 | 9 | UI + SFX shell | P8 `presentation-audio-ui.md` | SfxPlayer DEFS map in P8 doc | LOOP_READY |
 | 10 | UI gauntlets polish | P8 | P8 checklist | PLANNED |
@@ -681,7 +681,7 @@ flowchart TD
 *P2 combat-core (parity Ph 10–14): owner closed for now — reopen only for regressions or Phase 15 MP path.*
 
 **Implementation status:** [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md)  
-**Combat detail:** [`docs/TACTICAL_COMBAT_PARITY_PLAN.md`](docs/TACTICAL_COMBAT_PARITY_PLAN.md)  
+**Combat detail:** [`docs/design/TACTICAL_COMBAT_PARITY_PLAN.md`](docs/design/TACTICAL_COMBAT_PARITY_PLAN.md)  
 **Gauntlet live scores:** [`docs/design/workbench.md`](docs/design/workbench.md)
 
 **Deferred (not blocking design suite):**

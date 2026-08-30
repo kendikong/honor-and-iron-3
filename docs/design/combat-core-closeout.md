@@ -2,7 +2,7 @@
 
 **Status:** `CLOSED` *(owner: combat-core done for now — 2026-08-01; parity Ph 10–14 accepted)*  
 **Pillar ID:** P2  
-**Authority chain:** `docs/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–14) · `IMPLEMENTATION_STATUS.md` · `presentation/combat_planning_input.gd`
+**Authority chain:** `docs/design/TACTICAL_COMBAT_PARITY_PLAN.md` (Phases 10–14) · `IMPLEMENTATION_STATUS.md` · `presentation/combat_planning_input.gd`
 
 ## Goal
 
@@ -52,10 +52,10 @@ N/A
 
 ```text
 GOAL: P2 pillar doc — gauntlet pieces + QA path inventory (parity plan is link-only detail)
-BAR: lint PASS; Test-Path regression + planning QA scripts; link-only check to docs/TACTICAL_COMBAT_PARITY_PLAN.md
+BAR: lint PASS; Test-Path regression + planning QA scripts; link-only check to docs/design/TACTICAL_COMBAT_PARITY_PLAN.md
 PASS_THRESHOLD: 88
 RULES: move-preview-intent-truth.mdc, global-systems-first.mdc, qa-after-gameplay-changes.mdc
-ARTIFACT: this file, lint stdout, docs/TACTICAL_COMBAT_PARITY_PLAN.md link-only check
+ARTIFACT: this file, lint stdout, docs/design/TACTICAL_COMBAT_PARITY_PLAN.md link-only check
 ```
 
 ## Tooling I/O

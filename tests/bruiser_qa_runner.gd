@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Bruiser QA Tier 1 headless CLI / Run Script entry.
 ## Run: godot --headless --path <repo> --script res://tests/bruiser_qa_runner.gd
-## Scene gate (F5): res://tests/BruiserQaGate.tscn → bruiser_qa_gate_host.gd
+## Scene gate (F5): res://tests/gates/BruiserQaGate.tscn → bruiser_qa_gate_host.gd
 ## Scenario library: res://tests/bruiser_qa_runner_lib.gd
 
 

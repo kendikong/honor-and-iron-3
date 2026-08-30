@@ -2,7 +2,7 @@
 
 **Status:** `LOOP_READY` *(gauntlet C6: 89/88 PASS)*  
 **Pillar ID:** P9  
-**Authority chain:** `docs/design/REMAINING_WORK_MAP.md` · `docs/PLANNING_QA_GATE.md` · `docs/design/00-remaining-work-suite-plan.md`
+**Authority chain:** `docs/design/REMAINING_WORK_MAP.md` · `docs/qa/planning/PLANNING_QA_GATE.md` · `docs/design/00-remaining-work-suite-plan.md`
 
 ## Goal
 
@@ -30,17 +30,17 @@ N/A
 |--------|--------|---------------------|-----------|------------|
 | Gameplay core (planning/intent/UI) | P2 | `.\scripts\run_planning_qa_gate.ps1` | `.\scripts\run_regression_tests.ps1` | F5 planning parity — **uses Knights as fixtures, not class validation** |
 | Combat closeout | P2 | — | — | ✅ **Closed** *(owner 2026-08-01)* |
-| Knight template | P3 | `scripts/run_knight_qa_gate.ps1` | `docs/KNIGHT_QA_GATE.md` | ✅ **QA PASS** *(only class — owner 2026-08-02)* |
-| Bruiser template | P6 | `scripts/run_bruiser_qa_gate.ps1` | `docs/BRUISER_QA_GATE.md` | ❌ **QA NOT PASS** — sign-off revoked 2026-08-08 |
-| Archer | P6 | `scripts/run_archer_qa_gate.ps1` | `docs/ARCHER_QA_GATE.md` | ❌ **QA NOT PASS** |
-| Lancer | P6 | `scripts/run_lancer_qa_gate.ps1` | `docs/LANCER_QA_GATE.md` | ❌ **QA NOT PASS** |
-| Mage | P6 | `scripts/run_mage_qa_gate.ps1` | `docs/MAGE_QA_GATE.md` | ❌ **QA NOT PASS** |
-| Cleric | P6 | `scripts/run_cleric_qa_gate.ps1` | `docs/CLERIC_QA_GATE.md` | ❌ **QA NOT PASS** |
-| Class sign-off registry | meta | [`docs/CLASS_QA_SIGNOFF.md`](../CLASS_QA_SIGNOFF.md) | `.cursor/rules/class-qa-knight-bar.mdc` | Owner truth table |
+| Knight template | P3 | `scripts/run_knight_qa_gate.ps1` | `docs/qa/classes/KNIGHT_QA_GATE.md` | ✅ **QA PASS** *(only class — owner 2026-08-02)* |
+| Bruiser template | P6 | `scripts/run_bruiser_qa_gate.ps1` | `docs/qa/classes/BRUISER_QA_GATE.md` | ❌ **QA NOT PASS** — sign-off revoked 2026-08-08 |
+| Archer | P6 | `scripts/run_archer_qa_gate.ps1` | `docs/qa/classes/ARCHER_QA_GATE.md` | ❌ **QA NOT PASS** |
+| Lancer | P6 | `scripts/run_lancer_qa_gate.ps1` | `docs/qa/classes/LANCER_QA_GATE.md` | ❌ **QA NOT PASS** |
+| Mage | P6 | `scripts/run_mage_qa_gate.ps1` | `docs/qa/classes/MAGE_QA_GATE.md` | ❌ **QA NOT PASS** |
+| Cleric | P6 | `scripts/run_cleric_qa_gate.ps1` | `docs/qa/classes/CLERIC_QA_GATE.md` | ❌ **QA NOT PASS** |
+| Class sign-off registry | meta | [`docs/qa/CLASS_QA_SIGNOFF.md`](../CLASS_QA_SIGNOFF.md) | `.cursor/rules/class-qa-knight-bar.mdc` | Owner truth table |
 | Class rollout (other) | P6 | `PLANNED — scripts/run_<class>_qa_gate.ps1` | `tests/run_mass_sim_test.gd` | **NOT PASS** until Knight bar |
 | Roguelike run | P4 | `PLANNED — tests/run_state_test.gd` | — | P4 worksheet |
 | Enemy design | P5 | `tests/bridge_test_runner.gd` | `docs/design/appendices/encounter-fixture-format.md` | Puzzle fun |
-| World / map | P7 | `docs/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
+| World / map | P7 | `docs/reference/asset_manifest.md` | `PLANNED — F5 compositor gate (phase-audit.mdc)` | P7 worksheet |
 | Presentation | P8 | `PLANNED — Sfx event map (P8 doc)` | `docs/design/presentation-audio-ui.md` | Typography/layout |
 | Verification matrix | P9 | `.\scripts\lint_design_doc.ps1` | `.cursor/agents/gauntlet-critic.md` | Owner LOCK |
 | Triage / autobattler | W4 appendix | `tests/run_mass_sim_test.gd` | `docs/design/appendices/mass-sim-balance.md` | Owner |
