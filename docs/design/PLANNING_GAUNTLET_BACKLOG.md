@@ -1,6 +1,6 @@
 # Planning voluntary-walk gauntlet backlog
 
-**Status:** ACTIVE — living gap list for the planning refactor gauntlet.  
+**Status:** RULE ABIDANCE COMPLETE (gauntlet round 31) — reopen only on regression or new bible gap.  
 **Loop contract:** `docs/design/PLANNING_GAUNTLET_LOOP.md`  
 **Owner bible:** `docs/design/MOVE_PREVIEW_RULES.md` · **Matrix:** `docs/design/PLANNING_REFACTOR_MATRIX.md`  
 **Critic agent:** `.cursor/agents/gauntlet-critic.md` § Two-pass bible loop
@@ -26,7 +26,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Severity | Bible / matrix ref | Gap | Status | Evidence (file:line) | Fixed commit | Verified round |
 |----|----------|-------------------|-----|--------|----------------------|--------------|----------------|
-| *(none — all HIGH/MED gaps closed through round 29)* |
+| *(none — all HIGH/MED gaps closed through round 31)* |
 
 ---
 
@@ -50,12 +50,12 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 
 | ID | Bible / matrix ref | Claimed fix | Status | Evidence | Verified round |
 |----|-------------------|-------------|--------|----------|----------------|
-| FIX-001 | Matrix symbols eliminated | Retired symbol names absent from `presentation/` | VERIFY | grep matrix symbol list → 0 hits | 29 |
-| FIX-002 | §88; size≥2 writes | `set_unit_preview_path` / `assign_preview_path_dict` reject `path.size() < 2`; illegal hover entry clear | VERIFY | `combat_planning_preview.gd` ~43–55; `combat_planning_input.gd` ~5020+ | 29 |
-| FIX-003 | PRE≡MOVE≡POST; matrix R7 | Orbit/trim/clamp use `active_movement_planning_step` + `get_planning_move_timing` | VERIFY | `_voluntary_walk_orbit_phase_open` ~4936+; `_voluntary_walk_drag_trim_active` ~4885+ | 29 |
-| FIX-004 | R6; movement-step sole owner | Sim paint gated on movement step | VERIFY | `combat_planning_input.gd` movement-step early returns | 29 |
-| FIX-005 | R8 | Player voluntary walk commit only via `_try_commit_voluntary_walk` → `_append_move_to_commit_slots` | VERIFY | `TimelineAction.make_move` in input only at `_append_move_to_commit_slots` | 29 |
-| FIX-006 | R1/R4 paint+commit | Voluntary walk paint/commit use `_phase_entry_stand` | VERIFY | `_assemble_voluntary_walk_preview_path`, `_append_move_to_commit_slots` | 29 |
+| FIX-001 | Matrix symbols eliminated | Retired symbol names absent from `presentation/` | FIXED | grep matrix symbol list → 0 hits | 31 |
+| FIX-002 | §88; size≥2 writes | `set_unit_preview_path` / `assign_preview_path_dict` reject `path.size() < 2`; illegal hover entry clear | FIXED | `combat_planning_preview.gd` ~43–55; `combat_planning_input.gd` ~5020+ | 31 |
+| FIX-003 | PRE≡MOVE≡POST; matrix R7 | Orbit/trim/clamp use `active_movement_planning_step` + `get_planning_move_timing`; pathfinding via `_basic_walk_pathfinding_active` | FIXED | `_voluntary_walk_orbit_phase_open` ~4941+; `_basic_walk_pathfinding_active` ~4876+ (GAP-009) | 31 |
+| FIX-004 | R6; movement-step sole owner | Sim paint gated on movement step | FIXED | `combat_planning_input.gd` movement-step early returns | 31 |
+| FIX-005 | R8 | Player voluntary walk commit only via `_try_commit_voluntary_walk` → `_append_move_to_commit_slots` | FIXED | `TimelineAction.make_move` in input only at `_append_move_to_commit_slots` ~7035 | 31 |
+| FIX-006 | R1/R4 paint+commit | Voluntary walk paint/commit use `_phase_entry_stand` | FIXED | `_assemble_voluntary_walk_preview_path`, `_append_move_to_commit_slots` | 31 |
 
 ---
 
@@ -68,7 +68,7 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | 27 | `6aecc295e` | GAP-001–004 FIXED | GAP-005 HIGH new | 81 FAIL | First conforming two-pass |
 | 28 | `edb324bdb` | GAP-005 REGRESSED | GAP-006–008 HIGH new | 72 FAIL | Origin API unified; merge paths still leaked |
 | 30 | `0942e736` | all GAP/FIX PASS | no new HIGH | 86 PASS | `move_leg_origin_cell` SSOT; backlog/matrix synced |
-| 31 | `a441018a3` | GAP-009 FIXED | no new HIGH | TBD | Unified basic-walk pathfinding on `active_movement_planning_step` |
+| 31 | `64f67530a` | GAP-009 + FIX-001..006 FIXED | no new HIGH | 88 PASS | Unified pathfinding; gate = T3 mimic only; legacy PlanningQaGate archaeology |
 
 ---
 
@@ -77,4 +77,4 @@ Every critic round runs **Pass A** (verify every `OPEN` row here) then **Pass B*
 | Date | Change |
 |------|--------|
 | 2026-08-29 | Created backlog; seeded from round 26 fresh audit; retracted round 25 as non-conforming loop |
-| 2026-08-29 | Rounds 27–29: closed GAP-001–008; round 29 REGRESSION+BIBLE PASS at score 84 |
+| 2026-08-30 | Round 31: GAP-009 closed; FIX-001–006 re-verified; static two-pass PASS score 88 (`PLANNING_GAUNTLET_ROUND31.md`); legacy PlanningQaGate archaeology |

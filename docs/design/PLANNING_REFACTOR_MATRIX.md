@@ -2,9 +2,9 @@
 
 **Status:** ACTIVE — read this **first** after any chat summarization before planning or combat input work.  
 **Owner policy:** `docs/design/MOVE_PREVIEW_RULES.md` § **Timeline model**  
-**Hard gate (owner):** **NO testing** (`tests/`, `run_*`, F5 QA) until an agent claims **100% rule abidance** on this matrix (every row `DONE`).
+**Hard gate (owner):** Matrix R1–R12 `DONE`; gauntlet round 31 **PASS** (score 88). Automated planning gate: `run_planning_qa_gate.ps1` (T3 mimic + AOE). Owner F5 spot-check: WP-9.
 
-**Latest gauntlet (2026-08-29):** Round 30 — **PASS** (score 86, `REGRESSION_PASS` + `BIBLE_PASS`). GAP-001–009 closed (GAP-009: unified basic-walk pathfinding). See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md). WP-9 runtime QA owner-run when ready.
+**Latest gauntlet (2026-08-30):** Round 31 — **PASS** (score 88, `REGRESSION_PASS` + `BIBLE_PASS`). GAP-001–009 closed. See [`PLANNING_GAUNTLET_BACKLOG.md`](PLANNING_GAUNTLET_BACKLOG.md).
 
 ---
 
@@ -44,8 +44,8 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | WP-5 | `DONE` | R6+R7 single pipe |
 | WP-6 | `DONE` | R8 commit audit |
 | WP-7 | `DONE` | R12 sealed PRE≡MOVE pathfinding |
-| WP-8 | `DONE` | Two-pass gauntlet loop; GAP-001–008 closed through round 29 (`PLANNING_GAUNTLET_BACKLOG.md`) |
-| WP-9 | `BLOCKED` | Runtime QA after critic `RESULT: PASS` (score ≥85) — owner-run |
+| WP-8 | `DONE` | Two-pass gauntlet loop; GAP-001–009 closed through round 31 |
+| WP-9 | `OWNER` | F5 visual spot-check (sprites, settle timing, FPS) — not gate-blocking; headless T3 mimic PASS |
 
 ---
 
@@ -66,3 +66,4 @@ A turn is a **timeline of phases** (premove → skill modules → postmove). **F
 | 2026-08-29 | Round 24–25: code fixes (§88 clear, unified orbit/trim, sim gates) — round 25 PASS retracted |
 | 2026-08-29 | Round 26: fresh bible FAIL; seeded backlog; added `PLANNING_GAUNTLET_LOOP.md` two-pass contract (Rule 4d) |
 | 2026-08-29 | Rounds 27–29: closed GAP-001–008; `move_leg_origin_cell` delegates `planning_move_origin_cell` |
+| 2026-08-30 | Round 31: GAP-001–009 closed; FIX-* re-verified; 100% rule abidance claimed (`PLANNING_GAUNTLET_ROUND31.md`) |

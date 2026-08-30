@@ -118,7 +118,11 @@ Optional local archaeology for disabled Tier 1/2 fixtures (failures ignored):
 
 ```powershell
 .\scripts\run_planning_qa_gate.ps1 -IncludeLegacyTier12
+# or full bloated PlanningQaGate.tscn directly:
+.\scripts\run_planning_headless_contracts.ps1
 ```
+
+Neither archaeology runner blocks the default gate or the round-31 rule-abidance claim.
 
 **Owner default (2026-08):** Use **headless fixture suites** for Tier 3 planning regression (`run_planning_qa_gate.ps1` without `-LiveTier3`). Live TestBattle (`run_planning_scene_acceptance.ps1`) only when the owner explicitly requests it (sprites, settle timing, F5 spot-check).
 

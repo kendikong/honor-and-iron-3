@@ -62,7 +62,7 @@ Both passes run **in the same critic invocation**, in order. Neither is optional
 | `BIBLE_PASS` | Pass B — no new HIGH gaps |
 | `RESULT` | `PASS` only if **both** regression and bible PASS |
 | `SCORE` | Harsh rubric (`.cursor/agents/gauntlet-critic.md`) — **cannot** PASS on score alone if either pass FAIL |
-| `100% abidance claim` | Allowed only when `RESULT: PASS` **and** backlog has zero OPEN HIGH rows |
+| `100% abidance claim` | Allowed only when `RESULT: PASS` **and** backlog has zero OPEN HIGH rows. **Claimed:** gauntlet round 31 (`docs/design/PLANNING_GAUNTLET_ROUND31.md`). |
 
 When owner policy is **NO QA**, missing runtime tests must **not** fail Bible PASS or cap score — static read/grep is adequate unless BAR explicitly requires QA.
 
