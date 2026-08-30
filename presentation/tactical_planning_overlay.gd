@@ -425,31 +425,15 @@ func _planning_action_range_tiles_for_unit(
 	origin: Vector2i,
 	selected_ability: int,
 ) -> Array[Vector2i]:
-	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
-	var actor: UnitState = _proj_unit(unit.id)
-	if actor == null:
-		actor = unit
-	var plan_board: BoardState = _board
-	if _director != null and _director.projected_state != null:
-		plan_board = _director.projected_state
-	if _director != null:
-		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
-		if awaiting != null and awaiting.awaiting_module_index >= 0:
-			var range_stand: Vector2i = origin
-			if _planning_input != null:
-				var intent_stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
-				if intent_stand.x > -900000:
-					range_stand = intent_stand
-			## Latest stand (`range_stand`), projected board.
-			## Never `base_board` — that is turn start. See action-range-latest-stand.mdc.
-			return AbilitySystem.planning_module_range_tiles(
-				plan_board, awaiting, awaiting.awaiting_module_index, range_stand, _hover_coord,
-			)
-	return AbilitySystem.planning_action_range_tiles(
-		plan_board, actor, ability, origin, [], _hover_coord,
+	return PlanningPreviewTiles.action_range_tiles(
+		_director,
+		_board,
+		unit,
+		selected_ability,
+		_planning_input,
+		origin,
+		_hover_coord
 	)
-
-
 func _hover_is_walk_only_premove(unit: UnitState) -> bool:
 	if _planning_input != null:
 		return _planning_input.is_walk_only_hover_move(unit, _hover_coord)
@@ -480,23 +464,15 @@ func _compute_hover_blast_action_range_tiles(
 	_cache_force: bool,
 	_is_selected_player: bool = true,
 ) -> Array[Vector2i]:
-	## Blast visibility gated upstream by resolve_layer_origins show_blast — no second range gate here.
-	var ability: AbilityData = _selected_ability_data(unit, ability_index)
-	if ability == null and _director != null:
-		var awaiting: TimelineAction = _director.find_awaiting_action(unit.id)
-		if awaiting != null:
-			ability = awaiting.ability
-	if ability == null or not _board.is_in_bounds(_hover_coord):
-		return []
-	var plan_board: BoardState = _board
-	if _director.projected_state != null:
-		plan_board = _director.projected_state
-	var blast_actor: UnitState = p_unit if p_unit != null else unit
-	return AbilitySystem.planning_blast_tiles_at_target(
-		plan_board, blast_actor, ability, action_range_origin, _hover_coord,
+	return PlanningPreviewTiles.blast_tiles(
+		_director,
+		_board,
+		unit,
+		ability_index,
+		_planning_input,
+		action_range_origin,
+		_hover_coord
 	)
-
-
 func _recompute_hover_ranges_from_inputs() -> void:
 	if _director == null:
 		return
@@ -995,19 +971,24 @@ func _apply_planning_tile_layers(
 	)
 	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
-	if _planning_input != null:
-		var settled_paint: PlanningSettledPaint = _planning_input.get_settled_paint()
-		if settled_paint != null and settled_paint.matches_hover(unit.id, _hover_coord):
-			_hover_action_range_tiles = settled_paint.action_range_tiles.duplicate()
-			_hover_blast_tiles = settled_paint.blast_tiles.duplicate()
-			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
+	if _planning_input != null and is_selected_player:
+		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
+		if settled != null and settled.matches_paint_context(
+			_hover_coord,
+			unit.id,
+			_planning_input.settled_hover_revision_key(),
+			selected_ability,
+		):
+			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+			_hover_blast_tiles = settled.blast_tiles.duplicate()
+			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			if _can_show_move_tiles(unit, selected_ability):
-				var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
+				var locked_move: Vector2i = layer_plan.get('locked_move_origin', Vector2i(-999999, -999999))
 				if locked_move.x > -900000:
 					_hover_move_tiles = _reachable_move_tiles_for_origin(
 						unit, p_unit, selected_ability, locked_move, is_selected_player,
 					)
-			return
+		return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
@@ -2572,13 +2553,11 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	if unit == null:
 		return Vector2i(-999999, -999999)
 	if _planning_input != null and _is_selected_player_unit(unit):
-		var settled_paint: PlanningSettledPaint = _planning_input.get_settled_paint()
-		if settled_paint != null and settled_paint.is_sealed and settled_paint.unit_id == unit.id:
-			if settled_paint.stand_origin.x > -900000:
-				return settled_paint.stand_origin
-		var stand: Vector2i = _planning_input.action_range_intent_stand_cell(unit.id)
-		if stand.x > -900000:
-			return stand
+		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
+		if settled != null and settled.is_sealed and settled.unit_id == unit.id:
+			if settled.stand_origin.x > -900000:
+				return settled.stand_origin
+		return Vector2i(-999999, -999999)
 	return _proj_origin(unit)
 
 

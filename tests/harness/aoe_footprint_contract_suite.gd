@@ -2,9 +2,9 @@ extends RefCounted
 
 ## Shared AOE + movement-timeline contract checks (not a Godot main script).
 
-const _HARNESS := preload("res://tests/aoe_footprint_qa_harness.gd")
-const _MOVEMENT := preload("res://tests/movement_timeline_qa_harness.gd")
-const _MODULE_MOVEMENT := preload("res://tests/movement_module_qa_harness.gd")
+const _HARNESS := preload("res://tests/harness/aoe_footprint_qa_harness.gd")
+const _MOVEMENT := preload("res://tests/harness/movement_timeline_qa_harness.gd")
+const _MODULE_MOVEMENT := preload("res://tests/harness/movement_module_qa_harness.gd")
 
 
 static func run(failures: Array[String]) -> void:

@@ -6,14 +6,14 @@
 
 Same pattern as hover preview carried SSOT:
 
-1. **Settle** — `CombatPlanningInput._store_intent_snapshot` seals `PlanningSettledPaint` alongside hover slots.
-2. **Display** — `TacticalPlanningOverlay` reads sealed `stand_origin`, `action_range_tiles`, `blast_tiles` when hover matches bundle (no recompute).
-3. **Ratify** — commit still uses sealed hover slots only; paint bundle is display truth for red/yellow tiles.
+1. **Settle** — `PlanningPreviewTiles.resolve_paint` computes range, blast, and stand data beside the slots; `CombatPlanningInput._store_intent_snapshot` seals both in `PlanningHoverPreview`.
+2. **Display** — `TacticalPlanningOverlay` reads the sealed hover bundle only when its unit, cell, revision, and ability match (no paint recompute).
+3. **Ratify** — commit copies the sealed hover slots; the same bundle remains the display truth for red/yellow tiles.
 
 ## Gates
 
-- `scripts/qa/run_action_range_ssot_gate.ps1` — latest-stand paint bundle + no `base_board` in range helpers
-- `scripts/qa/run_footprint_ssot_gate.ps1` — blast tiles sealed via `AbilitySystem.planning_blast_tiles_at_target`
+- `scripts/qa/run_action_range_ssot_gate.ps1` — hover-bundle paint ownership + no `base_board` in range helpers
+- `scripts/qa/run_footprint_ssot_gate.ps1` — blast tiles owned by `PlanningPreviewTiles` and carried by the hover bundle
 - `scripts/qa/run_planning_ssot_gates.ps1` — runs all structural SSOT gates
 
 ## Drag = hover

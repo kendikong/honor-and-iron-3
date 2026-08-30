@@ -2,7 +2,7 @@ extends Node
 
 ## AOE footprint gate host for AoeFootprintQaGate.tscn (F5 / scene runner — not --script).
 
-const _SUITE := preload("res://tests/aoe_footprint_contract_suite.gd")
+const _SUITE := preload("res://tests/harness/aoe_footprint_contract_suite.gd")
 
 
 func _ready() -> void:

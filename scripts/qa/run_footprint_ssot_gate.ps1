@@ -1,6 +1,6 @@
 param(
 	[string]$InputPath = "",
-	[string]$PaintPath = ""
+	[string]$TilesPath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,29 +8,29 @@ $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $inputGd = if ($InputPath -ne "") { $InputPath } else {
 	Join-Path $projectRoot "presentation\combat_planning_input.gd"
 }
-$paintGd = if ($PaintPath -ne "") { $PaintPath } else {
-	Join-Path $projectRoot "presentation\planning_settled_paint.gd"
+$tilesGd = if ($TilesPath -ne "") { $TilesPath } else {
+	Join-Path $projectRoot "presentation\planning_preview_tiles.gd"
 }
 
 Write-Output "=== AOE Footprint SSOT structural gate ==="
 
 $failures = New-Object System.Collections.Generic.List[string]
 
-if (-not (Test-Path -LiteralPath $paintGd)) {
-	$failures.Add("[FAIL] missing presentation/planning_settled_paint.gd")
+if (-not (Test-Path -LiteralPath $tilesGd)) {
+	$failures.Add("[FAIL] missing presentation/planning_preview_tiles.gd")
 }
 
-$paintText = if (Test-Path -LiteralPath $paintGd) { Get-Content -LiteralPath $paintGd -Raw } else { "" }
+$tilesText = if (Test-Path -LiteralPath $tilesGd) { Get-Content -LiteralPath $tilesGd -Raw } else { "" }
 $inputText = if (Test-Path -LiteralPath $inputGd) { Get-Content -LiteralPath $inputGd -Raw } else { "" }
 
-if ($paintText -notmatch "planning_blast_tiles_at_target") {
-	$failures.Add("[FAIL] settled paint must seal blast via AbilitySystem.planning_blast_tiles_at_target")
+if ($tilesText -notmatch "static func resolve_paint\(") {
+	$failures.Add("[FAIL] PlanningPreviewTiles must own settled paint resolution")
 }
-if ($paintText -notmatch "blast_tiles") {
-	$failures.Add("[FAIL] settled paint missing blast_tiles field")
+if ($tilesText -notmatch "static func blast_tiles\(" -or $tilesText -notmatch "planning_blast_tiles_at_target") {
+	$failures.Add("[FAIL] PlanningPreviewTiles must own AbilitySystem blast footprint")
 }
-if ($inputText -notmatch "_SettledPaintBundle\.seal\(|PlanningSettledPaint\.seal\(") {
-	$failures.Add("[FAIL] input does not seal footprint paint at settle")
+if ($inputText -notmatch "PlanningPreviewTiles\.resolve_paint\(" -or $inputText -notmatch "_HoverPreviewBundle\.seal\(") {
+	$failures.Add("[FAIL] input does not carry footprint paint in sealed hover bundle")
 }
 
 if ($failures.Count -gt 0) {

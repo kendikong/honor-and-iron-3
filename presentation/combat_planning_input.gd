@@ -5,7 +5,6 @@ extends RefCounted
 
 const _PlanningRoutePolicy := preload("res://core/systems/planning_route_policy.gd")
 const _HoverPreviewBundle := preload("res://presentation/planning_hover_preview.gd")
-const _SettledPaintBundle := preload("res://presentation/planning_settled_paint.gd")
 
 var auto_use_skill_after_move: bool = true
 
@@ -91,7 +90,7 @@ var _intent_snapshot_valid: bool = false
 var _intent_snapshot_unit_id: int = -1
 var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _settled_hover_preview: _HoverPreviewBundle = null
-var _settled_paint: _SettledPaintBundle = null
+var _intent_snapshot_plan_revision: int = -1
 ## Settled hover used projected-delta move-only preview when overlay range already correct at stand.
 var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
@@ -589,23 +588,6 @@ func _refresh_drag_preview_now() -> void:
 			)
 			if not _is_invalid_dict(snap_res):
 				_apply_settled_preview_result(snap_res)
-			if not _is_invalid_dict(snap_slots):
-				var wp_key: Array[Vector2i] = _waypoints_for_snapshot_key_from_slots(snap_slots)
-				if wp_key.is_empty():
-					wp_key = preview_waypoints
-				_store_intent_snapshot(
-					_intent_snapshot_key_for(
-						_drag_unit_id,
-						drop_params.cell as Vector2i,
-						wp_key,
-						_snapshot_drag_legal_move_tiles(),
-						drop_params.preferred as Vector2i,
-						int(drop_params.get("face_dir", -1)),
-					),
-				snap_slots,
-				_drag_unit_id,
-					drop_params.cell as Vector2i,
-				)
 	if route_painted:
 		_apply_voluntary_walk_drag_preview(_drag_unit_id, false)
 	var drag_actor: UnitState = _proj_unit(_drag_unit_id)
@@ -675,9 +657,13 @@ func _apply_settled_preview_result(res: Dictionary) -> void:
 func get_settled_hover_preview() -> _HoverPreviewBundle:
 	return _settled_hover_preview
 
+func settled_hover_revision_key() -> String:
+	if not _intent_snapshot_valid or _director == null:
+		return ""
+	if _director.plan_revision != _intent_snapshot_plan_revision:
+		return ""
+	return _intent_snapshot_key
 
-func get_settled_paint() -> _SettledPaintBundle:
-	return _settled_paint
 
 
 func _active_hover_cell() -> Vector2i:
@@ -2296,6 +2282,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			if step_ability != null:
 				step_ally_wps = _hover_walk_waypoints_for_skill(p_unit, cell, step_ability)
 			if not step_ally_wps.is_empty():
+				_write_movement_hover_preview_paths(p_unit.id, cell, step_ally_wps)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, step_ally.id, step_ally_wps)
 			_refresh_click_target_highlight()
 			return
@@ -3249,7 +3236,12 @@ func _commit_at_cell(
 		_play_sfx("invalid")
 		return false
 	var slots: Dictionary = {}
-	if _settled_hover_preview != null and _settled_hover_preview.can_ratify_at(cell, unit_id):
+	if (
+		_settled_hover_preview != null
+		and _settled_hover_preview.matches_paint_context(
+			cell, unit_id, settled_hover_revision_key(), _director.selected_ability_index
+		)
+	):
 		slots = _settled_hover_preview.duplicate_slots()
 	else:
 		push_warning("SSOT: commit rejected - no sealed hover preview for unit %d at %s" % [unit_id, cell])
@@ -3420,11 +3412,20 @@ func _store_intent_snapshot(
 	_intent_snapshot_unit_id = unit_id
 	_intent_snapshot_hover_cell = hover_cell
 	_intent_snapshot_valid = true
+	_intent_snapshot_plan_revision = _director.plan_revision if _director != null else -1
 	var actor: UnitState = _proj_unit(unit_id)
 	var move_origin: Vector2i = _phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
 	var paths_for_seal: Dictionary = preview_paths_snapshot
 	if paths_for_seal.is_empty():
 		paths_for_seal = preview_state.preview_paths
+	var paint: Dictionary = PlanningPreviewTiles.resolve_paint(
+		_director,
+		_director.board,
+		actor,
+		_director.selected_ability_index,
+		self,
+		hover_cell,
+	)
 	_settled_hover_preview = _HoverPreviewBundle.seal(
 		unit_id,
 		hover_cell,
@@ -3433,16 +3434,8 @@ func _store_intent_snapshot(
 		paths_for_seal,
 		face_dir,
 		move_origin,
+		paint,
 	)
-	if _director != null and _director.board != null:
-		_settled_paint = _SettledPaintBundle.seal(
-			_director,
-			_director.board,
-			self,
-			unit_id,
-			hover_cell,
-			key,
-		)
 
 
 func _preview_paths_snapshot_for_settle(
@@ -3491,7 +3484,7 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_unit_id = -1
 	_intent_snapshot_hover_cell = Vector2i(-999999, -999999)
 	_settled_hover_preview = null
-	_settled_paint = null
+	_intent_snapshot_plan_revision = -1
 
 
 func _mouse_local_for_facing() -> Vector2:
@@ -6946,6 +6939,9 @@ func _proj() -> BoardState:
 		return _director.projected_state
 	return _director.board
 
+
+func projected_unit_for_preview(unit_id: int) -> UnitState:
+	return _proj_unit(unit_id)
 
 func _proj_unit(unit_id: int) -> UnitState:
 	if unit_id < 0:

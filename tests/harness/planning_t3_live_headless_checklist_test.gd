@@ -1,7 +1,7 @@
 class_name PlanningT3LiveHeadlessChecklistTest
 extends RefCounted
 
-const _Parity := preload("res://tests/planning_live_parity_harness.gd")
+const _Parity := preload("res://tests/harness/planning_live_parity_harness.gd")
 
 ## Headless mirror of every checkpoint in docs/qa/planning/PLANNING_T3_LIVE_HEADLESS_PARITY_CHECKLIST.md.
 ## Failure labels use checklist IDs (UNDO-01, K1-02, SWAP-07, EXEC-01, …).

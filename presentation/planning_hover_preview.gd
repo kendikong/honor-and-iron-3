@@ -12,6 +12,14 @@ var revision_key: String = ""
 var face_dir: int = -1
 var slots: Dictionary = {}
 var preview_paths: Dictionary = {}
+var stand_origin: Vector2i = Vector2i(-999999, -999999)
+var action_range_tiles: Array[Vector2i] = []
+var blast_tiles: Array[Vector2i] = []
+var blast_on_hover_layer: bool = false
+var show_action_range: bool = false
+var show_blast: bool = false
+var phase: int = -1
+var ability_index: int = -1
 
 
 static func seal(
@@ -22,6 +30,7 @@ static func seal(
 	p_preview_paths: Dictionary,
 	p_face_dir: int,
 	p_move_origin: Vector2i,
+	p_paint: Dictionary = {},
 ) -> PlanningHoverPreview:
 	var bundle_script: GDScript = load("res://presentation/planning_hover_preview.gd") as GDScript
 	var bundle: PlanningHoverPreview = bundle_script.new() as PlanningHoverPreview
@@ -37,6 +46,16 @@ static func seal(
 	bundle.face_dir = p_face_dir
 	bundle.slots = _duplicate_slots(p_slots)
 	bundle.preview_paths = p_preview_paths.duplicate(true)
+	bundle.stand_origin = p_paint.get("stand_origin", p_move_origin)
+	bundle.action_range_tiles = _duplicate_coords(
+		p_paint.get("action_range_tiles", []),
+	)
+	bundle.blast_tiles = _duplicate_coords(p_paint.get("blast_tiles", []))
+	bundle.blast_on_hover_layer = bool(p_paint.get("blast_on_hover_layer", false))
+	bundle.show_action_range = bool(p_paint.get("show_action_range", false))
+	bundle.show_blast = bool(p_paint.get("show_blast", false))
+	bundle.phase = int(p_paint.get("phase", -1))
+	bundle.ability_index = int(p_paint.get("ability_index", -1))
 	bundle.valid = true
 	bundle.is_sealed = true
 	return bundle
@@ -49,6 +68,19 @@ func can_ratify_at(cell: Vector2i, ratify_unit_id: int) -> bool:
 		and unit_id == ratify_unit_id
 		and hover_cell == cell
 		and not slots.is_empty()
+	)
+
+
+func matches_paint_context(
+	cell: Vector2i,
+	ratify_unit_id: int,
+	expected_revision_key: String,
+	expected_ability_index: int,
+) -> bool:
+	return (
+		can_ratify_at(cell, ratify_unit_id)
+		and revision_key == expected_revision_key
+		and ability_index == expected_ability_index
 	)
 
 
@@ -106,4 +138,14 @@ static func _duplicate_slots(p_slots: Dictionary) -> Dictionary:
 		out["_noop"] = p_slots["_noop"]
 	if p_slots.has("_preview_validated"):
 		out["_preview_validated"] = p_slots["_preview_validated"]
+	return out
+
+
+static func _duplicate_coords(raw_coords: Variant) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if not raw_coords is Array:
+		return out
+	for raw: Variant in raw_coords:
+		if raw is Vector2i:
+			out.append(raw as Vector2i)
 	return out

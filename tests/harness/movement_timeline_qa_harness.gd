@@ -3,8 +3,8 @@ extends RefCounted
 
 ## Movement skills must prove PRE-MOVE or POST-MOVE timeline legs in QA (not action column only).
 
-const _PLANNING_CHECKLIST := preload("res://tests/planning_checklist_harness.gd")
-const _MovementSmokeRegistry := preload("res://tests/movement_planning_smoke_registry.gd")
+const _PLANNING_CHECKLIST := preload("res://tests/harness/planning_checklist_harness.gd")
+const _MovementSmokeRegistry := preload("res://tests/harness/movement_planning_smoke_registry.gd")
 
 const _TIMELINE_LEG_MARKERS: Array[String] = [
 	"assert_pre_or_post_leg_if_needed(",
@@ -26,10 +26,10 @@ const _PREVIEW_ORIGIN_MARKERS: Array[String] = [
 ]
 
 const _SCENARIO_REGISTRIES: Array[GDScript] = [
-	preload("res://tests/bruiser_scenario_registry.gd"),
-	preload("res://tests/knight_scenario_registry.gd"),
-	preload("res://tests/archer_scenario_registry.gd"),
-	preload("res://tests/lancer_scenario_registry.gd"),
+	preload("res://tests/harness/bruiser_scenario_registry.gd"),
+	preload("res://tests/harness/knight_scenario_registry.gd"),
+	preload("res://tests/harness/archer_scenario_registry.gd"),
+	preload("res://tests/harness/lancer_scenario_registry.gd"),
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [

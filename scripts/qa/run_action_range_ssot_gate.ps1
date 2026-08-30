@@ -11,15 +11,19 @@ $overlayGd = if ($OverlayPath -ne "") { $OverlayPath } else {
 $inputGd = if ($InputPath -ne "") { $InputPath } else {
 	Join-Path $projectRoot "presentation\combat_planning_input.gd"
 }
-$paintGd = Join-Path $projectRoot "presentation\planning_settled_paint.gd"
+$hoverGd = Join-Path $projectRoot "presentation\planning_hover_preview.gd"
+$tilesGd = Join-Path $projectRoot "presentation\planning_preview_tiles.gd"
 
 Write-Output "=== Action Range / Latest Stand SSOT structural gate ==="
 Write-Output "Spec: docs/design/planning/ACTION_RANGE_LATEST_STAND.md"
 
 $failures = New-Object System.Collections.Generic.List[string]
 
-if (-not (Test-Path -LiteralPath $paintGd)) {
-	$failures.Add("[FAIL] missing presentation/planning_settled_paint.gd")
+if (-not (Test-Path -LiteralPath $hoverGd)) {
+	$failures.Add("[FAIL] missing presentation/planning_hover_preview.gd")
+}
+if (-not (Test-Path -LiteralPath $tilesGd)) {
+	$failures.Add("[FAIL] missing presentation/planning_preview_tiles.gd")
 }
 if (-not (Test-Path -LiteralPath $inputGd)) {
 	$failures.Add("[FAIL] missing presentation/combat_planning_input.gd")
@@ -30,11 +34,12 @@ if (-not (Test-Path -LiteralPath $overlayGd)) {
 
 $inputText = if (Test-Path -LiteralPath $inputGd) { Get-Content -LiteralPath $inputGd -Raw } else { "" }
 $overlayText = if (Test-Path -LiteralPath $overlayGd) { Get-Content -LiteralPath $overlayGd -Raw } else { "" }
+$tilesText = if (Test-Path -LiteralPath $tilesGd) { Get-Content -LiteralPath $tilesGd -Raw } else { "" }
 
 $requiredInput = @(
-	@{ label = "settled paint field"; pattern = "_settled_paint:\s*PlanningSettledPaint|_SettledPaintBundle" },
-	@{ label = "get_settled_paint accessor"; pattern = "func get_settled_paint\(\)" },
-	@{ label = "PlanningSettledPaint.seal on settle"; pattern = "_SettledPaintBundle\.seal\(|PlanningSettledPaint\.seal\(" }
+	@{ label = "hover bundle seal"; pattern = "_HoverPreviewBundle\.seal\(" },
+	@{ label = "paint resolver on settle"; pattern = "PlanningPreviewTiles\.resolve_paint\(" },
+	@{ label = "settled hover revision accessor"; pattern = "func settled_hover_revision_key\(\)" }
 )
 foreach ($req in $requiredInput) {
 	if ($inputText -notmatch $req.pattern) {
@@ -42,8 +47,14 @@ foreach ($req in $requiredInput) {
 	}
 }
 
-if ($overlayText -notmatch "get_settled_paint\(\)") {
-	$failures.Add("[FAIL] overlay does not read sealed paint bundle")
+if ($overlayText -notmatch "get_settled_hover_preview\(\)") {
+	$failures.Add("[FAIL] overlay does not read sealed hover bundle")
+}
+if ($overlayText -notmatch "matches_paint_context\(") {
+	$failures.Add("[FAIL] overlay does not validate settled paint context")
+}
+if ($tilesText -notmatch "static func resolve_paint\(" -or $tilesText -notmatch "static func action_range_tiles\(") {
+	$failures.Add("[FAIL] PlanningPreviewTiles does not own settled action-range paint")
 }
 
 $rangeFn = [regex]::Match($overlayText, "func _planning_action_range_tiles_for_unit\([\s\S]*?\nfunc ")

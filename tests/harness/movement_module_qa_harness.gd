@@ -3,8 +3,8 @@ extends RefCounted
 
 ## Enforces modular movement QA: no post_attack_move layers; position proof on MOVE skills.
 
-const _AoeHarness := preload("res://tests/aoe_footprint_qa_harness.gd")
-const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+const _AoeHarness := preload("res://tests/harness/aoe_footprint_qa_harness.gd")
+const _MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 
 const _POSITION_PROOF_MARKERS: Array[String] = [
 	".position",
@@ -21,16 +21,16 @@ const _POSITION_PROOF_MARKERS: Array[String] = [
 ]
 
 const _SCENARIO_REGISTRIES: Array[GDScript] = [
-	preload("res://tests/bruiser_scenario_registry.gd"),
-	preload("res://tests/knight_scenario_registry.gd"),
-	preload("res://tests/archer_scenario_registry.gd"),
-	preload("res://tests/lancer_scenario_registry.gd"),
-	preload("res://tests/monk_scenario_registry.gd"),
-	preload("res://tests/mercenary_scenario_registry.gd"),
-	preload("res://tests/rogue_scenario_registry.gd"),
-	preload("res://tests/mage_scenario_registry.gd"),
-	preload("res://tests/cleric_scenario_registry.gd"),
-	preload("res://tests/shaman_scenario_registry.gd"),
+	preload("res://tests/harness/bruiser_scenario_registry.gd"),
+	preload("res://tests/harness/knight_scenario_registry.gd"),
+	preload("res://tests/harness/archer_scenario_registry.gd"),
+	preload("res://tests/harness/lancer_scenario_registry.gd"),
+	preload("res://tests/harness/monk_scenario_registry.gd"),
+	preload("res://tests/harness/mercenary_scenario_registry.gd"),
+	preload("res://tests/harness/rogue_scenario_registry.gd"),
+	preload("res://tests/harness/mage_scenario_registry.gd"),
+	preload("res://tests/harness/cleric_scenario_registry.gd"),
+	preload("res://tests/harness/shaman_scenario_registry.gd"),
 ]
 
 const _FACTORY_CLASS_IDS: Array[StringName] = [

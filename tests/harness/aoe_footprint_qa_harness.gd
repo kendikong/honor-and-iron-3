@@ -24,14 +24,14 @@ const _LIVE_OVERLAY_MARKERS: Array[String] = [
 ]
 
 const _SCENARIO_REGISTRIES: Array[GDScript] = [
-	preload("res://tests/bruiser_scenario_registry.gd"),
-	preload("res://tests/knight_scenario_registry.gd"),
-	preload("res://tests/archer_scenario_registry.gd"),
-	preload("res://tests/lancer_scenario_registry.gd"),
-	preload("res://tests/monk_scenario_registry.gd"),
-	preload("res://tests/shaman_scenario_registry.gd"),
-	preload("res://tests/rogue_scenario_registry.gd"),
-	preload("res://tests/beast_rider_scenario_registry.gd"),
+	preload("res://tests/harness/bruiser_scenario_registry.gd"),
+	preload("res://tests/harness/knight_scenario_registry.gd"),
+	preload("res://tests/harness/archer_scenario_registry.gd"),
+	preload("res://tests/harness/lancer_scenario_registry.gd"),
+	preload("res://tests/harness/monk_scenario_registry.gd"),
+	preload("res://tests/harness/shaman_scenario_registry.gd"),
+	preload("res://tests/harness/rogue_scenario_registry.gd"),
+	preload("res://tests/harness/beast_rider_scenario_registry.gd"),
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [
