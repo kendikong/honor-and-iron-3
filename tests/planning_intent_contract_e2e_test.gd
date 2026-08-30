@@ -6,15 +6,20 @@ extends RefCounted
 ## assertions: each test uses CombatPlanningInput's actual click entry point.
 
 static func run_all(failures: Array[String]) -> void:
-	_test_bowling_run_click_hides_red_across_refreshes(failures)
-	_test_bowling_waypoint_run_center_hides_red(failures)
-	_test_painted_run_preview_interior_walk_hides_red(failures)
-	_test_committed_run_center_blue_hover_hides_red(failures)
-	_test_pre_run_binding_when_move_timing_closed(failures)
-	_test_red_hidden_when_projected_ap_zero(failures)
-	_test_f5_display_ap_zero_implies_no_red(failures)
-	_test_f5_stale_projection_at_run_dest_display_ap_zero(failures)
-	_test_simulation_validator_rejects_invalid_timeline_action(failures)
+	var tests: Array[Callable] = [
+		_test_bowling_run_click_hides_red_across_refreshes,
+		_test_bowling_waypoint_run_center_hides_red,
+		_test_painted_run_preview_interior_walk_hides_red,
+		_test_committed_run_center_blue_hover_hides_red,
+		_test_pre_run_binding_when_move_timing_closed,
+		_test_red_hidden_when_projected_ap_zero,
+		_test_f5_display_ap_zero_implies_no_red,
+		_test_f5_stale_projection_at_run_dest_display_ap_zero,
+		_test_simulation_validator_rejects_invalid_timeline_action,
+	]
+	for test: Callable in tests:
+		test.call(failures)
+		PlanningDragE2EHarness.cleanup_all()
 
 
 static func _test_bowling_run_click_hides_red_across_refreshes(failures: Array[String]) -> void:

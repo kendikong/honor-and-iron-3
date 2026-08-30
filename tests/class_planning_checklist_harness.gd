@@ -21,6 +21,8 @@ static func wire_board(
 	director.plan_post_move = Timeline.new()
 	var def: UnitData = FactoryTestHelpers.build_unit(class_id)
 	if def == null:
+		def = DataLibrary.get_unit(class_id)
+	if def == null:
 		push_error("ClassPlanningChecklistHarness: missing unit data for %s" % class_id)
 		return {}
 	var actor: UnitState = _actor_with_ability(def, actor_pos, ability_id)

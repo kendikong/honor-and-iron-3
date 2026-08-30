@@ -37,8 +37,8 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hide_red_committed_run_interior_hover_bowling,
 		_test_hide_no_ability_selected,
 		_test_show_awaiting_trample,
-		_test_hover_step_updates_stand_and_red_tiles,
 		_test_awaiting_module_range_after_committed_premove,
+		_test_hover_step_updates_stand_and_red_tiles,
 		_test_visibility_gate_parity_show,
 		_test_visibility_gate_parity_hide,
 		_test_post_swap_post_move_stand_locked_on_orbit,
@@ -59,8 +59,8 @@ static func run_all(failures: Array[String]) -> void:
 		"hide_committed_run_interior_hover_bowling",
 		"hide_no_ability",
 		"show_awaiting_trample",
-		"hover_step_updates_stand",
 		"awaiting_module_range_after_premove",
+		"hover_step_updates_stand",
 		"parity_gate_show",
 		"parity_gate_hide",
 		"post_swap_post_move_stand_locked",
@@ -876,6 +876,57 @@ static func _test_hover_step_updates_stand_and_red_tiles(failures: Array[String]
 		)
 
 
+static func _bruiser_awaiting_fixture(start: Vector2i) -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var def: UnitData = FactoryTestHelpers.build_unit(&"bruiser")
+	if def == null:
+		def = DataLibrary.get_unit(&"bruiser")
+	if def == null:
+		return {"error": "bruiser_def_missing"}
+	var abilities: Array[AbilityData] = []
+	for ab: AbilityData in def.abilities:
+		if ab != null and ab.id == &"bruiser_charge_strike":
+			abilities.append(ab.duplicate(true) as AbilityData)
+			break
+	if abilities.is_empty():
+		return {"error": "charge_strike_missing"}
+	var run: AbilityData = DataLibrary.get_universal_run()
+	if run != null:
+		abilities.append(run)
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var bruiser: UnitState = UnitState.create(
+		1, def, GameEnums.Team.PLAYER, start, {"active_abilities": abilities},
+	)
+	bruiser.movement.points_left = maxi(bruiser.movement.max_points, 8)
+	bruiser.movement.max_points = maxi(bruiser.movement.max_points, 8)
+	bruiser.ability.points_left = maxi(bruiser.ability.max_points, 1)
+	bruiser.ability.max_points = maxi(bruiser.ability.max_points, 1)
+	var board: BoardState = PlanningDragE2EHarness._plain_board(Vector2i(12, 12), [bruiser])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = bruiser.id
+	input._director = director
+	input.auto_use_skill_after_move = true
+	var fix: Dictionary = {
+		"input": input,
+		"director": director,
+		"board": board,
+		"knight": bruiser,
+		"bruiser": bruiser,
+		"actor": bruiser,
+	}
+	PlanningDragE2EHarness.track_raw_fixture(fix)
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	fix["overlay"] = overlay
+	return fix
+
+
 ## Would have failed 37b3879 — awaiting module range used base_board (turn start).
 ## BUG-20260815T183841-612: pre-move (5,3)→(7,3), arm Charge Strike, red still on (5,3).
 static func _test_awaiting_module_range_after_committed_premove(failures: Array[String]) -> void:
@@ -883,18 +934,19 @@ static func _test_awaiting_module_range_after_committed_premove(failures: Array[
 	const LANDING := Vector2i(7, 3)
 	const ONLY_FROM_LANDING := Vector2i(7, 5)
 	const ONLY_FROM_START := Vector2i(3, 3)
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
 	const Checklist := preload("res://tests/planning_checklist_harness.gd")
-	var fix: Dictionary = BruiserFixture.wire_board(
-		START, Vector2i(-1, -1), Vector2i(-1, -1), &"bruiser_charge_strike",
-	)
-	if fix.is_empty():
-		failures.append("ActionRangeRegression awaiting_module_range_after_premove: bruiser fixture missing")
+	var fix: Dictionary = _bruiser_awaiting_fixture(START)
+	if fix.has("error"):
+		failures.append(
+			"ActionRangeRegression awaiting_module_range_after_premove: bruiser fixture %s"
+			% str(fix.error),
+		)
+		return
+	if fix.is_empty() or not fix.has("input"):
 		return
 	var director: CombatDirector = fix.director
 	var input: CombatPlanningInput = fix.input
-	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
-	fix["overlay"] = overlay
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
 	director.auto_run = false
 	director.selected_ability_index = -1
 	var bruiser: UnitState = fix.bruiser as UnitState

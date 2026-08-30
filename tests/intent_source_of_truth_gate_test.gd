@@ -18,7 +18,6 @@ static func run_all(failures: Array[String]) -> void:
 	_test_stale_01(failures)
 	_test_cm08_stale_identity(failures)
 	_test_cm09_intent_mechanics(failures)
-	_test_cm11_measure(failures)
 	_dump_recorded()
 
 
@@ -43,6 +42,7 @@ static func _test_move_skill_01(failures: Array[String]) -> void:
 		PlanningChecklistHarness.assert_fail(failures, "MOVE-SKILL-01", "Shield Bash missing")
 		PlanningDragE2EHarness.cleanup_all()
 		return
+	var before_count: int = failures.size()
 	_assert_valid_four_way(
 		failures,
 		"MOVE-SKILL-01",
@@ -50,7 +50,56 @@ static func _test_move_skill_01(failures: Array[String]) -> void:
 		PlanningChecklistHarness.ENEMY_POS,
 		fix.director.selected_unit_id,
 	)
+	if failures.size() > before_count:
+		PlanningDragE2EHarness.cleanup_all()
+		return
+	_run_cm11_timing(failures, fix)
 	PlanningDragE2EHarness.cleanup_all()
+
+
+static func _run_cm11_timing(failures: Array[String], fix: Dictionary) -> void:
+	var cell: Vector2i = PlanningChecklistHarness.ENEMY_POS
+	var before_slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
+	if before_slots.is_empty() or PlanningChecklistHarness.slots_invalid(before_slots):
+		PlanningChecklistHarness.assert_fail(failures, "CM-11", "baseline hover slots invalid before timing loop")
+		return
+	var before_sig: String = PlanningQAGateTest._intent_slot_signature(before_slots)
+	const HOVER_N: int = 40
+	var t0: int = Time.get_ticks_usec()
+	for _i: int in range(HOVER_N):
+		PlanningChecklistHarness.hover(fix, cell)
+		PlanningChecklistHarness.slots_for_hover(fix, cell)
+	var hover_usec: int = int((Time.get_ticks_usec() - t0) / float(HOVER_N))
+	const SLOT_N: int = 40
+	t0 = Time.get_ticks_usec()
+	for _j: int in range(SLOT_N):
+		PlanningChecklistHarness.hover(fix, cell)
+		PlanningChecklistHarness.slots_for_click(fix, cell)
+	var slot_usec: int = int((Time.get_ticks_usec() - t0) / float(SLOT_N))
+	var after_loop_sig: String = PlanningQAGateTest._intent_slot_signature(
+		PlanningChecklistHarness.slots_for_hover(fix, cell),
+	)
+	if after_loop_sig != before_sig:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"CM-11",
+			"hover/slot timing loop changed slot signature %s vs %s"
+			% [after_loop_sig, before_sig],
+		)
+		return
+	if not PlanningChecklistHarness.commit_slots_production(fix, before_slots):
+		PlanningChecklistHarness.assert_fail(failures, "CM-11", "commit failed before sim timing")
+		return
+	const SIM_N: int = 12
+	t0 = Time.get_ticks_usec()
+	for _k: int in range(SIM_N):
+		PlanningChecklistHarness.simulate_committed(fix.director)
+	var sim_usec: int = int((Time.get_ticks_usec() - t0) / float(SIM_N))
+	var line: String = "hover_usec=%d slot_usec=%d sim_usec=%d sig=%s" % [
+		hover_usec, slot_usec, sim_usec, before_sig,
+	]
+	print("[SOT-PERF] %s" % line)
+	_record_sot("CM-11", before_sig, before_sig, "(timing only; no optimize)", line)
 
 
 static func _test_push_pull_01(failures: Array[String]) -> void:
@@ -518,60 +567,6 @@ static func _test_cm09_intent_mechanics(failures: Array[String]) -> void:
 		"ENEMY_PHASE_BEGAN via four-way",
 		"new_fails=%d" % (failures.size() - before),
 	)
-	PlanningDragE2EHarness.cleanup_all()
-
-
-static func _test_cm11_measure(failures: Array[String]) -> void:
-	PlanningDragE2EHarness.cleanup_all()
-	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
-	if PlanningChecklistHarness.select_ability(fix, PlanningChecklistHarness.SHIELD_BASH_ID) < 0:
-		PlanningChecklistHarness.assert_fail(failures, "CM-11", "Shield Bash missing")
-		PlanningDragE2EHarness.cleanup_all()
-		return
-	var cell: Vector2i = PlanningChecklistHarness.ENEMY_POS
-	PlanningChecklistHarness.hover(fix, cell)
-	var before_sig: String = PlanningQAGateTest._intent_slot_signature(
-		PlanningChecklistHarness.slots_for_hover(fix, cell),
-	)
-	const HOVER_N: int = 40
-	var t0: int = Time.get_ticks_usec()
-	for _i: int in range(HOVER_N):
-		PlanningChecklistHarness.hover(fix, cell)
-		PlanningChecklistHarness.slots_for_hover(fix, cell)
-	var hover_usec: int = int((Time.get_ticks_usec() - t0) / float(HOVER_N))
-	const SLOT_N: int = 40
-	t0 = Time.get_ticks_usec()
-	for _j: int in range(SLOT_N):
-		PlanningChecklistHarness.slots_for_click(fix, cell)
-	var slot_usec: int = int((Time.get_ticks_usec() - t0) / float(SLOT_N))
-	var after_loop_sig: String = PlanningQAGateTest._intent_slot_signature(
-		PlanningChecklistHarness.slots_for_hover(fix, cell),
-	)
-	if after_loop_sig != before_sig:
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			"CM-11",
-			"hover/slot timing loop changed slot signature %s vs %s"
-			% [after_loop_sig, before_sig],
-		)
-		PlanningDragE2EHarness.cleanup_all()
-		return
-	if not PlanningChecklistHarness.commit_slots_production(
-		fix, PlanningChecklistHarness.slots_for_click(fix, cell),
-	):
-		PlanningChecklistHarness.assert_fail(failures, "CM-11", "commit failed before sim timing")
-		PlanningDragE2EHarness.cleanup_all()
-		return
-	const SIM_N: int = 12
-	t0 = Time.get_ticks_usec()
-	for _k: int in range(SIM_N):
-		PlanningChecklistHarness.simulate_committed(fix.director)
-	var sim_usec: int = int((Time.get_ticks_usec() - t0) / float(SIM_N))
-	var line: String = "hover_usec=%d slot_usec=%d sim_usec=%d sig=%s" % [
-		hover_usec, slot_usec, sim_usec, before_sig,
-	]
-	print("[SOT-PERF] %s" % line)
-	_record_sot("CM-11", before_sig, before_sig, "(timing only; no optimize)", line)
 	PlanningDragE2EHarness.cleanup_all()
 
 

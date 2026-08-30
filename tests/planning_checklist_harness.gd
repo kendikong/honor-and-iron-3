@@ -365,7 +365,7 @@ static func commit_production(fix: Dictionary, cell: Vector2i) -> Dictionary:
 static func commit_slots_production(fix: Dictionary, slots: Dictionary) -> bool:
 	var input: CombatPlanningInput = fix.input
 	var director: CombatDirector = fix.director
-	if _slots_invalid(slots):
+	if slots.is_empty() or _slots_invalid(slots):
 		return false
 	var unit_id: int = director.selected_unit_id
 	input.call("_paint_intent_slots_before_commit", unit_id, slots)

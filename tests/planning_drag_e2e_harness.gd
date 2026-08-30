@@ -143,6 +143,62 @@ static func _planning_fixture(
 		"enemy": units[1] if units.size() > 1 else null,
 	}
 
+static func wire_bruiser_fixture(
+	bruiser_pos: Vector2i,
+	ability_id: StringName = &"bruiser_charge_strike",
+) -> Dictionary:
+	cleanup_all()
+	return wire_fixture(_bruiser_planning_fixture(bruiser_pos, ability_id))
+
+
+static func _bruiser_planning_fixture(
+	bruiser_pos: Vector2i,
+	ability_id: StringName,
+) -> Dictionary:
+	var input := CombatPlanningInput.new()
+	var director := CombatDirector.new()
+	director.plan_pre_move = Timeline.new()
+	director.plan_action = Timeline.new()
+	director.plan_post_move = Timeline.new()
+	var def: UnitData = FactoryTestHelpers.build_unit(&"bruiser")
+	if def == null:
+		def = DataLibrary.get_unit(&"bruiser")
+	assert(def != null, "PlanningDragE2E: bruiser definition missing")
+	var abilities: Array[AbilityData] = []
+	if ability_id != &"":
+		for ab: AbilityData in def.abilities:
+			if ab != null and ab.id == ability_id:
+				abilities.append(ab.duplicate(true) as AbilityData)
+				break
+	var run: AbilityData = DataLibrary.get_universal_run()
+	if run != null:
+		abilities.append(run)
+	var bruiser: UnitState = UnitState.create(
+		1, def, GameEnums.Team.PLAYER, bruiser_pos, {"active_abilities": abilities},
+	)
+	bruiser.movement.points_left = maxi(bruiser.movement.max_points, 8)
+	bruiser.movement.max_points = maxi(bruiser.movement.max_points, 8)
+	bruiser.ability.points_left = maxi(bruiser.ability.max_points, 1)
+	bruiser.ability.max_points = maxi(bruiser.ability.max_points, 1)
+	var board := _plain_board(Vector2i(12, 12), [bruiser])
+	director.board = board
+	director.base_board = board.clone()
+	director.projected_state = board.clone()
+	director.phase = CombatDirector.Phase.PLANNING
+	director.selected_unit_id = bruiser.id
+	input._director = director
+	input.auto_use_skill_after_move = true
+	return {
+		"input": input,
+		"director": director,
+		"board": board,
+		"knight": bruiser,
+		"bruiser": bruiser,
+		"actor": bruiser,
+		"enemy": null,
+	}
+
+
 
 static func wire_fixture(fix: Dictionary) -> Dictionary:
 	var map_stub := QaPlanningMapStub.new()
