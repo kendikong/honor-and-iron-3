@@ -12,7 +12,7 @@ if (-not (Test-Path $GodotPath)) {
 	exit 2
 }
 
-$latestLiveLog = Join-Path $projectRoot "qa_mercenary_live_latest.txt"
+$latestLiveLog = Join-Path $projectRoot "reports\qa\qa_mercenary_live_latest.txt"
 $liveLogLines = New-Object System.Collections.Generic.List[string]
 
 function Write-LiveLine([string]$Line) {

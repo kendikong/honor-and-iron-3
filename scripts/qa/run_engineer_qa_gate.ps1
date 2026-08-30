@@ -7,8 +7,8 @@ $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $matrixDoc = Join-Path $projectRoot "docs\ENGINEER_QA_GATE.md"
 $manifestPath = Join-Path $projectRoot "docs\engineer_meta_critic_manifest.json"
 
-$latestGateLog = Join-Path $projectRoot "qa_engineer_gate_latest.txt"
-$canonicalGateLog = Join-Path $projectRoot "qa_engineer_gate_canonical.txt"
+$latestGateLog = Join-Path $projectRoot "reports\qa\qa_engineer_gate_latest.txt"
+$canonicalGateLog = Join-Path $projectRoot "reports\qa\qa_engineer_gate_canonical.txt"
 $gateLogLines = New-Object System.Collections.Generic.List[string]
 
 function Write-GateLine([string]$Line) {

@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 if ([string]::IsNullOrWhiteSpace($ReportPath)) {
-	$ReportPath = Join-Path $projectRoot "qa_full_report_latest.txt"
+	$ReportPath = Join-Path $projectRoot "reports\qa\qa_full_report_latest.txt"
 }
 
 $log = New-Object System.Collections.Generic.List[string]

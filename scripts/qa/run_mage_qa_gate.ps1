@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$latestGateLog = Join-Path $projectRoot "qa_mage_gate_latest.txt"
+$latestGateLog = Join-Path $projectRoot "reports\qa\qa_mage_gate_latest.txt"
 $gateLogLines = New-Object System.Collections.Generic.List[string]
 
 function Write-GateLine([string]$Line) {
@@ -13,9 +13,9 @@ function Write-GateLine([string]$Line) {
 }
 
 function Save-GateLog() {
-	$canonical = Join-Path $projectRoot "qa_mage_gate_canonical.txt"
+	$canonical = Join-Path $projectRoot "reports\qa\qa_mage_gate_canonical.txt"
 	$gateLogLines | Set-Content -Path $canonical -Encoding utf8
-	$tmp = Join-Path $projectRoot "qa_mage_gate_latest.tmp"
+	$tmp = Join-Path $projectRoot "reports\qa\qa_mage_gate_latest.tmp"
 	$gateLogLines | Set-Content -Path $tmp -Encoding utf8
 	try {
 		if (Test-Path $latestGateLog) {

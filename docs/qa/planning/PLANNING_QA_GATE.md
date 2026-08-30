@@ -254,7 +254,7 @@ Run after adding or changing QA tests:
 .\scripts\validate_qa_mutations.ps1
 ```
 
-**22 temporary unfixes** (6 original + 16 expanded) each break one production path; the gate must **fail** for every mutation, then **PASS** after revert. Report: `tests/qa_mutation_report.json`.
+**22 temporary unfixes** (6 original + 16 expanded) each break one production path; the gate must **fail** for every mutation, then **PASS** after revert. Report: `reports/qa/qa_mutation_report.json`.
 
 | # | Unfix | Primary suites caught |
 |---|--------|------------------------|

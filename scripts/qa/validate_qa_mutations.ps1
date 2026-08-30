@@ -499,7 +499,7 @@ if ($final.ExitCode -ne 0) { throw "Revert incomplete (exit $($final.ExitCode))"
 Write-Host "PASS"
 
 $report | Format-Table -AutoSize
-$report | ConvertTo-Json | Set-Content (Join-Path $root "tests/qa_mutation_report.json")
+$report | ConvertTo-Json | Set-Content (Join-Path $root "reports/qa/qa_mutation_report.json")
 $missed = @($report | Where-Object { $_.Expected -eq "MISSED" })
 if ($missed.Count -gt 0) {
 	Write-Host "`n$($missed.Count) mutation(s) MISSED - QA gap" -ForegroundColor Red

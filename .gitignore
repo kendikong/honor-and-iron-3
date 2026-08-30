@@ -12,10 +12,11 @@ Thumbs.db
 *.tmp
 diff.txt
 
-# QA gate output (regenerated — use reports/qa/ or local only)
+# QA gate output (regenerated — keep under reports/qa/)
 qa_*_gate_latest.txt
 qa_*_gate_canonical.txt
 qa_*_live_latest.txt
+reports/qa/
 reports/qa_*.txt
 reports/*_gate*.stdout.txt
 reports/*_gate*.stderr.txt

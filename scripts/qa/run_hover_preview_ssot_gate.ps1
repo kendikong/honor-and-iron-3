@@ -10,7 +10,7 @@ $inputGd = if ($InputPath -ne "") { $InputPath } else {
 $bundleGd = Join-Path $projectRoot "presentation\planning_hover_preview.gd"
 
 Write-Output "=== Hover Preview Carried SSOT structural gate ==="
-Write-Output "Spec: docs/design/HOVER_PREVIEW_CARRIED_SSOT_PLAN.md"
+Write-Output "Spec: docs/design/planning/HOVER_PREVIEW_CARRIED_SSOT_PLAN.md"
 
 $failures = New-Object System.Collections.Generic.List[string]
 
