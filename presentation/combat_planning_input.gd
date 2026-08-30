@@ -5224,7 +5224,9 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 			and not AbilitySystem.motion_requires_occupied_target(p_unit, ability)
 		):
 			return true
-		return _voluntary_walk_economy_open(p_unit)
+		if not dragging and _voluntary_walk_economy_open(p_unit):
+			return true
+		return dragging and _drag_route.size() >= 2
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return _basic_move_allowed()
 	if (
@@ -5374,8 +5376,10 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 				_clear_stale_painted_preview_route(p_unit.id)
 				_refresh_click_target_highlight()
 				return
-	## Paint preview_paths in memory first Ã¢â€¢Â¬ÃƒÂ´Ã¢â€Å“ÃƒÂ§Ã¢â€Å“Ã¢â€¢Â¢ live sim must not merge a second corridor on top.
-	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
+		## Paint preview_paths in memory first (corridor probe is SSOT)
+		_write_voluntary_walk_preview_path(p_unit.id, probe_path)
+	else:
+		_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
 	if active_movement_planning_step(p_unit):
 		_sync_movement_hover_paths_to_overlay(p_unit.id)
 		var walk_res: Dictionary = _preview_at_interaction_cell(
