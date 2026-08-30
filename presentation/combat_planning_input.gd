@@ -704,7 +704,13 @@ func _apply_preview_result_preserving_hover_paths(res: Dictionary) -> void:
 		return
 	var payload: Dictionary = _authoritative_move_hover_paths_payload()
 	preview_state.apply_result(res, _director, payload)
-	if payload.is_empty() or _planning == null:
+	if _planning == null:
+		return
+	if payload.is_empty():
+		_planning.apply_preview_state(
+			preview_state, _director.selected_unit_id, _hover_attack_target_id(),
+		)
+		_planning._recompute_hover_ranges_from_inputs()
 		return
 	for uid: Variant in payload.keys():
 		_planning.apply_preview_paths_only(preview_state, int(uid))
@@ -1738,7 +1744,9 @@ func on_hover_moved(cell: Vector2i) -> void:
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			if planning_cell_changed and _hover_preserves_action_range_at_phase_entry(p_unit, cell):
-				_clear_stale_painted_preview_route(p_unit.id)
+				var preserve_painted: Array = preview_state.preview_paths.get(p_unit.id, [])
+				if not (active_movement_planning_step(p_unit) and preserve_painted.size() >= 2):
+					_clear_stale_painted_preview_route(p_unit.id)
 				preview_state.preview_board = null
 				preview_state.clear_interaction()
 				_clear_intent_snapshot()
@@ -5193,7 +5201,7 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		if drag_ability == null:
 			return false
 		if _is_awaiting_movement_endpoint(p_unit, drag_ability):
-			return false
+			return _drag_route.size() >= 2
 		if (
 			AbilitySystem.ability_has_movement_effect(drag_ability)
 			and not AbilitySystem.motion_requires_occupied_target(p_unit, drag_ability)
@@ -5315,8 +5323,11 @@ func _apply_voluntary_walk_drag_preview(unit_id: int, require_leg_match: bool) -
 func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -> bool:
 	if p_unit == null or _director == null:
 		return false
-	if dragging and _drag_unit_id == p_unit.id and _voluntary_walk_corridor_paint_active(p_unit):
-		return _movement_route_paint_allowed() or _drag_route.size() >= 2
+	if dragging and _drag_unit_id == p_unit.id:
+		if _drag_route.size() >= 2 and active_movement_planning_step(p_unit):
+			return true
+		if _voluntary_walk_corridor_paint_active(p_unit):
+			return _movement_route_paint_allowed() or _drag_route.size() >= 2
 	return _voluntary_walk_hover_paint_applies(p_unit, cell)
 
 ## PRE / ACTION (move module) / POST Ã¢â€¢Â¬ÃƒÂ´Ã¢â€Å“ÃƒÂ§Ã¢â€Å“Ã¢â€¢Â¢ one corridor preview owner for all move slots.
@@ -5345,9 +5356,22 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 				p_unit.id, p_unit, cell, waypoints,
 			)
 		if probe_path.size() < 2:
-			_clear_stale_painted_preview_route(p_unit.id)
-			_refresh_click_target_highlight()
-			return
+			var existing_paint: Array = preview_state.preview_paths.get(p_unit.id, [])
+			if existing_paint.size() >= 2:
+				var paint_tail: Vector2i = existing_paint[existing_paint.size() - 1] as Vector2i
+				if (
+					paint_tail != cell
+					and GridSystem.manhattan(paint_tail, cell) == 1
+					and _voluntary_walk_hover_extends_preview_path(p_unit, cell)
+				):
+					probe_path = []
+					for paint_step: Variant in existing_paint:
+						probe_path.append(paint_step as Vector2i)
+					probe_path.append(cell)
+			if probe_path.size() < 2:
+				_clear_stale_painted_preview_route(p_unit.id)
+				_refresh_click_target_highlight()
+				return
 	## Paint preview_paths in memory first Ã¢â€¢Â¬ÃƒÂ´Ã¢â€Å“ÃƒÂ§Ã¢â€Å“Ã¢â€¢Â¢ live sim must not merge a second corridor on top.
 	_write_movement_hover_preview_paths(p_unit.id, cell, waypoints)
 	if active_movement_planning_step(p_unit):

@@ -729,6 +729,16 @@ func apply_preview_paths_only(state: CombatPlanningPreview, unit_id: int) -> voi
 	var path: Array = state.preview_paths.get(unit_id, [])
 	if path.is_empty():
 		return
+	if state.preview_board != null:
+		_live_preview.preview_board = state.preview_board
+		_live_preview.forecast = state.forecast
+		_live_preview.live_intents = state.live_intents.duplicate()
+		if _unit_layer != null:
+			if _live_preview.forecast != null:
+				_unit_layer.set_live_forecast(_live_preview.forecast)
+			else:
+				_unit_layer.clear_live_forecast()
+		_recompute_hover_ranges_from_inputs()
 	CombatPlanningPreview.set_unit_preview_path(_live_preview, unit_id, path)
 	if state.preview_splits.has(unit_id):
 		_live_preview.preview_splits[unit_id] = state.preview_splits[unit_id]
