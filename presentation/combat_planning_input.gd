@@ -802,6 +802,36 @@ func _clamp_voluntary_walk_drag_for_forbidden_hover(unit_id: int) -> void:
 		_apply_voluntary_walk_drag_preview(unit_id, false)
 
 
+func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) -> void:
+	if p_unit == null or _director == null:
+		return
+	var existing: Array = preview_state.preview_paths.get(p_unit.id, [])
+	if existing.size() >= 2:
+		return
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null:
+		return
+	var waypoints: Array[Vector2i] = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
+	if waypoints.is_empty():
+		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
+		if target_id < 0:
+			return
+		var target: UnitState = _director.board.get_unit_by_id(target_id)
+		if target == null or not _in_ability_range(p_unit, target):
+			return
+		var approach: Vector2i = _director.preview_approach_tile(
+			p_unit.id, target_id, _director.selected_ability_index, target.position,
+		)
+		var stand: Vector2i = _proj_origin(p_unit)
+		if approach == stand:
+			return
+		waypoints = [approach]
+	var stand: Vector2i = _proj_origin(p_unit)
+	var dest: Vector2i = waypoints[waypoints.size() - 1]
+	if stand == dest:
+		return
+	_write_voluntary_walk_preview_path(p_unit.id, [stand, dest])
+
 func _authoritative_move_hover_paths_payload() -> Dictionary:
 	if _director == null or _director.selected_unit_id < 0:
 		return {}
@@ -816,15 +846,15 @@ func _authoritative_move_hover_paths_payload() -> Dictionary:
 	var actor: UnitState = _proj_unit(unit_id)
 	var hover_cell: Vector2i = _active_hover_cell()
 	if actor != null and _director.board != null and _director.board.is_in_bounds(hover_cell):
-		var enemy_id: int = _attack_target_id_at_cell(actor, hover_cell)
-		if enemy_id >= 0:
-			var enemy: UnitState = _director.board.get_unit_by_id(enemy_id)
+		var target_id: int = _attack_target_id_at_cell(actor, hover_cell)
+		if target_id >= 0:
+			var target: UnitState = _director.board.get_unit_by_id(target_id)
 			var ability: AbilityData = _selected_ability_data(actor)
-			if enemy != null and ability != null and path.size() >= 2:
+			if target != null and ability != null and path.size() >= 2 and target.is_enemy():
 				var route_waypoints: Array[Vector2i] = []
 				for i: int in range(1, path.size()):
 					route_waypoints.append(path[i] as Vector2i)
-				if not _enemy_hover_respects_painted_route(actor, enemy, ability, route_waypoints):
+				if not _enemy_hover_respects_painted_route(actor, target, ability, route_waypoints):
 					return {}
 	if path.size() >= 2 and actor != null and _voluntary_walk_drag_trim_active(actor):
 		path = _trim_route_for_prior_forbidden(path, unit_id, _active_hover_cell())
@@ -1176,7 +1206,6 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	if _drag_unit_id >= 0:
 		if _drag_unit_id != sealed_unit_id:
 			_clear_frozen_painted_leg(_drag_unit_id)
-	elif _director != null and _director.selected_unit_id >= 0:
 		if _director.selected_unit_id != sealed_unit_id:
 			_clear_frozen_painted_leg(_director.selected_unit_id)
 	_drag_route.clear()
@@ -1737,14 +1766,19 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if _should_restore_stand_hover_preview(cell):
 		_flush_hover_heavy_sync()
 		return
-	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
-		_run_hover_sim_refresh()
+	if _director.selected_ability_index >= 0:
+		if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
+			_run_hover_sim_refresh()
+			_run_hover_overlay_refresh()
+			_sync_movement_preview_after_hover_sim(cell)
+			if not dragging:
+				refresh_mouse_cursor(cell)
+		else:
+			_schedule_hover_sim_refresh()
+	else:
 		_run_hover_overlay_refresh()
-		_sync_movement_preview_after_hover_sim(cell)
 		if not dragging:
 			refresh_mouse_cursor(cell)
-	else:
-		_schedule_hover_sim_refresh()
 	if (
 		dragging
 		and _drag_route.size() >= 2
@@ -1895,10 +1929,6 @@ func _flush_hover_heavy_sync() -> void:
 	if _director != null and _director.selected_ability_index >= 0:
 		_run_hover_sim_refresh()
 		_sync_movement_preview_after_hover_sim(flush_cell)
-	elif _director != null and _director.selected_unit_id >= 0:
-		var flush_unit: UnitState = _proj_unit(_director.selected_unit_id)
-		if flush_unit != null and active_movement_planning_step(flush_unit):
-			_refresh_hover_interaction_preview(flush_cell)
 	_run_hover_overlay_refresh()
 	_refresh_action_range_overlay_when_gate_off()
 	if dragging and _drag_unit_id >= 0:
@@ -2285,6 +2315,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				)
 				if not _is_invalid_dict(approach_res):
 					_apply_preview_result_preserving_hover_paths(approach_res)
+				_seed_unit_target_hover_path_if_empty(p_unit, cell)
 				_refresh_click_target_highlight()
 				return
 			_clear_stale_painted_preview_route(p_unit.id)
@@ -2298,6 +2329,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			)
 			if not _is_invalid_dict(in_range_res):
 				_apply_preview_result_preserving_hover_paths(in_range_res)
+			_seed_unit_target_hover_path_if_empty(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
 		var step_ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
