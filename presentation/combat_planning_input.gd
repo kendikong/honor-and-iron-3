@@ -7326,7 +7326,10 @@ func _build_commit_slots_at_cell(
 		if (
 			ability_index >= 0
 			and ability != null
-			and not _voluntary_walk_planning_active()
+			and (
+				not _voluntary_walk_planning_active()
+				or AbilitySystem.target_passes_mode(actor, ability, hover_unit)
+			)
 		):
 			return _build_ally_commit_slots(
 				slots, actor, unit_id, hover_unit, ability, ability_index,
