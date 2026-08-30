@@ -514,7 +514,6 @@ func update_drag(local: Vector2) -> void:
 			and _director.board.is_in_bounds(cell)
 		):
 			_refresh_voluntary_walk_hover_preview(drag_actor, cell)
-	if cell_changed:
 		_update_drag_sprite(local, cell, _drag_preview_cache)
 		_drag_last_sprite_cell = cell
 	else:
@@ -820,7 +819,7 @@ func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) ->
 		if target == null:
 			return
 		var stand_seed: Vector2i = _proj_origin(p_unit)
-		if _in_ability_range(p_unit, target):
+		if _in_ability_range(p_unit, target) and not target.is_enemy():
 			if stand_seed != target.position:
 				_write_voluntary_walk_preview_path(p_unit.id, [stand_seed, target.position])
 			return
@@ -1645,7 +1644,7 @@ func _stage_voluntary_walk_drag_input(
 		and allow_hover_paint
 		and _drag_route_commits_active()
 		and _drag_unit_id == p_unit.id
-		and _can_move_to(p_unit, cell)
+		and _voluntary_walk_can_paint_cell(p_unit, cell)
 	):
 		should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
 	if allow_hover_paint and not orbit_phase_corridor:
@@ -1664,7 +1663,7 @@ func _stage_voluntary_walk_drag_input(
 				var paint_forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 					_director, p_unit.id, paint_origin,
 				)
-				if paint_forbidden.has(cell) and cell != paint_origin and not _can_move_to(p_unit, cell):
+				if paint_forbidden.has(cell) and cell != paint_origin and not _voluntary_walk_can_paint_cell(p_unit, cell):
 					should_extend_route = false
 		if should_extend_route:
 			if _drag_route.is_empty() or _drag_unit_id != p_unit.id:
@@ -1739,6 +1738,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and not dragging
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
+			if planning_cell_changed and _hover_preserves_action_range_at_phase_entry(p_unit, cell):
+				_clear_stale_painted_preview_route(p_unit.id)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -5084,6 +5085,37 @@ func _voluntary_walk_drag_trim_active(p_unit: UnitState) -> bool:
 	return _painted_drag_route_matches_leg(p_unit)
 
 
+func _voluntary_walk_corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
+	if actor == null or _director == null or not _director.board.is_in_bounds(cell):
+		return []
+	if not _voluntary_walk_corridor_paint_active(actor):
+		return []
+	return _corridor_waypoints_to_cell(actor, cell)
+
+
+func _voluntary_walk_corridor_reaches_cell(actor: UnitState, cell: Vector2i) -> bool:
+	var corridor: Array[Vector2i] = _voluntary_walk_corridor_waypoints_to_cell(actor, cell)
+	return not corridor.is_empty() and corridor.back() == cell
+
+
+func _voluntary_walk_can_paint_cell(p_unit: UnitState, cell: Vector2i) -> bool:
+	if p_unit == null:
+		return false
+	if _can_move_to(p_unit, cell):
+		return true
+	return _voluntary_walk_corridor_reaches_cell(p_unit, cell)
+
+
+func _hover_preserves_action_range_at_phase_entry(actor: UnitState, hover: Vector2i) -> bool:
+	if actor == null or _director == null or not _director.board.is_in_bounds(hover):
+		return false
+	if _attack_target_id_at_cell(actor, hover) >= 0:
+		return false
+	if _voluntary_walk_hover_paint_applies(actor, hover):
+		return false
+	return not _is_hover_move_cell(actor, hover)
+
+
 func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 	if _director == null:
 		return false
@@ -5214,7 +5246,7 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if (
 		active_movement_planning_step(p_unit)
-		and not _can_move_to(p_unit, cell)
+		and not _voluntary_walk_can_paint_cell(p_unit, cell)
 		and not _is_hover_move_cell(p_unit, cell)
 	):
 		_clear_stale_painted_preview_route(p_unit.id)
@@ -5277,7 +5309,10 @@ func _write_movement_hover_preview_paths(
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
 		if not _voluntary_walk_orbit_overrides_drag_paint(unit_id):
 			if _painted_drag_route_drives_live_preview():
-				_apply_voluntary_walk_drag_preview(unit_id, false)
+				var drag_paint_path: Array[Vector2i] = []
+				for drag_i: int in range(_drag_route.size()):
+					drag_paint_path.append(_drag_route[drag_i] as Vector2i)
+				_write_voluntary_walk_preview_path(unit_id, drag_paint_path)
 				return
 	if actor != null:
 		if _stationary_ranged_enemy_hover_suppresses_move_preview(actor, hover_cell, ability):
@@ -5336,6 +5371,16 @@ func _assemble_voluntary_walk_preview_path(
 			and _voluntary_walk_hover_extends_preview_path(actor, hover_cell)
 		):
 			return [origin, hover_cell]
+		if _voluntary_walk_corridor_paint_active(actor):
+			var corridor_fill: Array[Vector2i] = CombatPlanningPreview.voluntary_walk_corridor_waypoints(
+				_corridor_board_for_voluntary_walk(actor), actor, origin, hover_cell, _move_budget(actor), _director,
+			)
+			if not corridor_fill.is_empty() and corridor_fill.back() == hover_cell:
+				var filled: Array[Vector2i] = [origin]
+				for wp_fill: Vector2i in corridor_fill:
+					filled.append(wp_fill)
+				if not CombatPlanningPreview.route_touches_forbidden(filled, forbidden):
+					return filled
 		if not _can_move_to(actor, hover_cell) and not _is_hover_move_cell(actor, hover_cell):
 			return []
 		return []
@@ -5376,11 +5421,16 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 		if (
 			cell == _drag_route_stand_cell()
 			or _drag_route.has(cell)
-			or _can_move_to(actor, cell)
+			or _voluntary_walk_can_paint_cell(actor, cell)
 		):
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty():
 				return painted
+	if _voluntary_walk_corridor_paint_active(actor):
+		var corridor_wps: Array[Vector2i] = _corridor_waypoints_to_cell(actor, cell)
+		if not corridor_wps.is_empty() and corridor_wps.back() == cell:
+			return corridor_wps
+
 	if _can_move_to(actor, cell):
 		return _corridor_waypoints_to_cell(actor, cell)
 	return []
@@ -6041,9 +6091,26 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 				)
 			):
 				return stand
-	var hover_target_id: int = _hover_attack_target_id()
-	if hover_target_id >= 0:
+	var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	if _hover_preserves_action_range_at_phase_entry(actor, hover):
 		return stand
+	if _director.board.is_in_bounds(hover):
+		var hover_target_id: int = _hover_attack_target_id()
+		if hover_target_id >= 0 and ability != null:
+			var target: UnitState = _director.board.get_unit_by_id(hover_target_id)
+			if (
+				target != null
+				and target.is_enemy()
+				and not _in_ability_range(actor, target)
+			):
+				var approach: Vector2i = _director.preview_approach_tile(
+					unit_id,
+					hover_target_id,
+					_director.selected_ability_index,
+					target.position,
+				)
+				if _director.board.is_in_bounds(approach) and approach != stand:
+					return approach
 	var dest: Vector2i = move_intent_destination(unit_id)
 	if _director.board.is_in_bounds(dest) and dest != stand and _is_hover_move_cell(actor, dest):
 		return dest
@@ -6561,6 +6628,11 @@ func _move_budget(unit: UnitState) -> int:
 			return remaining
 		if actor.movement != null:
 			return actor.movement.max_points
+	if _director != null and _voluntary_walk_corridor_paint_active(actor):
+		var corridor_budget: int = _director.planning_move_budget(actor, _proj())
+		if corridor_budget > 0:
+			return corridor_budget
+
 	if extended_move_budget_active(unit):
 		return AbilitySystem.planning_move_budget(unit, true)
 	return AbilitySystem.planning_available_movement_points(actor)
@@ -6705,6 +6777,7 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		return false
 	if (
 		_planning != null
+		and not _voluntary_walk_corridor_paint_active(unit)
 		and not _planning.get_hover_move_tiles().is_empty()
 		and not skill_move_leg
 	):
@@ -8643,11 +8716,24 @@ func _hover_walk_waypoints_for_skill(
 					_proj(), actor, approach, [], ability, false, preview_state)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
+		if (
+			_painted_drag_route_drives_live_preview()
+			and _drag_unit_id == actor.id
+			and _drag_route.size() >= 2
+		):
+			return _hover_paint_waypoints_for_cell(actor, cell)
 		var skill_path: Array[Vector2i] = _director.preview_waypoints_for_hover(
 			_proj(), actor, cell, [], ability, true, preview_state,
 		)
 		if not skill_path.is_empty():
-			return skill_path
+			var origin: Vector2i = _phase_entry_stand(actor)
+			var trimmed: Array[Vector2i] = []
+			for wp: Vector2i in skill_path:
+				if trimmed.is_empty() and wp == origin:
+					continue
+				trimmed.append(wp)
+			if not trimmed.is_empty():
+				return _normalize_adjacent_single_step_waypoints(trimmed, origin)
 		return _hover_paint_waypoints_for_cell(actor, cell)
 	var empty: Array[Vector2i] = []
 	if not _is_hover_move_cell(actor, cell):
