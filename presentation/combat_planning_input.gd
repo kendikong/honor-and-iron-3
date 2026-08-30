@@ -5446,6 +5446,20 @@ func _assemble_voluntary_walk_preview_path(
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 		_director, unit_id, origin,
 	)
+	var painted_leg: Array = preview_state.preview_paths.get(unit_id, [])
+	if painted_leg.size() >= 2:
+		var painted_tail: Vector2i = painted_leg[painted_leg.size() - 1] as Vector2i
+		if (
+			painted_tail != hover_cell
+			and GridSystem.manhattan(painted_tail, hover_cell) == 1
+			and _voluntary_walk_hover_extends_preview_path(actor, hover_cell)
+		):
+			var extended_paint: Array[Vector2i] = []
+			for painted_step: Variant in painted_leg:
+				extended_paint.append(painted_step as Vector2i)
+			extended_paint.append(hover_cell)
+			if not CombatPlanningPreview.route_touches_forbidden(extended_paint, forbidden):
+				return extended_paint
 	if (
 		forbidden.has(hover_cell)
 		and hover_cell != origin
