@@ -1902,8 +1902,9 @@ func _begin_hover_sim_throttled_flush() -> void:
 		return
 	## Settle on the current tile before the expensive replay. Circling cancels
 	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
-	## If the pointer is still moving inside the tile, skip leftover replay Ã¢â€¢Â¬ÃƒÂ´Ã¢â€Å“ÃƒÂ§Ã¢â€Å“Ã¢â€¢Â¢
-	## red tiles already follow via overlay _recompute_hover_ranges_from_inputs.
+	## If the pointer is still moving inside the tile, reschedule (do not run stale sim).
+	## Timer defer is overlay-only; sim runs on zero-wait path and via _flush_hover_heavy_sync before commit.
+	## Red tiles already follow via overlay _recompute_hover_ranges_from_inputs.
 	_hover_sim_throttle_gen += 1
 	var gen: int = _hover_sim_throttle_gen
 	_hover_sim_pointer_at_schedule = _mouse_local_for_facing()

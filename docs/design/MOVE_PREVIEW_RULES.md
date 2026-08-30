@@ -266,12 +266,16 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 | Tile layers (one entry + one apply) | `_recompute_hover_ranges_from_inputs` → `TacticalPlanningOverlay._apply_planning_tile_layers` |
 | Action-range stand (aim origin) | Delegates to **Timeline phase + forecast stand** row — `action_range_intent_stand_cell` / `_intent_stand_origin` must not fork origin logic |
 | Targeting intent arrow (live hover) | `CombatPlanningInput.targeting_intent_arrow_cells` (overlay delegates) |
+| Post-commit hover/range/cursor truth | `CombatPlanningInput._apply_post_commit_hover_truth` (sole owner; called from `_promote_intent_preview_after_commit` after `preview_board = null`) |
+| In-place attack stand anchor (not walk) | `CombatPlanningPreview.set_unit_stand_anchor_path` — size-1 `[stand]` only; **not** `set_unit_preview_path` (voluntary-walk size≥2 guard) |
 
 ### Architecture audit (2026-08-26 pass 5)
 
 **Write paths (honest):**
 - Live hover/drag voluntary-walk (input): `_write_voluntary_walk_preview_path` → `set_unit_preview_path` (paths require size≥2; illegal hover clears) + overlay sync.
+- In-range attack hover at stand (no approach): `set_unit_stand_anchor_path` (size-1 stand anchor; not a walk route).
 - Intent/swap/anchor merge (preview): `_commit_preview_path` → `set_unit_preview_path` only.
+- Post-commit hover truth (input): `_promote_intent_preview_after_commit` → `_apply_post_commit_hover_truth` (restore display → recompute ranges → refresh interaction → `_flush_hover_heavy_sync` → cursor).
 - Sim timeline (preview): `build_preview_paths` from `UNIT_MOVED` events (rebuilds dict; not hover intent).
 - Post-commit trim: `trim_committed_paths_after_slot_promote` → `anchor_preview_paths_to_latest_stand` → `set_unit_preview_path`.
 - Overlay mirror: `apply_preview_paths_only` → `set_unit_preview_path` on `_live_preview`.
@@ -437,6 +441,12 @@ Everyone sees all units' move previews. Option to hide others' previews may come
 - **Unified:** sealed landing on hover uses movement-step gate for all timings (not PREMOVE-only).
 - **Tests:** `trampling_advance_e2e_test` uses `_phase_entry_stand` (retired `_active_move_drag_origin`).
 - **Note:** Historical pass notes above may name removed symbols; current owner is `_refresh_voluntary_walk_hover_preview`.
+
+**Pass 33 (post-commit hover truth — 2026-08-30, gauntlet round 33):**
+- **Removed:** `_suppress_post_commit_hover_refresh` defer flag (bandaid). No hover side effects in `_final_commit_slots_for_interaction`.
+- **Added:** `_apply_post_commit_hover_truth` — sole post-commit owner: `restore_committed_display` → `_recompute_hover_ranges_from_inputs` → `_refresh_hover_interaction_preview` → `_flush_hover_heavy_sync` → `refresh_mouse_cursor`; wired from `_promote_intent_preview_after_commit`.
+- **Stand anchor:** `set_unit_stand_anchor_path` — in-range enemy attack at stand (no approach); size-1 `[stand]`; not voluntary-walk `set_unit_preview_path`.
+- **Throttle:** `_begin_hover_sim_throttled_flush` timer defer is overlay-only; sim on zero-wait path and `_flush_hover_heavy_sync` before commit.
 
 ### Action-range economy gate
 
