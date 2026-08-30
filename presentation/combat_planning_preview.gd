@@ -776,6 +776,13 @@ static func build_preview_paths(
 					var move_timing: int = int(
 						d.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)
 					)
+					if not enemy_phase and path.size() > 0:
+						var route: Array = paths[id] as Array
+						var leg_start: Vector2i = current_positions.get(id, Vector2i(-999999, -999999)) as Vector2i
+						if route.is_empty() and leg_start.x > -900000:
+							var first_step: Vector2i = path[0] as Vector2i
+							if first_step != leg_start:
+								route.append(leg_start)
 					for c: Variant in path:
 						if (
 							not enemy_phase
