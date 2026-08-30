@@ -5,7 +5,7 @@ extends RefCounted
 ## Only created by CombatPlanningInput settle path; ratify copies slots only.
 
 var valid: bool = false
-var sealed: bool = false
+var is_sealed: bool = false
 var unit_id: int = -1
 var hover_cell: Vector2i = Vector2i(-999999, -999999)
 var revision_key: String = ""
@@ -38,13 +38,13 @@ static func seal(
 	bundle.slots = _duplicate_slots(p_slots)
 	bundle.preview_paths = p_preview_paths.duplicate(true)
 	bundle.valid = true
-	bundle.sealed = true
+	bundle.is_sealed = true
 	return bundle
 
 
 func can_ratify_at(cell: Vector2i, ratify_unit_id: int) -> bool:
 	return (
-		sealed
+		is_sealed
 		and valid
 		and unit_id == ratify_unit_id
 		and hover_cell == cell

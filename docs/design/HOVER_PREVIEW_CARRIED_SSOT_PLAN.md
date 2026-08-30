@@ -1,6 +1,7 @@
 # Hover Preview Carried SSOT — Plan & Goals
 
-**Status:** ACTIVE — Phase 2 (settle-only + structural gate)  
+**Date:** 2026-08-30  
+**Status:** ACTIVE — Phase 2 complete (settle-only + structural gate + step-6 regression run)  
 **Rules:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md)  
 **Gate:** `.\scripts\run_hover_preview_ssot_gate.ps1` (first step before planning QA)
 
@@ -41,10 +42,12 @@ If commit needs geometry the hover did not show → **fix settle**, never patch 
 
 - Born only when hover **settles** (`_preview_from_commit_slots_at_cell` / `settle_hover_preview_at_cell`)
 - Holds: slots, `preview_paths` snapshot, hover cell, unit id, facing, revision key
-- **Sealed** after settle; `validate_geometry()` asserts slots waypoints == `preview_paths` leg
+- **Sealed** after settle (`is_sealed`); `validate_geometry()` asserts slots waypoints == `preview_paths` leg
 - **Ratify** = `commit_from_slots(duplicate(bundle.slots))` — no waypoints args, no fill-at-commit
 
 Public read API: `CombatPlanningInput.get_settled_hover_preview()`.
+
+Settle builds matching `preview_paths` via `_preview_paths_snapshot_for_settle` before seal (same owner as slots — not paint-first).
 
 ---
 
@@ -92,9 +95,28 @@ Exceptions (separate UI, not voluntary-walk settle): teleport hop, forced push/p
 | 3. Voluntary walk settle-only (no paint-first) | ✅ |
 | 4. Harness → `get_settled_hover_preview()` | ✅ |
 | 5. SOT geometry row in `intent_source_of_truth_gate_test.gd` | ✅ |
-| 6. Full planning gate once | pending |
+| 6. Full planning gate once | ✅ run 2026-08-30 — see results below |
 
-**Scope freeze** until steps 3–5 pass on WALK-01 / MOVE-SKILL-01: no class/skill/GAP/milestone claims.
+**Scope freeze lifted** for WALK-01 / MOVE-SKILL-01 (intent SOT signatures green). Remaining T3 parity fails are tracked separately — not commit-fallback scope.
+
+### Step 6 gate results (2026-08-30)
+
+| Suite | Result |
+|-------|--------|
+| `run_hover_preview_ssot_gate.ps1` | **PASS** |
+| AOE footprint contract | **PASS** |
+| Intent SOT — WALK-01, MOVE-SKILL-01, PUSH-PULL, SWAP, AWAIT, TRAMPLE, STALE | **PASS** (SOT-SIG rows) |
+| T3 mimic fixture parity | **FAIL** — 5 rows (pre-existing / ratify-only fallout; no SSOT BREAK spam after settle-path fix) |
+
+T3 `[FAIL]` lines (fix in follow-up — do **not** add commit rebuild):
+
+- `ActionRangeRegression bowling_awaiting_occupied_end`
+- `ActionRangeRegression awaiting_module_range_after_premove`
+- `PlanningQAGate drag_drop_undo`
+- `PlanningQAGate hover order`
+- `PlanningQAGate move_preview_origin`
+
+CM-08 stale-waypoints harness hits script OOB at `planning_qa_gate_test.gd:1642` when bundle ratify rejects stale hover — harness must read bundle, not assume rebuild.
 
 ---
 

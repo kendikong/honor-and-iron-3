@@ -5,6 +5,8 @@ extends RefCounted
 ## Asserts production layers: blue/red overlay, live preview, slots, cursor, economy, sim.
 ## Commit path: paint → commit_from_slots → promote → deferred flush (F5 parity).
 
+const _HoverPreviewBundle := preload("res://presentation/planning_hover_preview.gd")
+
 const KNIGHT_START := Vector2i(4, 5)
 const ENEMY_POS := Vector2i(7, 5)
 const BASH_APPROACH := Vector2i(6, 5)
@@ -222,7 +224,7 @@ static func refresh_attack_hover(fix: Dictionary, cell: Vector2i) -> void:
 static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	hover(fix, cell)
 	var input: CombatPlanningInput = fix.input
-	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
+	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
 	if bundle != null and bundle.can_ratify_at(cell, fix.director.selected_unit_id):
 		return bundle.duplicate_slots()
 	return input._final_commit_slots_for_click_at_cell(
@@ -233,8 +235,8 @@ static func slots_for_click(fix: Dictionary, cell: Vector2i) -> Dictionary:
 static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	hover(fix, cell)
 	var input: CombatPlanningInput = fix.input
-	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
-	if bundle != null and bundle.valid and bundle.sealed:
+	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
+	if bundle != null and bundle.valid and bundle.is_sealed:
 		return bundle.duplicate_slots()
 	var empty_wps: Array[Vector2i] = []
 	var empty_legal: Array[Vector2i] = []

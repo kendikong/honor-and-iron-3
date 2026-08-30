@@ -4,6 +4,8 @@ extends RefCounted
 ## Phase 1 source-of-truth gate: last valid preview slots == finalized slots ==
 ## committed timeline == Simulator result for the seven reference journeys.
 
+const _HoverPreviewBundle := preload("res://presentation/planning_hover_preview.gd")
+
 static var _recorded: Dictionary = {}
 
 
@@ -335,12 +337,12 @@ static func _assert_valid_four_way(
 		PlanningChecklistHarness.assert_fail(failures, label, "expected valid hover slots")
 		return
 	var input: CombatPlanningInput = fix.input as CombatPlanningInput
-	var bundle: PlanningHoverPreview = input.get_settled_hover_preview() if input != null else null
-	if bundle != null and bundle.valid and bundle.sealed:
+	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview() if input != null else null
+	if bundle != null and bundle.valid and bundle.is_sealed:
 		var geom_origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 			fix.director, fix.director.board, unit_id,
 		)
-		var geom_err: String = PlanningHoverPreview.validate_geometry(
+		var geom_err: String = _HoverPreviewBundle.validate_geometry(
 			unit_id, hover_slots, input.preview_state.preview_paths, geom_origin,
 		)
 		if geom_err != "":

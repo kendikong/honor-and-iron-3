@@ -3519,6 +3519,7 @@ func _store_intent_snapshot(
 	unit_id: int = -1,
 	hover_cell: Vector2i = Vector2i(-999999, -999999),
 	face_dir: int = -1,
+	preview_paths_snapshot: Dictionary = {},
 ) -> void:
 	if _is_invalid_dict(slots) or slots.get("_noop", false) == true:
 		_clear_intent_snapshot()
@@ -3530,15 +3531,57 @@ func _store_intent_snapshot(
 	_intent_snapshot_valid = true
 	var actor: UnitState = _proj_unit(unit_id)
 	var move_origin: Vector2i = _phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
+	var paths_for_seal: Dictionary = preview_paths_snapshot
+	if paths_for_seal.is_empty():
+		paths_for_seal = preview_state.preview_paths
 	_settled_hover_preview = _HoverPreviewBundle.seal(
 		unit_id,
 		hover_cell,
 		key,
 		_intent_snapshot_slots,
-		preview_state.preview_paths,
+		paths_for_seal,
 		face_dir,
 		move_origin,
 	)
+
+
+func _preview_paths_snapshot_for_settle(
+	unit_id: int,
+	hover_cell: Vector2i,
+	slots: Dictionary,
+	waypoints: Array[Vector2i],
+) -> Dictionary:
+	var snapshot: Dictionary = preview_state.preview_paths.duplicate(true)
+	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
+	if slot_wps.is_empty():
+		return snapshot
+	var settle_actor: UnitState = _proj_unit(unit_id)
+	var move_origin_settle: Vector2i = (
+		_phase_entry_stand(settle_actor) if settle_actor != null else Vector2i(-999999, -999999)
+	)
+	var dest: Vector2i = slot_wps[slot_wps.size() - 1]
+	var existing_route: Array = snapshot.get(unit_id, [])
+	var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		existing_route, move_origin_settle, dest,
+	)
+	if leg == slot_wps:
+		return snapshot
+	var built: Array[Vector2i] = []
+	if move_origin_settle.x > -900000:
+		built.append(move_origin_settle)
+	for wp_i: int in range(slot_wps.size()):
+		built.append(slot_wps[wp_i])
+	if built.size() >= 2:
+		snapshot[unit_id] = built
+	elif not waypoints.is_empty():
+		built = []
+		if move_origin_settle.x > -900000:
+			built.append(move_origin_settle)
+		for wp_j: int in range(waypoints.size()):
+			built.append(waypoints[wp_j])
+		if built.size() >= 2:
+			snapshot[unit_id] = built
+	return snapshot
 
 
 func _clear_intent_snapshot() -> void:
@@ -3735,7 +3778,12 @@ func _preview_from_commit_slots_at_cell(
 	var snapshot_key: String = _intent_snapshot_key_for(
 		unit_id, cell, wp_for_key, legal_move_tiles, preferred_approach, effective_face,
 	)
-	_store_intent_snapshot(snapshot_key, slots, unit_id, cell, effective_face)
+	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
+		unit_id, cell, slots, wp_for_key,
+	)
+	_store_intent_snapshot(
+		snapshot_key, slots, unit_id, cell, effective_face, paths_snapshot,
+	)
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
 	if _hover_can_preview_move_without_simulate(slots, cell):
 		return {
