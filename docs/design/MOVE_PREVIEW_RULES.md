@@ -14,7 +14,20 @@ Plain-language rules. One pipeline. No parallel preview logic.
 
 - One voluntary-walk rule for premove, MOVE module, and postmove — same preview, same paint, same commit shape; only slot and execution order differ.
 - **Shown path = walked path.**
+- **Hover paints intent. Click freezes it.** Nothing recomputes at commit.
 - Exceptions are rare and explicit (forced push/pull UI, teleport hop) — not per-skill branches.
+
+---
+
+## Preview = commit truth (non-negotiable)
+
+**What you see on hover is exactly what gets committed and frozen.**
+
+- Click a tile → commit **ratifies** that picture. Path, landing, approach, facing — unchanged.
+- **Nothing recomputes at commit.** No corridor builder, no approach invent, no second path at click time.
+- **After you click, the preview must not change.** If the path, tiles, or ghosts jump to a different interpretation, that is a bug — not a feature.
+
+If commit would need geometry the hover did not show, the hover preview was incomplete — fix hover paint, do not patch at commit.
 
 ---
 
@@ -60,14 +73,6 @@ Same pipeline for every movement phase. Only **commit metadata** differs (timeli
 - **Do** keep showing **committed** walks not yet executed (frozen full path).
 
 **Modular skills:** each module finishes and hands off **stand** to the next. A later module does not redraw or replace an already-committed walk.
-
----
-
-## Preview = commit truth
-
-What the last valid preview showed is what commit locks — same path, landing, and stand for the next step.
-
-Commit **ratifies** preview. Commit does **not** invent a different route, approach, or facing.
 
 ---
 
@@ -169,6 +174,7 @@ Everyone sees all units' move previews.
 | New walk arrows on damage / target step | Not a movement step |
 | Blue walk tiles during non-move module | Blue range only on movement steps |
 | Path on screen ≠ path walked | Preview is not truth |
+| Preview changes after click | Commit recomputed or re-rendered — forbidden |
 | Commit path ≠ last hover preview | Preview ≠ commit |
 | Push/pull shown as blue walk | Forced displacement is different UI |
 | Planning UI during execution | Execution = zero planning UI |
