@@ -143,6 +143,9 @@ static func _planning_fixture(
 		"enemy": units[1] if units.size() > 1 else null,
 	}
 
+## Solo bruiser board for action-range / awaiting-module tests.
+## Uses track_raw_fixture + _wire_solo_overlay (no map_stub / wire_fixture).
+## For enemy/ally class movement smoke use BruiserPlanningChecklistHarness.wire_board.
 static func wire_bruiser_solo_fixture(
 	bruiser_pos: Vector2i,
 	ability_id: StringName = &"bruiser_charge_strike",

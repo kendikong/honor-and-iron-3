@@ -7,6 +7,8 @@ const _ClassFixture := preload("res://tests/class_planning_checklist_harness.gd"
 const _Drag := preload("res://tests/planning_drag_e2e_harness.gd")
 
 
+## Multi-unit bruiser board (enemy/ally) via ClassPlanningChecklistHarness + wire_fixture.
+## For solo action-range / awaiting-module tests use PlanningDragE2EHarness.wire_bruiser_solo_fixture.
 static func wire_board(
 	bruiser_pos: Vector2i,
 	enemy_pos: Vector2i = Vector2i(-1, -1),
