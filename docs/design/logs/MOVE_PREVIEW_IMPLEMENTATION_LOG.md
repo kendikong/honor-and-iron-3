@@ -217,3 +217,22 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 ### Action-range economy gate
 
 `CombatPlanningInput.action_range_visible_for_hover` hides red/yellow when the selected skill cannot be planned from the hover/projected stand. `resolve_layer_origins` still owns tile geometry; this gate owns legality.
+
+---
+
+## Attempt 7 — 2026-08-30 — Exact settlement context and receipt boundary
+
+**Status:** OPEN — implementation pass started; 100% compliance is not claimed.
+
+**Baseline:** The previous iteration 6 / gauntlet round 33 claims were superseded by a fresh audit. The audit found that paint was resolved before the fresh simulation board was applied, the stored receipt was externally mutable, and approved scheduling callbacks did not all validate an interaction/revision key.
+
+**Changes in this attempt:**
+- `PlanningPreviewTiles.resolve_paint` now accepts the settled simulation board and uses it for settled actor, movement, action-range, and blast geometry.
+- `CombatPlanningInput._store_intent_snapshot` passes `preview_result.temp_board` into the paint resolver before sealing.
+- `PlanningHoverPreview` requires a settled preview board and provides `duplicate_receipt`; `get_settled_hover_preview` returns a defensive copy.
+- Click and drop interaction now pass through `on_hover_moved(cell)` before ratification when not dragging, while `_commit_at_cell` remains ratify-only.
+- Ability, planning-refresh, and drag-preview callbacks capture and validate a planning interaction/revision key; bounded scheduling remains enabled under the owner-approved exception.
+
+**Still open for Attempt 7:** Route construction still has to be audited and consolidated so simulation-event paths, slot-derived paths, and post-commit promotion do not reconcile the same intent through separate writers.
+
+**Verification:** Static code review only. QA remains suspended by owner mandate.

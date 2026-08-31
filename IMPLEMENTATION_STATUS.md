@@ -40,6 +40,22 @@
 
 **Audit status:** Not closed. Structural SSOT gates are green; fixture and selective live failures remain explicit handoff work.
 
+## Planning SSOT architecture — Attempt 7
+
+**Date:** 2026-08-30
+**Status:** **OPEN** — implementation pass started; no 100% compliance claim.
+
+The earlier iteration 6 / round 33 compliance claims are superseded by the fresh code audit. Attempt 7 is correcting the settlement-state mismatch, sealed-receipt boundary, click settlement boundary, and stale scheduling guards.
+
+| Criterion | Attempt 7 status | Current evidence |
+|---|---|---|
+| One paint owner | **OPEN** | Settled paint now receives the fresh simulation board; route ownership remains under audit. |
+| No partial settle | **OPEN** | Click settlement is routed through the canonical hover boundary; route reconciliation remains open. |
+| Four-way parity | **OPEN** | Sealed paint and ratification share the settled board context; route/timeline parity is not yet closed. |
+| One simulation path | **OPEN** | The director uses the shared simulator path; this attempt does not reopen a second simulator path. |
+
+**Attempt 7 blockers:** Consolidate remaining route writers and complete the static six-row SSOT audit before recording any PASS or 100% claim.
+
 ## Core milestone — Planning voluntary-walk refactor ✅
 
 **Closed:** 2026-08-30 · pin `0b610706be236ddbfebc1c1556fae27d91689f1d`  

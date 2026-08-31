@@ -50,8 +50,10 @@ static func seal(
 	bundle.slots = _duplicate_slots(p_slots)
 	bundle.preview_paths = p_preview_paths.duplicate(true)
 	var sealed_board: Variant = p_paint.get("preview_board", null)
-	if sealed_board is BoardState:
-		bundle.preview_board = (sealed_board as BoardState).clone()
+	if not sealed_board is BoardState:
+		push_error("SSOT BREAK: sealed hover preview requires its settled preview board")
+		return bundle
+	bundle.preview_board = (sealed_board as BoardState).clone()
 	bundle.stand_origin = p_paint.get("stand_origin", p_move_origin)
 	bundle.action_range_tiles = _duplicate_coords(
 		p_paint.get("action_range_tiles", []),
@@ -124,6 +126,30 @@ func matches_ratification_context(
 
 func duplicate_slots() -> Dictionary:
 	return _duplicate_slots(slots)
+
+
+func duplicate_receipt() -> PlanningHoverPreview:
+	var copy: PlanningHoverPreview = PlanningHoverPreview.new()
+	copy.valid = valid
+	copy.is_sealed = is_sealed
+	copy.unit_id = unit_id
+	copy.hover_cell = hover_cell
+	copy.revision_key = revision_key
+	copy.face_dir = face_dir
+	copy.slots = _duplicate_slots(slots)
+	copy.preview_paths = preview_paths.duplicate(true)
+	copy.preview_board = preview_board.clone() if preview_board != null else null
+	copy.stand_origin = stand_origin
+	copy.action_range_tiles = action_range_tiles.duplicate()
+	copy.blast_tiles = blast_tiles.duplicate()
+	copy.move_tiles = move_tiles.duplicate()
+	copy.blast_on_hover_layer = blast_on_hover_layer
+	copy.show_action_range = show_action_range
+	copy.show_blast = show_blast
+	copy.paint_only = paint_only
+	copy.phase = phase
+	copy.ability_index = ability_index
+	return copy
 
 
 static func move_waypoints_from_slots(p_slots: Dictionary) -> Array[Vector2i]:

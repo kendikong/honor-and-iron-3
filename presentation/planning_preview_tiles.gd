@@ -52,6 +52,7 @@ static func resolve_layer_origins(
 	selected_ability: int,
 	planning_input: CombatPlanningInput,
 	hover_coord: Vector2i,
+	settled_board: BoardState = null,
 ) -> Dictionary:
 	var phase: PhaseKind = planning_phase(director, unit, selected_ability, planning_input)
 	var none: Vector2i = Vector2i(-999999, -999999)
@@ -85,8 +86,15 @@ static func resolve_layer_origins(
 		PhaseKind.MOVEMENT:
 			plan["locked_move_origin"] = locked_stand if locked_stand.x > -900000 else none
 			if show_action_range:
-				var predicted: Vector2i = planning_input.predicted_stand_at_hover(
-					unit.id, hover_coord,
+				var settled_unit: UnitState = (
+					settled_board.get_unit_by_id(unit.id)
+					if settled_board != null
+					else null
+				)
+				var predicted: Vector2i = (
+					settled_unit.position
+					if settled_unit != null
+					else planning_input.predicted_stand_at_hover(unit.id, hover_coord)
 				)
 				if predicted.x > -900000:
 					plan["next_aim_origin"] = predicted
@@ -106,8 +114,15 @@ static func resolve_layer_origins(
 				and not director.unit_has_move_planned_at_timing(unit.id, post_timing)
 				and planning_input != null
 			):
-				var hover_stand: Vector2i = planning_input.predicted_stand_at_hover(
-					unit.id, hover_coord,
+				var settled_unit: UnitState = (
+					settled_board.get_unit_by_id(unit.id)
+					if settled_board != null
+					else null
+				)
+				var hover_stand: Vector2i = (
+					settled_unit.position
+					if settled_unit != null
+					else planning_input.predicted_stand_at_hover(unit.id, hover_coord)
 				)
 				if hover_stand.x > -900000:
 					plan["next_move_origin"] = hover_stand
@@ -126,6 +141,7 @@ static func resolve_paint(
 	selected_ability: int,
 	planning_input: CombatPlanningInput,
 	hover_coord: Vector2i,
+	settled_board: BoardState = null,
 ) -> Dictionary:
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if director == null or board == null or unit == null:
@@ -140,14 +156,32 @@ static func resolve_paint(
 			"phase": PhaseKind.NON_MOVEMENT,
 			"ability_index": selected_ability,
 		}
+	var paint_board: BoardState = settled_board if settled_board != null else board
+	var paint_unit: UnitState = unit
+	if settled_board != null:
+		var settled_unit: UnitState = settled_board.get_unit_by_id(unit.id)
+		if settled_unit != null:
+			paint_unit = settled_unit
 	var plan: Dictionary = resolve_layer_origins(
-		director, board, unit, selected_ability, planning_input, hover_coord,
+		director,
+		paint_board,
+		paint_unit,
+		selected_ability,
+		planning_input,
+		hover_coord,
+		settled_board,
 	)
 	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
 	var blast: Array[Vector2i] = []
 	var move_tiles: Array[Vector2i] = resolve_move_tiles(
-		director, board, unit, selected_ability, planning_input, plan,
+		director,
+		paint_board,
+		paint_unit,
+		selected_ability,
+		planning_input,
+		plan,
+		settled_board,
 	)
 	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(plan.get("show_action_range", false))
@@ -156,22 +190,40 @@ static func resolve_paint(
 			var next_aim: Vector2i = plan.get("next_aim_origin", none)
 			if next_aim.x > -900000:
 				action_range = action_range_tiles(
-					director, board, unit, selected_ability, planning_input,
-					next_aim, hover_coord,
+					director,
+					paint_board,
+					paint_unit,
+					selected_ability,
+					planning_input,
+					next_aim,
+					hover_coord,
+					paint_board,
 				)
 		PhaseKind.NON_MOVEMENT:
 			var locked_aim: Vector2i = plan.get("locked_aim_origin", none)
 			if locked_aim.x > -900000 and show_action_range:
 				action_range = action_range_tiles(
-					director, board, unit, selected_ability, planning_input,
-					locked_aim, hover_coord,
+					director,
+					paint_board,
+					paint_unit,
+					selected_ability,
+					planning_input,
+					locked_aim,
+					hover_coord,
+					paint_board,
 				)
 	if bool(plan.get("show_blast", false)):
 		var blast_origin: Vector2i = plan.get("blast_origin", none)
 		if blast_origin.x > -900000:
 			blast = blast_tiles(
-				director, board, unit, selected_ability, planning_input,
-				blast_origin, hover_coord,
+				director,
+				paint_board,
+				paint_unit,
+				selected_ability,
+				planning_input,
+				blast_origin,
+				hover_coord,
+				paint_board,
 			)
 	return {
 		"stand_origin": stand,
@@ -207,6 +259,7 @@ static func resolve_move_tiles(
 	selected_ability: int,
 	planning_input: CombatPlanningInput,
 	plan: Dictionary,
+	settled_board: BoardState = null,
 ) -> Array[Vector2i]:
 	if (
 		director == null
@@ -234,6 +287,7 @@ static func resolve_move_tiles(
 		selected_ability,
 		planning_input,
 		origin,
+		settled_board,
 	)
 
 
@@ -244,6 +298,7 @@ static func reachable_move_tiles(
 	selected_ability: int,
 	planning_input: CombatPlanningInput,
 	origin: Vector2i,
+	settled_board: BoardState = null,
 ) -> Array[Vector2i]:
 	if (
 		director == null
@@ -253,16 +308,20 @@ static func reachable_move_tiles(
 	):
 		return []
 	var is_selected: bool = unit.id == director.selected_unit_id
-	var projected: UnitState = (
-		planning_input.projected_unit_for_preview(unit.id)
-		if is_selected
-		else null
-	)
-	var move_board: BoardState = (
-		CombatPlanningPreview.planning_projection_board(director, board)
-		if is_selected
-		else board
-	)
+	var projected: UnitState = null
+	if is_selected:
+		projected = (
+			settled_board.get_unit_by_id(unit.id)
+			if settled_board != null
+			else planning_input.projected_unit_for_preview(unit.id)
+		)
+	var move_board: BoardState = board
+	if is_selected:
+		move_board = (
+			settled_board
+			if settled_board != null
+			else CombatPlanningPreview.planning_projection_board(director, board)
+		)
 	var move_actor: UnitState = projected if projected != null else unit
 	var move_budget: int = move_budget_for_preview(
 		director,
@@ -331,20 +390,27 @@ static func action_range_tiles(
 	planning_input: CombatPlanningInput,
 	origin: Vector2i,
 	hover_coord: Vector2i,
+	plan_board: BoardState = null,
 ) -> Array[Vector2i]:
 	var ability: AbilityData = CombatDirector.resolve_selected_ability(unit, selected_ability)
 	var actor: UnitState = (
-		planning_input.projected_unit_for_preview(unit.id)
-		if planning_input != null
-		else unit
+		unit
+		if plan_board != null
+		else (
+			planning_input.projected_unit_for_preview(unit.id)
+			if planning_input != null
+			else unit
+		)
 	)
 	if actor == null:
 		actor = unit
-	var plan_board: BoardState = (
-		director.projected_state
-		if director != null and director.projected_state != null
-		else board
-	)
+	var effective_board: BoardState = plan_board
+	if effective_board == null:
+		effective_board = (
+			director.projected_state
+			if director != null and director.projected_state != null
+			else board
+		)
 	var awaiting: TimelineAction = (
 		director.find_awaiting_action(unit.id)
 		if director != null
@@ -352,14 +418,14 @@ static func action_range_tiles(
 	)
 	if awaiting != null and awaiting.awaiting_module_index >= 0:
 		return AbilitySystem.planning_module_range_tiles(
-			plan_board,
+			effective_board,
 			awaiting,
 			awaiting.awaiting_module_index,
 			origin,
 			hover_coord,
 		)
 	return AbilitySystem.planning_action_range_tiles(
-		plan_board, actor, ability, origin, [], hover_coord,
+		effective_board, actor, ability, origin, [], hover_coord,
 	)
 
 
@@ -371,6 +437,7 @@ static func blast_tiles(
 	planning_input: CombatPlanningInput,
 	origin: Vector2i,
 	hover_coord: Vector2i,
+	plan_board: BoardState = null,
 ) -> Array[Vector2i]:
 	if board == null or not board.is_in_bounds(hover_coord):
 		return []
@@ -382,17 +449,23 @@ static func blast_tiles(
 	if ability == null:
 		return []
 	var actor: UnitState = (
-		planning_input.projected_unit_for_preview(unit.id)
-		if planning_input != null
-		else unit
+		unit
+		if plan_board != null
+		else (
+			planning_input.projected_unit_for_preview(unit.id)
+			if planning_input != null
+			else unit
+		)
 	)
 	if actor == null:
 		actor = unit
-	var plan_board: BoardState = (
-		director.projected_state
-		if director != null and director.projected_state != null
-		else board
-	)
+	var effective_board: BoardState = plan_board
+	if effective_board == null:
+		effective_board = (
+			director.projected_state
+			if director != null and director.projected_state != null
+			else board
+		)
 	return AbilitySystem.planning_blast_tiles_at_target(
-		plan_board, actor, ability, origin, hover_coord,
+		effective_board, actor, ability, origin, hover_coord,
 	)

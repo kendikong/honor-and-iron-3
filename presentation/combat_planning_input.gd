@@ -70,9 +70,12 @@ var _hover_sim_schedule_cell: Vector2i = Vector2i(-9999, -9999)
 var _hover_sim_schedule_key: String = ""
 var _hover_sim_schedule_pointer: Vector2 = Vector2.INF
 var _ability_schedule_generation: int = 0
+var _ability_schedule_key: String = ""
 var _drag_preview_schedule_generation: int = 0
+var _drag_preview_schedule_key: String = ""
 var _planning_refresh_generation: int = 0
 var _planning_refresh_scheduled: bool = false
+var _planning_refresh_schedule_key: String = ""
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -470,14 +473,39 @@ func _schedule_or_refresh_drag_preview() -> void:
 	if _map_view == null or not _map_view.is_inside_tree():
 		_refresh_drag_preview_now()
 		return
+	var schedule_key: String = _planning_interaction_revision_key()
 	_drag_preview_schedule_generation += 1
 	var generation: int = _drag_preview_schedule_generation
+	_drag_preview_schedule_key = schedule_key
 	_map_view.get_tree().create_timer(_HOVER_HEAVY_MIN_INTERVAL_SEC).timeout.connect(
 		func() -> void:
-			if generation == _drag_preview_schedule_generation and dragging:
+			if (
+				generation == _drag_preview_schedule_generation
+				and schedule_key == _planning_interaction_revision_key()
+				and dragging
+			):
 				_refresh_drag_preview_now(),
 		CONNECT_ONE_SHOT,
 	)
+
+
+func _planning_interaction_revision_key() -> String:
+	var revision: int = _director.plan_revision if _director != null else -1
+	var selected_unit: int = _director.selected_unit_id if _director != null else -1
+	var selected_ability: int = _director.selected_ability_index if _director != null else -1
+	var hover_cell: Vector2i = (
+		_intent_state.hover_coord
+		if _intent_state != null
+		else Vector2i(-999999, -999999)
+	)
+	return "%d|%d|%d|%s|%d|%s" % [
+		revision,
+		selected_unit,
+		selected_ability,
+		str(hover_cell),
+		_drag_unit_id,
+		str(_drag_route),
+	]
 
 
 func _refresh_drag_preview_now() -> void:
@@ -621,7 +649,9 @@ func _apply_settled_preview_result(res: Dictionary) -> void:
 
 
 func get_settled_hover_preview() -> _HoverPreviewBundle:
-	return _settled_hover_preview
+	if _settled_hover_preview == null:
+		return null
+	return _settled_hover_preview.duplicate_receipt()
 
 func settled_hover_revision_key() -> String:
 	if not _intent_snapshot_valid or _director == null:
@@ -1074,21 +1104,31 @@ func _request_planning_selection_refresh() -> void:
 func _schedule_planning_refresh(refresh_cursor: bool) -> void:
 	if _planning_refresh_scheduled:
 		return
+	var schedule_key: String = _planning_interaction_revision_key()
 	_planning_refresh_scheduled = true
 	_planning_refresh_generation += 1
 	var generation: int = _planning_refresh_generation
+	_planning_refresh_schedule_key = schedule_key
 	if _map_view == null or not _map_view.is_inside_tree():
-		_run_scheduled_planning_refresh(generation, refresh_cursor)
+		_run_scheduled_planning_refresh(generation, schedule_key, refresh_cursor)
 		return
 	_map_view.get_tree().process_frame.connect(
 		func() -> void:
-			_run_scheduled_planning_refresh(generation, refresh_cursor),
+			_run_scheduled_planning_refresh(generation, schedule_key, refresh_cursor),
 		CONNECT_ONE_SHOT,
 	)
 
 
-func _run_scheduled_planning_refresh(generation: int, refresh_cursor: bool) -> void:
-	if generation != _planning_refresh_generation:
+func _run_scheduled_planning_refresh(
+	generation: int,
+	schedule_key: String,
+	refresh_cursor: bool,
+) -> void:
+	if (
+		generation != _planning_refresh_generation
+		or schedule_key != _planning_interaction_revision_key()
+	):
+		_planning_refresh_scheduled = false
 		return
 	_planning_refresh_scheduled = false
 	if _is_planning() and not dragging:
@@ -1156,13 +1196,20 @@ func _resync_hover_after_ability_change() -> void:
 func _schedule_ability_settled_refresh() -> void:
 	_ability_schedule_generation += 1
 	var generation: int = _ability_schedule_generation
+	var schedule_key: String = _planning_interaction_revision_key()
+	_ability_schedule_key = schedule_key
 	if _map_view == null or not _map_view.is_inside_tree():
 		_run_ability_settled_refresh()
 		return
 	var tree: SceneTree = _map_view.get_tree()
 	tree.create_timer(_ABILITY_SCROLL_SETTLE_SEC).timeout.connect(
 		func() -> void:
-			if generation == _ability_schedule_generation and _is_planning() and not dragging:
+			if (
+				generation == _ability_schedule_generation
+				and schedule_key == _planning_interaction_revision_key()
+				and _is_planning()
+				and not dragging
+			):
 				_run_ability_settled_refresh(),
 		CONNECT_ONE_SHOT,
 	)
@@ -2929,6 +2976,8 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
+	if not dragging:
+		on_hover_moved(cell)
 	return _commit_at_cell(
 		unit_id,
 		cell,
@@ -3121,15 +3170,20 @@ func _store_intent_snapshot(
 	var paths_for_seal: Dictionary = preview_paths_snapshot
 	if paths_for_seal.is_empty():
 		paths_for_seal = preview_state.preview_paths
+	var sealed_board: Variant = preview_result.get("temp_board", null)
+	var settled_board: BoardState = sealed_board as BoardState
+	var paint_actor: UnitState = actor
+	if paint_actor == null and settled_board != null:
+		paint_actor = settled_board.get_unit_by_id(unit_id)
 	var paint: Dictionary = PlanningPreviewTiles.resolve_paint(
 		_director,
 		_director.board,
-		actor,
+		paint_actor,
 		_director.selected_ability_index,
 		self,
 		hover_cell,
+		settled_board,
 	)
-	var sealed_board: Variant = preview_result.get("temp_board", null)
 	if sealed_board is BoardState:
 		paint["preview_board"] = sealed_board
 	paint["paint_only"] = paint_only
