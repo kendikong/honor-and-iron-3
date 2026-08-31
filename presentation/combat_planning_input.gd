@@ -111,8 +111,8 @@ func teardown() -> void:
 	_sfx = null
 
 
-## Compatibility hook: refresh the canonical preview immediately.
-func flush_deferred_planning() -> void:
+## Test and integration hook: refresh the canonical preview immediately.
+func refresh_planning_now() -> void:
 	_refresh_planning_hover_at_current_cell(false)
 
 

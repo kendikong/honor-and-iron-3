@@ -124,15 +124,13 @@ static func _collect_overlay_red_tiles(overlay: TacticalPlanningOverlay, board: 
 	return out
 
 
-static func _flush_deferred_planning_refresh(fix: Dictionary) -> void:
-	var director: CombatDirector = fix.director
+static func _refresh_planning_now(fix: Dictionary) -> void:
 	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
 	var input: CombatPlanningInput = fix.input
-	director.flush_plan_refresh_signals_if_pending()
+	if input != null:
+		input.refresh_planning_now()
 	if overlay != null:
 		overlay._recompute_hover_ranges_from_inputs()
-	if input != null:
-		input._flush_hover_preview_refresh()
 
 
 static func _assert_contract(
@@ -606,7 +604,7 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 		)
 		return
 	input.call("_promote_intent_preview_after_commit")
-	_flush_deferred_planning_refresh(fix)
+	_refresh_planning_now(fix)
 	if director.plan_pre_move.entries.is_empty():
 		failures.append(
 			"ActionRangeRegression hide_after_commit_run_icon_bash: run must appear on timeline after commit",
@@ -646,7 +644,7 @@ static func assert_hide_red_after_commit_run_icon_shield_bash(failures: Array[St
 		return
 	director.select_ability(bash_idx)
 	input.call("_run_ability_settled_refresh")
-	_flush_deferred_planning_refresh(fix)
+	_refresh_planning_now(fix)
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
 	_assert_contract(
 		failures,
@@ -712,10 +710,10 @@ static func _test_hide_red_after_commit_run_icon_bowling(failures: Array[String]
 		)
 		return
 	input.call("_promote_intent_preview_after_commit")
-	_flush_deferred_planning_refresh(fix)
+	_refresh_planning_now(fix)
 	director.select_ability(bowling_idx)
 	input.call("_run_ability_settled_refresh")
-	_flush_deferred_planning_refresh(fix)
+	_refresh_planning_now(fix)
 	var ability: AbilityData = PlanningQAGateTest._knight_ability(BOWLING_CHARGE_ID)
 	_assert_contract(
 		failures,

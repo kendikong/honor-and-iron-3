@@ -142,7 +142,7 @@ static func wait_ability_settle_sync(fix: Dictionary) -> void:
 		flush_planning(fix)
 		var input: CombatPlanningInput = fix.input
 		if input != null:
-			input.flush_deferred_planning()
+			input.refresh_planning_now()
 	settle_ability_hover(fix)
 
 

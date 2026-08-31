@@ -286,7 +286,7 @@ static func cleanup_all() -> void:
 		var input_ref: Variant = fix.get("input", null)
 		if input_ref is CombatPlanningInput:
 			var input := input_ref as CombatPlanningInput
-			input.flush_deferred_planning()
+			input.refresh_planning_now()
 			input.teardown()
 		var overlay_ref: Variant = fix.get("overlay", null)
 		if overlay_ref is Object and is_instance_valid(overlay_ref):
