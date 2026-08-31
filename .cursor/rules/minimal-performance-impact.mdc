@@ -43,6 +43,18 @@ Named incident (do not repeat): post-swap route defer + overlay hover throttle w
 
 Unless owner approved ⚠ exception in chat, the above are forbidden for **any** change type that touches these paths — not only perf turns.
 
+### ⚠ Owner-approved planning scheduling exception
+
+The owner has approved bounded scheduling for the already-tuned planning frame
+budget. Defer/throttle/coalesce may cover expensive hover simulation, drag-preview
+simulation, and presentation redraws, provided callbacks use the current
+interaction/revision key and stale callbacks are discarded.
+
+The exception does not permit deferred intent creation, alternate movement/range/
+blast painting, commit-slot reconstruction, or ratification without a matching
+`PlanningHoverPreview` sealed by the canonical planning owner. A commit must flush
+or reject synchronously at the sealed-intent boundary.
+
 ## Before shipping a change, ask
 
 1. **Does this add per-frame work?** (`_process`, `_physics_process`, `process_frame`, signal storms)

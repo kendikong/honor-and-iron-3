@@ -34,6 +34,17 @@ Applies to **bugs, features, refactors, perf, and cleanup** — not only lag or 
 - Refactor that copies logic without deleting the old path
 - Feature or fix wired only through presentation flags/meta
 
+## ⚠ Owner-approved performance exception — planning scheduling
+
+Bounded defer/throttle/coalesce is allowed for expensive preview simulation and
+presentation redraw work when required to preserve the tuned frame budget. It must
+run through the canonical planning owner, use the current interaction/revision key,
+discard stale callbacks, and never mutate or replace the sealed intent.
+
+The exception does not allow a scheduled alternate paint path, deferred commit-slot
+construction, UI-only state, or commit of anything other than the matching sealed
+bundle. Ratification remains synchronous and rejects when no matching bundle exists.
+
 **Owner phrase:** “Walk the table” → answer every audit row in plain language.
 
 Detail when editing code: `global-systems-first.mdc` · planning preview: `move-preview-intent-truth.mdc` · range: `action-range-latest-stand.mdc` · perf subordinate: `minimal-performance-impact.mdc`

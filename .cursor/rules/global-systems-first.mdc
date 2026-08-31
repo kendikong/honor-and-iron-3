@@ -54,6 +54,18 @@ A **heuristic** here means: behavior driven by a local shortcut that is **not** 
 | Data/meta at **build**, type rules at **apply** | `menu_font_tier` meta + walk by `Control` type — not `if node == _foo` |
 | One reload+apply bus | `EventBus.interface_settings_changed` → owner `_on_display_settings_applied` |
 
+### ⚠ Approved performance scheduling exception — planning preview
+
+The owner-approved exception permits bounded defer/throttle/coalesce scheduling for
+expensive planning preview simulation and presentation redraws when synchronous work
+would violate the tuned frame budget. Scheduled work must remain inside the canonical
+`CombatPlanningInput` → `PlanningPreviewTiles` → `PlanningHoverPreview.seal` path,
+use the current interaction/revision as its key, and discard stale callbacks.
+
+This exception does **not** permit deferred intent creation, alternate tile painting,
+commit-slot reconstruction, UI-only truth, or ratification of an unsealed/stale
+revision. Commit must synchronously ratify the matching sealed bundle or reject.
+
 ## Heuristics audit (mandatory — before declaring `none`)
 
 **Forbidden:** Writing `Heuristics added: none` as a default footer, ritual checkbox, or without completing the audit below. **Claiming `none` without walking the table is a rule violation** — same severity as inventing a heuristic silently.

@@ -29,6 +29,10 @@ var _drag_drop_finishing: bool = false
 var _drag_survive_board_cancel: bool = false
 
 const _DRAG_THRESHOLD_PX: float = 6.0
+const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
+const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
+const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.045
+const _HOVER_SIM_STILL_PX: float = 3.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -61,6 +65,12 @@ var _qa_pointer_screen_pos: Vector2 = Vector2.ZERO
 var _qa_pointer_grid_override: bool = false
 var _qa_pointer_grid_cell: Vector2i = Vector2i.ZERO
 var _last_sim_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
+var _hover_sim_schedule_generation: int = 0
+var _hover_sim_schedule_cell: Vector2i = Vector2i(-9999, -9999)
+var _hover_sim_schedule_key: String = ""
+var _hover_sim_schedule_pointer: Vector2 = Vector2.INF
+var _ability_schedule_generation: int = 0
+var _drag_preview_schedule_generation: int = 0
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -435,12 +445,7 @@ func update_drag(local: Vector2) -> void:
 	):
 		_drag_last_free = occ.position
 	if cell_changed:
-		_refresh_drag_preview_now()
-		if (
-			_drag_route.size() >= 2
-			and cell == (_drag_route[_drag_route.size() - 1] as Vector2i)
-		):
-			_refresh_drag_preview_now()
+		_schedule_or_refresh_drag_preview()
 		var drag_actor: UnitState = _proj_unit(_drag_unit_id)
 		if (
 			drag_actor != null
@@ -455,6 +460,20 @@ func update_drag(local: Vector2) -> void:
 	if cell != _drag_last_cursor_cell:
 		_drag_last_cursor_cell = cell
 		refresh_mouse_cursor(cell)
+
+
+func _schedule_or_refresh_drag_preview() -> void:
+	if _map_view == null or not _map_view.is_inside_tree():
+		_refresh_drag_preview_now()
+		return
+	_drag_preview_schedule_generation += 1
+	var generation: int = _drag_preview_schedule_generation
+	_map_view.get_tree().create_timer(_HOVER_HEAVY_MIN_INTERVAL_SEC).timeout.connect(
+		func() -> void:
+			if generation == _drag_preview_schedule_generation and dragging:
+				_refresh_drag_preview_now(),
+		CONNECT_ONE_SHOT,
+	)
 
 
 func _refresh_drag_preview_now() -> void:
@@ -1091,7 +1110,7 @@ func _on_ability_selected(index: int) -> void:
 	_clear_hover_preview()
 	if _planning != null:
 		_planning.queue_redraw()
-	_run_ability_settled_refresh()
+	_schedule_ability_settled_refresh()
 
 
 func _resync_hover_after_ability_change() -> void:
@@ -1109,6 +1128,21 @@ func _resync_hover_after_ability_change() -> void:
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
 	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
 	_refresh_planning_hover_at_current_cell(false)
+
+
+func _schedule_ability_settled_refresh() -> void:
+	_ability_schedule_generation += 1
+	var generation: int = _ability_schedule_generation
+	if _map_view == null or not _map_view.is_inside_tree():
+		_run_ability_settled_refresh()
+		return
+	var tree: SceneTree = _map_view.get_tree()
+	tree.create_timer(_ABILITY_SCROLL_SETTLE_SEC).timeout.connect(
+		func() -> void:
+			if generation == _ability_schedule_generation and _is_planning() and not dragging:
+				_run_ability_settled_refresh(),
+		CONNECT_ONE_SHOT,
+	)
 
 
 func _run_ability_settled_refresh() -> void:
@@ -1422,9 +1456,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 		_restore_hover_preview()
 		return
 	if _director.selected_ability_index >= 0:
-		_run_hover_sim_refresh()
+		if _should_run_hover_sim_sync(cell):
+			_run_hover_sim_refresh()
+			_sync_movement_preview_after_hover_sim(cell)
+		else:
+			_schedule_hover_sim_refresh()
 		_run_hover_overlay_refresh()
-		_sync_movement_preview_after_hover_sim(cell)
 		if not dragging:
 			refresh_mouse_cursor(cell)
 	else:
@@ -1453,10 +1490,94 @@ func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
-	return true
+	if dragging or _director == null or not _is_planning():
+		return false
+	if not _director.board.is_in_bounds(cell):
+		return false
+	if _planning != null and _planning.qa_static_overlay:
+		return true
+	return _director.selected_unit_id >= 0 and _director.selected_ability_index < 0
+
+
+func _schedule_hover_sim_refresh() -> void:
+	if (
+		dragging
+		or _director == null
+		or not _is_planning()
+		or _intent_state == null
+		or _director.board == null
+	):
+		return
+	var cell: Vector2i = _intent_state.hover_coord
+	if not _director.board.is_in_bounds(cell):
+		return
+	var unit_id: int = _director.selected_unit_id
+	if unit_id < 0:
+		return
+	var schedule_key: String = _hover_interaction_cache_key(unit_id, cell, _hover_attack_target_id())
+	if schedule_key.is_empty() or (
+		_hover_preview_fresh_at(cell)
+		and _intent_snapshot_key == schedule_key
+	):
+		return
+	_hover_sim_schedule_generation += 1
+	var generation: int = _hover_sim_schedule_generation
+	_hover_sim_schedule_cell = cell
+	_hover_sim_schedule_key = schedule_key
+	_hover_sim_schedule_pointer = _mouse_local_for_facing()
+	var wait_sec: float = _hover_sim_min_interval_sec()
+	if wait_sec <= 0.0 or _map_view == null or not _map_view.is_inside_tree():
+		_run_hover_sim_refresh()
+		return
+	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
+		func() -> void:
+			if generation != _hover_sim_schedule_generation:
+				return
+			if _intent_state == null or _intent_state.hover_coord != _hover_sim_schedule_cell:
+				return
+			if _hover_interaction_cache_key(
+				_director.selected_unit_id,
+				_hover_sim_schedule_cell,
+				_hover_attack_target_id(),
+			) != _hover_sim_schedule_key:
+				return
+			if not _hover_sim_pointer_is_still():
+				_schedule_hover_sim_refresh()
+				return
+			_run_hover_sim_refresh()
+			_run_hover_overlay_refresh()
+			_sync_movement_preview_after_hover_sim(_hover_sim_schedule_cell),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _hover_sim_min_interval_sec() -> float:
+	if _planning != null:
+		var settings: GameSettings = _planning.game_settings()
+		if settings != null:
+			return settings.hover_sim_interval_sec()
+	return _HOVER_SIM_MIN_INTERVAL_SEC
+
+
+func _hover_sim_pointer_is_still() -> bool:
+	if _planning != null and _planning.qa_static_overlay:
+		return true
+	if _hover_sim_schedule_pointer.x >= 1.0e12:
+		return true
+	return _mouse_local_for_facing().distance_to(_hover_sim_schedule_pointer) <= _hover_sim_still_px()
+
+
+func _hover_sim_still_px() -> float:
+	if _planning != null:
+		var settings: GameSettings = _planning.game_settings()
+		if settings != null:
+			return maxf(0.0, settings.hover_settle_still_px)
+	return _HOVER_SIM_STILL_PX
 
 
 func _flush_hover_heavy_sync() -> void:
+	_hover_sim_schedule_generation += 1
+	_drag_preview_schedule_generation += 1
 	if dragging:
 		_refresh_drag_preview_now()
 	var flush_cell: Vector2i = (
@@ -2805,6 +2926,7 @@ func _commit_at_cell(
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
+	_flush_hover_heavy_sync()
 	var slots: Dictionary = {}
 	if (
 		_settled_hover_preview != null
@@ -3043,6 +3165,7 @@ func _preview_paths_snapshot_for_settle(
 
 
 func _clear_intent_snapshot() -> void:
+	_hover_sim_schedule_generation += 1
 	_intent_snapshot_valid = false
 	_intent_snapshot_key = ""
 	_intent_snapshot_slots = {}
