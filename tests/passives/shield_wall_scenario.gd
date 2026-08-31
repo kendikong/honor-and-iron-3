@@ -1,7 +1,7 @@
 class_name ShieldWallScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Adjacent allies +1 DEF + PULL immune; [+] aura range 2.
 ## Globals: CombatSystem.get_dynamic_defense shield_wall aura.

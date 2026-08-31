@@ -1,10 +1,10 @@
 extends SceneTree
 
 ## AOE footprint contract — headless CLI entry.
-## Run: godot --headless --path <repo> --script res://tests/run_aoe_footprint_contract.gd
+## Run: godot --headless --path <repo> --script res://tests/runners/run_aoe_footprint_contract.gd
 ## Scene gate (F5): res://tests/gates/AoeFootprintQaGate.tscn → aoe_footprint_qa_gate_host.gd
 
-const _SUITE := preload("res://tests/aoe_footprint_contract_suite.gd")
+const _SUITE := preload("res://tests/harness/aoe_footprint_contract_suite.gd")
 
 
 func _initialize() -> void:

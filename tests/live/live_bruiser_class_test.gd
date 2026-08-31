@@ -7,8 +7,8 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 const _LIVE_EVENT_BARS: Dictionary = {
 	&"bruiser_push_through": {"damage": 0, "moves": 1, "pushes": 1, "self_damage": 0},
 	&"bruiser_charge_strike": {"damage": 1, "moves": 1, "pushes": 1, "self_damage": 0},

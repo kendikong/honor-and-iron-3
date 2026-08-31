@@ -3,9 +3,9 @@ extends RefCounted
 ## Bible: lancer_push - Lancer factory row via shared Simulator harness.
 ## Globals: AbilitySystem / Simulator (Rule A).
 
-const _H := preload("res://tests/lancer_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _H := preload("res://tests/harness/lancer_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 

@@ -34,8 +34,8 @@ function Exit-Gate([int]$Code) {
 	exit $Code
 }
 
-$matrixDoc = Join-Path $projectRoot "docs\ARCHER_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\archer_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\ARCHER_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\archer_meta_critic_manifest.json"
 $requiredFactoryIds = @(
 	"archer_sidestep", "archer_power_shot", "archer_volley", "archer_pinning_arrow",
 	"archer_piercing_shot", "archer_toxic_spore_arrow", "archer_grapple_arrow",
@@ -151,8 +151,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 foreach ($typedContract in @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
 	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-archer-$contractTag.stdout.log")

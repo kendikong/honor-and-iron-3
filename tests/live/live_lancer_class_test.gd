@@ -15,9 +15,9 @@ const _PUSH_EXTRA_PLAYERS: Array[Vector2i] = [
 ]
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _TRAMPLE_DRAG := preload("res://tests/trampling_advance_e2e_test.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _TRAMPLE_DRAG := preload("res://tests/harness/trampling_advance_e2e_test.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{

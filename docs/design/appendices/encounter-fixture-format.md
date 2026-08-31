@@ -12,7 +12,7 @@ JSON schema for handcrafted puzzle encounters. **PLANNED** loader maps fixture �
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Bridge smoke (today) | `godot --headless --path <repo> --script res://tests/bridge_test.gd` PASS | — |
+| Bridge smoke (today) | `godot --headless --path <repo> --script res://tests/harness/bridge_test.gd` PASS | — |
 | Fixture loader | `PLANNED — tests/encounter_fixture_test.gd` loads `tests/fixtures/encounters/*.json` | — |
 | Schema reference | Bridge inputs + metadata fields (`id`) documented in encoding table | — |
 

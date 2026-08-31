@@ -4,7 +4,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var trampling_e2e: GDScript = load("res://tests/trampling_advance_e2e_test.gd") as GDScript
+	var trampling_e2e: GDScript = load("res://tests/harness/trampling_advance_e2e_test.gd") as GDScript
 	trampling_e2e.run_all(failures)
 	if failures.is_empty():
 		print("[PASS] Trampling Advance E2E tests passed.")

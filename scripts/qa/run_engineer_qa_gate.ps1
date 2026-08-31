@@ -4,8 +4,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$matrixDoc = Join-Path $projectRoot "docs\ENGINEER_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\engineer_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\ENGINEER_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\engineer_meta_critic_manifest.json"
 
 $latestGateLog = Join-Path $projectRoot "reports\qa\qa_engineer_gate_latest.txt"
 $canonicalGateLog = Join-Path $projectRoot "reports\qa\qa_engineer_gate_canonical.txt"
@@ -154,8 +154,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 foreach ($typedContract in @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
 	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-engineer-$contractTag.stdout.log")

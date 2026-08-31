@@ -1,7 +1,7 @@
-﻿class_name MomentumOfTitanScenarioTest
+class_name MomentumOfTitanScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Momentum of the Titan — PUSH collision +10% Max HP damage.
 ## [+] collision damage increases to 20% Max HP.

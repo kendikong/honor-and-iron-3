@@ -1,7 +1,7 @@
-﻿class_name ShieldBashScenarioTest
+class_name ShieldBashScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Shield Bash - DAMAGE 1 + PUSH 2; [+] STAGGER if push collides with wall/enemy.
 ## Globals: EffectType.DAMAGE, PUSH; upgraded PUSH_STAGGER_ON_COLLISION via AbilitySystem.

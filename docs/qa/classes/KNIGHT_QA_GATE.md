@@ -262,7 +262,7 @@ Critic optimization examples: *“Add knight at (2,2) with Stand Ground only; en
 .\scripts\run_knight_qa_gate.ps1
 
 # Interim harness only (does not prove matrix PASS)
-godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
+godot --headless --path <repo> --script res://tests/runners/run_skill_scenarios_only.gd
 
 # Gameplay-core only (NOT Knight LOCK)
 .\scripts\run_planning_qa_gate.ps1

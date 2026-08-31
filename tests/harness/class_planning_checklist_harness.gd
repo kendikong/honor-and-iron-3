@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Generic planning fixture for movement/preview-origin smoke (all classes).
 
-const _Drag := preload("res://tests/planning_drag_e2e_harness.gd")
+const _Drag := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 
 static func wire_board(

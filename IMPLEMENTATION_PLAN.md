@@ -562,7 +562,7 @@ Watch for later split: Link, Scrap, Destroy — only if they become their own ve
 ## QA
 
 After each class: `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1`.  
-Converted-skill extras: headless `res://tests/run_ability_module_bridge_runner.gd` (includes `extra_rules_conversion_contract`).  
-**Layer shape (ER-2 anti-cheat):** `res://tests/run_layer_shape_conversion_gate.gd` (`--audit` for debt report).  
+Converted-skill extras: headless `res://tests/runners/run_ability_module_bridge_runner.gd` (includes `extra_rules_conversion_contract`).  
+**Layer shape (ER-2 anti-cheat):** `res://tests/runners/run_layer_shape_conversion_gate.gd` (`--audit` for debt report).  
 Planning/commit edits: `.\scripts\run_planning_qa_gate.ps1`.  
 Sim/core: `.\scripts\run_regression_tests.ps1`.

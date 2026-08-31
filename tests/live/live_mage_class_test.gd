@@ -7,8 +7,8 @@ const _ACTOR_CELL := Vector2i(4, 5)
 const _ALLY_CELL := Vector2i(3, 5)
 const _ENEMY_CELL := Vector2i(6, 5)
 const _TILE_CELL := Vector2i(4, 4)
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"mage_blink", "target": _TILE_CELL, "kind": &"movement", "effect": GameEnums.EffectType.TELEPORT_CASTER},

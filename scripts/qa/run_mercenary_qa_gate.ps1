@@ -34,8 +34,8 @@ function Exit-Gate([int]$Code) {
 	exit $Code
 }
 
-$matrixDoc = Join-Path $projectRoot "docs\MERCENARY_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\mercenary_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\MERCENARY_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\mercenary_meta_critic_manifest.json"
 
 $requiredFactoryIds = @(
 	"predatory_momentum", "mercenary_pullback", "mercenary_swift_strike",
@@ -161,8 +161,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 foreach ($typedContract in @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
 	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-mercenary-$contractTag.stdout.log")

@@ -49,7 +49,7 @@ N/A
 **Mass sim CLI:**
 
 ```text
-godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
+godot --headless --path <repo> --script res://tests/runners/run_mass_sim_test.gd
 ```
 
 ## Decomposition

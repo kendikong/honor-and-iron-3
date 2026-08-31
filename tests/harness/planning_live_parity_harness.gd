@@ -1,7 +1,7 @@
 class_name PlanningLiveParityHarness
 extends RefCounted
 
-const _QaGate := preload("res://tests/planning_qa_gate_test.gd")
+const _QaGate := preload("res://tests/harness/planning_qa_gate_test.gd")
 
 ## Headless mirror of live_planning_scene_test preview/commit parity asserts.
 ## Same slots, overlay display paths, and k4 run-loop checks — fixture board only.
@@ -695,7 +695,7 @@ static func action_target_unit_from_slots(slots: Dictionary) -> int:
 	return step.target_unit_id if step != null else -1
 
 
-const _Probe := preload("res://tests/planning_bible_fixture_probe.gd")
+const _Probe := preload("res://tests/harness/planning_bible_fixture_probe.gd")
 
 
 ## Full mirror of test_live_planning_bible_multi_knight_session (fixture board).

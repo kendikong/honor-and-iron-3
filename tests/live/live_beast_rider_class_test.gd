@@ -3,8 +3,8 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[StringName] = [
 	&"beast_reposition", &"beast_pounce", &"beast_feral_drag", &"beast_maul",

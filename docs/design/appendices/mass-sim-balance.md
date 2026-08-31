@@ -11,7 +11,7 @@ When and how to run mass sim for class/enemy balance signals during P6 — not f
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| Smoke | `godot --headless --script res://tests/run_mass_sim_test.gd` | — |
+| Smoke | `godot --headless --script res://tests/runners/run_mass_sim_test.gd` | — |
 | Interpretation | `tests/captures/mass_sim_interpretation.json` (generated; gitignored) | Balance taste |
 | Epoch honesty | `RULES_REVISION` bump when rules change | — |
 
@@ -30,7 +30,7 @@ N/A
 |------|--------|----------------|
 | 1 | Configure skirmish | Mass Sim dashboard / `core/batch/mass_sim_skirmish_setup.gd` |
 | 2 | New Epoch before rule change | `core/batch/mass_sim_constants.gd` `RULES_REVISION` bump |
-| 3 | Run queue | `godot --headless --script res://tests/run_mass_sim_test.gd` |
+| 3 | Run queue | `godot --headless --script res://tests/runners/run_mass_sim_test.gd` |
 | 4 | Interpret export | `tests/captures/mass_sim_interpretation.json` (see `tests/captures/README.md`) |
 
 ## When to run
@@ -42,7 +42,7 @@ N/A
 | Rules epoch change | Bump `mass_sim_constants.gd` `RULES_REVISION` |
 
 ```text
-godot --headless --path <repo> --script res://tests/run_mass_sim_test.gd
+godot --headless --path <repo> --script res://tests/runners/run_mass_sim_test.gd
 ```
 
 Optional capture: `.\scripts\capture_mass_sim_dashboard.ps1`
@@ -71,7 +71,7 @@ Optional capture: `.\scripts\capture_mass_sim_dashboard.ps1`
 
 ```powershell
 # Optional secondary BAR for P6 only
-godot --headless --script res://tests/run_mass_sim_test.gd
+godot --headless --script res://tests/runners/run_mass_sim_test.gd
 ```
 
 ## Gauntlet stub

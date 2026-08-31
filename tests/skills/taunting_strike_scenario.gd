@@ -1,7 +1,7 @@
 class_name KnightTauntingStrikeScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Taunting Strike - RANGE 2 ATK 1 PULL 1 TAUNT; [+] RANGE 3 AOE 3x3 PULL 2 all enemies.
 ## Globals: EffectType.DAMAGE, PULL, ADD_STATUS(TAUNT) via AbilitySystem.

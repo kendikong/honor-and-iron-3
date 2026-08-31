@@ -38,7 +38,7 @@ function Patch-ScenarioContent {
 	$planningConst = ""
 	$planningCall = ""
 	if ($IsSkill) {
-		$planningConst = "const _Planning := preload(`"res://tests/class_scenario_planning_contract.gd`")`n`n"
+		$planningConst = "const _Planning := preload(`"res://tests/harness/class_scenario_planning_contract.gd`")`n`n"
 		if ($Text -notmatch '## Planning tier:') {
 			$planningConst += "## Planning tier: B`n"
 		}

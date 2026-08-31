@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Shared Tier-2 overlay parity for live class tests (exact tile set + count).
 
-const _AOE := preload("res://tests/aoe_footprint_qa_harness.gd")
+const _AOE := preload("res://tests/harness/aoe_footprint_qa_harness.gd")
 
 
 static func sync_attack_hover(

@@ -1,13 +1,13 @@
-﻿class_name CoupDeGraceScenarioTest
+class_name CoupDeGraceScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/mercenary_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Scenarios := preload("res://tests/harness/mercenary_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Bible: Coup de Grace — Basic kill heal/move.
 ## Globals: MercenarySystems + AbilitySystem + Simulator.simulate_player_turn
-## Data/Sim delegate: tests/mercenary_qa_harness_scenarios.gd::run_coup_de_grace
+## Data/Sim delegate: tests/harness/mercenary_qa_harness_scenarios.gd::run_coup_de_grace
 
 
 static func run_all(failures: Array[String]) -> void:

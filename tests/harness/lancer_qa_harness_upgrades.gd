@@ -1,7 +1,7 @@
 class_name LancerQaHarnessUpgrades
 extends RefCounted
 
-const H := preload("res://tests/lancer_qa_harness.gd")
+const H := preload("res://tests/harness/lancer_qa_harness.gd")
 
 
 static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:

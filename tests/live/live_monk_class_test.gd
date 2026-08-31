@@ -1,8 +1,8 @@
 ## Tier 2 live Monk acceptance — every active skill commits through preview slots.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 const _CASES: Array[StringName] = [
 	&"monk_leap",
 	&"monk_scorching_kick",

@@ -1904,6 +1904,19 @@ func _run_hover_overlay_refresh() -> void:
 		if _planning != null:
 			_planning.queue_redraw()
 		return
+	if _director.selected_unit_id >= 0 and action_range_visible_for_hover():
+		var range_actor: UnitState = _proj_unit(_director.selected_unit_id)
+		var settled_matches: bool = (
+			_settled_hover_preview != null
+			and _settled_hover_preview.matches_paint_context(
+				cell,
+				_director.selected_unit_id,
+				settled_hover_revision_key(),
+				_director.selected_ability_index,
+			)
+		)
+		if range_actor != null and not settled_matches:
+			_settle_stand_hover_preview(range_actor, cell)
 	## Coord-change recompute lives in set_hover_coord; sim-only path updates need one refresh here.
 	if _planning != null and _last_hover_move_intent_preview:
 		_planning._recompute_hover_ranges_from_inputs()
@@ -2179,6 +2192,8 @@ func _should_restore_stand_hover_preview(cell: Vector2i) -> bool:
 			return false
 	if _director.selected_ability_index >= 0 and is_skill_aim_hover_at(cell):
 		return false
+	if _director.selected_ability_index >= 0 and action_range_visible_for_hover():
+		return false
 	return true
 
 
@@ -2373,7 +2388,21 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if p_unit != null and _sealed_leg_hover_restore_if_blocked(p_unit, cell):
 		_refresh_click_target_highlight()
 		return
+	if _director.selected_ability_index >= 0 and action_range_visible_for_hover():
+		_settle_stand_hover_preview(p_unit, cell)
+		_refresh_click_target_highlight()
+		return
 	_restore_hover_preview()
+
+
+func _settle_stand_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
+	if p_unit == null or _director == null:
+		return
+	var stand_res: Dictionary = _preview_from_commit_slots_at_cell(
+		p_unit.id, cell, [], _snapshot_drag_legal_move_tiles(),
+	)
+	if not _is_invalid_dict(stand_res):
+		_apply_settled_preview_result(stand_res)
 
 
 func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
@@ -3238,7 +3267,7 @@ func _commit_at_cell(
 	var slots: Dictionary = {}
 	if (
 		_settled_hover_preview != null
-		and _settled_hover_preview.matches_paint_context(
+		and _settled_hover_preview.matches_ratification_context(
 			cell, unit_id, settled_hover_revision_key(), _director.selected_ability_index
 		)
 	):
@@ -3257,7 +3286,13 @@ func _commit_at_cell(
 	_notify_drag_plan_move_committed(unit_id)
 	if _director != null:
 		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
-	if _director == null or not _director.commit_from_slots(unit_id, slots):
+	if _director == null or not _director.ratify_sealed_intent(
+		unit_id,
+		_settled_hover_preview,
+		cell,
+		settled_hover_revision_key(),
+		_director.selected_ability_index,
+	):
 		if _drag_move_commit_instant and _director != null:
 			_director.clear_planning_move_instant(unit_id)
 		_play_sfx("invalid")

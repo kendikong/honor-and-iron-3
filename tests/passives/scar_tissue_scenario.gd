@@ -1,7 +1,7 @@
-﻿class_name ScarTissueScenarioTest
+class_name ScarTissueScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Scar Tissue — reduce physical damage by 1 per 20 Max/missing HP.
 ## [+] reduce damage by an additional 1.

@@ -1,7 +1,7 @@
 class_name KnightSwapScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Swap - exchange tiles with ally (movement skill); [+] +2 DEF and SHIELD 2 rest of turn.
 ## Globals: EffectType.SWAP (movement ability data); ARMOR_UP + STAT_BUFF_DEF on upgrade.

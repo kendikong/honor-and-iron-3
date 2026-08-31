@@ -956,7 +956,7 @@ static func skill_timeline_column_failures(
 static func assert_planning_timeline_after_commit(
 	failures: Array[String], label: String, fix: Dictionary, cell: Vector2i,
 ) -> void:
-	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	const MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 	var unit_id: int = fix.director.selected_unit_id
 	var unit: UnitState = fix.board.get_unit_by_id(unit_id)
 	var ability: AbilityData = null
@@ -1038,7 +1038,7 @@ static func assert_commit_no_jump(
 		assert_eq_cell(failures, label, after_ghost, stand)
 	else:
 		assert_eq_cell(failures, label, after_ghost, before_ghost)
-	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	const MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 	if ability != null:
 		MovementTimeline.assert_move_preview_origin(
 			failures, label, fix, unit_id, ability,

@@ -1,15 +1,15 @@
 class_name BruiserChargeStrikeScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Bible: Charge Strike - MOVE 2 | ATK 3 | PUSH 1; [+] GHOST during MOVE, ATK +2 through an occupied tile.
 ## Globals: EffectType.MOVE + DAMAGE + PUSH; ghost_move / bonus_dmg_from_occupied modifiers on upgrade.
 ## Modules: M0 MOVE (own aim) + M1 DAMAGE (own aim) + PUSH layer on DAMAGE (see bruiser_factory)
 ## Planning tier: B
-## Data/Sim delegate: tests/bruiser_qa_harness_scenarios.gd::run_charge_strike
+## Data/Sim delegate: tests/harness/bruiser_qa_harness_scenarios.gd::run_charge_strike
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -29,7 +29,7 @@ static func _sim_upgrade(failures: Array[String]) -> void:
 
 static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 	const TAG := "charge_strike/postmove"
-	const _Lib := preload("res://tests/movement_planning_smoke_lib.gd")
+	const _Lib := preload("res://tests/harness/movement_planning_smoke_lib.gd")
 	_Lib.run_awaiting_smoke(
 		failures,
 		&"bruiser",

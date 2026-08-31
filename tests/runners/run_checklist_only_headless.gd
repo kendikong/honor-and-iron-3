@@ -1,10 +1,10 @@
 extends SceneTree
 
-const _Checklist := preload("res://tests/planning_t3_live_headless_checklist_test.gd")
+const _Checklist := preload("res://tests/harness/planning_t3_live_headless_checklist_test.gd")
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_harness.gd") as GDScript
 	var host := Node.new()
 	host.name = "ChecklistOnlyHost"
 	root.add_child(host)

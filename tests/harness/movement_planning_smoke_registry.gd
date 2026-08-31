@@ -3,9 +3,9 @@ extends RefCounted
 
 ## Global movement/premove planning smoke — every class, every movement-timeline skill.
 
-const _Lib := preload("res://tests/movement_planning_smoke_lib.gd")
-const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
-const _Checklist := preload("res://tests/planning_checklist_harness.gd")
+const _Lib := preload("res://tests/harness/movement_planning_smoke_lib.gd")
+const _MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
+const _Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
 
 
 static func has_entry(factory_id: StringName) -> bool:

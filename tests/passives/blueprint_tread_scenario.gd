@@ -1,10 +1,10 @@
-﻿extends RefCounted
+extends RefCounted
 
-const _H := preload("res://tests/engineer_qa_harness.gd")
+const _H := preload("res://tests/harness/engineer_qa_harness.gd")
 
 ## Bible §12: Blueprint Tread — GHOST through friendly constructs; adjacent end-turn repair; [+] pass-through SHIELD 1.
 ## Globals: EngineerSystems + AbilitySystem + CombatSystem + Simulator.
-## Data/Sim delegate: tests/engineer_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/engineer_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

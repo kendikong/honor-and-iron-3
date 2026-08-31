@@ -1,8 +1,8 @@
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 const _CASES: Array[StringName] = [
 	&"mercenary_pullback", &"mercenary_swift_strike", &"mercenary_defense_strike",
 	&"mercenary_blade_storm", &"mercenary_caltrop_toss", &"mercenary_feint",

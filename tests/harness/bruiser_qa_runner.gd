@@ -1,15 +1,15 @@
 extends SceneTree
 
 ## Bruiser QA Tier 1 headless CLI / Run Script entry.
-## Run: godot --headless --path <repo> --script res://tests/bruiser_qa_runner.gd
+## Run: godot --headless --path <repo> --script res://tests/harness/bruiser_qa_runner.gd
 ## Scene gate (F5): res://tests/gates/BruiserQaGate.tscn → bruiser_qa_gate_host.gd
-## Scenario library: res://tests/bruiser_qa_runner_lib.gd
+## Scenario library: res://tests/harness/bruiser_qa_runner_lib.gd
 
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
-	var runner: GDScript = load("res://tests/bruiser_qa_runner_lib.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_harness.gd") as GDScript
+	var runner: GDScript = load("res://tests/harness/bruiser_qa_runner_lib.gd") as GDScript
 	var host := Node.new()
 	host.name = "BruiserQaGateHost"
 	root.add_child(host)

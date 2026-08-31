@@ -1,7 +1,7 @@
-﻿class_name JuggernautScenarioTest
+class_name JuggernautScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Unstoppable Tread — moving over traps destroys them for 0 damage.
 ## [+] destroying a trap grants SHIELD 1.

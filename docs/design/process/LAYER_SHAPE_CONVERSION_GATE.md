@@ -62,9 +62,9 @@ A skill is **actually converted** when factory data is **Swap-shaped**:
 ## QA commands
 
 ```text
-godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --audit
-godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd
-godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --class bruiser
+godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd -- --audit
+godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd
+godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd -- --class bruiser
 ```
 
 **Expected today:** global default gate still **FAIL** until all classes clear mandate debt. **Bruiser** — all factory actives pass `--class bruiser` (layer-mandate **0**; ER-1 allowlist typed extras only) via `run_bruiser_qa_gate.ps1`. Audit mode shows remaining debt on other classes.

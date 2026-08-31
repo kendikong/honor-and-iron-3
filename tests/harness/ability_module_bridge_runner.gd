@@ -2,7 +2,7 @@ class_name AbilityModuleBridgeRunner
 extends RefCounted
 
 ## RefCounted harness — do NOT run with --script.
-## Headless CLI: godot --headless --path . --script res://tests/run_ability_module_bridge_runner.gd
+## Headless CLI: godot --headless --path . --script res://tests/runners/run_ability_module_bridge_runner.gd
 ## Headless smoke: modular finalize preserves Knight/Bruiser fingerprints + module bar.
 
 
@@ -33,7 +33,7 @@ static func run_all() -> Dictionary:
 	_check_authored_motion_push_layer(failures)
 	_report_check("infer_motion_push_layer", failures, check_failures)
 	_run_script_check(
-		"res://tests/ability_module_runtime_test.gd",
+		"res://tests/harness/ability_module_runtime_test.gd",
 		"run_all",
 		failures,
 		"ability_module_runtime",
@@ -41,7 +41,7 @@ static func run_all() -> Dictionary:
 	)
 	check_failures = failures.size()
 	_run_script_check(
-		"res://tests/extra_rules_conversion_contract.gd",
+		"res://tests/harness/extra_rules_conversion_contract.gd",
 		"run_all",
 		failures,
 		"extra_rules_conversion_contract",
@@ -49,7 +49,7 @@ static func run_all() -> Dictionary:
 	)
 	check_failures = failures.size()
 	_run_script_check(
-		"res://tests/module_authoring_rules_test.gd",
+		"res://tests/harness/module_authoring_rules_test.gd",
 		"run_all",
 		failures,
 		"module_authoring_rules",
@@ -57,7 +57,7 @@ static func run_all() -> Dictionary:
 	)
 	check_failures = failures.size()
 	_run_script_check(
-		"res://tests/class_library_editor_module_boundary_test.gd",
+		"res://tests/harness/class_library_editor_module_boundary_test.gd",
 		"run_all",
 		failures,
 		"class_editor_module_boundary",
@@ -65,7 +65,7 @@ static func run_all() -> Dictionary:
 	)
 	check_failures = failures.size()
 	_run_script_check(
-		"res://tests/ability_module_reader_boundary_test.gd",
+		"res://tests/harness/ability_module_reader_boundary_test.gd",
 		"run_all",
 		failures,
 		"module_reader_boundary",
@@ -105,7 +105,7 @@ static func _run_script_check(
 
 static func _run_formatter_audit(failures: Array[String], before: int) -> void:
 	print("ABILITY_MODULE_CHECK: ability_formatter_audit START")
-	var script: Script = load("res://tests/run_ability_formatter_audit.gd") as Script
+	var script: Script = load("res://tests/runners/run_ability_formatter_audit.gd") as Script
 	if script == null:
 		failures.append("ability_formatter_audit script missing")
 		_report_check("ability_formatter_audit", failures, before)

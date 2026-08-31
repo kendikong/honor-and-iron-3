@@ -4,11 +4,11 @@ extends SceneTree
 ## Default: LAYER_MANDATE — fails when CONVERTED_SKILL_IDS skills still use layer-mandate typed extras.
 ##
 ## Run:
-##   godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd
+##   godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd
 ## Audit only (print report, never fail):
-##   godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd -- --audit
+##   godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd -- --audit
 
-const _GateScript: Script = preload("res://tests/layer_shape_conversion_gate_test.gd")
+const _GateScript: Script = preload("res://tests/harness/layer_shape_conversion_gate_test.gd")
 
 
 func _initialize() -> void:

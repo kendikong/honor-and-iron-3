@@ -2,7 +2,7 @@ class_name ShamanScenarioAdapter
 extends RefCounted
 
 
-const _H := preload("res://tests/shaman_qa_harness.gd")
+const _H := preload("res://tests/harness/shaman_qa_harness.gd")
 
 
 static func run_active(ability_id: StringName, failures: Array[String]) -> void:

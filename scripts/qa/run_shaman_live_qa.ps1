@@ -14,7 +14,7 @@ $stderrPath = Join-Path $env:TEMP "honor-and-iron-shaman-live.stderr.log"
 $args = @(
 	"--path", $projectRoot, "--headless", "-s",
 	"res://addons/gdUnit4/bin/GdUnitCmdTool.gd",
-	"-a", "res://tests/live_shaman_class_test.gd", "--ignoreHeadlessMode"
+	"-a", "res://tests/live/live_shaman_class_test.gd", "--ignoreHeadlessMode"
 )
 $process = Start-Process -FilePath $GodotPath -ArgumentList $args `
 	-WorkingDirectory $projectRoot -RedirectStandardOutput $stdoutPath `

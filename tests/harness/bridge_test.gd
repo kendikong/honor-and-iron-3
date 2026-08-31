@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Headless entry point for bridge-layer checks.
 ## Run from the project root with:
-##   "<godot.exe>" --headless --path . --script res://tests/bridge_test.gd
+##   "<godot.exe>" --headless --path . --script res://tests/harness/bridge_test.gd
 
 func _initialize() -> void:
 	var result: Dictionary = BridgeTestRunner.run_all()

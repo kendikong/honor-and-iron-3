@@ -1,9 +1,9 @@
 extends SceneTree
 
 ## Headless entry for TestBattle / debug-report bridge tests only.
-## Do NOT use --script res://tests/bridge_test_runner.gd (RefCounted, not SceneTree).
+## Do NOT use --script res://tests/harness/bridge_test_runner.gd (RefCounted, not SceneTree).
 ## Run:
-##   "<godot.exe>" --headless --path . --script res://tests/run_test_battle_bridge.gd
+##   "<godot.exe>" --headless --path . --script res://tests/runners/run_test_battle_bridge.gd
 
 
 func _initialize() -> void:

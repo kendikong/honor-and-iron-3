@@ -3,8 +3,8 @@ extends Node
 ## Knight QA Tier 1 host for KnightQaGate.tscn (scene entry — not --script).
 ## Autoloads are ready before _ready; drag harness attaches UI stubs to this node.
 
-const _KNIGHT_QA_RUNNER := preload("res://tests/knight_qa_runner.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _KNIGHT_QA_RUNNER := preload("res://tests/harness/knight_qa_runner.gd")
+const _DRAG := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 
 func _ready() -> void:

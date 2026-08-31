@@ -3,9 +3,9 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
-const _ROGUE_HARNESS := preload("res://tests/rogue_qa_harness.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
+const _ROGUE_HARNESS := preload("res://tests/harness/rogue_qa_harness.gd")
 
 const _CASES: Array[StringName] = [
 	&"rogue_slip_past",

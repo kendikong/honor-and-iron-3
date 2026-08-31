@@ -994,6 +994,24 @@ func validate_commit_slots(unit_id: int, slots: Dictionary) -> String:
 	return ""
 
 
+func ratify_sealed_intent(
+	unit_id: int,
+	intent: PlanningHoverPreview,
+	hover_cell: Vector2i,
+	expected_revision_key: String,
+	expected_ability_index: int,
+) -> bool:
+	if intent == null or not intent.matches_ratification_context(
+		hover_cell,
+		unit_id,
+		expected_revision_key,
+		expected_ability_index,
+	):
+		EventBus.action_rejected.emit("stale_planning_intent")
+		return false
+	return commit_from_slots(unit_id, intent.duplicate_slots())
+
+
 func commit_from_slots(unit_id: int, slots: Dictionary) -> bool:
 	var validation_error: String = validate_commit_slots(unit_id, slots)
 	if validation_error != "":

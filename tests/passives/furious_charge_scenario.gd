@@ -1,11 +1,11 @@
 class_name BeastFuriousChargeScenarioTest
 extends RefCounted
 
-const _H := preload("res://tests/beast_rider_qa_harness.gd")
+const _H := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 ## Bible: Furious Charge — straight 3+ tile move gives next attack PUSH 1; [+] PUSH 2.
 ## Globals: MovementSystem straight-path telemetry and PhysicsSystem push.
-## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/beast_rider_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

@@ -883,7 +883,7 @@ static func _test_awaiting_module_range_after_committed_premove(failures: Array[
 	const LANDING := Vector2i(7, 3)
 	const ONLY_FROM_LANDING := Vector2i(7, 5)
 	const ONLY_FROM_START := Vector2i(3, 3)
-	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
 	var fix: Dictionary = PlanningDragE2EHarness.wire_bruiser_solo_fixture(
 		START, &"bruiser_charge_strike",
 	)

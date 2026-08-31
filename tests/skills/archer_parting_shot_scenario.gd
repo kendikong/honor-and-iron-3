@@ -1,15 +1,15 @@
 class_name ArcherPartingShotScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/archer_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Scenarios := preload("res://tests/harness/archer_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Bible: Parting Shot — RANGE 3 ATK 2, then MOVE 2 to chosen tile; [+] GHOST on retreat.
 ## Globals: modular DAMAGE + MOVE (NEW_AIM); AbilitySystem.set_module_target + Simulator.
 ## Modules: M0 DAMAGE enemy aim + M1 MOVE tile aim (NEW_AIM)
 ## Planning tier: B
-## Data/Sim delegate: tests/archer_qa_harness_scenarios.gd::run_parting_shot
+## Data/Sim delegate: tests/harness/archer_qa_harness_scenarios.gd::run_parting_shot
 
 
 static func run_all(failures: Array[String]) -> void:
@@ -29,10 +29,10 @@ static func _sim_upgrade(failures: Array[String]) -> void:
 
 static func _run_postmove_planning_contract(failures: Array[String]) -> void:
 	const TAG := "parting_shot/postmove"
-	const _Lib := preload("res://tests/movement_planning_smoke_lib.gd")
-	const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
-	const _Checklist := preload("res://tests/planning_checklist_harness.gd")
-	const _Timeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	const _Lib := preload("res://tests/harness/movement_planning_smoke_lib.gd")
+	const _Fixture := preload("res://tests/harness/class_planning_checklist_harness.gd")
+	const _Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
+	const _Timeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 	var actor_pos: Vector2i = Vector2i(2, 3)
 	var enemy_pos: Vector2i = Vector2i(4, 3)
 	var postmove_cell: Vector2i = Vector2i(2, 5)

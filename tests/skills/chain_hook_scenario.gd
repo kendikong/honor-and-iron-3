@@ -1,7 +1,7 @@
 class_name ChainHookScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Chain Hook â€” DAMAGE + PULL 2; [+] VULNERABLE if pulled adjacent.
 ## Globals: EffectType.DAMAGE, PULL; upgraded PULL_VULNERABLE_ON_ADJACENT.

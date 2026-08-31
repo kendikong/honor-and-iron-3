@@ -1,7 +1,7 @@
 class_name PlanningQAGateTest
 extends RefCounted
 
-const HoverMatrix := preload("res://tests/move_skill_hover_matrix_harness.gd")
+const HoverMatrix := preload("res://tests/harness/move_skill_hover_matrix_harness.gd")
 
 ## Automated mirror of the owner's manual planning QA checklist (Skill Arena / TestBattle).
 ## Asserts production planning, preview, commit-slot, cursor, and sim APIs — not pixel draw.
@@ -1638,6 +1638,9 @@ static func _test_stale_hover_updates_commit_waypoints(failures: Array[String]) 
 	if enemy_pre.is_empty():
 		failures.append("PlanningQAGate movement stale: enemy hover must build pre-move")
 		return
+	if approach_pre.is_empty():
+		failures.append("PlanningQAGate movement stale: approach hover must build pre-move")
+		return
 	var enemy_move: TimelineAction = enemy_pre[0] as TimelineAction
 	var approach_move: TimelineAction = approach_pre[0] as TimelineAction
 	if approach_move == null or approach_move.target_coord != BASH_APPROACH:
@@ -2381,7 +2384,7 @@ static func _test_premove_beast_reposition_applies_live_board(failures: Array[St
 
 
 static func _test_reposition_commit_clears_move_preview(failures: Array[String]) -> void:
-	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
 	var fix: Dictionary = Checklist.wire_swap_board(Checklist.WALK_SWAP_ALLY_CELL)
 	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
 	if overlay == null:
@@ -2419,9 +2422,9 @@ static func _test_reposition_commit_clears_move_preview(failures: Array[String])
 
 
 static func _test_push_through_premove_moves_both_units(failures: Array[String]) -> void:
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
-	const Checklist := preload("res://tests/planning_checklist_harness.gd")
-	const MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
+	const MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = BruiserFixture.wire_board(
 		Vector2i(4, 5), Vector2i(-1, -1), Vector2i(3, 5), &"bruiser_push_through",
@@ -2480,8 +2483,8 @@ static func _test_push_through_premove_moves_both_units(failures: Array[String])
 
 
 static func _test_push_through_hover_uses_shared_refresh_path(failures: Array[String]) -> void:
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
-	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
 	PlanningDragE2EHarness.cleanup_all()
 	var fix: Dictionary = BruiserFixture.wire_board(
 		Vector2i(4, 5), Vector2i(-1, -1), Vector2i(3, 5), &"bruiser_push_through",
@@ -2524,7 +2527,7 @@ static func _test_push_through_hover_uses_shared_refresh_path(failures: Array[St
 
 
 static func _test_move_preview_origin_premove_and_postmove(failures: Array[String]) -> void:
-	const Trample := preload("res://tests/trampling_advance_e2e_test.gd")
+	const Trample := preload("res://tests/harness/trampling_advance_e2e_test.gd")
 	var raw_fix: Dictionary = Trample._knight_fixture(Trample.START_CELL)
 	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_fix)
 	var input: CombatPlanningInput = fix.input
@@ -2690,7 +2693,7 @@ static func _test_move_preview_origin_premove_and_postmove(failures: Array[Strin
 
 
 static func _test_charge_strike_composite_move_preview(failures: Array[String]) -> void:
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
 	const ChargeStrikeId: StringName = &"bruiser_charge_strike"
 	var start := Vector2i(5, 4)
 	var enemy_cell := Vector2i(8, 2)
@@ -5429,8 +5432,8 @@ static func _test_shaped_skill_red_range_yellow_blast(failures: Array[String]) -
 
 static func _test_zero_range_self_aoe_red_yellow_contract(failures: Array[String]) -> void:
 	## RANGE 0 shaped self-AOE (Crimson Whirlwind): red = no Manhattan bubble; yellow = stand footprint.
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
-	const Checklist := preload("res://tests/planning_checklist_harness.gd")
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
+	const Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
 	var bruiser_pos := Vector2i(4, 5)
 	var enemy_pos := Vector2i(6, 5)
 	var fix: Dictionary = BruiserFixture.wire_board(
@@ -6528,7 +6531,7 @@ static func _test_range1_painted_route_enemy_hover_respects_waypoints(failures: 
 static func _test_movement_module_hover_uses_route_not_target_arrow(
 	failures: Array[String],
 ) -> void:
-	const BruiserFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
 	var start := Vector2i(6, 4)
 	var target := Vector2i(7, 5)
 	var fix: Dictionary = BruiserFixture.wire_board(

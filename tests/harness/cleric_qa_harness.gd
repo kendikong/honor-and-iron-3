@@ -1,7 +1,7 @@
 class_name ClericQaHarness
 extends RefCounted
 
-const _H := preload("res://tests/bruiser_qa_harness.gd")
+const _H := preload("res://tests/harness/bruiser_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:

@@ -34,8 +34,8 @@ function Exit-Gate([int]$Code) {
 	exit $Code
 }
 
-$matrixDoc = Join-Path $projectRoot "docs\CLERIC_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\cleric_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\CLERIC_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\cleric_meta_critic_manifest.json"
 
 Write-GateLine "=== Cleric QA gate (class validation - NOT planning QA) ==="
 Write-GateLine "Spec: docs/qa/classes/CLERIC_QA_GATE.md"
@@ -148,8 +148,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 $typedContracts = @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )
 foreach ($typedContract in $typedContracts) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)

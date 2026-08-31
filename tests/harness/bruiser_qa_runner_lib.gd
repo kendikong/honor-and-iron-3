@@ -1,12 +1,12 @@
 extends RefCounted
 
-const _REGISTRY := preload("res://tests/bruiser_scenario_registry.gd")
-const _HARNESS := preload("res://tests/bruiser_qa_harness.gd")
-const _UPGRADES := preload("res://tests/bruiser_qa_harness_upgrades.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _REGISTRY := preload("res://tests/harness/bruiser_scenario_registry.gd")
+const _HARNESS := preload("res://tests/harness/bruiser_qa_harness.gd")
+const _UPGRADES := preload("res://tests/harness/bruiser_qa_harness_upgrades.gd")
+const _DRAG := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 ## Tier 1 Bruiser scenario library (not a Godot main script).
-## Run gate: F5 `BruiserQaGate.tscn`, or `--script res://tests/bruiser_qa_runner.gd`
+## Run gate: F5 `BruiserQaGate.tscn`, or `--script res://tests/harness/bruiser_qa_runner.gd`
 
 
 static func run_all(failures: Array[String]) -> void:

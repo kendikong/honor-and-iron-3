@@ -1,11 +1,11 @@
 class_name BeastRiderBloodScentScenarioTest
 extends RefCounted
 
-const _H := preload("res://tests/beast_rider_qa_harness.gd")
+const _H := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 ## Bible: Blood Trail — +1 MOVE and PIERCE toward BLEEDing enemy; [+] +2 MOVE.
 ## Globals: MovementSystem direction intent and CombatSystem pierce validation.
-## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/beast_rider_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

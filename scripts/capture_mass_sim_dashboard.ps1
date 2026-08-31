@@ -16,7 +16,7 @@ if (-not (Test-Path $GodotPath)) {
 
 New-Item -ItemType Directory -Force -Path $captureDir | Out-Null
 
-$godotArgs = @("--path", $projectRoot, "--script", "res://tests/capture_mass_sim_dashboard.gd")
+$godotArgs = @("--path", $projectRoot, "--script", "res://tests/harness/capture_mass_sim_dashboard.gd")
 if ($Headless) {
 	$godotArgs = @("--headless") + $godotArgs
 }

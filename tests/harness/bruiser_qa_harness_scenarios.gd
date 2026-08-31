@@ -3,8 +3,8 @@ extends RefCounted
 
 ## Per-row sim + factory asserts for Bruiser B6-LOCK matrix (rows 2–31).
 
-const H := preload("res://tests/bruiser_qa_harness.gd")
-const KH := preload("res://tests/knight_qa_harness.gd")
+const H := preload("res://tests/harness/bruiser_qa_harness.gd")
+const KH := preload("res://tests/harness/knight_qa_harness.gd")
 
 
 static func run_charge_strike(failures: Array[String]) -> void:

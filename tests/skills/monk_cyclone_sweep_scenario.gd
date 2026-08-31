@@ -4,9 +4,9 @@ extends RefCounted
 ## Globals: shared GridSystem ARC footprint and PUSH resolution.
 ## Modules: M0 PUSH 2 ARC; [+] per-push movement modifier.
 ## Planning tier: B
-## Data/Sim delegate: tests/monk_qa_harness.gd::run_single_ability
-const _H := preload("res://tests/monk_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+## Data/Sim delegate: tests/harness/monk_qa_harness.gd::run_single_ability
+const _H := preload("res://tests/harness/monk_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_H.run_single_ability(&"monk_cyclone_sweep", failures)

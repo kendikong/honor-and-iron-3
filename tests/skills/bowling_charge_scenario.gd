@@ -1,7 +1,7 @@
 class_name KnightBowlingChargeScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Bowling Charge - DASH 3 | collision ATK/PUSH via BULLDOZE | [+] PUSH_CHAIN_COLLISION.
 ## Globals: DASH, BULLDOZE, PUSH_CHAIN_COLLISION via AbilitySystem / PhysicsSystem.

@@ -1,9 +1,9 @@
 class_name ArcherSidestepScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/archer_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Scenarios := preload("res://tests/harness/archer_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 

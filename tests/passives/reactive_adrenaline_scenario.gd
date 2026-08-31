@@ -1,7 +1,7 @@
 class_name ReactiveAdrenalineScenarioTest
 extends RefCounted
 
-const _Upgrades := preload("res://tests/bruiser_qa_harness_upgrades.gd")
+const _Upgrades := preload("res://tests/harness/bruiser_qa_harness_upgrades.gd")
 
 ## Bible: Reactive Adrenaline — adjacent enemies convert Sanguine Regeneration
 ## into SHIELD and grant +1 STR per adjacent enemy, capped at +3.

@@ -1,11 +1,11 @@
 class_name BeastTerminalVelocityScenarioTest
 extends RefCounted
 
-const _H := preload("res://tests/beast_rider_qa_harness.gd")
+const _H := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 ## Bible: Terminal Velocity — Drop/PUSH/PULL collision adds WPN true damage and VULNERABLE; [+] Drop STAGGER.
 ## Globals: PhysicsSystem collision lifecycle and CombatSystem unmitigated damage.
-## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/beast_rider_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

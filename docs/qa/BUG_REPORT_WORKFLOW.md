@@ -58,9 +58,9 @@ Legacy JSON may still say `"status": "open"` or `"fixed"`; the game normalizes t
 
 After fixing bug-report capture or TestBattle arena bridge code, run:
 
-`godot --headless --path . --script res://tests/run_test_battle_bridge.gd`
+`godot --headless --path . --script res://tests/runners/run_test_battle_bridge.gd`
 
-**Forbidden:** `godot --headless --script res://tests/bridge_test_runner.gd` — that file is a `RefCounted` helper, not a SceneTree entry; Godot shows an ALERT popup and does not run tests. Full bridge suite: `res://tests/bridge_test.gd`; sim + bridge regression: `res://tests/regression_test.gd`.
+**Forbidden:** `godot --headless --script res://tests/harness/bridge_test_runner.gd` — that file is a `RefCounted` helper, not a SceneTree entry; Godot shows an ALERT popup and does not run tests. Full bridge suite: `res://tests/harness/bridge_test.gd`; sim + bridge regression: `res://tests/harness/regression_test.gd`.
 
 ## Agent Non-Heuristic Mandate (Mandatory for all models)
 

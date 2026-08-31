@@ -1,7 +1,7 @@
-﻿class_name MomentumTransferScenarioTest
+class_name MomentumTransferScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Momentum Transfer — PUSH collision HEAL 1.
 ## [+] HEAL 1 and gain +1 STR.

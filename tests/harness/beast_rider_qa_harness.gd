@@ -5,7 +5,7 @@ extends RefCounted
 ## Layer C is exercised by each scenario through the shared planning contract.
 
 const _BEAST := preload("res://core/systems/beast_rider_systems.gd")
-const _PLANNING := preload("res://tests/class_scenario_planning_contract.gd")
+const _PLANNING := preload("res://tests/harness/class_scenario_planning_contract.gd")
 const _MovementSystem := preload("res://core/systems/movement_system.gd")
 const _TerrainSystem := preload("res://core/systems/terrain_system.gd")
 

@@ -1,9 +1,9 @@
 extends RefCounted
 
 ## Bible: cleric_divine_guidance - Cleric ability factory + sim contract.
-const _H := preload("res://tests/cleric_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _H := preload("res://tests/harness/cleric_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 

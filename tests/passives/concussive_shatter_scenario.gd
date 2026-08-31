@@ -1,7 +1,7 @@
-﻿class_name ConcussiveShatterScenarioTest
+class_name ConcussiveShatterScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Collision adds DEF-scaled damage and DEF debuff
 ## Globals: shared passive trigger pipeline (PassiveData on UnitState)

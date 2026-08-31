@@ -2,7 +2,7 @@ extends Node
 
 ## Scene runner for AbilityModuleBridgeTest.tscn (F5 / QA scenes with autoloads).
 
-const _Runner := preload("res://tests/ability_module_bridge_runner.gd")
+const _Runner := preload("res://tests/harness/ability_module_bridge_runner.gd")
 
 
 func _ready() -> void:

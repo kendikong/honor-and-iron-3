@@ -155,8 +155,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 foreach ($typedContract in @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
 	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-knight-$contractTag.stdout.log")

@@ -3,17 +3,17 @@ extends RefCounted
 
 ## Dispatches `[+]` sim tier to per-class upgrade harnesses (CLASS_QA_BIBLE.md §3 Layer B).
 
-const _BruiserUpgrades := preload("res://tests/bruiser_qa_harness_upgrades.gd")
-const _ArcherUpgrades := preload("res://tests/archer_qa_harness_upgrades.gd")
-const _LancerUpgrades := preload("res://tests/lancer_qa_harness_upgrades.gd")
-const _MageHarness := preload("res://tests/mage_qa_harness.gd")
-const _ClericUpgrades := preload("res://tests/cleric_qa_harness_upgrades.gd")
-const _MercenaryUpgrades := preload("res://tests/mercenary_qa_harness_upgrades.gd")
-const _MercenaryHarness := preload("res://tests/mercenary_qa_harness.gd")
+const _BruiserUpgrades := preload("res://tests/harness/bruiser_qa_harness_upgrades.gd")
+const _ArcherUpgrades := preload("res://tests/harness/archer_qa_harness_upgrades.gd")
+const _LancerUpgrades := preload("res://tests/harness/lancer_qa_harness_upgrades.gd")
+const _MageHarness := preload("res://tests/harness/mage_qa_harness.gd")
+const _ClericUpgrades := preload("res://tests/harness/cleric_qa_harness_upgrades.gd")
+const _MercenaryUpgrades := preload("res://tests/harness/mercenary_qa_harness_upgrades.gd")
+const _MercenaryHarness := preload("res://tests/harness/mercenary_qa_harness.gd")
 
 
 static func _find_ability(factory_id: StringName) -> AbilityData:
-	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	var harness_script: GDScript = load("res://tests/harness/aoe_footprint_qa_harness.gd") as GDScript
 	if harness_script == null:
 		return null
 	return harness_script.call("find_ability_by_id", factory_id) as AbilityData

@@ -12,8 +12,8 @@ const _COMPLEX_VOLLEY_AIM := Vector2i(6, 5)
 const _COMPLEX_SIDESTEP_DEST := Vector2i(3, 8)
 const _COMPLEX_POWER_TARGET := Vector2i(6, 8)
 const _COMPLEX_POST_MOVE_DEST := Vector2i(4, 8)
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"archer_sidestep", "range": 1, "flags": GameEnums.TargetingFlags.TILE,

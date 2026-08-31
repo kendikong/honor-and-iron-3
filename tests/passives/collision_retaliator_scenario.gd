@@ -1,7 +1,7 @@
-﻿class_name CollisionRetaliatorScenarioTest
+class_name CollisionRetaliatorScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Enemy collision into knight suffers retaliation damage
 ## Globals: shared passive trigger pipeline (PassiveData on UnitState)

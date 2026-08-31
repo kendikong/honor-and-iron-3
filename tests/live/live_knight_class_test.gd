@@ -6,8 +6,8 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _AOE_QA := preload("res://tests/aoe_footprint_qa_harness.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _AOE_QA := preload("res://tests/harness/aoe_footprint_qa_harness.gd")
 const _IDS: Array[StringName] = [
 	&"knight_swap",
 	&"knight_shield_bash",

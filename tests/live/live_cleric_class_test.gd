@@ -3,8 +3,8 @@
 ## TacticalCombat preview/slot pipeline.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 
 const _CASES: Array[Dictionary] = [
 	{"id": &"cleric_guardian_step", "actor": Vector2i(2, 2), "target": Vector2i(4, 2)},

@@ -3,8 +3,8 @@ extends RefCounted
 
 ## Bruiser planning fixtures — delegates to global class harness.
 
-const _ClassFixture := preload("res://tests/class_planning_checklist_harness.gd")
-const _Drag := preload("res://tests/planning_drag_e2e_harness.gd")
+const _ClassFixture := preload("res://tests/harness/class_planning_checklist_harness.gd")
+const _Drag := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 
 ## Multi-unit bruiser board (enemy/ally) via ClassPlanningChecklistHarness + wire_fixture.

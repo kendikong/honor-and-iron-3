@@ -1,7 +1,7 @@
 class_name KnightPhalanxStanceScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Phalanx Stance - SELF DEF +5 + STURDY until next turn; [+] RETALIATION_INFINITE_RANGE for Retaliation Protocol this turn.
 ## Globals: STURDY, STAT_BUFF_DEF, RETALIATION_INFINITE_RANGE, RETALIATION_PROTOCOL via AbilitySystem / CombatSystem

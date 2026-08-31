@@ -1,8 +1,8 @@
 extends SceneTree
 
 ## Headless entry: modular ability bridge + module authoring bar.
-## Run: godot --headless --path . --script res://tests/run_ability_module_bridge_runner.gd
-## Do NOT use --script res://tests/ability_module_bridge_runner.gd (RefCounted harness, not SceneTree).
+## Run: godot --headless --path . --script res://tests/runners/run_ability_module_bridge_runner.gd
+## Do NOT use --script res://tests/harness/ability_module_bridge_runner.gd (RefCounted harness, not SceneTree).
 
 
 func _initialize() -> void:

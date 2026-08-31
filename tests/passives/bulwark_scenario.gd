@@ -1,7 +1,7 @@
 class_name BulwarkScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: +1 DEF per adjacent unit; [+] +1 STR per adjacent enemy.
 ## Globals: CombatSystem.get_dynamic_defense / get_dynamic_strength.

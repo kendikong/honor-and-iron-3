@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Legacy alias — prefer res://tests/run_ability_module_bridge_runner.gd
-## Run: godot --headless --path . --script res://tests/run_ability_module_bridge_test.gd
+## Legacy alias — prefer res://tests/runners/run_ability_module_bridge_runner.gd
+## Run: godot --headless --path . --script res://tests/runners/run_ability_module_bridge_test.gd
 
 
 func _initialize() -> void:

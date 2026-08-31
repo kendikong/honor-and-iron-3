@@ -1,7 +1,7 @@
 class_name KnightRedirectStrikeScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Redirect Strike - RANGE 2 | Target Ally. INTERCEPT 50% of that ally's damage this turn. [+] DEF +2 per redirected hit.
 ## Globals: ADD_STATUS_SELF(INTERCEPT) with ALLY aim; split in CombatSystem.deal_damage.

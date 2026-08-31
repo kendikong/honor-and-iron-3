@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Bruiser planning smoke — delegates to global movement registry.
 
-const _Global := preload("res://tests/movement_planning_smoke_registry.gd")
+const _Global := preload("res://tests/harness/movement_planning_smoke_registry.gd")
 
 
 static func run_for_factory_id(failures: Array[String], factory_id: StringName) -> void:

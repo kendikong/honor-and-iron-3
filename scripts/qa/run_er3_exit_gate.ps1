@@ -10,9 +10,9 @@ if ([string]::IsNullOrWhiteSpace($ReportPath)) {
 }
 
 $checks = @(
-	"res://tests/run_ability_module_bridge_runner.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd",
-	"res://tests/run_extra_rules_conversion_contract.gd"
+	"res://tests/runners/run_ability_module_bridge_runner.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd",
+	"res://tests/runners/run_extra_rules_conversion_contract.gd"
 )
 $lines = New-Object System.Collections.Generic.List[string]
 $failed = $false
@@ -30,7 +30,7 @@ foreach ($script in $checks) {
 	if (Test-Path $stdoutPath) { $output += Get-Content $stdoutPath }
 	if (Test-Path $stderrPath) { $output += Get-Content $stderrPath }
 	$required = switch ($script) {
-		"res://tests/run_ability_module_bridge_runner.gd" {
+		"res://tests/runners/run_ability_module_bridge_runner.gd" {
 			@(
 				"ABILITY_MODULE_CHECK: er1_shared_homes PASS",
 				"ABILITY_MODULE_SCENARIO: grant_scrap_runtime PASS",
@@ -39,7 +39,7 @@ foreach ($script in $checks) {
 				"ABILITY_MODULE_BRIDGE_TEST: PASS"
 			)
 		}
-		"res://tests/run_class_library_schema_typed_fields_test.gd" {
+		"res://tests/runners/run_class_library_schema_typed_fields_test.gd" {
 			@("[PASS] typed class-library schema roundtrip")
 		}
 		default {

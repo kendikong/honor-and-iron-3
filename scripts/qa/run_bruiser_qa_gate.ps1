@@ -33,8 +33,8 @@ function Exit-Gate([int]$Code) {
 	Save-GateLog
 	exit $Code
 }
-$matrixDoc = Join-Path $projectRoot "docs\BRUISER_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\bruiser_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\BRUISER_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\bruiser_meta_critic_manifest.json"
 
 Write-GateLine "=== Bruiser QA gate (class validation - NOT planning QA) ==="
 Write-GateLine "Spec: docs/qa/classes/BRUISER_QA_GATE.md"
@@ -163,8 +163,8 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed module conversion contracts ==="
 foreach ($typedContract in @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd"
 )) {
 	$contractTag = [IO.Path]::GetFileNameWithoutExtension($typedContract)
 	$contractStdout = Join-Path $env:TEMP ("honor-and-iron-bruiser-$contractTag.stdout.log")
@@ -193,7 +193,7 @@ Write-GateLine "=== Bruiser layer-shape gate (ER-2 anti-cheat) ==="
 $shapeStdout = Join-Path $env:TEMP "honor-and-iron-bruiser-shape.stdout.log"
 $shapeStderr = Join-Path $env:TEMP "honor-and-iron-bruiser-shape.stderr.log"
 $shapeProcess = Start-Process -FilePath $GodotPath `
-	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/run_layer_shape_conversion_gate.gd", "--", "--class", "bruiser") `
+	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/runners/run_layer_shape_conversion_gate.gd", "--", "--class", "bruiser") `
 	-RedirectStandardOutput $shapeStdout `
 	-RedirectStandardError $shapeStderr `
 	-Wait -PassThru

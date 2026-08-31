@@ -5,7 +5,7 @@ extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
 const _IDS: Array[StringName] = [
 	&"engineer_recall", &"engineer_dismantle", &"engineer_sludge_bomb",
 	&"engineer_construct_turret", &"engineer_frag_bomb", &"engineer_magnetic_mine",

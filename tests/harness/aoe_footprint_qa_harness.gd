@@ -32,19 +32,25 @@ const _SCENARIO_REGISTRIES: Array[GDScript] = [
 	preload("res://tests/harness/shaman_scenario_registry.gd"),
 	preload("res://tests/harness/rogue_scenario_registry.gd"),
 	preload("res://tests/harness/beast_rider_scenario_registry.gd"),
+	preload("res://tests/harness/cleric_scenario_registry.gd"),
+	preload("res://tests/harness/mage_scenario_registry.gd"),
+	preload("res://tests/harness/mercenary_scenario_registry.gd"),
+	preload("res://tests/harness/engineer_scenario_registry.gd"),
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [
-	"res://tests/live_knight_class_test.gd",
-	"res://tests/live_bruiser_class_test.gd",
-	"res://tests/live_archer_class_test.gd",
-	"res://tests/live_lancer_class_test.gd",
-	"res://tests/live_cleric_class_test.gd",
-	"res://tests/live_mage_class_test.gd",
-	"res://tests/live_monk_class_test.gd",
-	"res://tests/live_shaman_class_test.gd",
-	"res://tests/live_rogue_class_test.gd",
-	"res://tests/live_beast_rider_class_test.gd",
+	"res://tests/live/live_knight_class_test.gd",
+	"res://tests/live/live_bruiser_class_test.gd",
+	"res://tests/live/live_archer_class_test.gd",
+	"res://tests/live/live_lancer_class_test.gd",
+	"res://tests/live/live_cleric_class_test.gd",
+	"res://tests/live/live_mage_class_test.gd",
+	"res://tests/live/live_monk_class_test.gd",
+	"res://tests/live/live_shaman_class_test.gd",
+	"res://tests/live/live_rogue_class_test.gd",
+	"res://tests/live/live_beast_rider_class_test.gd",
+	"res://tests/live/live_mercenary_class_test.gd",
+	"res://tests/live/live_engineer_class_test.gd",
 ]
 
 
@@ -143,6 +149,58 @@ static func overlay_parity_error(
 	return ""
 
 
+static func assert_planning_overlay_footprint(
+	failures: Array[String],
+	label: String,
+	fix: Dictionary,
+	ability: AbilityData,
+	origin: Vector2i,
+	target: Vector2i,
+) -> void:
+	var director: CombatDirector = fix.get("director") as CombatDirector
+	var board: BoardState = (
+		director.projected_state
+		if director != null and director.projected_state != null
+		else fix.get("board") as BoardState
+	)
+	var actor: UnitState = (
+		board.get_unit_by_id(director.selected_unit_id)
+		if board != null and director != null
+		else fix.get("actor") as UnitState
+	)
+	if board == null or actor == null or ability == null:
+		_assert_fail(failures, label, "missing projected board, actor, or ability")
+		return
+	var expected: Array[Vector2i] = expected_blast_tiles(
+		board, actor, ability, origin, target,
+	)
+	_assert_true(
+		failures,
+		"%s/canonical_footprint" % label,
+		not expected.is_empty(),
+		"AbilitySystem planning blast resolver returned no footprint",
+	)
+	var overlay: Variant = fix.get("overlay")
+	var parity_error: String = overlay_parity_error(
+		overlay, expected, "%s/overlay" % label,
+	)
+	_assert_true(
+		failures,
+		"%s/overlay_exact" % label,
+		parity_error.is_empty(),
+		parity_error,
+	)
+	if AbilitySystem.active_range_tiles(actor, ability) <= 0:
+		var overlay_instance: TacticalPlanningOverlay = overlay as TacticalPlanningOverlay
+		if overlay_instance != null:
+			_assert_true(
+				failures,
+				"%s/zero_range_no_red" % label,
+				overlay_instance.get_hover_action_range_tiles().is_empty(),
+				"zero-range shaped skill must not paint red range tiles",
+			)
+
+
 static func run_geometry_contracts(failures: Array[String]) -> void:
 	var center := Vector2i(4, 4)
 	var horizontal_arc := GridSystem.get_affected_tiles(
@@ -213,7 +271,7 @@ static func audit_live_class_tests(failures: Array[String]) -> void:
 
 
 static func audit_premove_arc_regression(failures: Array[String]) -> void:
-	const BRUISER_LIVE := "res://tests/live_bruiser_class_test.gd"
+	const BRUISER_LIVE := "res://tests/live/live_bruiser_class_test.gd"
 	if not ResourceLoader.exists(BRUISER_LIVE):
 		_assert_fail(failures, "audit/premove", "missing live Bruiser test for premove ARC regression")
 		return

@@ -84,6 +84,20 @@ func matches_paint_context(
 	)
 
 
+func matches_ratification_context(
+	cell: Vector2i,
+	ratify_unit_id: int,
+	expected_revision_key: String,
+	expected_ability_index: int,
+) -> bool:
+	return matches_paint_context(
+		cell,
+		ratify_unit_id,
+		expected_revision_key,
+		expected_ability_index,
+	)
+
+
 func duplicate_slots() -> Dictionary:
 	return _duplicate_slots(slots)
 

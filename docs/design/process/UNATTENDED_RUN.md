@@ -25,8 +25,8 @@ The lead agent must **not** ask the owner questions during this run. It stops on
 
 1. Schema matches bible §12.14: `AbilityData` header (`planner_group`, tags, cost) + `AbilityModule` + layers/gates/keywords
 2. Factories/class library author **modules** (not dual flat+modular UIs); runtime compiles active modules into transient `EffectData` payloads
-3. `godot --headless --path . --script res://tests/regression_test.gd` — no new FAIL vs baseline attributable to this refactor
-4. Planning QA: `godot --headless --path . --script res://tests/run_planning_qa_gate.gd` (or project equivalent) → **PASS**
+3. `godot --headless --path . --script res://tests/harness/regression_test.gd` — no new FAIL vs baseline attributable to this refactor
+4. Planning QA: `godot --headless --path . --script res://tests/runners/run_planning_qa_gate.gd` (or project equivalent) → **PASS**
 5. Knight QA + Bruiser QA gates → **PASS** (behavior-identical skills)
 6. Fresh **`gauntlet-critic`** on final piece returns `RESULT: PASS`, `SCORE ≥ 85`, `Infrastructure: ADEQUATE`
 7. No new per-skill `if ability.id == …` heuristics; no new anonymous `modifiers` keys
@@ -84,7 +84,7 @@ docs/design/FAILURE_REPORT.md
 
 | Order | Command | When |
 |-------|---------|------|
-| 1 | `godot --headless --path . --script res://tests/regression_test.gd` | After AbilitySystem / sim / factory changes |
+| 1 | `godot --headless --path . --script res://tests/harness/regression_test.gd` | After AbilitySystem / sim / factory changes |
 | 2 | Planning QA gate (headless Godot entry used by `run_planning_qa_gate`) | After planning / commit / AbilityData reader changes |
 | 3 | Knight + Bruiser QA gates (headless) | After factory skill ports |
 | 4 | Spawn `gauntlet-critic` | After every builder piece |

@@ -1,7 +1,7 @@
 class_name InterceptTacticsScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Redirect skill grants +2 DEF; [+] +3 DEF.
 ## Globals: AbilitySystem intercept_tactics hook on redirect skills.

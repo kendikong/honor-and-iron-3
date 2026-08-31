@@ -1,7 +1,7 @@
 class_name KineticArmorScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Kinetic Armor — incoming damage reduced by Floor(DEF / 2) if SHIELD active; [+] Floor((DEF + 2) / 2).
 ## Globals: CombatSystem.deal_damage passive hook when target.armor > 0.

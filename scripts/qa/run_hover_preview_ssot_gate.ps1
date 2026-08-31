@@ -4,6 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "ssot_gate_helpers.ps1")
 $inputGd = if ($InputPath -ne "") { $InputPath } else {
 	Join-Path $projectRoot "presentation\combat_planning_input.gd"
 }
@@ -29,6 +30,7 @@ $requiredSnippets = @(
 	@{ label = "get_settled_hover_preview accessor"; pattern = "func get_settled_hover_preview\(\)" },
 	@{ label = "HoverPreviewBundle.seal on settle"; pattern = "_HoverPreviewBundle\.seal\(" },
 	@{ label = "ratify rejects missing bundle"; pattern = "no sealed hover preview" },
+	@{ label = "single sealed intent ratify"; pattern = "ratify_sealed_intent\(" },
 	@{ label = "settled preview apply path"; pattern = "func _apply_settled_preview_result\(" }
 )
 foreach ($req in $requiredSnippets) {
@@ -66,7 +68,7 @@ if ($commitMatch.Success) {
 	if ($commitBody -match "_ensure_move_waypoints_on_commit_slots|_ratify_painted_route_on_commit_slots") {
 		$failures.Add("[FAIL] _commit_at_cell still calls commit-time waypoint invent")
 	}
-	if ($commitBody -match "_intent_snapshot_matches_interaction|_finalize_commit_slots|_paint_intent_slots_before_commit") {
+	if ($commitBody -match "_intent_snapshot_matches_interaction|_finalize_commit_slots|_paint_intent_slots_before_commit|commit_from_slots\(") {
 		$failures.Add("[FAIL] _commit_at_cell still has snapshot/finalize commit rebuild")
 	}
 } else {
@@ -116,8 +118,7 @@ if (Test-Path -LiteralPath $harnessPath) {
 }
 
 if ($failures.Count -gt 0) {
-	Write-Output "--- SSOT structural gate: FAIL ($($failures.Count)) ---"
-	foreach ($line in $failures) { Write-Output $line }
+	Write-SsotGateResult "Hover preview carried SSOT gate" $failures | Out-Null
 	exit 1
 }
 

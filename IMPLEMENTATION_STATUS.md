@@ -8,6 +8,31 @@
 
 ---
 
+## Planning SSOT hardening — implementation checkpoint
+
+**Updated:** 2026-08-30  
+**Purpose:** Carry settled planning intent directly through paint, ratification, timeline, and simulation so commit cannot recalculate a different outcome.
+
+### Implemented
+- [x] `PlanningHoverPreview` sealed bundle carries slots, route geometry, latest stand, action range, and AOE footprint.
+- [x] `CombatPlanningInput` is the single settle owner; `CombatDirector.ratify_sealed_intent` is the commit ratification path.
+- [x] Structural gates use machine-readable `[SSOT VIOLATION]` output for competing owners, heuristics, and weakened contracts.
+- [x] AOE footprint contract, ability-identity branch gate/self-test, and planning SSOT structural gates are integrated.
+- [x] Canonical test/resource paths and scenario delegate headers point at the current `tests/harness`, `tests/runners`, and `tests/live` layout.
+- [x] The top-level planning QA wrapper preserves default arguments when no optional switches are supplied.
+
+### QA checkpoint
+| Suite | Result |
+|---|---|
+| Planning SSOT structural gates | **PASS** |
+| Ability ID branch gate self-test | **PASS** |
+| AOE footprint contract | **PASS** |
+| Sim/bridge regression + ER-3 exit gate | **PASS** |
+| T3 fixture parity | **FAIL** — 33 existing planning/overlay fixture failures remain; no failures were suppressed |
+| Class Tier 1 gates | **FAIL** — class scenario contract and planning-overlay failures remain after canonical path repair |
+
+**Audit status:** Not closed. The remaining T3/class failures are explicit handoff blockers for the next agent; this checkpoint does not claim a phase or class completion.
+
 ## Core milestone — Planning voluntary-walk refactor ✅
 
 **Closed:** 2026-08-30 · pin `0b610706be236ddbfebc1c1556fae27d91689f1d`  
@@ -208,7 +233,7 @@ not owner visual sign-off.
 - [x] `WalkabilityBaker` unit tests (grid-only, null TileMapLayers)
 - [x] `EncounterBuilder` blocked-cell → wall override test
 - [x] Headless pipeline: `SkirmishGenerator` → `WalkabilityBaker` → `EncounterBuilder` → `BoardFactory` → `Simulator`
-- [x] `tests/bridge_test.gd` CLI runner (`godot --headless --script res://tests/bridge_test.gd`)
+- [x] `tests/bridge_test.gd` CLI runner (`godot --headless --script res://tests/harness/bridge_test.gd`)
 
 ### Phase 1 Audit (iteration 1 — 2026-07-16)
 

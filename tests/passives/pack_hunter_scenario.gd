@@ -1,11 +1,11 @@
 class_name BeastPackHunterScenarioTest
 extends RefCounted
 
-const _H := preload("res://tests/beast_rider_qa_harness.gd")
+const _H := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 ## Bible: Pack Hunter — attack isolated enemy triggers mount bite ATK 1 ignoring 50% DEF; [+] ATK 2.
 ## Globals: CombatSystem kill/follow-up lifecycle.
-## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/beast_rider_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

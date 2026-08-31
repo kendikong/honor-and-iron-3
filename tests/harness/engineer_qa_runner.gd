@@ -1,9 +1,9 @@
 class_name EngineerQaRunner
 extends RefCounted
 
-const _REGISTRY := preload("res://tests/engineer_scenario_registry.gd")
-const _HARNESS := preload("res://tests/engineer_qa_harness.gd")
-const _PLANNING := preload("res://tests/class_scenario_planning_contract.gd")
+const _REGISTRY := preload("res://tests/harness/engineer_scenario_registry.gd")
+const _HARNESS := preload("res://tests/harness/engineer_qa_harness.gd")
+const _PLANNING := preload("res://tests/harness/class_scenario_planning_contract.gd")
 
 
 static func run_all(failures: Array[String]) -> void:

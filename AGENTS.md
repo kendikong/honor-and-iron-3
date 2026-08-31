@@ -50,7 +50,7 @@ Godot `--script` / `-s` must target a **SceneTree** (or MainLoop) script. **`ext
 Legacy alias still works: `tests/run_ability_module_bridge_test.gd` → same suite as `run_ability_module_bridge_runner.gd`.
 
 Windows example:
-`"<godot.exe>" --headless --path . --script res://tests/run_ability_module_bridge_runner.gd`
+`"<godot.exe>" --headless --path . --script res://tests/runners/run_ability_module_bridge_runner.gd`
 
 ## Code Quality (All Agents — every model)
 
@@ -258,7 +258,7 @@ Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud
 - Godot **4.7-stable** is on `PATH` as `godot`. Image build: `.cursor/Dockerfile`. Boot install (`.cursor/environment.json`): reinstall if missing + `godot --headless --import`.
 - If a new Cloud Agent reports `godot: command not found`, check its setup log for `skipping install script` / `stale build` — that means Cursor reused an old snapshot and skipped install. Fix: rebuild from the Dockerfile (merge Dockerfile changes; wait for a new Environment **Build** to finish), then start a **new** agent.
 - The `scripts/*.ps1` QA wrappers are **Windows/PowerShell + local `.exe`** only. On this VM, invoke Godot directly (the `.ps1` files just wrap these commands):
-  - Sim/bridge regression (headless): `godot --headless --path . --script res://tests/regression_test.gd`
+  - Sim/bridge regression (headless): `godot --headless --path . --script res://tests/harness/regression_test.gd`
   - Result file is written to `~/.local/share/godot/app_userdata/Honor and Iron 3/regression_test_result.txt` (Linux user:// path; the `.ps1` scripts read the Windows `%APPDATA%` path instead).
   - Other headless entry points: `res://tests/run_*.gd` (e.g. `run_planning_input_only.gd`, `run_skill_scenarios_only.gd`, `run_ability_module_bridge_runner.gd`). **Never** `--script` a `*_runner.gd` / `*_harness.gd` file that `extends RefCounted` — see **Headless Godot test entry points** table in `AGENTS.md`.
 
@@ -272,7 +272,7 @@ Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud
 - Audio has no sound card and falls back to the **dummy driver** (ALSA errors in logs are benign).
 
 ### Test state caveat
-- As of environment setup, the **sim/bridge regression suite (`res://tests/regression_test.gd`) reports FAILs on `master`** due to pre-existing test/production drift — the test runners assign properties that no longer exist on the data classes (e.g. `UnitData.max_hp`, `BoardState.width`, `MovementComponent.points_max`). These are **repo-side code issues, not environment issues**; the harness itself runs deterministically and other suites (e.g. `run_planning_input_only.gd`) report PASS.
+- As of environment setup, the **sim/bridge regression suite (`res://tests/harness/regression_test.gd`) reports FAILs on `master`** due to pre-existing test/production drift — the test runners assign properties that no longer exist on the data classes (e.g. `UnitData.max_hp`, `BoardState.width`, `MovementComponent.points_max`). These are **repo-side code issues, not environment issues**; the harness itself runs deterministically and other suites (e.g. `run_planning_input_only.gd`) report PASS.
 
 ## Bug Report Triage & Architectural Sources of Truth Mandate
 Whenever tasked with investigating, diagnosing, or fixing any bug report (from `reports/bug_reports/` or from user logs), **ALL agents across all models MUST read and obey the core non-heuristic rules first**:

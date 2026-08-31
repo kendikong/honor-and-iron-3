@@ -1,7 +1,7 @@
-﻿class_name KineticConverterScenarioTest
+class_name KineticConverterScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: When hit gain STR/MOV next turn
 ## Globals: shared passive trigger pipeline (PassiveData on UnitState)

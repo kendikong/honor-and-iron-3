@@ -1,7 +1,7 @@
-﻿class_name TargetPainterScenarioTest
+class_name TargetPainterScenarioTest
 extends RefCounted
 
-const _Passives := preload("res://tests/archer_qa_harness_passives.gd")
+const _Passives := preload("res://tests/harness/archer_qa_harness_passives.gd")
 
 
 static func run_all(failures: Array[String]) -> void:

@@ -5,7 +5,7 @@ extends RefCounted
 ## Builds headless boards, runs Simulator, asserts Bible outcomes via global systems.
 
 const BRUISER_DEF_ID: StringName = &"bruiser"
-const _PlanningFixture := preload("res://tests/bruiser_planning_checklist_harness.gd")
+const _PlanningFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
 
 
 static func compiled_effects(ability: AbilityData, upgraded: bool = false) -> Array[EffectData]:
@@ -775,7 +775,7 @@ static func events_actor_moved(events: Array, actor_id: int) -> bool:
 	return false
 
 
-const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
+const _MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 
 
 static func _apply_wall_cells(fix: Dictionary, wall_cells: Array) -> void:

@@ -1,15 +1,15 @@
 extends SceneTree
 
 ## Knight QA Tier 1 headless CLI runner.
-## Run: godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
+## Run: godot --headless --path <repo> --script res://tests/runners/run_skill_scenarios_only.gd
 ## Scene gate (F5 / .tscn): use res://tests/gates/KnightQaGate.tscn → knight_qa_gate_host.gd
 ## Uses load() so EventBus autoloads exist before planning E2E scripts compile.
 
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
-	var runner: GDScript = load("res://tests/knight_qa_runner.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_harness.gd") as GDScript
+	var runner: GDScript = load("res://tests/harness/knight_qa_runner.gd") as GDScript
 	var host := Node.new()
 	host.name = "KnightQaGateHost"
 	root.add_child(host)

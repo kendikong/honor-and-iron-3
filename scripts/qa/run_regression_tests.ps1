@@ -21,7 +21,7 @@ Write-Output "=== Sim/bridge regression (headless) ==="
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-regression.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-regression.stderr.log"
 $process = Start-Process -FilePath $GodotPath `
-	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/regression_test.gd") `
+	-ArgumentList @("--headless", "--path", $projectRoot, "--script", "res://tests/harness/regression_test.gd") `
 	-WorkingDirectory $projectRoot `
 	-RedirectStandardOutput $stdoutPath `
 	-RedirectStandardError $stderrPath `

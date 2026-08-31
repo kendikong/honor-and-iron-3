@@ -1,8 +1,8 @@
 class_name MercenaryQaHarnessUpgrades
 extends RefCounted
 
-const H := preload("res://tests/mercenary_qa_harness.gd")
-const S := preload("res://tests/mercenary_qa_harness_scenarios.gd")
+const H := preload("res://tests/harness/mercenary_qa_harness.gd")
+const S := preload("res://tests/harness/mercenary_qa_harness_scenarios.gd")
 const MercenarySystems := preload("res://core/systems/mercenary_systems.gd")
 
 

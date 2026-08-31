@@ -391,7 +391,7 @@ static func _sort_cells(a: Vector2i, b: Vector2i) -> bool:
 	return a.x < b.x
 
 
-const TrampleE2E := preload("res://tests/trampling_advance_e2e_test.gd")
+const TrampleE2E := preload("res://tests/harness/trampling_advance_e2e_test.gd")
 
 
 static func capture_painted_leg_hover_layers(

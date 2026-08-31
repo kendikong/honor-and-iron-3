@@ -1,7 +1,7 @@
 class_name KnightRetaliationProtocolScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Retaliation Protocol: SELF counter stance
 ## Globals: RETALIATION_PROTOCOL via AbilitySystem / EffectData

@@ -8,7 +8,8 @@ $gates = @(
 	@{ name = "Hover preview carried"; script = "run_hover_preview_ssot_gate.ps1" },
 	@{ name = "Action range latest stand"; script = "run_action_range_ssot_gate.ps1" },
 	@{ name = "AOE footprint paint"; script = "run_footprint_ssot_gate.ps1" },
-	@{ name = "Ability ID branches"; script = "run_ability_id_branch_gate.ps1" }
+	@{ name = "Ability ID branches"; script = "run_ability_id_branch_gate.ps1" },
+	@{ name = "Ability ID branch self-test"; script = "test_ability_id_branch_gate.ps1" }
 )
 
 foreach ($gate in $gates) {

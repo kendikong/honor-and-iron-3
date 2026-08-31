@@ -3,8 +3,8 @@ extends RefCounted
 
 ## [+] tier sim asserts for the Bruiser matrix (authoritative upgraded_modules / passives).
 
-const H := preload("res://tests/bruiser_qa_harness.gd")
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const H := preload("res://tests/harness/bruiser_qa_harness.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 
 static func run_upgrade_for(row_name: String, failures: Array[String]) -> void:

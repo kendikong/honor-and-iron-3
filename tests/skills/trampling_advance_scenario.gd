@@ -1,7 +1,7 @@
 class_name TramplingAdvanceScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Trampling Advance â€” MOVE + TRAMPLE + PUSH on tile target.
 ## Globals: EffectType.MOVE, TRAMPLE, PUSH via AbilitySystem.

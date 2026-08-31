@@ -1,7 +1,7 @@
 class_name ShieldMasteryScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Phalanx Deflection — frontal-lane mitigation stores Kinetic Energy (cap 2×DEF; [+] 3×DEF)
 ## Globals: CombatSystem + PhysicsSystem.is_frontal_lane

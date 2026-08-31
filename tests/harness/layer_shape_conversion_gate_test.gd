@@ -4,7 +4,7 @@ extends RefCounted
 const _ShapeRules := preload("res://data/definitions/layer_shape_conversion_rules.gd")
 
 ## Shape bar for ER-2 refactor — Swap-shaped authoring, not Effect Knob dumps.
-## Headless CLI: godot --headless --path . --script res://tests/run_layer_shape_conversion_gate.gd
+## Headless CLI: godot --headless --path . --script res://tests/runners/run_layer_shape_conversion_gate.gd
 
 
 static func run_all(failures: Array[String], mode: int = -1, class_prefix: String = "") -> void:

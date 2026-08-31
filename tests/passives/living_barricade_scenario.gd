@@ -1,7 +1,7 @@
 class_name LivingBarricadeScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Allies behind immune to ranged; [+] allies behind +1 DEF.
 ## Globals: AbilitySystem._apply_effect_to_tile block + CombatSystem.get_dynamic_defense.

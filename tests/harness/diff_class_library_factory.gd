@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## One-shot: factory-coded abilities vs class_library_data.json overrides.
-## Run: godot --headless --path . --script res://tests/diff_class_library_factory.gd
+## Run: godot --headless --path . --script res://tests/harness/diff_class_library_factory.gd
 const FactoryBaseline = preload("res://ui/class_library_factory_baseline.gd")
 
 const EFFECT_NAMES: PackedStringArray = [

@@ -9,7 +9,7 @@ const _K1_BASH_ROUTE: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,
 ]
-const _LiveParity := preload("res://tests/planning_live_parity_harness.gd")
+const _LiveParity := preload("res://tests/harness/planning_live_parity_harness.gd")
 const _K1_BASH_WAYPOINTS: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,

@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Live Tier-2: movement skills must commit PRE-MOVE or POST-MOVE legs + column contract.
 
-const _HARNESS := preload("res://tests/movement_timeline_qa_harness.gd")
+const _HARNESS := preload("res://tests/harness/movement_timeline_qa_harness.gd")
 const _SETTLE_FRAMES: int = 8
 const _DELTA_MS: int = 16
 

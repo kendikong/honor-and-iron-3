@@ -4,7 +4,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_test.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_test.gd") as GDScript
 	drag.run_all(failures)
 	for failure: String in failures:
 		printerr("[FAIL] %s" % failure)

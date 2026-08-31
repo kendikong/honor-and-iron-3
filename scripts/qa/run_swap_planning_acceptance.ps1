@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$suite = "res://tests/live_planning_scene_test.gd"
+$suite = "res://tests/live/live_planning_scene_test.gd"
 $swapOnly = "live_planning_scene_test.gd:test_live_swap_session"
 $bibleTest = "live_planning_scene_test.gd:test_live_planning_bible_multi_knight_session"
 $cmdTool = "res://addons/gdUnit4/bin/GdUnitCmdTool.gd"

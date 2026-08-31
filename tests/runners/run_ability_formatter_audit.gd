@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Headless audit: factory abilities whose formatter output is a lone number or raw enum name.
 
-const _Helpers := preload("res://tests/factory_test_helpers.gd")
+const _Helpers := preload("res://tests/harness/factory_test_helpers.gd")
 
 const _CLASS_IDS: Array[StringName] = [
 	&"knight", &"bruiser", &"archer", &"lancer", &"cleric", &"mage",

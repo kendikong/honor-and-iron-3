@@ -1,13 +1,13 @@
-﻿class_name MercenaryBladeStormScenarioTest
+class_name MercenaryBladeStormScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/mercenary_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Scenarios := preload("res://tests/harness/mercenary_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Bible: Blade Storm — Ally-adjacent bonus ATK.
 ## Globals: MercenarySystems + AbilitySystem + Simulator.simulate_player_turn
-## Data/Sim delegate: tests/mercenary_qa_harness_scenarios.gd::run_blade_storm
+## Data/Sim delegate: tests/harness/mercenary_qa_harness_scenarios.gd::run_blade_storm
 
 
 static func run_all(failures: Array[String]) -> void:

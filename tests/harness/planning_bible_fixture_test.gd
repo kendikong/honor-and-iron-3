@@ -1,7 +1,7 @@
 extends RefCounted
 
-const _Probe := preload("res://tests/planning_bible_fixture_probe.gd")
-const _LiveParity := preload("res://tests/planning_live_parity_harness.gd")
+const _Probe := preload("res://tests/harness/planning_bible_fixture_probe.gd")
+const _LiveParity := preload("res://tests/harness/planning_live_parity_harness.gd")
 
 ## Fixture Parity Suite: continuous K1–K4 bible session, hover edges, swap journeys.
 

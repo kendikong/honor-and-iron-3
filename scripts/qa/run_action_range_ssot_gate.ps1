@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "ssot_gate_helpers.ps1")
 $overlayGd = if ($OverlayPath -ne "") { $OverlayPath } else {
 	Join-Path $projectRoot "presentation\tactical_planning_overlay.gd"
 }
@@ -78,8 +79,7 @@ if ($blastFn.Success) {
 }
 
 if ($failures.Count -gt 0) {
-	Write-Output "--- Action range SSOT gate: FAIL ($($failures.Count)) ---"
-	foreach ($line in $failures) { Write-Output $line }
+	Write-SsotGateResult "Action range latest stand SSOT gate" $failures | Out-Null
 	exit 1
 }
 

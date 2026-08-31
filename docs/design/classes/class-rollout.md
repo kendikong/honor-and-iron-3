@@ -64,7 +64,7 @@ N/A
 ```powershell
 # Class bar (when run_knight_qa_gate.ps1 / per-class gate exists)
 # Planning QA gate: only after gameplay-core edits — see qa-after-gameplay-changes.mdc
-godot --headless --path <repo> --script res://tests/run_skill_scenarios_only.gd
+godot --headless --path <repo> --script res://tests/runners/run_skill_scenarios_only.gd
 ```
 
 Per skill/class: clone `docs/design/knight-template.md` critic playbook.

@@ -1,6 +1,6 @@
 extends Node
 
-const _RUNNER := preload("res://tests/archer_qa_runner.gd")
+const _RUNNER := preload("res://tests/harness/archer_qa_runner.gd")
 
 func _ready() -> void:
 	call_deferred("_run")

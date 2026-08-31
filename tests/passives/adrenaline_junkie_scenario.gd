@@ -1,7 +1,7 @@
-﻿class_name AdrenalineJunkieScenarioTest
+class_name AdrenalineJunkieScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Adrenaline Junkie — +MOV/+STR per 10% missing HP.
 ## [+] +DEF per 20% missing HP.

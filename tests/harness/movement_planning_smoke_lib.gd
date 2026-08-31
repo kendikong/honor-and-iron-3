@@ -3,11 +3,11 @@ extends RefCounted
 
 ## Production planning commit smoke for movement / premove skills (all classes).
 
-const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
-const _Checklist := preload("res://tests/planning_checklist_harness.gd")
-const _Drag := preload("res://tests/planning_drag_e2e_harness.gd")
-const _MovementTimeline := preload("res://tests/movement_timeline_qa_harness.gd")
-const _BruiserHarness := preload("res://tests/bruiser_qa_harness.gd")
+const _Fixture := preload("res://tests/harness/class_planning_checklist_harness.gd")
+const _Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
+const _Drag := preload("res://tests/harness/planning_drag_e2e_harness.gd")
+const _MovementTimeline := preload("res://tests/harness/movement_timeline_qa_harness.gd")
+const _BruiserHarness := preload("res://tests/harness/bruiser_qa_harness.gd")
 
 
 static func run_entry(failures: Array[String], entry: Dictionary) -> void:

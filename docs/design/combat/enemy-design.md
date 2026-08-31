@@ -12,7 +12,7 @@ Handcrafted **puzzle encounters**: public intents, board-state weaknesses, fixtu
 
 | Deliverable | Machine check | Human check |
 |-------------|---------------|-------------|
-| **Bridge smoke (today)** | `godot --headless --path <repo> --script res://tests/bridge_test.gd` PASS | — |
+| **Bridge smoke (today)** | `godot --headless --path <repo> --script res://tests/harness/bridge_test.gd` PASS | — |
 | **Fixture JSON puzzles** (separate piece) | `PLANNED — tests/encounter_fixture_test.gd` loads `tests/fixtures/encounters/puzzle_001.json` | Puzzle fun |
 | Intent display (when enemies affect planning) | `.\scripts\run_planning_qa_gate.ps1` PASS | Difficulty curve |
 

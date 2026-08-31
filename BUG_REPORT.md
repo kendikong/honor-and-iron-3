@@ -38,7 +38,7 @@ authorship still require a user runtime check.
 Trampling-only (fast):
 
 ```powershell
-& "<godot.exe>" --headless --path . --script res://tests/run_trampling_only.gd
+& "<godot.exe>" --headless --path . --script res://tests/runners/run_trampling_only.gd
 ```
 
 Mass Simulation Analytics UI capture (agent sees same screen as F5):

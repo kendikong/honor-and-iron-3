@@ -4,7 +4,7 @@ extends SceneTree
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var test_script: GDScript = load("res://tests/stale_pre_move_test.gd") as GDScript
+	var test_script: GDScript = load("res://tests/harness/stale_pre_move_test.gd") as GDScript
 	test_script.run_all(failures)
 	if failures.is_empty():
 		print("[PASS] stale pre-move preview tests")

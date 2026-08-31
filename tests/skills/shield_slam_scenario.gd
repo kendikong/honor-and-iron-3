@@ -1,7 +1,7 @@
 class_name KnightShieldSlamScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Shield Slam: DAMAGE + PUSH
 ## Globals: DAMAGE, PUSH via AbilitySystem / EffectData

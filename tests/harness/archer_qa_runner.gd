@@ -1,11 +1,11 @@
 class_name ArcherQaRunner
 extends RefCounted
 
-const _REGISTRY := preload("res://tests/archer_scenario_registry.gd")
-const _HARNESS := preload("res://tests/archer_qa_harness.gd")
-const _UPGRADES := preload("res://tests/archer_qa_harness_upgrades.gd")
-const _PLANNING := preload("res://tests/movement_planning_smoke_registry.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _REGISTRY := preload("res://tests/harness/archer_scenario_registry.gd")
+const _HARNESS := preload("res://tests/harness/archer_qa_harness.gd")
+const _UPGRADES := preload("res://tests/harness/archer_qa_harness_upgrades.gd")
+const _PLANNING := preload("res://tests/harness/movement_planning_smoke_registry.gd")
+const _DRAG := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:

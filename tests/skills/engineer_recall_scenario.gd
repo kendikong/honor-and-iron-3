@@ -1,11 +1,11 @@
-﻿extends RefCounted
+extends RefCounted
 
-const _H := preload("res://tests/engineer_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+const _H := preload("res://tests/harness/engineer_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
 
 ## Bible §12: Recall — 3 MOV teleport adjacent to Construct; [+] Overclock on arrival.
 ## Globals: EffectType.TELEPORT_ADJACENT_TO + EngineerSystems + Simulator + GridSystem.
-## Data/Sim delegate: tests/engineer_qa_harness.gd::run_ability_row
+## Data/Sim delegate: tests/harness/engineer_qa_harness.gd::run_ability_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

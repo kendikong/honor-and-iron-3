@@ -1,9 +1,9 @@
 class_name KnightQaRunner
 extends RefCounted
 
-const _REGISTRY := preload("res://tests/knight_scenario_registry.gd")
-const _HARNESS := preload("res://tests/knight_qa_harness.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _REGISTRY := preload("res://tests/harness/knight_scenario_registry.gd")
+const _HARNESS := preload("res://tests/harness/knight_qa_harness.gd")
+const _DRAG := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 ## Tier 1 Knight class QA runner — sim + Tier A planning in scenarios; planning QA = Fixture Parity Suite.
 

@@ -4,7 +4,7 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 
 **Not mirrored in headless (TestBattle-only):** sprite tween positions (`_assert_actor_on_cell`), PNG trace screenshots, frame settle timing. Headless uses `flush_planning` / `settle_ability_hover` on the same production APIs.
 
-**Runner:** `godot --headless --script res://tests/run_t3_mimic_headless.gd` includes `[SUITE] t3_live_headless_checklist`.
+**Runner:** `godot --headless --script res://tests/runners/run_t3_mimic_headless.gd` includes `[SUITE] t3_live_headless_checklist`.
 
 ## Bible session — `test_live_planning_bible_multi_knight_session`
 

@@ -4,8 +4,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$matrixDoc = Join-Path $projectRoot "docs\ROGUE_QA_GATE.md"
-$manifestPath = Join-Path $projectRoot "docs\rogue_meta_critic_manifest.json"
+$matrixDoc = Join-Path $projectRoot "docs\qa\classes\ROGUE_QA_GATE.md"
+$manifestPath = Join-Path $projectRoot "docs\qa\manifests\rogue_meta_critic_manifest.json"
 
 $latestGateLog = Join-Path $projectRoot "reports\qa\qa_rogue_gate_latest.txt"
 $canonicalGateLog = Join-Path $projectRoot "reports\qa\qa_rogue_gate_canonical.txt"
@@ -146,9 +146,9 @@ if (-not (Test-Path $GodotPath)) {
 
 Write-GateLine "=== Typed conversion contracts ==="
 $conversionEntrypoints = @(
-	"res://tests/run_extra_rules_conversion_contract.gd",
-	"res://tests/run_class_library_schema_typed_fields_test.gd",
-	"res://tests/run_ability_module_bridge_runner.gd"
+	"res://tests/runners/run_extra_rules_conversion_contract.gd",
+	"res://tests/runners/run_class_library_schema_typed_fields_test.gd",
+	"res://tests/runners/run_ability_module_bridge_runner.gd"
 )
 foreach ($entrypoint in $conversionEntrypoints) {
 	Write-GateLine "[QA] $entrypoint"

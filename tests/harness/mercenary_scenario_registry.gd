@@ -2,8 +2,8 @@ class_name MercenaryScenarioRegistry
 extends RefCounted
 
 
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 
 static func all_entries() -> Array[Dictionary]:

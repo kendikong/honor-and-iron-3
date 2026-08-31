@@ -1,9 +1,9 @@
 class_name BruiserPushThroughScenarioTest
 extends RefCounted
 
-const _BruiserQaHarness := preload("res://tests/bruiser_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _Upgrades := preload("res://tests/class_scenario_upgrade_registry.gd")
+const _BruiserQaHarness := preload("res://tests/harness/bruiser_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _Upgrades := preload("res://tests/harness/class_scenario_upgrade_registry.gd")
 
 ## Planning tier: B
 

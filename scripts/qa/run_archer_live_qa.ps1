@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$suite = "res://tests/live_archer_class_test.gd"
+$suite = "res://tests/live/live_archer_class_test.gd"
 $cmdTool = "res://addons/gdUnit4/bin/GdUnitCmdTool.gd"
 
 if (-not (Test-Path $GodotPath)) {

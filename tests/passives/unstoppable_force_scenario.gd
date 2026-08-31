@@ -1,7 +1,7 @@
-﻿class_name UnstoppableForceScenarioTest
+class_name UnstoppableForceScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Unstoppable Force — immune STAGGER/ROOT; resist grants SHIELD 1.
 ## [+] resist grants SHIELD 2 instead.

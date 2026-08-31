@@ -1,13 +1,13 @@
 extends SceneTree
 
 ## Headless CLI runner for fixture parity (NOT Tier 3 LIVE TestBattle).
-## Run: godot --headless --path <repo> --script res://tests/run_t3_mimic_headless.gd
+## Run: godot --headless --path <repo> --script res://tests/runners/run_t3_mimic_headless.gd
 ## Scene gate: res://tests/gates/T3MimicHeadless.tscn → t3_mimic_headless_host.gd
 
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_harness.gd") as GDScript
 	if drag == null:
 		printerr("[FAIL] planning_drag_e2e_harness load failed")
 		quit(1)

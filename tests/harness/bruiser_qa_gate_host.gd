@@ -3,8 +3,8 @@ extends Node
 ## Bruiser QA Tier 1 host for BruiserQaGate.tscn (F5 / scene runner — not --script).
 ## Autoloads are ready before _ready; drag harness attaches UI stubs to this node.
 
-const _BRUISER_QA_RUNNER := preload("res://tests/bruiser_qa_runner_lib.gd")
-const _DRAG := preload("res://tests/planning_drag_e2e_harness.gd")
+const _BRUISER_QA_RUNNER := preload("res://tests/harness/bruiser_qa_runner_lib.gd")
+const _DRAG := preload("res://tests/harness/planning_drag_e2e_harness.gd")
 
 
 func _ready() -> void:

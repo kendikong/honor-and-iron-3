@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "ssot_gate_helpers.ps1")
 $inputGd = if ($InputPath -ne "") { $InputPath } else {
 	Join-Path $projectRoot "presentation\combat_planning_input.gd"
 }
@@ -34,8 +35,7 @@ if ($inputText -notmatch "PlanningPreviewTiles\.resolve_paint\(" -or $inputText 
 }
 
 if ($failures.Count -gt 0) {
-	Write-Output "--- Footprint SSOT gate: FAIL ($($failures.Count)) ---"
-	foreach ($line in $failures) { Write-Output $line }
+	Write-SsotGateResult "AOE footprint SSOT gate" $failures | Out-Null
 	exit 1
 }
 

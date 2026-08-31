@@ -1,8 +1,8 @@
 class_name BeastRiderQaRunner
 extends RefCounted
 
-const _REGISTRY := preload("res://tests/beast_rider_scenario_registry.gd")
-const _HARNESS := preload("res://tests/beast_rider_qa_harness.gd")
+const _REGISTRY := preload("res://tests/harness/beast_rider_scenario_registry.gd")
+const _HARNESS := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 
 static func run_all(failures: Array[String]) -> void:

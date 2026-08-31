@@ -2,7 +2,7 @@ class_name LancerScenarioRegistry
 extends RefCounted
 
 ## One authoritative entry per Lancer Bible row.
-const SCENARIO_PATH := "res://tests/lancer_class_scenario.gd"
+const SCENARIO_PATH := "res://tests/harness/lancer_class_scenario.gd"
 
 static func all_entries() -> Array[Dictionary]:
 	return [

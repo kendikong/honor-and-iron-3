@@ -1,11 +1,11 @@
 class_name BeastPredatoryDriveScenarioTest
 extends RefCounted
 
-const _H := preload("res://tests/beast_rider_qa_harness.gd")
+const _H := preload("res://tests/harness/beast_rider_qa_harness.gd")
 
 ## Bible: Predatory Drive — attacks against BLEEDing/isolated enemies apply BLEED X; [+] POISON too.
 ## Globals: CombatSystem attack-hit status lifecycle and weapon data.
-## Data/Sim delegate: tests/beast_rider_qa_harness.gd::run_passive_row
+## Data/Sim delegate: tests/harness/beast_rider_qa_harness.gd::run_passive_row
 
 static func run_all(failures: Array[String]) -> void:
 	_data_contract(failures)

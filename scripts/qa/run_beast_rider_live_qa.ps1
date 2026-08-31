@@ -10,7 +10,7 @@ if (-not (Test-Path $GodotPath)) {
 }
 
 $cmdTool = "res://addons/gdUnit4/bin/GdUnitCmdTool.gd"
-$suite = "res://tests/live_beast_rider_class_test.gd"
+$suite = "res://tests/live/live_beast_rider_class_test.gd"
 $stdoutPath = Join-Path $env:TEMP "honor-and-iron-beast-rider-live.stdout.log"
 $stderrPath = Join-Path $env:TEMP "honor-and-iron-beast-rider-live.stderr.log"
 $args = @("--path", $projectRoot, "--headless", "-s", $cmdTool, "-a", $suite, "--ignoreHeadlessMode")

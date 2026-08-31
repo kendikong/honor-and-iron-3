@@ -820,7 +820,11 @@ static func build_preview_paths(
 						from_unit.position if from_unit != null else to_pos,
 					)
 					## Voluntary displacement (SWAP): extend route only — not orange push arrows.
-					if not enemy_phase and not d.has("pusher") and paths.has(pid):
+					if not enemy_phase and not d.has("pusher"):
+						if not paths.has(pid):
+							paths[pid] = []
+							splits[pid] = 0
+							post_splits[pid] = 0
 						var route: Array = paths[pid]
 						if route.is_empty():
 							route.append(from_pos)
@@ -1173,6 +1177,10 @@ static func committed_move_route_leg(
 	var leg: Array = move_route_leg_from_preview(
 		unit_id, preview, director, board, timing, false,
 	)
+	if leg.size() < 2:
+		leg = _committed_move_route_from_slots(
+			director, board, unit_id, timing, move_action,
+		)
 	if leg.size() >= 2:
 		if committed_move_already_realized(
 			director, board, unit_id, timing, move_action, leg, visual_cell,
@@ -1180,6 +1188,29 @@ static func committed_move_route_leg(
 			return []
 		return leg
 	return []
+
+
+static func _committed_move_route_from_slots(
+	director: CombatDirector,
+	board: BoardState,
+	unit_id: int,
+	timing: int,
+	move_action: TimelineAction,
+) -> Array[Vector2i]:
+	if director == null or move_action == null:
+		return []
+	var origin: Vector2i = move_leg_origin_cell(
+		director, board, unit_id, timing, move_action,
+	)
+	if origin.x <= -900000:
+		return []
+	var route: Array[Vector2i] = [origin]
+	for waypoint: Vector2i in move_action.waypoints:
+		if route.back() != waypoint:
+			route.append(waypoint)
+	if route.back() != move_action.target_coord:
+		route.append(move_action.target_coord)
+	return route
 
 
 ## Grid cell where the committed class action leaves the unit (post-move starts here).

@@ -33,11 +33,11 @@ const _SCENARIO_REGISTRIES: Array[GDScript] = [
 ]
 
 const _LIVE_CLASS_TESTS: Array[String] = [
-	"res://tests/live_bruiser_class_test.gd",
-	"res://tests/live_archer_class_test.gd",
-	"res://tests/live_lancer_class_test.gd",
-	"res://tests/live_cleric_class_test.gd",
-	"res://tests/live_mage_class_test.gd",
+	"res://tests/live/live_bruiser_class_test.gd",
+	"res://tests/live/live_archer_class_test.gd",
+	"res://tests/live/live_lancer_class_test.gd",
+	"res://tests/live/live_cleric_class_test.gd",
+	"res://tests/live/live_mage_class_test.gd",
 ]
 
 

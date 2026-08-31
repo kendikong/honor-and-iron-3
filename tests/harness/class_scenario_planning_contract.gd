@@ -3,20 +3,21 @@ extends RefCounted
 
 ## Tier B planning + movement smoke entry for per-row class scenarios (CLASS_QA_BIBLE.md §3 Layer C).
 
-const _Fixture := preload("res://tests/class_planning_checklist_harness.gd")
-const _Checklist := preload("res://tests/planning_checklist_harness.gd")
-const _MovementRegistry := preload("res://tests/movement_planning_smoke_registry.gd")
+const _Fixture := preload("res://tests/harness/class_planning_checklist_harness.gd")
+const _Checklist := preload("res://tests/harness/planning_checklist_harness.gd")
+const _MovementRegistry := preload("res://tests/harness/movement_planning_smoke_registry.gd")
+const AoeFootprintQaHarness := preload("res://tests/harness/aoe_footprint_qa_harness.gd")
 
 
 static func _find_ability(factory_id: StringName) -> AbilityData:
-	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	var harness_script: GDScript = load("res://tests/harness/aoe_footprint_qa_harness.gd") as GDScript
 	if harness_script == null:
 		return null
 	return harness_script.call("find_ability_by_id", factory_id) as AbilityData
 
 
 static func _ability_requires_footprint_qa(ability: AbilityData) -> bool:
-	var harness_script: GDScript = load("res://tests/aoe_footprint_qa_harness.gd") as GDScript
+	var harness_script: GDScript = load("res://tests/harness/aoe_footprint_qa_harness.gd") as GDScript
 	if harness_script == null:
 		return false
 	return bool(harness_script.call("ability_requires_footprint_qa", ability))
@@ -263,39 +264,14 @@ static func _assert_shaped_footprint(
 	var actor: UnitState = _Checklist.projected_unit(fix, 1)
 	if actor == null:
 		return
-	var origin: Vector2i = actor.position
-	var board: BoardState = fix.board
-	var blast: Array[Vector2i] = GridSystem.get_affected_tiles(
-		board, origin, hover_cell, ability.target_shape, ability.target_shape_size,
+	AoeFootprintQaHarness.assert_planning_overlay_footprint(
+		failures,
+		"%s/planning" % factory_id,
+		fix,
+		ability,
+		actor.position,
+		hover_cell,
 	)
-	_Checklist.assert_true(
-		failures, "%s/planning/footprint_tiles" % factory_id,
-		not blast.is_empty(),
-		"shaped ability must have blast footprint at hover",
-	)
-	if not blast.is_empty():
-		var ability_range: int = AbilitySystem.active_range_tiles(actor, ability)
-		if ability_range <= 0:
-			var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
-			if overlay != null:
-				_Checklist.assert_true(
-					failures, "%s/planning/red_empty_zero_range" % factory_id,
-					overlay.get_hover_action_range_tiles().is_empty(),
-					"RANGE 0 shaped skill must not paint red tiles (got %s)"
-					% overlay.get_hover_action_range_tiles(),
-				)
-				for tile: Vector2i in blast:
-					_Checklist.assert_true(
-						failures, "%s/planning/yellow_blast_tile" % factory_id,
-						overlay.is_hover_blast_tile(tile),
-						"cell %s must be in yellow blast at stand for zero-range shaped skill"
-						% tile,
-					)
-		else:
-			_Checklist.assert_red_includes_cell(
-				failures, "%s/planning/red_blast_tile" % factory_id,
-				fix, ability, origin, blast[0],
-			)
 
 
 static func _apply_cleric_planning_setup(fix: Dictionary, factory_id: StringName) -> void:

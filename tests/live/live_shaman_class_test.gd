@@ -1,8 +1,8 @@
 ## Tier 2 live Shaman acceptance — every authored skill uses preview slots.
 extends "res://addons/gdUnit4/src/GdUnitTestSuite.gd"
 
-const _OVERLAY_QA := preload("res://tests/live_overlay_qa_mixin.gd")
-const _MOVEMENT_QA := preload("res://tests/live_movement_timeline_qa_mixin.gd")
+const _OVERLAY_QA := preload("res://tests/live/live_overlay_qa_mixin.gd")
+const _MOVEMENT_QA := preload("res://tests/live/live_movement_timeline_qa_mixin.gd")
 const _CASES: Array[StringName] = [
 	&"shaman_usher", &"shaman_curse_of_weakness", &"shaman_healing_totem",
 	&"shaman_flame_totem", &"shaman_bloodlust", &"shaman_hex",

@@ -1,7 +1,7 @@
-﻿class_name StandGroundScenarioTest
+class_name StandGroundScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Immune PUSH/PULL; triggers counter on attempt
 ## Globals: shared passive trigger pipeline (PassiveData on UnitState)

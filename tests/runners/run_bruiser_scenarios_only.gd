@@ -1,13 +1,13 @@
 extends SceneTree
 
 ## Alias CLI entry for Bruiser Tier 1 (same as bruiser_qa_runner.gd).
-## Prefer: --script res://tests/bruiser_qa_runner.gd or F5 BruiserQaGate.tscn
+## Prefer: --script res://tests/harness/bruiser_qa_runner.gd or F5 BruiserQaGate.tscn
 
 
 func _initialize() -> void:
 	var failures: Array[String] = []
-	var drag: GDScript = load("res://tests/planning_drag_e2e_harness.gd") as GDScript
-	var runner: GDScript = load("res://tests/bruiser_qa_runner_lib.gd") as GDScript
+	var drag: GDScript = load("res://tests/harness/planning_drag_e2e_harness.gd") as GDScript
+	var runner: GDScript = load("res://tests/harness/bruiser_qa_runner_lib.gd") as GDScript
 	var host := Node.new()
 	host.name = "BruiserQaGateHost"
 	root.add_child(host)

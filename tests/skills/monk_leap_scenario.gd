@@ -4,9 +4,9 @@ extends RefCounted
 ## Globals: EffectType.JUMP_TO_BEHIND; preview/commit slots.
 ## Modules: M0 ON_ACTION JUMP_TO_BEHIND range 2; [+] max range 3 and elemental landing absorption.
 ## Planning tier: B
-## Data/Sim delegate: tests/monk_qa_harness.gd::run_single_ability
-const _H := preload("res://tests/monk_qa_harness.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
+## Data/Sim delegate: tests/harness/monk_qa_harness.gd::run_single_ability
+const _H := preload("res://tests/harness/monk_qa_harness.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
 
 static func run_all(failures: Array[String]) -> void:
 	_H.run_single_ability(&"monk_leap", failures)

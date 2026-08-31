@@ -7,7 +7,7 @@ extends RefCounted
 static func _is_basic_attack(ability: AbilityData) -> bool:
 	if ability == null:
 		return false
-	return ability.id == &"basic_attack" or String(ability.id).ends_with("_basic")
+	return DataLibrary.is_basic_ability(ability.id)
 
 
 static func _combat() -> Object:

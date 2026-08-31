@@ -13,7 +13,7 @@ Get-ChildItem -Path (Join-Path $ProjectRoot 'tests\skills') -Filter '*_scenario.
 	if ($text -notmatch '_sim_contract') { return }
 
 	$factoryId = $name
-	$upgradeConst = "const _Upgrades := preload(`"res://tests/class_scenario_upgrade_registry.gd`")`n`n"
+	$upgradeConst = "const _Upgrades := preload(`"res://tests/harness/class_scenario_upgrade_registry.gd`")`n`n"
 	if ($text -notmatch 'ClassScenarioUpgradeRegistry') {
 		if ($text -match '(const _Planning[^\n]+\n)') {
 			$text = $text -replace '(const _Planning[^\n]+\n)', "`$1$upgradeConst"

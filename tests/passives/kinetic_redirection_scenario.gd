@@ -1,7 +1,7 @@
 class_name KineticRedirectionScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Mitigated DEF/SHIELD damage stacks +1 STR (max 3) for next attack; resets on attack; [+] PIERCE.
 ## Globals: CombatSystem.deal_damage stack + AbilitySystem attack reset / pierce hook.

@@ -118,7 +118,7 @@ Every Extra Rule id belongs to **one** conversion home. Most are **not** new pri
 2. Implement the **Solution** cell using the conversion law. If the Solution cell is shorthand vs the skill bible, stop and ask — do not invent a leftover key.
 3. Delete that skill’s Extra Rules **and** leftover Extra Rule keys on `effect.modifiers` **in the same change**. Factory has no `_add_extra` on that skill.
 4. Add the ability id to `tests/extra_rules_conversion_contract.gd` `CONVERTED_SKILL_IDS`. Removing a legacy container while combat still reads an unowned key = cheat = not converted.
-5. Run the conversion contract (via `res://tests/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
+5. Run the conversion contract (via `res://tests/runners/run_ability_module_bridge_test.gd`) **and** that class’s gate + live QA. Report PASS/FAIL.
 6. Do not start the next skill until this one has no extras and is on `CONVERTED_SKILL_IDS`.
 
 If the Solution cell is **Rework skill**, **stop**. Do not convert until the rework is specified in the Bible and factory. Do not invent Extra Rules. Do not author from a chat summary. **New module = new player click.** Extra punches on the same click = layers. Do not relocate an **ally** on Action. Enemy Forced Movement / enemy SWAP / drag on Action is legal.
@@ -497,7 +497,7 @@ When every active class skill row is converted and its contract plus class/live 
 | After | Run |
 |-------|-----|
 | Any class factory / skill conversion | `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1` |
-| Converted-skill extras / Extra Rule homes | Headless `res://tests/run_ability_module_bridge_test.gd` (includes `extra_rules_conversion_contract`) |
+| Converted-skill extras / Extra Rule homes | Headless `res://tests/runners/run_ability_module_bridge_test.gd` (includes `extra_rules_conversion_contract`) |
 | Planning / commit / overlay | `.\scripts\run_planning_qa_gate.ps1` (no `-LiveTier3` unless asked) |
 | GRANT_AP / Simulator / AbilitySystem | `.\scripts\run_regression_tests.ps1` |
 

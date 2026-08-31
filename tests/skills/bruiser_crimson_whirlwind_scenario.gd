@@ -1,9 +1,9 @@
 class_name BruiserCrimsonWhirlwindScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
-const _Planning := preload("res://tests/class_scenario_planning_contract.gd")
-const _H := preload("res://tests/bruiser_qa_harness.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
+const _Planning := preload("res://tests/harness/class_scenario_planning_contract.gd")
+const _H := preload("res://tests/harness/bruiser_qa_harness.gd")
 
 ## Planning tier: B
 

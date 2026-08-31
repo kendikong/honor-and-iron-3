@@ -1,7 +1,7 @@
-﻿class_name ColossalMassScenarioTest
+class_name ColossalMassScenarioTest
 extends RefCounted
 
-const _Scenarios := preload("res://tests/bruiser_qa_harness_scenarios.gd")
+const _Scenarios := preload("res://tests/harness/bruiser_qa_harness_scenarios.gd")
 
 ## Bible: Colossal Mass — +1 STR per 15 Max HP.
 ## [+] +1 STR per 10 Max HP instead.

@@ -1,7 +1,7 @@
 class_name RallyingPresenceScenarioTest
 extends RefCounted
 
-const _KnightQaHarness := preload("res://tests/knight_qa_harness.gd")
+const _KnightQaHarness := preload("res://tests/harness/knight_qa_harness.gd")
 
 ## Bible: Adjacent allies +1 MOV at turn start; [+] +2 MOV.
 ## Globals: Simulator._tick_start_of_turn rallying_presence hook.

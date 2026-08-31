@@ -2,7 +2,7 @@ extends SceneTree
 
 ## Single headless entry point for deterministic bug-regression verification.
 ## Run:
-##   "<godot.exe>" --headless --path . --script res://tests/regression_test.gd
+##   "<godot.exe>" --headless --path . --script res://tests/harness/regression_test.gd
 
 func _initialize() -> void:
 	## Autoloads are initialized before this entry point dynamically loads planning code.
@@ -14,13 +14,13 @@ func _initialize() -> void:
 	report.seek_end()
 	report.store_line("BRIDGE_START")
 	report.close()
-	var bridge_runner: Script = load("res://tests/bridge_test_runner.gd")
+	var bridge_runner: Script = load("res://tests/harness/bridge_test_runner.gd")
 	var bridge_result: Dictionary = bridge_runner.run_all()
 	report = FileAccess.open("user://regression_test_result.txt", FileAccess.READ_WRITE)
 	report.seek_end()
 	report.store_line("BRIDGE_FINISHED")
 	report.close()
-	var sim_runner: Script = load("res://tests/sim_test_runner.gd")
+	var sim_runner: Script = load("res://tests/harness/sim_test_runner.gd")
 	var sim_failures: int = sim_runner.new().run_all()
 	var bridge_failures: Array = bridge_result.get("failures", [])
 	if bridge_failures.is_empty() and sim_failures == 0:
