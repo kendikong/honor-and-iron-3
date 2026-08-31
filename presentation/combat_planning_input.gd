@@ -7375,28 +7375,7 @@ func _slots_are_wait_only(actions: Array[TimelineAction]) -> bool:
 
 func _composite_cursors_enabled() -> bool:
 	return auto_use_skill_after_move and _skill_commit_path_active()
-
-
-func _slots_with_facing_for_commit(
-	unit_id: int,
-	cell: Vector2i,
-	local: Vector2,
-	waypoints: Array[Vector2i],
-	legal_move_tiles: Array[Vector2i],
-	preferred_approach: Vector2i,
-	face_dir: int = -1,
-) -> Dictionary:
-	var effective_face: int = face_dir
-	if effective_face < 0:
-		effective_face = _facing_from_drop(local, cell)
-	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-	)
-	_apply_facing_to_slots(slots, local, cell, unit_id)
-	return slots
-
-
-## Tile cursor: same commit slots as on_left_press would commit.
+## Test adapter: delegates directly to the canonical interaction-slot builder.
 func _final_commit_slots_for_click_at_cell(
 	unit_id: int,
 	cell: Vector2i,
@@ -7413,37 +7392,6 @@ func _final_commit_slots_for_click_at_cell(
 		params.legal_move_tiles,
 		params.preferred,
 		face_dir,
-	)
-
-
-func _cursor_icon_for_commit_at_cell(
-	unit: UnitState,
-	cell: Vector2i,
-	waypoints: Array[Vector2i] = [],
-	legal_move_tiles: Array[Vector2i] = [],
-	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
-	face_dir: int = -1,
-) -> String:
-	if unit == null:
-		return ""
-	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit.id, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
-	)
-	return _cursor_icon_from_commit_slots(slots, unit)
-
-
-func _hover_icon_for_cell(
-	unit: UnitState,
-	cell: Vector2i,
-	waypoints: Array[Vector2i] = [],
-	legal_move_tiles: Array[Vector2i] = [],
-	preferred_approach: Vector2i = _NO_PREFERRED_APPROACH,
-	face_dir: int = -1,
-) -> String:
-	if unit == null:
-		return ""
-	return _cursor_icon_for_commit_at_cell(
-		unit, cell, waypoints, legal_move_tiles, preferred_approach, face_dir,
 	)
 
 
