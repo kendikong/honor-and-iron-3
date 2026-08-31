@@ -47,7 +47,9 @@ function Assert-QaNotSuspended {
 		Write-Output "[QA SUSPENDED] $detail"
 	}
 	Write-Output "[QA SUSPENDED] Re-enable: owner deletes the flag and says QA is re-enabled in chat."
-	exit 99
+	throw [System.InvalidOperationException]::new(
+		"QA SUSPENDED: automated QA is disabled by docs/qa/QA_SUSPENDED.flag."
+	)
 }
 
 
