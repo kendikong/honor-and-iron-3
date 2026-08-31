@@ -1,7 +1,7 @@
 # Hover Preview Carried SSOT — Plan & Goals
 
 **Date:** 2026-08-30  
-**Status:** IMPLEMENTED — ratify-only commit, structural gate enforced  
+**Status:** MILESTONE CLOSED — Attempt 9 (see `PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`)  
 **Rules:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md)  
 **Gate:** `.\scripts\run_hover_preview_ssot_gate.ps1` (first step before planning QA)
 

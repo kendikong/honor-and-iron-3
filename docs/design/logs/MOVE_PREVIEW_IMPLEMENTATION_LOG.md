@@ -308,3 +308,5 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 **Residual (non-architecture):** GDScript receipt fields not compile-time immutable; QA suspended for behavioral proof.
 
 **Verification:** Three static code re-audits post-fix. QA still suspended.
+
+**Milestone:** Recorded in [`PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`](../planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md) · pin `ebb0f51a15a469c4824a603ac716aafbf518841a`

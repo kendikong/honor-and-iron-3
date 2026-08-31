@@ -11,34 +11,34 @@
 ## Planning SSOT hardening — implementation checkpoint
 
 **Updated:** 2026-08-30  
+**Status:** **Architecture milestone closed** — see [`docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`](docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md) · pin `ebb0f51a15a469c4824a603ac716aafbf518841a`
+
 **Purpose:** Carry settled planning intent directly through paint, ratification, timeline, and simulation so commit cannot recalculate a different outcome.
 
 ### Implemented
 - [x] `PlanningHoverPreview` sealed bundle carries slots, route geometry, latest stand, action range, and AOE footprint.
 - [x] `CombatPlanningInput` is the single settle owner; `CombatDirector.ratify_sealed_intent` is the commit ratification path.
+- [x] Attempt 9: receipt-only routes/tiles/stand for selected player; ghost writer removed; paint-only via `preview_actions`.
 - [x] Structural gates use machine-readable `[SSOT VIOLATION]` output for competing owners, heuristics, and weakened contracts.
 - [x] AOE footprint contract, ability-identity branch gate/self-test, and planning SSOT structural gates are integrated.
 - [x] Canonical test/resource paths and scenario delegate headers point at the current `tests/harness`, `tests/runners`, and `tests/live` layout.
-- [x] The top-level planning QA wrapper preserves default arguments when no optional switches are supplied.
 
-### QA checkpoint
-| Suite | Result |
-|---|---|
-| Planning SSOT structural gates | **PASS** |
-| Ability ID branch gate self-test | **PASS** |
-| AOE footprint contract | **PASS** |
-| Sim/bridge regression + ER-3 exit gate | **PASS** |
-| T3 fixture parity | **FAIL** — 21 failures (down from 33); action-range-after-premove, K1/K3/K4 bible probes, drag/swap commit |
-| Live class QA | **Mixed** — Mage, Bruiser, Rogue **PASS**; Lancer blast overlay **FAIL**; Archer complex-turn forecast **FAIL**; others not re-run this turn |
+### Architecture milestone (Attempt 9)
+| Check | Result |
+|-------|--------|
+| Pass 1 — settle → seal → ratify | **COMPLIANT** (static) |
+| Pass 2 — paint / display / overlay | **COMPLIANT** (static) |
+| Pass 3 — parallel path hunt (6-row) | **COMPLIANT** (static) |
 
-### Handoff blockers (next agent)
-1. **Action range after committed premove** — red tiles must paint from `action_range_intent_stand_cell`, not turn-start stand (`show_enemy_bash_committed_premove`, `awaiting_module_range_after_premove`, K1/K4).
-2. **Off-map / off-blue hover** — overlay must keep red/blue when cursor leaves board (`K1-03/off_blue`, `K1-03/off_map`).
-3. **Trample/dash preview paths** — awaiting-movement endpoint must build route geometry (`K3-04`, `K3-05`, `K3-09`).
-4. **Drag/swap commit** — painted drag and SWAP-12 release still produce invalid sealed slots.
-5. **Move preview leg origin** — movement-skill path includes stale phase-entry cell (`move_preview_origin`).
+**Not claimed at close:** behavioral QA (QA suspended), F5 feel, K1/K3/K4/swap green.
 
-**Audit status:** Not closed. Structural SSOT gates are green; fixture and selective live failures remain explicit handoff work.
+### Behavioral QA (when re-enabled — not part of architecture milestone)
+| Suite | Last known |
+|-------|------------|
+| T3 fixture parity | **FAIL** — premove range, K1/K3/K4, drag/swap (pre–Attempt 9 baseline; re-run after QA on) |
+| Live class QA | **Mixed** — see prior checkpoint rows |
+
+**Audit status:** **Architecture closed** at Attempt 9. **Behavioral** audit open until QA returns.
 
 ## Planning SSOT architecture — Attempt 7
 
@@ -78,14 +78,16 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 - `apply_result` scratch-path build when settled routes present; authoritative paths via `apply_settled_preview_paths`.
 - QA remains suspended; four-way parity **unproven** until QA returns.
 
-## Planning SSOT architecture — Attempt 9
+## Planning SSOT architecture — Attempt 9 ✅ MILESTONE
 
 **Date:** 2026-08-30  
-**Status:** **CLOSED — RULE-COMPLIANT** (three static re-audits unanimous).
+**Status:** **MILESTONE CLOSED** — architecture rule-compliant (three static re-audits unanimous).  
+**Owner doc:** [`docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`](docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md)  
+**Pin:** `ebb0f51a15a469c4824a603ac716aafbf518841a`
 
-See `docs/design/logs/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempt 9 for changes and audit table.
+See `docs/design/logs/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempt 9 for change list and audit table.
 
-**QA:** Still suspended for behavioral proof only.
+**QA:** Suspended — behavioral proof not part of this milestone.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 
