@@ -1425,9 +1425,7 @@ func _preview_strip_ally_cancels_for_new_actions(combined: Timeline, new_actions
 		PlanDependency.strip_ally_entries_after_step(combined, action, allies)
 
 
-func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictionary:
-	if _preview_use_projected_delta(new_actions):
-		return _preview_from_projected_delta(new_actions)
+func _preview_from_plan(combined: Timeline) -> Dictionary:
 	var ev: Array[SimEvent] = []
 	var temp: BoardState = base_board.clone()
 	Simulator.simulate_player_turn(temp, combined, ev)
@@ -1445,41 +1443,6 @@ func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictiona
 			ResolutionPipeline.apply_action(temp, action, ev)
 	ResolutionPipeline.resolve_pending_pushes(temp, ev)
 	return {"intents": intents, "events": ev, "temp_board": temp}
-
-
-func _preview_use_projected_delta(new_actions: Array) -> bool:
-	if projected_state == null or base_board == null or new_actions.is_empty():
-		return false
-	for raw: Variant in new_actions:
-		if not raw is TimelineAction:
-			return false
-		if (raw as TimelineAction).type == GameEnums.ActionType.ABILITY:
-			return false
-	return true
-
-
-func _preview_from_projected_delta(new_actions: Array) -> Dictionary:
-	var temp: BoardState = projected_state.clone()
-	var ev: Array[SimEvent] = []
-	var delta: Timeline = Timeline.new()
-	for raw: Variant in new_actions:
-		if raw is TimelineAction:
-			delta.add(raw as TimelineAction)
-	Simulator.simulate_player_turn(temp, delta, ev)
-	var res: Dictionary = {
-		"intents": [],
-		"events": ev,
-		"temp_board": temp,
-	}
-	var intents: Array = EnemyPlanner.plan(temp)
-	for intent: Variant in intents:
-		if not intent is Intent:
-			continue
-		for enemy_action: TimelineAction in (intent as Intent).actions:
-			ResolutionPipeline.apply_action(temp, enemy_action, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
-	res["intents"] = intents
-	return res
 
 
 func _preview_apply_displacement_strips(
@@ -1523,7 +1486,7 @@ func preview_actions(unit_id: int, actions: Array[TimelineAction]) -> Dictionary
 	var preview_actions: Array[TimelineAction] = []
 	for action: TimelineAction in actions:
 		preview_actions.append(AbilitySystem.planning_preview_action(action))
-	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, preview_actions), actions)
+	var res: Dictionary = _preview_from_plan(_build_preview_plan(unit_id, preview_actions))
 	## Carry commit-slot actions so preview can ratify movement intent geometry.
 	res["actions"] = actions
 	return res
