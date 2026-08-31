@@ -1982,6 +1982,12 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if p_unit == null:
 		_restore_hover_preview()
 		return
+	if _director.selected_ability_index >= 0:
+		var early_target_id: int = _attack_target_id_at_cell(p_unit, cell)
+		if _hover_at_committed_stand_for_range_only(p_unit, cell, early_target_id):
+			_settle_paint_only_preview_at_cell(p_unit, cell)
+			_refresh_click_target_highlight()
+			return
 	if active_movement_planning_step(p_unit):
 		var step_ability: AbilityData = _selected_ability_data(p_unit)
 		if step_ability == null:
@@ -2102,6 +2108,10 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			_refresh_click_target_highlight()
 			return
 		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
+		if _hover_at_committed_stand_for_range_only(p_unit, cell, target_id):
+			_settle_paint_only_preview_at_cell(p_unit, cell)
+			_refresh_click_target_highlight()
+			return
 		if _is_hover_move_cell(p_unit, cell) or target_id >= 0:
 			if target_id < 0 and _voluntary_walk_preview_refresh_needed(p_unit, cell):
 				_refresh_voluntary_walk_hover_preview(p_unit, cell)
@@ -2125,6 +2135,12 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			elif ability != null:
 				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
+			if (
+				target_id < 0
+				and action_range_visible_for_hover()
+				and _current_sealed_receipt() == null
+			):
+				_settle_paint_only_preview_at_cell(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
 	if p_unit != null and _sealed_leg_hover_restore_if_blocked(p_unit, cell):
@@ -3242,6 +3258,21 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_plan_revision = -1
 
 
+func _hover_at_committed_stand_for_range_only(
+	p_unit: UnitState,
+	cell: Vector2i,
+	target_id: int,
+) -> bool:
+	if p_unit == null or _director == null or target_id >= 0:
+		return false
+	if not action_range_visible_for_hover():
+		return false
+	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		_director, _proj(), p_unit.id, null,
+	)
+	return stand.x > -900000 and cell == stand
+
+
 func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> void:
 	if p_unit == null or _director == null:
 		return
@@ -3259,7 +3290,14 @@ func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> vo
 	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
 		p_unit.id, cell, noop_slots, [],
 	)
-	var result: Dictionary = _director.preview_actions(p_unit.id, [])
+	var projection: BoardState = _director.live_planning_board()
+	if projection == null:
+		projection = CombatPlanningPreview.planning_projection_board(_director, _proj())
+	var result: Dictionary = {
+		"intents": [],
+		"events": [],
+		"temp_board": projection.clone() if projection != null else BoardState.new(),
+	}
 	result["settled_preview_paths"] = paths_snapshot.duplicate(true)
 	_store_intent_snapshot(
 		key,
@@ -6144,10 +6182,22 @@ func phase_entry_stand_cell(unit_id: int) -> Vector2i:
 func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
 	if _director == null or unit_id < 0:
 		return Vector2i(-999999, -999999)
-	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+	if unit_id == _director.selected_unit_id:
+		var receipt: PlanningHoverPreview = _current_sealed_receipt()
+		if (
+			receipt != null
+			and receipt.matches_paint_context(
+				_active_hover_cell(),
+				unit_id,
+				settled_hover_revision_key(),
+				_director.selected_ability_index,
+			)
+			and receipt.stand_origin.x > -900000
+		):
+			return receipt.stand_origin
+	return CombatPlanningPreview.planning_latest_stand_cell(
 		_director, _proj(), unit_id, null,
 	)
-	return stand
 
 
 func _phase_entry_stand(unit: UnitState) -> Vector2i:

@@ -4,7 +4,6 @@ extends RefCounted
 ## RefCounted harness — do NOT run with --script.
 ## Headless CLI: godot --headless --path . --script res://tests/runners/run_t3_mimic_headless.gd
 
-const _Checklist := preload("res://tests/harness/planning_t3_live_headless_checklist_test.gd")
 const _IntentSot := preload("res://tests/harness/intent_source_of_truth_gate_test.gd")
 
 ## Fixture Parity Suite (headless): action_range + intent_contract + full T3 live checklist.
@@ -20,5 +19,5 @@ static func run_all(failures: Array[String]) -> void:
 	failures.append_array(intent_failures)
 	var checklist_failures: Array[String] = []
 	print("[SUITE] t3_live_headless_checklist")
-	_Checklist.run_all(checklist_failures)
+	PlanningT3LiveHeadlessChecklistTest.run_all(checklist_failures)
 	failures.append_array(checklist_failures)

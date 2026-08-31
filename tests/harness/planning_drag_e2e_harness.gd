@@ -282,7 +282,8 @@ static func cleanup_all() -> void:
 		var director_ref: Variant = fix.get("director", null)
 		if director_ref is Object and is_instance_valid(director_ref):
 			director = director_ref as CombatDirector
-			director.flush_plan_refresh_signals_if_pending()
+			if director.has_method("flush_plan_refresh_signals_if_pending"):
+				director.flush_plan_refresh_signals_if_pending()
 		var input_ref: Variant = fix.get("input", null)
 		if input_ref is CombatPlanningInput:
 			var input := input_ref as CombatPlanningInput
