@@ -23,6 +23,7 @@ var show_blast: bool = false
 var paint_only: bool = false
 var phase: int = -1
 var ability_index: int = -1
+var _receipt_locked: bool = false
 
 
 static func seal(
@@ -68,6 +69,7 @@ static func seal(
 	bundle.ability_index = int(p_paint.get("ability_index", -1))
 	bundle.valid = true
 	bundle.is_sealed = true
+	bundle._receipt_locked = true
 	return bundle
 
 
@@ -149,6 +151,7 @@ func duplicate_receipt() -> PlanningHoverPreview:
 	copy.paint_only = paint_only
 	copy.phase = phase
 	copy.ability_index = ability_index
+	copy._receipt_locked = _receipt_locked
 	return copy
 
 

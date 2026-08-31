@@ -3202,17 +3202,33 @@ func _store_intent_snapshot(
 		move_origin,
 		paint,
 	)
+	if unit_id >= 0:
+		var sealed_route: Variant = paths_for_seal.get(unit_id, null)
+		if sealed_route is Array and (sealed_route as Array).size() >= 2:
+			CombatPlanningPreview.set_unit_preview_path(
+				preview_state, unit_id, sealed_route as Array,
+			)
+		else:
+			CombatPlanningPreview.clear_unit_preview_path(preview_state, unit_id)
 
 
 func _preview_paths_snapshot_for_settle(
 	unit_id: int,
-	hover_cell: Vector2i,
+	_hover_cell: Vector2i,
 	slots: Dictionary,
 	waypoints: Array[Vector2i],
 ) -> Dictionary:
-	var snapshot: Dictionary = preview_state.preview_paths.duplicate(true)
+	## Settling unit route comes from commit slots only — never the mutable drag/hover buffer.
+	var snapshot: Dictionary = {}
+	for other_id: Variant in preview_state.preview_paths.keys():
+		var other_unit_id: int = int(other_id)
+		if other_unit_id == unit_id:
+			continue
+		var other_route: Variant = preview_state.preview_paths[other_id]
+		if other_route is Array:
+			snapshot[other_unit_id] = (other_route as Array).duplicate()
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
-	if slot_wps.is_empty():
+	if slot_wps.is_empty() and waypoints.is_empty():
 		return snapshot
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var move_origin_settle: Vector2i = (
@@ -3220,28 +3236,14 @@ func _preview_paths_snapshot_for_settle(
 		if settle_actor != null
 		else Vector2i(-999999, -999999)
 	)
-	var dest: Vector2i = slot_wps[slot_wps.size() - 1]
-	var existing_route: Array = snapshot.get(unit_id, [])
-	var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
-		existing_route, move_origin_settle, dest,
-	)
-	if leg == slot_wps:
-		return snapshot
 	var built: Array[Vector2i] = []
 	if move_origin_settle.x > -900000:
 		built.append(move_origin_settle)
-	for wp_i: int in range(slot_wps.size()):
-		built.append(slot_wps[wp_i])
+	var route_cells: Array[Vector2i] = slot_wps if not slot_wps.is_empty() else waypoints
+	for wp_i: int in range(route_cells.size()):
+		built.append(route_cells[wp_i])
 	if built.size() >= 2:
 		snapshot[unit_id] = built
-	elif not waypoints.is_empty():
-		built = []
-		if move_origin_settle.x > -900000:
-			built.append(move_origin_settle)
-		for wp_j: int in range(waypoints.size()):
-			built.append(waypoints[wp_j])
-		if built.size() >= 2:
-			snapshot[unit_id] = built
 	return snapshot
 
 

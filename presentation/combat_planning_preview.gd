@@ -46,6 +46,33 @@ static func assign_preview_path_dict(
 	splits[unit_id] = path.size()
 
 
+## Authoritative settled interaction routes replace sim-built paths and resync split indices.
+static func apply_settled_preview_paths(
+	preview: CombatPlanningPreview,
+	settled_paths: Dictionary,
+) -> void:
+	if preview == null:
+		return
+	preview.preview_paths = settled_paths.duplicate(true)
+	for uid: Variant in settled_paths.keys():
+		var route: Variant = settled_paths[uid]
+		if not route is Array:
+			continue
+		var unit_id: int = int(uid)
+		var cells: Array = route as Array
+		if cells.size() >= 2:
+			preview.preview_splits[unit_id] = cells.size()
+			if not preview.preview_post_splits.has(unit_id):
+				preview.preview_post_splits[unit_id] = 0
+		elif cells.size() == 1:
+			preview.preview_splits.erase(unit_id)
+			preview.preview_post_splits.erase(unit_id)
+		else:
+			preview.preview_paths.erase(unit_id)
+			preview.preview_splits.erase(unit_id)
+			preview.preview_post_splits.erase(unit_id)
+
+
 static func set_unit_preview_path(preview: CombatPlanningPreview, unit_id: int, path: Array) -> void:
 	if preview == null:
 		return
@@ -118,7 +145,7 @@ func apply_result(
 	)
 	var settled_paths: Variant = res.get("settled_preview_paths", null)
 	if settled_paths is Dictionary:
-		preview_paths = (settled_paths as Dictionary).duplicate(true)
+		apply_settled_preview_paths(self, settled_paths as Dictionary)
 	## Settled interaction geometry is already authoritative; only legacy result paths
 	## need action-based completion.
 	if actions_v is Array and not settled_paths is Dictionary:

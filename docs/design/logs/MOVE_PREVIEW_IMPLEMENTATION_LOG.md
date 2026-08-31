@@ -248,4 +248,20 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 
 **Attempt 7 correction after final static pass:** Settled blue-tile resolution now consumes the sealed route snapshot rather than `CombatPlanningInput`'s mutable corridor buffer. Settled walk-only blast gating likewise uses that receipt route; the unspecialized path retains the existing input API.
 
+**Owner pushback (2026-08-30):** Attempt 7 closed with a premature 100% claim. Route snapshot still merged mutable `preview_state.preview_paths`; split indices could drift after `build_preview_paths`; receipt fields remain publicly assignable in GDScript.
+
 **Verification:** Static code review only. QA remains suspended by owner mandate.
+
+---
+
+## Attempt 8 — 2026-08-30 — Slot-owned route at settle
+
+**Status:** OPEN — implementation started; no compliance claim.
+
+**Targets:**
+- `_preview_paths_snapshot_for_settle` builds the settling unit route from commit slots + phase-entry origin only (not the drag/hover `preview_paths` buffer).
+- After seal, `preview_state` for that unit is overwritten from the sealed route so staging matches the receipt.
+- `CombatPlanningPreview.apply_settled_preview_paths` replaces settled routes and resyncs split indices after sim event path build.
+- `PlanningHoverPreview._receipt_locked` marks sealed receipts; `duplicate_receipt` preserves the lock.
+
+**Not claimed:** QA green, behavioral parity, or 100% compliance until owner re-enables QA or accepts static proof.

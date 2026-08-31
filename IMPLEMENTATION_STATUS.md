@@ -43,7 +43,7 @@
 ## Planning SSOT architecture — Attempt 7
 
 **Date:** 2026-08-30
-**Status:** **CLOSED** — structural planning SSOT audit passed; QA remains suspended.
+**Status:** **SUPERSEDED** — 100% close claim withdrawn; see Attempt 8.
 
 The earlier iteration 6 / round 33 compliance claims are superseded by the fresh code audit. Attempt 7 is correcting the settlement-state mismatch, sealed-receipt boundary, click settlement boundary, stale scheduling guards, and route handoff.
 
@@ -65,7 +65,22 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 | Reusable | **PASS** | The same path serves movement, range, blast, click, and drag. |
 | Obsolete path removed | **PASS** | Authoritative settled routes skip post-result route reconciliation; settled paint no longer reads the mutable corridor path; stale refreshes are discarded and latest-key refreshes are rescheduled. |
 
-**Final structural verdict:** **PASS** — planning architecture is 100% compliant with the four planning SSOT criteria. QA remains suspended by owner mandate and was not run.
+**Final structural verdict:** Attempt 7 audit was overstated; owner pushback recorded. See Attempt 8.
+
+## Planning SSOT architecture — Attempt 8
+
+**Date:** 2026-08-30  
+**Status:** **OPEN** — slot-owned route at settle; no compliance claim.
+
+- Settling-unit route is built from commit slots, not the mutable drag/hover buffer.
+- Sealed route overwrites staging `preview_state` for that unit after seal.
+- `apply_settled_preview_paths` resyncs split indices when authoritative routes replace sim-built paths.
+- QA remains suspended.
+
+## Planning SSOT architecture — Attempt 7 (superseded close claim)
+
+**Date:** 2026-08-30  
+**Status:** Superseded — 100% claim withdrawn after owner pushback.
 
 ## Core milestone — Planning voluntary-walk refactor ✅
 
