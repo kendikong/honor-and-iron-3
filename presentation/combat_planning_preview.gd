@@ -134,6 +134,7 @@ func apply_result(
 			action_splits,
 			director,
 		)
+	if actions_v is Array:
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
 

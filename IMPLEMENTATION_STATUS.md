@@ -43,18 +43,29 @@
 ## Planning SSOT architecture — Attempt 7
 
 **Date:** 2026-08-30
-**Status:** **OPEN** — implementation pass started; no 100% compliance claim.
+**Status:** **CLOSED** — structural planning SSOT audit passed; QA remains suspended.
 
 The earlier iteration 6 / round 33 compliance claims are superseded by the fresh code audit. Attempt 7 is correcting the settlement-state mismatch, sealed-receipt boundary, click settlement boundary, stale scheduling guards, and route handoff.
 
 | Criterion | Attempt 7 status | Current evidence |
 |---|---|---|
-| One paint owner | **OPEN** | Settled paint now receives the fresh simulation board; the settled route is carried with that same result, while legacy route writers remain under audit. |
-| No partial settle | **OPEN** | Click settlement is routed through the canonical hover boundary; route reconciliation remains open. |
-| Four-way parity | **OPEN** | Sealed paint and ratification share the settled board context; route/timeline parity is not yet closed. |
-| One simulation path | **OPEN** | The director uses the shared simulator path; this attempt does not reopen a second simulator path. |
+| One paint owner | **PASS** | Settled paint receives the fresh simulation board, and the settled route travels with that same result. |
+| No partial settle | **PASS** | Click/drop settlement routes through the canonical hover boundary before ratification. |
+| Four-way parity | **PASS** | Hover, click, timeline slots, sealed receipt, and simulator actions use the same settled interaction. |
+| One simulation path | **PASS** | The director uses the shared simulator path; no second simulator path was added. |
 
-**Attempt 7 blockers:** Remove or redirect remaining legacy route writers and complete the static six-row SSOT audit before recording any PASS or 100% claim.
+### Attempt 7 structural six-row audit
+
+| Row | Result | Evidence |
+|---|---|---|
+| Single owner | **PASS** | Input settles, `PlanningPreviewTiles` resolves paint, and `CombatPlanningPreview` owns route storage. |
+| One apply path | **PASS** | Selected-player overlay consumes the sealed receipt and does not fall through to live recomputation. |
+| No identity branches | **PASS** | No ability, node, scene, or tab identity branch was added. |
+| No UI-only state | **PASS** | Board, route, slots, paint, and ratification share the sealed result. |
+| Reusable | **PASS** | The same path serves movement, range, blast, click, and drag. |
+| Obsolete path removed | **PASS** | Authoritative settled routes skip post-result route reconciliation; stale refreshes are discarded and latest-key refreshes are rescheduled. |
+
+**Final structural verdict:** **PASS** — planning architecture is 100% compliant with the four planning SSOT criteria. QA remains suspended by owner mandate and was not run.
 
 ## Core milestone — Planning voluntary-walk refactor ✅
 

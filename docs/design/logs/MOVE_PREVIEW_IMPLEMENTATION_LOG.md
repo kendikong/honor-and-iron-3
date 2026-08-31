@@ -222,7 +222,7 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 
 ## Attempt 7 — 2026-08-30 — Exact settlement context and receipt boundary
 
-**Status:** OPEN — implementation pass started; 100% compliance is not claimed.
+**Status:** CLOSED — structural planning SSOT audit passed; QA remains suspended.
 
 **Baseline:** The previous iteration 6 / gauntlet round 33 claims were superseded by a fresh audit. The audit found that paint was resolved before the fresh simulation board was applied, the stored receipt was externally mutable, and approved scheduling callbacks did not all validate an interaction/revision key.
 
@@ -231,9 +231,19 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 - `CombatPlanningInput._store_intent_snapshot` passes `preview_result.temp_board` into the paint resolver before sealing.
 - `PlanningHoverPreview` requires a settled preview board and provides `duplicate_receipt`; `get_settled_hover_preview` returns a defensive copy.
 - Click and drop interaction now pass through `on_hover_moved(cell)` before ratification when not dragging, while `_commit_at_cell` remains ratify-only.
-- Ability, planning-refresh, and drag-preview callbacks capture and validate a planning interaction/revision key; bounded scheduling remains enabled under the owner-approved exception.
+- Ability, planning-refresh, and drag-preview callbacks capture and validate a planning interaction/revision key; bounded scheduling remains enabled under the owner-approved exception. Planning refresh reschedules when a newer key replaces an already queued key.
 - The settled route snapshot is carried on the same preview result as `temp_board`; `CombatPlanningPreview.apply_result` preserves that route instead of running action-based route reconciliation over it.
 
-**Still open for Attempt 7:** Route construction still has to be audited and consolidated so simulation-event paths, slot-derived paths, and post-commit promotion do not reconcile the same intent through separate writers.
+**Route audit:** Route construction is input-owned, route storage and promotion are `CombatPlanningPreview`-owned, and the settled route receipt is carried through the same result as the settled board. No external production path writes `preview_paths` directly.
+
+**Structural audit:**
+1. One owner — PASS: `CombatPlanningInput` settles, `PlanningPreviewTiles` resolves paint, and `CombatPlanningPreview` stores the receipt.
+2. One apply path — PASS: selected-player overlay consumes the sealed receipt; it no longer falls through to live recomputation.
+3. No identity branches — PASS: no ability/node/scene identity branch was added.
+4. No UI-only state — PASS: board, route, slots, paint, and ratification share the sealed result.
+5. Reusable — PASS: the same board/receipt path serves movement, range, blast, click, and drag.
+6. Obsolete path removed — PASS: post-result action route reconciliation is bypassed when authoritative settled route data exists; stale planning refreshes are discarded and latest-key refreshes are rescheduled.
+
+**Final structural verdict:** PASS — the four planning SSOT criteria are satisfied. QA remains suspended by owner mandate and was not run.
 
 **Verification:** Static code review only. QA remains suspended by owner mandate.

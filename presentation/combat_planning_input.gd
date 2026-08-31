@@ -1103,7 +1103,10 @@ func _request_planning_selection_refresh() -> void:
 
 func _schedule_planning_refresh(refresh_cursor: bool) -> void:
 	if _planning_refresh_scheduled:
-		return
+		if _planning_refresh_schedule_key == _planning_interaction_revision_key():
+			return
+		_planning_refresh_generation += 1
+		_planning_refresh_scheduled = false
 	var schedule_key: String = _planning_interaction_revision_key()
 	_planning_refresh_scheduled = true
 	_planning_refresh_generation += 1
@@ -1126,8 +1129,9 @@ func _run_scheduled_planning_refresh(
 ) -> void:
 	if (
 		generation != _planning_refresh_generation
-		or schedule_key != _planning_interaction_revision_key()
 	):
+		return
+	if schedule_key != _planning_interaction_revision_key():
 		_planning_refresh_scheduled = false
 		return
 	_planning_refresh_scheduled = false
