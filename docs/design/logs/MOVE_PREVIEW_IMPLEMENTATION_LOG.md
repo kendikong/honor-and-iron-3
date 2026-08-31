@@ -232,6 +232,7 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 - `PlanningHoverPreview` requires a settled preview board and provides `duplicate_receipt`; `get_settled_hover_preview` returns a defensive copy.
 - Click and drop interaction now pass through `on_hover_moved(cell)` before ratification when not dragging, while `_commit_at_cell` remains ratify-only.
 - Ability, planning-refresh, and drag-preview callbacks capture and validate a planning interaction/revision key; bounded scheduling remains enabled under the owner-approved exception.
+- The settled route snapshot is carried on the same preview result as `temp_board`; `CombatPlanningPreview.apply_result` preserves that route instead of running action-based route reconciliation over it.
 
 **Still open for Attempt 7:** Route construction still has to be audited and consolidated so simulation-event paths, slot-derived paths, and post-commit promotion do not reconcile the same intent through separate writers.
 

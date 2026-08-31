@@ -3477,6 +3477,8 @@ func _preview_from_commit_slots_at_cell(
 	)
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
 	var result: Dictionary = _director.preview_actions(unit_id, actions)
+	## The route snapshot is part of the same settled receipt as the simulation board.
+	result["settled_preview_paths"] = paths_snapshot.duplicate(true)
 	_store_intent_snapshot(
 		snapshot_key,
 		slots,

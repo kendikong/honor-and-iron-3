@@ -116,8 +116,12 @@ func apply_result(
 		action_splits,
 		path_init_board,
 	)
-	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
-	if actions_v is Array:
+	var settled_paths: Variant = res.get("settled_preview_paths", null)
+	if settled_paths is Dictionary:
+		preview_paths = (settled_paths as Dictionary).duplicate(true)
+	## Settled interaction geometry is already authoritative; only legacy result paths
+	## need action-based completion.
+	if actions_v is Array and not settled_paths is Dictionary:
 		ensure_movement_intent_from_actions(
 			actions_v as Array, path_init_board, {}, director,
 		)

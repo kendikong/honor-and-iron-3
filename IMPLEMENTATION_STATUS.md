@@ -45,16 +45,16 @@
 **Date:** 2026-08-30
 **Status:** **OPEN** — implementation pass started; no 100% compliance claim.
 
-The earlier iteration 6 / round 33 compliance claims are superseded by the fresh code audit. Attempt 7 is correcting the settlement-state mismatch, sealed-receipt boundary, click settlement boundary, and stale scheduling guards.
+The earlier iteration 6 / round 33 compliance claims are superseded by the fresh code audit. Attempt 7 is correcting the settlement-state mismatch, sealed-receipt boundary, click settlement boundary, stale scheduling guards, and route handoff.
 
 | Criterion | Attempt 7 status | Current evidence |
 |---|---|---|
-| One paint owner | **OPEN** | Settled paint now receives the fresh simulation board; route ownership remains under audit. |
+| One paint owner | **OPEN** | Settled paint now receives the fresh simulation board; the settled route is carried with that same result, while legacy route writers remain under audit. |
 | No partial settle | **OPEN** | Click settlement is routed through the canonical hover boundary; route reconciliation remains open. |
 | Four-way parity | **OPEN** | Sealed paint and ratification share the settled board context; route/timeline parity is not yet closed. |
 | One simulation path | **OPEN** | The director uses the shared simulator path; this attempt does not reopen a second simulator path. |
 
-**Attempt 7 blockers:** Consolidate remaining route writers and complete the static six-row SSOT audit before recording any PASS or 100% claim.
+**Attempt 7 blockers:** Remove or redirect remaining legacy route writers and complete the static six-row SSOT audit before recording any PASS or 100% claim.
 
 ## Core milestone — Planning voluntary-walk refactor ✅
 
