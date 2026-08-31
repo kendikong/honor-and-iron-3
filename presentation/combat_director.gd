@@ -1437,8 +1437,6 @@ func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictiona
 		ev.clear()
 		temp = base_board.clone()
 		Simulator.simulate_player_turn(temp, combined, ev)
-	if _preview_skip_enemy_resolution(new_actions):
-		return {"intents": [], "events": ev, "temp_board": temp}
 	var intents: Array = EnemyPlanner.plan(temp)
 	for intent: Variant in intents:
 		if not intent is Intent:
@@ -1473,28 +1471,15 @@ func _preview_from_projected_delta(new_actions: Array) -> Dictionary:
 		"events": ev,
 		"temp_board": temp,
 	}
-	if not _preview_skip_enemy_resolution(new_actions):
-		var intents: Array = EnemyPlanner.plan(temp)
-		for intent: Variant in intents:
-			if not intent is Intent:
-				continue
-			for enemy_action: TimelineAction in (intent as Intent).actions:
-				ResolutionPipeline.apply_action(temp, enemy_action, ev)
-		ResolutionPipeline.resolve_pending_pushes(temp, ev)
-		res["intents"] = intents
-	return res
-
-
-func _preview_skip_enemy_resolution(new_actions: Array) -> bool:
-	if new_actions.is_empty():
-		return false
-	for raw: Variant in new_actions:
-		if not raw is TimelineAction:
+	var intents: Array = EnemyPlanner.plan(temp)
+	for intent: Variant in intents:
+		if not intent is Intent:
 			continue
-		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.ABILITY:
-			return false
-	return true
+		for enemy_action: TimelineAction in (intent as Intent).actions:
+			ResolutionPipeline.apply_action(temp, enemy_action, ev)
+	ResolutionPipeline.resolve_pending_pushes(temp, ev)
+	res["intents"] = intents
+	return res
 
 
 func _preview_apply_displacement_strips(
