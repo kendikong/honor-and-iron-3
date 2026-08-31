@@ -278,16 +278,16 @@ static func _test_combat_intent_state(failures: Array[String]) -> void:
 	board.intents = [intent]
 	state.set_board(board)
 	state.set_selection(1)
-	state.flush_recompute()
+	state.recompute()
 	if not state.intent_units.has(2):
 		failures.append("CombatIntentState: enemy targeting selected player not visible")
 	state.set_selection(-1)
 	state.set_timeline_hover(2)
-	state.flush_recompute()
+	state.recompute()
 	if not state.intent_units.has(2):
 		failures.append("CombatIntentState: timeline hover should show enemy intent")
 	state.clear_timeline_hover()
-	state.flush_recompute()
+	state.recompute()
 	if state.intent_units.has(2):
 		failures.append("CombatIntentState: clear timeline hover should remove highlight when nothing else selected")
 

@@ -29,10 +29,6 @@ var _drag_drop_finishing: bool = false
 var _drag_survive_board_cancel: bool = false
 
 const _DRAG_THRESHOLD_PX: float = 6.0
-const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
-const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
-const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.045
-const _HOVER_SIM_STILL_PX: float = 3.0
 
 var _drag_unit_id: int = -1
 var _drag_route: Array[Vector2i] = []
@@ -60,27 +56,14 @@ var _hover_cursor_cache_key: String = ""
 var _hover_cursor_cached_icon: String = ""
 var _overlay_cursor_icon: String = ""
 var _overlay_cursor_cell: Vector2i = Vector2i(-9999, -9999)
-var _selection_refresh_pending: bool = false
-var _plan_refresh_followup_pending: bool = false
-var _hover_preview_refresh_pending: bool = false
-var _ability_scroll_settle_generation: int = 0
-var _ability_hover_settle_pending: bool = false
 var _qa_pointer_override: bool = false
 var _qa_pointer_screen_pos: Vector2 = Vector2.ZERO
 var _qa_pointer_grid_override: bool = false
 var _qa_pointer_grid_cell: Vector2i = Vector2i.ZERO
-var _hover_heavy_throttle_gen: int = 0
-var _hover_heavy_last_flush_usec: int = 0
-var _last_heavy_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
 var _last_sim_hover_refresh_cell: Vector2i = Vector2i(-9999, -9999)
-var _hover_sim_throttle_gen: int = 0
-var _hover_sim_last_flush_usec: int = 0
-var _hover_sim_pointer_at_schedule: Vector2 = Vector2.INF
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
-var _drag_preview_refresh_pending: bool = false
-var _drag_preview_last_flush_usec: int = 0
 var _drag_last_cursor_cell: Vector2i = Vector2i(-999999, -999999)
 var _drag_last_sprite_cell: Vector2i = Vector2i(-999999, -999999)
 ## Last painted intent (move-preview truth) ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ commit ratifies these slots, does not rebuild.
@@ -92,7 +75,6 @@ var _intent_snapshot_hover_cell: Vector2i = Vector2i(-999999, -999999)
 var _settled_hover_preview: _HoverPreviewBundle = null
 var _intent_snapshot_plan_revision: int = -1
 ## Settled hover used projected-delta move-only preview when overlay range already correct at stand.
-var _last_hover_move_intent_preview: bool = false
 const _HOVER_PREVIEW_LRU_MAX: int = 24
 var _hover_preview_lru: Dictionary = {}
 var _hover_preview_lru_order: Array[String] = []
@@ -118,7 +100,7 @@ func setup(
 
 
 func teardown() -> void:
-	flush_deferred_planning()
+	_refresh_planning_hover_at_current_cell(false)
 	_disconnect_event_bus()
 	if _planning != null and _planning.live_preview_changed.is_connected(_on_planning_live_preview_changed):
 		_planning.live_preview_changed.disconnect(_on_planning_live_preview_changed)
@@ -129,13 +111,9 @@ func teardown() -> void:
 	_sfx = null
 
 
-## Test and teardown hook: drain the same deferred preview pipeline used at runtime.
+## Compatibility hook: refresh the canonical preview immediately.
 func flush_deferred_planning() -> void:
-	if _selection_refresh_pending:
-		_run_planning_selection_refresh()
-	_flush_drag_preview_refresh()
-	_flush_hover_preview_refresh()
-	_finish_plan_refresh_followup()
+	_refresh_planning_hover_at_current_cell(false)
 
 
 func _disconnect_event_bus() -> void:
@@ -282,7 +260,7 @@ func on_left_release(local: Vector2) -> void:
 		return
 	var had_movement: bool = _drag_had_movement()
 	_drag_drop_finishing = true
-	_flush_drag_preview_refresh()
+	_refresh_drag_preview_now()
 	dragging = false
 	var board: BoardState = _director.board
 	var cell: Vector2i = _pointer_grid_cell()
@@ -327,9 +305,8 @@ func _try_click_through_drag_armed(local: Vector2) -> bool:
 
 
 func _process_unit_drop(local: Vector2, had_movement: bool) -> bool:
-	## Drag drop == hover click: settle via on_hover_moved inside _commit_at_interaction_cell.
+	## Drag drop == hover click: ratify the already-settled hover bundle.
 	_drag_move_commit_instant = had_movement
-	_flush_drag_preview_refresh()
 	var released_unit_id: int = _drag_unit_id
 	var clicked_unit: UnitState = _unit_at_input_cell(_pointer_grid_cell())
 	if (
@@ -458,7 +435,7 @@ func update_drag(local: Vector2) -> void:
 	):
 		_drag_last_free = occ.position
 	if cell_changed:
-		_schedule_or_refresh_drag_preview()
+		_refresh_drag_preview_now()
 		if (
 			_drag_route.size() >= 2
 			and cell == (_drag_route[_drag_route.size() - 1] as Vector2i)
@@ -480,45 +457,12 @@ func update_drag(local: Vector2) -> void:
 		refresh_mouse_cursor(cell)
 
 
-func _schedule_or_refresh_drag_preview() -> void:
-	var now_usec: int = Time.get_ticks_usec()
-	var elapsed_sec: float = (
-		float(now_usec - _drag_preview_last_flush_usec) / 1_000_000.0
-		if _drag_preview_last_flush_usec > 0
-		else _HOVER_HEAVY_MIN_INTERVAL_SEC
-	)
-	if _drag_preview_last_flush_usec == 0 or elapsed_sec >= _HOVER_HEAVY_MIN_INTERVAL_SEC:
-		_refresh_drag_preview_now()
-		return
-	if _drag_preview_refresh_pending:
-		return
-	_drag_preview_refresh_pending = true
-	var wait_sec: float = maxf(_HOVER_HEAVY_MIN_INTERVAL_SEC - elapsed_sec, 0.001)
-	if _map_view == null or not _map_view.is_inside_tree():
-		_drag_preview_refresh_pending = false
-		_refresh_drag_preview_now()
-		return
-	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
-		func() -> void:
-			_drag_preview_refresh_pending = false
-			_refresh_drag_preview_now(),
-		CONNECT_ONE_SHOT,
-	)
-
-
-func _flush_drag_preview_refresh() -> void:
-	_drag_preview_refresh_pending = false
-	if dragging:
-		_refresh_drag_preview_now()
-
-
 func _refresh_drag_preview_now() -> void:
 	if not dragging or _drag_unit_id < 0 or _director == null or _director.board == null:
 		return
 	var movement_drag_actor: UnitState = _proj_unit(_drag_unit_id)
 	if movement_drag_actor != null and active_movement_planning_step(movement_drag_actor):
 		_apply_voluntary_walk_drag_preview(_drag_unit_id, false)
-		_drag_preview_last_flush_usec = Time.get_ticks_usec()
 		return
 	var cell: Vector2i = _pointer_grid_cell()
 	if not _director.board.is_in_bounds(cell):
@@ -536,7 +480,6 @@ func _refresh_drag_preview_now() -> void:
 	var cache_key: int = _drag_preview_cache_key_for(cell, drag_target_id, preview_waypoints)
 	if cache_key == _drag_preview_cache_key:
 		return
-	_drag_preview_last_flush_usec = Time.get_ticks_usec()
 	_drag_preview_cache_key = cache_key
 	_drag_preview_cache = _preview_at_interaction_cell(
 		_drag_unit_id,
@@ -795,123 +738,16 @@ func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) ->
 	_write_voluntary_walk_preview_path(p_unit.id, [stand, dest])
 
 
-func _paired_premove_approach_path_preserve_intent(unit_id: int) -> bool:
-	if _director == null or unit_id < 0 or not _skill_interaction_active():
-		return false
-	if unit_id != _director.selected_unit_id:
-		return false
-	var actor: UnitState = _proj_unit(unit_id)
-	var ability: AbilityData = _selected_ability_data(actor)
-	if actor == null or ability == null:
-		return false
-	if not AbilitySystem.planning_allows_paired_premove(ability):
-		return false
-	var hover_cell: Vector2i = _active_hover_cell()
-	if _attack_target_id_at_cell(actor, hover_cell) < 0:
-		return false
-	return not _hover_walk_waypoints_for_skill(actor, hover_cell, ability).is_empty()
-
-
-func _paired_premove_approach_hover_authoritative(unit_id: int) -> bool:
-	if not _paired_premove_approach_path_preserve_intent(unit_id):
-		return false
-	var path: Array = preview_state.preview_paths.get(unit_id, [])
-	return path.size() >= 2
-
-
-func _movement_hover_path_authoritative(unit_id: int) -> bool:
-	if _director == null or unit_id < 0:
-		return false
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		return false
-	if dragging and _painted_drag_route_matches_leg(actor):
-		if _voluntary_walk_orbit_phase_open(actor):
-			var hover_cell: Vector2i = _active_hover_cell()
-			var leg_origin: Vector2i = _drag_route[0] as Vector2i
-			var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
-				_director, unit_id, leg_origin,
-			)
-			if (
-				forbidden.has(hover_cell)
-				and hover_cell != leg_origin
-				and not _can_move_to(actor, hover_cell)
-			):
-				return false
-			if _drag_route.has(hover_cell):
-				return true
-			var tail: Vector2i = _drag_route.back() as Vector2i
-			if hover_cell == tail:
-				return true
-			if (
-				GridSystem.manhattan(tail, hover_cell) == 1
-				and _can_move_to(actor, hover_cell)
-			):
-				return true
-			return false
-		return true
-	if _paired_premove_approach_hover_authoritative(unit_id):
-		return true
-	if not active_movement_planning_step(actor):
-		return false
-	if _sealed_leg_structurally_locked(actor):
-		return true
-	var hover_cell: Vector2i = (
-		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	)
-	return live_move_hover_rewrite_applies(actor, hover_cell)
-
-
 func _apply_live_preview(preview: Dictionary) -> void:
-	if _director != null and _director.selected_unit_id >= 0:
-		var live_unit: UnitState = _proj_unit(_director.selected_unit_id)
-		if live_unit != null and active_movement_planning_step(live_unit):
-			if preview.is_empty() or _is_invalid_dict(preview):
-				return
-			_apply_settled_preview_result(preview)
-			drag_preview_failed = false
-			_last_hover_move_intent_preview = _preview_dict_is_move_only_intent(preview)
-			return
 	if preview.is_empty():
 		return
 	if _is_invalid_dict(preview):
 		drag_preview_failed = true
 		_hover_preview_cache_key = ""
-		_last_hover_move_intent_preview = false
-		var preserved_hover_paths: Dictionary = {}
-		if _director != null and _director.selected_unit_id >= 0:
-			var actor: UnitState = _proj_unit(_director.selected_unit_id)
-			if actor != null:
-				var hover_path: Array = preview_state.preview_paths.get(actor.id, [])
-				if hover_path.size() >= 2:
-					if preview_state.is_painted_leg_sealed(actor.id):
-						preserved_hover_paths[actor.id] = {
-							"path": hover_path.duplicate(),
-							"seal": true,
-						}
-					elif _paired_premove_approach_path_preserve_intent(actor.id):
-						preserved_hover_paths[actor.id] = {
-							"path": hover_path.duplicate(),
-							"seal": false,
-						}
-		preview_state.clear_all()
-		for unit_id: Variant in preserved_hover_paths.keys():
-			var entry: Dictionary = preserved_hover_paths[unit_id] as Dictionary
-			_restore_sealed_voluntary_walk_preview(
-				int(unit_id), entry.get("path", []) as Array, bool(entry.get("seal", false)),
-			)
-		if preserved_hover_paths.is_empty():
-			if _planning != null:
-				_planning.restore_committed_display()
-		else:
-			if _planning != null:
-				for unit_id: Variant in preserved_hover_paths.keys():
-					_planning.apply_preview_paths_only(preview_state, int(unit_id))
-		_sync_intent_live_board()
+		_clear_hover_preview()
 		return
 	_apply_settled_preview_result(preview)
 	drag_preview_failed = false
-	_last_hover_move_intent_preview = _preview_dict_is_move_only_intent(preview)
 	var actor_id: int = _drag_unit_id if dragging else _director.selected_unit_id
 	for event: Variant in preview.get("events", []):
 		if event is SimEvent:
@@ -922,7 +758,6 @@ func _apply_live_preview(preview: Dictionary) -> void:
 			):
 				drag_preview_failed = true
 				break
-	_ensure_live_movement_intent_from_preview_actions(preview)
 	var temp_board: BoardState = preview.get("temp_board")
 	var pv_actor: UnitState = temp_board.get_unit_by_id(actor_id) if temp_board != null else null
 	if pv_actor != null:
@@ -952,65 +787,6 @@ func _refresh_action_range_overlay_when_gate_off() -> void:
 
 func _on_planning_live_preview_changed() -> void:
 	_refresh_action_range_overlay_when_gate_off()
-
-
-func _ensure_live_movement_intent_from_preview_actions(preview: Dictionary) -> void:
-	## Path merge runs only inside apply_result (_apply_settled_preview_result).
-	if _director == null or _director.selected_unit_id < 0:
-		return
-	if _movement_hover_path_authoritative(_director.selected_unit_id):
-		return
-	if bool(preview.get("intent_preview", false)):
-		return
-	if dragging and _drag_route.size() >= 2 and _movement_route_paint_allowed():
-		return
-	if (
-		not dragging
-		and _drag_route_commits_active()
-		and _movement_route_paint_allowed()
-	):
-		return
-	var actions_v: Variant = preview.get("actions", [])
-	if actions_v is Array and not (actions_v as Array).is_empty():
-		return
-	var start_board: BoardState = (
-		_director.live_planning_board() if _director != null else null
-	)
-	if start_board == null and _director != null:
-		start_board = (
-			_director.base_board if _director.base_board != null else _director.board
-		)
-	_anchor_preview_path_for_active_move_leg(_director.selected_unit_id, start_board)
-
-
-func _anchor_preview_path_for_active_move_leg(unit_id: int, start_board: BoardState) -> void:
-	if _director == null or unit_id < 0:
-		return
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		actor = _director.board.get_unit_by_id(unit_id) if _director.board != null else null
-	if actor == null:
-		return
-	if _voluntary_walk_orbit_phase_open(actor):
-		return
-	var stand: Vector2i = Vector2i(-999999, -999999)
-	var ability: AbilityData = _selected_ability_data(actor)
-	## MOVE module legs use the same painted-route path as premove ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ do not collapse here.
-	if _is_awaiting_movement_endpoint(actor, ability):
-		return
-	elif _voluntary_walk_planning_active() and not awaiting_targeting_active():
-		if dragging:
-			var timing: int = _director.get_planning_move_timing(unit_id)
-			if timing == GameEnums.MoveTiming.POST_ACTION:
-				return
-		var timing: int = _director.get_planning_move_timing(unit_id)
-		if timing == GameEnums.MoveTiming.POST_ACTION:
-			var board: BoardState = start_board if start_board != null else _proj()
-			stand = CombatPlanningPreview.committed_plan_action_end_cell(_director, board, unit_id)
-	if stand.x <= -900000:
-		return
-	## No stand-stub preview ÃƒÅ½Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã‚Â¶ live walk paint is hover/drag only (MOVE_PREVIEW_RULES).
-	preview_state.action_splits[unit_id] = 0
 
 
 func _sync_intent_live_board() -> void:
@@ -1158,7 +934,9 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 		if _planning != null:
 			_planning.restore_committed_display()
 			if sealed_unit_id >= 0:
-				_planning.apply_preview_paths_only(preview_state, sealed_unit_id)
+				_planning.apply_preview_state(
+					preview_state, sealed_unit_id, _hover_attack_target_id(),
+				)
 	_sync_intent_live_board()
 	_sync_intent_skill_mode()
 	if _intent_state != null:
@@ -1182,23 +960,21 @@ func _on_board_changed(board: BoardState) -> void:
 		_drag_route.clear()
 		if _planning != null:
 			_planning.clear_drag_route()
-		if not _director.plan_refresh_defer_overlay:
-			preview_state.clear_interaction()
+		preview_state.clear_interaction()
 		# Stale stash after drag ended must not restore over a committed plan.
 		if _drag_saved_preview != null:
 			_drag_saved_preview = null
 		# Snap undo/move refresh emits preview_updated in the same flush ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ skip duplicate danger pass.
-		if _planning != null and not _director.plan_refresh_snap_units:
+		if _planning != null:
 			_planning.mark_danger_dirty()
-		if not _director.plan_refresh_snap_units:
-			_schedule_plan_refresh_followup()
+		_sync_after_plan_refresh()
 		return
 	if _drag_survive_board_cancel:
 		_drag_survive_board_cancel = false
 		_invalidate_planning_hover_cache()
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
-		_schedule_plan_refresh_followup()
+		_sync_after_plan_refresh()
 		return
 	var preserve_drag_session: bool = (
 		_drag_armed
@@ -1208,7 +984,7 @@ func _on_board_changed(board: BoardState) -> void:
 		_invalidate_planning_hover_cache()
 		if _planning != null:
 			_planning._recompute_hover_ranges_from_inputs()
-		_schedule_plan_refresh_followup()
+		_sync_after_plan_refresh()
 		return
 	if aiming:
 		cancel_aim()
@@ -1230,7 +1006,7 @@ func _on_board_changed(board: BoardState) -> void:
 		_planning.end_drag_sprite()
 		_planning.mark_danger_dirty()
 		_planning._invalidate_hover_cache()
-	_schedule_plan_refresh_followup()
+	_sync_after_plan_refresh()
 
 
 func _stash_committed_preview() -> void:
@@ -1265,14 +1041,11 @@ func _on_selection_changed(unit_id: int) -> void:
 		_drag_route.clear()
 		_drag_unit_id = unit_id
 	_play_sfx("select")
-	call_deferred("_finish_selection_changed")
+	_finish_selection_changed()
 
 
 func _request_planning_selection_refresh() -> void:
-	if _selection_refresh_pending:
-		return
-	_selection_refresh_pending = true
-	call_deferred("_run_planning_selection_refresh")
+	_run_planning_selection_refresh()
 
 
 func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
@@ -1290,8 +1063,6 @@ func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
 
 
 func _run_planning_selection_refresh() -> void:
-	_selection_refresh_pending = false
-	_ability_hover_settle_pending = false
 	_refresh_planning_hover_at_current_cell(true)
 
 
@@ -1312,19 +1083,15 @@ func _on_ability_selected(index: int) -> void:
 	_clear_intent_snapshot()
 	_sync_intent_skill_mode()
 	if dragging:
-		_ability_hover_settle_pending = false
 		clear_awaiting_targeting()
 		_request_planning_selection_refresh()
 		refresh_live_preview()
 		return
-	_ability_hover_settle_pending = true
-	## Scroll settle delays the new skill's sim. Drop the previous skill's leftover
-	## live path/ghost immediately so it cannot flash for 75 ms.
 	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
 	_clear_hover_preview()
 	if _planning != null:
 		_planning.queue_redraw()
-	_schedule_ability_settled_refresh()
+	_run_ability_settled_refresh()
 
 
 func _resync_hover_after_ability_change() -> void:
@@ -1340,33 +1107,13 @@ func _resync_hover_after_ability_change() -> void:
 	if not _director.board.is_in_bounds(hover):
 		return
 	_last_planning_hover_cell = Vector2i(-9999, -9999)
-	_last_heavy_hover_refresh_cell = Vector2i(-9999, -9999)
 	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
-	_flush_hover_heavy_sync()
-
-
-func _schedule_ability_settled_refresh() -> void:
-	_ability_scroll_settle_generation += 1
-	var gen: int = _ability_scroll_settle_generation
-	var tree: SceneTree = null
-	if _map_view != null and _map_view.is_inside_tree():
-		tree = _map_view.get_tree()
-	if tree == null:
-		_run_ability_settled_refresh()
-		return
-	tree.create_timer(_ABILITY_SCROLL_SETTLE_SEC).timeout.connect(
-		func() -> void:
-			if gen != _ability_scroll_settle_generation:
-				return
-			_run_ability_settled_refresh(),
-		CONNECT_ONE_SHOT,
-	)
+	_refresh_planning_hover_at_current_cell(false)
 
 
 func _run_ability_settled_refresh() -> void:
 	if _director == null:
 		return
-	_ability_hover_settle_pending = false
 	var actor := _director.board.get_unit_by_id(_director.selected_unit_id) if _director.board != null and _director.selected_unit_id >= 0 else null
 	var cur_ability := _selected_ability_data(actor) if actor != null else null
 	var awaiting := _director.find_awaiting_action(_director.selected_unit_id) if _director.selected_unit_id >= 0 else null
@@ -1399,23 +1146,11 @@ func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
 		return
-	if _director != null and _director.plan_refresh_defer_overlay:
-		return
-	_schedule_plan_refresh_followup()
-	if _director != null and _director.plan_refresh_snap_units:
-		return
-	_schedule_hover_preview_refresh()
+	_sync_after_plan_refresh()
+	_refresh_hover_if_planning()
 
 
-func _schedule_plan_refresh_followup() -> void:
-	if _plan_refresh_followup_pending:
-		return
-	_plan_refresh_followup_pending = true
-	call_deferred("_finish_plan_refresh_followup")
-
-
-func _finish_plan_refresh_followup() -> void:
-	_plan_refresh_followup_pending = false
+func _sync_after_plan_refresh() -> void:
 	_sync_intent_live_board()
 	_sync_intent_skill_mode()
 	if _intent_state != null:
@@ -1423,19 +1158,6 @@ func _finish_plan_refresh_followup() -> void:
 	refresh_mouse_cursor(
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999),
 	)
-
-
-func _schedule_hover_preview_refresh() -> void:
-	if _hover_preview_refresh_pending:
-		return
-	_hover_preview_refresh_pending = true
-	call_deferred("_flush_hover_preview_refresh")
-
-
-func _flush_hover_preview_refresh() -> void:
-	_hover_preview_refresh_pending = false
-	_flush_drag_preview_refresh()
-	_refresh_hover_if_planning()
 
 
 func _refresh_hover_if_planning() -> void:
@@ -1656,17 +1378,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and not _selection_corridor_route_staging_active(p_unit)
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
-			if planning_cell_changed and _hover_preserves_action_range_at_phase_entry(p_unit, cell):
-				var preserve_painted: Array = preview_state.preview_paths.get(p_unit.id, [])
-				if not (active_movement_planning_step(p_unit) and preserve_painted.size() >= 2):
-					_clear_stale_painted_preview_route(p_unit.id)
-				preview_state.preview_board = null
-				preview_state.clear_interaction()
-				_clear_intent_snapshot()
-				if _planning != null:
-					_planning.set_drag_attack_target(-1)
-					_planning._recompute_hover_ranges_from_inputs()
-					_planning.queue_redraw()
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -1704,29 +1415,18 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var oob_unit: UnitState = _proj_unit(_director.selected_unit_id)
 			if oob_unit != null and active_movement_planning_step(oob_unit):
 				_clear_stale_painted_preview_route(oob_unit.id)
-		_flush_hover_heavy_sync()
+		_run_hover_sim_refresh()
+		_run_hover_overlay_refresh()
 		return
 	if _should_restore_stand_hover_preview(cell):
-		_flush_hover_heavy_sync()
+		_restore_hover_preview()
 		return
 	if _director.selected_ability_index >= 0:
-		var _preserve_actor: UnitState = _proj_unit(_director.selected_unit_id)
-		var _preserve_range: bool = (
-			_preserve_actor != null
-			and _hover_preserves_action_range_at_phase_entry(_preserve_actor, cell)
-		)
-		if _preserve_range:
-			_run_hover_overlay_refresh()
-			if not dragging:
-				refresh_mouse_cursor(cell)
-		elif _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
-			_run_hover_sim_refresh()
-			_run_hover_overlay_refresh()
-			_sync_movement_preview_after_hover_sim(cell)
-			if not dragging:
-				refresh_mouse_cursor(cell)
-		else:
-			_schedule_hover_sim_refresh()
+		_run_hover_sim_refresh()
+		_run_hover_overlay_refresh()
+		_sync_movement_preview_after_hover_sim(cell)
+		if not dragging:
+			refresh_mouse_cursor(cell)
 	else:
 		_run_hover_overlay_refresh()
 		if not dragging:
@@ -1753,128 +1453,12 @@ func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
 
 
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
-	## QA fixtures keep immediate sim. Live F5 uses the throttle so circling
-	## a unit does not resim every blue tile. Commit still flushes first.
-	if dragging or _director == null or not _is_planning():
-		return false
-	if not _director.board.is_in_bounds(cell):
-		return false
-	if _planning != null and _planning.qa_static_overlay:
-		if _director.selected_unit_id < 0:
-			return false
-		var p_unit := _proj_unit(_director.selected_unit_id)
-		if p_unit == null:
-			return false
-		if not _unit_move_slot_open(p_unit.id):
-			return false
-		if _director.selected_ability_index < 0:
-			return _is_hover_move_cell(p_unit, cell)
-		if _voluntary_walk_corridor_paint_active():
-			return true
-		return false
-	return false
-
-
-func _schedule_hover_heavy_refresh() -> void:
-	## Legacy entry for callers that still batch overlay + sim; hover uses sync overlay path.
-	_run_hover_overlay_refresh()
-	_schedule_hover_sim_refresh()
-
-
-func _deferred_begin_hover_heavy_flush() -> void:
-	_deferred_begin_hover_sim_flush()
-
-
-func _hover_heavy_min_interval_sec() -> float:
-	return _HOVER_HEAVY_MIN_INTERVAL_SEC
-
-
-func _begin_hover_heavy_throttled_flush() -> void:
-	_begin_hover_sim_throttled_flush()
-
-
-func _schedule_hover_sim_refresh() -> void:
-	if dragging or _map_view == null or not _map_view.is_inside_tree():
-		return
-	_begin_hover_sim_throttled_flush()
-
-
-func _deferred_begin_hover_sim_flush() -> void:
-	_begin_hover_sim_throttled_flush()
-
-
-func _hover_sim_min_interval_sec() -> float:
-	if dragging:
-		return _HOVER_HEAVY_MIN_INTERVAL_SEC
-	if _planning != null and _planning.qa_static_overlay:
-		return _HOVER_SIM_MIN_INTERVAL_SEC
-	if _planning != null:
-		var settings: GameSettings = _planning.game_settings()
-		if settings != null:
-			return settings.hover_sim_interval_sec()
-	return _HOVER_SIM_MIN_INTERVAL_SEC
-
-
-func _begin_hover_sim_throttled_flush() -> void:
-	if _director == null or not _is_planning() or dragging:
-		return
-	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	if (
-		cell == _last_sim_hover_refresh_cell
-		and _hover_preview_fresh_at(cell)
-	):
-		return
-	## Settle on the current tile before the expensive replay. Circling cancels
-	## in-flight work so intermediate tiles are never simulated. 0 ms runs now.
-	## If the pointer is still moving inside the tile, reschedule (do not run stale sim).
-	## Timer defer is overlay-only; sim runs on zero-wait path and via _flush_hover_heavy_sync before commit.
-	## Red tiles already follow via overlay _recompute_hover_ranges_from_inputs.
-	_hover_sim_throttle_gen += 1
-	var gen: int = _hover_sim_throttle_gen
-	_hover_sim_pointer_at_schedule = _mouse_local_for_facing()
-	var wait_sec: float = _hover_sim_min_interval_sec()
-	if wait_sec <= 0.0 or _map_view == null or not _map_view.is_inside_tree():
-		_run_hover_sim_refresh()
-		_run_hover_overlay_refresh()
-		if not dragging:
-			refresh_mouse_cursor(cell)
-		return
-	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
-		func() -> void:
-			if gen != _hover_sim_throttle_gen:
-				return
-			if _intent_state != null and _intent_state.hover_coord != cell:
-				return
-			if not _hover_sim_pointer_is_still():
-				_begin_hover_sim_throttled_flush()
-				return
-			_run_hover_overlay_refresh()
-			if not dragging:
-				refresh_mouse_cursor(cell),
-		CONNECT_ONE_SHOT,
-	)
-
-
-func _hover_sim_still_px() -> float:
-	if _planning != null:
-		var settings: GameSettings = _planning.game_settings()
-		if settings != null:
-			return maxf(0.0, settings.hover_settle_still_px)
-	return _HOVER_SIM_STILL_PX
-
-
-func _hover_sim_pointer_is_still() -> bool:
-	if _planning != null and _planning.qa_static_overlay:
-		return true
-	if _hover_sim_pointer_at_schedule.x >= 1.0e12:
-		return true
-	return _mouse_local_for_facing().distance_to(_hover_sim_pointer_at_schedule) <= _hover_sim_still_px()
+	return true
 
 
 func _flush_hover_heavy_sync() -> void:
-	_hover_heavy_throttle_gen += 1
-	_hover_sim_throttle_gen += 1
-	_flush_drag_preview_refresh()
+	if dragging:
+		_refresh_drag_preview_now()
 	var flush_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)
@@ -1893,13 +1477,8 @@ func _run_hover_overlay_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning():
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0 and action_range_visible_for_hover():
-			var range_actor_oob: UnitState = _proj_unit(_director.selected_unit_id)
-			var stand_cell: Vector2i = action_range_intent_stand_cell(_director.selected_unit_id)
-			if range_actor_oob != null and _director.board.is_in_bounds(stand_cell):
-				_settle_stand_hover_preview(range_actor_oob, stand_cell)
 			if _planning != null:
 				_planning._recompute_hover_ranges_from_inputs()
 		elif _director.selected_unit_id < 0:
@@ -1907,37 +1486,16 @@ func _run_hover_overlay_refresh() -> void:
 			if _planning != null:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
-		_last_heavy_hover_refresh_cell = cell
 		if _planning != null:
 			_planning.queue_redraw()
 		return
-	if _director.selected_unit_id >= 0 and action_range_visible_for_hover():
-		var range_actor: UnitState = _proj_unit(_director.selected_unit_id)
-		var settled_matches: bool = (
-			_settled_hover_preview != null
-			and _settled_hover_preview.matches_paint_context(
-				cell,
-				_director.selected_unit_id,
-				settled_hover_revision_key(),
-				_director.selected_ability_index,
-			)
-		)
-		if range_actor != null and not settled_matches:
-			_settle_stand_hover_preview(range_actor, cell)
-	## Coord-change recompute lives in set_hover_coord; sim-only path updates need one refresh here.
-	if _planning != null and _last_hover_move_intent_preview:
-		_planning._recompute_hover_ranges_from_inputs()
-	_last_heavy_hover_refresh_cell = cell
-
-
 func _run_hover_sim_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning() or dragging:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
-	_hover_sim_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
-			_restore_hover_preview()
+			_clear_live_preview_preserve_intent()
 		else:
 			_sync_intent_live_board()
 		_last_sim_hover_refresh_cell = cell
@@ -1951,12 +1509,6 @@ func _run_hover_sim_refresh() -> void:
 	_last_sim_hover_refresh_cell = cell
 	if not dragging:
 		refresh_mouse_cursor(cell)
-
-
-func _run_hover_heavy_refresh() -> void:
-	_run_hover_overlay_refresh()
-	_run_hover_sim_refresh()
-
 
 func get_hover_tile_for_ui() -> Vector2i:
 	if dragging:
@@ -1999,11 +1551,10 @@ func build_debug_context() -> Dictionary:
 				CombatPlanningPreview.planning_latest_stand_cell(_director, _proj(), unit_id),
 			)
 			context["projected_position"] = DebugReportRuntime._coord(actor.position)
-		if _director.board != null and _director.board.is_in_bounds(hover):
-			var slots: Dictionary = _final_commit_slots_for_click_at_cell(
-				unit_id, hover, Vector2.ZERO,
+		if _settled_hover_preview != null:
+			context["hover_commit_slots"] = DebugReportRuntime.serialize_commit_slots(
+				_settled_hover_preview.duplicate_slots(),
 			)
-			context["hover_commit_slots"] = DebugReportRuntime.serialize_commit_slots(slots)
 	if preview_state != null and not preview_state.preview_paths.is_empty():
 		var path_summary: Dictionary = {}
 		for path_unit_id: int in preview_state.preview_paths.keys():
@@ -2047,8 +1598,6 @@ func live_sim_matches_hover() -> bool:
 func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) -> bool:
 	if planning_cell_changed:
 		return true
-	if _ability_hover_settle_pending:
-		return false
 	return not _hover_preview_fresh_at(cell)
 
 
@@ -2130,7 +1679,6 @@ func _clear_hover_preview() -> void:
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
 	drag_preview_failed = false
-	_last_hover_move_intent_preview = false
 	_clear_intent_snapshot()
 	if _planning != null:
 		_planning.restore_committed_display()
@@ -2398,23 +1946,16 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if _director.selected_ability_index >= 0 and action_range_visible_for_hover():
 		var stand_only_ability: AbilityData = _selected_ability_data(p_unit)
 		if (
-			stand_only_ability == null
-			or not _is_awaiting_movement_endpoint(p_unit, stand_only_ability)
+			not active_movement_planning_step(p_unit)
+			and (
+				stand_only_ability == null
+				or not _is_awaiting_movement_endpoint(p_unit, stand_only_ability)
+			)
 		):
-			_settle_stand_hover_preview(p_unit, cell)
+			_settle_paint_only_preview_at_cell(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
 	_restore_hover_preview()
-
-
-func _settle_stand_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
-	if p_unit == null or _director == null:
-		return
-	var stand_res: Dictionary = _preview_from_commit_slots_at_cell(
-		p_unit.id, cell, [], _snapshot_drag_legal_move_tiles(),
-	)
-	if not _is_invalid_dict(stand_res):
-		_apply_settled_preview_result(stand_res)
 
 
 func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
@@ -2573,7 +2114,9 @@ func _clear_stale_painted_preview_route(unit_id: int) -> void:
 		return
 	CombatPlanningPreview.clear_unit_preview_path(preview_state, unit_id)
 	if _planning != null:
-		_planning.apply_preview_paths_only(preview_state, unit_id)
+		_planning.apply_preview_state(
+			preview_state, unit_id, _hover_attack_target_id(),
+		)
 
 
 func _clear_frozen_painted_leg(unit_id: int) -> void:
@@ -2742,11 +2285,6 @@ func _apply_hover_preview_dict(res: Dictionary) -> void:
 		_clear_hover_preview()
 		return
 	_apply_settled_preview_result(res)
-	_ensure_live_movement_intent_from_preview_actions(res)
-	if _planning != null:
-		_planning.apply_preview_state(preview_state, _director.selected_unit_id, _hover_attack_target_id())
-		if not bool(res.get("intent_preview", false)):
-			_planning._recompute_hover_ranges_from_inputs()
 	_sync_intent_live_board()
 
 
@@ -2773,8 +2311,7 @@ func _refresh_live_interaction_preview(
 		res = _preview_at_interaction_cell(
 			unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 		)
-		if not bool(res.get("intent_preview", false)):
-			_store_hover_preview_lru(cache_key, res)
+		_store_hover_preview_lru(cache_key, res)
 	_apply_hover_preview_from_result(res, unit_id, move_coord, cache_key)
 
 
@@ -3249,17 +2786,10 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
-	var params: Dictionary = _commit_interaction_params(cell, attack_target_id)
-	var commit_cell: Vector2i = params.cell as Vector2i
-	on_hover_moved(commit_cell)
 	return _commit_at_cell(
 		unit_id,
-		params.cell,
+		cell,
 		local,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		int(params.get("face_dir", -1)),
 	)
 
 func _commit_at_cell(
@@ -3272,7 +2802,6 @@ func _commit_at_cell(
 	face_dir: int = -1,
 	_intent_slots_unused: Dictionary = {},
 ) -> bool:
-	_flush_hover_heavy_sync()
 	if selected_phase_action_exhausted(unit_id):
 		_play_sfx("invalid")
 		return false
@@ -3315,25 +2844,6 @@ func _commit_at_cell(
 	_clear_hover_drag_route()
 	_clear_intent_snapshot()
 	return true
-
-func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
-	if _director == null:
-		return
-	var actions: Array[TimelineAction] = _actions_from_slots(slots)
-	if actions.is_empty():
-		return
-	var res: Dictionary = _director.preview_actions(unit_id, actions)
-	if _is_invalid_dict(res):
-		return
-	preview_state.apply_result(res, _director)
-	if _planning != null:
-		_planning.apply_preview_state(
-			preview_state,
-			unit_id,
-			_hover_attack_target_id(),
-		)
-	_sync_intent_live_board()
-
 
 func _promote_intent_preview_after_commit() -> void:
 	if _planning == null:
@@ -3450,8 +2960,10 @@ func _store_intent_snapshot(
 	hover_cell: Vector2i = Vector2i(-999999, -999999),
 	face_dir: int = -1,
 	preview_paths_snapshot: Dictionary = {},
+	preview_result: Dictionary = {},
+	paint_only: bool = false,
 ) -> void:
-	if _is_invalid_dict(slots) or slots.get("_noop", false) == true:
+	if _is_invalid_dict(slots) or (slots.get("_noop", false) == true and not paint_only):
 		_clear_intent_snapshot()
 		return
 	_intent_snapshot_key = key
@@ -3461,7 +2973,7 @@ func _store_intent_snapshot(
 	_intent_snapshot_valid = true
 	_intent_snapshot_plan_revision = _director.plan_revision if _director != null else -1
 	var actor: UnitState = _proj_unit(unit_id)
-	var move_origin: Vector2i = _phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
+	var move_origin: Vector2i = _settle_phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
 	var paths_for_seal: Dictionary = preview_paths_snapshot
 	if paths_for_seal.is_empty():
 		paths_for_seal = preview_state.preview_paths
@@ -3473,6 +2985,10 @@ func _store_intent_snapshot(
 		self,
 		hover_cell,
 	)
+	var sealed_board: Variant = preview_result.get("temp_board", null)
+	if sealed_board is BoardState:
+		paint["preview_board"] = sealed_board
+	paint["paint_only"] = paint_only
 	_settled_hover_preview = _HoverPreviewBundle.seal(
 		unit_id,
 		hover_cell,
@@ -3497,7 +3013,9 @@ func _preview_paths_snapshot_for_settle(
 		return snapshot
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var move_origin_settle: Vector2i = (
-		_phase_entry_stand(settle_actor) if settle_actor != null else Vector2i(-999999, -999999)
+		_settle_phase_entry_stand(settle_actor)
+		if settle_actor != null
+		else Vector2i(-999999, -999999)
 	)
 	var dest: Vector2i = slot_wps[slot_wps.size() - 1]
 	var existing_route: Array = snapshot.get(unit_id, [])
@@ -3532,6 +3050,42 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_hover_cell = Vector2i(-999999, -999999)
 	_settled_hover_preview = null
 	_intent_snapshot_plan_revision = -1
+
+
+func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> void:
+	if p_unit == null or _director == null:
+		return
+	_clear_live_preview_preserve_intent()
+	var key: String = _intent_snapshot_key_for(
+		p_unit.id,
+		cell,
+		[],
+		[],
+		_NO_PREFERRED_APPROACH,
+		-1,
+	)
+	var paint_board: BoardState = _proj().clone() if _proj() != null else BoardState.new()
+	_store_intent_snapshot(
+		key,
+		_empty_commit_slots(),
+		p_unit.id,
+		cell,
+		-1,
+		preview_state.preview_paths.duplicate(true),
+		{"temp_board": paint_board},
+		true,
+	)
+
+
+func _clear_live_preview_preserve_intent() -> void:
+	_hover_preview_cache_key = ""
+	clear_hover_route_preview()
+	preview_state.clear_interaction()
+	preview_state.preview_board = null
+	drag_preview_failed = false
+	if _planning != null:
+		_planning.restore_committed_display()
+	_sync_intent_live_board()
 
 
 func _mouse_local_for_facing() -> Vector2:
@@ -3722,270 +3276,18 @@ func _preview_from_commit_slots_at_cell(
 	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
 		unit_id, cell, slots, wp_for_key,
 	)
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	var result: Dictionary = _director.preview_actions(unit_id, actions)
 	_store_intent_snapshot(
-		snapshot_key, slots, unit_id, cell, effective_face, paths_snapshot,
+		snapshot_key,
+		slots,
+		unit_id,
+		cell,
+		effective_face,
+		paths_snapshot,
+		result,
 	)
-	var actions: Array[TimelineAction] = _actions_from_slots(slots)
-	if _hover_can_preview_move_without_simulate(slots, cell):
-		return {
-			"intents": [],
-			"events": [],
-			"temp_board": _hover_empty_move_preview_board(slots, cell),
-			"actions": actions,
-			"intent_preview": true,
-		}
-	if _hover_can_preview_occupy_push_without_simulate(slots, cell):
-		var occupy_board: BoardState = _hover_occupy_push_preview_board(slots, cell)
-		var occupy_source: BoardState = _director.projected_state
-		if occupy_source == null:
-			occupy_source = _director.board
-		return {
-			"intents": [],
-			"events": _hover_displacement_events(occupy_source, occupy_board, unit_id),
-			"temp_board": occupy_board,
-			"actions": actions,
-			"intent_preview": true,
-		}
-	return _director.preview_actions(unit_id, actions)
-
-
-func _hover_empty_move_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
-	var source: BoardState = _director.projected_state
-	if source == null:
-		source = _director.board
-	if source == null:
-		return BoardState.new()
-	var cheap: BoardState = source.clone()
-	var move_action: TimelineAction = null
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
-				move_action = raw as TimelineAction
-				break
-		if move_action != null:
-			break
-	if move_action != null:
-		var dummy_events: Array[SimEvent] = []
-		MovementSystem.execute_move(cheap, move_action, dummy_events)
-	else:
-		var uid: int = _director.selected_unit_id
-		var u: UnitState = cheap.get_unit_by_id(uid)
-		if u != null and u.position != cell:
-			GridSystem.set_occupant(cheap, u.position, -1)
-			u.position = cell
-			GridSystem.set_occupant(cheap, cell, uid)
-	return cheap
-
-
-func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
-	## Live hover of an empty walk tile: painted slots are the intent. Simulator
-	## still runs on commit (`_commit_at_cell` flushes) and in QA fixtures.
-	if _planning == null or _planning.qa_static_overlay:
-		return false
-	return _slots_are_move_only_hover(slots, cell)
-
-
-## Committed class skill on timeline (action column or modular target locked).
-func _unit_has_resolved_ability_on_plan(unit_id: int) -> bool:
-	if _director == null or unit_id < 0:
-		return false
-	for action: TimelineAction in _director.get_player_plan().entries:
-		if action.actor_id != unit_id or action.type != GameEnums.ActionType.ABILITY:
-			continue
-		if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
-			continue
-		if action.awaiting_target and action.target_unit_id < 0:
-			continue
-		return true
-	return false
-
-
-func _hover_intent_actions_are_move_only(unit_id: int, hover: Vector2i) -> bool:
-	if not _intent_snapshot_valid or _intent_snapshot_unit_id != unit_id:
-		return false
-	if _intent_snapshot_hover_cell != hover:
-		return false
-	if _is_invalid_dict(_intent_snapshot_slots):
-		return false
-	var actions: Array[TimelineAction] = _actions_from_slots(_intent_snapshot_slots)
-	if actions.is_empty():
-		return false
-	var has_move: bool = false
-	for action: TimelineAction in actions:
-		if action.type == GameEnums.ActionType.ABILITY:
-			return false
-		if action.type == GameEnums.ActionType.MOVE:
-			has_move = true
-	return has_move
-
-
-func _hover_slots_are_move_only(unit_id: int, cell: Vector2i) -> bool:
-	if awaiting_targeting_active() or dragging:
-		return false
-	if _director == null or _director.board == null or unit_id < 0:
-		return false
-	var occupant: UnitState = _director.board.get_unit_at(cell)
-	if occupant != null and occupant.id != unit_id:
-		return false
-	var slots: Dictionary = _final_commit_slots_for_click_at_cell(
-		unit_id, cell, Vector2.ZERO,
-	)
-	if _is_invalid_dict(slots):
-		return false
-	var actions: Array[TimelineAction] = _actions_from_slots(slots)
-	if actions.is_empty():
-		return false
-	var has_move: bool = false
-	for action: TimelineAction in actions:
-		if action.type == GameEnums.ActionType.ABILITY:
-			return false
-		if action.type == GameEnums.ActionType.MOVE:
-			has_move = true
-	return has_move
-
-
-func _slots_are_move_only_hover(slots: Dictionary, cell: Vector2i) -> bool:
-	if _is_invalid_dict(slots):
-		return false
-	if _director == null or _director.board == null:
-		return false
-	if awaiting_targeting_active() or dragging:
-		return false
-	var occupant: UnitState = _director.board.get_unit_at(cell)
-	if occupant != null and occupant.id != _director.selected_unit_id:
-		return false
-	var has_move: bool = false
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if not raw is TimelineAction:
-				continue
-			var action: TimelineAction = raw as TimelineAction
-			if action.type == GameEnums.ActionType.ABILITY:
-				return false
-			if action.type == GameEnums.ActionType.MOVE:
-				has_move = true
-	return has_move
-
-
-func _hover_can_preview_occupy_push_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
-	if _planning == null or _planning.qa_static_overlay:
-		return false
-	if awaiting_targeting_active() or dragging:
-		return false
-	if _director == null or _director.board == null:
-		return false
-	var occupant: UnitState = _director.board.get_unit_at(cell)
-	if occupant == null or occupant.id == _director.selected_unit_id or occupant.is_enemy():
-		return false
-	var actor: UnitState = _proj_unit(_director.selected_unit_id)
-	var occupy_ability: AbilityData = null
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if not raw is TimelineAction:
-				continue
-			var action: TimelineAction = raw as TimelineAction
-			if action.type == GameEnums.ActionType.MOVE:
-				continue
-			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
-				return false
-			if not AbilitySystem.motion_requires_occupied_target(actor, action.ability):
-				return false
-			if occupy_ability != null:
-				return false
-			occupy_ability = action.ability
-	if occupy_ability == null or actor == null:
-		return false
-	var origin: Vector2i = actor.position
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if not raw is TimelineAction:
-				continue
-			var move_action: TimelineAction = raw as TimelineAction
-			if move_action.type == GameEnums.ActionType.MOVE:
-				origin = move_action.target_coord
-	return AbilitySystem.occupied_push_from_origin_valid(
-		_proj(), actor, occupy_ability, origin, occupant.position,
-	)
-
-
-func _hover_occupy_push_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
-	var source: BoardState = _director.projected_state
-	if source == null:
-		source = _director.board
-	if source == null:
-		return BoardState.new()
-	var cheap: BoardState = source.clone()
-	var uid: int = _director.selected_unit_id
-	var actor: UnitState = cheap.get_unit_by_id(uid)
-	if actor == null:
-		return cheap
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if not raw is TimelineAction:
-				continue
-			var move_action: TimelineAction = raw as TimelineAction
-			if move_action.type != GameEnums.ActionType.MOVE:
-				continue
-			var dest: Vector2i = move_action.target_coord
-			if dest != actor.position:
-				GridSystem.set_occupant(cheap, actor.position, -1)
-				actor.position = dest
-				GridSystem.set_occupant(cheap, dest, uid)
-	var occupant: UnitState = cheap.get_unit_at(cell)
-	if occupant == null or occupant.id == uid:
-		occupant = cheap.get_unit_at(actor.position)
-		if occupant == null or occupant.id == uid:
-			return cheap
-	var old_pos: Vector2i = occupant.position
-	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, old_pos)
-	if push_dir == Vector2i.ZERO:
-		return cheap
-	var behind: Vector2i = old_pos + push_dir
-	if (
-		not cheap.is_in_bounds(behind)
-		or GridSystem.is_wall(cheap, behind)
-		or GridSystem.is_occupied(cheap, behind)
-	):
-		return cheap
-	GridSystem.set_occupant(cheap, old_pos, -1)
-	occupant.position = behind
-	GridSystem.set_occupant(cheap, behind, occupant.id)
-	if actor.position != old_pos:
-		GridSystem.set_occupant(cheap, actor.position, -1)
-	actor.position = old_pos
-	GridSystem.set_occupant(cheap, old_pos, uid)
-	return cheap
-
-
-func _hover_displacement_events(
-	source: BoardState,
-	cheap: BoardState,
-	actor_id: int,
-) -> Array:
-	var events: Array = []
-	if source == null or cheap == null:
-		return events
-	for unit: UnitState in source.units:
-		if unit == null:
-			continue
-		var after: UnitState = cheap.get_unit_by_id(unit.id)
-		if after == null or after.position == unit.position:
-			continue
-		if unit.id == actor_id:
-			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
-				"actor": actor_id,
-				"from": unit.position,
-				"to": after.position,
-				"path": [after.position],
-			}))
-		else:
-			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
-				"unit": unit.id,
-				"from": unit.position,
-				"to": after.position,
-				"pusher": actor_id,
-			}))
-	return events
+	return result
 
 
 func _hover_interaction_cache_key(
@@ -5081,22 +4383,6 @@ func _voluntary_walk_can_paint_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 	return _voluntary_walk_corridor_reaches_cell(p_unit, cell)
 
 
-func _hover_preserves_action_range_at_phase_entry(actor: UnitState, hover: Vector2i) -> bool:
-	if actor == null or _director == null or not _director.board.is_in_bounds(hover):
-		return false
-	if _attack_target_id_at_cell(actor, hover) >= 0:
-		return false
-	if _voluntary_walk_hover_paint_applies(actor, hover):
-		return false
-	if _voluntary_walk_orbit_phase_open(actor):
-		var orbit_only: Array = preview_state.preview_paths.get(actor.id, [])
-		if orbit_only.size() < 2:
-			return true
-	if active_movement_planning_step(actor) and _voluntary_walk_can_paint_cell(actor, hover):
-		return false
-	return not _is_hover_move_cell(actor, hover)
-
-
 func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
@@ -5225,13 +4511,12 @@ func _write_voluntary_walk_preview_path(unit_id: int, path: Array) -> void:
 				return
 	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, trimmed)
 	if _planning != null:
-		_planning.apply_preview_paths_only(preview_state, unit_id)
+		_planning.apply_preview_state(
+			preview_state, unit_id, _hover_attack_target_id(),
+		)
 
 
 ## Movement-step hover path is authoritative ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ sim merge must not stomp it.
-func _movement_hover_path_blocks_sim_merge(unit_id: int) -> bool:
-	return _movement_hover_path_authoritative(unit_id)
-
 
 ## Single painted-route ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã¢â‚¬ËœÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â¥ preview_paths writer (drag buffer ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã¢â‚¬ËœÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â¥ route truth).
 func _apply_voluntary_walk_drag_preview(unit_id: int, require_leg_match: bool) -> void:
@@ -5326,7 +4611,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 
 func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 	if _planning != null:
-		_planning.apply_preview_paths_only(preview_state, unit_id)
+		_planning.apply_preview_state(
+			preview_state, unit_id, _hover_attack_target_id(),
+		)
 
 
 func _write_movement_hover_preview_paths(
@@ -5399,9 +4686,7 @@ func _assemble_voluntary_walk_preview_path(
 ) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
-	var origin: Vector2i = _phase_entry_stand(actor)
-	if origin.x <= -900000:
-		origin = _phase_entry_stand(actor)
+	var origin: Vector2i = _settle_phase_entry_stand(actor)
 	if origin.x <= -900000:
 		return []
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
@@ -5547,7 +4832,7 @@ func _route_waypoints_for_commit(dest_cell: Vector2i = Vector2i(-999999, -999999
 func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
-	var move_origin: Vector2i = _phase_entry_stand(actor)
+	var move_origin: Vector2i = _settle_phase_entry_stand(actor)
 	if cell == move_origin:
 		return []
 	if _drag_route.size() >= 2:
@@ -5589,7 +4874,7 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				return painted
-	var origin: Vector2i = _phase_entry_stand(actor)
+	var origin: Vector2i = _settle_phase_entry_stand(actor)
 	if origin.x <= -900000:
 		return []
 	var sealed_mode: int = _sealed_leg_hover_mode(actor, cell)
@@ -5950,8 +5235,6 @@ func _drag_had_movement() -> bool:
 func _clear_drag_preview_cache() -> void:
 	_drag_preview_cache_key = 0
 	_drag_preview_cache = {}
-	_drag_preview_refresh_pending = false
-	_drag_preview_last_flush_usec = 0
 	_drag_last_cursor_cell = Vector2i(-999999, -999999)
 	_drag_last_sprite_cell = Vector2i(-999999, -999999)
 
@@ -6085,301 +5368,16 @@ func auto_run_movement_active(unit: UnitState = null) -> bool:
 
 
 ## Armed TILE skills: red range stays on projected stand until commit/clear (not hover ghost).
-func _armed_tile_target_locks_action_range(actor: UnitState) -> bool:
-	if not awaiting_targeting_active() or actor == null or _director == null:
-		return false
-	var awaiting: TimelineAction = _director.find_awaiting_action(actor.id)
-	var ability: AbilityData = null
-	if awaiting != null and awaiting.ability != null:
-		ability = awaiting.ability
-	elif actor.id == _director.selected_unit_id:
-		ability = _selected_ability_data(actor)
-	if ability == null:
-		return false
-	return (
-		AbilitySystem.active_targeting_flags(actor, ability)
-		& GameEnums.TargetingFlags.TILE
-	) != 0
-
-
 ## Where red action-range tiles anchor ÃƒÅ½Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã‚Â¶ delegates to phase-entry stand (R1/R3).
 ## Exceptions (documented): module handoff prior stand; committed move target;
 ## armed-tile range lock; live_path terminus only during active movement step (not locked red).
 func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
-	if _director == null:
-		return Vector2i(-999999, -999999)
-	if unit_id < 0:
+	if unit_id < 0 and _director != null:
 		unit_id = _director.selected_unit_id
-	if unit_id < 0:
-		return Vector2i(-999999, -999999)
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return Vector2i(-999999, -999999)
-	var stand: Vector2i = phase_entry_stand_cell(unit_id)
-	var awaiting: TimelineAction = _director.find_awaiting_action(unit_id)
-	if awaiting != null and awaiting.awaiting_module_index > 0:
-		var prior_stand: Vector2i = AbilitySystem.module_target_coord(
-			awaiting, awaiting.awaiting_module_index - 1,
-		)
-		if _director.board.is_in_bounds(prior_stand):
-			stand = prior_stand
-	var hover_early: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
-	if _hover_preserves_action_range_at_phase_entry(actor, hover_early):
-		return stand
-	if (
-		_director.board.is_in_bounds(hover_early)
-		and active_movement_planning_step(actor)
-		and _voluntary_walk_can_paint_cell(actor, hover_early)
-		and not _voluntary_walk_orbit_phase_open(actor)
-	):
-		var ability_early: AbilityData = null
-		if unit_id == _director.selected_unit_id:
-			ability_early = _selected_ability_data(actor)
-		if (
-			ability_early != null
-			and not AbilitySystem.is_movement_skill(ability_early)
-			and not _is_awaiting_movement_endpoint(actor, ability_early)
-		):
-			return hover_early
-	var planned_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
-	if planned_move != null:
-		return planned_move.target_coord
-	if _action_range_locked_to_projected_stand(unit_id, actor, stand):
-		if _director.projected_state != null:
-			var projected_unit: UnitState = _director.projected_state.get_unit_by_id(unit_id)
-			if projected_unit != null:
-				return projected_unit.position
-		return stand
-	var ability: AbilityData = null
-	if unit_id == _director.selected_unit_id:
-		ability = _selected_ability_data(actor)
-	if _armed_tile_target_locks_action_range(actor):
-		return stand
-	if ability != null and _awaiting_flow_selected(actor, ability) and AbilitySystem.is_movement_skill(ability):
-		var hover: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
-		if _director.board.is_in_bounds(hover):
-			var hover_unit: UnitState = _director.board.get_unit_at(hover)
-			if (
-				hover_unit != null
-				and hover_unit.is_enemy()
-				and AbilitySystem.planning_is_valid_awaiting_endpoint(
-					stand, hover, ability, actor, _proj(),
-				)
-			):
-				return stand
-	if _director.board.is_in_bounds(hover_early):
-		var hover_target_id: int = _hover_attack_target_id()
-		if hover_target_id >= 0 and ability != null:
-			var target: UnitState = _director.board.get_unit_by_id(hover_target_id)
-			if (
-				target != null
-				and target.is_enemy()
-				and not _in_ability_range(actor, target)
-			):
-				var approach: Vector2i = _director.preview_approach_tile(
-					unit_id,
-					hover_target_id,
-					_director.selected_ability_index,
-					target.position,
-				)
-				if _director.board.is_in_bounds(approach) and approach != stand:
-					return approach
-	if _voluntary_walk_orbit_phase_open(actor):
-		var orbit_painted: Array = preview_state.preview_paths.get(unit_id, [])
-		if orbit_painted.size() < 2:
-			return stand
-	var dest: Vector2i = move_intent_destination(unit_id)
-	if (
-		_director.board.is_in_bounds(dest)
-		and dest != stand
-		and _is_hover_move_cell(actor, dest)
-		and not _voluntary_walk_orbit_phase_open(actor)
-	):
-		return dest
-	if is_live_preview_active() and preview_state.preview_board != null:
-		if _voluntary_walk_orbit_phase_open(actor):
-			var orbit_route: Array = preview_state.preview_paths.get(unit_id, [])
-			if orbit_route.size() < 2:
-				return stand
-		var live_unit: UnitState = preview_state.preview_board.get_unit_by_id(unit_id)
-		if live_unit != null:
-			return live_unit.position
-	return stand
-
-func _action_range_locked_to_projected_stand(
-	unit_id: int,
-	actor: UnitState,
-	projected: Vector2i,
-) -> bool:
-	if _director == null or actor == null or unit_id < 0:
-		return false
-	var hover: Vector2i = (
-		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
-	)
-	if not _director.board.is_in_bounds(hover):
-		return false
-	if _hover_commit_slots_are_post_reposition_walk_only(actor, unit_id, hover):
-		return true
-	if _planning_post_move_only(actor, unit_id, hover):
-		return true
-	if (
-		_unit_has_resolved_ability_on_plan(unit_id)
-		and _hover_intent_actions_are_move_only(unit_id, hover)
-		and not _should_replan_premove_approach(unit_id, hover)
-	):
-		return true
-	if (
-		_director.unit_action_column_spent_for_movement(unit_id)
-		and _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
-	):
-		var hover_unit: UnitState = _director.board.get_unit_at(hover)
-		if hover_unit == null or hover_unit.id == unit_id:
-			return true
-	return false
-
-
-func action_range_stand_locked_to_projection(unit_id: int = -1) -> bool:
-	if _director == null or _director.board == null:
-		return false
-	if unit_id < 0:
-		unit_id = _director.selected_unit_id
-	if unit_id < 0:
-		return false
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor == null:
-		return false
-	return _action_range_locked_to_projected_stand(unit_id, actor, _phase_entry_stand(actor))
-
-
-func _preview_dict_is_move_only_intent(preview: Dictionary) -> bool:
-	if not bool(preview.get("intent_preview", false)):
-		return false
-	var actions_v: Variant = preview.get("actions", [])
-	if not actions_v is Array:
-		return false
-	var has_move: bool = false
-	for raw: Variant in actions_v as Array:
-		if not raw is TimelineAction:
-			continue
-		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.ABILITY:
-			return false
-		if action.type == GameEnums.ActionType.MOVE:
-			has_move = true
-	return has_move
-
+	return settled_action_range_stand_cell(unit_id)
 
 ## Locked move intent (timeline or painted drag) used for action-range economy ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ not hover stand.
-func _timeline_move_action_for_action_range(unit_id: int) -> TimelineAction:
-	if _director == null or unit_id < 0:
-		return null
-	var move_timing: int = _director.get_planning_move_timing(unit_id)
-	if move_timing < 0:
-		var post_move: TimelineAction = CombatPlanningPreview.committed_move_action(
-			_director.plan_post_move, unit_id, GameEnums.MoveTiming.POST_ACTION,
-		)
-		if post_move != null:
-			return post_move
-		var pre_move: TimelineAction = CombatPlanningPreview.committed_move_action(
-			_director.plan_pre_move, unit_id, GameEnums.MoveTiming.PRE_ACTION,
-		)
-		if pre_move != null:
-			return pre_move
-		return null
-	if not _director.unit_has_move_planned_at_timing(unit_id, move_timing):
-		return null
-	var plan: Timeline = (
-		_director.plan_post_move
-		if move_timing == GameEnums.MoveTiming.POST_ACTION
-		else _director.plan_pre_move
-	)
-	return CombatPlanningPreview.committed_move_action(plan, unit_id, move_timing)
-
-
-func _binding_move_action_for_action_range(unit_id: int) -> TimelineAction:
-	if _director == null or unit_id < 0:
-		return null
-	var timeline_move: TimelineAction = _timeline_move_action_for_action_range(unit_id)
-	if timeline_move != null:
-		return timeline_move
-	if (
-		dragging
-		and _drag_unit_id == unit_id
-		and _drag_route_commits_active()
-		and not _drag_route.is_empty()
-	):
-		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
-		var params: Dictionary = _commit_interaction_params(dest, -1)
-		var slots: Dictionary = _final_commit_slots_for_interaction(
-			unit_id,
-			params.cell as Vector2i,
-			params.waypoints as Array[Vector2i],
-			params.legal_move_tiles as Array[Vector2i],
-			params.preferred as Vector2i,
-			params.face_dir as int,
-		)
-		var pre_moves: Array = slots.get("pre", []) as Array
-		if not pre_moves.is_empty() and pre_moves[0] is TimelineAction:
-			return pre_moves[0] as TimelineAction
-	if unit_id == _director.selected_unit_id and not dragging:
-		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
-		if live_path.size() >= 2:
-			var dest: Vector2i = live_path[live_path.size() - 1] as Vector2i
-			var actor: UnitState = _proj_unit(unit_id)
-			if actor == null or not _is_hover_move_cell(actor, dest):
-				return null
-			var waypoints: Array[Vector2i] = []
-			for i: int in range(1, live_path.size()):
-				waypoints.append(live_path[i] as Vector2i)
-			var params: Dictionary = _commit_interaction_params(dest, -1)
-			var slots: Dictionary = _final_commit_slots_for_interaction(
-				unit_id,
-				dest,
-				waypoints,
-				params.legal_move_tiles as Array[Vector2i],
-				params.preferred as Vector2i,
-				params.face_dir as int,
-			)
-			var hover_pre_moves: Array = slots.get("pre", []) as Array
-			if not hover_pre_moves.is_empty() and hover_pre_moves[0] is TimelineAction:
-				return hover_pre_moves[0] as TimelineAction
-	return null
-
-
-func _actor_after_binding_move_intent(
-	unit_id: int,
-	move_action: TimelineAction,
-) -> UnitState:
-	if move_action == null or _director == null:
-		return null
-	var origin: UnitState = _proj_unit(unit_id)
-	if origin == null and _director.board != null:
-		origin = _director.board.get_unit_by_id(unit_id)
-	if origin == null:
-		return null
-	var trial: BoardState = _proj().clone()
-	var trial_actor: UnitState = trial.get_unit_by_id(unit_id)
-	if trial_actor == null:
-		return null
-	var plan: Timeline = Timeline.new()
-	plan.entries.append(move_action)
-	var events: Array[SimEvent] = []
-	Simulator.simulate_player_turn(trial, plan, events)
-	for event: SimEvent in events:
-		if event.type != GameEnums.SimEventType.ACTION_FAILED:
-			continue
-		if int(event.data.get("actor", -1)) == unit_id:
-			return null
-	var projected: UnitState = trial.get_unit_by_id(unit_id)
-	return projected.clone() if projected != null else null
-
-
-## Red tiles show only when the selected skill is legal after binding move intent or hover stand.
-## Economy owner: AbilitySystem.can_plan / can_show_planning_action_range_after_premove on projected actor.
+## Red tiles show only when the selected skill is legal from the canonical settled stand.
 func action_range_visible_for_hover() -> bool:
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
 		return false
@@ -6398,20 +5396,7 @@ func action_range_visible_for_hover() -> bool:
 		auto_run_move = true
 	if awaiting_targeting_active():
 		return true
-	var binding_move: TimelineAction = _binding_move_action_for_action_range(unit_id)
-	if binding_move != null:
-		var after_intent: UnitState = _actor_after_binding_move_intent(unit_id, binding_move)
-		if after_intent == null:
-			return false
-		return AbilitySystem.can_plan(after_intent, ability, board)
-	var stand: Vector2i = action_range_intent_stand_cell(unit_id)
-	var hover: Vector2i = get_hover_tile_for_ui()
-	if (
-		board.is_in_bounds(hover)
-		and hover != actor.position
-		and unit_move_requires_run(unit_id)
-	):
-		stand = hover
+	var stand: Vector2i = settled_action_range_stand_cell(unit_id)
 	return AbilitySystem.can_show_planning_action_range_after_premove(
 		board, actor, ability, stand, auto_run_move,
 	)
@@ -6557,22 +5542,17 @@ func planning_display_mp_left(unit_id: int) -> int:
 			live_valid = true
 	if (
 		not live_valid
-		and _intent_state != null
-		and _director.get_planning_move_timing(unit_id) == GameEnums.MoveTiming.POST_ACTION
-		and not _director.unit_has_move_planned_at_timing(unit_id, GameEnums.MoveTiming.POST_ACTION)
 	):
-		var hover_cell: Vector2i = _intent_state.hover_coord
-		if _director.board.is_in_bounds(hover_cell):
-			var hover_slots: Dictionary = _final_commit_slots_for_click_at_cell(
-				unit_id, hover_cell, Vector2.ZERO,
+		var settled: PlanningHoverPreview = _settled_hover_preview
+		if (
+			settled != null
+			and settled.matches_display_context(
+				unit_id, settled_hover_revision_key(), _director.selected_ability_index,
 			)
-			if not _is_invalid_dict(hover_slots):
-				var intent_board: BoardState = _hover_empty_move_preview_board(
-					hover_slots, hover_cell,
-				)
-				live_actor = intent_board.get_unit_by_id(unit_id)
-				if live_actor != null:
-					live_valid = true
+			and settled.preview_board != null
+		):
+			live_actor = settled.preview_board.get_unit_by_id(unit_id)
+			live_valid = live_actor != null
 	if unit_intent_uses_steady_aim(unit_id):
 		return 0
 	return AbilitySystem.planning_display_mp_left(committed, live_actor, live_valid)
@@ -7017,7 +5997,17 @@ func phase_entry_stand_cell(unit_id: int) -> Vector2i:
 		unit = _director.board.get_unit_by_id(unit_id)
 	if unit == null:
 		return Vector2i(-999999, -999999)
-	return _phase_entry_stand(unit)
+	return _settle_phase_entry_stand(unit)
+
+
+## Settled action-range origin; never follows stale live preview paths.
+func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
+	if _director == null or unit_id < 0:
+		return Vector2i(-999999, -999999)
+	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		_director, _proj(), unit_id, null,
+	)
+	return stand
 
 
 func _phase_entry_stand(unit: UnitState) -> Vector2i:
@@ -7025,6 +6015,14 @@ func _phase_entry_stand(unit: UnitState) -> Vector2i:
 		return Vector2i(-999999, -999999)
 	return CombatPlanningPreview.forecast_stand_at_phase_entry(
 		_director, _proj(), unit.id, preview_state,
+	)
+
+
+func _settle_phase_entry_stand(unit: UnitState) -> Vector2i:
+	if unit == null or _director == null:
+		return Vector2i(-999999, -999999)
+	return CombatPlanningPreview.forecast_stand_at_phase_entry(
+		_director, _proj(), unit.id, null,
 	)
 
 
@@ -8404,148 +7402,17 @@ func _final_commit_slots_for_click_at_cell(
 	cell: Vector2i,
 	local: Vector2,
 ) -> Dictionary:
-	if _director == null or _director.board == null or unit_id < 0:
-		return _empty_commit_slots()
-	if not _director.board.is_in_bounds(cell):
-		return {"invalid": "Out of bounds."}
-	if (
-		selected_phase_action_exhausted(unit_id)
-		and _director.find_awaiting_action(unit_id) == null
-	):
-		return _empty_commit_slots()
-	var unit_at: UnitState = _unit_at_input_cell(cell)
-	var caster_for_corpse: UnitState = _proj_unit(unit_id)
-	var selected_ability: AbilityData = (
-		_selected_ability_data(caster_for_corpse) if caster_for_corpse != null else null
-	)
-	if (
-		selected_ability != null
-		and AbilitySystem.ability_occupant_is(
-			caster_for_corpse,
-			selected_ability,
-			GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE,
-		)
-	):
-		var corpse: UnitState = AbilitySystem.ally_corpse_at(
-			_director.board, caster_for_corpse, cell,
-		)
-		if corpse == null:
-			corpse = AbilitySystem.ally_corpse_at(_proj(), caster_for_corpse, cell)
-		if corpse != null:
-			unit_at = corpse
-	if (
-		unit_at != null
-		and not unit_at.is_enemy()
-		and (
-			unit_at.is_alive()
-			or AbilitySystem.ability_occupant_is(
-				caster_for_corpse,
-				selected_ability,
-				GameEnums.ModuleTargetFilterOccupant.ALLY_CORPSE,
-			)
-		)
-	):
-		if unit_at.id != unit_id:
-			var caster: UnitState = _proj_unit(unit_id)
-			if caster != null:
-				if _skill_commit_path_active():
-					var ability: AbilityData = _selected_ability_data(caster)
-					if ability != null and AbilitySystem.target_passes_mode(caster, ability, unit_at):
-						var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
-						return _slots_with_facing_for_commit(
-							unit_id,
-							params.cell,
-							local,
-							params.waypoints,
-							params.legal_move_tiles,
-							params.preferred,
-							int(params.get("face_dir", -1)),
-						)
-				if _can_target_unit_with_selected_ability(caster, unit_at):
-					var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
-					return _slots_with_facing_for_commit(
-						unit_id,
-						params.cell,
-						local,
-						params.waypoints,
-						params.legal_move_tiles,
-						params.preferred,
-						int(params.get("face_dir", -1)),
-					)
-	if unit_at != null and unit_at.is_enemy():
-		var params: Dictionary = _commit_interaction_params(cell, unit_at.id)
-		return _slots_with_facing_for_commit(
-			unit_id,
-			params.cell,
-			local,
-			params.waypoints,
-			params.legal_move_tiles,
-			params.preferred,
-			int(params.get("face_dir", -1)),
-		)
 	var params: Dictionary = _commit_interaction_params(cell, -1)
-	return _slots_with_facing_for_commit(
+	var face_dir: int = int(params.get("face_dir", -1))
+	if face_dir < 0:
+		face_dir = _facing_from_drop(local, cell)
+	return _final_commit_slots_for_interaction(
 		unit_id,
 		params.cell,
-		local,
 		params.waypoints,
 		params.legal_move_tiles,
 		params.preferred,
-		int(params.get("face_dir", -1)),
-	)
-
-
-## Tile cursor while dragging: same commit slots as drop would commit.
-func _final_commit_slots_for_drop_at_cell(
-	unit_id: int,
-	cell: Vector2i,
-	local: Vector2,
-	legal_move_tiles: Array[Vector2i],
-) -> Dictionary:
-	if _director == null or _director.board == null or unit_id < 0:
-		return _empty_commit_slots()
-	if not _director.board.is_in_bounds(cell):
-		return _empty_commit_slots()
-	if (
-		selected_phase_action_exhausted(unit_id)
-		and _director.find_awaiting_action(unit_id) == null
-	):
-		return _empty_commit_slots()
-	var dropped_on: UnitState = _unit_at_input_cell(cell)
-	if dropped_on != null and dropped_on.id != unit_id:
-		if _is_selectable_player_unit(dropped_on):
-			var actor: UnitState = _proj_unit(unit_id)
-			if actor == null or _director.selected_ability_index < 0:
-				return _empty_commit_slots()
-			var params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
-			return _slots_with_facing_for_commit(
-				unit_id,
-				params.cell,
-				local,
-				params.waypoints,
-				params.legal_move_tiles,
-				params.preferred,
-				int(params.get("face_dir", -1)),
-			)
-		var enemy_drop_params: Dictionary = _commit_interaction_params(cell, dropped_on.id)
-		return _slots_with_facing_for_commit(
-			unit_id,
-			enemy_drop_params.cell,
-			local,
-			enemy_drop_params.waypoints,
-			enemy_drop_params.legal_move_tiles,
-			enemy_drop_params.preferred,
-			int(enemy_drop_params.get("face_dir", -1)),
-		)
-	var params: Dictionary = _commit_interaction_params(cell, -1)
-	return _slots_with_facing_for_commit(
-		unit_id,
-		params.cell,
-		local,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		int(params.get("face_dir", -1)),
+		face_dir,
 	)
 
 
@@ -8654,7 +7521,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if _intent_snapshot_valid and _intent_snapshot_key == cache_key:
 		slots = _duplicate_commit_slots(_intent_snapshot_slots)
 	else:
-		slots = _final_commit_slots_for_click_at_cell(sel_id, cell, _mouse_local_for_facing())
+		return PlanningIcons.GLYPH_NULL
 	var icon: String = _cursor_icon_from_commit_slots(slots, p_unit)
 	_hover_cursor_cache_key = cache_key
 	_hover_cursor_cached_icon = icon
@@ -8720,10 +7587,18 @@ func _drag_preview_includes_attack(actor_id: int) -> bool:
 func _drag_hover_icon(actor: UnitState, cell: Vector2i) -> String:
 	if actor == null:
 		return ""
+	if (
+		_settled_hover_preview == null
+		or not _settled_hover_preview.matches_ratification_context(
+			cell,
+			actor.id,
+			settled_hover_revision_key(),
+			_director.selected_ability_index,
+		)
+	):
+		return PlanningIcons.GLYPH_NULL
 	return _cursor_icon_from_commit_slots(
-		_final_commit_slots_for_drop_at_cell(
-			actor.id, cell, _mouse_local_for_facing(), _snapshot_drag_legal_move_tiles(),
-		),
+		_settled_hover_preview.duplicate_slots(),
 		actor,
 	)
 
@@ -8804,7 +7679,7 @@ func _hover_walk_waypoints_for_skill(
 			var approach: Vector2i = _director.preview_approach_tile(
 				actor.id, target.id, _director.selected_ability_index, target.position,
 			)
-			var origin: Vector2i = _proj_origin(actor)
+			var origin: Vector2i = _settle_phase_entry_stand(actor)
 			if approach != origin:
 				return _director.preview_waypoints_for_hover(
 					_proj(), actor, approach, [], ability, false, preview_state)

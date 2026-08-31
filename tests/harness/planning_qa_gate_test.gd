@@ -3451,7 +3451,7 @@ static func _test_trample_full_preview_truth_click(failures: Array[String]) -> v
 	input.set_qa_pointer_grid_cell(TramplingAdvanceE2ETest.END_CELL)
 	input.on_hover_moved(TramplingAdvanceE2ETest.END_CELL)
 	input._flush_hover_heavy_sync()
-	overlay._flush_hover_recompute()
+	overlay._recompute_hover_ranges_from_inputs()
 	var live: CombatPlanningPreview = overlay.get_live_preview()
 	if live == null or live.preview_board == null:
 		failures.append("%s: valid hover preview board missing" % label)
@@ -3548,7 +3548,7 @@ static func _test_teleport_full_preview_truth_click(failures: Array[String]) -> 
 		return
 	input.on_hover_moved(target)
 	input._flush_hover_heavy_sync()
-	overlay._flush_hover_recompute()
+	overlay._recompute_hover_ranges_from_inputs()
 	var live: CombatPlanningPreview = overlay.get_live_preview()
 	if live == null or live.preview_board == null:
 		failures.append("%s: valid teleport preview board missing" % label)

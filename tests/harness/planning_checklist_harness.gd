@@ -189,7 +189,7 @@ static func flush_planning(fix: Dictionary) -> void:
 	var overlay: TacticalPlanningOverlay = fix.get("overlay", null) as TacticalPlanningOverlay
 	director.flush_plan_refresh_signals_if_pending()
 	if overlay != null:
-		overlay._flush_hover_recompute()
+		overlay._recompute_hover_ranges_from_inputs()
 	if input != null:
 		input._flush_hover_preview_refresh()
 

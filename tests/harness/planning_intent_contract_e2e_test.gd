@@ -237,9 +237,10 @@ static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[St
 	)
 	PlanningChecklistHarness.assert_true(
 		failures,
-		"intent_contract/painted_run_preview/binding_move",
-		input.call("_binding_move_action_for_action_range", 1) != null,
-		"painted drag must expose binding pre-move for action-range economy",
+		"intent_contract/painted_run_preview/sealed_paint",
+		input.get_settled_hover_preview() != null
+			and input.get_settled_hover_preview().is_sealed,
+		"painted drag must seal one preview bundle for action-range paint",
 	)
 	var drag_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_drag_hover_tiles(fix)
 	var walk_diamond: Array[Vector2i] = PlanningChecklistHarness.walk_diamond_from(
@@ -432,14 +433,11 @@ static func _test_pre_run_binding_when_move_timing_closed(failures: Array[String
 		director.unit_has_move_planned_at_timing(1, GameEnums.MoveTiming.PRE_ACTION),
 		"pre-run must remain on timeline",
 	)
-	var binding: TimelineAction = input.call(
-		"_binding_move_action_for_action_range", 1,
-	) as TimelineAction
 	PlanningChecklistHarness.assert_true(
 		failures,
 		"intent_contract/pre_run_binding_closed_timing/setup",
-		binding != null and binding.uses_run and binding.target_coord == RUN_DEST,
-		"binding must still find pre-run on timeline (got %s)" % binding,
+		input.action_range_intent_stand_cell(1) == RUN_DEST,
+		"latest-stand owner must expose pre-run landing on timeline",
 	)
 	var bowling_index: int = PlanningChecklistHarness.select_ability(
 		fix, PlanningChecklistHarness.BOWLING_CHARGE_ID,

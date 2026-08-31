@@ -2,7 +2,7 @@ class_name PlanningHoverPreview
 extends RefCounted
 
 ## Sealed hover intent — single carried SSOT from settle through ratify.
-## Only created by CombatPlanningInput settle path; ratify copies slots only.
+## Only created by CombatPlanningInput settle path; ratify copies sealed slots.
 
 var valid: bool = false
 var is_sealed: bool = false
@@ -12,12 +12,15 @@ var revision_key: String = ""
 var face_dir: int = -1
 var slots: Dictionary = {}
 var preview_paths: Dictionary = {}
+var preview_board: BoardState = null
 var stand_origin: Vector2i = Vector2i(-999999, -999999)
 var action_range_tiles: Array[Vector2i] = []
 var blast_tiles: Array[Vector2i] = []
+var move_tiles: Array[Vector2i] = []
 var blast_on_hover_layer: bool = false
 var show_action_range: bool = false
 var show_blast: bool = false
+var paint_only: bool = false
 var phase: int = -1
 var ability_index: int = -1
 
@@ -46,14 +49,19 @@ static func seal(
 	bundle.face_dir = p_face_dir
 	bundle.slots = _duplicate_slots(p_slots)
 	bundle.preview_paths = p_preview_paths.duplicate(true)
+	var sealed_board: Variant = p_paint.get("preview_board", null)
+	if sealed_board is BoardState:
+		bundle.preview_board = (sealed_board as BoardState).clone()
 	bundle.stand_origin = p_paint.get("stand_origin", p_move_origin)
 	bundle.action_range_tiles = _duplicate_coords(
 		p_paint.get("action_range_tiles", []),
 	)
 	bundle.blast_tiles = _duplicate_coords(p_paint.get("blast_tiles", []))
+	bundle.move_tiles = _duplicate_coords(p_paint.get("move_tiles", []))
 	bundle.blast_on_hover_layer = bool(p_paint.get("blast_on_hover_layer", false))
 	bundle.show_action_range = bool(p_paint.get("show_action_range", false))
 	bundle.show_blast = bool(p_paint.get("show_blast", false))
+	bundle.paint_only = bool(p_paint.get("paint_only", false))
 	bundle.phase = int(p_paint.get("phase", -1))
 	bundle.ability_index = int(p_paint.get("ability_index", -1))
 	bundle.valid = true
@@ -67,7 +75,8 @@ func can_ratify_at(cell: Vector2i, ratify_unit_id: int) -> bool:
 		and valid
 		and unit_id == ratify_unit_id
 		and hover_cell == cell
-		and not slots.is_empty()
+		and not paint_only
+		and _contains_timeline_actions(slots)
 	)
 
 
@@ -78,7 +87,24 @@ func matches_paint_context(
 	expected_ability_index: int,
 ) -> bool:
 	return (
-		can_ratify_at(cell, ratify_unit_id)
+		is_sealed
+		and valid
+		and unit_id == ratify_unit_id
+		and hover_cell == cell
+		and revision_key == expected_revision_key
+		and ability_index == expected_ability_index
+	)
+
+
+func matches_display_context(
+	ratify_unit_id: int,
+	expected_revision_key: String,
+	expected_ability_index: int,
+) -> bool:
+	return (
+		is_sealed
+		and valid
+		and unit_id == ratify_unit_id
 		and revision_key == expected_revision_key
 		and ability_index == expected_ability_index
 	)
@@ -90,11 +116,9 @@ func matches_ratification_context(
 	expected_revision_key: String,
 	expected_ability_index: int,
 ) -> bool:
-	return matches_paint_context(
-		cell,
-		ratify_unit_id,
-		expected_revision_key,
-		expected_ability_index,
+	return can_ratify_at(cell, ratify_unit_id) and (
+		revision_key == expected_revision_key
+		and ability_index == expected_ability_index
 	)
 
 
@@ -144,7 +168,7 @@ static func _duplicate_slots(p_slots: Dictionary) -> Dictionary:
 	for col: String in ["pre", "action", "post"]:
 		var steps: Array = []
 		for raw: Variant in p_slots.get(col, []):
-			steps.append(raw)
+			steps.append((raw as TimelineAction).clone() if raw is TimelineAction else raw)
 		out[col] = steps
 	if p_slots.has("invalid"):
 		out["invalid"] = p_slots["invalid"]
@@ -153,6 +177,14 @@ static func _duplicate_slots(p_slots: Dictionary) -> Dictionary:
 	if p_slots.has("_preview_validated"):
 		out["_preview_validated"] = p_slots["_preview_validated"]
 	return out
+
+
+static func _contains_timeline_actions(p_slots: Dictionary) -> bool:
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in p_slots.get(col, []):
+			if raw is TimelineAction:
+				return true
+	return false
 
 
 static func _duplicate_coords(raw_coords: Variant) -> Array[Vector2i]:

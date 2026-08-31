@@ -100,9 +100,6 @@ var _show_danger_area: bool = false
 var _danger_tiles_cache: Dictionary = {}
 var _danger_tiles_dirty: bool = true
 var _hit_markers: Array = []
-var _hover_recompute_pending: bool = false
-var _deferred_preview_pending: bool = false
-var _deferred_preview_result: SimResult = null
 var _game_settings: GameSettings
 var _hover_perimeter_cache_key: int = 0
 var _cached_hover_perimeter_segments: Array = []
@@ -127,12 +124,8 @@ func setup(
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.planning_commit_events.connect(_on_planning_commit_events)
 	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
-		if _director != null and (
-			_director.plan_refresh_snap_units or _director.plan_refresh_defer_overlay
-		):
-			return
 		_invalidate_hover_cache()
-		_schedule_hover_recompute()
+		_recompute_hover_ranges_from_inputs()
 	)
 	EventBus.selection_changed.connect(func(_id: int) -> void:
 		if _director == null:
@@ -651,8 +644,6 @@ func _clear_execution_preview_state() -> void:
 	_clear_hover_skill_tiles()
 	_hit_markers.clear()
 	_attack_target_id = -1
-	_deferred_preview_pending = false
-	_deferred_preview_result = null
 	_invalidate_hover_cache()
 	_queue_overlay_redraw()
 
@@ -696,38 +687,6 @@ func apply_preview_state(
 	live_preview_changed.emit()
 	## Live route/ghost only — flow chevrons already redraw every frame; skip duplicate flow queue.
 	queue_redraw()
-
-
-## Hover corridor paint only — no sim, forecast, or action-range recompute.
-func apply_preview_paths_only(state: CombatPlanningPreview, unit_id: int) -> void:
-	if state == null or unit_id < 0:
-		return
-	var path: Array = state.preview_paths.get(unit_id, [])
-	if path.is_empty():
-		return
-	if state.preview_board != null:
-		_live_preview.preview_board = state.preview_board
-		_live_preview.forecast = state.forecast
-		_live_preview.live_intents = state.live_intents.duplicate()
-		if _unit_layer != null:
-			if _live_preview.forecast != null:
-				_unit_layer.set_live_forecast(_live_preview.forecast)
-			else:
-				_unit_layer.clear_live_forecast()
-		_recompute_hover_ranges_from_inputs()
-	CombatPlanningPreview.set_unit_preview_path(_live_preview, unit_id, path)
-	if state.preview_splits.has(unit_id):
-		_live_preview.preview_splits[unit_id] = state.preview_splits[unit_id]
-	if state.preview_post_splits.has(unit_id):
-		_live_preview.preview_post_splits[unit_id] = state.preview_post_splits[unit_id]
-	if state.preview_pushes.has(unit_id):
-		_live_preview.preview_pushes[unit_id] = state.preview_pushes[unit_id]
-	if state.is_painted_leg_sealed(unit_id):
-		_live_preview.seal_painted_leg(unit_id)
-	else:
-		_live_preview.clear_sealed_painted_leg(unit_id)
-	_queue_hover_tile_redraw()
-	_queue_overlay_redraw()
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
@@ -884,18 +843,9 @@ func _movement_status_blocked(unit: UnitState) -> bool:
 
 
 func _compute_move_budget(unit: UnitState, p_unit: UnitState, selected_ability: int) -> int:
-	if p_unit == null or _movement_status_blocked(p_unit):
-		return 0
-	if _director.get_planning_move_timing(unit.id) < 0:
-		return 0
-	if (
-		_planning_input != null
-		and _planning_input.auto_run_movement_active(p_unit)
-	):
-		return _move_budget_for_hover(p_unit, selected_ability)
-	if AbilitySystem.planning_available_movement_points(p_unit) <= 0:
-		return 0
-	return _move_budget_for_hover(p_unit, selected_ability)
+	return PlanningPreviewTiles.move_budget_for_preview(
+		_director, p_unit, selected_ability, _planning_input,
+	)
 
 
 func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
@@ -960,8 +910,37 @@ func _apply_planning_tile_layers(
 	if _board == null or _director == null or unit == null:
 		return
 	var is_selected_player: bool = _is_selected_player_unit(unit)
-	var p_unit: UnitState = _proj_unit(unit.id) if is_selected_player else null
 	var cache_force: bool = voluntary_walk if unit.id == _director.selected_unit_id else false
+	if is_selected_player:
+		if _planning_input == null:
+			return
+		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
+		var settled_matches: bool = (
+			settled != null
+			and settled.matches_paint_context(
+				_hover_coord,
+				unit.id,
+				_planning_input.settled_hover_revision_key(),
+				selected_ability,
+			)
+		)
+		if (
+			not settled_matches
+			and settled != null
+			and _board != null
+			and not _board.is_in_bounds(_hover_coord)
+		):
+			settled_matches = settled.matches_display_context(
+				unit.id,
+				_planning_input.settled_hover_revision_key(),
+				selected_ability,
+			)
+		if settled_matches:
+			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+			_hover_blast_tiles = settled.blast_tiles.duplicate()
+			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+			_hover_move_tiles = settled.move_tiles.duplicate()
+		return
 	if PlanningPreviewTiles.tiles_blocked(
 		_director, unit, selected_ability, _planning_input, is_selected_player,
 	):
@@ -971,44 +950,14 @@ func _apply_planning_tile_layers(
 	)
 	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
-	if _planning_input != null and is_selected_player:
-		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		if settled != null and settled.matches_paint_context(
-			_hover_coord,
-			unit.id,
-			_planning_input.settled_hover_revision_key(),
-			selected_ability,
-		):
-			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-			_hover_blast_tiles = settled.blast_tiles.duplicate()
-			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
-			if _can_show_move_tiles(unit, selected_ability):
-				match phase:
-					PlanningPreviewTiles.PhaseKind.MOVEMENT:
-						var locked_move: Vector2i = layer_plan.get(
-							"locked_move_origin", Vector2i(-999999, -999999),
-						)
-						if locked_move.x > -900000:
-							_hover_move_tiles = _reachable_move_tiles_for_origin(
-								unit, p_unit, selected_ability, locked_move, is_selected_player,
-							)
-					PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-						var next_move: Vector2i = layer_plan.get(
-							"next_move_origin", Vector2i(-999999, -999999),
-						)
-						if next_move.x > -900000:
-							_hover_move_tiles = _reachable_move_tiles_for_origin(
-								unit, p_unit, selected_ability, next_move, is_selected_player,
-							)
-		return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
 			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
-				_hover_move_tiles = _reachable_move_tiles_for_origin(
-					unit, p_unit, selected_ability, locked_move, is_selected_player,
+				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
+					_director, _board, unit, selected_ability, _planning_input, locked_move,
 				)
 			var next_aim: Vector2i = layer_plan.get("next_aim_origin", Vector2i(-999999, -999999))
 			if next_aim.x > -900000:
@@ -1025,8 +974,8 @@ func _apply_planning_tile_layers(
 				)
 			var next_move: Vector2i = layer_plan.get("next_move_origin", Vector2i(-999999, -999999))
 			if next_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
-				_hover_move_tiles = _reachable_move_tiles_for_origin(
-					unit, p_unit, selected_ability, next_move, is_selected_player,
+				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
+					_director, _board, unit, selected_ability, _planning_input, next_move,
 				)
 	if bool(layer_plan.get("show_blast", false)):
 		var blast_origin: Vector2i = layer_plan.get("blast_origin", Vector2i(-999999, -999999))
@@ -1035,52 +984,8 @@ func _apply_planning_tile_layers(
 			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
 				unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
 			)
-	if _planning_input != null:
-		for painted_wp: Vector2i in _planning_input.painted_corridor_waypoints_for_blue_tiles(unit.id):
-			if not _hover_move_tiles.has(painted_wp):
-				_hover_move_tiles.append(painted_wp)
-
-
-func _reachable_move_tiles_for_origin(
-	unit: UnitState,
-	p_unit: UnitState,
-	selected_ability: int,
-	move_from: Vector2i,
-	is_selected_player: bool,
-) -> Array[Vector2i]:
-	var move_board: BoardState = _board
-	var move_budget: int = 0
-	var move_cost: int = 2 if unit.has_status(GameEnums.StatusType.BLEED) else 1
-	var mt: int = (
-		unit.definition.movement_type
-		if unit.definition != null
-		else GameEnums.MovementType.WALK
-	)
-	if is_selected_player and p_unit != null:
-		move_cost = 2 if p_unit.has_status(GameEnums.StatusType.BLEED) else 1
-		mt = (
-			p_unit.definition.movement_type
-			if p_unit.definition != null
-			else GameEnums.MovementType.WALK
-		)
-		move_board = CombatPlanningPreview.planning_projection_board(_director, _board)
-		move_budget = _compute_move_budget(unit, p_unit, selected_ability)
-	else:
-		move_budget = unit.movement.points_left
-	if move_budget <= 0:
-		return []
-	var move_ability: AbilityData = null
-	if is_selected_player and p_unit != null and _planning_input != null:
-		move_ability = _planning_input.route_pathfinding_ability_for_hover(p_unit)
-	return MovementSystem.get_reachable_tiles(
-		move_board, move_from, move_budget, mt, move_cost, move_ability,
-	)
-
-
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
-	if _director != null and _director.plan_refresh_snap_units:
-		return
 	_danger_tiles_dirty = true
 	_invalidate_hover_cache()
 	_queue_static_tiles_redraw()
@@ -1134,25 +1039,8 @@ func _on_sim_event(event: SimEvent) -> void:
 			_hit_markers.append([marker_pos, 0.4])
 
 
-func _schedule_hover_recompute() -> void:
-	if _hover_recompute_pending:
-		return
-	_hover_recompute_pending = true
-	call_deferred("_flush_hover_recompute")
-
-
-func _flush_hover_recompute() -> void:
-	_hover_recompute_pending = false
-	_recompute_hover_ranges_from_inputs()
-
-
 func _on_preview_updated(result: SimResult) -> void:
 	if _execution_preview_suppressed:
-		_deferred_preview_pending = false
-		_deferred_preview_result = null
-		if _director != null:
-			_director.plan_refresh_light_overlay = false
-			_director.plan_refresh_defer_overlay = false
 		return
 	## Intent truth: after promote_live_preview_to_committed, do not rebuild ghosts from a
 	## second sim — keep the ratified picture (including preview_board pointer).
@@ -1161,48 +1049,18 @@ func _on_preview_updated(result: SimResult) -> void:
 		_has_stashed_committed = false
 		_queue_overlay_redraw()
 		return
-	if _director != null and _director.plan_refresh_defer_overlay:
-		_deferred_preview_result = result
-		if not _deferred_preview_pending:
-			_deferred_preview_pending = true
-			call_deferred("_flush_deferred_preview_updated")
-		return
 	_apply_committed_preview_update(result)
 
 
-func _flush_deferred_preview_updated() -> void:
-	_deferred_preview_pending = false
-	var result: SimResult = _deferred_preview_result
-	_deferred_preview_result = null
-	var light_refresh: bool = false
-	if _director != null:
-		light_refresh = _director.plan_refresh_light_overlay
-		_director.plan_refresh_light_overlay = false
-		_director.plan_refresh_defer_overlay = false
-	if result == null:
-		return
-	if _execution_preview_suppressed:
-		return
-	_apply_committed_preview_update(result, light_refresh)
-
-
-func _apply_committed_preview_update(result: SimResult, light_refresh: bool = false) -> void:
+func _apply_committed_preview_update(result: SimResult) -> void:
 	_hit_markers.clear()
 	set_preview_board(result.final_state)
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
 		_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
-	if light_refresh:
-		_live_preview.clear_interaction()
-		if _unit_layer != null:
-			_unit_layer.clear_live_forecast()
-		# Undo snap: red action-range tiles must track projected stand immediately.
-		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
-	else:
-		_invalidate_hover_cache()
-		_schedule_hover_recompute()
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
 	_push_committed_forecast_to_unit_layer()
 	if _planning_input == null or not _planning_input.is_live_preview_active():
 		live_preview_changed.emit()
@@ -2599,23 +2457,6 @@ func _dash_threat_tiles(origin: Vector2i, steps: int) -> Array[Vector2i]:
 func _movement_blocked_by_dash(unit: UnitState, selected_ability: int) -> bool:
 	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
 	return ability != null and AbilitySystem.ability_blocks_basic_movement(ability)
-
-
-func _move_budget_for_hover(unit: UnitState, selected_ability: int) -> int:
-	var p_unit := _proj_unit(unit.id)
-	var budget_unit: UnitState = p_unit if p_unit != null else unit
-	if _planning_input != null and _planning_input.extended_move_budget_active(budget_unit):
-		return AbilitySystem.preview_move_budget_with_run(budget_unit)
-	if selected_ability < 0:
-		return AbilitySystem.planning_available_movement_points(budget_unit)
-	var ability: AbilityData = _selected_ability_data(unit, selected_ability)
-	if (
-		ability != null
-		and AbilitySystem.is_run_ability(ability)
-		and budget_unit.ability.points_left >= ability.action_point_cost
-	):
-		return AbilitySystem.preview_move_budget_with_run(budget_unit)
-	return AbilitySystem.planning_available_movement_points(budget_unit)
 
 
 func _unit_attack_range(unit: UnitState, selected_ability: int) -> int:

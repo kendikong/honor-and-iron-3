@@ -160,7 +160,6 @@ func test_live_knight_defensive_formation_overlay_uses_shared_geometry(
 		"knight_defensive_formation: commit_from_slots rejected preview %s" % slots,
 	).is_true()
 	input.call("_promote_intent_preview_after_commit")
-	director.flush_plan_refresh_signals_if_pending()
 	input.clear_qa_pointer_override()
 	await runner.simulate_frames(_SETTLE_FRAMES, _DELTA_MS)
 	var committed := _committed_action_for_ability(director, actor.id, ability.id)

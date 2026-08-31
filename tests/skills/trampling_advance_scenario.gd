@@ -68,7 +68,6 @@ static func _arm_awaiting(fix: Dictionary) -> bool:
 		return false
 	if not director.commit_from_slots(1, arm_slots):
 		return false
-	director.flush_plan_refresh_signals_if_pending()
 	return input.awaiting_targeting_active()
 
 

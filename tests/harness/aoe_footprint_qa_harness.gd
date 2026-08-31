@@ -149,6 +149,33 @@ static func overlay_parity_error(
 	return ""
 
 
+static func sealed_paint_parity_error(
+	input: CombatPlanningInput,
+	expected: Array[Vector2i],
+	label: String,
+) -> String:
+	if input == null:
+		return "%s: missing CombatPlanningInput" % label
+	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
+	if bundle == null or not bundle.is_sealed:
+		return "%s: missing sealed hover preview bundle" % label
+	for tile: Vector2i in expected:
+		if not bundle.blast_tiles.has(tile):
+			return "%s: sealed bundle missing blast tile %s (expected %s)" % [
+				label, tile, expected,
+			]
+	for tile: Vector2i in bundle.blast_tiles:
+		if not expected.has(tile):
+			return "%s: sealed bundle has blast tile %s outside footprint %s" % [
+				label, tile, expected,
+			]
+	if bundle.blast_tiles.size() != expected.size():
+		return "%s: sealed bundle must contain exactly %d blast tiles, got %d" % [
+			label, expected.size(), bundle.blast_tiles.size(),
+		]
+	return ""
+
+
 static func assert_planning_overlay_footprint(
 	failures: Array[String],
 	label: String,
@@ -189,6 +216,17 @@ static func assert_planning_overlay_footprint(
 		"%s/overlay_exact" % label,
 		parity_error.is_empty(),
 		parity_error,
+	)
+	var sealed_error: String = sealed_paint_parity_error(
+		fix.get("input") as CombatPlanningInput,
+		expected,
+		"%s/sealed" % label,
+	)
+	_assert_true(
+		failures,
+		"%s/sealed_exact" % label,
+		sealed_error.is_empty(),
+		sealed_error,
 	)
 	if AbilitySystem.active_range_tiles(actor, ability) <= 0:
 		var overlay_instance: TacticalPlanningOverlay = overlay as TacticalPlanningOverlay

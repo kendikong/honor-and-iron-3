@@ -264,12 +264,18 @@ static func _assert_shaped_footprint(
 	var actor: UnitState = _Checklist.projected_unit(fix, 1)
 	if actor == null:
 		return
+	var input: CombatPlanningInput = fix.get("input") as CombatPlanningInput
+	var stand: Vector2i = (
+		input.action_range_intent_stand_cell(actor.id)
+		if input != null
+		else actor.position
+	)
 	AoeFootprintQaHarness.assert_planning_overlay_footprint(
 		failures,
 		"%s/planning" % factory_id,
 		fix,
 		ability,
-		actor.position,
+		stand,
 		hover_cell,
 	)
 

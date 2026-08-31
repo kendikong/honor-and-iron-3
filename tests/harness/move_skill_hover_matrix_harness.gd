@@ -138,7 +138,7 @@ static func _apply_hover_input(
 	input.call("_run_ability_settled_refresh")
 	PlanningChecklistHarness.flush_planning(fix)
 	if overlay != null:
-		overlay._flush_hover_recompute()
+		overlay._recompute_hover_ranges_from_inputs()
 
 
 static func _probe_label(config: Dictionary, cell: Vector2i) -> String:

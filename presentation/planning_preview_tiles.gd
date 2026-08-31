@@ -76,7 +76,7 @@ static func resolve_layer_origins(
 	plan["show_action_range"] = show_action_range
 	var locked_stand: Vector2i = none
 	if planning_input != null:
-		locked_stand = planning_input.phase_entry_stand_cell(unit.id)
+		locked_stand = planning_input.settled_action_range_stand_cell(unit.id)
 	else:
 		locked_stand = CombatPlanningPreview.forecast_stand_at_phase_entry(
 			director, board, unit.id, null,
@@ -94,27 +94,10 @@ static func resolve_layer_origins(
 				show_action_range
 				and not planning_input.is_walk_only_hover_move(unit, hover_coord)
 			)
-			if (
-				planning_input != null
-				and planning_input.action_range_stand_locked_to_projection(unit.id)
-			):
-				plan["show_blast"] = true
-				if plan["next_aim_origin"] != none:
-					plan["blast_origin"] = plan["next_aim_origin"]
-				elif plan["locked_move_origin"] != none:
-					plan["blast_origin"] = plan["locked_move_origin"]
 			if plan["show_blast"] and plan["next_aim_origin"] != none:
 				plan["blast_origin"] = plan["next_aim_origin"]
-			plan["blast_on_hover_layer"] = (
-				planning_input != null
-				and planning_input.action_range_stand_locked_to_projection(unit.id)
-			)
 		PhaseKind.NON_MOVEMENT:
 			var aim_stand: Vector2i = locked_stand
-			if planning_input != null and show_action_range:
-				var intent_stand: Vector2i = planning_input.action_range_intent_stand_cell(unit.id)
-				if intent_stand.x > -900000:
-					aim_stand = intent_stand
 			if aim_stand.x > -900000:
 				plan["locked_aim_origin"] = aim_stand
 			var post_timing: int = director.get_planning_move_timing(unit.id)
@@ -131,14 +114,6 @@ static func resolve_layer_origins(
 			plan["show_blast"] = show_action_range or planning_input == null
 			if plan["show_blast"] and plan["locked_aim_origin"] != none:
 				plan["blast_origin"] = plan["locked_aim_origin"]
-			if (
-				planning_input != null
-				and planning_input.action_range_stand_locked_to_projection(unit.id)
-			):
-				plan["show_blast"] = true
-				plan["blast_on_hover_layer"] = true
-				if plan["locked_aim_origin"] != none:
-					plan["blast_origin"] = plan["locked_aim_origin"]
 	return plan
 
 
@@ -158,6 +133,7 @@ static func resolve_paint(
 			"stand_origin": none,
 			"action_range_tiles": [],
 			"blast_tiles": [],
+			"move_tiles": [],
 			"blast_on_hover_layer": false,
 			"show_action_range": false,
 			"show_blast": false,
@@ -167,13 +143,12 @@ static func resolve_paint(
 	var plan: Dictionary = resolve_layer_origins(
 		director, board, unit, selected_ability, planning_input, hover_coord,
 	)
-	var stand: Vector2i = (
-		planning_input.action_range_intent_stand_cell(unit.id)
-		if planning_input != null
-		else none
-	)
+	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
 	var blast: Array[Vector2i] = []
+	var move_tiles: Array[Vector2i] = resolve_move_tiles(
+		director, board, unit, selected_ability, planning_input, plan,
+	)
 	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(plan.get("show_action_range", false))
 	match phase:
@@ -202,12 +177,150 @@ static func resolve_paint(
 		"stand_origin": stand,
 		"action_range_tiles": action_range,
 		"blast_tiles": blast,
+		"move_tiles": move_tiles,
 		"blast_on_hover_layer": bool(plan.get("blast_on_hover_layer", false)),
 		"show_action_range": show_action_range,
 		"show_blast": bool(plan.get("show_blast", false)),
 		"phase": phase,
 		"ability_index": selected_ability,
 	}
+
+
+static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
+	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
+	var candidate: Vector2i = none
+	if phase == PhaseKind.MOVEMENT:
+		candidate = plan.get("next_aim_origin", none)
+		if candidate == none:
+			candidate = plan.get("locked_move_origin", none)
+	else:
+		candidate = plan.get("locked_aim_origin", none)
+		if candidate == none:
+			candidate = plan.get("next_move_origin", none)
+	return candidate
+
+
+static func resolve_move_tiles(
+	director: CombatDirector,
+	board: BoardState,
+	unit: UnitState,
+	selected_ability: int,
+	planning_input: CombatPlanningInput,
+	plan: Dictionary,
+) -> Array[Vector2i]:
+	if (
+		director == null
+		or board == null
+		or unit == null
+		or planning_input == null
+		or tiles_blocked(
+			director,
+			unit,
+			selected_ability,
+			planning_input,
+			unit.id == director.selected_unit_id,
+		)
+	):
+		return []
+	var origin: Vector2i = plan.get("locked_move_origin", Vector2i(-999999, -999999))
+	if int(plan.get("phase", PhaseKind.NON_MOVEMENT)) == PhaseKind.NON_MOVEMENT:
+		origin = plan.get("next_move_origin", origin)
+	if origin.x <= -900000:
+		return []
+	return reachable_move_tiles(
+		director,
+		board,
+		unit,
+		selected_ability,
+		planning_input,
+		origin,
+	)
+
+
+static func reachable_move_tiles(
+	director: CombatDirector,
+	board: BoardState,
+	unit: UnitState,
+	selected_ability: int,
+	planning_input: CombatPlanningInput,
+	origin: Vector2i,
+) -> Array[Vector2i]:
+	if (
+		director == null
+		or board == null
+		or unit == null
+		or (planning_input == null and unit.id == director.selected_unit_id)
+	):
+		return []
+	var is_selected: bool = unit.id == director.selected_unit_id
+	var projected: UnitState = (
+		planning_input.projected_unit_for_preview(unit.id)
+		if is_selected
+		else null
+	)
+	var move_board: BoardState = (
+		CombatPlanningPreview.planning_projection_board(director, board)
+		if is_selected
+		else board
+	)
+	var move_actor: UnitState = projected if projected != null else unit
+	var move_budget: int = move_budget_for_preview(
+		director,
+		move_actor,
+		selected_ability,
+		planning_input if is_selected else null,
+	)
+	if not is_selected:
+		move_budget = move_actor.movement.points_left
+	if move_budget <= 0:
+		return []
+	var move_cost: int = 2 if move_actor.has_status(GameEnums.StatusType.BLEED) else 1
+	var movement_type: int = (
+		move_actor.definition.movement_type
+		if move_actor.definition != null
+		else GameEnums.MovementType.WALK
+	)
+	var move_ability: AbilityData = null
+	if is_selected and planning_input != null:
+		move_ability = planning_input.route_pathfinding_ability_for_hover(move_actor)
+	var tiles: Array[Vector2i] = MovementSystem.get_reachable_tiles(
+		move_board,
+		origin,
+		move_budget,
+		movement_type,
+		move_cost,
+		move_ability,
+	)
+	if is_selected and planning_input != null:
+		for painted: Vector2i in planning_input.painted_corridor_waypoints_for_blue_tiles(unit.id):
+			if not tiles.has(painted):
+				tiles.append(painted)
+	return tiles
+
+
+static func move_budget_for_preview(
+	director: CombatDirector,
+	unit: UnitState,
+	selected_ability: int,
+	planning_input: CombatPlanningInput = null,
+) -> int:
+	if unit == null or director == null:
+		return 0
+	if unit.has_status(GameEnums.StatusType.ROOT) or unit.has_status(GameEnums.StatusType.STAGGER):
+		return 0
+	if director.get_planning_move_timing(unit.id) < 0:
+		return 0
+	if planning_input != null and planning_input.extended_move_budget_active(unit):
+		return AbilitySystem.preview_move_budget_with_run(unit)
+	if selected_ability >= 0:
+		var ability: AbilityData = CombatDirector.resolve_selected_ability(unit, selected_ability)
+		if (
+			ability != null
+			and AbilitySystem.is_run_ability(ability)
+			and unit.ability.points_left >= ability.action_point_cost
+		):
+			return AbilitySystem.preview_move_budget_with_run(unit)
+	return AbilitySystem.planning_available_movement_points(unit)
 
 
 static func action_range_tiles(
@@ -238,13 +351,12 @@ static func action_range_tiles(
 		else null
 	)
 	if awaiting != null and awaiting.awaiting_module_index >= 0:
-		var range_stand: Vector2i = origin
-		if planning_input != null:
-			var intent_stand: Vector2i = planning_input.action_range_intent_stand_cell(unit.id)
-			if intent_stand.x > -900000:
-				range_stand = intent_stand
 		return AbilitySystem.planning_module_range_tiles(
-			plan_board, awaiting, awaiting.awaiting_module_index, range_stand, hover_coord,
+			plan_board,
+			awaiting,
+			awaiting.awaiting_module_index,
+			origin,
+			hover_coord,
 		)
 	return AbilitySystem.planning_action_range_tiles(
 		plan_board, actor, ability, origin, [], hover_coord,

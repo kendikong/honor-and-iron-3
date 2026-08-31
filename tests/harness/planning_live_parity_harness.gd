@@ -130,8 +130,6 @@ static func reset_planning_interaction_layers(fix: Dictionary) -> void:
 		input.preview_state.preview_board = null
 		input.call("_restore_hover_preview")
 	if director != null:
-		director.plan_refresh_defer_overlay = false
-		director.flush_plan_refresh_signals_if_pending()
 	PlanningChecklistHarness.flush_planning(fix)
 
 

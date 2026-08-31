@@ -54,8 +54,14 @@ if ($overlayText -notmatch "get_settled_hover_preview\(\)") {
 if ($overlayText -notmatch "matches_paint_context\(") {
 	$failures.Add("[FAIL] overlay does not validate settled paint context")
 }
+if ($overlayText -notmatch "settled\.move_tiles") {
+	$failures.Add("[FAIL] overlay does not consume sealed movement paint")
+}
 if ($tilesText -notmatch "static func resolve_paint\(" -or $tilesText -notmatch "static func action_range_tiles\(") {
 	$failures.Add("[FAIL] PlanningPreviewTiles does not own settled action-range paint")
+}
+if ($tilesText -notmatch "static func resolve_move_tiles\(") {
+	$failures.Add("[FAIL] PlanningPreviewTiles does not own settled movement paint")
 }
 
 $rangeFn = [regex]::Match($overlayText, "func _planning_action_range_tiles_for_unit\([\s\S]*?\nfunc ")

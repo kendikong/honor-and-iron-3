@@ -402,9 +402,6 @@ func _on_board_changed(board: BoardState) -> void:
 		return
 	if _is_fresh_planning_session():
 		_abort_planning_commit_sequence()
-	if _director != null and _director.plan_refresh_snap_units:
-		_sync_snap_plan_refresh_units()
-		return
 	_snap_planning_instant_units_from_board()
 	_sync_actors()
 	_refresh_planning_visuals()
@@ -428,25 +425,11 @@ func _snap_planning_instant_units_from_board() -> void:
 		_update_depth(unit.id)
 
 
-func _sync_snap_plan_refresh_units() -> void:
-	if _board == null or _director == null:
-		return
-	for unit_id: int in _director.plan_affected_unit_ids:
-		var unit: UnitState = _board.get_unit_by_id(unit_id)
-		if unit == null or not unit.is_alive() or unit.is_enemy():
-			continue
-		_kill_move_tween(unit_id)
-		_position_actor(unit_id, unit.position)
-		_sync_planning_final_facing(unit_id)
-		_update_depth(unit_id)
-
-
 func _on_preview_updated(result: SimResult) -> void:
 	_preview_board = result.final_state
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
 		if (
-			not _director.plan_refresh_defer_overlay
-			and not is_planning_commit_sequence_active()
+			not is_planning_commit_sequence_active()
 		):
 			## The commit queue owns actor positions until its queued tween settles.
 			## The preview board may already be final, but must not snap over it.
@@ -623,8 +606,6 @@ func _on_selection_changed(unit_id: int) -> void:
 
 func _on_timeline_changed(_timeline: Timeline, _statuses: PackedStringArray) -> void:
 	if _director != null and CombatDirector.is_planning_phase(_director.phase):
-		if _director.plan_refresh_snap_units or _director.plan_refresh_defer_overlay:
-			return
 		_sync_planning_facings_for_queued_actions()
 		_refresh_player_exhaustion()
 		_refresh_unit_glows()
@@ -1326,8 +1307,6 @@ func _sync_planning_actor_positions() -> void:
 		return
 	_snap_planning_instant_units_from_board()
 	var hold_visuals: bool = is_planning_commit_sequence_active()
-	if _director != null and _director.plan_refresh_defer_overlay:
-		hold_visuals = true
 	var force_sync: Dictionary = {}
 	if _director != null and not hold_visuals:
 		for unit_id: int in _director.plan_affected_unit_ids:
@@ -1362,12 +1341,6 @@ func _sync_planning_unit_position(unit: UnitState) -> void:
 	var target: Vector2i = unit.position
 	var current_cell: Vector2i = _actor_grid_cell(unit.id)
 	if current_cell == target:
-		_sync_planning_final_facing(unit.id)
-		_update_depth(unit.id)
-		return
-	if _director != null and _director.plan_refresh_snap_units:
-		_kill_move_tween(unit.id)
-		_position_actor(unit.id, target)
 		_sync_planning_final_facing(unit.id)
 		_update_depth(unit.id)
 		return

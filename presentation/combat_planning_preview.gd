@@ -90,43 +90,22 @@ func _commit_preview_path(actor_id: int, path: Array) -> void:
 func apply_result(
 	res: Dictionary,
 	director: CombatDirector,
-	authoritative_paths: Dictionary = {},
 ) -> void:
 	var temp_board: BoardState = res.get("temp_board")
 	if temp_board == null:
 		return
 	preview_board = temp_board
 	var base_board: BoardState = director.base_board if director.base_board != null else director.board
-	var intent_preview: bool = bool(res.get("intent_preview", false))
 	var path_init_board: BoardState = base_board
-	if intent_preview and director.projected_state != null:
-		path_init_board = director.projected_state
 	var actions_v: Variant = res.get("actions", [])
-	var move_only_intent: bool = (
-		intent_preview
-		and actions_v is Array
-		and preview_actions_are_move_only(actions_v as Array)
+	var forecast_baseline: BoardState = forecast_baseline_board(director, base_board)
+	forecast = CombatPlanningForecast.from_boards(
+		forecast_baseline,
+		temp_board,
+		director.plan_revision if director != null else -1,
 	)
-	if move_only_intent:
-		## Walk-only hover never changes HP — skip live bar merge + unit-layer redraw churn.
-		forecast = null
-	else:
-		var forecast_baseline: BoardState = forecast_baseline_board(director, base_board)
-		if intent_preview and path_init_board != null:
-			## Post-move hover after committed swap: baseline must be projected stand, not live board.
-			forecast_baseline = path_init_board
-		forecast = CombatPlanningForecast.from_boards(
-			forecast_baseline,
-			temp_board,
-			director.plan_revision if director != null else -1,
-		)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	var skip_path_merge: Dictionary = {}
-	for uid: Variant in authoritative_paths.keys():
-		var path_v: Variant = authoritative_paths[uid]
-		if path_v is Array and not (path_v as Array).is_empty():
-			skip_path_merge[int(uid)] = true
 	build_preview_paths(
 		events,
 		director,
@@ -137,20 +116,11 @@ func apply_result(
 		action_splits,
 		path_init_board,
 	)
-	for uid: Variant in authoritative_paths.keys():
-		var path_v: Variant = authoritative_paths[uid]
-		if path_v is Array and not (path_v as Array).is_empty():
-			set_unit_preview_path(self, int(uid), path_v as Array)
 	## Intent geometry comes from planned actions (valid TILE/move selection), not only sim paths.
 	if actions_v is Array:
 		ensure_movement_intent_from_actions(
-			actions_v as Array, path_init_board, {}, director, skip_path_merge,
+			actions_v as Array, path_init_board, {}, director,
 		)
-		if intent_preview and director != null and director.selected_unit_id >= 0:
-			if not skip_path_merge.get(director.selected_unit_id, false):
-				anchor_preview_paths_to_latest_stand(
-					director, self, director.selected_unit_id, path_init_board,
-				)
 		ensure_swap_approach_paths_from_actions(
 			actions_v as Array,
 			path_init_board,
@@ -162,20 +132,6 @@ func apply_result(
 		)
 		adjust_swap_intent_actor_pose(temp_board, actions_v as Array, director)
 
-
-static func preview_actions_are_move_only(actions: Array) -> bool:
-	if actions.is_empty():
-		return false
-	var has_move: bool = false
-	for raw: Variant in actions:
-		if not raw is TimelineAction:
-			continue
-		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.ABILITY:
-			return false
-		if action.type == GameEnums.ActionType.MOVE:
-			has_move = true
-	return has_move
 
 
 ## Walk→swap hover: inject approach route when sim path is missing but commit slots include a pre-walk.
@@ -932,6 +888,14 @@ static func planning_move_origin_cell(
 	var sealed: Vector2i = sealed_phase_entry_anchor(preview, unit_id)
 	if sealed.x > -900000:
 		return sealed
+	var awaiting: TimelineAction = director.find_awaiting_action(unit_id)
+	if awaiting != null and awaiting.awaiting_module_index > 0:
+		var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+			awaiting,
+			awaiting.awaiting_module_index - 1,
+		)
+		if fallback_board != null and fallback_board.is_in_bounds(prior_stand):
+			return prior_stand
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
 		var idle_board: BoardState = planning_projection_board(director, fallback_board)

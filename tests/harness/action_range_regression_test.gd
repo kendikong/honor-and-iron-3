@@ -130,7 +130,7 @@ static func _flush_deferred_planning_refresh(fix: Dictionary) -> void:
 	var input: CombatPlanningInput = fix.input
 	director.flush_plan_refresh_signals_if_pending()
 	if overlay != null:
-		overlay._flush_hover_recompute()
+		overlay._recompute_hover_ranges_from_inputs()
 	if input != null:
 		input._flush_hover_preview_refresh()
 
@@ -1037,16 +1037,16 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 			% [stand_after_swap, overlay_stand],
 		)
 	var preview: Dictionary = input._preview_from_commit_slots_at_cell(fix.k1_id, orbit)
-	if not preview.get("intent_preview", false):
+	if preview.get("temp_board", null) == null:
 		failures.append(
-			"ActionRangeRegression post_swap_post_move_stand_locked: orbit hover must use cheap intent_preview",
+			"ActionRangeRegression post_swap_post_move_stand_locked: orbit hover must return a simulator preview",
 		)
 	var orbit_slots: Dictionary = input._final_commit_slots_for_click_at_cell(fix.k1_id, orbit, Vector2.ZERO)
 	var orbit_actions: Array[TimelineAction] = input._actions_from_slots(orbit_slots)
 	var director_preview: Dictionary = director.preview_actions(fix.k1_id, orbit_actions)
-	if not director_preview.get("intent_preview", false):
+	if director_preview.get("temp_board", null) == null:
 		failures.append(
-			"ActionRangeRegression post_swap_post_move_stand_locked: director must preview from projected delta",
+			"ActionRangeRegression post_swap_post_move_stand_locked: director must return a simulator preview",
 		)
 	if not overlay._blast_tiles_on_hover_layer:
 		failures.append(

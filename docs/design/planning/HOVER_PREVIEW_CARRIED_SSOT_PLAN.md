@@ -26,7 +26,7 @@ The **hover preview** is born once at **settle**, carried in a **sealed bundle**
 
 ## What SSOT means here
 
-Not slots alone, not `preview_paths` alone. The **settled hover preview bundle** (paths + slots + facing + sim board) is the only intent. Every layer **carries** it:
+Not slots alone, not `preview_paths` alone. The **settled hover preview bundle** (paths + slots + facing + projected board + move/range/blast paint) is the only intent. Every layer **carries** it:
 
 ```
 settle → display (read-only) → ratify (copy) → timeline → execute
@@ -41,7 +41,8 @@ If commit needs geometry the hover did not show → **fix settle**, never patch 
 `PlanningHoverPreview` (`presentation/planning_hover_preview.gd`):
 
 - Born only when hover **settles** (`_preview_from_commit_slots_at_cell` / `settle_hover_preview_at_cell`)
-- Holds: slots, `preview_paths` snapshot, hover cell, unit id, facing, revision key
+- Holds: slots, `preview_paths` snapshot, projected board, hover cell, unit id, facing, revision key, and settled move/range/blast tiles
+- Paint-only settle is explicit and non-ratifiable: it carries display paint when no timeline action is legal, while click still rejects because the bundle has no actions.
 - **Sealed** after settle (`is_sealed`); `validate_geometry()` asserts slots waypoints == `preview_paths` leg
 - **Ratify** = `commit_from_slots(duplicate(bundle.slots))` — no waypoints args, no fill-at-commit
 

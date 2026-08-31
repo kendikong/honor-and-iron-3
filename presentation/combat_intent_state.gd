@@ -18,7 +18,6 @@ var _director: CombatDirector
 var _selected_id: int = -1
 var _phase: int = CombatDirector.Phase.PLANNING
 var _skill_interaction_active: bool = false
-var _recompute_pending: bool = false
 
 
 func bind(director: CombatDirector) -> void:
@@ -91,20 +90,6 @@ func clear_timeline_hover() -> void:
 
 
 func recompute() -> void:
-	if _recompute_pending:
-		return
-	_recompute_pending = true
-	call_deferred("_flush_recompute")
-
-
-## Flush a pending recompute for synchronous callers such as headless checks.
-func flush_recompute() -> void:
-	_recompute_pending = false
-	_recompute_now()
-
-
-func _flush_recompute() -> void:
-	_recompute_pending = false
 	_recompute_now()
 
 

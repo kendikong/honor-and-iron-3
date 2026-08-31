@@ -64,23 +64,11 @@ var auto_run: bool = false
 var _instant_planning_move_units: Dictionary = {}
 ## Hidden exhaustion slot (Master Bible § Universal Wait) — not in plan_action.
 var _wait_unit_ids: Dictionary = {}
-var _plan_refresh_emit_pending: bool = false
-var _pending_refresh_board: BoardState
-var _pending_refresh_plan: Timeline
-var _pending_refresh_statuses: PackedStringArray
-var _pending_refresh_preview: SimResult
-## Undo/remove: snap sprites immediately; enables sim-only fast path (never skips walk/run on commit).
-var plan_refresh_snap_units: bool = false
-## Defer heavy overlay preview rebuild one frame (walk commit / undo snap).
-var plan_refresh_defer_overlay: bool = false
-## Snap undo back to turn-start layout: skip hover/stats churn in overlay apply.
-var plan_refresh_light_overlay: bool = false
 var _turn_start_intents: Array = []
 var _turn_start_enemy_ghost_events: Array[SimEvent] = []
 var _pending_planning_commit_events: Array[SimEvent] = []
 ## Swap premoves: play planning presentation before snapping sprites to swapped board tiles.
 var _swap_planning_presentations: Array[TimelineAction] = []
-var _refresh_plan_queued: bool = false
 var _cached_wait_marker_ghost_events: Array[SimEvent] = []
 ## Move-preview paths frozen at commit time — commit anim must match hover/drag preview exactly.
 var _commit_intent_preview_paths: Dictionary = {}
@@ -1462,14 +1450,12 @@ func _preview_from_plan(combined: Timeline, new_actions: Array = []) -> Dictiona
 
 
 func _preview_use_projected_delta(new_actions: Array) -> bool:
-	## After committed plan (e.g. swap), move-only hover must not replay turn-start → swap every settle.
 	if projected_state == null or base_board == null or new_actions.is_empty():
 		return false
 	for raw: Variant in new_actions:
 		if not raw is TimelineAction:
 			return false
-		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.ABILITY:
+		if (raw as TimelineAction).type == GameEnums.ActionType.ABILITY:
 			return false
 	return true
 
@@ -1477,20 +1463,15 @@ func _preview_use_projected_delta(new_actions: Array) -> bool:
 func _preview_from_projected_delta(new_actions: Array) -> Dictionary:
 	var temp: BoardState = projected_state.clone()
 	var ev: Array[SimEvent] = []
+	var delta: Timeline = Timeline.new()
 	for raw: Variant in new_actions:
-		if not raw is TimelineAction:
-			continue
-		var action: TimelineAction = raw as TimelineAction
-		if action.type == GameEnums.ActionType.MOVE:
-			MovementSystem.execute_move(temp, action, ev)
-		else:
-			ResolutionPipeline.apply_action(temp, action, ev)
-	ResolutionPipeline.resolve_pending_pushes(temp, ev)
+		if raw is TimelineAction:
+			delta.add(raw as TimelineAction)
+	Simulator.simulate_player_turn(temp, delta, ev)
 	var res: Dictionary = {
 		"intents": [],
 		"events": ev,
 		"temp_board": temp,
-		"intent_preview": true,
 	}
 	if not _preview_skip_enemy_resolution(new_actions):
 		var intents: Array = EnemyPlanner.plan(temp)
@@ -2165,14 +2146,7 @@ func execute_turn() -> void:
 	plan_action.clear()
 	plan_post_move.clear()
 	_wait_unit_ids.clear()
-	## Drop any deferred commit preview from the prior planning phase so post-execute
-	## refresh cannot resurrect orange push/pull arrows from the executed plan.
-	plan_refresh_defer_overlay = false
-	_plan_refresh_emit_pending = false
 	_pending_planning_commit_events.clear()
-	_pending_refresh_board = null
-	_pending_refresh_plan = null
-	_pending_refresh_preview = null
 	if _check_end_state():
 		return
 	selected_unit_id = -1
@@ -2820,10 +2794,6 @@ func unit_has_undoable_action(unit_id: int) -> bool:
 
 func _begin_undo_plan_refresh(unit_id: int) -> void:
 	plan_affected_unit_ids = [unit_id]
-	plan_refresh_snap_units = true
-	# Undo must refresh red action-range tiles immediately — do not defer overlay.
-	plan_refresh_defer_overlay = false
-	plan_refresh_light_overlay = true
 	_pending_planning_commit_events.clear()
 	clear_planning_move_instant(unit_id)
 
@@ -2833,14 +2803,6 @@ func _refresh_plan() -> void:
 
 
 func _queue_refresh_plan() -> void:
-	if _refresh_plan_queued:
-		return
-	_refresh_plan_queued = true
-	call_deferred("_flush_queued_refresh_plan")
-
-
-func _flush_queued_refresh_plan() -> void:
-	_refresh_plan_queued = false
 	_refresh_plan_core()
 
 
@@ -2850,9 +2812,6 @@ func _refresh_plan_core() -> void:
 		_refresh_plan_wait_marker_only(plan_to_run)
 		return
 	_cached_wait_marker_ghost_events.clear()
-	if plan_refresh_snap_units and _plan_is_movement_only(plan_to_run):
-		_refresh_plan_snap_movement_only(plan_to_run)
-		return
 	var move_only := base_board.clone()
 	var full_proj := base_board.clone()
 	var statuses := PackedStringArray()
@@ -2970,8 +2929,6 @@ func _refresh_plan_core() -> void:
 				_make_planning_swap_ability_event(swap_action, plan_to_run)
 			)
 		_swap_planning_presentations.clear()
-	if not _pending_planning_commit_events.is_empty():
-		plan_refresh_defer_overlay = true
 	clear_commit_intent_preview_paths()
 	plan_revision += 1
 	sync_selected_ability_if_invalid()
@@ -2981,68 +2938,7 @@ func _refresh_plan_core() -> void:
 
 	var sim_res := SimResult.new(preview_board)
 	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
-	_defer_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
-
-
-func _refresh_plan_snap_movement_only(plan: Timeline) -> void:
-	var move_only := base_board.clone()
-	var evs: Array[SimEvent] = []
-	for action: TimelineAction in plan.entries:
-		if action.awaiting_target or action.type != GameEnums.ActionType.MOVE:
-			continue
-		var move_ev: Array[SimEvent] = []
-		ResolutionPipeline.apply_action(move_only, action, move_ev)
-		ResolutionPipeline.resolve_pending_pushes(move_only, move_ev)
-		evs.append_array(move_ev)
-	_commit_animate_actor_ids.clear()
-	_pending_planning_commit_events.clear()
-
-	if _player_positions_match_turn_start(move_only):
-		_refresh_plan_snap_turn_start(plan, evs)
-		return
-
-	projected_state = move_only.clone()
-	board = move_only
-
-	var new_intents := EnemyPlanner.plan(projected_state)
-	base_board.intents = new_intents
-	board.intents = new_intents
-	projected_state.intents = new_intents
-
-	plan_revision += 1
-	sync_selected_ability_if_invalid()
-
-	var preview_board: BoardState = projected_state.clone()
-	var ghost_evs := _build_enemy_ghost_events(preview_board, new_intents)
-	var sim_res := SimResult.new(preview_board)
-	sim_res.events = _preview_events_for_overlay(evs, ghost_evs)
-	var statuses := PackedStringArray()
-	statuses.resize(maxi(plan.size(), 1))
-	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
-
-
-func _refresh_plan_snap_turn_start(plan: Timeline, player_events: Array[SimEvent]) -> void:
-	projected_state = base_board.clone()
-	board = base_board.clone()
-	var intents: Array = _clone_intents(_turn_start_intents)
-	if intents.is_empty():
-		intents = EnemyPlanner.plan(projected_state)
-	base_board.intents = intents
-	board.intents = intents
-	projected_state.intents = intents
-
-	plan_revision += 1
-	sync_selected_ability_if_invalid()
-
-	var preview_board: BoardState = projected_state.clone()
-	## Always apply enemy ghosts on preview_board — cached events alone do not mutate final_state.
-	var ghost_evs: Array[SimEvent] = _build_enemy_ghost_events(preview_board, intents)
-	var sim_res := SimResult.new(preview_board)
-	sim_res.events = _preview_events_for_overlay(player_events, ghost_evs)
-	var statuses := PackedStringArray()
-	statuses.resize(maxi(plan.size(), 1))
-	plan_refresh_light_overlay = true
-	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+	_emit_plan_refresh_signals(board, plan_to_run, statuses, sim_res)
 
 
 func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
@@ -3075,7 +2971,7 @@ func _refresh_plan_wait_marker_only(plan: Timeline) -> void:
 	sim_res.events = _preview_events_for_overlay([], ghost_evs)
 	var statuses := PackedStringArray()
 	statuses.resize(maxi(plan.size(), 1))
-	_defer_plan_refresh_signals(board, plan, statuses, sim_res)
+	_emit_plan_refresh_signals(board, plan, statuses, sim_res)
 
 
 func _plan_is_movement_only(plan: Timeline) -> bool:
@@ -3111,30 +3007,20 @@ func _plan_is_wait_marker_only(plan: Timeline) -> bool:
 	return true
 
 
-func _defer_plan_refresh_signals(
+func _emit_plan_refresh_signals(
 	board_state: BoardState,
 	plan: Timeline,
 	statuses: PackedStringArray,
 	preview: SimResult,
 ) -> void:
-	_pending_refresh_board = board_state
-	_pending_refresh_plan = plan
-	_pending_refresh_statuses = statuses
-	_pending_refresh_preview = preview
-	if not plan_refresh_defer_overlay:
-		# Undo snap: emit board + preview this frame so red range tiles update immediately.
-		_plan_refresh_emit_pending = false
-		_flush_plan_refresh_signals()
-		return
-	if _plan_refresh_emit_pending:
-		return
-	_plan_refresh_emit_pending = true
-	call_deferred("_flush_plan_refresh_signals")
-
-
-func flush_plan_refresh_signals_if_pending() -> void:
-	if _plan_refresh_emit_pending:
-		_flush_plan_refresh_signals()
+	var commit_events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
+	_pending_planning_commit_events.clear()
+	if not commit_events.is_empty():
+		EventBus.planning_commit_events.emit(commit_events)
+	EventBus.board_changed.emit(board_state)
+	EventBus.timeline_changed.emit(plan, statuses)
+	EventBus.preview_updated.emit(preview)
+	plan_affected_unit_ids.clear()
 
 
 func begin_autobattler_plan_batch() -> void:
@@ -3145,7 +3031,6 @@ func begin_autobattler_plan_batch() -> void:
 func finish_autobattler_plan_batch(unit_layer: TacticalUnitLayer) -> void:
 	_autobattler_plan_batch = false
 	_commit_animate_actor_ids.clear()
-	flush_plan_refresh_signals_if_pending()
 	var anim_events: Array[SimEvent] = _collect_all_planning_move_anim_events()
 	if not anim_events.is_empty() and unit_layer != null:
 		unit_layer.reset_planning_walk_origins_for_moves(anim_events)
@@ -3179,26 +3064,6 @@ func _collect_all_planning_move_anim_events() -> Array[SimEvent]:
 			anim_events.append(move_event)
 	return anim_events
 
-
-func _flush_plan_refresh_signals() -> void:
-	_plan_refresh_emit_pending = false
-	if _pending_refresh_board == null:
-		return
-	## Animations + walk-origin reset must run before board_changed so sprites are not
-	## pulled to post-swap logical cells before the commit presentation queue starts.
-	var commit_events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
-	_pending_planning_commit_events.clear()
-	if not commit_events.is_empty():
-		EventBus.planning_commit_events.emit(commit_events)
-	EventBus.board_changed.emit(_pending_refresh_board)
-	EventBus.timeline_changed.emit(_pending_refresh_plan, _pending_refresh_statuses)
-	EventBus.preview_updated.emit(_pending_refresh_preview)
-	plan_affected_unit_ids.clear()
-	plan_refresh_snap_units = false
-	plan_refresh_defer_overlay = false
-	_pending_refresh_board = null
-	_pending_refresh_plan = null
-	_pending_refresh_preview = null
 
 func _build_ghost_events(sim: BoardState, timeline: Timeline, intents: Array[Intent]) -> Array[SimEvent]:
 	var evs: Array[SimEvent] = []
@@ -3559,14 +3424,6 @@ func _move_commits_with_planning_anim(action: TimelineAction) -> bool:
 			== GameEnums.TimelineColumn.PRE_MOVE
 		)
 	return false
-
-
-func _flush_pending_planning_commit_events() -> void:
-	if _pending_planning_commit_events.is_empty():
-		return
-	var events: Array[SimEvent] = _pending_planning_commit_events.duplicate()
-	_pending_planning_commit_events.clear()
-	EventBus.planning_commit_events.emit(events)
 
 
 func _lock_enemy_intents() -> void:

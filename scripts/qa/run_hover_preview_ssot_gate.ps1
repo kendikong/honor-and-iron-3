@@ -31,7 +31,9 @@ $requiredSnippets = @(
 	@{ label = "HoverPreviewBundle.seal on settle"; pattern = "_HoverPreviewBundle\.seal\(" },
 	@{ label = "ratify rejects missing bundle"; pattern = "no sealed hover preview" },
 	@{ label = "single sealed intent ratify"; pattern = "ratify_sealed_intent\(" },
-	@{ label = "settled preview apply path"; pattern = "func _apply_settled_preview_result\(" }
+	@{ label = "settled preview apply path"; pattern = "func _apply_settled_preview_result\(" },
+	@{ label = "sealed movement paint"; pattern = "move_tiles" },
+	@{ label = "paint-only settle is explicit"; pattern = "paint_only" }
 )
 foreach ($req in $requiredSnippets) {
 	if ($text -notmatch $req.pattern) {
@@ -45,7 +47,8 @@ $forbiddenPatterns = @(
 	@{ label = "commit fill move waypoints"; pattern = "func _ensure_move_waypoints_on_commit_slots" },
 	@{ label = "commit fill ability waypoints"; pattern = "func _ensure_movement_waypoints_on_commit_slots" },
 	@{ label = "commit ratify painted route"; pattern = "func _ratify_painted_route_on_commit_slots" },
-	@{ label = "authoritative merge payload"; pattern = "func _authoritative_move_hover_paths_payload" }
+	@{ label = "authoritative merge payload"; pattern = "func _authoritative_move_hover_paths_payload" },
+	@{ label = "stand-only settle shortcut"; pattern = "func _settle_stand_hover_preview" }
 )
 foreach ($ban in $forbiddenPatterns) {
 	if ($text -match $ban.pattern) {
