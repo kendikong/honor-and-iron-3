@@ -4,6 +4,7 @@ param(
 
 $ErrorActionPreference = "Continue"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
 $outPath = Join-Path $projectRoot "reports\ability_data_gauntlet\all_background_verification_latest.txt"
 $errPath = Join-Path $projectRoot "reports\ability_data_gauntlet\all_background_verification_latest.stderr.txt"
 $outDir = Split-Path -Parent $outPath

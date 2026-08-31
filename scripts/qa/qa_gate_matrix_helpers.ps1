@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
+
 # Shared matrix + manifest enforcement for class QA gate scripts.
 
 function Test-MatrixScenarioFiles {

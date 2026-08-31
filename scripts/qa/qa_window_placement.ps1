@@ -1,3 +1,5 @@
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
+
 if (-not ([System.Management.Automation.PSTypeName]::new("QaWindowPlacement").Type)) {
 	Add-Type @"
 using System;

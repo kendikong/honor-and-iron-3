@@ -3,6 +3,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
 
 $gates = @(
 	@{ name = "Hover preview carried"; script = "run_hover_preview_ssot_gate.ps1" },

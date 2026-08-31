@@ -1,3 +1,4 @@
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
 Set-StrictMode -Version Latest
 
 function New-SsotViolation {

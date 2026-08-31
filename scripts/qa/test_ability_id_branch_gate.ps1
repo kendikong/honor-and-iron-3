@@ -1,5 +1,6 @@
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
 $gate = Join-Path $PSScriptRoot "run_ability_id_branch_gate.ps1"
 $fixtureRoot = Join-Path $PSScriptRoot "fixtures\ability_id"
 

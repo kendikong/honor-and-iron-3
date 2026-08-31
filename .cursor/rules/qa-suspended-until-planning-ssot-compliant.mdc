@@ -1,0 +1,42 @@
+---
+description: ABSOLUTE — ALL automated QA suspended until owner declares planning SSOT 100% compliant
+alwaysApply: true
+---
+
+# QA Suspended (Owner Mandate — wins over mandatory QA rules)
+
+**Status: SUSPENDED** (owner mandate, 2026-08-30).
+
+While `docs/qa/QA_SUSPENDED.flag` exists:
+
+## Forbidden
+
+- Run **any** automated QA suite (planning gate, SSOT gates, class gates, live QA, regression, swap, T3 mimic, scene acceptance, full QA, background class tests)
+- Invoke Godot test harnesses for QA purposes (`GdUnitCmdTool`, `*QaGate.tscn`, `run_*_qa*.ps1`, `run_regression_tests.ps1`)
+- Report QA PASS/FAIL in changelog for gameplay edits
+- Suggest "let me run QA" or use QA output to justify architecture compliance
+
+## Required instead
+
+- Implement planning SSOT architecture fixes only
+- Architecture compliance verdict: **yes** or **no** against the four criteria in `docs/qa/QA_SUSPENSION.md` — not QA pass/fail
+
+## Sentinel + scripts
+
+`scripts/qa/qa_suspend_guard.ps1` is dot-sourced from QA entry helpers. If the flag exists, scripts exit `99` with `[QA SUSPENDED]`.
+
+## Re-enable (owner only)
+
+Owner must **both**:
+
+1. Delete `docs/qa/QA_SUSPENDED.flag`
+2. Say explicitly in chat: **"QA is re-enabled"** or **"planning SSOT is 100% compliant — run QA"**
+
+Until then, QA stays off permanently.
+
+## Wins over
+
+- `.cursor/rules/qa-after-gameplay-changes.mdc` (mandatory QA after gameplay edits)
+- `.cursor/rules/class-qa-all-classes-mandatory.mdc` (QA run portions)
+- `.cursor/rules/class-qa-knight-bar.mdc` (QA run portions)
+- `AGENTS.md` test execution hierarchy (QA runs)

@@ -5,6 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+. (Join-Path $PSScriptRoot "qa_suspend_guard.ps1"); Assert-QaNotSuspended
 if ([string]::IsNullOrWhiteSpace($ReportPath)) {
 	$ReportPath = Join-Path $projectRoot "reports\qa\qa_full_report_latest.txt"
 }
