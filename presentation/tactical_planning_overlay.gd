@@ -2438,7 +2438,7 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 			and settled.stand_origin.x > -900000
 		):
 			return settled.stand_origin
-		return _planning_input.action_range_intent_stand_cell(unit.id)
+		return Vector2i(-999999, -999999)
 	return _proj_origin(unit)
 
 

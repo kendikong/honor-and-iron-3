@@ -49,7 +49,7 @@ $forbiddenPatterns = @(
 	@{ label = "commit fill ability waypoints"; pattern = "func _ensure_movement_waypoints_on_commit_slots" },
 	@{ label = "commit ratify painted route"; pattern = "func _ratify_painted_route_on_commit_slots" },
 	@{ label = "authoritative merge payload"; pattern = "func _authoritative_move_hover_paths_payload" },
-	@{ label = "mutable buffer fallback at seal"; pattern = "paths_for_seal\s*=\s*preview_state\.preview_paths" }
+	@{ label = "ghost voluntary walk writer"; pattern = "func _write_voluntary_walk_preview_path" }
 )
 foreach ($ban in $forbiddenPatterns) {
 	if ($text -match $ban.pattern) {

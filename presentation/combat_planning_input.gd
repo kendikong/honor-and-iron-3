@@ -544,7 +544,7 @@ func _refresh_drag_preview_now() -> void:
 	if _drag_unit_id >= 0:
 		var post_drag_actor: UnitState = _proj_unit(_drag_unit_id)
 		if post_drag_actor != null and _voluntary_walk_drag_trim_active(post_drag_actor):
-			var live_path: Array = preview_state.preview_paths.get(_drag_unit_id, [])
+			var live_path: Array = _authoritative_route_for_unit(_drag_unit_id)
 			if live_path.size() >= 2:
 				var trimmed_live: Array = _trim_route_for_prior_forbidden(
 					live_path, _drag_unit_id, _active_hover_cell(),
@@ -668,16 +668,17 @@ func _authoritative_preview_paths() -> Dictionary:
 	var receipt: PlanningHoverPreview = _current_sealed_receipt()
 	if receipt != null:
 		return receipt.preview_paths.duplicate(true)
-	return preview_state.preview_paths.duplicate(true)
+	return {}
 
 
 func _authoritative_route_for_unit(unit_id: int) -> Array:
 	var receipt: PlanningHoverPreview = _current_sealed_receipt()
-	if receipt != null and receipt.unit_id == unit_id:
-		var route: Variant = receipt.preview_paths.get(unit_id, [])
-		if route is Array:
-			return (route as Array).duplicate()
-	return preview_state.preview_paths.get(unit_id, [])
+	if receipt == null or receipt.unit_id != unit_id:
+		return []
+	var route: Variant = receipt.preview_paths.get(unit_id, [])
+	if route is Array:
+		return (route as Array).duplicate()
+	return []
 
 
 func settled_hover_revision_key() -> String:
@@ -769,7 +770,7 @@ func _clamp_voluntary_walk_drag_for_forbidden_hover(unit_id: int) -> void:
 			_apply_voluntary_walk_drag_preview(unit_id, false)
 		else:
 			_clear_stale_painted_preview_route(unit_id)
-	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+	var live_path: Array = _authoritative_route_for_unit(unit_id)
 	if live_path.size() >= 2:
 		var trimmed_preview: Array = _trim_route_for_prior_forbidden(
 			live_path, unit_id, hover_cell,
@@ -777,45 +778,6 @@ func _clamp_voluntary_walk_drag_for_forbidden_hover(unit_id: int) -> void:
 		if trimmed_preview != live_path:
 			_apply_trimmed_drag_route(trimmed_preview, leg_origin)
 		_apply_voluntary_walk_drag_preview(unit_id, false)
-
-
-func _seed_unit_target_hover_path_if_empty(p_unit: UnitState, cell: Vector2i) -> void:
-	if p_unit == null or _director == null:
-		return
-	var existing: Array = preview_state.preview_paths.get(p_unit.id, [])
-	if existing.size() >= 2:
-		return
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	if ability == null:
-		return
-	var waypoints: Array[Vector2i] = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
-	if waypoints.is_empty():
-		var target_id: int = _attack_target_id_at_cell(p_unit, cell)
-		if target_id < 0:
-			return
-		var target: UnitState = _director.board.get_unit_by_id(target_id)
-		if target == null:
-			return
-		var stand_seed: Vector2i = _proj_origin(p_unit)
-		if _in_ability_range(p_unit, target) and not target.is_enemy():
-			if stand_seed != target.position:
-				_write_voluntary_walk_preview_path(p_unit.id, [stand_seed, target.position])
-			return
-		var approach: Vector2i = _director.preview_approach_tile(
-			p_unit.id, target_id, _director.selected_ability_index, target.position,
-		)
-		var stand: Vector2i = _proj_origin(p_unit)
-		if approach == stand:
-			if target.is_enemy() and _in_ability_range(p_unit, target):
-				CombatPlanningPreview.set_unit_stand_anchor_path(preview_state, p_unit.id, stand)
-				_sync_movement_hover_paths_to_overlay(p_unit.id)
-			return
-		waypoints = [approach]
-	var stand: Vector2i = _proj_origin(p_unit)
-	var dest: Vector2i = waypoints[waypoints.size() - 1]
-	if stand == dest:
-		return
-	_write_voluntary_walk_preview_path(p_unit.id, [stand, dest])
 
 
 func _apply_live_preview(preview: Dictionary) -> void:
@@ -2751,7 +2713,7 @@ func _painted_drag_route_matches_leg(p_unit: UnitState) -> bool:
 func _painted_preview_route_matches_leg(p_unit: UnitState) -> bool:
 	if p_unit == null or not _movement_route_paint_allowed():
 		return false
-	var route: Array = preview_state.preview_paths.get(p_unit.id, [])
+	var route: Array = _authoritative_route_for_unit(p_unit.id)
 	if route.size() < 2:
 		return false
 	var origin: Vector2i = _phase_entry_stand(p_unit)
@@ -3249,13 +3211,6 @@ func _preview_paths_snapshot_for_settle(
 ) -> Dictionary:
 	## Settling unit route comes from commit slots only — never the mutable drag/hover buffer.
 	var snapshot: Dictionary = {}
-	for other_id: Variant in preview_state.preview_paths.keys():
-		var other_unit_id: int = int(other_id)
-		if other_unit_id == unit_id:
-			continue
-		var other_route: Variant = preview_state.preview_paths[other_id]
-		if other_route is Array:
-			snapshot[other_unit_id] = (other_route as Array).duplicate()
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
 	if slot_wps.is_empty() and waypoints.is_empty():
 		return snapshot
@@ -3291,6 +3246,8 @@ func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> vo
 	if p_unit == null or _director == null:
 		return
 	_clear_live_preview_preserve_intent()
+	var noop_slots: Dictionary = _empty_commit_slots()
+	noop_slots["_noop"] = true
 	var key: String = _intent_snapshot_key_for(
 		p_unit.id,
 		cell,
@@ -3299,20 +3256,22 @@ func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> vo
 		_NO_PREFERRED_APPROACH,
 		-1,
 	)
-	var paint_board: BoardState = _proj().clone() if _proj() != null else BoardState.new()
 	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
-		p_unit.id, cell, _empty_commit_slots(), [],
+		p_unit.id, cell, noop_slots, [],
 	)
+	var result: Dictionary = _director.preview_actions(p_unit.id, [])
+	result["settled_preview_paths"] = paths_snapshot.duplicate(true)
 	_store_intent_snapshot(
 		key,
-		_empty_commit_slots(),
+		noop_slots,
 		p_unit.id,
 		cell,
 		-1,
 		paths_snapshot,
-		{"temp_board": paint_board},
+		result,
 		true,
 	)
+	_apply_settled_preview_result(result)
 
 
 func _clear_live_preview_preserve_intent() -> void:
@@ -3499,9 +3458,11 @@ func _preview_from_commit_slots_at_cell(
 	var hover_sim_validate: bool = _planning != null and _planning.qa_static_overlay
 	var slots: Dictionary = _final_commit_slots_for_interaction(
 		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
-		hover_sim_validate,
+		false,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
+	if hover_sim_validate and not _is_invalid_dict(slots):
+		slots = _finalize_commit_slots(slots, unit_id, true)
 	if _is_invalid_dict(slots):
 		_clear_intent_snapshot()
 		return {"intents": [], "events": [], "temp_board": BoardState.new(), "invalid": true}
@@ -4129,6 +4090,11 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		var route_ability: AbilityData = _selected_ability_data(actor)
 		if not movement_hover_route_display_applies(actor, route_ability):
 			return []
+	if unit_id == _director.selected_unit_id:
+		var sealed_route: Array = _authoritative_route_for_unit(unit_id)
+		if sealed_route.size() >= 2:
+			return CombatPlanningPreview.frozen_move_route_cells_from_array(sealed_route)
+		return []
 	return CombatPlanningPreview.display_route_cells_from_preview(
 		unit_id,
 		preview_state,
@@ -4142,7 +4108,7 @@ func clear_hover_route_preview() -> void:
 		var unit_id: int = int(uid)
 		if not preview_state.is_painted_leg_sealed(unit_id):
 			continue
-		var path: Array = preview_state.preview_paths.get(unit_id, [])
+		var path: Array = _authoritative_route_for_unit(unit_id)
 		if path.size() >= 2:
 			preserved_paths[unit_id] = path.duplicate()
 	preview_state.clear_route_geometry()
@@ -4216,8 +4182,9 @@ func display_units_with_route_preview() -> Array[int]:
 		for uid: Variant in committed.preview_paths.keys():
 			ids[int(uid)] = true
 	if is_live_preview_active():
-		for uid: Variant in preview_state.preview_paths.keys():
-			ids[int(uid)] = true
+		var receipt: PlanningHoverPreview = _current_sealed_receipt()
+		if receipt != null and receipt.unit_id >= 0:
+			ids[receipt.unit_id] = true
 	var out: Array[int] = []
 	for uid: Variant in ids.keys():
 		out.append(int(uid))
@@ -4717,46 +4684,27 @@ func _voluntary_walk_orbit_overrides_drag_paint(unit_id: int) -> bool:
 	return _voluntary_walk_orbit_phase_open(actor)
 
 
-## R6 restore entry ÃƒÅ½Ã¢â‚¬Å“ÃƒÆ’Ã¢â‚¬Â¡ÃƒÆ’Ã‚Â¶ sealed/failure preserve; no sim merge.
+## R6 restore entry — re-settle sealed leg route (no mutable-buffer ghost write).
 func _restore_sealed_voluntary_walk_preview(
 	unit_id: int, path: Array, seal_leg: bool,
 ) -> void:
-	if unit_id < 0 or path.is_empty():
+	if unit_id < 0 or path.size() < 2 or _director == null:
 		return
-	_write_voluntary_walk_preview_path(unit_id, path)
+	var cell: Vector2i = path[path.size() - 1] as Vector2i
+	var leg_origin: Vector2i = path[0] as Vector2i
+	var wps: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		path, leg_origin, cell,
+	)
+	var res: Dictionary = _preview_at_interaction_cell(
+		unit_id, cell, cell, -1, wps, _snapshot_drag_legal_move_tiles(),
+	)
+	if not _is_invalid_dict(res):
+		_apply_settled_preview_result(res)
 	if seal_leg:
 		preview_state.seal_painted_leg(unit_id)
 
 
-## Ghost-staging only — route truth is sealed via slots at settle; never read this for paint/commit.
-func _write_voluntary_walk_preview_path(unit_id: int, path: Array) -> void:
-	if unit_id < 0 or path.is_empty():
-		return
-	if path.size() < 2:
-		_clear_stale_painted_preview_route(unit_id)
-		return
-	var trimmed: Array = path.duplicate()
-	if (
-		trimmed.size() >= 2
-		and dragging
-		and _director != null
-	):
-		var actor: UnitState = _proj_unit(unit_id)
-		if actor != null and _voluntary_walk_drag_trim_active(actor):
-			var leg_origin: Vector2i = trimmed[0] as Vector2i
-			trimmed = _trim_route_for_prior_forbidden(trimmed, unit_id, _active_hover_cell())
-			_apply_trimmed_drag_route(trimmed, leg_origin)
-			if trimmed.is_empty():
-				_clear_stale_painted_preview_route(unit_id)
-				return
-	CombatPlanningPreview.set_unit_preview_path(preview_state, unit_id, trimmed)
-	if _planning != null:
-		_planning.apply_preview_state(
-			preview_state, unit_id, _hover_attack_target_id(),
-		)
-
-
-## Movement-step hover path is authoritative ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ sim merge must not stomp it.
+## Movement-step hover path is authoritative — sim merge must not stomp it.
 
 ## Single painted-route ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã¢â‚¬ËœÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â¥ preview_paths writer (drag buffer ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã¢â‚¬ËœÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â¥ route truth).
 func _apply_voluntary_walk_drag_preview(unit_id: int, require_leg_match: bool) -> void:
@@ -4809,7 +4757,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 				p_unit.id, p_unit, cell, settle_waypoints,
 			)
 		if probe_path.size() < 2:
-			var existing_paint: Array = preview_state.preview_paths.get(p_unit.id, [])
+			var existing_paint: Array = _authoritative_route_for_unit(p_unit.id)
 			if existing_paint.size() >= 2:
 				var paint_tail: Vector2i = existing_paint[existing_paint.size() - 1] as Vector2i
 				if (
@@ -4881,7 +4829,7 @@ func _assemble_voluntary_walk_preview_path(
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 		_director, unit_id, origin,
 	)
-	var painted_leg: Array = preview_state.preview_paths.get(unit_id, [])
+	var painted_leg: Array = _authoritative_route_for_unit(unit_id)
 	if painted_leg.size() >= 2:
 		var painted_tail: Vector2i = painted_leg[painted_leg.size() - 1] as Vector2i
 		if (
@@ -5003,7 +4951,7 @@ func _route_waypoints_for_commit(dest_cell: Vector2i = Vector2i(-999999, -999999
 		if _drag_route.size() >= 2:
 			dest_cell = _drag_route.back() as Vector2i
 		else:
-			var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
+			var painted_path: Array = _authoritative_route_for_unit(unit_id)
 			if painted_path.size() >= 2 and painted_path.back() is Vector2i:
 				dest_cell = painted_path.back() as Vector2i
 			elif (
@@ -5028,7 +4976,7 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		var drag_wps: Array[Vector2i] = _route_waypoints()
 		if not drag_wps.is_empty() and drag_wps.back() == cell:
 			return drag_wps
-	var painted_path: Array = preview_state.preview_paths.get(unit_id, [])
+	var painted_path: Array = _authoritative_route_for_unit(unit_id)
 	if painted_path.size() >= 2:
 		var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
 			painted_path, move_origin, cell,
@@ -5603,7 +5551,7 @@ func unit_move_requires_run(unit_id: int) -> bool:
 		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
 		return AbilitySystem.movement_requires_run(board, actor, dest, _route_waypoints())
 	if unit_id == _director.selected_unit_id:
-		var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+		var live_path: Array = _authoritative_route_for_unit(unit_id)
 		if live_path.size() >= 2:
 			var live_waypoints: Array[Vector2i] = []
 			for i: int in range(1, live_path.size()):
@@ -5643,7 +5591,7 @@ func unit_intent_uses_steady_aim(unit_id: int) -> bool:
 func move_intent_destination(unit_id: int) -> Vector2i:
 	if _director == null or unit_id < 0:
 		return Vector2i(-999, -999)
-	var live_path: Array = preview_state.preview_paths.get(unit_id, [])
+	var live_path: Array = _authoritative_route_for_unit(unit_id)
 	if live_path.size() >= 2:
 		return live_path[live_path.size() - 1] as Vector2i
 	if _drag_route_commits_active() and _drag_unit_id == unit_id and not _drag_route.is_empty():

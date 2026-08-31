@@ -280,3 +280,31 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 \*Pass 2: tile layers only; route ghosts/stand markers still diverge.
 
 **Verification:** Three static code audits. QA still suspended for behavioral proof.
+
+---
+
+## Attempt 9 — 2026-08-30 — Close unanimous architecture blockers
+
+**Status:** CLOSED — architecture rule-compliant (three static re-audits unanimous).
+
+**Done:**
+- Selected-unit route display reads sealed receipt (`display_move_route_cells`).
+- Ghost writer deleted; sealed-leg restore re-settles via `_preview_at_interaction_cell`.
+- Paint-only settle uses `preview_actions` + sim `temp_board`.
+- `_authoritative_*` receipt-only; settle snapshot slots-only.
+- Facing applied before QA validate; `resolve_layer_origins` stand from `settled_board`; overlay stand receipt-only.
+- Dead `_seed_unit_target_hover_path_if_empty` removed.
+
+**Architecture verdict (three static re-audits — unanimous YES):**
+
+| Pass | Lens | C1 | C2 | C3 | C4 | Overall |
+|------|------|----|----|----|----|---------|
+| 1 | Settle→seal→ratify | YES | YES* | YES | YES | **COMPLIANT** |
+| 2 | Paint/display/overlay | YES | YES | YES | YES | **COMPLIANT** |
+| 3 | Parallel path hunt | — | — | — | — | **COMPLIANT** (6-row 6/6) |
+
+\*C2: paint-only is documented non-ratifiable display (`SETTLED_PAINT_SSOT_PLAN.md`); uses sim `preview_actions` board.
+
+**Residual (non-architecture):** GDScript receipt fields not compile-time immutable; QA suspended for behavioral proof.
+
+**Verification:** Three static code re-audits post-fix. QA still suspended.

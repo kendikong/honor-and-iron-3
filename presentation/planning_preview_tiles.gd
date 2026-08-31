@@ -77,7 +77,11 @@ static func resolve_layer_origins(
 	)
 	plan["show_action_range"] = show_action_range
 	var locked_stand: Vector2i = none
-	if planning_input != null:
+	if settled_board != null:
+		var settled_unit: UnitState = settled_board.get_unit_by_id(unit.id)
+		if settled_unit != null:
+			locked_stand = settled_unit.position
+	elif planning_input != null:
 		locked_stand = planning_input.settled_action_range_stand_cell(unit.id)
 	else:
 		locked_stand = CombatPlanningPreview.forecast_stand_at_phase_entry(

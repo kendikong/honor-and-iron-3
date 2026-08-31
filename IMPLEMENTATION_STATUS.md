@@ -78,25 +78,14 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 - `apply_result` scratch-path build when settled routes present; authoritative paths via `apply_settled_preview_paths`.
 - QA remains suspended; four-way parity **unproven** until QA returns.
 
-**Architecture verdict (three independent static audits — 2026-08-30):**
+## Planning SSOT architecture — Attempt 9
 
-**Unanimous: NOT RULE-COMPLIANT.** QA is separate; these were code-only passes. Do **not** claim 100% compliance or delete `QA_SUSPENDED.flag` on architecture grounds alone.
+**Date:** 2026-08-30  
+**Status:** **CLOSED — RULE-COMPLIANT** (three static re-audits unanimous).
 
-| Pass | Lens | Overall |
-|------|------|---------|
-| 1 | Settle → seal → ratify | **NOT COMPLIANT** |
-| 2 | Paint / display / overlay | **NOT COMPLIANT** |
-| 3 | Parallel path / obsolete path hunt | **NOT COMPLIANT** |
+See `docs/design/logs/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempt 9 for changes and audit table.
 
-**Shared blockers (all three flagged):**
-- Blue route display reads mutable `preview_state.preview_paths`; tile layers read sealed receipt — **two paint owners**
-- Paint-only settle (`_settle_paint_only_preview_at_cell`) uses `_proj().clone()`, not sim `temp_board` — **partial / non-sim settle**
-- Ghost staging (`_write_voluntary_walk_preview_path`) mutates `preview_state` outside seal
-- Settle runs validation sim (`preview_commit_valid`) and display sim (`preview_actions`) — **two sim invocations**
-- `_apply_facing_to_slots` runs **after** slot validation in `_preview_from_commit_slots_at_cell`
-- `_authoritative_*` and seal snapshot still fall back to / copy from mutable `preview_paths`
-
-**What passes:** ratify-only commit (no click-time slot rebuild); structural gate forbidden symbols removed; selected-player tile layers receipt-gated in overlay.
+**QA:** Still suspended for behavioral proof only.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 
