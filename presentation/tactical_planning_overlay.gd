@@ -983,11 +983,23 @@ func _apply_planning_tile_layers(
 			_hover_blast_tiles = settled.blast_tiles.duplicate()
 			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			if _can_show_move_tiles(unit, selected_ability):
-				var locked_move: Vector2i = layer_plan.get('locked_move_origin', Vector2i(-999999, -999999))
-				if locked_move.x > -900000:
-					_hover_move_tiles = _reachable_move_tiles_for_origin(
-						unit, p_unit, selected_ability, locked_move, is_selected_player,
-					)
+				match phase:
+					PlanningPreviewTiles.PhaseKind.MOVEMENT:
+						var locked_move: Vector2i = layer_plan.get(
+							"locked_move_origin", Vector2i(-999999, -999999),
+						)
+						if locked_move.x > -900000:
+							_hover_move_tiles = _reachable_move_tiles_for_origin(
+								unit, p_unit, selected_ability, locked_move, is_selected_player,
+							)
+					PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+						var next_move: Vector2i = layer_plan.get(
+							"next_move_origin", Vector2i(-999999, -999999),
+						)
+						if next_move.x > -900000:
+							_hover_move_tiles = _reachable_move_tiles_for_origin(
+								unit, p_unit, selected_ability, next_move, is_selected_player,
+							)
 		return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
@@ -2554,10 +2566,21 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 		return Vector2i(-999999, -999999)
 	if _planning_input != null and _is_selected_player_unit(unit):
 		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		if settled != null and settled.is_sealed and settled.unit_id == unit.id:
-			if settled.stand_origin.x > -900000:
-				return settled.stand_origin
-		return Vector2i(-999999, -999999)
+		var selected_ability: int = _director.selected_ability_index if _director != null else -1
+		if (
+			settled != null
+			and settled.is_sealed
+			and settled.unit_id == unit.id
+			and settled.matches_paint_context(
+				_hover_coord,
+				unit.id,
+				_planning_input.settled_hover_revision_key(),
+				selected_ability,
+			)
+			and settled.stand_origin.x > -900000
+		):
+			return settled.stand_origin
+		return _planning_input.action_range_intent_stand_cell(unit.id)
 	return _proj_origin(unit)
 
 

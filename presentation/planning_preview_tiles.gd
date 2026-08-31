@@ -110,8 +110,13 @@ static func resolve_layer_origins(
 				and planning_input.action_range_stand_locked_to_projection(unit.id)
 			)
 		PhaseKind.NON_MOVEMENT:
-			if locked_stand.x > -900000:
-				plan["locked_aim_origin"] = locked_stand
+			var aim_stand: Vector2i = locked_stand
+			if planning_input != null and show_action_range:
+				var intent_stand: Vector2i = planning_input.action_range_intent_stand_cell(unit.id)
+				if intent_stand.x > -900000:
+					aim_stand = intent_stand
+			if aim_stand.x > -900000:
+				plan["locked_aim_origin"] = aim_stand
 			var post_timing: int = director.get_planning_move_timing(unit.id)
 			if (
 				post_timing == GameEnums.MoveTiming.POST_ACTION

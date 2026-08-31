@@ -1895,7 +1895,14 @@ func _run_hover_overlay_refresh() -> void:
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	_hover_heavy_last_flush_usec = Time.get_ticks_usec()
 	if not _director.board.is_in_bounds(cell):
-		if _director.selected_unit_id < 0:
+		if _director.selected_unit_id >= 0 and action_range_visible_for_hover():
+			var range_actor_oob: UnitState = _proj_unit(_director.selected_unit_id)
+			var stand_cell: Vector2i = action_range_intent_stand_cell(_director.selected_unit_id)
+			if range_actor_oob != null and _director.board.is_in_bounds(stand_cell):
+				_settle_stand_hover_preview(range_actor_oob, stand_cell)
+			if _planning != null:
+				_planning._recompute_hover_ranges_from_inputs()
+		elif _director.selected_unit_id < 0:
 			_sync_intent_live_board()
 			if _planning != null:
 				_planning._invalidate_hover_cache()
@@ -2389,9 +2396,14 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		_refresh_click_target_highlight()
 		return
 	if _director.selected_ability_index >= 0 and action_range_visible_for_hover():
-		_settle_stand_hover_preview(p_unit, cell)
-		_refresh_click_target_highlight()
-		return
+		var stand_only_ability: AbilityData = _selected_ability_data(p_unit)
+		if (
+			stand_only_ability == null
+			or not _is_awaiting_movement_endpoint(p_unit, stand_only_ability)
+		):
+			_settle_stand_hover_preview(p_unit, cell)
+			_refresh_click_target_highlight()
+			return
 	_restore_hover_preview()
 
 
@@ -5549,6 +5561,14 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		)
 		if not leg.is_empty() and leg.back() == cell:
 			return leg
+	var ability: AbilityData = _selected_ability_data(actor)
+	if ability != null:
+		var skill_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(actor, cell, ability)
+		if not skill_wps.is_empty() and skill_wps.back() == cell:
+			return skill_wps
+	var corridor_wps: Array[Vector2i] = _hover_paint_waypoints_for_cell(actor, cell)
+	if not corridor_wps.is_empty() and corridor_wps.back() == cell:
+		return corridor_wps
 	return []
 
 
@@ -8303,6 +8323,8 @@ func _append_module_awaiting_target(
 		var wps: Array[Vector2i] = waypoints.duplicate()
 		if wps.is_empty() and AbilitySystem.ability_has_movement_effect(committed.ability, actor):
 			wps = _resolve_commit_move_waypoints(actor.id, actor, cell)
+			if (wps.is_empty() or wps.back() != cell) and committed.ability != null:
+				wps = _hover_walk_waypoints_for_skill(actor, cell, committed.ability)
 			if wps.is_empty() or wps.back() != cell:
 				slots["invalid"] = "Ability move requires preview waypoints."
 				return false

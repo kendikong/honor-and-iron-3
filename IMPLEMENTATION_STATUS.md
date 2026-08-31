@@ -28,10 +28,17 @@
 | Ability ID branch gate self-test | **PASS** |
 | AOE footprint contract | **PASS** |
 | Sim/bridge regression + ER-3 exit gate | **PASS** |
-| T3 fixture parity | **FAIL** — 33 existing planning/overlay fixture failures remain; no failures were suppressed |
-| Class Tier 1 gates | **FAIL** — class scenario contract and planning-overlay failures remain after canonical path repair |
+| T3 fixture parity | **FAIL** — 21 failures (down from 33); action-range-after-premove, K1/K3/K4 bible probes, drag/swap commit |
+| Live class QA | **Mixed** — Mage, Bruiser, Rogue **PASS**; Lancer blast overlay **FAIL**; Archer complex-turn forecast **FAIL**; others not re-run this turn |
 
-**Audit status:** Not closed. The remaining T3/class failures are explicit handoff blockers for the next agent; this checkpoint does not claim a phase or class completion.
+### Handoff blockers (next agent)
+1. **Action range after committed premove** — red tiles must paint from `action_range_intent_stand_cell`, not turn-start stand (`show_enemy_bash_committed_premove`, `awaiting_module_range_after_premove`, K1/K4).
+2. **Off-map / off-blue hover** — overlay must keep red/blue when cursor leaves board (`K1-03/off_blue`, `K1-03/off_map`).
+3. **Trample/dash preview paths** — awaiting-movement endpoint must build route geometry (`K3-04`, `K3-05`, `K3-09`).
+4. **Drag/swap commit** — painted drag and SWAP-12 release still produce invalid sealed slots.
+5. **Move preview leg origin** — movement-skill path includes stale phase-entry cell (`move_preview_origin`).
+
+**Audit status:** Not closed. Structural SSOT gates are green; fixture and selective live failures remain explicit handoff work.
 
 ## Core milestone — Planning voluntary-walk refactor ✅
 
