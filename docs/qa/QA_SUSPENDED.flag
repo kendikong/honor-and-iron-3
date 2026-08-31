@@ -1,4 +1,0 @@
-SUSPENDED=1
-reason=Owner mandate: no automated QA until planning architecture is definitively 100% compliant with planning SSOT rules.
-suspended_at=2026-08-30
-re_enable=Owner deletes this file AND says "QA is re-enabled" or "planning SSOT is 100% compliant" in chat.

@@ -982,7 +982,7 @@ func _apply_planning_tile_layers(
 		if blast_origin.x > -900000:
 			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
 			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-				unit, p_unit, blast_origin, selected_ability, cache_force, is_selected_player,
+				unit, unit, blast_origin, selected_ability, cache_force, is_selected_player,
 			)
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)

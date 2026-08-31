@@ -1,6 +1,6 @@
 # QA Suspension (Owner Mandate)
 
-**Status: SUSPENDED** — all automated QA is hard-disabled until planning architecture is **definitively 100% compliant** with planning SSOT rules.
+**Status: RE-ENABLED** (owner, 2026-08-30) — `QA_SUSPENDED.flag` removed after Planning SSOT architecture milestone (Attempt 9).
 
 ## What is blocked
 

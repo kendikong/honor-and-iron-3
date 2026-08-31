@@ -87,7 +87,7 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 
 See `docs/design/logs/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempt 9 for change list and audit table.
 
-**QA:** Suspended — behavioral proof not part of this milestone.
+**QA:** Re-enabled 2026-08-30 after architecture milestone — run planning gate for behavioral baseline.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 
