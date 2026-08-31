@@ -71,6 +71,8 @@ var _hover_sim_schedule_key: String = ""
 var _hover_sim_schedule_pointer: Vector2 = Vector2.INF
 var _ability_schedule_generation: int = 0
 var _drag_preview_schedule_generation: int = 0
+var _planning_refresh_generation: int = 0
+var _planning_refresh_scheduled: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -123,6 +125,8 @@ func teardown() -> void:
 
 ## Test and integration hook: refresh the canonical preview immediately.
 func refresh_planning_now() -> void:
+	_planning_refresh_generation += 1
+	_planning_refresh_scheduled = false
 	_refresh_planning_hover_at_current_cell(false)
 
 
@@ -1064,7 +1068,31 @@ func _on_selection_changed(unit_id: int) -> void:
 
 
 func _request_planning_selection_refresh() -> void:
-	_run_planning_selection_refresh()
+	_schedule_planning_refresh(true)
+
+
+func _schedule_planning_refresh(refresh_cursor: bool) -> void:
+	if _planning_refresh_scheduled:
+		return
+	_planning_refresh_scheduled = true
+	_planning_refresh_generation += 1
+	var generation: int = _planning_refresh_generation
+	if _map_view == null or not _map_view.is_inside_tree():
+		_run_scheduled_planning_refresh(generation, refresh_cursor)
+		return
+	_map_view.get_tree().process_frame.connect(
+		func() -> void:
+			_run_scheduled_planning_refresh(generation, refresh_cursor),
+		CONNECT_ONE_SHOT,
+	)
+
+
+func _run_scheduled_planning_refresh(generation: int, refresh_cursor: bool) -> void:
+	if generation != _planning_refresh_generation:
+		return
+	_planning_refresh_scheduled = false
+	if _is_planning() and not dragging:
+		_refresh_planning_hover_at_current_cell(refresh_cursor)
 
 
 func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
@@ -1079,11 +1107,6 @@ func _refresh_planning_hover_at_current_cell(refresh_cursor: bool) -> void:
 	_sync_intent_skill_mode()
 	if refresh_cursor and _intent_state != null:
 		refresh_mouse_cursor(cell)
-
-
-func _run_planning_selection_refresh() -> void:
-	_refresh_planning_hover_at_current_cell(true)
-
 
 func _finish_selection_changed() -> void:
 	if _drag_saved_preview == null and _planning != null:
@@ -1180,8 +1203,7 @@ func _on_preview_updated(_result: SimResult) -> void:
 	_drag_saved_preview = null
 	if dragging:
 		return
-	_sync_after_plan_refresh()
-	_refresh_hover_if_planning()
+	_schedule_planning_refresh(false)
 
 
 func _sync_after_plan_refresh() -> void:
