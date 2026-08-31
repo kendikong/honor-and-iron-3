@@ -2135,11 +2135,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			elif ability != null:
 				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
-			if (
-				target_id < 0
-				and action_range_visible_for_hover()
-				and _current_sealed_receipt() == null
-			):
+			if action_range_visible_for_hover() and _current_sealed_receipt() == null:
 				_settle_paint_only_preview_at_cell(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
@@ -5572,8 +5568,16 @@ func action_range_visible_for_hover() -> bool:
 	if awaiting_targeting_active():
 		return true
 	var stand: Vector2i = settled_action_range_stand_cell(unit_id)
+	var economy_board: BoardState = board
+	var economy_actor: UnitState = actor
+	var live_board: BoardState = _director.live_planning_board()
+	if live_board != null:
+		var live_actor: UnitState = live_board.get_unit_by_id(unit_id)
+		if live_actor != null and live_actor.position == stand:
+			economy_board = live_board
+			economy_actor = live_actor
 	return AbilitySystem.can_show_planning_action_range_after_premove(
-		board, actor, ability, stand, auto_run_move,
+		economy_board, economy_actor, ability, stand, auto_run_move,
 	)
 
 
@@ -5588,6 +5592,9 @@ func unit_move_requires_run(unit_id: int) -> bool:
 	if dragging and _drag_unit_id == unit_id and not _drag_route.is_empty():
 		var dest: Vector2i = _drag_route[_drag_route.size() - 1]
 		return AbilitySystem.movement_requires_run(board, actor, dest, _route_waypoints())
+	for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
+		if step != null and step.type == GameEnums.ActionType.MOVE and step.uses_run:
+			return true
 	if unit_id == _director.selected_unit_id:
 		var live_path: Array = _authoritative_route_for_unit(unit_id)
 		if live_path.size() >= 2:
@@ -5600,9 +5607,6 @@ func unit_move_requires_run(unit_id: int) -> bool:
 		var hover: Vector2i = get_hover_tile_for_ui()
 		if board.is_in_bounds(hover) and hover != actor.position and _is_hover_move_cell(actor, hover):
 			return AbilitySystem.movement_requires_run(board, actor, hover, [])
-	for step: TimelineAction in _director.get_unit_plan_steps(unit_id):
-		if step != null and step.type == GameEnums.ActionType.MOVE and step.uses_run:
-			return true
 	return false
 
 
@@ -5932,7 +5936,7 @@ func _ability_range_origin(actor: UnitState) -> Vector2i:
 			var stand: Vector2i = _drag_route_stand_cell()
 			if _director.board != null and _director.board.is_in_bounds(stand):
 				return stand
-	return _phase_entry_stand(actor)
+	return _settle_phase_entry_stand(actor)
 
 
 func _in_ability_range_of_coord(actor: UnitState, coord: Vector2i) -> bool:

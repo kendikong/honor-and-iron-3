@@ -2438,6 +2438,9 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 			and settled.stand_origin.x > -900000
 		):
 			return settled.stand_origin
+		var fallback_stand: Vector2i = _planning_input.settled_action_range_stand_cell(unit.id)
+		if fallback_stand.x > -900000:
+			return fallback_stand
 		return Vector2i(-999999, -999999)
 	return _proj_origin(unit)
 

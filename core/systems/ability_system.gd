@@ -3030,8 +3030,10 @@ static func can_show_planning_action_range_after_premove(
 		return false
 	if not can_plan(actor, ability):
 		return false
-	if premove_cell == actor.position or not board.is_in_bounds(premove_cell):
-		return true
+	if not board.is_in_bounds(premove_cell):
+		return false
+	if premove_cell == actor.position:
+		return can_plan(actor, ability)
 	var projected: UnitState = project_actor_after_premove(
 		board, actor, premove_cell, auto_run_active,
 	)
