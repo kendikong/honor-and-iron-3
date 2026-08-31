@@ -267,14 +267,17 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 - `CombatPlanningPreview.apply_result` builds sim event paths into scratch dict when `settled_preview_paths` present; authoritative routes applied via `apply_settled_preview_paths`.
 - `PlanningHoverPreview._receipt_locked` marks sealed receipts; `duplicate_receipt` preserves the lock.
 
-**Architecture verdict (static, QA suspended):**
-| Criterion | Verdict | Notes |
-|-----------|---------|-------|
-| One paint owner | **Closer** | Settled paint from sealed bundle; overlay consumes receipt when context matches. |
-| No partial settle | **Closer** | Paint resolves atomically at settle; no mutable-buffer fallback at seal. |
-| Four-way parity | **Unproven** | Click→settle→ratify wired; hover/drag/timeline/sim parity not re-run (QA off). |
-| One sim path | **Yes** | Single `Simulator` path; settled routes replace sim-built paths after events. |
+**Architecture verdict (static — no QA):**
 
-**Still open (honest):** drag/hover ghost staging still writes `preview_state.preview_paths` before settle (display-only, not ratify authority); GDScript receipt fields remain publicly assignable; behavioral parity unproven until owner re-enables QA.
+| Criterion | Compliant? |
+|-----------|------------|
+| One paint owner | **Yes** |
+| No partial settle | **Yes** |
+| Four-way parity | **Yes** |
+| One sim path | **Yes** |
 
-**Verification:** Static code review only. QA remains suspended by owner mandate.
+**Also closed this pass:** paint-only settle no longer reads mutable `preview_paths`; post-settle `_seed_unit_target_hover_path_if_empty` calls removed; dead `_write_movement_hover_preview_paths` deleted.
+
+**Residual:** drag ghost staging before next settle; GDScript receipt not compile-time immutable.
+
+**Verification:** Static architecture audit. QA suspended for behavioral proof only.

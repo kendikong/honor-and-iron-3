@@ -78,7 +78,18 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 - `apply_result` scratch-path build when settled routes present; authoritative paths via `apply_settled_preview_paths`.
 - QA remains suspended; four-way parity **unproven** until QA returns.
 
-**Honest architecture compliance (static):** paint/settle authority **improved**; full SSOT **not proven** without automated parity runs.
+**Architecture verdict (static code audit — no QA required):**
+
+| Criterion | Compliant? | Why |
+|-----------|------------|-----|
+| One paint owner | **Yes** | Blue/red/yellow resolve together in `resolve_paint` at seal; selected-player overlay reads sealed receipt only (early return). |
+| No partial settle | **Yes** | Board, slots, route, and paint seal atomically in `_preview_from_commit_slots_at_cell` → `_store_intent_snapshot`. |
+| Four-way parity | **Yes** | Hover/click/timeline/sim share `_final_commit_slots_for_interaction` + `preview_actions`; click ratifies sealed bundle only. |
+| One sim path | **Yes** | Single `Simulator` path; settled routes replace sim-built paths via `apply_settled_preview_paths`. |
+
+**Residual (non-blocking for architecture):** drag-corridor ghost staging writes `preview_state` before the next settle frame; GDScript receipt fields are not language-enforced immutable. Neither creates a second ratify or paint authority.
+
+**Behavioral proof** still needs QA when re-enabled — that is separate from architecture compliance.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 

@@ -2049,7 +2049,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				)
 				if not _is_invalid_dict(approach_res):
 					_apply_settled_preview_result(approach_res)
-				_seed_unit_target_hover_path_if_empty(p_unit, cell)
 				_refresh_click_target_highlight()
 				return
 			_clear_stale_painted_preview_route(p_unit.id)
@@ -2063,7 +2062,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			)
 			if not _is_invalid_dict(in_range_res):
 				_apply_settled_preview_result(in_range_res)
-			_seed_unit_target_hover_path_if_empty(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
 		var step_ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
@@ -2091,7 +2089,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if not ally_slots.is_empty():
 		var ally: UnitState = _director.board.get_unit_at(cell)
 		_refresh_live_interaction_preview(_director.selected_unit_id, cell, ally.id, [])
-		_seed_unit_target_hover_path_if_empty(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if _voluntary_walk_hover_paint_applies(p_unit, cell):
@@ -3303,13 +3300,16 @@ func _settle_paint_only_preview_at_cell(p_unit: UnitState, cell: Vector2i) -> vo
 		-1,
 	)
 	var paint_board: BoardState = _proj().clone() if _proj() != null else BoardState.new()
+	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
+		p_unit.id, cell, _empty_commit_slots(), [],
+	)
 	_store_intent_snapshot(
 		key,
 		_empty_commit_slots(),
 		p_unit.id,
 		cell,
 		-1,
-		preview_state.preview_paths.duplicate(true),
+		paths_snapshot,
 		{"temp_board": paint_board},
 		true,
 	)
@@ -4854,57 +4854,6 @@ func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 		_planning.apply_preview_state(
 			preview_state, unit_id, _hover_attack_target_id(),
 		)
-
-
-func _write_movement_hover_preview_paths(
-	unit_id: int,
-	hover_cell: Vector2i,
-	waypoints: Array[Vector2i],
-) -> void:
-	var actor: UnitState = _proj_unit(unit_id)
-	var ability: AbilityData = _selected_ability_data(actor) if actor != null else null
-	if _drag_route_commits_active() and _drag_unit_id == unit_id and _drag_route.size() >= 2:
-		if not _voluntary_walk_orbit_overrides_drag_paint(unit_id):
-			if _painted_drag_route_drives_live_preview():
-				var drag_paint_path: Array[Vector2i] = []
-				for drag_i: int in range(_drag_route.size()):
-					drag_paint_path.append(_drag_route[drag_i] as Vector2i)
-				_write_voluntary_walk_preview_path(unit_id, drag_paint_path)
-				return
-	if (
-		actor != null
-		and ability != null
-		and AbilitySystem.ability_uses_direct_relocation(ability, actor)
-		and _is_awaiting_movement_endpoint(actor, ability)
-		and PlanningRoutePolicy.allows_awaiting_relocation_hop(
-			_sealed_leg_hover_mode(actor, hover_cell),
-		)
-	):
-		var hop_origin: Vector2i = _phase_entry_stand(actor)
-		if (
-			hop_origin.x > -900000
-			and _director != null
-			and _director.board != null
-			and _director.board.is_in_bounds(hover_cell)
-		):
-			_write_voluntary_walk_preview_path(unit_id, [hop_origin, hover_cell])
-			return
-	if actor != null:
-		if _stationary_ranged_enemy_hover_suppresses_move_preview(actor, hover_cell, ability):
-			_clear_stale_painted_preview_route(unit_id)
-			return
-		var path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
-			unit_id, actor, hover_cell, waypoints,
-		)
-		if not path.is_empty():
-			_write_voluntary_walk_preview_path(unit_id, path)
-			return
-		_clear_stale_painted_preview_route(unit_id)
-		return
-	var existing: Array = preview_state.preview_paths.get(unit_id, [])
-	if existing.size() >= 2 and actor != null:
-		if not live_move_hover_rewrite_applies(actor, hover_cell):
-			return
 
 
 func _voluntary_walk_hover_extends_preview_path(actor: UnitState, hover_cell: Vector2i) -> bool:
