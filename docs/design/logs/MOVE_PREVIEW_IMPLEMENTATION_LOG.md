@@ -246,4 +246,6 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 
 **Final structural verdict:** PASS — the four planning SSOT criteria are satisfied. QA remains suspended by owner mandate and was not run.
 
+**Attempt 7 correction after final static pass:** Settled blue-tile resolution now consumes the sealed route snapshot rather than `CombatPlanningInput`'s mutable corridor buffer. Settled walk-only blast gating likewise uses that receipt route; the unspecialized path retains the existing input API.
+
 **Verification:** Static code review only. QA remains suspended by owner mandate.

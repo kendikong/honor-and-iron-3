@@ -53,6 +53,7 @@ static func resolve_layer_origins(
 	planning_input: CombatPlanningInput,
 	hover_coord: Vector2i,
 	settled_board: BoardState = null,
+	settled_preview_paths: Dictionary = {},
 ) -> Dictionary:
 	var phase: PhaseKind = planning_phase(director, unit, selected_ability, planning_input)
 	var none: Vector2i = Vector2i(-999999, -999999)
@@ -100,7 +101,13 @@ static func resolve_layer_origins(
 					plan["next_aim_origin"] = predicted
 			plan["show_blast"] = (
 				show_action_range
-				and not planning_input.is_walk_only_hover_move(unit, hover_coord)
+				and not _is_settled_walk_only_hover(
+					unit,
+					hover_coord,
+					planning_input,
+					settled_preview_paths,
+					settled_board,
+				)
 			)
 			if plan["show_blast"] and plan["next_aim_origin"] != none:
 				plan["blast_origin"] = plan["next_aim_origin"]
@@ -142,6 +149,7 @@ static func resolve_paint(
 	planning_input: CombatPlanningInput,
 	hover_coord: Vector2i,
 	settled_board: BoardState = null,
+	settled_preview_paths: Dictionary = {},
 ) -> Dictionary:
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if director == null or board == null or unit == null:
@@ -170,6 +178,7 @@ static func resolve_paint(
 		planning_input,
 		hover_coord,
 		settled_board,
+		settled_preview_paths,
 	)
 	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
@@ -182,6 +191,7 @@ static func resolve_paint(
 		planning_input,
 		plan,
 		settled_board,
+		settled_preview_paths,
 	)
 	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
 	var show_action_range: bool = bool(plan.get("show_action_range", false))
@@ -238,6 +248,23 @@ static func resolve_paint(
 	}
 
 
+static func _is_settled_walk_only_hover(
+	unit: UnitState,
+	hover_coord: Vector2i,
+	planning_input: CombatPlanningInput,
+	settled_preview_paths: Dictionary,
+	settled_board: BoardState,
+) -> bool:
+	if planning_input == null:
+		return false
+	if settled_board == null:
+		return planning_input.is_walk_only_hover_move(unit, hover_coord)
+	if not planning_input.active_movement_planning_step(unit):
+		return false
+	var route: Array = settled_preview_paths.get(unit.id, [])
+	return route.size() >= 2 and route.back() == hover_coord
+
+
 static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
 	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
 	var candidate: Vector2i = none
@@ -260,6 +287,7 @@ static func resolve_move_tiles(
 	planning_input: CombatPlanningInput,
 	plan: Dictionary,
 	settled_board: BoardState = null,
+	settled_preview_paths: Dictionary = {},
 ) -> Array[Vector2i]:
 	if (
 		director == null
@@ -288,6 +316,7 @@ static func resolve_move_tiles(
 		planning_input,
 		origin,
 		settled_board,
+		settled_preview_paths,
 	)
 
 
@@ -299,6 +328,7 @@ static func reachable_move_tiles(
 	planning_input: CombatPlanningInput,
 	origin: Vector2i,
 	settled_board: BoardState = null,
+	settled_preview_paths: Dictionary = {},
 ) -> Array[Vector2i]:
 	if (
 		director == null
@@ -351,7 +381,12 @@ static func reachable_move_tiles(
 		move_ability,
 	)
 	if is_selected and planning_input != null:
-		for painted: Vector2i in planning_input.painted_corridor_waypoints_for_blue_tiles(unit.id):
+		var painted_waypoints: Array = (
+			settled_preview_paths.get(unit.id, [])
+			if settled_board != null
+			else planning_input.painted_corridor_waypoints_for_blue_tiles(unit.id)
+		)
+		for painted: Vector2i in painted_waypoints:
 			if not tiles.has(painted):
 				tiles.append(painted)
 	return tiles

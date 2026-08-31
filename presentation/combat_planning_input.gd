@@ -3187,6 +3187,7 @@ func _store_intent_snapshot(
 		self,
 		hover_cell,
 		settled_board,
+		paths_for_seal,
 	)
 	if sealed_board is BoardState:
 		paint["preview_board"] = sealed_board

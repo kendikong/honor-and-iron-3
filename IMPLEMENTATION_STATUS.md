@@ -49,7 +49,7 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 
 | Criterion | Attempt 7 status | Current evidence |
 |---|---|---|
-| One paint owner | **PASS** | Settled paint receives the fresh simulation board, and the settled route travels with that same result. |
+| One paint owner | **PASS** | Settled paint receives the fresh simulation board and sealed route; settled blue tiles no longer consult the mutable corridor buffer. |
 | No partial settle | **PASS** | Click/drop settlement routes through the canonical hover boundary before ratification. |
 | Four-way parity | **PASS** | Hover, click, timeline slots, sealed receipt, and simulator actions use the same settled interaction. |
 | One simulation path | **PASS** | The director uses the shared simulator path; no second simulator path was added. |
@@ -63,7 +63,7 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 | No identity branches | **PASS** | No ability, node, scene, or tab identity branch was added. |
 | No UI-only state | **PASS** | Board, route, slots, paint, and ratification share the sealed result. |
 | Reusable | **PASS** | The same path serves movement, range, blast, click, and drag. |
-| Obsolete path removed | **PASS** | Authoritative settled routes skip post-result route reconciliation; stale refreshes are discarded and latest-key refreshes are rescheduled. |
+| Obsolete path removed | **PASS** | Authoritative settled routes skip post-result route reconciliation; settled paint no longer reads the mutable corridor path; stale refreshes are discarded and latest-key refreshes are rescheduled. |
 
 **Final structural verdict:** **PASS** — planning architecture is 100% compliant with the four planning SSOT criteria. QA remains suspended by owner mandate and was not run.
 
