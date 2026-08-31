@@ -70,12 +70,15 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 ## Planning SSOT architecture — Attempt 8
 
 **Date:** 2026-08-30  
-**Status:** **OPEN** — slot-owned route at settle; no compliance claim.
+**Status:** **CLOSED (structural)** — slot-owned route at settle; **not** 100% behavioral compliance.
 
-- Settling-unit route is built from commit slots, not the mutable drag/hover buffer.
-- Sealed route overwrites staging `preview_state` for that unit after seal.
-- `apply_settled_preview_paths` resyncs split indices when authoritative routes replace sim-built paths.
-- QA remains suspended.
+- Settling-unit route built from commit slots only; mutable-buffer fallback at seal removed.
+- `_authoritative_preview_paths` / `_authoritative_route_for_unit` — commit, promote, sealed-leg reads use sealed receipt first.
+- Ally hover settles through canonical preview path (no movement-path write bypass).
+- `apply_result` scratch-path build when settled routes present; authoritative paths via `apply_settled_preview_paths`.
+- QA remains suspended; four-way parity **unproven** until QA returns.
+
+**Honest architecture compliance (static):** paint/settle authority **improved**; full SSOT **not proven** without automated parity runs.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 

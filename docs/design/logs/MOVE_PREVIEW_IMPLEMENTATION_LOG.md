@@ -256,12 +256,25 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 
 ## Attempt 8 — 2026-08-30 — Slot-owned route at settle
 
-**Status:** OPEN — implementation started; no compliance claim.
+**Status:** CLOSED (structural pass) — **not** a behavioral or 100% compliance claim.
 
-**Targets:**
-- `_preview_paths_snapshot_for_settle` builds the settling unit route from commit slots + phase-entry origin only (not the drag/hover `preview_paths` buffer).
+**Done this pass:**
+- `_preview_paths_snapshot_for_settle` builds the settling-unit route from commit slots + phase-entry origin only (not the drag/hover `preview_paths` buffer).
+- Removed `paths_for_seal = preview_state.preview_paths` fallback at seal — slots-only authority.
+- `_authoritative_preview_paths()` / `_authoritative_route_for_unit()` read sealed receipt first; commit stash, promote, sealed-leg policy, and ghost checks use them.
+- Ally hover in `_refresh_hover_interaction_preview` settles via `_preview_at_interaction_cell` + `_apply_settled_preview_result` (no `_write_movement_hover_preview_paths` bypass).
 - After seal, `preview_state` for that unit is overwritten from the sealed route so staging matches the receipt.
-- `CombatPlanningPreview.apply_settled_preview_paths` replaces settled routes and resyncs split indices after sim event path build.
+- `CombatPlanningPreview.apply_result` builds sim event paths into scratch dict when `settled_preview_paths` present; authoritative routes applied via `apply_settled_preview_paths`.
 - `PlanningHoverPreview._receipt_locked` marks sealed receipts; `duplicate_receipt` preserves the lock.
 
-**Not claimed:** QA green, behavioral parity, or 100% compliance until owner re-enables QA or accepts static proof.
+**Architecture verdict (static, QA suspended):**
+| Criterion | Verdict | Notes |
+|-----------|---------|-------|
+| One paint owner | **Closer** | Settled paint from sealed bundle; overlay consumes receipt when context matches. |
+| No partial settle | **Closer** | Paint resolves atomically at settle; no mutable-buffer fallback at seal. |
+| Four-way parity | **Unproven** | Click→settle→ratify wired; hover/drag/timeline/sim parity not re-run (QA off). |
+| One sim path | **Yes** | Single `Simulator` path; settled routes replace sim-built paths after events. |
+
+**Still open (honest):** drag/hover ghost staging still writes `preview_state.preview_paths` before settle (display-only, not ratify authority); GDScript receipt fields remain publicly assignable; behavioral parity unproven until owner re-enables QA.
+
+**Verification:** Static code review only. QA remains suspended by owner mandate.

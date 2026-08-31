@@ -133,19 +133,34 @@ func apply_result(
 	)
 	var events: Array = res.get("events", [])
 	live_intents = res.get("intents", [])
-	build_preview_paths(
-		events,
-		director,
-		preview_paths,
-		preview_splits,
-		preview_pushes,
-		preview_post_splits,
-		action_splits,
-		path_init_board,
-	)
 	var settled_paths: Variant = res.get("settled_preview_paths", null)
 	if settled_paths is Dictionary:
+		var scratch_paths: Dictionary = {}
+		var scratch_splits: Dictionary = {}
+		var scratch_post_splits: Dictionary = {}
+		var scratch_action_splits: Dictionary = {}
+		build_preview_paths(
+			events,
+			director,
+			scratch_paths,
+			scratch_splits,
+			preview_pushes,
+			scratch_post_splits,
+			scratch_action_splits,
+			path_init_board,
+		)
 		apply_settled_preview_paths(self, settled_paths as Dictionary)
+	else:
+		build_preview_paths(
+			events,
+			director,
+			preview_paths,
+			preview_splits,
+			preview_pushes,
+			preview_post_splits,
+			action_splits,
+			path_init_board,
+		)
 	## Settled interaction geometry is already authoritative; only legacy result paths
 	## need action-based completion.
 	if actions_v is Array and not settled_paths is Dictionary:

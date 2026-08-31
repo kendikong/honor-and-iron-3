@@ -653,6 +653,33 @@ func get_settled_hover_preview() -> _HoverPreviewBundle:
 		return null
 	return _settled_hover_preview.duplicate_receipt()
 
+
+func _current_sealed_receipt() -> PlanningHoverPreview:
+	if (
+		_settled_hover_preview != null
+		and _settled_hover_preview.valid
+		and _settled_hover_preview.is_sealed
+	):
+		return _settled_hover_preview
+	return null
+
+
+func _authoritative_preview_paths() -> Dictionary:
+	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	if receipt != null:
+		return receipt.preview_paths.duplicate(true)
+	return preview_state.preview_paths.duplicate(true)
+
+
+func _authoritative_route_for_unit(unit_id: int) -> Array:
+	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	if receipt != null and receipt.unit_id == unit_id:
+		var route: Variant = receipt.preview_paths.get(unit_id, [])
+		if route is Array:
+			return (route as Array).duplicate()
+	return preview_state.preview_paths.get(unit_id, [])
+
+
 func settled_hover_revision_key() -> String:
 	if not _intent_snapshot_valid or _director == null:
 		return ""
@@ -1463,7 +1490,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			if active_movement_planning_step(p_unit):
 				var leg_origin: Vector2i = _phase_entry_stand(p_unit)
 				if preview_state.is_painted_leg_sealed(p_unit.id):
-					var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+					var sealed_route: Array = _authoritative_route_for_unit(p_unit.id)
 					if (
 						sealed_route.size() >= 2
 						and leg_origin.x > -900000
@@ -2045,9 +2072,16 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			var step_ally_wps: Array[Vector2i] = []
 			if step_ability != null:
 				step_ally_wps = _hover_walk_waypoints_for_skill(p_unit, cell, step_ability)
-			if not step_ally_wps.is_empty():
-				_write_movement_hover_preview_paths(p_unit.id, cell, step_ally_wps)
-			_refresh_live_interaction_preview(_director.selected_unit_id, cell, step_ally.id, step_ally_wps)
+			var ally_res: Dictionary = _preview_at_interaction_cell(
+				p_unit.id,
+				cell,
+				cell,
+				step_ally.id,
+				step_ally_wps,
+				_snapshot_drag_legal_move_tiles(),
+			)
+			if not _is_invalid_dict(ally_res):
+				_apply_settled_preview_result(ally_res)
 			_refresh_click_target_highlight()
 			return
 		_refresh_voluntary_walk_hover_preview(p_unit, cell)
@@ -2326,10 +2360,10 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 	if actor != null:
 		if _painted_drag_route_matches_leg(actor) and _drag_route.size() >= 2:
 			if preview_state.is_painted_leg_sealed(unit_id):
-				var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
+				var sealed_route: Array = _authoritative_route_for_unit(unit_id)
 				if sealed_route != _drag_route:
 					_clear_frozen_painted_leg(unit_id)
-			var sealed_route: Array = preview_state.preview_paths.get(unit_id, [])
+			var sealed_route: Array = _authoritative_route_for_unit(unit_id)
 			if sealed_route.size() >= 2:
 				_restore_sealed_voluntary_walk_preview(unit_id, sealed_route, false)
 		_seal_painted_preview_landing_if_needed(actor)
@@ -2338,7 +2372,7 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
 	if unit_id < 0 or _director == null:
 		return
-	var route: Array = preview_state.preview_paths.get(unit_id, [])
+	var route: Array = _authoritative_route_for_unit(unit_id)
 	if route.size() < 2:
 		return
 	var board: BoardState = _proj().clone()
@@ -3023,7 +3057,7 @@ func _commit_at_cell(
 		return false
 	_notify_drag_plan_move_committed(unit_id)
 	if _director != null:
-		_director.stash_commit_intent_preview_paths(preview_state.preview_paths)
+		_director.stash_commit_intent_preview_paths(_authoritative_preview_paths())
 	if _director == null or not _director.ratify_sealed_intent(
 		unit_id,
 		_settled_hover_preview,
@@ -3047,7 +3081,7 @@ func _promote_intent_preview_after_commit() -> void:
 		return
 	var unit_id: int = _director.selected_unit_id if _director != null else -1
 	var fallback_board: BoardState = _proj() if _director != null else null
-	var intent_paths: Dictionary = preview_state.preview_paths.duplicate(true)
+	var intent_paths: Dictionary = _authoritative_preview_paths()
 	if preview_state.preview_board != null:
 		_planning.apply_preview_state(
 			preview_state,
@@ -3172,8 +3206,6 @@ func _store_intent_snapshot(
 	var actor: UnitState = _proj_unit(unit_id)
 	var move_origin: Vector2i = _settle_phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
 	var paths_for_seal: Dictionary = preview_paths_snapshot
-	if paths_for_seal.is_empty():
-		paths_for_seal = preview_state.preview_paths
 	var sealed_board: Variant = preview_result.get("temp_board", null)
 	var settled_board: BoardState = sealed_board as BoardState
 	var paint_actor: UnitState = actor
@@ -3897,7 +3929,7 @@ func _sealed_leg_structurally_locked(p_unit: UnitState) -> bool:
 		return false
 	if not preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
-	var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+	var sealed_route: Array = _authoritative_route_for_unit(p_unit.id)
 	if sealed_route.size() < 2:
 		_clear_frozen_painted_leg(p_unit.id)
 		return false
@@ -3983,14 +4015,14 @@ func _sealed_painted_preview_active(p_unit: UnitState) -> bool:
 		return false
 	if not preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
-	return (preview_state.preview_paths.get(p_unit.id, []) as Array).size() >= 2
+	return _authoritative_route_for_unit(p_unit.id).size() >= 2
 
 
 ## True when hover may rewrite preview_paths / live corridor for this cell.
 func _sealed_leg_hover_mode(p_unit: UnitState, cell: Vector2i) -> int:
 	if p_unit == null or _director == null or not _director.board.is_in_bounds(cell):
 		return PlanningRoutePolicy.SealedLegHoverMode.NONE
-	var sealed_route: Array = preview_state.preview_paths.get(p_unit.id, [])
+	var sealed_route: Array = _authoritative_route_for_unit(p_unit.id)
 	return PlanningRoutePolicy.sealed_leg_hover_mode(
 		preview_state.is_painted_leg_sealed(p_unit.id),
 		sealed_route.size(),
@@ -4696,7 +4728,7 @@ func _restore_sealed_voluntary_walk_preview(
 		preview_state.seal_painted_leg(unit_id)
 
 
-## Single live preview_paths write owner for hover/drag voluntary-walk routes.
+## Ghost-staging only — route truth is sealed via slots at settle; never read this for paint/commit.
 func _write_voluntary_walk_preview_path(unit_id: int, path: Array) -> void:
 	if unit_id < 0 or path.is_empty():
 		return
@@ -5799,6 +5831,9 @@ func _hover_intent_ghost_active(unit_id: int) -> bool:
 		return false
 	if drag_preview_failed:
 		return false
+	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	if receipt != null and receipt.preview_board != null:
+		return true
 	return preview_state.preview_board != null
 
 
