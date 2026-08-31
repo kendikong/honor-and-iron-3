@@ -26,6 +26,7 @@ Use exactly these three sections (in order):
 - Risks or assumptions, if any
 - If this plan **breaks or bypasses** a global system → include the **⚠ Global system exception** block from `global-systems-first.mdc` and wait for approval on the exception (not just the plan)
 - **Will not add this turn:** parallel preview/commit/sim path; UI-only flag/meta sim ignores; `if ability.id` / `if node ==` / scene/tab branch when data or shared pipeline could express it; duplicate logic without deleting the obsolete path in the **same** change — unless ⚠ exception block approved.
+- **QA-fix turns:** include the **QA failure owner map** + **QA fix discipline** blocks from `.cursor/rules/qa-fix-no-heuristics.mdc` (mandatory when responding to QA FAIL or chasing gate green). Plans that only patch overlay/tests to reduce FAIL count are **invalid** — stop and redesign.
 - **Lag / feel / parity** (when slowness or “feels different” — e.g. premove vs postmove): before any perf tweak, state fast vs slow scenario and whether they use the **same** owner API; unify first. Perf-specific bans: `.cursor/rules/minimal-performance-impact.mdc` § Forbidden on planning / combat.
 
 ### 3. Permission

@@ -76,6 +76,7 @@ Authoritative checklist mapping: `docs/qa/planning/PLANNING_QA_GATE.md`.
 ## Fail policy
 
 - **FAIL → do not mark task complete.** Fix and re-run QA, or stop and report blockers.
+- **QA-fix discipline (ABSOLUTE):** `.cursor/rules/qa-fix-no-heuristics.mdc` — fix the **canonical owner** (settle/slots/sim/director), never heuristic overlay fallbacks or per-test branches to chase green. Invalid plan → do not implement.
 - **Never ignore Tier 3 `[FAIL]` lines** — every failure is in scope until fixed or owner explicitly defers.
 - **Swap-only work:** iterate with `run_swap_planning_acceptance.ps1` until PASS; full gate only after swap is green.
 - **Skipped QA → rule violation** (same severity as skipping auto-commit).

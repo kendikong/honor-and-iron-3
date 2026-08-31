@@ -47,4 +47,4 @@ bundle. Ratification remains synchronous and rejects when no matching bundle exi
 
 **Owner phrase:** “Walk the table” → answer every audit row in plain language.
 
-Detail when editing code: `global-systems-first.mdc` · planning preview: `move-preview-intent-truth.mdc` · range: `action-range-latest-stand.mdc` · perf subordinate: `minimal-performance-impact.mdc`
+Detail when editing code: `global-systems-first.mdc` · planning preview: `move-preview-intent-truth.mdc` · range: `action-range-latest-stand.mdc` · perf subordinate: `minimal-performance-impact.mdc` · **QA FAIL fixes:** `qa-fix-no-heuristics.mdc` (read first — no heuristic green)
