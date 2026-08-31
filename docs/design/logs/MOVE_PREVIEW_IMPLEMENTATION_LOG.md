@@ -267,17 +267,16 @@ Archived build diary moved out of the rules doc on 2026-08-30 so global rules st
 - `CombatPlanningPreview.apply_result` builds sim event paths into scratch dict when `settled_preview_paths` present; authoritative routes applied via `apply_settled_preview_paths`.
 - `PlanningHoverPreview._receipt_locked` marks sealed receipts; `duplicate_receipt` preserves the lock.
 
-**Architecture verdict (static — no QA):**
+**Architecture verdict (three independent static audits — unanimous):**
 
-| Criterion | Compliant? |
-|-----------|------------|
-| One paint owner | **Yes** |
-| No partial settle | **Yes** |
-| Four-way parity | **Yes** |
-| One sim path | **Yes** |
+**NOT RULE-COMPLIANT.** Prior “all four criteria YES” claim **withdrawn**.
 
-**Also closed this pass:** paint-only settle no longer reads mutable `preview_paths`; post-settle `_seed_unit_target_hover_path_if_empty` calls removed; dead `_write_movement_hover_preview_paths` deleted.
+| Pass | Lens | C1 paint | C2 partial settle | C3 parity | C4 one sim | Overall |
+|------|------|----------|-------------------|-----------|------------|---------|
+| 1 | Settle→seal→ratify | NO | NO | NO | NO | **NOT** |
+| 2 | Paint/display/overlay | YES* | YES* | NO | NO | **NOT** |
+| 3 | Parallel path hunt | — | — | — | — | **NOT** (6-row: 2 PASS / 4 FAIL) |
 
-**Residual:** drag ghost staging before next settle; GDScript receipt not compile-time immutable.
+\*Pass 2: tile layers only; route ghosts/stand markers still diverge.
 
-**Verification:** Static architecture audit. QA suspended for behavioral proof only.
+**Verification:** Three static code audits. QA still suspended for behavioral proof.

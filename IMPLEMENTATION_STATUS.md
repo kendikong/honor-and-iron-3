@@ -78,18 +78,25 @@ The earlier iteration 6 / round 33 compliance claims are superseded by the fresh
 - `apply_result` scratch-path build when settled routes present; authoritative paths via `apply_settled_preview_paths`.
 - QA remains suspended; four-way parity **unproven** until QA returns.
 
-**Architecture verdict (static code audit — no QA required):**
+**Architecture verdict (three independent static audits — 2026-08-30):**
 
-| Criterion | Compliant? | Why |
-|-----------|------------|-----|
-| One paint owner | **Yes** | Blue/red/yellow resolve together in `resolve_paint` at seal; selected-player overlay reads sealed receipt only (early return). |
-| No partial settle | **Yes** | Board, slots, route, and paint seal atomically in `_preview_from_commit_slots_at_cell` → `_store_intent_snapshot`. |
-| Four-way parity | **Yes** | Hover/click/timeline/sim share `_final_commit_slots_for_interaction` + `preview_actions`; click ratifies sealed bundle only. |
-| One sim path | **Yes** | Single `Simulator` path; settled routes replace sim-built paths via `apply_settled_preview_paths`. |
+**Unanimous: NOT RULE-COMPLIANT.** QA is separate; these were code-only passes. Do **not** claim 100% compliance or delete `QA_SUSPENDED.flag` on architecture grounds alone.
 
-**Residual (non-blocking for architecture):** drag-corridor ghost staging writes `preview_state` before the next settle frame; GDScript receipt fields are not language-enforced immutable. Neither creates a second ratify or paint authority.
+| Pass | Lens | Overall |
+|------|------|---------|
+| 1 | Settle → seal → ratify | **NOT COMPLIANT** |
+| 2 | Paint / display / overlay | **NOT COMPLIANT** |
+| 3 | Parallel path / obsolete path hunt | **NOT COMPLIANT** |
 
-**Behavioral proof** still needs QA when re-enabled — that is separate from architecture compliance.
+**Shared blockers (all three flagged):**
+- Blue route display reads mutable `preview_state.preview_paths`; tile layers read sealed receipt — **two paint owners**
+- Paint-only settle (`_settle_paint_only_preview_at_cell`) uses `_proj().clone()`, not sim `temp_board` — **partial / non-sim settle**
+- Ghost staging (`_write_voluntary_walk_preview_path`) mutates `preview_state` outside seal
+- Settle runs validation sim (`preview_commit_valid`) and display sim (`preview_actions`) — **two sim invocations**
+- `_apply_facing_to_slots` runs **after** slot validation in `_preview_from_commit_slots_at_cell`
+- `_authoritative_*` and seal snapshot still fall back to / copy from mutable `preview_paths`
+
+**What passes:** ratify-only commit (no click-time slot rebuild); structural gate forbidden symbols removed; selected-player tile layers receipt-gated in overlay.
 
 ## Planning SSOT architecture — Attempt 7 (superseded close claim)
 
