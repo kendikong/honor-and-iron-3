@@ -1432,3 +1432,18 @@ manual Tier 3 visual checklist and class sign-off registry are completed.
 
 **Final issue count:** 2  
 **Audit result:** **PASS** (implementation and automated QA) · **Owner QA sign-off: NOT PASS** · **QA LOCK: NO**
+
+## Planning SSOT architecture audit — iteration 6
+
+**Date:** 2026-08-30  
+**Scope:** settled paint, latest-stand origin, hover/click/drag ratification, and preview simulation ownership.
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| One paint owner | **YES** | `CombatPlanningInput` seals move/range/blast paint once; selected-unit overlay consumes that bundle. |
+| No partial settle | **YES** | Paint-only settles are explicit and non-ratifiable; planning refreshes execute immediately without deferred or throttled intent paths. |
+| Four-way parity | **YES** | Hover, click, drag, and timeline use the same sealed slots/paint contract; ratification validates the sealed slots. |
+| One simulation path | **YES** | `CombatDirector._preview_from_plan` uses the full `Simulator.simulate_player_turn` preview path; the projected-delta and move-only enemy-skip branches are removed. |
+
+**Architecture compliance verdict:** **YES — 100% compliant with the planning SSOT rules.**  
+**QA state:** Automated QA remains suspended by owner mandate; this audit is architectural and did not invoke QA.
