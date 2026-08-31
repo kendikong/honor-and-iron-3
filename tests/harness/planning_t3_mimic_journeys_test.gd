@@ -9,7 +9,6 @@ const _K1_BASH_ROUTE: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,
 ]
-const _LiveParity := preload("res://tests/harness/planning_live_parity_harness.gd")
 const _K1_BASH_WAYPOINTS: Array[Vector2i] = [
 	PlanningChecklistHarness.BASH_HOVER_WALK,
 	PlanningChecklistHarness.BASH_APPROACH,
@@ -74,7 +73,7 @@ static func _test_k1_bash_tap_vs_waypoint_drag_parity(failures: Array[String]) -
 	var bash: AbilityData = null
 	if bash_idx >= 0:
 		bash = fix.knight.active_abilities[bash_idx]
-	_LiveParity.run_k1_bash_live_parity(
+	PlanningLiveParityHarness.run_k1_bash_live_parity(
 		fix, failures, k1_id, e_bash_id, bash, "t3_mimic/k1_bash",
 	)
 
@@ -205,6 +204,6 @@ static func _test_k4_run_selection_vs_drag_parity(failures: Array[String]) -> vo
 	var bowling: AbilityData = null
 	if bowling_idx >= 0:
 		bowling = fix.knight.active_abilities[bowling_idx]
-	_LiveParity.run_k4_run_live_parity(
+	PlanningLiveParityHarness.run_k4_run_live_parity(
 		fix, failures, k4_id, bowling, "t3_mimic/k4_run",
 	)

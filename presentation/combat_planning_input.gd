@@ -1656,6 +1656,11 @@ func _flush_hover_heavy_sync() -> void:
 			_clamp_voluntary_walk_drag_for_forbidden_hover(_drag_unit_id)
 
 
+## Harness/test alias: same synchronous hover settle path as production flush.
+func _flush_hover_preview_refresh() -> void:
+	_flush_hover_heavy_sync()
+
+
 func _run_hover_overlay_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning():
 		return
@@ -3082,6 +3087,39 @@ func _promote_intent_preview_after_commit() -> void:
 	preview_state.preview_board = null
 	_sync_intent_live_board()
 	_apply_post_commit_hover_truth()
+
+
+## Harness/test hook: seal explicit slots at current hover and apply preview before commit_from_slots.
+func _paint_intent_slots_before_commit(unit_id: int, slots: Dictionary) -> void:
+	if _director == null or unit_id < 0 or _is_invalid_dict(slots):
+		return
+	var hover_cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	)
+	var wp: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
+	var legal_moves: Array[Vector2i] = []
+	if _drag_route_commits_active():
+		legal_moves = _snapshot_drag_legal_move_tiles()
+	var snapshot_key: String = _intent_snapshot_key_for(
+		unit_id, hover_cell, wp, legal_moves, _NO_PREFERRED_APPROACH, -1,
+	)
+	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
+		unit_id, hover_cell, slots, wp,
+	)
+	var actions: Array[TimelineAction] = _actions_from_slots(slots)
+	var result: Dictionary = _director.preview_actions(unit_id, actions)
+	if _is_invalid_dict(result):
+		return
+	result["settled_preview_paths"] = paths_snapshot.duplicate(true)
+	_store_intent_snapshot(
+		snapshot_key, slots, unit_id, hover_cell, -1, paths_snapshot, result,
+	)
+	preview_state.apply_result(result, _director)
+	if _planning != null:
+		_planning.apply_preview_state(
+			preview_state, unit_id, _hover_attack_target_id(),
+		)
+	_sync_intent_live_board()
 
 
 func _apply_post_commit_hover_truth() -> void:
@@ -7570,6 +7608,50 @@ func _slots_are_wait_only(actions: Array[TimelineAction]) -> bool:
 
 func _composite_cursors_enabled() -> bool:
 	return auto_use_skill_after_move and _skill_commit_path_active()
+
+
+## Test adapter: drag-drop commit slots use the same interaction builder as click.
+func _final_commit_slots_for_drop_at_cell(
+	unit_id: int,
+	cell: Vector2i,
+	local: Vector2,
+	legal_move_tiles: Array[Vector2i] = [],
+) -> Dictionary:
+	if _director == null or _director.board == null or unit_id < 0:
+		return _empty_commit_slots()
+	if not _director.board.is_in_bounds(cell):
+		return _empty_commit_slots()
+	if (
+		selected_phase_action_exhausted(unit_id)
+		and _director.find_awaiting_action(unit_id) == null
+	):
+		return _empty_commit_slots()
+	var dropped_on: UnitState = _unit_at_input_cell(cell)
+	var target_id: int = -1
+	if dropped_on != null and dropped_on.id != unit_id:
+		target_id = dropped_on.id
+	var params: Dictionary = _commit_interaction_params(cell, target_id)
+	var waypoints: Array[Vector2i] = params.waypoints as Array[Vector2i]
+	var legal: Array[Vector2i] = (
+		legal_move_tiles
+		if not legal_move_tiles.is_empty()
+		else params.legal_move_tiles as Array[Vector2i]
+	)
+	var face_dir: int = int(params.get("face_dir", -1))
+	if face_dir < 0:
+		face_dir = _facing_from_drop(local, params.cell)
+	var slots: Dictionary = _final_commit_slots_for_interaction(
+		unit_id,
+		params.cell,
+		waypoints,
+		legal,
+		params.preferred,
+		face_dir,
+	)
+	_apply_facing_to_slots(slots, local, params.cell, unit_id)
+	return slots
+
+
 ## Test adapter: delegates directly to the canonical interaction-slot builder.
 func _final_commit_slots_for_click_at_cell(
 	unit_id: int,

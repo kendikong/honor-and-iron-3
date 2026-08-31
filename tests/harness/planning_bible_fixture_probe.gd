@@ -1,3 +1,4 @@
+class_name PlanningBibleFixtureProbe
 extends RefCounted
 
 ## Headless probe parity for Tier 3 LIVE `_probe_cell` / `_audit_surface` contracts.

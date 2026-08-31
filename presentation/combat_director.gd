@@ -2971,6 +2971,11 @@ func _emit_plan_refresh_signals(
 	plan_affected_unit_ids.clear()
 
 
+## Harness/test hook: plan refresh signals emit synchronously from _refresh_plan_core.
+func flush_plan_refresh_signals_if_pending() -> void:
+	pass
+
+
 func begin_autobattler_plan_batch() -> void:
 	_autobattler_plan_batch = true
 	_commit_animate_actor_ids.clear()

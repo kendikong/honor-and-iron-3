@@ -1,8 +1,6 @@
 class_name PlanningLiveParityHarness
 extends RefCounted
 
-const _QaGate := preload("res://tests/harness/planning_qa_gate_test.gd")
-
 ## Headless mirror of live_planning_scene_test preview/commit parity asserts.
 ## Same slots, overlay display paths, and k4 run-loop checks — fixture board only.
 
@@ -318,7 +316,7 @@ static func capture_preview_intent(
 	return {
 		"cell": cell,
 		"slots": slots,
-		"slots_signature": _QaGate._intent_slot_signature(slots),
+		"slots_signature": PlanningQAGateTest._intent_slot_signature(slots),
 		"preview_path": PlanningChecklistHarness.preview_path(fix, unit_id).duplicate(),
 		"drag_route": fix.input.get_drag_route().duplicate(),
 		"display_ap": input.planning_display_ap_left(unit_id),
@@ -693,9 +691,6 @@ static func action_target_unit_from_slots(slots: Dictionary) -> int:
 	return step.target_unit_id if step != null else -1
 
 
-const _Probe := preload("res://tests/harness/planning_bible_fixture_probe.gd")
-
-
 ## Full mirror of test_live_planning_bible_multi_knight_session (fixture board).
 static func run_bible_multi_knight_session(failures: Array[String]) -> void:
 	var fix: Dictionary = PlanningChecklistHarness.wire_bible_board()
@@ -745,7 +740,7 @@ static func run_swap_adjacent_premove_mirror(failures: Array[String]) -> void:
 	if swap == null:
 		PlanningChecklistHarness.assert_fail(failures, "SWAP-01", "swap ability missing")
 		return
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL, {
 			"blue_any": true,
 			"ability": swap,
@@ -774,7 +769,7 @@ static func run_swap_adjacent_premove_mirror(failures: Array[String]) -> void:
 	)
 	PlanningChecklistHarness.enter_basic_movement(fix)
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.SWAP_PREMOVE_ROUTE[0], {
 			"blue_has": [PlanningChecklistHarness.SWAP_PREMOVE_ROUTE[0]],
 			"ghost_pos": PlanningChecklistHarness.SWAP_PREMOVE_ROUTE[0],
@@ -787,7 +782,7 @@ static func run_swap_adjacent_premove_mirror(failures: Array[String]) -> void:
 			"icon_has": [PlanningIcons.GLYPH_WALK],
 		}, "SWAP-04/hover_west",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.SWAP_PREMOVE_DEST, {
 			"blue_has": [PlanningChecklistHarness.SWAP_PREMOVE_DEST],
 			"ghost_pos": PlanningChecklistHarness.SWAP_PREMOVE_DEST,
@@ -847,7 +842,7 @@ static func run_swap_out_of_range_parity_mirror(failures: Array[String]) -> void
 	if PlanningChecklistHarness.select_ability_for_unit(fix, k1_id, PlanningChecklistHarness.KNIGHT_SWAP_ID) < 0:
 		PlanningChecklistHarness.assert_fail(failures, "SWAP-06", "swap ability missing")
 		return
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.WALK_SWAP_ALLY_CELL, {
 			"preview_nonempty": true,
 			"path_end": PlanningChecklistHarness.WALK_SWAP_APPROACH,
@@ -987,7 +982,7 @@ static func run_k1_journey_mirror(
 	var bash: AbilityData = null
 	if bash_idx >= 0:
 		bash = fix.board.get_unit_by_id(k1_id).active_abilities[bash_idx]
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.KNIGHT_START, {
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.KNIGHT_START,
@@ -1001,7 +996,7 @@ static func run_k1_journey_mirror(
 		}, "K1-02/stand",
 	)
 	probe_k1_hover_edges(fix, failures, k1_id, bash)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.BASH_HOVER_WALK, {
 			"ghost_pos": PlanningChecklistHarness.BASH_HOVER_WALK,
 			"path_end": PlanningChecklistHarness.BASH_HOVER_WALK,
@@ -1020,7 +1015,7 @@ static func run_k1_journey_mirror(
 	var push_to: Vector2i = PlanningChecklistHarness.push_destination(fix, e_bash_id)
 	if push_to.x <= PlanningChecklistHarness.E_BASH_CELL.x:
 		PlanningChecklistHarness.assert_fail(failures, "K1-06", "push preview must be east of enemy")
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.ENEMY_POS, {
 			"path_end": PlanningChecklistHarness.BASH_APPROACH,
 			"path_start": PlanningChecklistHarness.KNIGHT_START,
@@ -1047,12 +1042,12 @@ static func probe_k1_hover_edges(
 	k1_id: int,
 	bash: AbilityData,
 ) -> void:
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.ENEMY_POS, {
 			"ability": bash,
 		}, "K1-03/from_enemy",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.OFF_BLUE_CELL, {
 			"blue_any": true,
 			"blue_not": [PlanningChecklistHarness.OFF_BLUE_CELL],
@@ -1070,7 +1065,7 @@ static func probe_k1_hover_edges(
 		fix, failures, k1_id, PlanningChecklistHarness.OFF_BLUE_CELL, "K1-03/off_blue_click",
 	)
 	PlanningChecklistHarness.hover_off_map(fix)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k1_id, PlanningChecklistHarness.OFF_MAP_HOVER, {
 			"hover_oob": true,
 			"blue_any": true,
@@ -1098,7 +1093,7 @@ static func run_k2_journey_mirror(
 	var hook: AbilityData = null
 	if hook_idx >= 0:
 		hook = fix.board.get_unit_by_id(k2_id).active_abilities[hook_idx]
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k2_id, PlanningChecklistHarness.K2_CELL, {
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.K2_CELL,
@@ -1111,7 +1106,7 @@ static func run_k2_journey_mirror(
 			"blue_any": true,
 		}, "K2-01/stand",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k2_id, Vector2i(2, 3), {
 			"ghost_pos": Vector2i(2, 3),
 			"path_end": Vector2i(2, 3),
@@ -1124,7 +1119,7 @@ static func run_k2_journey_mirror(
 	var pull_preview: Vector2i = PlanningChecklistHarness.push_destination(fix, e_hook_id)
 	if pull_preview.x > -900000 and pull_preview.x >= PlanningChecklistHarness.E_HOOK_CELL.x:
 		PlanningChecklistHarness.assert_fail(failures, "K2-03", "pull preview must be west of enemy")
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k2_id, PlanningChecklistHarness.E_HOOK_CELL, {
 			"path_end": PlanningChecklistHarness.K2_CELL,
 			"path_start": PlanningChecklistHarness.K2_CELL,
@@ -1205,7 +1200,7 @@ static func run_k3_journey_mirror(
 	var trample: AbilityData = null
 	if trample_idx >= 0:
 		trample = fix.board.get_unit_by_id(k3_id).active_abilities[trample_idx]
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.K3_CELL, {
 			"blue_any": true,
 			"red_on": true,
@@ -1218,7 +1213,7 @@ static func run_k3_journey_mirror(
 		return
 	if not fix.input.awaiting_targeting_active():
 		PlanningChecklistHarness.assert_fail(failures, "K3-02", "awaiting_targeting must be active")
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_ROUTE[0], {
 			"path": [PlanningChecklistHarness.K3_CELL, PlanningChecklistHarness.TRAMPLE_ROUTE[0]],
 			"ghost_pos": PlanningChecklistHarness.TRAMPLE_ROUTE[0],
@@ -1229,7 +1224,7 @@ static func run_k3_journey_mirror(
 			"ability": trample,
 		}, "K3-03/hover_east",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_END, {
 			"path_end": PlanningChecklistHarness.TRAMPLE_END,
 			"path_start": PlanningChecklistHarness.K3_CELL,
@@ -1246,7 +1241,7 @@ static func run_k3_journey_mirror(
 		if not rearm_trample_awaiting(fix, failures, k3_id, "K3-05"):
 			PlanningChecklistHarness.assert_fail(failures, "K3-05", "trample re-arm failed")
 			return
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_END, {
 			"path": PlanningChecklistHarness.TRAMPLE_FULL_PATH,
 			"ghost_pos": PlanningChecklistHarness.TRAMPLE_END,
@@ -1276,13 +1271,13 @@ static func run_k3_journey_mirror(
 	)
 	PlanningChecklistHarness.select_unit(fix, k3_id, PlanningChecklistHarness.TRAMPLE_END)
 	PlanningChecklistHarness.enter_basic_movement(fix)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_END, {
 			"blue_any": true,
 			"manhattan": true,
 		}, "K3-09/post_stand",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, Vector2i(7, 3), {
 			"blue_has": [Vector2i(7, 3)],
 			"ghost_pos": Vector2i(7, 3),
@@ -1293,7 +1288,7 @@ static func run_k3_journey_mirror(
 			"icon_not": [PlanningIcons.GLYPH_ATTACK],
 		}, "K3-10/post_hover_east",
 	)
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k3_id, PlanningChecklistHarness.TRAMPLE_POST_DEST, {
 			"path": PlanningChecklistHarness.TRAMPLE_POST_ROUTE,
 			"ghost_pos": PlanningChecklistHarness.TRAMPLE_POST_DEST,
@@ -1667,7 +1662,7 @@ static func run_k4_journey_mirror(
 	var bowling: AbilityData = null
 	if bowling_idx >= 0:
 		bowling = unit.active_abilities[bowling_idx]
-	_Probe.probe_cell(
+	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k4_id, PlanningChecklistHarness.K4_START, {
 			"blue_any": true,
 			"red_on": true,
