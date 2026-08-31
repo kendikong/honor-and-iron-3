@@ -3191,6 +3191,7 @@ func _store_intent_snapshot(
 		hover_cell,
 		settled_board,
 		paths_for_seal,
+		move_origin,
 	)
 	if sealed_board is BoardState:
 		paint["preview_board"] = sealed_board
@@ -5573,7 +5574,7 @@ func action_range_visible_for_hover() -> bool:
 	var live_board: BoardState = _director.live_planning_board()
 	if live_board != null:
 		var live_actor: UnitState = live_board.get_unit_by_id(unit_id)
-		if live_actor != null and live_actor.position == stand:
+		if live_actor != null:
 			economy_board = live_board
 			economy_actor = live_actor
 	return AbilitySystem.can_show_planning_action_range_after_premove(

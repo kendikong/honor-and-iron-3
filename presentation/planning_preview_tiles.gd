@@ -54,6 +54,7 @@ static func resolve_layer_origins(
 	hover_coord: Vector2i,
 	settled_board: BoardState = null,
 	settled_preview_paths: Dictionary = {},
+	range_stand_origin: Vector2i = Vector2i(-999999, -999999),
 ) -> Dictionary:
 	var phase: PhaseKind = planning_phase(director, unit, selected_ability, planning_input)
 	var none: Vector2i = Vector2i(-999999, -999999)
@@ -76,33 +77,30 @@ static func resolve_layer_origins(
 		and planning_input.action_range_visible_for_hover()
 	)
 	plan["show_action_range"] = show_action_range
-	var locked_stand: Vector2i = none
-	if settled_board != null:
-		var settled_unit: UnitState = settled_board.get_unit_by_id(unit.id)
-		if settled_unit != null:
-			locked_stand = settled_unit.position
-	elif planning_input != null:
-		locked_stand = planning_input.settled_action_range_stand_cell(unit.id)
-	else:
-		locked_stand = CombatPlanningPreview.forecast_stand_at_phase_entry(
-			director, board, unit.id, null,
-		)
+	var locked_stand: Vector2i = _action_range_paint_stand(
+		unit,
+		hover_coord,
+		planning_input,
+		settled_board,
+		range_stand_origin,
+		director,
+		board,
+	)
 	match phase:
 		PhaseKind.MOVEMENT:
 			plan["locked_move_origin"] = locked_stand if locked_stand.x > -900000 else none
 			if show_action_range:
-				var settled_unit: UnitState = (
-					settled_board.get_unit_by_id(unit.id)
-					if settled_board != null
-					else null
+				var range_origin: Vector2i = _action_range_paint_stand(
+					unit,
+					hover_coord,
+					planning_input,
+					settled_board,
+					range_stand_origin,
+					director,
+					board,
 				)
-				var predicted: Vector2i = (
-					settled_unit.position
-					if settled_unit != null
-					else planning_input.predicted_stand_at_hover(unit.id, hover_coord)
-				)
-				if predicted.x > -900000:
-					plan["next_aim_origin"] = predicted
+				if range_origin.x > -900000:
+					plan["next_aim_origin"] = range_origin
 			plan["show_blast"] = (
 				show_action_range
 				and not _is_settled_walk_only_hover(
@@ -154,6 +152,7 @@ static func resolve_paint(
 	hover_coord: Vector2i,
 	settled_board: BoardState = null,
 	settled_preview_paths: Dictionary = {},
+	range_stand_origin: Vector2i = Vector2i(-999999, -999999),
 ) -> Dictionary:
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if director == null or board == null or unit == null:
@@ -183,6 +182,7 @@ static func resolve_paint(
 		hover_coord,
 		settled_board,
 		settled_preview_paths,
+		range_stand_origin,
 	)
 	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
@@ -281,6 +281,44 @@ static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
 		if candidate == none:
 			candidate = plan.get("next_move_origin", none)
 	return candidate
+
+
+## Walk hovers follow predicted stand; preview-sim displacement anchors on phase-entry stand.
+static func _action_range_paint_stand(
+	unit: UnitState,
+	hover_coord: Vector2i,
+	planning_input: CombatPlanningInput,
+	settled_board: BoardState,
+	range_stand_origin: Vector2i,
+	director: CombatDirector,
+	board: BoardState,
+) -> Vector2i:
+	var none: Vector2i = Vector2i(-999999, -999999)
+	if unit == null:
+		return none
+	if planning_input != null and planning_input.is_walk_only_hover_move(unit, hover_coord):
+		var walk_stand: Vector2i = planning_input.predicted_stand_at_hover(unit.id, hover_coord)
+		if walk_stand.x > -900000:
+			return walk_stand
+	if range_stand_origin.x > -900000 and settled_board != null:
+		var sim_unit: UnitState = settled_board.get_unit_by_id(unit.id)
+		if sim_unit != null and sim_unit.position != range_stand_origin:
+			return range_stand_origin
+	if range_stand_origin.x > -900000:
+		return range_stand_origin
+	if planning_input != null:
+		var settled: Vector2i = planning_input.settled_action_range_stand_cell(unit.id)
+		if settled.x > -900000:
+			return settled
+	if settled_board != null:
+		var settled_unit: UnitState = settled_board.get_unit_by_id(unit.id)
+		if settled_unit != null:
+			return settled_unit.position
+	if director != null and board != null:
+		return CombatPlanningPreview.forecast_stand_at_phase_entry(
+			director, board, unit.id, null,
+		)
+	return none
 
 
 static func resolve_move_tiles(
