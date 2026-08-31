@@ -945,7 +945,19 @@ static func planning_move_origin_cell(
 			return prior_stand
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
-		var idle_board: BoardState = planning_projection_board(director, fallback_board)
+		var pre_move: TimelineAction = committed_move_action(
+			director.plan_pre_move, unit_id, GameEnums.MoveTiming.PRE_ACTION,
+		)
+		if pre_move != null:
+			return pre_move.target_coord
+		var walked_end: Vector2i = _walk_committed_plan_action_end_cell(
+			director, fallback_board, unit_id,
+		)
+		if walked_end.x > -900000:
+			return walked_end
+		var idle_board: BoardState = director.live_planning_board()
+		if idle_board == null:
+			idle_board = planning_projection_board(director, fallback_board)
 		var idle_unit: UnitState = idle_board.get_unit_by_id(unit_id) if idle_board != null else null
 		if idle_unit != null:
 			return idle_unit.position
@@ -1234,6 +1246,8 @@ static func committed_plan_action_end_cell(
 		return Vector2i(-999999, -999999)
 	var walked_end: Vector2i = _walk_committed_plan_action_end_cell(director, board, unit_id)
 	if _plan_has_post_move_for_unit(director, unit_id):
+		return walked_end
+	if walked_end.x > -900000:
 		return walked_end
 	var plan_board: BoardState = planning_projection_board(director, board)
 	if plan_board != null:

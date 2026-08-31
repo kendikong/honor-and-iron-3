@@ -55,6 +55,7 @@ static func resolve_layer_origins(
 	settled_board: BoardState = null,
 	settled_preview_paths: Dictionary = {},
 	range_stand_origin: Vector2i = Vector2i(-999999, -999999),
+	settled_slots: Dictionary = {},
 ) -> Dictionary:
 	var phase: PhaseKind = planning_phase(director, unit, selected_ability, planning_input)
 	var none: Vector2i = Vector2i(-999999, -999999)
@@ -86,6 +87,7 @@ static func resolve_layer_origins(
 		director,
 		board,
 		settled_preview_paths,
+		settled_slots,
 	)
 	match phase:
 		PhaseKind.MOVEMENT:
@@ -100,6 +102,7 @@ static func resolve_layer_origins(
 					director,
 					board,
 					settled_preview_paths,
+					settled_slots,
 				)
 				if range_origin.x > -900000:
 					plan["next_aim_origin"] = range_origin
@@ -155,6 +158,7 @@ static func resolve_paint(
 	settled_board: BoardState = null,
 	settled_preview_paths: Dictionary = {},
 	range_stand_origin: Vector2i = Vector2i(-999999, -999999),
+	settled_slots: Dictionary = {},
 ) -> Dictionary:
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if director == null or board == null or unit == null:
@@ -185,6 +189,7 @@ static func resolve_paint(
 		settled_board,
 		settled_preview_paths,
 		range_stand_origin,
+		settled_slots,
 	)
 	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
@@ -286,6 +291,14 @@ static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
 
 
 ## Walk hovers follow predicted stand; approach-walk uses sim landing; dash-only keeps phase-entry stand.
+static func _paired_premove_approach_slots(slots: Dictionary) -> bool:
+	if slots.is_empty():
+		return false
+	var pre_steps: Array = slots.get("pre", []) as Array
+	var action_steps: Array = slots.get("action", []) as Array
+	return not pre_steps.is_empty() and not action_steps.is_empty()
+
+
 static func _action_range_paint_stand(
 	unit: UnitState,
 	hover_coord: Vector2i,
@@ -295,21 +308,37 @@ static func _action_range_paint_stand(
 	director: CombatDirector,
 	board: BoardState,
 	settled_preview_paths: Dictionary = {},
+	settled_slots: Dictionary = {},
 ) -> Vector2i:
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if unit == null:
 		return none
 	if planning_input != null and planning_input.is_walk_only_hover_move(unit, hover_coord):
-		var walk_stand: Vector2i = planning_input.predicted_stand_at_hover(unit.id, hover_coord)
-		if walk_stand.x > -900000:
-			return walk_stand
+		if (
+			planning_input.action_range_visible_for_hover()
+			and director != null
+			and director.get_planning_move_timing(unit.id) != GameEnums.MoveTiming.POST_ACTION
+		):
+			var walk_stand: Vector2i = planning_input.predicted_stand_at_hover(unit.id, hover_coord)
+			if walk_stand.x > -900000:
+				return walk_stand
+	if (
+		director != null
+		and director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION
+		and range_stand_origin.x > -900000
+	):
+		return range_stand_origin
 	if range_stand_origin.x > -900000 and settled_board != null:
 		var sim_unit: UnitState = settled_board.get_unit_by_id(unit.id)
 		if sim_unit != null and sim_unit.position != range_stand_origin:
 			var route: Variant = settled_preview_paths.get(unit.id, [])
 			if route is Array and (route as Array).size() >= 2:
 				var route_end: Variant = (route as Array).back()
-				if route_end is Vector2i and (route_end as Vector2i) == sim_unit.position:
+				if (
+					route_end is Vector2i
+					and (route_end as Vector2i) == sim_unit.position
+					and _paired_premove_approach_slots(settled_slots)
+				):
 					return sim_unit.position
 			return range_stand_origin
 	if range_stand_origin.x > -900000:
@@ -318,10 +347,6 @@ static func _action_range_paint_stand(
 		var settled: Vector2i = planning_input.settled_action_range_stand_cell(unit.id)
 		if settled.x > -900000:
 			return settled
-	if settled_board != null:
-		var settled_unit: UnitState = settled_board.get_unit_by_id(unit.id)
-		if settled_unit != null:
-			return settled_unit.position
 	if director != null and board != null:
 		return CombatPlanningPreview.forecast_stand_at_phase_entry(
 			director, board, unit.id, null,

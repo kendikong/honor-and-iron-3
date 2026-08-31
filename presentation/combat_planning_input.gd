@@ -2140,7 +2140,11 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			elif ability != null:
 				hover_waypoints = _hover_walk_waypoints_for_skill(p_unit, cell, ability)
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
-			if action_range_visible_for_hover() and _current_sealed_receipt() == null:
+			if (
+				action_range_visible_for_hover()
+				and _current_sealed_receipt() == null
+				and not awaiting_targeting_active()
+			):
 				_settle_paint_only_preview_at_cell(p_unit, cell)
 			_refresh_click_target_highlight()
 			return
@@ -2508,7 +2512,12 @@ func _refresh_live_interaction_preview(
 		_refresh_voluntary_walk_hover_preview(unit, cell)
 		return
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
-	if cache_key == _hover_preview_cache_key and preview_state.preview_board != null:
+	if (
+		cache_key == _hover_preview_cache_key
+		and preview_state.preview_board != null
+		and _intent_snapshot_valid
+		and _intent_snapshot_key == cache_key
+	):
 		return
 	var res: Dictionary = _take_hover_preview_lru(cache_key)
 	if res.is_empty():
@@ -3230,6 +3239,7 @@ func _store_intent_snapshot(
 		settled_board,
 		paths_for_seal,
 		move_origin,
+		_intent_snapshot_slots,
 	)
 	if sealed_board is BoardState:
 		paint["preview_board"] = sealed_board
@@ -3530,7 +3540,7 @@ func _preview_from_commit_slots_at_cell(
 		effective_face = _facing_from_drop(_mouse_local_for_facing(), cell)
 	var hover_sim_validate: bool = _planning != null and _planning.qa_static_overlay
 	var slots: Dictionary = _final_commit_slots_for_interaction(
-		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, effective_face,
+		unit_id, cell, waypoints, legal_move_tiles, preferred_approach, -1,
 		false,
 	)
 	_apply_facing_to_slots(slots, _mouse_local_for_facing(), cell, unit_id)
@@ -3543,7 +3553,7 @@ func _preview_from_commit_slots_at_cell(
 	if wp_for_key.is_empty():
 		wp_for_key = waypoints
 	var snapshot_key: String = _intent_snapshot_key_for(
-		unit_id, cell, wp_for_key, legal_move_tiles, preferred_approach, effective_face,
+		unit_id, cell, wp_for_key, legal_move_tiles, preferred_approach, -1,
 	)
 	var paths_snapshot: Dictionary = _preview_paths_snapshot_for_settle(
 		unit_id, cell, slots, wp_for_key,
@@ -5589,6 +5599,8 @@ func action_range_intent_stand_cell(unit_id: int = -1) -> Vector2i:
 ## Locked move intent (timeline or painted drag) used for action-range economy ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ not hover stand.
 ## Red tiles show only when the selected skill is legal from the canonical settled stand.
 func action_range_visible_for_hover() -> bool:
+	if dragging:
+		return false
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
 		return false
 	var unit_id: int = _director.selected_unit_id
@@ -6254,8 +6266,11 @@ func _phase_entry_stand(unit: UnitState) -> Vector2i:
 func _settle_phase_entry_stand(unit: UnitState) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
-	return CombatPlanningPreview.forecast_stand_at_phase_entry(
-		_director, _proj(), unit.id, null,
+	var board: BoardState = _director.live_planning_board()
+	if board == null:
+		board = _director.board
+	return CombatPlanningPreview.planning_latest_stand_cell(
+		_director, board, unit.id, null,
 	)
 
 
@@ -7742,8 +7757,19 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	var cache_key: String = _hover_interaction_cache_key(sel_id, cell, attack_target_id)
 	if cache_key == _hover_cursor_cache_key:
 		return _hover_cursor_cached_icon
-	var slots: Dictionary
-	if _intent_snapshot_valid and _intent_snapshot_key == cache_key:
+	var slots: Dictionary = {}
+	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	if (
+		receipt != null
+		and receipt.matches_paint_context(
+			cell,
+			sel_id,
+			settled_hover_revision_key(),
+			_director.selected_ability_index,
+		)
+	):
+		slots = receipt.duplicate_slots()
+	elif _intent_snapshot_valid and _intent_snapshot_key == cache_key:
 		slots = _duplicate_commit_slots(_intent_snapshot_slots)
 	else:
 		return PlanningIcons.GLYPH_NULL
