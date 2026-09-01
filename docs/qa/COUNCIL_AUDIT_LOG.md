@@ -173,6 +173,32 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 R14–R17 (council-gated painted_route_equivalence)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R14 | Assembler orbit bypass before trample settle; corridor_fill gate auth≥2; `_corridor_waypoints_to_cell` leg anchor | 1–6 | **6/6 PASS** | Applied — **46→20 FAIL**, painted_route **39→13** |
+| R15-revised | Illegal-clear fall-through + assembler prefix slice | 1–6 | **6/6 PASS** (proposal) | **REGRESSED 20→112** — reverted same turn |
+| R15b | Reorder: locked + orbit bypass before illegal clear; remove duplicate bottom bypass | 1–6 | **6/6 PASS** | Applied — draw_route parity; preview_paths still 13 |
+| R16 | `_hover_orbit_extends_painted_receipt` + basic-walk corridor for armed trample orbit; leg-anchor origin | 1–6 | **6/6 PASS** (amendment) | Applied — **20→8 FAIL**, painted_route **13→1** |
+| R17 | Assembler on-route prefix `i>0` + fresh-hover apply hook | 1–6 | **6/6 PASS** | Applied — **8→7 FAIL**, **painted_route_equivalence PASS** |
+
+### Verify (latest)
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **FAIL (7)** — teleport, drag_drop_undo, waypoint_enemy_hover×3, range2_enemy_hover, tile_aim_forbids_premove |
+| `painted_route_equivalence` | **PASS** |
+| L0–L3 regression | **PASS** (pending re-run this turn) |
+
+**Commits:** `2d8a7cf19` (R15b) · `3218eaa5d` (R16) · `67cd0b353` (R17)
+
+**Layer 4 status:** **IN PROGRESS** — painted_route bucket closed; 7 failures in other buckets (each needs own council cycle).
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
