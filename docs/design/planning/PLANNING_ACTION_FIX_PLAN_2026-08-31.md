@@ -63,9 +63,9 @@ This is **not** the Gauntlet Loop.
 
 **Fix checklist:**
 
-- [ ] Stop recomputing locked blue inside every hover settle.
-- [ ] `reachable_move_tiles`: flood board = projection at phase entry, not settled board with unit on hover cell.
-- [ ] Fix `PLANNING_SKILL_QA_CHECKLIST.md` “Blue updates live” → **path** updates live; **locked flood does not**.
+- [x] Stop recomputing locked blue inside every hover settle.
+- [x] `reachable_move_tiles`: flood board = projection at phase entry, not settled board with unit on hover cell.
+- [x] Fix `PLANNING_SKILL_QA_CHECKLIST.md` “Blue updates live” → **path** updates live; **locked flood does not**.
 
 **Gate tests:** `_test_blue_move_tiles_on_walk_select` + new stability tests above + `_test_move_preview_origin_premove_and_postmove`.
 

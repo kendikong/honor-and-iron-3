@@ -31,6 +31,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_locked_blue_stable_across_hovers,
 		_test_locked_blue_visible_without_bundle,
 		_test_bundle_mismatch_does_not_clear_locked_blue,
+		_test_locked_blue_origin_after_premove,
 		_test_locked_red_stable_across_hovers,
 		_test_locked_red_visible_without_bundle,
 		_test_bundle_mismatch_does_not_clear_locked_red,
@@ -1766,7 +1767,86 @@ static func _test_bundle_mismatch_does_not_clear_locked_blue(failures: Array[Str
 		)
 
 
-static func 	_test_locked_red_stable_across_hovers(failures: Array[String]) -> void:
+static func _test_locked_blue_origin_after_premove(failures: Array[String]) -> void:
+	const Trample := preload("res://tests/harness/trampling_advance_e2e_test.gd")
+	var raw_fix: Dictionary = Trample._knight_fixture(Trample.START_CELL)
+	var fix: Dictionary = PlanningDragE2EHarness.wire_fixture(raw_fix)
+	var overlay: TacticalPlanningOverlay = fix.overlay
+	if fix.trample_idx < 0:
+		failures.append(
+			"PlanningQAGate locked blue premove origin: Trampling Advance missing",
+		)
+		return
+	PlanningChecklistHarness.set_unit_pools(fix, fix.unit.id, 1, 8)
+	var pre_route: Array[Vector2i] = [
+		Trample.START_CELL, Vector2i(6, 4), Vector2i(6, 3),
+	]
+	var pre_dest: Vector2i = pre_route.back()
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	if not PlanningChecklistHarness.commit_painted_drop_on_cell(fix, pre_route, pre_dest):
+		failures.append(
+			"PlanningQAGate locked blue premove origin: premove commit failed",
+		)
+		return
+	var phase_entry: Vector2i = fix.input.phase_entry_stand_cell(fix.director.selected_unit_id)
+	if phase_entry != pre_dest:
+		failures.append(
+			"PlanningQAGate locked blue premove origin: phase-entry stand %s expected %s"
+			% [str(phase_entry), str(pre_dest)],
+		)
+		return
+	if PlanningChecklistHarness.select_ability(fix, Trample.TRAMPLE_ID) < 0:
+		failures.append(
+			"PlanningQAGate locked blue premove origin: Trampling Advance selection failed",
+		)
+		return
+	var projected_after_pre: UnitState = fix.director.projected_state.get_unit_by_id(fix.unit.id)
+	if not Trample._arm_trample_awaiting(fix.input, fix.director, projected_after_pre):
+		failures.append(
+			"PlanningQAGate locked blue premove origin: trample arm failed after premove",
+		)
+		return
+	PlanningChecklistHarness.hover(fix, Vector2i(7, 3))
+	var blue: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if blue.is_empty():
+		failures.append(
+			"PlanningQAGate locked blue premove origin: blue flood missing during skill move step after premove",
+		)
+		return
+	var locked_origin: Vector2i = fix.input.phase_entry_stand_cell(fix.unit.id)
+	if locked_origin != pre_dest:
+		failures.append(
+			"PlanningQAGate locked blue premove origin: locked stand %s expected premove landing %s"
+			% [str(locked_origin), str(pre_dest)],
+		)
+		return
+	var expected: Array[Vector2i] = PlanningPreviewTiles.reachable_move_tiles(
+		fix.director,
+		fix.board,
+		projected_after_pre,
+		fix.director.selected_ability_index,
+		fix.input,
+		locked_origin,
+	)
+	if expected.is_empty():
+		failures.append(
+			"PlanningQAGate locked blue premove origin: expected flood empty at %s" % str(locked_origin),
+		)
+		return
+	for cell: Vector2i in blue:
+		if not expected.has(cell):
+			failures.append(
+				"PlanningQAGate locked blue premove origin: tile %s not in locked flood from %s"
+				% [str(cell), str(locked_origin)],
+			)
+			return
+	if expected.has(Trample.START_CELL) and not blue.has(Trample.START_CELL):
+		failures.append(
+			"PlanningQAGate locked blue premove origin: flood must use premove stand not turn-start",
+		)
+
+
+static func _test_locked_red_stable_across_hovers(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
 	fix["overlay"] = overlay

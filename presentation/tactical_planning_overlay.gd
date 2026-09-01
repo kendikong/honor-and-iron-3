@@ -861,12 +861,17 @@ func _can_show_move_tiles(unit: UnitState, selected_ability: int) -> bool:
 		):
 			return false
 	if _director != null:
-		var move_timing: int = _director.get_planning_move_timing(unit.id)
-		if (
-			move_timing != -1
-			and _director.unit_has_move_planned_at_timing(unit.id, move_timing)
-		):
-			return false
+		var voluntary_walk_step: bool = (
+			_planning_input == null
+			or not _planning_input.active_movement_planning_step(unit)
+		)
+		if voluntary_walk_step:
+			var move_timing: int = _director.get_planning_move_timing(unit.id)
+			if (
+				move_timing != -1
+				and _director.unit_has_move_planned_at_timing(unit.id, move_timing)
+			):
+				return false
 	if _intent_tiles_blocked(unit, selected_ability):
 		return false
 	if _is_selected_player_unit(unit):
@@ -946,18 +951,20 @@ func _apply_planning_tile_layers(
 	)
 	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
 	var locked_phase: int = phase
+	var locked_plan: Dictionary = layer_plan
 	if settled != null and settled.valid and not paint_matches:
-		var at_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+		locked_plan = PlanningPreviewTiles.resolve_layer_origins(
 			_director, _board, unit, selected_ability, _planning_input, settled.hover_cell,
 		)
 		locked_phase = int(
-			at_settle_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT),
+			locked_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT),
 		)
 	var locked_stand: Vector2i = Vector2i(-999999, -999999)
-	if _planning_input != null:
-		locked_stand = _planning_input.phase_entry_stand_cell(unit.id)
-	if locked_stand.x <= -900000:
-		locked_stand = _proj_origin(unit)
+	match locked_phase:
+		PlanningPreviewTiles.PhaseKind.MOVEMENT:
+			locked_stand = locked_plan.get("locked_move_origin", locked_stand)
+		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+			locked_stand = locked_plan.get("locked_aim_origin", locked_stand)
 	match locked_phase:
 		PlanningPreviewTiles.PhaseKind.WAIT:
 			return

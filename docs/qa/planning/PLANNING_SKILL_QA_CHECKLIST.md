@@ -40,7 +40,9 @@ Every skill test must record pass/fail at **each** phase. Do not skip a phase be
 
 **What must be correct:**
 
-- **Blue updates live:** As the cursor moves, the blue reachable set stays correct for the hovered intent. It does not flicker to a wrong set or freeze on the first tile you hovered.
+- **Locked blue flood (movement step):** Stays anchored to **phase-entry stand**; does **not** chase the cursor. **Walk path** updates live with the mouse/drag.
+- **Locked red flood (skill step):** Same — stable from phase-entry stand until plan revision.
+- **Next-phase / yellow layers:** Update with hover (settle → bundle).
 - **Red follows stand:** Red skill range re-anchors to the tile you would stand on if you moved there (implicit premove / hover stand). Red tiles shift when the stand shifts — they do not stay drawn as if you were still on your start cell.
 - **Red hide when illegal:** Hovering a tile that requires Run when you cannot afford Run + skill must hide red (or show that bash/trample/etc. is impossible after that premove). Same for any AP/MP rule that blocks the skill after that stand.
 - **Move preview ghost:** Unit ghost (or path endpoint) appears on the hovered tile when that hover represents a valid move intent. Ghost position equals preview board position for your unit.
@@ -157,7 +159,7 @@ Do not pass a phase if only one layer looks right. All applicable rows must pass
 
 | Layer | What must be correct |
 |-------|----------------------|
-| **Blue tiles** | Set equals legal reachable tiles for projected MP, movement type, terrain, bleed, root/stagger, and open move slot. Updates when hover, drag, commit, or timeline changes. Never includes blocked or out-of-budget cells. |
+| **Blue tiles** | Set equals legal reachable tiles for projected MP, movement type, terrain, bleed, root/stagger, and open move slot. **Locked flood** is stable across hovers until plan revision; **walk path** updates live on movement step. Never includes blocked or out-of-budget cells. |
 | **Red tiles** | Set equals skill range from **intent stand** (hover stand, path end, or projected position). Hidden when no skill, Run/Wait selected, skill illegal, or economy forbids skill after premove. Overlay red matches `action_range_visible_for_hover()` gate. |
 | **Move preview** | `preview_board` unit positions match ghosts. `preview_paths` match drawn path. Clearing hover clears or updates preview — no orphan preview board. Live preview active flag matches whether preview is shown. |
 | **Arrows** | Push/pull/trample/approach arrows match `preview_pushes` and design direction. Arrows disappear when intent becomes invalid. No arrows from previous hover cell. |

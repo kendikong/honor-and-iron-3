@@ -188,20 +188,23 @@ static func resolve_paint(
 		range_stand_origin,
 		settled_slots,
 	)
+	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
 	var stand: Vector2i = _paint_stand_origin(plan, none)
 	var action_range: Array[Vector2i] = []
 	var blast: Array[Vector2i] = []
-	var move_tiles: Array[Vector2i] = resolve_move_tiles(
-		director,
-		paint_board,
-		paint_unit,
-		selected_ability,
-		planning_input,
-		plan,
-		settled_board,
-		settled_preview_paths,
-	)
-	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
+	## Locked blue (MOVEMENT) is overlay-only (EX-LOCKED-FIELD) — not recomputed every hover settle.
+	var move_tiles: Array[Vector2i] = []
+	if phase == PhaseKind.NON_MOVEMENT:
+		move_tiles = resolve_move_tiles(
+			director,
+			paint_board,
+			paint_unit,
+			selected_ability,
+			planning_input,
+			plan,
+			settled_board,
+			settled_preview_paths,
+		)
 	var show_action_range: bool = bool(plan.get("show_action_range", false))
 	match phase:
 		PhaseKind.MOVEMENT:
@@ -435,18 +438,26 @@ static func reachable_move_tiles(
 	):
 		return []
 	var is_selected: bool = unit.id == director.selected_unit_id
+	var phase_entry: Vector2i = Vector2i(-999999, -999999)
+	if is_selected and planning_input != null:
+		phase_entry = planning_input.phase_entry_stand_cell(unit.id)
+	var use_settled_for_flood: bool = (
+		settled_board != null
+		and phase_entry.x > -900000
+		and origin != phase_entry
+	)
 	var projected: UnitState = null
 	if is_selected:
 		projected = (
 			settled_board.get_unit_by_id(unit.id)
-			if settled_board != null
+			if use_settled_for_flood
 			else planning_input.projected_unit_for_preview(unit.id)
 		)
 	var move_board: BoardState = board
 	if is_selected:
 		move_board = (
 			settled_board
-			if settled_board != null
+			if use_settled_for_flood
 			else CombatPlanningPreview.planning_projection_board(director, board)
 		)
 	var move_actor: UnitState = projected if projected != null else unit
