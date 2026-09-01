@@ -669,15 +669,15 @@ func _authoritative_preview_paths() -> Dictionary:
 
 
 func _authoritative_route_for_unit(unit_id: int) -> Array:
+	if preview_state.is_painted_leg_sealed(unit_id):
+		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
+		if painted is Array and (painted as Array).size() >= 2:
+			return (painted as Array).duplicate()
 	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt != null and receipt.unit_id == unit_id:
 		var route: Variant = receipt.preview_paths.get(unit_id, [])
 		if route is Array and (route as Array).size() >= 2:
 			return (route as Array).duplicate()
-	if preview_state.is_painted_leg_sealed(unit_id):
-		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
-		if painted is Array and (painted as Array).size() >= 2:
-			return (painted as Array).duplicate()
 	return []
 
 
@@ -2210,6 +2210,8 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 	if hover_unit == null:
 		return
+	if painted_move_route_locked(hover_unit, cell):
+		return
 	if dragging and _voluntary_walk_orbit_phase_open(hover_unit):
 		var leg_origin: Vector2i = _phase_entry_stand(hover_unit)
 		if leg_origin.x > -900000:
@@ -2352,6 +2354,8 @@ func _clear_hover_drag_route() -> void:
 ## Range 2+ enemy hover discards painted detour buffers (see _enemy_hover_respects_painted_route).
 func _clear_stale_painted_preview_route(unit_id: int) -> void:
 	if unit_id < 0:
+		return
+	if preview_state.is_painted_leg_sealed(unit_id):
 		return
 	_clear_frozen_painted_leg(unit_id)
 	if not preview_state.preview_paths.has(unit_id):
@@ -3301,7 +3305,7 @@ func _store_intent_snapshot(
 			CombatPlanningPreview.set_unit_preview_path(
 				preview_state, unit_id, sealed_route as Array,
 			)
-		else:
+		elif not preview_state.is_painted_leg_sealed(unit_id):
 			CombatPlanningPreview.clear_unit_preview_path(preview_state, unit_id)
 
 
@@ -5079,6 +5083,8 @@ func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 func _voluntary_walk_hover_extends_preview_path(actor: UnitState, hover_cell: Vector2i) -> bool:
 	if actor == null or _director == null or not _director.board.is_in_bounds(hover_cell):
 		return false
+	if painted_move_route_locked(actor, hover_cell):
+		return false
 	if not active_movement_planning_step(actor):
 		return false
 	if _attack_target_id_at_cell(actor, hover_cell) >= 0:
@@ -5094,6 +5100,11 @@ func _assemble_voluntary_walk_preview_path(
 	waypoints: Array[Vector2i],
 ) -> Array[Vector2i]:
 	if actor == null or _director == null:
+		return []
+	if painted_move_route_locked(actor, hover_cell):
+		var frozen: Variant = preview_state.preview_paths.get(unit_id, null)
+		if frozen is Array and (frozen as Array).size() >= 2:
+			return (frozen as Array).duplicate()
 		return []
 	var origin: Vector2i = _settle_phase_entry_stand(actor)
 	if origin.x <= -900000:
