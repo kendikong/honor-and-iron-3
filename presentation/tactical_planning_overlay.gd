@@ -960,6 +960,7 @@ func _apply_planning_tile_layers(
 			locked_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT),
 		)
 	var locked_stand: Vector2i = Vector2i(-999999, -999999)
+	var show_locked_action_range: bool = bool(locked_plan.get("show_action_range", false))
 	match locked_phase:
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			locked_stand = locked_plan.get("locked_move_origin", locked_stand)
@@ -974,7 +975,7 @@ func _apply_planning_tile_layers(
 					_director, _board, unit, selected_ability, _planning_input, locked_stand,
 				)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-			if locked_stand.x > -900000:
+			if locked_stand.x > -900000 and show_locked_action_range:
 				_blast_tiles_on_hover_layer = false
 				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
 					unit,
@@ -991,6 +992,8 @@ func _apply_planning_tile_layers(
 					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 					_hover_move_tiles = settled.move_tiles.duplicate()
+					if not settled.action_range_tiles.is_empty():
+						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
 					_hover_blast_tiles = settled.blast_tiles.duplicate()
 					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			return
@@ -1003,6 +1006,8 @@ func _apply_planning_tile_layers(
 					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 					_hover_move_tiles = settled.move_tiles.duplicate()
+					if not settled.action_range_tiles.is_empty():
+						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
 					_hover_blast_tiles = settled.blast_tiles.duplicate()
 					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 		return

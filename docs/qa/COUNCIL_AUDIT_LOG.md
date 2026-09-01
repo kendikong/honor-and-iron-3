@@ -39,7 +39,42 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
-## Template (copy for next entry)
+## 2026-09-01 — Layer 2 locked red + approach red (paint layers)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R1 | Initial proposal | 1–6 | **4/6 FAIL** | Critic 1: NON_MOVEMENT hover-shaped red path; Critic 6: proposal docs |
+| R2 | Revised proposal | 1–6 | **5/6 FAIL** | Critic 3: `stand_origin` must match sealed approach red |
+| R3 | Revised proposal | 1–6 | **6/6 PASS** | Approved apply: `planning_preview_tiles.gd`, `tactical_planning_overlay.gd`, Layer 2 gate |
+| **R4 amendment** | Economy gate (`action_range_visible_for_hover` premove_cell) | 1–6 | **6/6 PASS** | Gate FAIL fix upstream; no overlay fallback |
+| **R4b amendment** | Full economy gate: premove_cell + awaiting `can_plan` + projected-only economy (no live_board short-circuit) | 1–6 | **6/6 PASS** | Layer 2 gate green |
+
+**Critic IDs (R3):** 1 PASS · 2 PASS · 3 PASS · 4 PASS · 5 PASS · 6 PASS  
+
+**Critic IDs (R4 amendment):** 1 PASS · 2 PASS · 3 PASS · 4 PASS · 5 PASS · 6 PASS  
+
+**Critic IDs (R4b amendment):** 1 PASS · 2 PASS · 3 PASS · 4 PASS · 5 PASS · 6 PASS  
+
+### Files
+
+- `presentation/planning_preview_tiles.gd` — NON_MOVEMENT hover-shaped approach red; EX-LOCKED-FIELD locked red not sealed into bundle
+- `presentation/tactical_planning_overlay.gd` — locked red gated by `show_action_range`; bundle approach red on NON_MOVEMENT match
+- `presentation/combat_planning_input.gd` — `action_range_visible_for_hover`: premove_cell chain, awaiting uses `can_plan`, projected economy only
+- `scripts/qa/run_layer2_paint_gate.ps1`, `tests/gates/Layer2PaintGate.tscn`, `tests/runners/run_layer2_paint_gate.gd`
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer2_paint_gate.ps1` | **PASS** |
+| `run_layer0_paint_gate.ps1` | **PASS** (regression) |
+| `run_layer1_paint_gate.ps1` | **PASS** (regression) |
+
+**Layer 2 status:** **DONE** (2026-09-01)
+
+---
 
 ```
 ## YYYY-MM-DD — <short title>

@@ -5779,19 +5779,28 @@ func action_range_visible_for_hover() -> bool:
 	var auto_run_move: bool = auto_run_movement_active(actor)
 	if unit_move_requires_run(unit_id):
 		auto_run_move = true
-	if awaiting_targeting_active():
-		return true
 	var stand: Vector2i = settled_action_range_stand_cell(unit_id)
 	var economy_board: BoardState = board
 	var economy_actor: UnitState = actor
-	var live_board: BoardState = _director.live_planning_board()
-	if live_board != null:
-		var live_actor: UnitState = live_board.get_unit_by_id(unit_id)
-		if live_actor != null:
-			economy_board = live_board
-			economy_actor = live_actor
+	if awaiting_targeting_active():
+		return AbilitySystem.can_plan(economy_actor, ability, economy_board)
+	var premove_cell: Vector2i = stand
+	var intent_dest: Vector2i = move_intent_destination(unit_id)
+	if (
+		economy_board.is_in_bounds(intent_dest)
+		and intent_dest != economy_actor.position
+	):
+		premove_cell = intent_dest
+	elif auto_run_move:
+		var hover_cell: Vector2i = get_hover_tile_for_ui()
+		if (
+			economy_board.is_in_bounds(hover_cell)
+			and hover_cell != economy_actor.position
+			and AbilitySystem.movement_requires_run(economy_board, economy_actor, hover_cell, [])
+		):
+			premove_cell = hover_cell
 	return AbilitySystem.can_show_planning_action_range_after_premove(
-		economy_board, economy_actor, ability, stand, auto_run_move,
+		economy_board, economy_actor, ability, premove_cell, auto_run_move,
 	)
 
 

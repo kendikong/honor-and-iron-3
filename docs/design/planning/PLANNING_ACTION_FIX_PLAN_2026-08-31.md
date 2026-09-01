@@ -102,6 +102,8 @@ Verify: `.\scripts\qa\run_layer1_paint_gate.ps1` **PASS**. Audit: `docs/qa/COUNC
 
 **Gate tests:** `_test_action_range_centered_on_live_stand`, `_test_action_range_shows_on_enemy_hover`, `_test_action_range_hides_when_auto_run_blocks_skill_ap`, intent contract red cases.
 
+Verify: `.\scripts\qa\run_layer2_paint_gate.ps1` **PASS**. Council: R3 6/6 + R4/R4b amendments 6/6 each. Audit: `docs/qa/COUNCIL_AUDIT_LOG.md` § 2026-09-01 Layer 2.
+
 ---
 
 ## Layer 3 — Yellow tiles (hover footprint)

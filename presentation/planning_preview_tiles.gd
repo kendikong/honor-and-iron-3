@@ -223,16 +223,30 @@ static func resolve_paint(
 		PhaseKind.NON_MOVEMENT:
 			var locked_aim: Vector2i = plan.get("locked_aim_origin", none)
 			if locked_aim.x > -900000 and show_action_range:
-				action_range = action_range_tiles(
+				var paint_stand: Vector2i = _action_range_paint_stand(
+					paint_unit,
+					hover_coord,
+					planning_input,
+					settled_board,
+					range_stand_origin,
 					director,
 					paint_board,
-					paint_unit,
-					selected_ability,
-					planning_input,
-					locked_aim,
-					hover_coord,
-					paint_board,
+					settled_preview_paths,
+					settled_slots,
 				)
+				## Hover-shaped approach red only — locked red is overlay-only (EX-LOCKED-FIELD).
+				if paint_stand.x > -900000 and paint_stand != locked_aim:
+					action_range = action_range_tiles(
+						director,
+						paint_board,
+						paint_unit,
+						selected_ability,
+						planning_input,
+						paint_stand,
+						hover_coord,
+						paint_board,
+					)
+					stand = paint_stand
 	if bool(plan.get("show_blast", false)):
 		var blast_origin: Vector2i = plan.get("blast_origin", none)
 		if blast_origin.x > -900000:
