@@ -14,6 +14,8 @@ alwaysApply: true
 | Pattern | Why |
 |---------|-----|
 | **Seal / lock / discard / redo loops** on hover | Throws away work and re-runs sim + tile math every mouse move when match checks fail |
+| **`_settle_paint_only_preview_at_cell` / noop fake bundles** | Display without real commit slots+sim — preview ≠ commit |
+| **`_restore_sealed_voluntary_walk_preview` / re-settle restore** | Full sim to re-show a saved path — use path geometry write only |
 | **Display-layer fallback recompute** when hover bundle missing or "doesn't match" | Second truth path; masks broken settle — **fix settle once** |
 | **Click-time full hover redo** before commit | Extra sim pass; commit must ratify what hover already settled |
 | **Revision / version keys that invalidate a good bundle** and force rebuild | Heuristic staleness — fix the producer, don't invalidate consumers |
