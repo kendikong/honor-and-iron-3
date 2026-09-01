@@ -5770,6 +5770,36 @@ static func _test_single_target_yellow_impact_tile(failures: Array[String]) -> v
 		)
 
 
+static func _test_yellow_clears_after_skill_commit(failures: Array[String]) -> void:
+	## Yellow is hover-only — must not persist after skill commit (frozen path may remain).
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate yellow_clears_after_commit: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	input.on_hover_moved(ENEMY_POS)
+	input._flush_hover_heavy_sync()
+	overlay._recompute_hover_ranges_from_inputs()
+	if overlay.get_hover_blast_tiles().is_empty():
+		failures.append(
+			"PlanningQAGate yellow_clears_after_commit: enemy hover must paint yellow before commit",
+		)
+		return
+	if not PlanningChecklistHarness.commit_paint_promote_only(fix, ENEMY_POS):
+		failures.append("PlanningQAGate yellow_clears_after_commit: commit failed")
+		return
+	overlay._recompute_hover_ranges_from_inputs()
+	if not overlay.get_hover_blast_tiles().is_empty():
+		failures.append(
+			"PlanningQAGate yellow_clears_after_commit: yellow must clear after commit (got %s)"
+			% str(overlay.get_hover_blast_tiles()),
+		)
+
+
 static func _test_bash_hover_keeps_targeting_arrow(failures: Array[String]) -> void:
 	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
 	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)

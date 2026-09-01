@@ -76,6 +76,37 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 3 R3 amendment (`_action_range_paint_stand` / `resolve_paint` / `action_range_tiles`)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R3 | Initial proposal | 1–6 | (prior rounds) | Yellow blast / shaped skill layer |
+| **R3 amendment** | `premove_dest` vs `phase_entry`; settled landing at hover; single `resolve_paint` stand call; `action_range_tiles` projected board + landing `origin` | 1–6 | **6/6 PASS** | No overlay fallback; `run_layer3_paint_gate.ps1` **PASS** |
+
+**Critic IDs (R3 amendment):** 1 PASS · 2 PASS · 3 PASS · 4 PASS · 5 PASS · 6 PASS
+
+### Files
+
+- `presentation/planning_preview_tiles.gd` — `_action_range_paint_stand`, `resolve_paint`, `action_range_tiles`, walk-only blast guards
+- `presentation/tactical_planning_overlay.gd` — yellow bundle-only; committed-action yellow clear
+- `scripts/qa/run_layer3_paint_gate.ps1`, `tests/gates/Layer3PaintGate.tscn`, `tests/runners/run_layer3_paint_gate.gd`
+- `tests/harness/planning_qa_gate_test.gd` — `_test_yellow_clears_after_skill_commit`
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer3_paint_gate.ps1` | **PASS** |
+| `run_layer0_paint_gate.ps1` | **PASS** (regression) |
+| `run_layer1_paint_gate.ps1` | **PASS** (regression) |
+| `run_layer2_paint_gate.ps1` | **PASS** (regression) |
+
+**Layer 3 status:** **DONE** (2026-09-01)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

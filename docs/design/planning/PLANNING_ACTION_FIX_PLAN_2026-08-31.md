@@ -121,6 +121,8 @@ Verify: `.\scripts\qa\run_layer2_paint_gate.ps1` **PASS**. Council: R3 6/6 + R4/
 
 **Gate tests:** tile AOE / Volley / waypoint hover cases (`tile_aoe_waypoint_hover/*` in gate log).
 
+Verify: `.\scripts\qa\run_layer3_paint_gate.ps1` **PASS**. Council: R2 6/6 + R3 amendment 6/6. Audit: `docs/qa/COUNCIL_AUDIT_LOG.md` § Layer 3.
+
 ---
 
 ## Layer 4 — Move preview (path / route)

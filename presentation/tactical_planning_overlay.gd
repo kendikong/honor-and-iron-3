@@ -451,23 +451,6 @@ func _hover_action_range_uses_blast_at_coord(
 	return _board != null and _board.is_in_bounds(_hover_coord)
 
 
-func _compute_hover_blast_action_range_tiles(
-	unit: UnitState,
-	p_unit: UnitState,
-	action_range_origin: Vector2i,
-	ability_index: int,
-	_cache_force: bool,
-	_is_selected_player: bool = true,
-) -> Array[Vector2i]:
-	return PlanningPreviewTiles.blast_tiles(
-		_director,
-		_board,
-		unit,
-		ability_index,
-		_planning_input,
-		action_range_origin,
-		_hover_coord
-	)
 func _recompute_hover_ranges_from_inputs() -> void:
 	if _director == null:
 		return
@@ -961,6 +944,9 @@ func _apply_planning_tile_layers(
 		)
 	var locked_stand: Vector2i = Vector2i(-999999, -999999)
 	var show_locked_action_range: bool = bool(locked_plan.get("show_action_range", false))
+	var committed_class_action: bool = (
+		_director != null and _director.unit_has_committed_class_action(unit.id)
+	)
 	match locked_phase:
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			locked_stand = locked_plan.get("locked_move_origin", locked_stand)
@@ -988,28 +974,41 @@ func _apply_planning_tile_layers(
 			match phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
 					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					_hover_blast_tiles = settled.blast_tiles.duplicate()
-					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+					if committed_class_action:
+						_hover_blast_tiles.clear()
+						_blast_tiles_on_hover_layer = false
+					else:
+						_hover_blast_tiles = settled.blast_tiles.duplicate()
+						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 					_hover_move_tiles = settled.move_tiles.duplicate()
 					if not settled.action_range_tiles.is_empty():
 						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					_hover_blast_tiles = settled.blast_tiles.duplicate()
-					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+					if committed_class_action:
+						_hover_blast_tiles.clear()
+						_blast_tiles_on_hover_layer = false
+					else:
+						_hover_blast_tiles = settled.blast_tiles.duplicate()
+						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			return
 		## Bundle mismatch: locked fields painted above; hold last sealed hover-shaped layers.
 		if settled.valid:
 			match locked_phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
 					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					_hover_blast_tiles = settled.blast_tiles.duplicate()
-					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+					if not committed_class_action:
+						_hover_blast_tiles = settled.blast_tiles.duplicate()
+						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 					_hover_move_tiles = settled.move_tiles.duplicate()
 					if not settled.action_range_tiles.is_empty():
 						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					_hover_blast_tiles = settled.blast_tiles.duplicate()
-					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+					if not committed_class_action:
+						_hover_blast_tiles = settled.blast_tiles.duplicate()
+						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+		elif committed_class_action:
+			_hover_blast_tiles.clear()
+			_blast_tiles_on_hover_layer = false
 		return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
@@ -1028,13 +1027,6 @@ func _apply_planning_tile_layers(
 				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
 					_director, _board, unit, selected_ability, _planning_input, next_move,
 				)
-	if bool(layer_plan.get("show_blast", false)):
-		var blast_origin: Vector2i = layer_plan.get("blast_origin", Vector2i(-999999, -999999))
-		if blast_origin.x > -900000:
-			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
-			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-				unit, unit, blast_origin, selected_ability, voluntary_walk, is_selected_player,
-			)
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)
 	_danger_tiles_dirty = true
