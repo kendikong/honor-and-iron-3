@@ -14,20 +14,34 @@ Automated mirror of the owner's manual planning checklist (Skill Arena / TestBat
 Use this gate **before and after every change** that touches planning,
 preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.
 
-## Planning QA suites (two runners)
+## Planning QA suites (three layers)
 
 | Suite | Runner | Role |
 |-------|--------|------|
-| **Headless parity** (default gate) | `run_t3_mimic_headless.ps1` via `run_planning_qa_gate.ps1` | Same bible checklist as live (`PlanningLiveParityHarness` / `live_planning_scene_test.gd` IDs), fixture board, headless |
-| **Live acceptance** | `run_planning_scene_acceptance.ps1` | Real `TestBattle.tscn`, GdUnit4, production input + frames (`-LiveTier3` on gate) |
+| **Headless fixtures** (default gate) | `run_planning_headless_contracts.ps1` → `PlanningQaGate.tscn` | Full Knight checklist (~109 tests), drag E2E, input, trample, forecast, skill scenarios, intent contracts |
+| **Bible mirror** (default gate) | `run_t3_mimic_headless.ps1` | Live bible checklist IDs on fixture board (`PlanningLiveParityHarness`) |
+| **Live acceptance** | `run_planning_scene_acceptance.ps1` | Real `TestBattle.tscn`, GdUnit4 (`-LiveTier3` on gate) |
 | **Manual visual** | Owner F5 review | Pixel feel, animation timing, FPS |
 
-**Default gate:** SSOT structural gates + AOE footprint + **headless T3 mimic**.  
-**F5 parity:** add `-LiveTier3` or run `run_planning_scene_acceptance.ps1` alone.
+**Default gate:** SSOT structural gates + AOE footprint + **headless fixtures** + **bible mirror**.  
+**F5 parity:** add `-LiveTier3` or run `run_planning_scene_acceptance.ps1` alone.  
+**Swap-only iteration:** `run_swap_planning_acceptance.ps1` (do not run full gate until swap PASS).
 
-Shared harness helpers (`planning_qa_gate_test.gd` fixtures, `PlanningQAGateTest` slot signatures) are used by mimic sub-suites — not a separate gate entry point.
+### Headless fixture contracts (`PlanningQaGate.tscn`)
 
-### Headless T3 mimic (default)
+Runs nine suites in order:
+
+- `planning_forecast_test.gd`
+- `planning_skill_scenarios_test.gd`
+- `planning_drag_e2e_test.gd`
+- `planning_input_test.gd`
+- `trampling_advance_e2e_test.gd`
+- `action_range_regression_test.gd`
+- `planning_qa_gate_test.gd` (full Knight checklist)
+- `planning_intent_contract_e2e_test.gd`
+- `intent_source_of_truth_gate_test.gd`
+
+### Headless bible mirror (T3 mimic)
 
 `PlanningT3MimicRunner` runs:
 

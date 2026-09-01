@@ -1,6 +1,7 @@
 param(
 	[string]$GodotPath = "C:\Users\Kendy\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64.exe",
-	[switch]$LiveTier3
+	[switch]$LiveTier3,
+	[switch]$SkipFixtureContracts
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,8 +33,32 @@ if ($LASTEXITCODE -ne 0) {
 Write-Output "--- AOE footprint contract: PASS ---"
 Write-Output ""
 
-$tier3Pass = $false
-$tier3Label = ""
+$fixtureLabel = "SKIPPED"
+$fixturePass = $true
+if (-not $SkipFixtureContracts) {
+	Write-Output "=== Planning headless fixture contracts (full checklist) ==="
+	$fixtureGate = Join-Path $PSScriptRoot "run_planning_headless_contracts.ps1"
+	if (-not (Test-Path $fixtureGate)) {
+		Write-Error "[INCOMPLETE] Planning fixture runner missing: $fixtureGate"
+		exit 2
+	}
+	& $fixtureGate -GodotPath $GodotPath
+	if ($LASTEXITCODE -eq 130) { exit 130 }
+	if ($LASTEXITCODE -ne 0) {
+		$fixtureLabel = "FAIL (headless fixtures)"
+		Write-Output "--- Planning headless fixtures: FAIL ---"
+		exit 1
+	}
+	$fixtureLabel = "PASS (headless fixtures)"
+	Write-Output "--- Planning headless fixtures: PASS ---"
+} else {
+	Write-Output "=== Planning headless fixture contracts: SKIPPED (-SkipFixtureContracts) ==="
+}
+
+Write-Output ""
+
+$parityPass = $false
+$parityLabel = ""
 
 if ($LiveTier3) {
 	Write-Output "=== Planning: TestBattle live acceptance (GdUnit4) ==="
@@ -45,21 +70,21 @@ if ($LiveTier3) {
 	& $sceneGate -GodotPath $GodotPath
 	$sceneExit = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 1 }
 	if ($sceneExit -eq 2) {
-		$tier3Label = "INCOMPLETE (live)"
+		$parityLabel = "INCOMPLETE (live)"
 		Write-Output "--- Planning live: INCOMPLETE ---"
 	} elseif ($sceneExit -eq 130) {
 		Write-Output "--- Planning live: CANCELLED (ESC) ---"
 		exit 130
 	} elseif ($sceneExit -eq 0) {
-		$tier3Pass = $true
-		$tier3Label = "PASS (live)"
+		$parityPass = $true
+		$parityLabel = "PASS (live)"
 		Write-Output "--- Planning live: PASS ---"
 	} else {
-		$tier3Label = "FAIL (live, exit $sceneExit)"
+		$parityLabel = "FAIL (live, exit $sceneExit)"
 		Write-Output "--- Planning live: FAIL (exit $sceneExit) ---"
 	}
 } else {
-	Write-Output "=== Planning: headless fixture parity (T3 mimic - live bible checklist mirror) ==="
+	Write-Output "=== Planning: headless bible parity (T3 mimic mirror) ==="
 	Write-Output "Use -LiveTier3 for GdUnit TestBattle acceptance (F5 parity)."
 	$mimicGate = Join-Path $PSScriptRoot "run_t3_mimic_headless.ps1"
 	if (-not (Test-Path $mimicGate)) {
@@ -68,20 +93,21 @@ if ($LiveTier3) {
 	}
 	& $mimicGate -GodotPath $GodotPath
 	if ($LASTEXITCODE -ne 0) {
-		$tier3Label = "FAIL (headless)"
-		Write-Output "--- Planning headless parity: FAIL ---"
+		$parityLabel = "FAIL (bible mirror)"
+		Write-Output "--- Planning bible mirror: FAIL ---"
 		exit 1
 	}
-	$tier3Pass = $true
-	$tier3Label = "PASS (headless)"
-	Write-Output "--- Planning headless parity: PASS ---"
+	$parityPass = $true
+	$parityLabel = "PASS (bible mirror)"
+	Write-Output "--- Planning bible mirror: PASS ---"
 }
 
 Write-Output ""
 Write-Output "=== Planning QA gate summary ==="
-Write-Output ("Planning behavioral: {0}" -f $tier3Label)
+Write-Output ("Headless fixtures: {0}" -f $fixtureLabel)
+Write-Output ("Parity layer:      {0}" -f $parityLabel)
 
-if (-not $tier3Pass) {
+if (-not $fixturePass -or -not $parityPass) {
 	exit 1
 }
 Write-Output "[PASS] Planning QA gate."
