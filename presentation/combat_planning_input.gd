@@ -1997,6 +1997,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
 	if p_unit != null and _hover_settle_fresh_at(p_unit.id, cell):
+		_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if p_unit != null and _sealed_leg_hover_restore_if_blocked(p_unit, cell):
@@ -5016,6 +5017,7 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if _hover_settle_fresh_at(p_unit.id, cell):
+		_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if painted_move_route_locked(p_unit, cell):
@@ -5100,6 +5102,22 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	_refresh_click_target_highlight()
 
 
+func _apply_assembler_prefix_preview_on_painted_route(p_unit: UnitState, cell: Vector2i) -> void:
+	if p_unit == null or _director == null:
+		return
+	if _authoritative_route_for_unit(p_unit.id).size() < 2:
+		return
+	var prefix_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
+		p_unit.id, p_unit, cell, [],
+	)
+	if prefix_path.size() < 2:
+		return
+	CombatPlanningPreview.set_unit_preview_path(
+		preview_state, p_unit.id, prefix_path,
+	)
+	_sync_movement_hover_paths_to_overlay(p_unit.id)
+
+
 func _sync_movement_hover_paths_to_overlay(unit_id: int) -> void:
 	if _planning != null:
 		_planning.apply_preview_state(
@@ -5132,7 +5150,7 @@ func _assemble_voluntary_walk_preview_path(
 		var locked_route: Array = _authoritative_route_for_unit(unit_id)
 		for locked_idx: int in range(locked_route.size()):
 			var locked_step: Vector2i = locked_route[locked_idx] as Vector2i
-			if locked_step == hover_cell:
+			if locked_step == hover_cell and locked_idx > 0:
 				var locked_prefix: Array[Vector2i] = []
 				for prefix_idx: int in range(locked_idx + 1):
 					locked_prefix.append(locked_route[prefix_idx] as Vector2i)
@@ -5153,11 +5171,17 @@ func _assemble_voluntary_walk_preview_path(
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 		_director, unit_id, origin,
 	)
-	var painted_leg: Array = _authoritative_route_for_unit(unit_id)
+	var painted_leg: Array = []
+	if preview_state.is_painted_leg_sealed(unit_id):
+		var sealed_paint: Variant = preview_state.preview_paths.get(unit_id, null)
+		if sealed_paint is Array and (sealed_paint as Array).size() >= 2:
+			painted_leg = (sealed_paint as Array).duplicate()
+	if painted_leg.size() < 2:
+		painted_leg = _authoritative_route_for_unit(unit_id)
 	if painted_leg.size() >= 2:
 		for route_idx: int in range(painted_leg.size()):
 			var on_route: Vector2i = painted_leg[route_idx] as Vector2i
-			if on_route == hover_cell:
+			if on_route == hover_cell and route_idx > 0:
 				var route_prefix: Array[Vector2i] = []
 				for prefix_idx: int in range(route_idx + 1):
 					route_prefix.append(painted_leg[prefix_idx] as Vector2i)
