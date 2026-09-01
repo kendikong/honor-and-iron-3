@@ -915,12 +915,28 @@ func _apply_planning_tile_layers(
 		if _planning_input == null:
 			return
 		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		if (
+		var paint_hover: Vector2i = _planning_input.pointer_grid_cell()
+		var paint_matches: bool = (
 			settled != null
-			and settled.valid
-			and settled.unit_id == unit.id
-			and settled.ability_index == selected_ability
+			and settled.matches_paint_context(
+				paint_hover,
+				unit.id,
+				"",
+				selected_ability,
+			)
+		)
+		if (
+			not paint_matches
+			and settled != null
+			and _board != null
+			and not _board.is_in_bounds(paint_hover)
 		):
+			paint_matches = settled.matches_display_context(
+				unit.id,
+				"",
+				selected_ability,
+			)
+		if paint_matches:
 			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
 			_hover_blast_tiles = settled.blast_tiles.duplicate()
 			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer

@@ -2342,6 +2342,10 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 				if sealed_route != _drag_route:
 					_clear_frozen_painted_leg(unit_id)
 			var sealed_route: Array = _authoritative_route_for_unit(unit_id)
+			if sealed_route.size() < 2:
+				var stored: Variant = preview_state.preview_paths.get(unit_id, null)
+				if stored is Array:
+					sealed_route = stored as Array
 			if sealed_route.size() >= 2:
 				CombatPlanningPreview.set_unit_preview_path(
 					preview_state, unit_id, sealed_route,
@@ -4149,6 +4153,10 @@ func clear_hover_route_preview() -> void:
 		if not preview_state.is_painted_leg_sealed(unit_id):
 			continue
 		var path: Array = _authoritative_route_for_unit(unit_id)
+		if path.size() < 2:
+			var stored: Variant = preview_state.preview_paths.get(unit_id, null)
+			if stored is Array:
+				path = stored as Array
 		if path.size() >= 2:
 			preserved_paths[unit_id] = path.duplicate()
 	preview_state.clear_route_geometry()
