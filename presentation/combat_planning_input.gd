@@ -5129,6 +5129,14 @@ func _assemble_voluntary_walk_preview_path(
 	if actor == null or _director == null:
 		return []
 	if painted_move_route_locked(actor, hover_cell):
+		var locked_route: Array = _authoritative_route_for_unit(unit_id)
+		for locked_idx: int in range(locked_route.size()):
+			var locked_step: Vector2i = locked_route[locked_idx] as Vector2i
+			if locked_step == hover_cell:
+				var locked_prefix: Array[Vector2i] = []
+				for prefix_idx: int in range(locked_idx + 1):
+					locked_prefix.append(locked_route[prefix_idx] as Vector2i)
+				return locked_prefix
 		var frozen: Variant = preview_state.preview_paths.get(unit_id, null)
 		if frozen is Array and (frozen as Array).size() >= 2:
 			return (frozen as Array).duplicate()
@@ -5147,6 +5155,13 @@ func _assemble_voluntary_walk_preview_path(
 	)
 	var painted_leg: Array = _authoritative_route_for_unit(unit_id)
 	if painted_leg.size() >= 2:
+		for route_idx: int in range(painted_leg.size()):
+			var on_route: Vector2i = painted_leg[route_idx] as Vector2i
+			if on_route == hover_cell:
+				var route_prefix: Array[Vector2i] = []
+				for prefix_idx: int in range(route_idx + 1):
+					route_prefix.append(painted_leg[prefix_idx] as Vector2i)
+				return route_prefix
 		var painted_tail: Vector2i = painted_leg[painted_leg.size() - 1] as Vector2i
 		if (
 			painted_tail != hover_cell
@@ -5171,7 +5186,10 @@ func _assemble_voluntary_walk_preview_path(
 			and _voluntary_walk_hover_extends_preview_path(actor, hover_cell)
 		):
 			return [origin, hover_cell]
-		if _voluntary_walk_corridor_paint_active(actor):
+		if (
+			_voluntary_walk_corridor_paint_active(actor)
+			or _hover_orbit_extends_painted_receipt(actor, hover_cell)
+		):
 			var corridor_fill: Array[Vector2i] = _corridor_waypoints_to_cell(actor, hover_cell)
 
 
@@ -5232,6 +5250,10 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 		var corridor_wps: Array[Vector2i] = _corridor_waypoints_to_cell(actor, cell)
 		if not corridor_wps.is_empty() and corridor_wps.back() == cell:
 			return corridor_wps
+	if _hover_orbit_extends_painted_receipt(actor, cell):
+		var receipt_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(actor, cell)
+		if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
+			return receipt_corridor
 
 	if _can_move_to(actor, cell):
 		return _corridor_waypoints_to_cell(actor, cell)
@@ -5321,6 +5343,16 @@ func _corridor_board_for_voluntary_walk(actor: UnitState) -> BoardState:
 		return preview_state.preview_board
 	return _proj()
 
+func _hover_orbit_extends_painted_receipt(p_unit: UnitState, cell: Vector2i) -> bool:
+	var auth_route: Array = _authoritative_route_for_unit(p_unit.id)
+	if auth_route.size() < 2:
+		return false
+	for step: Variant in auth_route:
+		if step is Vector2i and (step as Vector2i) == cell:
+			return false
+	return _hover_extends_walk_geometry(p_unit, cell)
+
+
 func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
@@ -5329,7 +5361,13 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 			var painted: Array[Vector2i] = _route_waypoints()
 			if not painted.is_empty() and painted.back() == cell:
 				return painted
-	var origin: Vector2i = _settle_phase_entry_stand(actor)
+	var auth_route: Array = _authoritative_route_for_unit(actor.id)
+	var orbit_extend_from_receipt: bool = _hover_orbit_extends_painted_receipt(actor, cell)
+	var origin: Vector2i = (
+		_leg_anchor_for_painted_drag(actor)
+		if auth_route.size() >= 2
+		else _settle_phase_entry_stand(actor)
+	)
 	if origin.x <= -900000:
 		return []
 	var sealed_mode: int = _sealed_leg_hover_mode(actor, cell)
@@ -5338,13 +5376,19 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	if preview_state.is_painted_leg_sealed(actor.id):
 		corridor_budget = _move_budget(actor)
 		corridor_ability = null
+	elif orbit_extend_from_receipt:
+		corridor_budget = _move_budget(actor)
+		corridor_ability = null
 	elif (
 		_voluntary_walk_corridor_paint_active(actor)
 		or PlanningRoutePolicy.use_basic_walk_corridor_legality(sealed_mode)
 	):
 		corridor_budget = _move_budget(actor)
 		corridor_ability = null
-	if PlanningRoutePolicy.use_basic_walk_corridor_legality(sealed_mode):
+	if (
+		PlanningRoutePolicy.use_basic_walk_corridor_legality(sealed_mode)
+		or orbit_extend_from_receipt
+	):
 		if preview_state.preview_board == null:
 			_sync_preview_board_to_sealed_landing(actor.id)
 	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
