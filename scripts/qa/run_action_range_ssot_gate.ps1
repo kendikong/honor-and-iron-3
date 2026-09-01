@@ -63,6 +63,12 @@ if ($tilesText -notmatch "static func resolve_paint\(" -or $tilesText -notmatch 
 if ($tilesText -notmatch "static func resolve_move_tiles\(") {
 	$failures.Add("[FAIL] PlanningPreviewTiles does not own settled movement paint")
 }
+if ($tilesText -notmatch "static func _locked_current_phase_stand\(") {
+	$failures.Add("[FAIL] locked blue walk bubble must use _locked_current_phase_stand (phase-entry only)")
+}
+if ($tilesText -match "locked_move_origin.*predicted_stand_at_hover") {
+	$failures.Add("[FAIL] locked_move_origin must not use predicted_stand_at_hover")
+}
 
 $rangeFn = [regex]::Match($overlayText, "func _planning_action_range_tiles_for_unit\([\s\S]*?\nfunc ")
 if (-not $rangeFn.Success) {

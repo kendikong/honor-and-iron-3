@@ -78,16 +78,13 @@ static func resolve_layer_origins(
 		and planning_input.action_range_visible_for_hover()
 	)
 	plan["show_action_range"] = show_action_range
-	var locked_stand: Vector2i = _action_range_paint_stand(
+	## Locked current-phase stand (blue walk bubble / red aim bubble) — phase entry only.
+	var locked_stand: Vector2i = _locked_current_phase_stand(
 		unit,
-		hover_coord,
-		planning_input,
-		settled_board,
 		range_stand_origin,
 		director,
 		board,
-		settled_preview_paths,
-		settled_slots,
+		planning_input,
 	)
 	match phase:
 		PhaseKind.MOVEMENT:
@@ -290,7 +287,31 @@ static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
 	return candidate
 
 
-## Walk hovers follow predicted stand; approach-walk uses sim landing; dash-only keeps phase-entry stand.
+## MOVE_PREVIEW_RULES locked current-phase field — blue/red bubble origin at phase entry.
+## PERF GUARD: must NOT follow hover_coord or settled sim landing (see planning-hover-perf-mandatory.mdc).
+static func _locked_current_phase_stand(
+	unit: UnitState,
+	range_stand_origin: Vector2i,
+	director: CombatDirector,
+	board: BoardState,
+	planning_input: CombatPlanningInput,
+) -> Vector2i:
+	var none: Vector2i = Vector2i(-999999, -999999)
+	if unit == null:
+		return none
+	if range_stand_origin.x > -900000:
+		return range_stand_origin
+	if planning_input != null:
+		var phase_entry: Vector2i = planning_input.phase_entry_stand_cell(unit.id)
+		if phase_entry.x > -900000:
+			return phase_entry
+	if director != null and board != null:
+		return CombatPlanningPreview.forecast_stand_at_phase_entry(
+			director, board, unit.id, null,
+		)
+	return none
+
+
 static func _paired_premove_approach_slots(slots: Dictionary) -> bool:
 	if slots.is_empty():
 		return false
@@ -299,6 +320,7 @@ static func _paired_premove_approach_slots(slots: Dictionary) -> bool:
 	return not pre_steps.is_empty() and not action_steps.is_empty()
 
 
+## Next-phase / hover-aware range stand (red at predicted landing). Not for locked_move_origin.
 static func _action_range_paint_stand(
 	unit: UnitState,
 	hover_coord: Vector2i,

@@ -3255,7 +3255,7 @@ func _store_intent_snapshot(
 	_intent_snapshot_valid = true
 	_intent_snapshot_plan_revision = _director.plan_revision if _director != null else -1
 	var actor: UnitState = _proj_unit(unit_id)
-	var move_origin: Vector2i = _settle_phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
+	var move_origin: Vector2i = _phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
 	var paths_for_seal: Dictionary = preview_paths_snapshot
 	var sealed_board: Variant = preview_result.get("temp_board", null)
 	var settled_board: BoardState = sealed_board as BoardState
@@ -6393,7 +6393,7 @@ func phase_entry_stand_cell(unit_id: int) -> Vector2i:
 		unit = _director.board.get_unit_by_id(unit_id)
 	if unit == null:
 		return Vector2i(-999999, -999999)
-	return _settle_phase_entry_stand(unit)
+	return _phase_entry_stand(unit)
 
 
 ## Settled action-range origin; never follows stale live preview paths.
