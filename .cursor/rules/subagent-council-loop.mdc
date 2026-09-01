@@ -1,92 +1,61 @@
 ---
-description: Subagent Council Loop — mandatory propose → 3 rules-only critics → apply (NOT gauntlet)
+description: Subagent Council Loop — propose → 5 rules critics (parallel) → apply (NOT gauntlet)
 alwaysApply: true
 ---
 
 # Subagent Council Loop (mandatory — NOT Gauntlet)
 
-**Owner name:** **Subagent Council Loop**  
-**NOT the same as:** Gauntlet loop, gauntlet-critic scoring, BAR, meta-critic manifest, “make gate green.”
+**NOT:** Gauntlet loop · gauntlet-critic · BAR · scores · “make gate green.”
 
-Agents have repeatedly skipped this process. **Do not apply code fixes until the council passes.**
+**Full doc:** `docs/qa/SUBAGENT_COUNCIL_LOOP.md`
 
-Full reference: `docs/qa/SUBAGENT_COUNCIL_LOOP.md`
-
----
-
-## When this loop is required
-
-- **Any implementation turn** that changes gameplay, planning paint, settle/commit, tiles, or combat behavior — unless the owner explicitly says “skip council this once.”
-- **Planning recovery** per `docs/design/planning/PLANNING_ACTION_FIX_PLAN_2026-08-31.md` — every layer.
-
-**Not required:** read-only Q&A, doc-only edits the owner pasted verbatim, git commits with zero logic change.
+Do **not** apply gameplay/planning fixes until council passes.
 
 ---
 
-## The loop (repeat until pass)
+## Loop
 
 ```
-1. PROPOSE  — agent writes the fix (what, why, files, bible/rule cites). Do NOT edit code yet.
-2. COUNCIL  — launch exactly 3 subagents (rules-only critics). Parallel OK.
-3. VERDICT  — all 3 PASS → step 4. Any FAIL → revise proposal, new council (step 2). Do not patch from critic homework.
-4. APPLY    — implement the approved proposal only.
-5. VERIFY   — run the matching automated suite; report PASS/FAIL.
+PROPOSE (no code) → COUNCIL (parallel) → all PASS → APPLY → VERIFY (automated QA)
 ```
+
+Any FAIL → revise proposal → new council. Do not apply partial fixes from critics.
 
 ---
 
-## Council job (rules only)
+## Council size (efficient)
 
-Each critic answers **only:**
+| Scope | Critics |
+|-------|---------|
+| **Default** planning / paint / commit / hover | **5** parallel (charters 1–5 in doc) |
+| + QA FAIL / test edits | **+ Critic 6** |
+| + class factory / skills | **+ Critic 7** |
 
-> Does this **proposal** violate any project rule? If yes: **which rule** (file/name) and **what pattern**?
+**5 is the default** — covers bible paint, commit SSOT, stand/range, anti-heuristic, and perf without 3-critic gaps or 8-critic overlap.
 
-### Critics MUST check
+Launch all in **one message**. Verdict: **all PASS** (5/5, 6/6, or 7/7).
 
-- `docs/design/planning/MOVE_PREVIEW_RULES.md` (wins on planning paint/commit)
-- `.cursor/rules/global-systems-first.mdc`
-- `.cursor/rules/move-preview-intent-truth.mdc`
-- `.cursor/rules/action-range-latest-stand.mdc`
-- `.cursor/rules/no-bandaid-fixes.mdc`
-- `.cursor/rules/no-heavy-postprocess-safety.mdc`
-- `.cursor/rules/planning-hover-perf-mandatory.mdc` (when touching hover perf)
-- `.cursor/rules/qa-fix-no-heuristics.mdc` (when fixing QA FAILs)
-
-### Critics MUST NOT
-
-| Forbidden | Why |
-|-----------|-----|
-| Gauntlet scores (0–100), BAR, “threshold 85” | That is **Gauntlet Loop** — different process |
-| Regression matrices, “run full gate” lists | Verification is step 5, not council |
-| “Fix isn’t complete yet” / architecture wishlists | Council = **rule violations on the proposal**, not scope creep |
-| Re-propose the implementation | Only: PASS or FAIL + rule cite |
-| `gauntlet-critic` subagent for scoring gameplay | Use **generalPurpose** or explicit rules-only prompt below |
-
-### Council prompt template (copy for each of 3 critics)
-
-```
-Subagent Council — rules only (NOT gauntlet).
-
-Proposal: [paste proposal]
-
-Answer ONLY:
-- PASS or FAIL
-- If FAIL: list each rule violated (rule file + one sentence). No scores. No extra fixes. No regression plan.
-```
+Subagent: **generalPurpose** with charter from doc. **Not** `gauntlet-critic`.
 
 ---
 
-## Agent obligations after council
+## Critics (summary — detail in doc)
 
-- **PASS (3/3):** Apply proposal → run QA per `qa-after-gameplay-changes.mdc` → changelog notes `Council: 3/3 PASS`.
-- **FAIL:** New proposal addressing **cited rules only** → new council. **Do not** apply partial fixes from failed round.
-- **Never** claim “critics failed so we can’t ship” while shipping without a council pass on what was applied.
+1. **Bible paint & tiles** — `MOVE_PREVIEW_RULES.md`, locked blue/red, path vs flood, frozen/live  
+2. **Settle / bundle / commit** — preview=commit, ratify, no overlay fallback, no post-process redo  
+3. **Stand & range origins** — phase-entry, two-range model, `action-range-latest-stand`  
+4. **Global systems & anti-heuristic** — one owner/path, 6-row audit, no bandaids, skill-global if abilities  
+5. **Perf & scheduling** — `planning-hover-perf-mandatory`, throttle, no perf heuristics  
+6. *(optional)* **QA-fix discipline** — `qa-fix-no-heuristics`  
+7. *(optional)* **Class / skill scope** — `skill-global-rules`, class QA bar  
+
+Each returns **PASS/FAIL + rule cites only**. No scores. No regression plans.
 
 ---
 
-## Wins over
+## After council
 
-- Applying fixes first, critics after (backwards)
-- Using `gauntlet-critic` as the council (wrong tool)
-- Treating council FAIL as “implement critic suggestions” without a new proposal + council
-- Structural grep PASS as “follows rules” without behavioral bible checks (see action fix plan)
+- **All PASS:** apply → QA per `qa-after-gameplay-changes.mdc` → changelog `Council: N/N PASS`  
+- **Any FAIL:** new proposal → new council  
+
+Structural gates after apply are **not** council substitutes.
