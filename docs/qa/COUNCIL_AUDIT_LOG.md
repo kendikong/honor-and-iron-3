@@ -107,6 +107,38 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 sealed-leg orbit route (R1c–R1f)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R1c | `_authoritative_route_for_unit` sealed fallback; snapshot freeze; `_voluntary_walk_hover_paint_applies` guard; remove duplicate restore | 1–6 | **6/6 PASS** | Applied |
+| R1d | Sealed → `corridor_paint` false; restore without drag; delete dead sealed+EXTEND branches | 1–6 | **6/6 PASS** (Critic 4 revised) | Applied — gate still 97 FAIL |
+| R1e | Hoist sealed guard to top of `_voluntary_walk_corridor_paint_active` (before trample awaiting return) | 1–6 | **6/6 PASS** amendment | Applied |
+| R1f | `display_move_route_cells` sealed-first; block L2089 refresh when locked; `_hover_paint_waypoints_for_cell` locked guard | 1–6 | **6/6 PASS** | Applied — gate **89 FAIL** (was 97) |
+
+**Critic IDs (R1f):** 1 PASS · 2 PASS · 3 PASS · 4 PASS · 5 PASS · 6 PASS
+
+### Files
+
+- `presentation/combat_planning_input.gd` — sealed-leg orbit route policy + display/settle guards
+- `scripts/qa/run_layer4_paint_gate.ps1`, `tests/gates/Layer4PaintGate.tscn`, `tests/runners/run_layer4_paint_gate.gd`
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **FAIL** (89 — `painted_route_equivalence` ~73, plus teleport/waypoint/drag/tile_aim buckets) |
+| `run_layer0_paint_gate.ps1` | **PASS** |
+| `run_layer1_paint_gate.ps1` | **PASS** |
+| `run_layer2_paint_gate.ps1` | **PASS** |
+| `run_layer3_paint_gate.ps1` | **PASS** |
+
+**Layer 4 status:** **IN PROGRESS** — orbit equivalence improved (97→89); remaining buckets need separate council cycles (teleport, waypoint_enemy_hover, drag_drop_undo, tile_aim, range2_arrow).
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

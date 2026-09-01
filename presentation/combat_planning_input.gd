@@ -2086,6 +2086,9 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				_apply_settled_preview_result(ally_res)
 			_refresh_click_target_highlight()
 			return
+		if painted_move_route_locked(p_unit, cell):
+			_refresh_click_target_highlight()
+			return
 		_refresh_voluntary_walk_hover_preview(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
@@ -4381,15 +4384,16 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		actor = _director.board.get_unit_by_id(unit_id)
 	if actor == null:
 		return []
+	if unit_id == _director.selected_unit_id:
+		var sealed_route: Array = _authoritative_route_for_unit(unit_id)
+		if sealed_route.size() >= 2:
+			return CombatPlanningPreview.frozen_move_route_cells_from_array(sealed_route)
 	var movement_step: bool = active_movement_planning_step(actor)
 	if movement_step:
 		var route_ability: AbilityData = _selected_ability_data(actor)
 		if not movement_hover_route_display_applies(actor, route_ability):
 			return []
 	if unit_id == _director.selected_unit_id:
-		var sealed_route: Array = _authoritative_route_for_unit(unit_id)
-		if sealed_route.size() >= 2:
-			return CombatPlanningPreview.frozen_move_route_cells_from_array(sealed_route)
 		return []
 	return CombatPlanningPreview.display_route_cells_from_preview(
 		unit_id,
@@ -5154,6 +5158,8 @@ func _assemble_voluntary_walk_preview_path(
 ## Shared hover/drag paint: premove, postmove, and MOVE module legs use one corridor owner.
 func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if actor == null or _director == null or not _director.board.is_in_bounds(cell):
+		return []
+	if painted_move_route_locked(actor, cell):
 		return []
 	if (
 		_painted_drag_route_drives_live_preview()
@@ -6222,7 +6228,6 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 		return false
 	var ability: AbilityData = _selected_ability_data(unit)
 	var skill_move_leg: bool = ability != null and _is_awaiting_movement_endpoint(unit, ability)
-	var sealed_hover_mode: int = _sealed_leg_hover_mode(unit, coord)
 	if _voluntary_walk_corridor_paint_active(unit):
 		skill_move_leg = false
 	var budget: int = _drag_max_steps(unit)
