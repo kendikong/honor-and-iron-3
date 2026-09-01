@@ -31,6 +31,9 @@ var _drag_survive_board_cancel: bool = false
 const _DRAG_THRESHOLD_PX: float = 6.0
 const _ABILITY_SCROLL_SETTLE_SEC: float = 0.075
 const _HOVER_HEAVY_MIN_INTERVAL_SEC: float = 0.032
+## PERF GUARD (owner-mandate): live F5 hover sim throttle interval — see
+## `.cursor/rules/planning-hover-perf-mandatory.mdc`. Do not remove or zero
+## without owner approval; QA uses immediate sync via qa_static_overlay.
 const _HOVER_SIM_MIN_INTERVAL_SEC: float = 0.045
 const _HOVER_SIM_STILL_PX: float = 3.0
 
@@ -1495,52 +1498,26 @@ func on_hover_moved(cell: Vector2i) -> void:
 			):
 				_seal_painted_preview_landing_if_needed(p_unit)
 			_stage_voluntary_walk_drag_input(p_unit, cell, ability, planning_cell_changed, awaiting_move_leg)
-	var hover_settle_ran: bool = false
-	if (
-		_director.board.is_in_bounds(cell)
-		and _director.selected_unit_id >= 0
-	):
-		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
-		if hover_unit != null and active_movement_planning_step(hover_unit):
-			if _voluntary_walk_corridor_paint_active(hover_unit):
-				_refresh_voluntary_walk_hover_preview(hover_unit, cell)
-			else:
-				_refresh_hover_interaction_preview(cell)
-			_last_sim_hover_refresh_cell = cell
-			hover_settle_ran = true
-		elif (
-			planning_cell_changed
-			and hover_unit != null
-			and _voluntary_walk_preview_refresh_needed(hover_unit, cell)
-		):
-			_refresh_voluntary_walk_hover_preview(hover_unit, cell)
-			_last_sim_hover_refresh_cell = cell
-			hover_settle_ran = true
+	## PERF GUARD: live F5 must NOT sync-settle every cell here — route/drag updates
+	## above are cheap; full settle runs via _schedule_hover_sim_refresh (throttle)
+	## or _flush_hover_heavy_sync on commit. See planning-hover-perf-mandatory.mdc.
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			var oob_unit: UnitState = _proj_unit(_director.selected_unit_id)
 			if oob_unit != null and active_movement_planning_step(oob_unit):
 				_clear_stale_painted_preview_route(oob_unit.id)
-		_run_hover_sim_refresh()
-		_run_hover_overlay_refresh()
+		_flush_hover_heavy_sync()
 		return
 	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
 		return
-	if hover_settle_ran:
-		_run_hover_overlay_refresh()
-		if not dragging:
-			refresh_mouse_cursor(cell)
-	elif _director.selected_ability_index >= 0:
-		if _should_run_hover_sim_sync(cell):
-			_run_hover_sim_refresh()
-			_sync_movement_preview_after_hover_sim(cell)
-		else:
-			_schedule_hover_sim_refresh()
+	if _should_run_hover_sim_sync(cell) or _map_view == null or not _map_view.is_inside_tree():
+		_run_hover_sim_refresh()
 		_run_hover_overlay_refresh()
 		if not dragging:
 			refresh_mouse_cursor(cell)
 	else:
+		_schedule_hover_sim_refresh()
 		_run_hover_overlay_refresh()
 		if not dragging:
 			refresh_mouse_cursor(cell)
@@ -1565,6 +1542,22 @@ func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
 	return _is_awaiting_movement_endpoint(p_unit, ability)
 
 
+func _occupy_push_hover_tracks_immediately() -> bool:
+	## Occupy-push hover is a cheap clone (no Simulator). Do not wait for the
+	## pointer-still throttle used to skip expensive dash/attack replay.
+	if _planning != null and _planning.qa_static_overlay:
+		return false
+	if _director == null or _director.selected_unit_id < 0:
+		return false
+	var unit: UnitState = _proj_unit(_director.selected_unit_id)
+	if unit == null:
+		return false
+	return AbilitySystem.motion_requires_occupied_target(unit, _selected_ability_data(unit))
+
+
+## PERF GUARD (owner-mandate): live F5 returns false → throttle via
+## _schedule_hover_sim_refresh. QA (qa_static_overlay) always sync. Occupy-push
+## sync on live. Do NOT return true for live basic move — that removes throttle.
 func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 	if dragging or _director == null or not _is_planning():
 		return false
@@ -1572,7 +1565,9 @@ func _should_run_hover_sim_sync(cell: Vector2i) -> bool:
 		return false
 	if _planning != null and _planning.qa_static_overlay:
 		return true
-	return _director.selected_unit_id >= 0 and _director.selected_ability_index < 0
+	if _occupy_push_hover_tracks_immediately():
+		return true
+	return false
 
 
 func _schedule_hover_sim_refresh() -> void:
@@ -1604,6 +1599,7 @@ func _schedule_hover_sim_refresh() -> void:
 	var wait_sec: float = _hover_sim_min_interval_sec()
 	if wait_sec <= 0.0 or _map_view == null or not _map_view.is_inside_tree():
 		_run_hover_sim_refresh()
+		_run_hover_overlay_refresh()
 		return
 	_map_view.get_tree().create_timer(wait_sec).timeout.connect(
 		func() -> void:
@@ -1656,6 +1652,8 @@ func _hover_sim_still_px() -> float:
 
 
 func _flush_hover_heavy_sync() -> void:
+	## PERF GUARD: commit/drag-end must flush pending throttle and run one sync
+	## settle before ratify — always call _run_hover_sim_refresh here.
 	_hover_sim_schedule_generation += 1
 	_drag_preview_schedule_generation += 1
 	if dragging:
@@ -1663,8 +1661,8 @@ func _flush_hover_heavy_sync() -> void:
 	var flush_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)
+	_run_hover_sim_refresh()
 	if _director != null and _director.selected_ability_index >= 0:
-		_run_hover_sim_refresh()
 		_sync_movement_preview_after_hover_sim(flush_cell)
 	_run_hover_overlay_refresh()
 	_refresh_action_range_overlay_when_gate_off()
@@ -3555,7 +3553,29 @@ func _preview_from_commit_slots_at_cell(
 		unit_id, cell, slots, wp_for_key,
 	)
 	var actions: Array[TimelineAction] = _actions_from_slots(slots)
-	var result: Dictionary = _director.preview_actions(unit_id, actions)
+	var result: Dictionary
+	if _hover_can_preview_move_without_simulate(slots, cell):
+		result = {
+			"intents": [],
+			"events": [],
+			"temp_board": _hover_empty_move_preview_board(slots, cell),
+			"actions": actions,
+			"intent_preview": true,
+		}
+	elif _hover_can_preview_occupy_push_without_simulate(slots, cell):
+		var occupy_board: BoardState = _hover_occupy_push_preview_board(slots, cell)
+		var occupy_source: BoardState = _director.projected_state
+		if occupy_source == null:
+			occupy_source = _director.board
+		result = {
+			"intents": [],
+			"events": _hover_displacement_events(occupy_source, occupy_board, unit_id),
+			"temp_board": occupy_board,
+			"actions": actions,
+			"intent_preview": true,
+		}
+	else:
+		result = _director.preview_actions(unit_id, actions)
 	## The route snapshot is part of the same settled receipt as the simulation board.
 	result["settled_preview_paths"] = paths_snapshot.duplicate(true)
 	_store_intent_snapshot(
@@ -3568,6 +3588,181 @@ func _preview_from_commit_slots_at_cell(
 		result,
 	)
 	return result
+
+
+## PERF GUARD (owner-mandate): live F5 empty-tile walk hover uses board clone +
+## same commit slots — NOT full Simulator.simulate per cell. QA + commit flush
+## still use full preview when required. Do not delete for "SSOT purity".
+func _hover_empty_move_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
+	var source: BoardState = _director.projected_state
+	if source == null:
+		source = _director.board
+	if source == null:
+		return BoardState.new()
+	var cheap: BoardState = source.clone()
+	var move_action: TimelineAction = null
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if raw is TimelineAction and (raw as TimelineAction).type == GameEnums.ActionType.MOVE:
+				move_action = raw as TimelineAction
+				break
+		if move_action != null:
+			break
+	if move_action != null:
+		var dummy_events: Array[SimEvent] = []
+		MovementSystem.execute_move(cheap, move_action, dummy_events)
+	else:
+		var uid: int = _director.selected_unit_id
+		var u: UnitState = cheap.get_unit_by_id(uid)
+		if u != null and u.position != cell:
+			GridSystem.set_occupant(cheap, u.position, -1)
+			u.position = cell
+			GridSystem.set_occupant(cheap, cell, uid)
+	return cheap
+
+
+func _hover_can_preview_move_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
+	if _planning == null or _planning.qa_static_overlay:
+		return false
+	if awaiting_targeting_active() or dragging:
+		return false
+	if _director == null or _director.board == null:
+		return false
+	var occupant: UnitState = _director.board.get_unit_at(cell)
+	if occupant != null and occupant.id != _director.selected_unit_id:
+		return false
+	var has_move: bool = false
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.ABILITY:
+				return false
+			if action.type == GameEnums.ActionType.MOVE:
+				has_move = true
+	return has_move
+
+
+func _hover_can_preview_occupy_push_without_simulate(slots: Dictionary, cell: Vector2i) -> bool:
+	if _planning == null or _planning.qa_static_overlay:
+		return false
+	if awaiting_targeting_active() or dragging:
+		return false
+	if _director == null or _director.board == null:
+		return false
+	var occupant: UnitState = _director.board.get_unit_at(cell)
+	if occupant == null or occupant.id == _director.selected_unit_id or occupant.is_enemy():
+		return false
+	var actor: UnitState = _proj_unit(_director.selected_unit_id)
+	var occupy_ability: AbilityData = null
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.MOVE:
+				continue
+			if action.type != GameEnums.ActionType.ABILITY or action.ability == null:
+				return false
+			if not AbilitySystem.motion_requires_occupied_target(actor, action.ability):
+				return false
+			if occupy_ability != null:
+				return false
+			occupy_ability = action.ability
+	if occupy_ability == null or actor == null:
+		return false
+	var origin: Vector2i = actor.position
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var move_action: TimelineAction = raw as TimelineAction
+			if move_action.type == GameEnums.ActionType.MOVE:
+				origin = move_action.target_coord
+	return AbilitySystem.occupied_push_from_origin_valid(
+		_proj(), actor, occupy_ability, origin, occupant.position,
+	)
+
+
+func _hover_occupy_push_preview_board(slots: Dictionary, cell: Vector2i) -> BoardState:
+	var source: BoardState = _director.projected_state
+	if source == null:
+		source = _director.board
+	if source == null:
+		return BoardState.new()
+	var cheap: BoardState = source.clone()
+	var uid: int = _director.selected_unit_id
+	var actor: UnitState = cheap.get_unit_by_id(uid)
+	if actor == null:
+		return cheap
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var move_action: TimelineAction = raw as TimelineAction
+			if move_action.type != GameEnums.ActionType.MOVE:
+				continue
+			var dest: Vector2i = move_action.target_coord
+			if dest != actor.position:
+				GridSystem.set_occupant(cheap, actor.position, -1)
+				actor.position = dest
+				GridSystem.set_occupant(cheap, dest, uid)
+	var occupant: UnitState = cheap.get_unit_at(cell)
+	if occupant == null or occupant.id == uid:
+		occupant = cheap.get_unit_at(actor.position)
+		if occupant == null or occupant.id == uid:
+			return cheap
+	var old_pos: Vector2i = occupant.position
+	var push_dir: Vector2i = PhysicsSystem.cardinal_from_to(actor.position, old_pos)
+	if push_dir == Vector2i.ZERO:
+		return cheap
+	var behind: Vector2i = old_pos + push_dir
+	if (
+		not cheap.is_in_bounds(behind)
+		or GridSystem.is_wall(cheap, behind)
+		or GridSystem.is_occupied(cheap, behind)
+	):
+		return cheap
+	GridSystem.set_occupant(cheap, old_pos, -1)
+	occupant.position = behind
+	GridSystem.set_occupant(cheap, behind, occupant.id)
+	if actor.position != old_pos:
+		GridSystem.set_occupant(cheap, actor.position, -1)
+	actor.position = old_pos
+	GridSystem.set_occupant(cheap, old_pos, uid)
+	return cheap
+
+
+func _hover_displacement_events(
+	source: BoardState,
+	cheap: BoardState,
+	actor_id: int,
+) -> Array:
+	var events: Array = []
+	if source == null or cheap == null:
+		return events
+	for unit: UnitState in source.units:
+		if unit == null:
+			continue
+		var after: UnitState = cheap.get_unit_by_id(unit.id)
+		if after == null or after.position == unit.position:
+			continue
+		if unit.id == actor_id:
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_MOVED, {
+				"actor": actor_id,
+				"from": unit.position,
+				"to": after.position,
+				"path": [after.position],
+			}))
+		else:
+			events.append(SimEvent.make(GameEnums.SimEventType.UNIT_PUSHED, {
+				"unit": unit.id,
+				"from": unit.position,
+				"to": after.position,
+				"pusher": actor_id,
+			}))
+	return events
 
 
 func _hover_interaction_cache_key(

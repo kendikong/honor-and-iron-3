@@ -1,0 +1,54 @@
+---
+description: Mandatory live F5 planning hover performance — throttle + cheap walk preview (owner mandate, do not remove)
+alwaysApply: true
+---
+
+# Planning Hover Performance (ABSOLUTE — DO NOT REMOVE)
+
+**Owner mandate (2026-08-31):** Live F5 planning must stay responsive (~120 FPS reference). Agents have **removed this perf architecture twice** while chasing "SSOT purity." That is forbidden.
+
+**This is NOT a second truth path.** Same commit slots and sealed bundle at ratify. Only **when** expensive work runs differs between live hover and QA/commit flush.
+
+## Required live F5 behavior (`CombatPlanningInput`)
+
+| Mechanism | Purpose | Code anchors |
+|-----------|---------|--------------|
+| **Hover sim throttle** | `_schedule_hover_sim_refresh` + `hover_sim_interval_sec` (~45ms) + pointer-still | `on_hover_moved`, `_should_run_hover_sim_sync`, `_HOVER_SIM_MIN_INTERVAL_SEC` |
+| **Sync only when needed** | QA (`qa_static_overlay`), occupy-push, commit flush | `_should_run_hover_sim_sync`, `_flush_hover_heavy_sync` |
+| **Cheap empty-walk preview** | Board clone from same slots — skip `Simulator.simulate` on live hover | `_hover_can_preview_move_without_simulate`, `_preview_from_commit_slots_at_cell` |
+| **Cheap occupy-push preview** | Same pattern for allied push hovers | `_hover_can_preview_occupy_push_without_simulate` |
+
+## Forbidden (instant violation — even for "SSOT cleanup")
+
+| Do not | Why |
+|--------|-----|
+| Call `_refresh_voluntary_walk_hover_preview` / full settle **synchronously in `on_hover_moved` per cell** | Restores slideshow FPS |
+| Make `_should_run_hover_sim_sync` return **true for live basic move** (`selected_ability_index < 0`) | Disables throttle |
+| Remove `_hover_can_preview_move_without_simulate` or always call `preview_actions` on live hover | Full sim every pixel |
+| Skip `_run_hover_sim_refresh` in `_flush_hover_heavy_sync` before commit | Commit without settled bundle |
+| Label throttle or cheap preview as "heuristic" and delete | Owner-approved scheduling exception (`minimal-performance-impact.mdc`) |
+
+## SSOT compatibility (must remain true)
+
+- Hover still builds **the same commit slots**; commit **ratifies the sealed bundle** — no re-path at click.
+- QA headless (`qa_static_overlay`) **always** runs full sim on hover — cheap path returns false there.
+- Overlay still reads **bundle only** — no live tile fallback when bundle missing.
+
+## Before editing `combat_planning_input.gd` hover paths
+
+1. Grep `PERF GUARD` in the file — do not delete those blocks without owner approval.
+2. Read this rule + `docs/design/planning/MOVE_PREVIEW_RULES.md` § Preview = commit.
+3. If removing perf code, **stop** and propose to owner — default is **keep perf, fix SSOT upstream**.
+
+## Wins over
+
+- Misread of `no-heavy-postprocess-safety.mdc` (ban redo loops, not throttle)
+- Misread of `minimal-performance-impact.mdc` § Forbidden (owner exception below it applies)
+- "Make every hover call Simulator for purity"
+
+## Related
+
+- `.cursor/rules/minimal-performance-impact.mdc` — owner-approved planning scheduling exception
+- `.cursor/rules/no-heavy-postprocess-safety.mdc` — no seal/discard/redo storms
+- `docs/design/planning/POST_PROCESS_AUDIT.md`
+- Code: `presentation/combat_planning_input.gd` (`PERF GUARD` comments)

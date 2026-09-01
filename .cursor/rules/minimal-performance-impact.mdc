@@ -45,6 +45,8 @@ Unless owner approved ⚠ exception in chat, the above are forbidden for **any**
 
 ### ⚠ Owner-approved planning scheduling exception
 
+**Mandatory detail:** `.cursor/rules/planning-hover-perf-mandatory.mdc` (always on) — live F5 throttle + cheap walk preview. The "Forbidden" bullets above do **not** override that rule.
+
 The owner has approved bounded scheduling for the already-tuned planning frame
 budget. Defer/throttle/coalesce may cover expensive hover simulation, drag-preview
 simulation, and presentation redraws, provided callbacks use the current

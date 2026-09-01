@@ -34,7 +34,11 @@ $requiredSnippets = @(
 	@{ label = "settled preview apply path"; pattern = "func _apply_settled_preview_result\(" },
 	@{ label = "sealed movement paint"; pattern = "move_tiles" },
 	@{ label = "authoritative preview paths accessor"; pattern = "func _authoritative_preview_paths\(\)" },
-	@{ label = "authoritative route accessor"; pattern = "func _authoritative_route_for_unit\(" }
+	@{ label = "authoritative route accessor"; pattern = "func _authoritative_route_for_unit\(" },
+	@{ label = "hover perf throttle schedule"; pattern = "func _schedule_hover_sim_refresh\(\)" },
+	@{ label = "cheap empty-walk hover preview"; pattern = "func _hover_can_preview_move_without_simulate\(" },
+	@{ label = "live F5 throttle gate"; pattern = "func _should_run_hover_sim_sync\(" },
+	@{ label = "PERF GUARD owner mandate marker"; pattern = "PERF GUARD \(owner-mandate\)" }
 )
 foreach ($req in $requiredSnippets) {
 	if ($text -notmatch $req.pattern) {
@@ -54,6 +58,15 @@ $forbiddenPatterns = @(
 foreach ($ban in $forbiddenPatterns) {
 	if ($text -match $ban.pattern) {
 		$failures.Add("[FAIL] forbidden still present: $($ban.label) ($($ban.pattern))")
+	}
+}
+
+# Live F5 must not sync-settle every hover cell in on_hover_moved (perf mandate).
+$hoverMovedMatch = [regex]::Match($text, "func on_hover_moved\([\s\S]*?\nfunc ")
+if ($hoverMovedMatch.Success) {
+	$hoverMovedBody = $hoverMovedMatch.Value
+	if ($hoverMovedBody -match "_refresh_voluntary_walk_hover_preview\(") {
+		$failures.Add("[FAIL] on_hover_moved still sync-calls _refresh_voluntary_walk_hover_preview (removes throttle)")
 	}
 }
 
