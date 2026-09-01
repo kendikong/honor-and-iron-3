@@ -9,11 +9,11 @@
 **Workflow on every code change:**
 
 1. Agent **proposes** fix (owner layer, files, bible section).
-2. **3 rules-only critics** — rule violations only (no gauntlet scores, no regression homework).
-3. All pass → **apply**.
+2. **Subagent Council Loop** — 3 rules-only critics ([`docs/qa/SUBAGENT_COUNCIL_LOOP.md`](../../qa/SUBAGENT_COUNCIL_LOOP.md)); violations only.
+3. 3/3 PASS → **apply**.
 4. Run matching gate slice → report PASS/FAIL.
 
-This is **not** a gauntlet loop.
+This is **not** the Gauntlet Loop.
 
 ---
 
@@ -159,7 +159,7 @@ This is **not** a gauntlet loop.
 |--------|------|
 | Align checklist with bible | `docs/qa/planning/PLANNING_SKILL_QA_CHECKLIST.md` |
 | Add behavioral-done matrix | `docs/qa/planning/PLANNING_QA_GATE.md` — one row per bible section |
-| Rules-only critic contract | `docs/qa/RULES_ONLY_CRITIC.md` (or pointer in `.cursor/rules/`) |
+| Rules-only critic contract | `docs/qa/SUBAGENT_COUNCIL_LOOP.md` (`.cursor/rules/subagent-council-loop.mdc`) |
 | Clarify locked vs bundle | `SETTLED_PAINT_SSOT_PLAN.md` |
 
 ---
