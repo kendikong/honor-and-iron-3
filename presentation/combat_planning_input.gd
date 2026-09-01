@@ -2012,6 +2012,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		if (
 			not painted_move_route_locked(p_unit, cell)
 			and not preview_state.is_painted_leg_sealed(p_unit.id)
+			and _authoritative_route_for_unit(p_unit.id).size() < 2
 			and _hover_at_committed_stand_for_range_only(p_unit, cell, early_target_id)
 		):
 			var stand_res: Dictionary = _preview_at_interaction_cell(

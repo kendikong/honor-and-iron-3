@@ -139,6 +139,32 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 R3–R10 (council-gated orbit / trample parity)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R3 | Armed awaiting refresh skip when locked; sealed restore order; manhattan-1 assemble | 1–6 | **6/6 PASS** | Applied — no FAIL delta |
+| R4 | Sealed anchor via `sealed_phase_entry_anchor`; remove hover clear on anchor mismatch | 1–6 | **5/6** (C6 FAIL) | Applied — remediation logged; no FAIL delta |
+| R5 | Block settle in `_refresh_voluntary_walk_hover_preview` when locked | 1–6 | **4/6** → R5-revised **6/6 PASS** | Applied — no FAIL delta |
+| R5-revised | Guard after illegal-hover clear, before corridor/settle | 1–6 | **6/6 PASS** | Applied |
+| R6 | Skip armed stand settle when sealed/locked | 1–6 | **6/6 PASS** | Applied — insufficient alone |
+| R7 | `_leg_anchor_for_painted_drag` live stand for awaiting MOVE module | 1–6 | **6/6 PASS** | Applied |
+| R8 | `_planning_drag_origin` → `_leg_anchor_for_painted_drag` | 1–6 | **6/6 PASS** | Applied |
+| R10 | Skip armed stand settle when `_authoritative_route_for_unit` ≥ 2 | 1–6 | **6/6 PASS** | Applied — **89→88 FAIL**, painted_route **73→72** |
+
+### Verify (latest)
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **FAIL (88)** — painted_route_equivalence 72 + other buckets |
+| L0–L3 regression | **PASS** |
+
+**Layer 4 status:** **IN PROGRESS** — trample orbit @(5,4) stand-stomp fixed (R10); 72 painted_route + waypoint/teleport/drag/tile_aim/range2 buckets remain (each needs own council cycle).
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
