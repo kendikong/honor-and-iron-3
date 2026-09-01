@@ -670,11 +670,14 @@ func _authoritative_preview_paths() -> Dictionary:
 
 func _authoritative_route_for_unit(unit_id: int) -> Array:
 	var receipt: PlanningHoverPreview = _current_hover_receipt()
-	if receipt == null or receipt.unit_id != unit_id:
-		return []
-	var route: Variant = receipt.preview_paths.get(unit_id, [])
-	if route is Array:
-		return (route as Array).duplicate()
+	if receipt != null and receipt.unit_id == unit_id:
+		var route: Variant = receipt.preview_paths.get(unit_id, [])
+		if route is Array and (route as Array).size() >= 2:
+			return (route as Array).duplicate()
+	if preview_state.is_painted_leg_sealed(unit_id):
+		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
+		if painted is Array and (painted as Array).size() >= 2:
+			return (painted as Array).duplicate()
 	return []
 
 
@@ -2368,19 +2371,21 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 		return
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor != null:
-		if _painted_drag_route_matches_leg(actor) and _drag_route.size() >= 2:
-			if preview_state.is_painted_leg_sealed(unit_id):
-				var sealed_route: Array = _authoritative_route_for_unit(unit_id)
-				if sealed_route != _drag_route:
-					_clear_frozen_painted_leg(unit_id)
+		if _sealed_leg_structurally_locked(actor):
 			var sealed_route: Array = _authoritative_route_for_unit(unit_id)
-			if sealed_route.size() < 2:
-				var stored: Variant = preview_state.preview_paths.get(unit_id, null)
-				if stored is Array:
-					sealed_route = stored as Array
 			if sealed_route.size() >= 2:
 				CombatPlanningPreview.set_unit_preview_path(
 					preview_state, unit_id, sealed_route,
+				)
+		elif _painted_drag_route_matches_leg(actor) and _drag_route.size() >= 2:
+			if preview_state.is_painted_leg_sealed(unit_id):
+				var drag_sealed_route: Array = _authoritative_route_for_unit(unit_id)
+				if drag_sealed_route != _drag_route:
+					_clear_frozen_painted_leg(unit_id)
+			var drag_route: Array = _authoritative_route_for_unit(unit_id)
+			if drag_route.size() >= 2:
+				CombatPlanningPreview.set_unit_preview_path(
+					preview_state, unit_id, drag_route,
 				)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
@@ -3305,6 +3310,18 @@ func _preview_paths_snapshot_for_settle(
 ) -> Dictionary:
 	## Settling unit route comes from commit slots only — never the mutable drag/hover buffer.
 	var snapshot: Dictionary = {}
+	var settle_actor: UnitState = _proj_unit(unit_id)
+	if (
+		settle_actor != null
+		and preview_state.is_painted_leg_sealed(unit_id)
+		and not PlanningRoutePolicy.hover_rewrite_allowed(
+			_sealed_leg_hover_mode(settle_actor, _hover_cell),
+		)
+	):
+		var frozen_route: Variant = preview_state.preview_paths.get(unit_id, null)
+		if frozen_route is Array and (frozen_route as Array).size() >= 2:
+			snapshot[unit_id] = (frozen_route as Array).duplicate()
+			return snapshot
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
 	if slot_wps.is_empty() and waypoints.is_empty():
 		if preview_state.is_painted_leg_sealed(unit_id):
@@ -3312,7 +3329,6 @@ func _preview_paths_snapshot_for_settle(
 			if sealed_route is Array and (sealed_route as Array).size() >= 2:
 				snapshot[unit_id] = (sealed_route as Array).duplicate()
 		return snapshot
-	var settle_actor: UnitState = _proj_unit(unit_id)
 	var move_origin_settle: Vector2i = (
 		_settle_phase_entry_stand(settle_actor)
 		if settle_actor != null
@@ -4198,16 +4214,18 @@ func _voluntary_walk_hover_paint_applies(p_unit: UnitState, cell: Vector2i) -> b
 		return false
 	if p_unit == null or _director == null or not _director.board.is_in_bounds(cell):
 		return false
+	if (
+		preview_state.is_painted_leg_sealed(p_unit.id)
+		and not PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell))
+	):
+		return false
 	if _attack_target_id_at_cell(p_unit, cell) >= 0:
 		return false
 	if (
 		_voluntary_walk_corridor_paint_active(p_unit)
 		and _is_hover_move_cell(p_unit, cell)
 	):
-		if _sealed_leg_structurally_locked(p_unit):
-			if PlanningRoutePolicy.hover_rewrite_allowed(_sealed_leg_hover_mode(p_unit, cell)):
-				return true
-		elif live_move_hover_rewrite_applies(p_unit, cell):
+		if live_move_hover_rewrite_applies(p_unit, cell):
 			return true
 	if painted_move_route_locked(p_unit, cell):
 		return false
@@ -4878,6 +4896,8 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		p_unit = _proj_unit(_director.selected_unit_id)
 	if p_unit == null:
 		return false
+	if preview_state.is_painted_leg_sealed(p_unit.id):
+		return false
 	if dragging:
 		if not _basic_move_economy_gate(p_unit):
 			return false
@@ -4911,8 +4931,6 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		if not dragging and _voluntary_walk_economy_open(p_unit):
 			return true
 		return dragging and _drag_route.size() >= 2
-	if preview_state.is_painted_leg_sealed(p_unit.id):
-		return _basic_move_economy_gate(p_unit)
 	if (
 		ability != null
 		and AbilitySystem.ability_has_movement_effect(ability)
@@ -6208,24 +6226,6 @@ func _can_move_to(unit: UnitState, coord: Vector2i) -> bool:
 	if _voluntary_walk_corridor_paint_active(unit):
 		skill_move_leg = false
 	var budget: int = _drag_max_steps(unit)
-	if (
-		_voluntary_walk_corridor_paint_active(unit)
-		and preview_state.is_painted_leg_sealed(unit.id)
-		and PlanningRoutePolicy.hover_rewrite_allowed(sealed_hover_mode)
-	):
-		var sealed_board: BoardState = _corridor_board_for_voluntary_walk(unit)
-		if not MovementSystem.can_end_movement_on(sealed_board, coord, unit):
-			return false
-		var sealed_budget: int = _move_budget(unit)
-		var sealed_corridor: Array[Vector2i] = CombatPlanningPreview.voluntary_walk_corridor_waypoints(
-			sealed_board,
-			unit,
-			_phase_entry_stand(unit),
-			coord,
-			sealed_budget,
-			_director,
-		)
-		return not sealed_corridor.is_empty() and sealed_corridor.back() == coord
 	if skill_move_leg:
 		if not AbilitySystem.planning_is_valid_awaiting_endpoint(
 			move_origin, coord, ability, unit, _proj(),
