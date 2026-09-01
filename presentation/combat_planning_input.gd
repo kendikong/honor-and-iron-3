@@ -1350,6 +1350,10 @@ func _stage_voluntary_walk_drag_input(
 ) -> void:
 	if p_unit == null or _director == null:
 		return
+	if _awaiting_target_pick_blocks_premove():
+		_clear_hover_drag_route()
+		_clear_stale_painted_preview_route(p_unit.id)
+		return
 	var hover_phase_kind: int = _director.planning_timeline_phase_kind(p_unit.id)
 	var move_already_planned: bool = false
 	if hover_phase_kind == CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT:
@@ -2007,7 +2011,15 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if dragging or _director == null or _director.board == null:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
-	if p_unit != null and _hover_settle_fresh_at(p_unit.id, cell):
+	if _awaiting_target_pick_blocks_premove():
+		_clear_hover_drag_route()
+		if p_unit != null:
+			_clear_stale_painted_preview_route(p_unit.id)
+	if (
+		p_unit != null
+		and not _awaiting_target_pick_blocks_premove()
+		and _hover_settle_fresh_at(p_unit.id, cell)
+	):
 		_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
@@ -2758,6 +2770,8 @@ const _NO_PREFERRED_APPROACH: Vector2i = Vector2i(-999999, -999999)
 
 ## Single source for commit cell, waypoints, and approach hint ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ cursor, preview, and drop must match.
 func _drag_route_commits_active() -> bool:
+	if _awaiting_target_pick_blocks_premove():
+		return false
 	if _drag_drop_finishing and _drag_route.size() >= 2:
 		return true
 	if dragging:
@@ -2960,6 +2974,8 @@ func _commit_interaction_params(
 							waypoints = _hover_walk_waypoints_for_skill(
 								actor, target.position, ability,
 							)
+	elif _awaiting_target_pick_blocks_premove():
+		pass  # TARGET_PICK aim: no walk waypoints or legal-move snapshot
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints_for_commit()
 		legal_moves = _snapshot_drag_legal_move_tiles()
