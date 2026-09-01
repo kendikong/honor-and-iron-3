@@ -32,7 +32,7 @@ func _initialize() -> void:
 	lines.append("preview_invalid=%s has_board=%s" % [str(preview.get("invalid", false)), str(preview.get("temp_board") != null)])
 	bundle = input.get_settled_hover_preview()
 	if bundle != null:
-		lines.append("post_preview valid=%s sealed=%s" % [bundle.valid, bundle.is_sealed])
+		lines.append("post_preview valid=%s" % bundle.valid)
 	PlanningDragE2EHarness.cleanup_all()
 	var f := FileAccess.open(OUT, FileAccess.WRITE)
 	for line: String in lines:

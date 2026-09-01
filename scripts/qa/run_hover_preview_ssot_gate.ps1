@@ -29,7 +29,7 @@ $requiredSnippets = @(
 	@{ label = "HoverPreviewBundle field"; pattern = "_settled_hover_preview:\s*_HoverPreviewBundle" },
 	@{ label = "get_settled_hover_preview accessor"; pattern = "func get_settled_hover_preview\(\)" },
 	@{ label = "HoverPreviewBundle.seal on settle"; pattern = "_HoverPreviewBundle\.seal\(" },
-	@{ label = "ratify rejects missing bundle"; pattern = "no sealed hover preview" },
+	@{ label = "ratify rejects missing bundle"; pattern = "no settled hover preview" },
 	@{ label = "single sealed intent ratify"; pattern = "ratify_sealed_intent\(" },
 	@{ label = "settled preview apply path"; pattern = "func _apply_settled_preview_result\(" },
 	@{ label = "sealed movement paint"; pattern = "move_tiles" },
