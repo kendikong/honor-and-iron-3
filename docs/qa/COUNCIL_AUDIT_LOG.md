@@ -228,6 +228,29 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 R20 (council-gated tile_aim_forbids_premove)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R20 | `_drag_route_commits_active` false when TARGET_PICK blocks premove; clear drag at refresh entry | 1–6 | **6/6 PASS** | Verify FAIL — staging order |
+| R20b (amendment) | Staging early clear+return; skip assembler-prefix settle during TARGET_PICK | 1–6 | **6/6 PASS** | Verify FAIL — commit params still injected walk |
+| R20c (amendment) | `_commit_interaction_params` skip waypoint resolution when blocks premove | 1–6 | **6/6 PASS** | Applied — **tile_aim PASS**, **4→3 FAIL** |
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **FAIL (3)** — teleport_full_truth, drag_drop_undo, range2_enemy_hover |
+| `tile_aim_forbids_premove` | **PASS** |
+| `waypoint_enemy_hover/1–3` | **PASS** |
+| `painted_route_equivalence` | **PASS** |
+
+**Remaining buckets (separate council cycles required):** teleport_full_truth, drag_drop_undo, range2_enemy_hover.
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
