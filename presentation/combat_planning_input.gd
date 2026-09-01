@@ -1669,6 +1669,18 @@ func _flush_hover_heavy_sync() -> void:
 	_drag_preview_schedule_generation += 1
 	if dragging:
 		_refresh_drag_preview_now()
+	var pointer_cell: Vector2i = _pointer_grid_cell()
+	if (
+		_drag_drop_finishing
+		and _director != null
+		and _director.board != null
+		and _director.board.is_in_bounds(pointer_cell)
+		and _intent_state != null
+		and _intent_state.hover_coord != pointer_cell
+	):
+		_intent_state.set_hover_coord(pointer_cell)
+		if _planning != null:
+			_planning.set_hover_coord(pointer_cell, true)
 	var flush_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)

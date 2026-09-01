@@ -286,6 +286,46 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R25 (council-gated drag-release ratify settle)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R25 | Sync intent hover to `_pointer_grid_cell()` in `_flush_hover_heavy_sync` before `_run_hover_sim_refresh` | 1–6 | **6/6 PASS** | Verify FAIL — headless stale QA pointer regression |
+| R25b (amendment) | Gate sync to `_qa_pointer_grid_override or _drag_drop_finishing` only | 1–6 | **6/6 PASS** | Still FAIL — stale QA override from prior suite |
+| R25c (amendment) | Gate sync to `_drag_drop_finishing` only (drag release ratify cell) | 1–6 | **6/6 PASS** | Applied — **Layer 4 PASS**, **DragE2E no FAIL** |
+
+**QA failure owner map (addressed):**
+| Bucket | Owner | Broken step |
+| DragE2E release_bash_enemy | `_flush_hover_heavy_sync` | settle ran at stale intent hover, not release pointer during `_drag_drop_finishing` |
+
+**Heuristics refused:** click-time slot rebuild; overlay fallback; unconditional pointer sync (broke teleport/range2 headless).
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **PASS (0)** |
+| L0–L3 paint gates | **PASS** |
+| `drag_e2e` suite (PlanningQaGate) | **PASS** (no DragE2E `[FAIL]` lines) |
+| `planning_input` suite | **FAIL** — cursor parity (R24 in progress) |
+
+**Layer 5 status:** **IN PROGRESS** — drag-release ratify fixed; PlanningInputTest cursor harness next council cycle (R24).
+
+---
+
+## 2026-09-01 — Layer 5 R24 (council-gated PlanningInputTest cursor — partial)
+
+### Council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R24 | Replace `_hover_icon_for_cell` with settle + `compute_hover_action_icon` / `_drag_hover_icon` | Critic 6 | **FAIL** | Needs `set_qa_pointer_grid_cell`; drag uses `_drag_hover_icon` |
+| R24b (applied) | Test-only `_assert_cursor_matches_slots` uses settle path per critic 6 amendments | pending re-council | Applied | PlanningInputTest still FAIL — needs `_preview_from_commit_slots_at_cell` seal for non-drag |
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

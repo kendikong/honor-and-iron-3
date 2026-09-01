@@ -608,14 +608,25 @@ static func _assert_cursor_matches_slots(
 		face_dir,
 	)
 	var from_slots: String = input._cursor_icon_from_commit_slots(slots, unit)
-	var from_hover: String = input._hover_icon_for_cell(
-		unit,
-		params.cell,
-		params.waypoints,
-		params.legal_move_tiles,
-		params.preferred,
-		face_dir,
-	)
+	input.set_qa_pointer_grid_cell(cell)
+	var from_hover: String = ""
+	if input.dragging:
+		var preview: Dictionary = input._preview_from_commit_slots_at_cell(
+			unit.id,
+			params.cell,
+			params.waypoints,
+			params.legal_move_tiles,
+			params.preferred,
+			face_dir,
+		)
+		if preview.get("invalid", false):
+			from_hover = PlanningIcons.GLYPH_NULL
+		else:
+			from_hover = input._drag_hover_icon(unit, params.cell)
+	else:
+		input.on_hover_moved(cell)
+		input._flush_hover_heavy_sync()
+		from_hover = input.compute_hover_action_icon(cell)
 	if from_slots != from_hover:
 		failures.append(
 			"PlanningInputTest: %s cursor must equal commit slots (hover=%s slots=%s)"
