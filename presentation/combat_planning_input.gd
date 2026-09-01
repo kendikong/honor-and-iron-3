@@ -1399,7 +1399,11 @@ func _stage_voluntary_walk_drag_input(
 		and _voluntary_walk_can_paint_cell(p_unit, cell)
 	):
 		should_extend_route = not _drag_route.is_empty() and cell != _drag_route.back()
-	if allow_hover_paint and (not orbit_phase_corridor or _voluntary_walk_corridor_paint_active(p_unit)):
+	if allow_hover_paint and (
+		not orbit_phase_corridor
+		or _voluntary_walk_corridor_paint_active(p_unit)
+		or open_premove_hover_paint
+	):
 		var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if target_enemy_id >= 0:
 			var enemy_unit: UnitState = (
@@ -1428,6 +1432,7 @@ func _stage_voluntary_walk_drag_input(
 		and _drag_unit_id == p_unit.id
 		and not painted_move_route_locked(p_unit)
 		and not _voluntary_walk_corridor_paint_active()
+		and not open_premove_hover_paint
 	):
 		_clear_hover_drag_route()
 
