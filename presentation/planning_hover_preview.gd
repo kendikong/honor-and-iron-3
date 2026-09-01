@@ -1,11 +1,10 @@
 class_name PlanningHoverPreview
 extends RefCounted
 
-## Sealed hover intent — single carried SSOT from settle through ratify.
-## Only created by CombatPlanningInput settle path; ratify copies sealed slots.
+## Hover intent bundle — built once at settle; display reads it; click copies slots.
+## Only created by CombatPlanningInput settle path.
 
 var valid: bool = false
-var is_sealed: bool = false
 var unit_id: int = -1
 var hover_cell: Vector2i = Vector2i(-999999, -999999)
 var revision_key: String = ""
@@ -23,10 +22,31 @@ var show_blast: bool = false
 var paint_only: bool = false
 var phase: int = -1
 var ability_index: int = -1
-var _receipt_locked: bool = false
 
 
 static func seal(
+	p_unit_id: int,
+	p_hover_cell: Vector2i,
+	p_revision_key: String,
+	p_slots: Dictionary,
+	p_preview_paths: Dictionary,
+	p_face_dir: int,
+	p_move_origin: Vector2i,
+	p_paint: Dictionary = {},
+) -> PlanningHoverPreview:
+	return from_settle(
+		p_unit_id,
+		p_hover_cell,
+		p_revision_key,
+		p_slots,
+		p_preview_paths,
+		p_face_dir,
+		p_move_origin,
+		p_paint,
+	)
+
+
+static func from_settle(
 	p_unit_id: int,
 	p_hover_cell: Vector2i,
 	p_revision_key: String,
@@ -50,11 +70,11 @@ static func seal(
 	bundle.face_dir = p_face_dir
 	bundle.slots = _duplicate_slots(p_slots)
 	bundle.preview_paths = p_preview_paths.duplicate(true)
-	var sealed_board: Variant = p_paint.get("preview_board", null)
-	if not sealed_board is BoardState:
-		push_error("SSOT BREAK: sealed hover preview requires its settled preview board")
+	var settled_board: Variant = p_paint.get("preview_board", null)
+	if not settled_board is BoardState:
+		push_error("SSOT BREAK: hover preview requires its settled preview board")
 		return bundle
-	bundle.preview_board = (sealed_board as BoardState).clone()
+	bundle.preview_board = (settled_board as BoardState).clone()
 	bundle.stand_origin = p_paint.get("stand_origin", p_move_origin)
 	bundle.action_range_tiles = _duplicate_coords(
 		p_paint.get("action_range_tiles", []),
@@ -68,15 +88,12 @@ static func seal(
 	bundle.phase = int(p_paint.get("phase", -1))
 	bundle.ability_index = int(p_paint.get("ability_index", -1))
 	bundle.valid = true
-	bundle.is_sealed = true
-	bundle._receipt_locked = true
 	return bundle
 
 
 func can_ratify_at(cell: Vector2i, ratify_unit_id: int) -> bool:
 	return (
-		is_sealed
-		and valid
+		valid
 		and unit_id == ratify_unit_id
 		and hover_cell == cell
 		and not paint_only
@@ -87,29 +104,25 @@ func can_ratify_at(cell: Vector2i, ratify_unit_id: int) -> bool:
 func matches_paint_context(
 	cell: Vector2i,
 	ratify_unit_id: int,
-	expected_revision_key: String,
+	_expected_revision_key: String,
 	expected_ability_index: int,
 ) -> bool:
 	return (
-		is_sealed
-		and valid
+		valid
 		and unit_id == ratify_unit_id
 		and hover_cell == cell
-		and revision_key == expected_revision_key
 		and ability_index == expected_ability_index
 	)
 
 
 func matches_display_context(
 	ratify_unit_id: int,
-	expected_revision_key: String,
+	_expected_revision_key: String,
 	expected_ability_index: int,
 ) -> bool:
 	return (
-		is_sealed
-		and valid
+		valid
 		and unit_id == ratify_unit_id
-		and revision_key == expected_revision_key
 		and ability_index == expected_ability_index
 	)
 
@@ -117,12 +130,11 @@ func matches_display_context(
 func matches_ratification_context(
 	cell: Vector2i,
 	ratify_unit_id: int,
-	expected_revision_key: String,
+	_expected_revision_key: String,
 	expected_ability_index: int,
 ) -> bool:
 	return can_ratify_at(cell, ratify_unit_id) and (
-		revision_key == expected_revision_key
-		and ability_index == expected_ability_index
+		ability_index == expected_ability_index
 	)
 
 
@@ -133,7 +145,6 @@ func duplicate_slots() -> Dictionary:
 func duplicate_receipt() -> PlanningHoverPreview:
 	var copy: PlanningHoverPreview = PlanningHoverPreview.new()
 	copy.valid = valid
-	copy.is_sealed = is_sealed
 	copy.unit_id = unit_id
 	copy.hover_cell = hover_cell
 	copy.revision_key = revision_key
@@ -151,7 +162,6 @@ func duplicate_receipt() -> PlanningHoverPreview:
 	copy.paint_only = paint_only
 	copy.phase = phase
 	copy.ability_index = ability_index
-	copy._receipt_locked = _receipt_locked
 	return copy
 
 

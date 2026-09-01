@@ -338,7 +338,7 @@ static func _assert_valid_four_way(
 		return
 	var input: CombatPlanningInput = fix.input as CombatPlanningInput
 	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview() if input != null else null
-	if bundle != null and bundle.valid and bundle.is_sealed:
+	if bundle != null and bundle.valid:
 		var geom_origin: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 			fix.director, fix.director.board, unit_id,
 		)

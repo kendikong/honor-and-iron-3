@@ -157,7 +157,7 @@ static func sealed_paint_parity_error(
 	if input == null:
 		return "%s: missing CombatPlanningInput" % label
 	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
-	if bundle == null or not bundle.is_sealed:
+	if bundle == null or not bundle.valid:
 		return "%s: missing sealed hover preview bundle" % label
 	for tile: Vector2i in expected:
 		if not bundle.blast_tiles.has(tile):

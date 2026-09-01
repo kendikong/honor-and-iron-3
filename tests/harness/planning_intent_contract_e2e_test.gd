@@ -239,7 +239,7 @@ static func _test_painted_run_preview_interior_walk_hides_red(failures: Array[St
 		failures,
 		"intent_contract/painted_run_preview/sealed_paint",
 		input.get_settled_hover_preview() != null
-			and input.get_settled_hover_preview().is_sealed,
+			and input.get_settled_hover_preview().valid,
 		"painted drag must seal one preview bundle for action-range paint",
 	)
 	var drag_tiles: Array[Vector2i] = PlanningChecklistHarness.collect_drag_hover_tiles(fix)

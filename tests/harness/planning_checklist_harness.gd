@@ -235,7 +235,7 @@ static func slots_for_hover(fix: Dictionary, cell: Vector2i) -> Dictionary:
 	hover(fix, cell)
 	var input: CombatPlanningInput = fix.input
 	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
-	if bundle != null and bundle.valid and bundle.is_sealed:
+	if bundle != null and bundle.valid:
 		return bundle.duplicate_slots()
 	return {"invalid": "SSOT: no sealed hover preview for hover"}
 
@@ -567,7 +567,7 @@ static func slots_for_painted_hover(fix: Dictionary, dest: Vector2i) -> Dictiona
 	hover(fix, dest)
 	var input: CombatPlanningInput = fix.input
 	var bundle: _HoverPreviewBundle = input.get_settled_hover_preview()
-	if bundle != null and bundle.valid and bundle.is_sealed:
+	if bundle != null and bundle.valid:
 		return bundle.duplicate_slots()
 	return {"invalid": "SSOT: no sealed hover preview for painted hover"}
 

@@ -915,33 +915,18 @@ func _apply_planning_tile_layers(
 		if _planning_input == null:
 			return
 		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		var paint_hover: Vector2i = _planning_input.pointer_grid_cell()
-		var settled_matches: bool = (
-			settled != null
-			and settled.matches_paint_context(
-				paint_hover,
-				unit.id,
-				_planning_input.settled_hover_revision_key(),
-				selected_ability,
-			)
-		)
 		if (
-			not settled_matches
-			and settled != null
-			and _board != null
-			and not _board.is_in_bounds(paint_hover)
+			settled != null
+			and settled.valid
+			and settled.unit_id == unit.id
+			and settled.ability_index == selected_ability
 		):
-			settled_matches = settled.matches_display_context(
-				unit.id,
-				_planning_input.settled_hover_revision_key(),
-				selected_ability,
-			)
-		if settled_matches:
 			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
 			_hover_blast_tiles = settled.blast_tiles.duplicate()
 			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			_hover_move_tiles = settled.move_tiles.duplicate()
 			return
+		return
 	if PlanningPreviewTiles.tiles_blocked(
 		_director, unit, selected_ability, _planning_input, is_selected_player,
 	):
@@ -2425,23 +2410,13 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 		return Vector2i(-999999, -999999)
 	if _planning_input != null and _is_selected_player_unit(unit):
 		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		var selected_ability: int = _director.selected_ability_index if _director != null else -1
 		if (
 			settled != null
-			and settled.is_sealed
+			and settled.valid
 			and settled.unit_id == unit.id
-			and settled.matches_paint_context(
-				_hover_coord,
-				unit.id,
-				_planning_input.settled_hover_revision_key(),
-				selected_ability,
-			)
 			and settled.stand_origin.x > -900000
 		):
 			return settled.stand_origin
-		var fallback_stand: Vector2i = _planning_input.settled_action_range_stand_cell(unit.id)
-		if fallback_stand.x > -900000:
-			return fallback_stand
 		return Vector2i(-999999, -999999)
 	return _proj_origin(unit)
 

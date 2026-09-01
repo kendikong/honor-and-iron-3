@@ -649,30 +649,24 @@ func _apply_settled_preview_result(res: Dictionary) -> void:
 
 
 func get_settled_hover_preview() -> _HoverPreviewBundle:
-	if _settled_hover_preview == null:
-		return null
-	return _settled_hover_preview.duplicate_receipt()
+	return _settled_hover_preview
 
 
-func _current_sealed_receipt() -> PlanningHoverPreview:
-	if (
-		_settled_hover_preview != null
-		and _settled_hover_preview.valid
-		and _settled_hover_preview.is_sealed
-	):
+func _current_hover_receipt() -> PlanningHoverPreview:
+	if _settled_hover_preview != null and _settled_hover_preview.valid:
 		return _settled_hover_preview
 	return null
 
 
 func _authoritative_preview_paths() -> Dictionary:
-	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt != null:
 		return receipt.preview_paths.duplicate(true)
 	return {}
 
 
 func _authoritative_route_for_unit(unit_id: int) -> Array:
-	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt == null or receipt.unit_id != unit_id:
 		return []
 	var route: Variant = receipt.preview_paths.get(unit_id, [])
@@ -682,9 +676,7 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 
 
 func settled_hover_revision_key() -> String:
-	if not _intent_snapshot_valid or _director == null:
-		return ""
-	if _director.plan_revision != _intent_snapshot_plan_revision:
+	if not _intent_snapshot_valid:
 		return ""
 	return _intent_snapshot_key
 
@@ -2142,7 +2134,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			_refresh_live_interaction_preview(_director.selected_unit_id, cell, target_id, hover_waypoints)
 			if (
 				action_range_visible_for_hover()
-				and _current_sealed_receipt() == null
+				and _current_hover_receipt() == null
 				and not awaiting_targeting_active()
 			):
 				_settle_paint_only_preview_at_cell(p_unit, cell)
@@ -2999,8 +2991,6 @@ func _commit_at_interaction_cell(
 	local: Vector2,
 	attack_target_id: int = -1,
 ) -> bool:
-	if not dragging:
-		on_hover_moved(cell)
 	return _commit_at_cell(
 		unit_id,
 		cell,
@@ -3030,7 +3020,7 @@ func _commit_at_cell(
 	):
 		slots = _settled_hover_preview.duplicate_slots()
 	else:
-		push_warning("SSOT: commit rejected - no sealed hover preview for unit %d at %s" % [unit_id, cell])
+		push_warning("SSOT: commit rejected - no settled hover preview for unit %d at %s" % [unit_id, cell])
 		_play_sfx("invalid")
 		return false
 	if slots.get("_noop", false) == true:
@@ -4265,7 +4255,7 @@ func display_units_with_route_preview() -> Array[int]:
 		for uid: Variant in committed.preview_paths.keys():
 			ids[int(uid)] = true
 	if is_live_preview_active():
-		var receipt: PlanningHoverPreview = _current_sealed_receipt()
+		var receipt: PlanningHoverPreview = _current_hover_receipt()
 		if receipt != null and receipt.unit_id >= 0:
 			ids[receipt.unit_id] = true
 	var out: Array[int] = []
@@ -5821,7 +5811,7 @@ func _hover_intent_ghost_active(unit_id: int) -> bool:
 		return false
 	if drag_preview_failed:
 		return false
-	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt != null and receipt.preview_board != null:
 		return true
 	return preview_state.preview_board != null
@@ -6238,7 +6228,7 @@ func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
 	if _director == null or unit_id < 0:
 		return Vector2i(-999999, -999999)
 	if unit_id == _director.selected_unit_id:
-		var receipt: PlanningHoverPreview = _current_sealed_receipt()
+		var receipt: PlanningHoverPreview = _current_hover_receipt()
 		if (
 			receipt != null
 			and receipt.matches_paint_context(
@@ -7758,7 +7748,7 @@ func _compute_hover_action_icon(cell: Vector2i) -> String:
 	if cache_key == _hover_cursor_cache_key:
 		return _hover_cursor_cached_icon
 	var slots: Dictionary = {}
-	var receipt: PlanningHoverPreview = _current_sealed_receipt()
+	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if (
 		receipt != null
 		and receipt.matches_paint_context(
