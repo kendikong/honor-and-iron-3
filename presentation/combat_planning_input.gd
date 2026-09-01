@@ -3231,7 +3231,7 @@ func _store_intent_snapshot(
 	_intent_snapshot_valid = true
 	_intent_snapshot_plan_revision = _director.plan_revision if _director != null else -1
 	var actor: UnitState = _proj_unit(unit_id)
-	var move_origin: Vector2i = _settle_phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
+	var move_origin: Vector2i = _settle_phase_entry_stand(actor, hover_cell) if actor != null else Vector2i(-999999, -999999)
 	var paths_for_seal: Dictionary = preview_paths_snapshot
 	var sealed_board: Variant = preview_result.get("temp_board", null)
 	var settled_board: BoardState = sealed_board as BoardState
@@ -3286,7 +3286,7 @@ func _preview_paths_snapshot_for_settle(
 		return snapshot
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var move_origin_settle: Vector2i = (
-		_settle_phase_entry_stand(settle_actor)
+		_settle_phase_entry_stand(settle_actor, _hover_cell)
 		if settle_actor != null
 		else Vector2i(-999999, -999999)
 	)
@@ -4328,6 +4328,19 @@ func is_walk_only_hover_move(unit: UnitState, hover_coord: Vector2i) -> bool:
 		actor = unit
 	return active_movement_planning_step(actor) and _is_hover_move_cell(actor, hover_coord)
 
+## Post-class-action voluntary walk hover — locked stand stays at committed action end.
+func is_post_commit_walk_hover(unit: UnitState, hover_coord: Vector2i) -> bool:
+	if unit == null or _director == null or not _director.board.is_in_bounds(hover_coord):
+		return false
+	if hover_coord == unit.position:
+		return false
+	if not _director.unit_has_committed_class_action(unit.id):
+		return false
+	if not _director.unit_action_column_spent_for_movement(unit.id):
+		return false
+	if not _voluntary_walk_postmove_slot_open(unit):
+		return false
+	return _can_move_to(unit, hover_coord)
 
 func _typed_route_cells(route: Array) -> Array[Vector2i]:
 	var typed: Array[Vector2i] = []
@@ -6247,6 +6260,14 @@ func phase_entry_stand_cell(unit_id: int) -> Vector2i:
 func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
 	if _director == null or unit_id < 0:
 		return Vector2i(-999999, -999999)
+	var actor: UnitState = _proj_unit(unit_id)
+	if actor == null and _director.board != null:
+		actor = _director.board.get_unit_by_id(unit_id)
+	var hover: Vector2i = _active_hover_cell()
+	if actor != null and is_post_commit_walk_hover(actor, hover):
+		var pinned: Vector2i = _settle_phase_entry_stand(actor, hover)
+		if pinned.x > -900000:
+			return pinned
 	if unit_id == _director.selected_unit_id:
 		var receipt: PlanningHoverPreview = _current_sealed_receipt()
 		if (
@@ -6260,11 +6281,8 @@ func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
 			and receipt.stand_origin.x > -900000
 		):
 			return receipt.stand_origin
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
 	if actor != null:
-		return _settle_phase_entry_stand(actor)
+		return _settle_phase_entry_stand(actor, hover)
 	return Vector2i(-999999, -999999)
 
 
@@ -6276,11 +6294,21 @@ func _phase_entry_stand(unit: UnitState) -> Vector2i:
 	)
 
 
-func _settle_phase_entry_stand(unit: UnitState) -> Vector2i:
+func _settle_phase_entry_stand(
+	unit: UnitState, hover_cell: Vector2i = Vector2i(-999999, -999999),
+) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
+	var board: BoardState = CombatPlanningPreview.planning_projection_board(_director, _proj())
+	var hover: Vector2i = hover_cell if hover_cell.x > -900000 else _active_hover_cell()
+	if is_post_commit_walk_hover(unit, hover):
+		var action_end: Vector2i = CombatPlanningPreview.committed_plan_action_end_cell(
+			_director, board, unit.id,
+		)
+		if action_end.x > -900000:
+			return action_end
 	return CombatPlanningPreview.forecast_stand_at_phase_entry(
-		_director, _proj(), unit.id, preview_state,
+		_director, board, unit.id, null,
 	)
 
 
