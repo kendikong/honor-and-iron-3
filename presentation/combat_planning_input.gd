@@ -1366,6 +1366,12 @@ func _stage_voluntary_walk_drag_input(
 		and _movement_route_paint_allowed()
 		and not move_already_planned
 	)
+	var armed_skill_premain_paint: bool = (
+		open_premove_hover_paint
+		and not awaiting_move_leg
+		and _director != null
+		and _director.selected_ability_index >= 0
+	)
 	var should_paint_hover_route: bool = (
 		dragging
 		or _voluntary_walk_corridor_paint_active()
@@ -1402,7 +1408,7 @@ func _stage_voluntary_walk_drag_input(
 	if allow_hover_paint and (
 		not orbit_phase_corridor
 		or _voluntary_walk_corridor_paint_active(p_unit)
-		or open_premove_hover_paint
+		or armed_skill_premain_paint
 	):
 		var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if target_enemy_id >= 0:
@@ -1432,7 +1438,7 @@ func _stage_voluntary_walk_drag_input(
 		and _drag_unit_id == p_unit.id
 		and not painted_move_route_locked(p_unit)
 		and not _voluntary_walk_corridor_paint_active()
-		and not open_premove_hover_paint
+		and not armed_skill_premain_paint
 	):
 		_clear_hover_drag_route()
 
@@ -2043,9 +2049,27 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			)
 		var step_target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if step_ability != null and step_target_id >= 0:
-			var approach_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
-				p_unit, cell, step_ability,
-			)
+			var approach_wps: Array[Vector2i] = []
+			if _drag_route_commits_active():
+				var route_waypoints: Array[Vector2i] = _route_waypoints()
+				var enemy: UnitState = (
+					_director.board.get_unit_by_id(step_target_id)
+					if _director != null and _director.board != null
+					else null
+				)
+				if enemy == null or _enemy_hover_respects_painted_route(
+					p_unit, enemy, step_ability, route_waypoints,
+				):
+					approach_wps = route_waypoints
+				else:
+					_clear_hover_drag_route()
+					approach_wps = _hover_walk_waypoints_for_skill(
+						p_unit, cell, step_ability,
+					)
+			else:
+				approach_wps = _hover_walk_waypoints_for_skill(
+					p_unit, cell, step_ability,
+				)
 			if not approach_wps.is_empty():
 				var approach_res: Dictionary = _preview_at_interaction_cell(
 					p_unit.id,
@@ -2167,7 +2191,10 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				return
 			var hover_waypoints: Array[Vector2i] = []
 			var ability: AbilityData = _selected_ability_data(p_unit)
-			if _voluntary_walk_preview_refresh_needed(p_unit, cell):
+			if (
+				_voluntary_walk_preview_refresh_needed(p_unit, cell)
+				and target_id < 0
+			):
 				_refresh_voluntary_walk_hover_preview(p_unit, cell)
 				_refresh_click_target_highlight()
 				return
@@ -2757,6 +2784,17 @@ func _drag_route_commits_active() -> bool:
 				return false
 	if _painted_drag_route_matches_leg(p_unit):
 		return true
+	if (
+		p_unit != null
+		and _drag_route.size() >= 2
+		and _drag_unit_id == p_unit.id
+		and _movement_route_paint_allowed()
+		and _director != null
+		and _director.selected_ability_index >= 0
+	):
+		var staged_ability: AbilityData = _selected_ability_data(p_unit)
+		if staged_ability != null and not _is_awaiting_movement_endpoint(p_unit, staged_ability):
+			return true
 	return _voluntary_walk_corridor_paint_active()
 
 
@@ -4899,19 +4937,23 @@ func _voluntary_walk_can_paint_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
-	if (
-		not _voluntary_walk_corridor_paint_active(p_unit)
-		and not (
-			_voluntary_walk_orbit_phase_open(p_unit)
-			and _movement_route_paint_allowed()
-		)
-	):
-		return false
 	if not _movement_route_paint_allowed():
 		return false
-	if _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+	if _voluntary_walk_corridor_paint_active(p_unit):
+		if _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+			return _voluntary_walk_hover_paint_applies(p_unit, _active_hover_cell())
+		return true
+	var staged_ability: AbilityData = _selected_ability_data(p_unit)
+	if (
+		_director != null
+		and _director.selected_ability_index >= 0
+		and staged_ability != null
+		and not _is_awaiting_movement_endpoint(p_unit, staged_ability)
+		and _drag_route.size() >= 2
+		and _drag_unit_id == p_unit.id
+	):
 		return _voluntary_walk_hover_paint_applies(p_unit, _active_hover_cell())
-	return true
+	return false
 
 
 func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
