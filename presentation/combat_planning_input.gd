@@ -673,6 +673,7 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
 		if painted is Array and (painted as Array).size() >= 2:
 			return (painted as Array).duplicate()
+		return []
 	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt != null and receipt.unit_id == unit_id:
 		var route: Variant = receipt.preview_paths.get(unit_id, [])
@@ -1466,14 +1467,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
 			if active_movement_planning_step(p_unit):
 				var leg_origin: Vector2i = _phase_entry_stand(p_unit)
-				if preview_state.is_painted_leg_sealed(p_unit.id):
-					var sealed_route: Array = _authoritative_route_for_unit(p_unit.id)
-					if (
-						sealed_route.size() >= 2
-						and leg_origin.x > -900000
-						and (sealed_route[0] as Vector2i) != leg_origin
-					):
-						_clear_frozen_painted_leg(p_unit.id)
 				if (
 					_drag_route_commits_active()
 					and _drag_unit_id == p_unit.id
@@ -2116,6 +2109,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			dash_ab != null
 			and _awaiting_flow_selected(p_unit, dash_ab)
 			and not sealed_orbit_extend
+			and not painted_move_route_locked(p_unit, cell)
 			and AbilitySystem.planning_is_valid_awaiting_endpoint(
 				_proj_origin(p_unit), cell, dash_ab, p_unit, _proj(),
 			)
@@ -2210,8 +2204,6 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 	if hover_unit == null:
 		return
-	if painted_move_route_locked(hover_unit, cell):
-		return
 	if dragging and _voluntary_walk_orbit_phase_open(hover_unit):
 		var leg_origin: Vector2i = _phase_entry_stand(hover_unit)
 		if leg_origin.x > -900000:
@@ -2227,6 +2219,8 @@ func _sync_movement_preview_after_hover_sim(cell: Vector2i) -> void:
 	if dragging and not _voluntary_walk_orbit_phase_open(hover_unit):
 		return
 	if _sealed_leg_hover_restore_if_blocked(hover_unit, cell):
+		return
+	if painted_move_route_locked(hover_unit, cell):
 		return
 	if not active_movement_planning_step(hover_unit):
 		return
@@ -2769,6 +2763,11 @@ func _painted_drag_route_drives_live_preview() -> bool:
 
 
 func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
+	var sealed: Vector2i = CombatPlanningPreview.sealed_phase_entry_anchor(
+		preview_state, p_unit.id,
+	)
+	if sealed.x > -900000:
+		return sealed
 	return _phase_entry_stand(p_unit)
 
 
@@ -2790,7 +2789,7 @@ func _painted_preview_route_matches_leg(p_unit: UnitState) -> bool:
 	var route: Array = _authoritative_route_for_unit(p_unit.id)
 	if route.size() < 2:
 		return false
-	var origin: Vector2i = _phase_entry_stand(p_unit)
+	var origin: Vector2i = _leg_anchor_for_painted_drag(p_unit)
 	if origin.x <= -900000:
 		return false
 	return route[0] is Vector2i and (route[0] as Vector2i) == origin
@@ -5109,6 +5108,12 @@ func _assemble_voluntary_walk_preview_path(
 	var origin: Vector2i = _settle_phase_entry_stand(actor)
 	if origin.x <= -900000:
 		return []
+	if (
+		preview_state.is_painted_leg_sealed(unit_id)
+		and GridSystem.manhattan(origin, hover_cell) == 1
+		and not _route_has_left_origin_ring(origin)
+	):
+		return [origin, hover_cell]
 	var forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
 		_director, unit_id, origin,
 	)
