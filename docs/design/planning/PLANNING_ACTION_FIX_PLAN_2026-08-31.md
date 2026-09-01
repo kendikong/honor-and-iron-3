@@ -43,7 +43,14 @@ This is **not** the Gauntlet Loop.
 - `locked_red_visible_without_bundle` — skill step, bundle mismatch → red still shows.
 - `bundle_mismatch_does_not_clear_locked_red`.
 
-**Status (2026-08-31):** Layer 0 **DONE** — overlay split, stand fallback, hold sealed hover-shaped on throttle mismatch, `run_layer0_paint_gate.ps1` PASS (7 tests).
+**Status (2026-09-01):** Layer 0 **DONE** — commits `e958bcd2d` + `e781343c1`.
+
+| Council | When | Verdict |
+|---------|------|---------|
+| Initial (pre-ship) | 2026-08-31 | **5/5 PASS** → `e958bcd2d` |
+| **Remediation** (completion delta) | 2026-09-01 | **5/5 PASS** → `e781343c1` |
+
+Verify: `.\scripts\qa\run_layer0_paint_gate.ps1` **PASS** (7 tests). Audit: `docs/qa/COUNCIL_AUDIT_LOG.md` § 2026-09-01.
 
 
 ## Layer 1 — Blue tiles (legal walk)
@@ -68,6 +75,14 @@ This is **not** the Gauntlet Loop.
 - [x] Fix `PLANNING_SKILL_QA_CHECKLIST.md` “Blue updates live” → **path** updates live; **locked flood does not**.
 
 **Gate tests:** `_test_blue_move_tiles_on_walk_select` + new stability tests above + `_test_move_preview_origin_premove_and_postmove`.
+
+**Status (2026-09-01):** Layer 1 **DONE** — commit `cf0c33d6b`.
+
+| Council | When | Verdict |
+|---------|------|---------|
+| Initial (post-ship remediation) | 2026-09-01 | **6/6 PASS** (process violation V1 remediated) |
+
+Verify: `.\scripts\qa\run_layer1_paint_gate.ps1` **PASS**. Audit: `docs/qa/COUNCIL_AUDIT_LOG.md` § 2026-09-01.
 
 ---
 

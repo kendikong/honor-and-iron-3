@@ -5,6 +5,8 @@
 
 Full rule (always on): `.cursor/rules/subagent-council-loop.mdc`
 
+**Audit log (violations + remediation):** [`COUNCIL_AUDIT_LOG.md`](COUNCIL_AUDIT_LOG.md)
+
 ---
 
 ## Why this exists
@@ -59,7 +61,15 @@ Launch all selected critics **in one message** (parallel).
 
 **Stale proposal:** If repo or proposal text changes between Propose and Council, **re-run council** on the updated proposal before apply.
 
-**Lead agent records:** After council, changelog must include `Council: N/N PASS` with each critic id (1–5) — not a single “council approved” line.
+**Post-apply amendments (mandatory):** If **any** production or test code changes **after** council PASS and **before** commit (or after commit on the same layer), **stop** — do **not** mark the layer DONE. Run an **amendment council** on the **full shipped delta** (same critic count as the layer) and record in [`COUNCIL_AUDIT_LOG.md`](COUNCIL_AUDIT_LOG.md). Silent post-council patches are a **process violation**.
+
+**Remediation (when violation discovered):** If code shipped without council, or council was skipped on a delta:
+
+1. **Do not revert** automatically if layer gates pass — run **remediation council** on **current shipped scope** (commit hash + file list).
+2. Record violation type, commits, remediation verdict (`Council: N/N PASS`), and gate result in `COUNCIL_AUDIT_LOG.md`.
+3. Layer may stay **DONE** only after remediation **all PASS** + verify gate PASS.
+
+**Lead agent records:** After council, changelog must include `Council: N/N PASS` with each critic id (1–5) — not a single “council approved” line. Remediation turns add `Remediation council: N/N PASS` + audit log entry.
 
 ---
 

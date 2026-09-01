@@ -21,6 +21,10 @@ PROPOSE (no code) → COUNCIL (parallel) → all PASS → APPLY → VERIFY (auto
 
 Any FAIL → revise proposal → new council. Do not apply partial fixes from critics.
 
+**Post-apply amendments:** Any code change after council PASS → **amendment council** on full delta before layer DONE. Log in `docs/qa/COUNCIL_AUDIT_LOG.md`.
+
+**Remediation:** If council was skipped → remediation council on shipped scope; log verdict before layer stays DONE.
+
 **Proposal must name behavioral tests** for bible rules touched. Structural grep alone = instant FAIL.
 
 ---
@@ -74,7 +78,7 @@ Do **not** FAIL correct exception use. **Do** FAIL misuse, deletion, or relabeli
 
 ## After council
 
-- **All PASS:** apply → QA per `qa-after-gameplay-changes.mdc` → changelog `Council: N/N PASS`  
+- **All PASS:** apply → QA per `qa-after-gameplay-changes.mdc` → changelog `Council: N/N PASS` + entry in `docs/qa/COUNCIL_AUDIT_LOG.md` when remediating  
 - **Swap-only:** `run_swap_planning_acceptance.ps1` during iteration  
 - **Any FAIL:** new proposal → new council  
 
