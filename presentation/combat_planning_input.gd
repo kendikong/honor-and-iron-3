@@ -4395,9 +4395,8 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	if idx >= 0:
 		if idx < _drag_route.size() - 1 and not _painted_premove_orbit_sealed():
 			_drag_route = _drag_route.slice(0, idx + 1)
-			_sanitize_drag_route_context()
-			_sync_drag_route_stand()
-		return
+			_finish_drag_route_extension()
+			return
 	var last: Vector2i = _drag_route[_drag_route.size() - 1]
 	var board: BoardState = _proj()
 	var unit := _proj_unit(_drag_unit_id)
@@ -4418,8 +4417,7 @@ func _extend_drag_route(cell: Vector2i) -> void:
 	):
 		_drag_route = [move_origin]
 		_append_route_tile(cell)
-		_sanitize_drag_route_context()
-		_sync_drag_route_stand()
+		_finish_drag_route_extension()
 		return
 	var ability: AbilityData = _route_pathfinding_ability(unit)
 	var budget: int = _drag_max_steps(unit)
@@ -4437,15 +4435,13 @@ func _extend_drag_route(cell: Vector2i) -> void:
 			_append_route_tile(c)
 		if not _drag_route.is_empty() and _drag_route.back() != cell:
 			_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
-		_sanitize_drag_route_context()
-		_sync_drag_route_stand()
+		_finish_drag_route_extension()
 		return
 	_append_route_tile(cell)
 	if _drag_route.back() != cell:
 		## Adjacent past budget: repath within budget instead of silently ignoring.
 		_repath_drag_route_to(cell, unit, board, mt, budget, move_cost, ability)
-	_sanitize_drag_route_context()
-	_sync_drag_route_stand()
+	_finish_drag_route_extension()
 	if dragging:
 		_drag_preview_cache_key = 0
 
@@ -4498,16 +4494,18 @@ func _append_route_tile(coord: Vector2i) -> void:
 	_drag_route.append(coord)
 
 
-func _sanitize_drag_route_context() -> void:
+## Drag buffer staging only — preview/settle is _sync_drag_route_stand → voluntary-walk hover refresh.
+func _finish_drag_route_extension() -> void:
 	if _drag_route.size() <= 1:
+		_sync_drag_route_stand()
+		return
+	var unit: UnitState = _proj_unit(_drag_unit_id)
+	if unit == null:
+		_sync_drag_route_stand()
 		return
 	var board: BoardState = _proj()
-	var unit := _proj_unit(_drag_unit_id)
-	if unit == null:
-		return
 	var origin: Vector2i = _drag_route[0]
 	var final_cell: Vector2i = _drag_route.back()
-	var ability: AbilityData = _route_pathfinding_ability(unit)
 	var selected_ability: AbilityData = _selected_ability_data(unit)
 	if (
 		selected_ability != null
@@ -4519,27 +4517,8 @@ func _sanitize_drag_route_context() -> void:
 		_drag_route = [origin]
 		_sync_drag_route_stand()
 		return
-	var waypoints: Array[Vector2i] = _route_waypoints()
-	var budget: int = _drag_max_steps(unit)
-	var move_cost: int = MovementSystem.move_cost_for(unit)
 	if dragging and _voluntary_walk_drag_trim_active(unit):
 		_trim_drag_route_forbidden()
-		_sync_drag_route_stand()
-		return
-	if not MovementSystem._is_legal_walk(board, origin, waypoints, budget, move_cost, unit, ability):
-		var corridor: Array[Vector2i] = CombatPlanningPreview.corridor_waypoints_to_cell(
-			board, unit, origin, final_cell, budget, ability, _director, unit.id,
-		)
-		if not corridor.is_empty() and corridor.back() == final_cell:
-			_drag_route = [origin]
-			_drag_route.append_array(corridor)
-		else:
-			while _drag_route.size() > 1:
-				_drag_route.pop_back()
-				waypoints = _route_waypoints()
-				if MovementSystem._is_legal_walk(board, origin, waypoints, budget, move_cost, unit, ability):
-					break
-	_trim_drag_route_forbidden()
 	_sync_drag_route_stand()
 
 
