@@ -251,6 +251,41 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 R21–R23 (council-gated final buckets)
+
+### Councils
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R21-range2 | Wire dead `_stationary_ranged_enemy_hover_suppresses_move_preview` (`_phase_entry_stand` + `planning_target_is_in_range`); `voluntary_walk_suppresses_targeting_arrow` exception; clear drag on stationary ranged enemy hover | 1–6 + R21b critic 3 amendment | **6/6 PASS** | Applied — **range2_enemy_hover PASS** |
+| R22-teleport | Skip walk injection for `direct_relocation` in `_commit_interaction_params`; hop in `_append_module_awaiting_target`; hop snapshot in `_preview_paths_snapshot_for_settle` | 1–6 | **6/6 PASS** | Applied — **teleport_full_truth PASS** |
+| R23-drag_drop | Unarmed `dragging` commit branch; `trust_painted_route` includes `dragging` | 1–6 | **6/6 PASS** | Verify FAIL — 1-step leg emptied |
+| R23b (amendment) | `_resolve_commit_move_waypoints`: raw `_drag_route[1..]` when `dragging` (bypass `_normalize_adjacent_single_step_waypoints` emptying adjacent single-step leg) | critics 2 + 6 | **PASS** | Applied — **drag_drop_undo PASS** |
+
+**QA failure owner map (addressed):**
+| Bucket | Owner | Broken step |
+| range2_enemy_hover | `_stationary_ranged_enemy_hover_suppresses_move_preview` + `voluntary_walk_suppresses_targeting_arrow` + `_discard_enemy_hover_painted_buffers_if_needed` | voluntary walk suppressed targeting arrow; painted drag not cleared on in-range Range 2+ hover |
+| teleport_full_truth | `_commit_interaction_params`, `_append_module_awaiting_target`, `_preview_paths_snapshot_for_settle` | pathfind walk legs instead of direct_relocation hop |
+| drag_drop_undo | `_resolve_commit_move_waypoints` | `_normalize_adjacent_single_step_waypoints` returned `[]` for 1-step drag leg → invalid commit slots |
+
+**Heuristics refused:** overlay path recompute; new `_range2_stationary_shot_from_stand` helper; `action_range_intent_stand_cell` in stationary helper (receipt bypass — R21b uses `_phase_entry_stand`).
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **PASS (0)** |
+| `painted_route_equivalence` | **PASS** |
+| `waypoint_enemy_hover/1–3` | **PASS** |
+| `tile_aim_forbids_premove` | **PASS** |
+| `teleport_full_truth` | **PASS** |
+| `range2_enemy_hover` | **PASS** |
+| `drag_drop_undo` | **PASS** |
+
+**Layer 4 status:** **PASS** — all buckets council-gated; gate green.
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

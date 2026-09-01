@@ -2497,6 +2497,10 @@ func _discard_enemy_hover_painted_buffers_if_needed(
 	var enemy_unit: UnitState = _director.board.get_unit_by_id(target_enemy_id)
 	if enemy_unit == null:
 		return
+	if _stationary_ranged_enemy_hover_suppresses_move_preview(p_unit, cell, ability):
+		_clear_hover_drag_route()
+		_clear_stale_painted_preview_route(p_unit.id)
+		return
 	if _enemy_hover_respects_painted_route(p_unit, enemy_unit, ability, _route_waypoints()):
 		return
 	_clear_hover_drag_route()
@@ -2521,8 +2525,10 @@ func _stationary_ranged_enemy_hover_suppresses_move_preview(
 	if enemy == null:
 		return false
 	var stand: Vector2i = _phase_entry_stand(actor)
-	return AbilitySystem.planning_is_valid_awaiting_endpoint(
-		stand, enemy.position, ability, actor, _proj(),
+	if stand.x <= -900000:
+		return false
+	return AbilitySystem.planning_target_is_in_range(
+		_proj(), actor, ability, stand, enemy.position,
 	)
 
 
@@ -2979,22 +2985,33 @@ func _commit_interaction_params(
 	elif _drag_route_commits_active():
 		waypoints = _route_waypoints_for_commit()
 		legal_moves = _snapshot_drag_legal_move_tiles()
+	elif dragging and _director.selected_ability_index < 0:
+		waypoints = _route_waypoints_for_commit()
+		legal_moves = _snapshot_drag_legal_move_tiles()
 	else:
 		var actor: UnitState = _proj_unit(_director.selected_unit_id)
 		var ability: AbilityData = _selected_ability_data(actor)
 		if actor != null and ability != null:
-			var painted_wps: Array[Vector2i] = _resolve_commit_move_waypoints(
-				_director.selected_unit_id, actor, hover_cell,
+			var skip_walk_for_relocation: bool = (
+				AbilitySystem.ability_uses_direct_relocation(ability, actor)
+				and (
+					_is_awaiting_movement_endpoint(actor, ability)
+					or awaiting_targeting_active()
+				)
 			)
-			var hover_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
-				actor, hover_cell, ability,
-			)
-			if not painted_wps.is_empty():
-				waypoints = painted_wps
-			elif not hover_wps.is_empty():
-				waypoints = hover_wps
-			elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
-				waypoints = hover_wps
+			if not skip_walk_for_relocation:
+				var painted_wps: Array[Vector2i] = _resolve_commit_move_waypoints(
+					_director.selected_unit_id, actor, hover_cell,
+				)
+				var hover_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
+					actor, hover_cell, ability,
+				)
+				if not painted_wps.is_empty():
+					waypoints = painted_wps
+				elif not hover_wps.is_empty():
+					waypoints = hover_wps
+				elif _movement_skill_commits_tile_endpoint(actor, ability, hover_cell):
+					waypoints = hover_wps
 	var face_dir: int = -1
 	if _map_view != null:
 		face_dir = _facing_from_drop(_mouse_local_for_facing(), hover_cell)
@@ -3426,6 +3443,17 @@ func _preview_paths_snapshot_for_settle(
 		built.append(route_cells[wp_i])
 	if built.size() >= 2:
 		snapshot[unit_id] = built
+	if settle_actor != null and _hover_cell.x > -900000:
+		var hop_ability: AbilityData = _awaiting_ability_for(settle_actor)
+		if hop_ability == null:
+			hop_ability = _selected_ability_data(settle_actor)
+		if (
+			hop_ability != null
+			and AbilitySystem.ability_uses_direct_relocation(hop_ability, settle_actor)
+			and move_origin_settle.x > -900000
+			and move_origin_settle != _hover_cell
+		):
+			snapshot[unit_id] = [move_origin_settle, _hover_cell]
 	return snapshot
 
 
@@ -5415,6 +5443,12 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 	var move_origin: Vector2i = _settle_phase_entry_stand(actor)
 	if cell == move_origin:
 		return []
+	if dragging and _drag_unit_id == unit_id and _drag_route.size() >= 2:
+		var raw_drag_leg: Array[Vector2i] = []
+		for drag_i: int in range(1, _drag_route.size()):
+			raw_drag_leg.append(_drag_route[drag_i] as Vector2i)
+		if not raw_drag_leg.is_empty() and raw_drag_leg.back() == cell:
+			return raw_drag_leg
 	if _drag_route.size() >= 2:
 		var drag_wps: Array[Vector2i] = _route_waypoints()
 		if not drag_wps.is_empty() and drag_wps.back() == cell:
@@ -6683,7 +6717,16 @@ func awaiting_movement_endpoint_ghost_visible(unit: UnitState) -> bool:
 
 
 func voluntary_walk_suppresses_targeting_arrow() -> bool:
-	return _voluntary_walk_planning_active() and not awaiting_enemy_pick_active()
+	if awaiting_enemy_pick_active():
+		return false
+	if _director != null and _director.selected_unit_id >= 0:
+		var actor: UnitState = _proj_unit(_director.selected_unit_id)
+		var ability: AbilityData = _selected_ability_data(actor)
+		if _stationary_ranged_enemy_hover_suppresses_move_preview(
+			actor, get_hover_tile_for_ui(), ability,
+		):
+			return false
+	return _voluntary_walk_planning_active()
 
 
 func enemy_unit_at_hover_cell() -> UnitState:
@@ -6998,7 +7041,11 @@ func _append_move_to_commit_slots(
 			return
 	var trust_painted_route: bool = (
 		not safe_waypoints.is_empty()
-		and (_drag_route_commits_active() or _painted_preview_route_matches_leg(actor))
+		and (
+			dragging
+			or _drag_route_commits_active()
+			or _painted_preview_route_matches_leg(actor)
+		)
 	)
 	if not trust_painted_route:
 		for step: Vector2i in safe_waypoints:
@@ -7939,13 +7986,18 @@ func _append_module_awaiting_target(
 		committed.target_coord = cell
 		committed.target_unit_id = target_unit_id
 		var wps: Array[Vector2i] = waypoints.duplicate()
-		if wps.is_empty() and AbilitySystem.ability_has_movement_effect(committed.ability, actor):
-			wps = _resolve_commit_move_waypoints(actor.id, actor, cell)
-			if (wps.is_empty() or wps.back() != cell) and committed.ability != null:
-				wps = _hover_walk_waypoints_for_skill(actor, cell, committed.ability)
-			if wps.is_empty() or wps.back() != cell:
-				slots["invalid"] = "Ability move requires preview waypoints."
-				return false
+		if wps.is_empty() and committed.ability != null:
+			if AbilitySystem.ability_uses_direct_relocation(committed.ability, actor):
+				var hop_origin: Vector2i = _phase_entry_stand(actor)
+				if hop_origin.x > -900000 and cell != hop_origin:
+					wps = [hop_origin, cell]
+			elif AbilitySystem.ability_has_movement_effect(committed.ability, actor):
+				wps = _resolve_commit_move_waypoints(actor.id, actor, cell)
+				if wps.is_empty() or wps.back() != cell:
+					wps = _hover_walk_waypoints_for_skill(actor, cell, committed.ability)
+				if wps.is_empty() or wps.back() != cell:
+					slots["invalid"] = "Ability move requires preview waypoints."
+					return false
 		committed.waypoints = wps
 	AbilitySystem.prepare_planning_action(_proj(), committed)
 	slots[_ability_plan_column(awaiting_action.ability)].append(committed)
