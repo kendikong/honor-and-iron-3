@@ -675,6 +675,23 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 	return []
 
 
+func _hover_settle_fresh_at(unit_id: int, cell: Vector2i, attack_target_id: int = -999999) -> bool:
+	if _director == null or unit_id < 0 or not _intent_snapshot_valid:
+		return false
+	var resolved_target: int = (
+		_hover_attack_target_id() if attack_target_id <= -900000 else attack_target_id
+	)
+	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, resolved_target)
+	if cache_key.is_empty() or _intent_snapshot_key != cache_key:
+		return false
+	if _settled_hover_preview == null or not _settled_hover_preview.valid:
+		return false
+	return (
+		_settled_hover_preview.unit_id == unit_id
+		and _settled_hover_preview.hover_cell == cell
+	)
+
+
 func settled_hover_revision_key() -> String:
 	if not _intent_snapshot_valid:
 		return ""
@@ -1478,19 +1495,19 @@ func on_hover_moved(cell: Vector2i) -> void:
 			):
 				_seal_painted_preview_landing_if_needed(p_unit)
 			_stage_voluntary_walk_drag_input(p_unit, cell, ability, planning_cell_changed, awaiting_move_leg)
+	var hover_settle_ran: bool = false
 	if (
 		_director.board.is_in_bounds(cell)
 		and _director.selected_unit_id >= 0
 	):
 		var hover_unit: UnitState = _proj_unit(_director.selected_unit_id)
 		if hover_unit != null and active_movement_planning_step(hover_unit):
-			if _planning != null:
-				_planning._recompute_hover_ranges_from_inputs()
 			if _voluntary_walk_corridor_paint_active(hover_unit):
 				_refresh_voluntary_walk_hover_preview(hover_unit, cell)
 			else:
 				_refresh_hover_interaction_preview(cell)
 			_last_sim_hover_refresh_cell = cell
+			hover_settle_ran = true
 		elif (
 			planning_cell_changed
 			and hover_unit != null
@@ -1498,6 +1515,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 		):
 			_refresh_voluntary_walk_hover_preview(hover_unit, cell)
 			_last_sim_hover_refresh_cell = cell
+			hover_settle_ran = true
 	if not _director.board.is_in_bounds(cell):
 		if _director.selected_unit_id >= 0:
 			var oob_unit: UnitState = _proj_unit(_director.selected_unit_id)
@@ -1509,7 +1527,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 	if _should_restore_stand_hover_preview(cell):
 		_restore_hover_preview()
 		return
-	if _director.selected_ability_index >= 0:
+	if hover_settle_ran:
+		_run_hover_overlay_refresh()
+		if not dragging:
+			refresh_mouse_cursor(cell)
+	elif _director.selected_ability_index >= 0:
 		if _should_run_hover_sim_sync(cell):
 			_run_hover_sim_refresh()
 			_sync_movement_preview_after_hover_sim(cell)
@@ -1598,9 +1620,13 @@ func _schedule_hover_sim_refresh() -> void:
 			if not _hover_sim_pointer_is_still():
 				_schedule_hover_sim_refresh()
 				return
+			if _hover_settle_fresh_at(_director.selected_unit_id, _hover_sim_schedule_cell):
+				_run_hover_overlay_refresh()
+				return
 			_run_hover_sim_refresh()
 			_run_hover_overlay_refresh()
-			_sync_movement_preview_after_hover_sim(_hover_sim_schedule_cell),
+			if _director.selected_ability_index >= 0:
+				_sync_movement_preview_after_hover_sim(_hover_sim_schedule_cell),
 		CONNECT_ONE_SHOT,
 	)
 
@@ -1682,6 +1708,11 @@ func _run_hover_sim_refresh() -> void:
 		return
 	var sim_cell_changed: bool = cell != _last_sim_hover_refresh_cell
 	if _director.selected_unit_id >= 0:
+		if _hover_settle_fresh_at(_director.selected_unit_id, cell):
+			_last_sim_hover_refresh_cell = cell
+			if not dragging:
+				refresh_mouse_cursor(cell)
+			return
 		if _should_refresh_hover_preview(cell, sim_cell_changed):
 			_refresh_selected_interaction_preview()
 	elif sim_cell_changed:
@@ -1971,6 +2002,9 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if dragging or _director == null or _director.board == null:
 		return
 	var p_unit := _proj_unit(_director.selected_unit_id)
+	if p_unit != null and _hover_settle_fresh_at(p_unit.id, cell):
+		_refresh_click_target_highlight()
+		return
 	if p_unit != null and _sealed_leg_hover_restore_if_blocked(p_unit, cell):
 		return
 	if _should_restore_stand_hover_preview(cell):
@@ -3254,6 +3288,7 @@ func _store_intent_snapshot(
 		move_origin,
 		paint,
 	)
+	_hover_preview_cache_key = key
 	if unit_id >= 0:
 		var sealed_route: Variant = paths_for_seal.get(unit_id, null)
 		if sealed_route is Array and (sealed_route as Array).size() >= 2:
@@ -4744,8 +4779,11 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 			return _movement_route_paint_allowed() or _drag_route.size() >= 2
 	return _voluntary_walk_hover_paint_applies(p_unit, cell)
 
-## PRE / ACTION (move module) / POST ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ one corridor preview owner for all move slots.
+## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
+	if _hover_settle_fresh_at(p_unit.id, cell):
+		_refresh_click_target_highlight()
+		return
 	if (
 		active_movement_planning_step(p_unit)
 		and not _voluntary_walk_can_paint_cell(p_unit, cell)
