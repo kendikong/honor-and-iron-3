@@ -2144,7 +2144,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				action_range_visible_for_hover()
 				and _current_sealed_receipt() == null
 				and not awaiting_targeting_active()
-				and target_id < 0
 			):
 				_settle_paint_only_preview_at_cell(p_unit, cell)
 			_refresh_click_target_highlight()
@@ -2513,23 +2512,15 @@ func _refresh_live_interaction_preview(
 		_refresh_voluntary_walk_hover_preview(unit, cell)
 		return
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
-	var sealed_receipt: PlanningHoverPreview = _current_sealed_receipt()
 	if (
 		cache_key == _hover_preview_cache_key
 		and preview_state.preview_board != null
 		and _intent_snapshot_valid
 		and _intent_snapshot_key == cache_key
-		and sealed_receipt != null
 	):
 		return
-	var res: Dictionary = {}
-	if (
-		_intent_snapshot_valid
-		and _intent_snapshot_key == cache_key
-		and sealed_receipt != null
-	):
-		res = _take_hover_preview_lru(cache_key)
-	if res.is_empty() or _is_invalid_dict(res):
+	var res: Dictionary = _take_hover_preview_lru(cache_key)
+	if res.is_empty():
 		res = _preview_at_interaction_cell(
 			unit_id, cell, move_coord, attack_target_id, waypoints, _snapshot_drag_legal_move_tiles(),
 		)
@@ -3310,7 +3301,6 @@ func _clear_intent_snapshot() -> void:
 	_intent_snapshot_hover_cell = Vector2i(-999999, -999999)
 	_settled_hover_preview = null
 	_intent_snapshot_plan_revision = -1
-	_clear_hover_preview_lru()
 
 
 func _hover_at_committed_stand_for_range_only(
@@ -6260,12 +6250,9 @@ func settled_action_range_stand_cell(unit_id: int) -> Vector2i:
 			and receipt.stand_origin.x > -900000
 		):
 			return receipt.stand_origin
-	var actor: UnitState = _proj_unit(unit_id)
-	if actor == null and _director.board != null:
-		actor = _director.board.get_unit_by_id(unit_id)
-	if actor != null:
-		return _settle_phase_entry_stand(actor)
-	return Vector2i(-999999, -999999)
+	return CombatPlanningPreview.planning_latest_stand_cell(
+		_director, _proj(), unit_id, null,
+	)
 
 
 func _phase_entry_stand(unit: UnitState) -> Vector2i:
@@ -6279,8 +6266,11 @@ func _phase_entry_stand(unit: UnitState) -> Vector2i:
 func _settle_phase_entry_stand(unit: UnitState) -> Vector2i:
 	if unit == null or _director == null:
 		return Vector2i(-999999, -999999)
-	return CombatPlanningPreview.forecast_stand_at_phase_entry(
-		_director, _proj(), unit.id, preview_state,
+	var board: BoardState = _director.live_planning_board()
+	if board == null:
+		board = _director.board
+	return CombatPlanningPreview.planning_latest_stand_cell(
+		_director, board, unit.id, null,
 	)
 
 
