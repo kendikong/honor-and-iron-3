@@ -3307,6 +3307,10 @@ func _preview_paths_snapshot_for_settle(
 	var snapshot: Dictionary = {}
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
 	if slot_wps.is_empty() and waypoints.is_empty():
+		if preview_state.is_painted_leg_sealed(unit_id):
+			var sealed_route: Variant = preview_state.preview_paths.get(unit_id, null)
+			if sealed_route is Array and (sealed_route as Array).size() >= 2:
+				snapshot[unit_id] = (sealed_route as Array).duplicate()
 		return snapshot
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var move_origin_settle: Vector2i = (
