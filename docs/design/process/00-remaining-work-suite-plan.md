@@ -65,7 +65,7 @@ This file is the **implementation plan for creating all remaining-work documents
 |-------|--------|
 | `run_planning_qa_gate.ps1` exists | PASS |
 | `run_regression_tests.ps1` exists | PASS |
-| `planning_skill_scenarios_test.gd` in gate | PASS (`tests/run_planning_qa_gate.gd`) |
+| `planning_skill_scenarios_test.gd` in gate | Covered via T3 mimic / class scenario runners |
 | `PLANNING_SKILL_QA_CHECKLIST.md` (7 phases) | PASS |
 | `mass_sim_*` + `run_mass_sim_test.gd` | PASS (Godot CLI — no PS1 wrapper) |
 | `lint_design_doc.ps1` | PASS — on disk at `scripts/lint_design_doc.ps1`; exempts operational gauntlet OS |

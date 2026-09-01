@@ -5,7 +5,7 @@ extends RefCounted
 
 static func run_all(failures: Array[String]) -> void:
 	## Ability economy, action-range, displacement, and range-approach parity live in
-	## the production-fixture suites run by PlanningQaGate: skill scenarios,
+	## Complements the T3 mimic / live bible checklist suites: skill scenarios,
 	## action-range regression, trample E2E, and the checklist gate.
 	var tests: Array[Callable] = [
 		_test_undoable_action_director,

@@ -123,7 +123,7 @@ $qaPs1 = @(
 	"run_*_qa_gate.ps1", "run_*_live_qa.ps1",
 	"run_planning_qa_gate.ps1", "run_t3_mimic_headless.ps1",
 	"run_hover_preview_ssot_gate.ps1", "run_aoe_footprint_qa_gate.ps1",
-	"run_swap_planning_acceptance.ps1", "run_planning_headless_contracts.ps1",
+	"run_swap_planning_acceptance.ps1", "run_t3_mimic_headless.ps1",
 	"run_planning_scene_acceptance.ps1", "run_planning_scene_acceptance_compare.ps1",
 	"run_regression_tests.ps1", "run_full_qa.ps1", "run_all_background_class_tests.ps1",
 	"run_bible_alignment_gate.ps1", "run_er3_exit_gate.ps1", "run_k4_preview_compare.ps1",
@@ -224,11 +224,11 @@ $refMap = [ordered]@{
 	"res://tests/gates/EngineerQaGate.tscn" = "res://tests/gates/EngineerQaGate.tscn"
 	"res://tests/gates/MercenaryQaGate.tscn" = "res://tests/gates/MercenaryQaGate.tscn"
 	"res://tests/gates/BeastRiderQaGate.tscn" = "res://tests/gates/BeastRiderQaGate.tscn"
-	"res://tests/gates/PlanningQaGate.tscn" = "res://tests/gates/PlanningQaGate.tscn"
+	"res://tests/gates/T3MimicHeadless.tscn" = "res://tests/gates/T3MimicHeadless.tscn"
 	"res://tests/gates/AoeFootprintQaGate.tscn" = "res://tests/gates/AoeFootprintQaGate.tscn"
 	"res://tests/gates/T3MimicHeadless.tscn" = "res://tests/gates/T3MimicHeadless.tscn"
 	"tests/gates/KnightQaGate.tscn" = "tests/gates/KnightQaGate.tscn"
-	"tests/gates/PlanningQaGate.tscn" = "tests/gates/PlanningQaGate.tscn"
+	"tests/gates/T3MimicHeadless.tscn" = "tests/gates/T3MimicHeadless.tscn"
 	"tests/gates/T3MimicHeadless.tscn" = "tests/gates/T3MimicHeadless.tscn"
 	"docs\qa\classes\KNIGHT_QA_GATE.md" = "docs\qa\classes\KNIGHT_QA_GATE.md"
 	"docs\qa\manifests\knight_meta_critic_manifest.json" = "docs\qa\manifests\knight_meta_critic_manifest.json"

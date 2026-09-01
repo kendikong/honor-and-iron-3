@@ -55,8 +55,6 @@ When the turn is **only** fixing swap / walk-then-swap / swap commit presentatio
 
 Swap-only runner: GdUnit `test_live_swap_session` in `tests/live_planning_scene_test.gd` (ignores `test_live_planning_bible_multi_knight_session`).
 
-**Tier 1/2 headless fixture suites are legacy and disabled** from the gate and from `bridge_test_runner` — do not run `PlanningQaGate.tscn`, `run_planning_qa_gate.gd`, or `run_drag_e2e_only.gd` as QA unless the owner explicitly requests `-IncludeLegacyTier12` archaeology.
-
 When unsure, run **Planning QA gate** at minimum for anything in `presentation/combat_*` or planning input. Run **full regression** when `core/simulation/` or `ResolutionPipeline` changes.
 
 **Run QA once per turn.** Re-run only if the suite **FAIL**s and you are fixing toward a new pass.

@@ -108,7 +108,7 @@ See `docs/design/logs/MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempt 9 for change l
 | Backlog GAP-001–012 | **Closed** — [`PLANNING_GAUNTLET_BACKLOG.md`](docs/design/logs/PLANNING_GAUNTLET_BACKLOG.md) |
 | Runtime F5 proof (WP-9) | **Not run** at milestone close — owner optional |
 
-**Not claimed at close:** full class QA LOCK, legacy `PlanningQaGate.tscn` green, live Tier 3 F5 session. See milestone doc § “What was NOT claimed.”
+**Not claimed at close:** full class QA LOCK, live Tier 3 F5 session green. See milestone doc § “What was NOT claimed.”
 
 ---
 

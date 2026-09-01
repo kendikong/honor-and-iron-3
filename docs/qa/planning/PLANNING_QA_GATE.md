@@ -14,35 +14,29 @@ Automated mirror of the owner's manual planning checklist (Skill Arena / TestBat
 Use this gate **before and after every change** that touches planning,
 preview, commit slots, overlay draw, hover sim, or `CombatDirector` refresh — not only perf work.
 
-## Three tiers
+## Planning QA suites (two runners)
 
-| Tier | Runner | QA gate status |
-|------|--------|----------------|
-| **1 — Simulation/economy** | fast fixture suites | **Legacy — disabled** (drifted from F5) |
-| **2 — Planning contracts** | `tests/run_planning_qa_gate.gd` | **Legacy — disabled** (drifted from F5) |
-| **3 — TestBattle acceptance** | `tests/live_planning_scene_test.gd` through GdUnit4 | **Required** — actual `TestBattle.tscn`, production input, frames, live overlay |
-| **Manual visual** | Owner F5 review | Required for pixel/animation/FPS |
+| Suite | Runner | Role |
+|-------|--------|------|
+| **Headless parity** (default gate) | `run_t3_mimic_headless.ps1` via `run_planning_qa_gate.ps1` | Same bible checklist as live (`PlanningLiveParityHarness` / `live_planning_scene_test.gd` IDs), fixture board, headless |
+| **Live acceptance** | `run_planning_scene_acceptance.ps1` | Real `TestBattle.tscn`, GdUnit4, production input + frames (`-LiveTier3` on gate) |
+| **Manual visual** | Owner F5 review | Pixel feel, animation timing, FPS |
 
-**Only Tier 3 blocks the planning QA gate.** Tier 1/2 remain in the repo for optional local archaeology (`-IncludeLegacyTier12`); failures there are expected and ignored.
+**Default gate:** SSOT structural gates + AOE footprint + **headless T3 mimic**.  
+**F5 parity:** add `-LiveTier3` or run `run_planning_scene_acceptance.ps1` alone.
 
-### Tier 1/2 suites (legacy — not gate-blocking)
+Shared harness helpers (`planning_qa_gate_test.gd` fixtures, `PlanningQAGateTest` slot signatures) are used by mimic sub-suites — not a separate gate entry point.
 
-| Suite | Script | What it catches |
-|-------|--------|-----------------|
-| **Skill scenarios (checklist)** | `tests/planning_skill_scenarios_test.gd` | **7-phase owner checklist** per skill: blue/red, preview, cursor, slots, economy, sim — production commit path |
-| **Drag E2E** | `tests/planning_drag_e2e_test.gd` | Production path: `_begin_drag` → `update_drag` → `on_left_release` → `board_changed` → undo |
-| **Planning input** | `tests/planning_input_test.gd` | Cursor/slots parity, drop route, undo, awaiting refresh |
-| **Trample E2E** | `tests/trampling_advance_e2e_test.gd` | Painted waypoint order through commit + sim |
-| **Action-range regression** | `tests/action_range_regression_test.gd` | Red tile visibility + overlay parity |
-| **Checklist mirror** | `tests/planning_qa_gate_test.gd` | Manual Skill Arena checklist APIs (slots, sim, click/drop parity) |
+### Headless T3 mimic (default)
 
-**Coverage honesty:** Every suite in this table is a Tier 1/2 fixture contract. It is
-valuable regression coverage, but it is not F5 proof: these suites use
-`PlanningDragE2EHarness`, mock map/viewport objects, QA pointer overrides, or direct
-planning APIs. Skill scenarios (`tests/skills/*_scenario.gd`) remain the canonical
-deterministic checklist contract; slot-only rows do not replace drag E2E.
+`PlanningT3MimicRunner` runs:
 
-### Tier 3 TestBattle acceptance
+- `action_range_regression_test.gd`
+- `planning_intent_contract_e2e_test.gd`
+- `intent_source_of_truth_gate_test.gd`
+- `planning_t3_live_headless_checklist_test.gd` → `PlanningLiveParityHarness` (K1–K4 bible + swap mirror)
+
+### Live TestBattle acceptance
 
 `tests/live_planning_scene_test.gd` boots the actual `TestBattle.tscn` through
 GdUnit4. **`test_live_planning_bible_multi_knight_session`** runs one four-knight /
@@ -106,25 +100,27 @@ Prove that this journey can fail (the source is restored even if the assertion f
 
 **Training Arena defaults:** Knight **1 AP / 3 MP** (`knight_factory` `action_points = 1`, `move_points = 3`). All knight class skills: **`action_point_cost = 1`** in `knight_factory.gd`. Headless `_planning_fixture` deliberately mirrors these data defaults but does **not** establish F5 parity. Slot-only tests (`_final_commit_slots_for_drop_at_cell`) do **not** replace drag E2E. The drag suite uses `QaPlanningMapStub` + `on_left_release` so stash lifecycle and deferred `board_changed` bugs are caught.
 
-## Run (planning gate — Tier 3 only)
+## Run (planning gate)
 
-**One command, one Tier 3 boot.**
+**One command (headless default):**
 
 ```powershell
 .\scripts\run_planning_qa_gate.ps1
 ```
 
-Optional local archaeology for disabled Tier 1/2 fixtures (failures ignored):
+**Live TestBattle (F5 parity):**
 
 ```powershell
-.\scripts\run_planning_qa_gate.ps1 -IncludeLegacyTier12
-# or full bloated PlanningQaGate.tscn directly:
-.\scripts\run_planning_headless_contracts.ps1
+.\scripts\run_planning_qa_gate.ps1 -LiveTier3
+# or alone:
+.\scripts\run_planning_scene_acceptance.ps1
 ```
 
-Neither archaeology runner blocks the default gate or the round-31 rule-abidance claim.
+**Compare live vs headless:**
 
-**Owner default (2026-08):** Use **headless fixture suites** for Tier 3 planning regression (`run_planning_qa_gate.ps1` without `-LiveTier3`). Live TestBattle (`run_planning_scene_acceptance.ps1`) only when the owner explicitly requests it (sprites, settle timing, F5 spot-check).
+```powershell
+.\scripts\run_planning_scene_acceptance_compare.ps1
+```
 
 Tier 3 alone (owner debugging):
 

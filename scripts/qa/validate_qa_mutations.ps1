@@ -10,7 +10,7 @@ function Invoke-QaGate {
 	$errFile = "$outFile.err"
 	. (Join-Path $PSScriptRoot "qa_window_placement.ps1")
 	$p = Start-Process -FilePath $GodotPath `
-		-ArgumentList @("--headless", "--path", $root, "res://tests/gates/PlanningQaGate.tscn") `
+		-ArgumentList @("--headless", "--path", $root, "res://tests/gates/T3MimicHeadless.tscn") `
 		-PassThru `
 		-RedirectStandardOutput $outFile `
 		-RedirectStandardError $errFile

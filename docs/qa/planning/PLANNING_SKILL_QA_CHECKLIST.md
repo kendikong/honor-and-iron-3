@@ -608,8 +608,9 @@ not yet claim that full expansion.
 | Suite | File | Role |
 |-------|------|------|
 | Planning QA gate | `scripts/run_planning_qa_gate.ps1` | Default headless orchestrator |
-| Headless contracts | `scripts/run_planning_headless_contracts.ps1` + `scripts/run_t3_mimic_headless.ps1` | Current headless contracts and seven-journey mimic |
-| Legacy fixture runner | `tests/run_planning_qa_gate.gd` | Legacy Tier 1/2 only with explicit `-IncludeLegacyTier12`; not the default gate |
+| Headless parity | `scripts/run_t3_mimic_headless.ps1` | Bible checklist mirror (`PlanningLiveParityHarness`) |
+| Live acceptance | `scripts/run_planning_scene_acceptance.ps1` | GdUnit + TestBattle (`live_planning_scene_test.gd`) |
+| Fixture helpers | `tests/harness/planning_qa_gate_test.gd` | Shared fixtures/signatures for mimic + intent suites (not a separate gate) |
 | Drag E2E | `planning_drag_e2e_test.gd` | Real drag → release → commit → undo |
 | Planning input | `planning_input_test.gd` | Cursor, AP gates, synthetic abilities |
 | Trample E2E | `trampling_advance_e2e_test.gd` | Trample paint → commit → sim |

@@ -1,6 +1,6 @@
 extends Node
 
-## Scene-tree host for T3 mimic headless suite (PlanningQaGate-style .tscn entry).
+## Scene-tree host for T3 mimic headless suite (`T3MimicHeadless.tscn`).
 
 
 func _ready() -> void:
