@@ -5018,6 +5018,25 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	if _hover_settle_fresh_at(p_unit.id, cell):
 		_refresh_click_target_highlight()
 		return
+	if painted_move_route_locked(p_unit, cell):
+		_refresh_click_target_highlight()
+		return
+	var settle_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
+	if active_movement_planning_step(p_unit):
+		if (
+			not _voluntary_walk_corridor_paint_active(p_unit)
+			and _authoritative_route_for_unit(p_unit.id).size() >= 2
+		):
+			var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
+				p_unit.id, p_unit, cell, settle_waypoints,
+			)
+			if orbit_path.size() >= 2:
+				CombatPlanningPreview.set_unit_preview_path(
+					preview_state, p_unit.id, orbit_path,
+				)
+				_sync_movement_hover_paths_to_overlay(p_unit.id)
+				_refresh_click_target_highlight()
+				return
 	if (
 		active_movement_planning_step(p_unit)
 		and not _voluntary_walk_can_paint_cell(p_unit, cell)
@@ -5026,10 +5045,6 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		_clear_stale_painted_preview_route(p_unit.id)
 		_refresh_click_target_highlight()
 		return
-	if painted_move_route_locked(p_unit, cell):
-		_refresh_click_target_highlight()
-		return
-	var settle_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
 	if _voluntary_walk_corridor_paint_active(p_unit):
 		var probe_path: Array[Vector2i] = []
 		if (
