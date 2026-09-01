@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<testsuites id="2026-08-23" name="report_1445" tests="2" failures="0" skipped="0" flaky="0" time="0.000">
-	<testsuite id="0" name="live_planning_scene_test" package="tests" timestamp="2026-08-24T05:18:00" hostname="localhost" tests="2" failures="0" errors="0" skipped="0" flaky="0" time="12.938">
-		<testcase name="test_live_swap_session" classname="live_planning_scene_test" time="10.197">
-		</testcase>
-		<testcase name="test_live_push_through_premove_session" classname="live_planning_scene_test" time="2.709">
-		</testcase>
-	</testsuite>
-</testsuites>

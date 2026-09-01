@@ -4899,7 +4899,13 @@ func _voluntary_walk_can_paint_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
 	if dragging or p_unit == null:
 		return false
-	if not _voluntary_walk_corridor_paint_active(p_unit):
+	if (
+		not _voluntary_walk_corridor_paint_active(p_unit)
+		and not (
+			_voluntary_walk_orbit_phase_open(p_unit)
+			and _movement_route_paint_allowed()
+		)
+	):
 		return false
 	if not _movement_route_paint_allowed():
 		return false
