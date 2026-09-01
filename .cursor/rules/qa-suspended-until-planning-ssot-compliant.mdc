@@ -1,22 +1,22 @@
 ---
-description: ABSOLUTE — ALL automated QA suspended until owner declares planning SSOT 100% compliant
-alwaysApply: true
+description: When docs/qa/QA_SUSPENDED.flag exists, all automated QA is blocked (owner mandate).
+alwaysApply: false
 ---
 
-# QA Suspended (Owner Mandate — wins over mandatory QA rules)
+# QA Suspension (Owner Mandate — only active while sentinel flag exists)
 
-**Status: SUSPENDED** (owner mandate, 2026-08-30).
+**Status: RE-ENABLED** (owner, 2026-08-30) — `docs/qa/QA_SUSPENDED.flag` is **not** on disk. Normal QA rules apply (`qa-after-gameplay-changes.mdc`).
 
-While `docs/qa/QA_SUSPENDED.flag` exists:
+**This rule applies only while** `docs/qa/QA_SUSPENDED.flag` **exists.** If the flag is absent, ignore this file.
 
-## Forbidden
+## While the flag exists — Forbidden
 
 - Run **any** automated QA suite (planning gate, SSOT gates, class gates, live QA, regression, swap, T3 mimic, scene acceptance, full QA, background class tests)
 - Invoke Godot test harnesses for QA purposes (`GdUnitCmdTool`, `*QaGate.tscn`, `run_*_qa*.ps1`, `run_regression_tests.ps1`)
 - Report QA PASS/FAIL in changelog for gameplay edits
 - Suggest "let me run QA" or use QA output to justify architecture compliance
 
-## Required instead
+## While the flag exists — Required instead
 
 - Implement planning SSOT architecture fixes only
 - Architecture compliance verdict: **yes** or **no** against the four criteria in `docs/qa/QA_SUSPENSION.md` — not QA pass/fail
@@ -25,16 +25,17 @@ While `docs/qa/QA_SUSPENDED.flag` exists:
 
 `scripts/qa/qa_suspend_guard.ps1` is dot-sourced from QA entry helpers. If the flag exists, scripts exit `99` with `[QA SUSPENDED]`.
 
+## Suspend (owner only)
+
+1. Create `docs/qa/QA_SUSPENDED.flag` with a one-line reason.
+2. Say explicitly in chat that QA is suspended.
+
 ## Re-enable (owner only)
 
-Owner must **both**:
+1. Delete `docs/qa/QA_SUSPENDED.flag`.
+2. Say explicitly in chat: **"QA is re-enabled"** or **"planning SSOT is 100% compliant — run QA"**.
 
-1. Delete `docs/qa/QA_SUSPENDED.flag`
-2. Say explicitly in chat: **"QA is re-enabled"** or **"planning SSOT is 100% compliant — run QA"**
-
-Until then, QA stays off permanently.
-
-## Wins over
+## Wins over (only while flag exists)
 
 - `.cursor/rules/qa-after-gameplay-changes.mdc` (mandatory QA after gameplay edits)
 - `.cursor/rules/class-qa-all-classes-mandatory.mdc` (QA run portions)

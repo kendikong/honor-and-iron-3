@@ -12,7 +12,7 @@ if (-not (Test-Path $GodotPath)) {
 	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: Godot executable not found: $GodotPath"
 	exit 2
 }
-if (-not (Test-Path (Join-Path $projectRoot "tests\live_planning_scene_test.gd"))) {
+if (-not (Test-Path (Join-Path $projectRoot "tests\live\live_planning_scene_test.gd"))) {
 	Write-Output "[INCOMPLETE] Tier 3 TestBattle acceptance: live suite is unavailable."
 	exit 2
 }

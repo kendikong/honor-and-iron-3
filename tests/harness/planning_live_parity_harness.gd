@@ -128,7 +128,7 @@ static func reset_planning_interaction_layers(fix: Dictionary) -> void:
 		input.preview_state.preview_board = null
 		input.call("_restore_hover_preview")
 	if director != null:
-	PlanningChecklistHarness.flush_planning(fix)
+		PlanningChecklistHarness.flush_planning(fix)
 
 
 static func run_k4_run_live_parity(

@@ -1,6 +1,6 @@
 # QA Suspension (Owner Mandate)
 
-**Status: RE-ENABLED** (owner, 2026-08-30) — `QA_SUSPENDED.flag` removed after Planning SSOT architecture milestone (Attempt 9).
+**Status: RE-ENABLED** (owner, 2026-08-30) — `QA_SUSPENDED.flag` removed; `.cursor/rules/qa-suspended-until-planning-ssot-compliant.mdc` set to `alwaysApply: false` (active only if flag returns).
 
 ## What is blocked
 

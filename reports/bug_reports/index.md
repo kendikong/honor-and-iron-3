@@ -26,13 +26,18 @@
 - `BUG-20260822T131801-867` **done** — Medium — Bug — Lying/false damage indication when undoing actions.
 - `BUG-20260822T125232-308` **done** — Medium — Bug — premove and postmove bugs
 - `BUG-20260822T123715-788` **done** — Medium — Bug — explosive arrow not dealing damage
+- `BUG-TEST-STATUS-11653` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11605` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11443` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11400` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11365` **done** — Low — Bug — status workflow probe
+- `BUG-TEST-STATUS-11294` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11015` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11124` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11154` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11159` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11232` **done** — Low — Bug — status workflow probe
 - `BUG-TEST-STATUS-11292` **done** — Low — Bug — status workflow probe
-- `BUG-TEST-STATUS-11443` **done** — Low — Bug — status workflow probe
 - `BUG-20260819T202015-902` **done** — Medium — Bug — commitpreviewghost is slow to update
 - `BUG-20260819T195651-656` **done** — Medium — Bug — mouse cursor showing move/atk and commit ghost not showing sometimes
 - `BUG-20260819T080458-775` **done** — Medium — Bug — power shot to enemy hover
