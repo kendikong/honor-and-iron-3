@@ -55,6 +55,12 @@ Launch all selected critics **in one message** (parallel).
 
 **Verdict:** all PASS (5/5, 6/6, or 7/7). Not majority.
 
+**Cross-critic conflicts:** When charters appear to disagree, **owner-approved exception IDs win** over older milestone prose — e.g. **EX-LOCKED-FIELD** overrides “display reads bundle only” in `SETTLED_PAINT_SSOT_PLAN.md` / `planning-hover-perf-mandatory.mdc` for **locked** current-phase tiles only; bundle-owned layers (next-field, yellow, path) stay on settle path.
+
+**Stale proposal:** If repo or proposal text changes between Propose and Council, **re-run council** on the updated proposal before apply.
+
+**Lead agent records:** After council, changelog must include `Council: N/N PASS` with each critic id (1–5) — not a single “council approved” line.
+
 ---
 
 ## Owner-approved exceptions registry
