@@ -2009,7 +2009,11 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		return
 	if _director.selected_ability_index >= 0:
 		var early_target_id: int = _attack_target_id_at_cell(p_unit, cell)
-		if _hover_at_committed_stand_for_range_only(p_unit, cell, early_target_id):
+		if (
+			not painted_move_route_locked(p_unit, cell)
+			and not preview_state.is_painted_leg_sealed(p_unit.id)
+			and _hover_at_committed_stand_for_range_only(p_unit, cell, early_target_id)
+		):
 			var stand_res: Dictionary = _preview_at_interaction_cell(
 				p_unit.id, cell, cell, -1, [], _snapshot_drag_legal_move_tiles(),
 			)
@@ -2768,6 +2772,13 @@ func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
 	)
 	if sealed.x > -900000:
 		return sealed
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability) and _director != null:
+		var board: BoardState = _director.live_planning_board()
+		if board != null:
+			var live: UnitState = board.get_unit_by_id(p_unit.id)
+			if live != null:
+				return live.position
 	return _phase_entry_stand(p_unit)
 
 
@@ -5016,6 +5027,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		_clear_stale_painted_preview_route(p_unit.id)
 		_refresh_click_target_highlight()
 		return
+	if painted_move_route_locked(p_unit, cell):
+		_refresh_click_target_highlight()
+		return
 	var settle_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
 	if _voluntary_walk_corridor_paint_active(p_unit):
 		var probe_path: Array[Vector2i] = []
@@ -6475,7 +6489,7 @@ func _planning_drag_origin(unit_id: int) -> Vector2i:
 	var unit: UnitState = _proj_unit(unit_id)
 	if unit == null:
 		return Vector2i(-999999, -999999)
-	return _phase_entry_stand(unit)
+	return _leg_anchor_for_painted_drag(unit)
 
 func _aim_enemy_pos(unit_id: int) -> Vector2i:
 	var live := _director.board.get_unit_by_id(unit_id) if _director.board != null else null
