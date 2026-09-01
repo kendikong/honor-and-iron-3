@@ -9,6 +9,8 @@ alwaysApply: true
 
 **If chat was summarized or the task is "fix QA" / "make gate pass" → read this file first**, then `non-heuristic-mandate.mdc`, then plan.
 
+**Planning behavior authority:** `docs/design/planning/MOVE_PREVIEW_RULES.md` wins over implementation plans, milestone prose, and agent audit opinions on any conflict. QA-fix turns still obey this file for *how* to fix (no overlay fallbacks); *what* correct behavior means comes from MOVE_PREVIEW.
+
 ## When this rule applies
 
 Any turn that:
@@ -40,15 +42,19 @@ Any turn that:
 | Weakening asserts, skipping cases, `push_warning` instead of fail | Hides regression |
 | UI-only flags meta sim/commit ignores | Preview ≠ commit |
 | Duplicate origin getters (`_intent_stand_origin` vs `_proj_origin` both live for same case) | Two anchors |
-| "Paint-only" settle that skips slots/sim validation | Partial settle |
+| Partial settle / `_noop` bundle that paints commit-shaped hover without full slots+sim when click would ratify | Violates MOVE_PREVIEW preview=commit; fix settle upstream |
 | Restoring **mutable-buffer** route/stand reads "until receipt works" | Parallel path |
 | Editing tests to match wrong behavior without owner fix | False green |
 
 ## Required fix order (planning domain)
 
+Aligns with `MOVE_PREVIEW_RULES.md` (hover paints intent; click freezes it):
+
 ```
 slots + sim at hover → seal receipt → paint reads receipt only → commit ratifies same receipt
 ```
+
+Locked **current-phase** red/blue (phase-entry stand) may display without a commitable hover — see MOVE_PREVIEW § Tile colors. That is **not** a second settle path and **not** a `_noop` shortcut.
 
 Fix **upstream** (settle/seal/slots/sim). **Never** patch **downstream** (overlay paint) to paper over missing receipt.
 

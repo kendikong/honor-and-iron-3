@@ -15,6 +15,8 @@ Each shortcut creates **refactor tax**: the next agent fixes symptoms again, SSO
 
 ## The rule (plain language)
 
+**Correct behavior** = `docs/design/planning/MOVE_PREVIEW_RULES.md`. This discipline is *how* to fix QA without shortcuts — not a second spec.
+
 1. **Read the FAIL log** — group by *who owns the behavior*, not which file asserted.
 2. **Fix the owner** — settle, slots, sim, or director — so the normal path produces correct truth.
 3. **Paint and commit only read that truth** — never invent a fallback because the receipt was empty.

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-30  
 **Status:** MILESTONE CLOSED — Attempt 9 (see `PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`)  
-**Rules:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md)  
+**Rules (dominant):** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) — wins on conflict; this plan implements it.  
 **Gate:** `.\scripts\run_hover_preview_ssot_gate.ps1` (first step before planning QA)
 
 ## One sentence
@@ -42,7 +42,7 @@ If commit needs geometry the hover did not show → **fix settle**, never patch 
 
 - Born only when hover **settles** (`_preview_from_commit_slots_at_cell` / `settle_hover_preview_at_cell`)
 - Holds: slots, `preview_paths` snapshot, projected board, hover cell, unit id, facing, revision key, and settled move/range/blast tiles
-- Paint-only settle is explicit and non-ratifiable: it carries display paint when no timeline action is legal, while click still rejects because the bundle has no actions.
+- **No partial / `_noop` settle for commit-shaped hover.** If click would ratify, the bundle must carry full slots + sim (MOVE_PREVIEW preview = commit). Locked current-phase tiles from phase-entry stand are not a separate “paint-only” exception — see MOVE_PREVIEW § Tile colors.
 - **Sealed** after settle (`is_sealed`); `validate_geometry()` asserts slots waypoints == `preview_paths` leg
 - **Ratify** = `commit_from_slots(duplicate(bundle.slots))` — no waypoints args, no fill-at-commit
 

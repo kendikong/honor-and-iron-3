@@ -11,14 +11,15 @@
 ## Planning SSOT hardening — implementation checkpoint
 
 **Updated:** 2026-08-30  
-**Status:** **Architecture milestone closed** — see [`docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`](docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md) · pin `ebb0f51a15a469c4824a603ac716aafbf518841a`
+**Status:** **Structural milestone closed** (Attempt 9) — **behavioral MOVE_PREVIEW not done** until planning QA gate green.  
+**Dominant spec:** [`docs/design/planning/MOVE_PREVIEW_RULES.md`](docs/design/planning/MOVE_PREVIEW_RULES.md) · structural record [`PLANNING_SSOT_ARCHITECTURE_MILESTONE.md`](docs/design/planning/PLANNING_SSOT_ARCHITECTURE_MILESTONE.md) · pin `ebb0f51a1`
 
-**Purpose:** Carry settled planning intent directly through paint, ratification, timeline, and simulation so commit cannot recalculate a different outcome.
+**Purpose:** Carry settled planning intent directly through paint, ratification, timeline, and simulation so commit cannot recalculate a different outcome (**MOVE_PREVIEW**: hover paints intent; click freezes it).
 
 ### Implemented
 - [x] `PlanningHoverPreview` sealed bundle carries slots, route geometry, latest stand, action range, and AOE footprint.
 - [x] `CombatPlanningInput` is the single settle owner; `CombatDirector.ratify_sealed_intent` is the commit ratification path.
-- [x] Attempt 9: receipt-only routes/tiles/stand for selected player; ghost writer removed; paint-only via `preview_actions`.
+- [x] Attempt 9: receipt-only routes/tiles/stand for selected player; ghost writer removed; partial `_noop` settle flagged for removal per MOVE_PREVIEW.
 - [x] Structural gates use machine-readable `[SSOT VIOLATION]` output for competing owners, heuristics, and weakened contracts.
 - [x] AOE footprint contract, ability-identity branch gate/self-test, and planning SSOT structural gates are integrated.
 - [x] Canonical test/resource paths and scenario delegate headers point at the current `tests/harness`, `tests/runners`, and `tests/live` layout.
@@ -30,15 +31,15 @@
 | Pass 2 — paint / display / overlay | **COMPLIANT** (static) |
 | Pass 3 — parallel path hunt (6-row) | **COMPLIANT** (static) |
 
-**Not claimed at close:** behavioral QA (QA suspended), F5 feel, K1/K3/K4/swap green.
+**Not claimed at close:** MOVE_PREVIEW behavioral proof, F5 feel, K1/K3/K4/swap green.
 
-### Behavioral QA (when re-enabled — not part of architecture milestone)
+### Behavioral QA (MOVE_PREVIEW done criteria — not satisfied by structural close alone)
 | Suite | Last known |
 |-------|------------|
 | T3 fixture parity | **FAIL** — premove range, K1/K3/K4, drag/swap (pre–Attempt 9 baseline; re-run after QA on) |
 | Live class QA | **Mixed** — see prior checkpoint rows |
 
-**Audit status:** **Architecture closed** at Attempt 9. **Behavioral** audit open until QA returns.
+**Audit status:** **Structural** closed at Attempt 9. **MOVE_PREVIEW + planning QA gate** = behavioral done (open).
 
 ## Planning SSOT architecture — Attempt 7
 
@@ -1499,5 +1500,5 @@ manual Tier 3 visual checklist and class sign-off registry are completed.
 | Four-way parity | **YES** | Hover, click, drag, and timeline use the same sealed slots/paint contract; ratification validates the sealed slots. |
 | One simulation path | **YES** | `CombatDirector._preview_from_plan` uses the full `Simulator.simulate_player_turn` preview path; the projected-delta and move-only enemy-skip branches are removed. |
 
-**Architecture compliance verdict:** **YES — 100% compliant with the planning SSOT rules.**  
-**QA state:** Automated QA remains suspended by owner mandate; this audit is architectural and did not invoke QA.
+**Architecture compliance verdict:** **WITHDRAWN** — superseded by MOVE_PREVIEW authority (`docs/design/planning/MOVE_PREVIEW_RULES.md` § Authority). Structural iteration only; not behavioral done.  
+**QA state:** Planning behavioral proof = `run_planning_qa_gate.ps1` exit 0 per MOVE_PREVIEW acceptance.

@@ -39,7 +39,7 @@ Both passes run **in the same critic invocation**, in order. Neither is optional
 
 **Input (read in full, every round):**
 
-- `docs/design/MOVE_PREVIEW_RULES.md` — owner rules only (short). **Not** `MOVE_PREVIEW_IMPLEMENTATION_LOG.md` (agent diary).
+- `docs/design/planning/MOVE_PREVIEW_RULES.md` — **dominant** owner rules only (short). **Not** `MOVE_PREVIEW_IMPLEMENTATION_LOG.md` (agent diary).
 - `docs/design/PLANNING_REFACTOR_MATRIX.md` — rows R1–R12.
 
 **Critic must:**

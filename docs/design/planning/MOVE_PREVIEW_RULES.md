@@ -8,6 +8,16 @@ Plain-language rules. One pipeline. No parallel preview logic.
 
 ---
 
+## Authority (owner — wins on conflict)
+
+**This file is the dominant spec** for planning hover, paths, tiles, lines, and commit behavior.
+
+- Implementation plans ([`HOVER_PREVIEW_CARRIED_SSOT_PLAN.md`](HOVER_PREVIEW_CARRIED_SSOT_PLAN.md), [`SETTLED_PAINT_SSOT_PLAN.md`](SETTLED_PAINT_SSOT_PLAN.md)), gauntlet matrices, milestone close records, and agent audits **implement** these rules — they **do not override** them.
+- On any conflict, **this file wins**. Agents must not declare planning “done” or “compliant” while behavior violates this doc.
+- **Behavioral done:** every rule and acceptance example in this file **plus** `.\scripts\run_planning_qa_gate.ps1` exit 0. Structural grep gates alone are **not** sufficient.
+
+---
+
 ## Design principle
 
 **Fewer global rules → fewer branches → one canonical path → simpler code.**

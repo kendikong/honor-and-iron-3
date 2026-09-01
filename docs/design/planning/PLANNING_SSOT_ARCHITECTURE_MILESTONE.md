@@ -5,6 +5,8 @@
 **Pin commit (milestone tree):** `ebb0f51a15a469c4824a603ac716aafbf518841a`  
 **Prior false closes:** Attempts 7–8 and post–voluntary-walk milestone claims — withdrawn; see `MOVE_PREVIEW_IMPLEMENTATION_LOG.md` Attempts 7–9.
 
+**Dominant owner spec:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md). This milestone records **structural** progress toward that spec. It does **not** override MOVE_PREVIEW and is **not** behavioral “done.”
+
 ---
 
 ## What was claimed (plain language)
@@ -14,7 +16,7 @@
 | Rule | Meaning |
 |------|---------|
 | **One paint owner** | Selected player: blue routes, red/yellow tiles, and stand marker all come from the sealed `PlanningHoverPreview` receipt (or one atomic `resolve_paint` at settle). |
-| **No partial settle** | Board, slots, route, and paint seal together. Paint-only hovers are documented display-only (`SETTLED_PAINT_SSOT_PLAN.md`) and use `preview_actions`, not projection clone. |
+| **No partial settle** | Board, slots, route, and paint seal together for any hover click would ratify (MOVE_PREVIEW preview = commit). Locked current-phase tiles from phase-entry stand are not a partial settle. |
 | **Four-way parity** | Hover settle, click ratify, timeline slots, and sim `preview_actions` share the same slot geometry. Click copies sealed slots only. |
 | **One sim path (live)** | Live hover settle runs one `preview_actions` → `Simulator` for the receipt board. |
 
@@ -26,7 +28,7 @@
 
 | Limitation | Meaning |
 |------------|---------|
-| **QA suspended** | `docs/qa/QA_SUSPENDED.flag` still on. No planning gate, T3 mimic, swap, or F5 proof at this milestone. |
+| **QA at close** | At Attempt 9 close, QA was suspended. **Behavioral done** requires `run_planning_qa_gate.ps1` exit 0 per MOVE_PREVIEW — regardless of this milestone. |
 | **Behavioral parity** | K1/K3/K4, drag/swap, premove range-after-commit, etc. are **not** proven green by this close. |
 | **Class kits** | Architecture milestone only — not class QA or Bible LOCK. |
 | **GDScript immutability** | Receipt fields are not compile-time locked; discipline is structural, not language-enforced. |

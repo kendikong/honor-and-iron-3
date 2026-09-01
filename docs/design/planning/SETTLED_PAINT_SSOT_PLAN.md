@@ -1,6 +1,7 @@
 # Settled Paint SSOT (move + range + blast)
 
-**Status:** IMPLEMENTED (structural gates + settle seal)
+**Status:** IMPLEMENTED (structural gates + settle seal)  
+**Authority:** [`MOVE_PREVIEW_RULES.md`](MOVE_PREVIEW_RULES.md) — this plan implements that spec; on conflict MOVE_PREVIEW wins.
 
 ## Model
 
@@ -18,9 +19,14 @@ Same pattern as hover preview carried SSOT:
 
 Blue movement tiles follow the same rule: they are resolved during settle and carried
 as `PlanningHoverPreview.move_tiles`; the selected-unit sealed-display branch does
-not call live reachability again. A paint-only bundle may carry range/blue paint when
-the cursor has no ratifiable action, but it can never pass ratification because it
-contains no timeline actions.
+not call live reachability again.
+
+**MOVE_PREVIEW alignment (no separate “paint-only” doctrine):**
+
+- Any hover where **click would ratify** must use full settle: slots + sim → seal → display → ratify (preview = commit).
+- **Locked current-phase** red/blue from phase-entry stand (MOVE_PREVIEW § Tile colors) is not a partial settle — it is the locked field, not a `_noop` bundle.
+- **Forbidden:** `_noop` / partial bundles that show commit-shaped intent (path, yellow footprint, walk corridor) without the same slots+sim the click path would ratify.
+- When receipt context does not match the cursor: hold last sealed paint (out of bounds) or fix settle — **no overlay recompute** (see Display §2 above).
 
 ## Drag = hover
 
