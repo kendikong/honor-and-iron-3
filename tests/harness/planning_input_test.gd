@@ -51,6 +51,23 @@ static func _register_fixture(input: CombatPlanningInput, director: CombatDirect
 	PlanningDragE2EHarness.track_raw_fixture({"input": input, "director": director})
 
 
+static func _cursor_icon_after_canonical_settle(
+	input: CombatPlanningInput,
+	unit: UnitState,
+	cell: Vector2i,
+	attack_target_id: int = -1,
+) -> String:
+	input.set_qa_pointer_grid_cell(cell)
+	var preview: Dictionary = input._preview_at_interaction_cell(
+		unit.id, cell, cell, attack_target_id,
+	)
+	if preview.get("invalid", false):
+		return PlanningIcons.GLYPH_NULL
+	if input.dragging:
+		return input._drag_hover_icon(unit, cell)
+	return input.compute_hover_action_icon(cell)
+
+
 static func _bowling_charge_arm_fixture() -> Dictionary:
 	var input := CombatPlanningInput.new()
 	var director := _new_director()
@@ -387,7 +404,7 @@ static func _test_drag_cursor_matches_commit_slots(failures: Array[String]) -> v
 		params.preferred,
 	)
 	var expected_icon: String = input._cursor_icon_from_commit_slots(slots, unit)
-	var drag_icon: String = input._drag_hover_icon(unit, dest)
+	var drag_icon: String = _cursor_icon_after_canonical_settle(input, unit, dest)
 	if drag_icon != expected_icon:
 		failures.append(
 			(
@@ -435,7 +452,7 @@ static func _test_drag_cursor_ignores_preview_failed_flag(failures: Array[String
 		)
 		return
 	var expected_icon: String = input._cursor_icon_from_commit_slots(slots, unit)
-	var drag_icon: String = input._drag_hover_icon(unit, dest)
+	var drag_icon: String = _cursor_icon_after_canonical_settle(input, unit, dest)
 	if drag_icon != expected_icon:
 		failures.append(
 			(
@@ -608,25 +625,7 @@ static func _assert_cursor_matches_slots(
 		face_dir,
 	)
 	var from_slots: String = input._cursor_icon_from_commit_slots(slots, unit)
-	input.set_qa_pointer_grid_cell(cell)
-	var from_hover: String = ""
-	if input.dragging:
-		var preview: Dictionary = input._preview_from_commit_slots_at_cell(
-			unit.id,
-			params.cell,
-			params.waypoints,
-			params.legal_move_tiles,
-			params.preferred,
-			face_dir,
-		)
-		if preview.get("invalid", false):
-			from_hover = PlanningIcons.GLYPH_NULL
-		else:
-			from_hover = input._drag_hover_icon(unit, params.cell)
-	else:
-		input.on_hover_moved(cell)
-		input._flush_hover_heavy_sync()
-		from_hover = input.compute_hover_action_icon(cell)
+	var from_hover: String = _cursor_icon_after_canonical_settle(input, unit, cell)
 	if from_slots != from_hover:
 		failures.append(
 			"PlanningInputTest: %s cursor must equal commit slots (hover=%s slots=%s)"
@@ -1048,7 +1047,9 @@ static func _test_hover_cursor_matches_click_commit_slots(failures: Array[String
 	var enemy_cell := enemy.position
 	var click_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, enemy_cell, Vector2.ZERO)
 	var expected_icon: String = input._cursor_icon_from_commit_slots(click_slots, knight)
-	var hover_icon: String = input.compute_hover_action_icon(enemy_cell)
+	var hover_icon: String = _cursor_icon_after_canonical_settle(
+		input, knight, enemy_cell, enemy.id,
+	)
 	if hover_icon != expected_icon:
 		failures.append(
 			"PlanningInputTest: hover cursor must match click commit slots (hover=%s click=%s)"
@@ -1710,8 +1711,10 @@ static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -
 			"PlanningInputTest: swap ally out of range click slots need walk+swap pre, got %d"
 			% pre_steps.size(),
 		)
-	var hover_icon: String = input.compute_hover_action_icon(ally_cell)
 	var expected_icon: String = input._cursor_icon_from_commit_slots(click_slots, knight)
+	var hover_icon: String = _cursor_icon_after_canonical_settle(
+		input, knight, ally_cell, ally.id,
+	)
 	if hover_icon != expected_icon:
 		failures.append(
 			"PlanningInputTest: swap ally hover must match click slots (hover=%s click=%s)"
@@ -1727,7 +1730,7 @@ static func _test_swap_ally_out_of_range_click_parity(failures: Array[String]) -
 			"PlanningInputTest: swap ally approach icon must include swap, got %s"
 			% expected_icon,
 		)
-	input.set_qa_pointer_grid_cell(ally_cell)
+	input._preview_at_interaction_cell(1, ally_cell, ally_cell, ally.id)
 	if not input._commit_at_interaction_cell(1, ally_cell, Vector2.ZERO, ally.id):
 		failures.append("PlanningInputTest: swap ally out of range click must commit")
 		return
@@ -2131,8 +2134,10 @@ static func _test_violent_collision_extended_enemy_preview(
 	]
 	if action.waypoints != expected_path:
 		failures.append(
-			"PlanningInputTest: extended enemy commit must keep direct dash path, got %s"
-			% action.waypoints,
+			(
+				"PlanningInputTest: extended enemy commit must keep direct dash path, got %s"
+				% str(action.waypoints)
+			),
 		)
 
 

@@ -6048,6 +6048,18 @@ func action_range_visible_for_hover() -> bool:
 	var economy_board: BoardState = board
 	var economy_actor: UnitState = actor
 	if awaiting_targeting_active():
+		var awaiting_action: TimelineAction = _director.find_awaiting_action(unit_id)
+		if (
+			awaiting_action != null
+			and awaiting_action.awaiting_module_index > 0
+		):
+			var module_tiles: Array[Vector2i] = AbilitySystem.planning_module_range_tiles(
+				economy_board,
+				awaiting_action,
+				awaiting_action.awaiting_module_index,
+				stand,
+			)
+			return not module_tiles.is_empty()
 		return AbilitySystem.can_plan(economy_actor, ability, economy_board)
 	var premove_cell: Vector2i = stand
 	var intent_dest: Vector2i = move_intent_destination(unit_id)
@@ -7294,7 +7306,9 @@ func _build_commit_slots_at_cell(
 			effective_waypoints.is_empty()
 			and _dash_tile_endpoint_one_click_commit(actor, ability, cell)
 		):
-			effective_waypoints = _resolve_commit_move_waypoints(unit_id, actor, cell)
+			effective_waypoints = _director.preview_waypoints_for_hover(
+				_proj(), actor, cell, [], ability, true, preview_state,
+			)
 
 		if (
 			not has_awaiting_action

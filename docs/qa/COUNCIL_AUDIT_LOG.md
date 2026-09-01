@@ -315,6 +315,57 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R24 (council-gated PlanningInputTest cursor)
+
+### Council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R24c | `_cursor_icon_after_canonical_settle` via `_preview_at_interaction_cell` | 1–6 | **6/6 PASS** (revised after R24c `_paint_intent_slots` blocked by critics 2/4/6) | Applied — cursor parity PASS |
+| R24c-amend | Format string fix in extended-enemy assert | — | test hygiene | `str(action.waypoints)` |
+
+**QA failure owner map (addressed):**
+| Bucket | Owner | Broken step |
+| PlanningInputTest cursor ∅ | `planning_input_test.gd` | tests called `compute_hover_action_icon` / `_drag_hover_icon` without canonical settle |
+| swap ally commit rejected | same harness | `_commit_at_interaction_cell` without prior `_preview_at_interaction_cell` seal |
+
+**Heuristics refused:** restore `_hover_icon_for_cell`; `_paint_intent_slots_before_commit` for hover cursor reads.
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_planning_input_only.gd` | **PASS** (after R26/R27 — see below) |
+
+---
+
+## 2026-09-01 — Layer 5 R26 + R27 (council-gated production)
+
+### Council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R26 | Dash one-click enemy: `preview_waypoints_for_hover(..., direct_dash_endpoint=true)` in `_final_commit_slots_for_interaction` | 1–6 | **6/6 PASS** | Applied — extended enemy waypoints |
+| R27 | `action_range_visible_for_hover`: module range tiles when `awaiting_module_index > 0` | 1–6 | **6/6 PASS** | Applied — later NEW_AIM range visible |
+
+**QA failure owner map (addressed):**
+| Bucket | Owner | Broken step |
+| extended_enemy dash path [] | `_final_commit_slots_for_interaction` | `_resolve_commit_move_waypoints` → `_hover_walk_waypoints_for_skill` returns [] for tile-dash aim |
+| later NEW_AIM range hidden | `action_range_visible_for_hover` | whole-ability `can_plan` false after MOVE prefix consumes action slot |
+
+**Heuristics refused:** overlay fallback; per-test branches.
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_planning_input_only.gd` | **PASS** |
+| `run_layer4_paint_gate.ps1` | **PASS (0)** |
+
+**Layer 5 status:** **IN PROGRESS** — PlanningInputTest cursor + violent-collision extended enemy + NEW_AIM range gates green; full planning QA gate still has remaining buckets.
+
+---
+
 ## 2026-09-01 — Layer 5 R24 (council-gated PlanningInputTest cursor — partial)
 
 ### Council
@@ -322,7 +373,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 | Round | Scope | Council | Verdict | Notes |
 |-------|-------|---------|---------|-------|
 | R24 | Replace `_hover_icon_for_cell` with settle + `compute_hover_action_icon` / `_drag_hover_icon` | Critic 6 | **FAIL** | Needs `set_qa_pointer_grid_cell`; drag uses `_drag_hover_icon` |
-| R24b (applied) | Test-only `_assert_cursor_matches_slots` uses settle path per critic 6 amendments | pending re-council | Applied | PlanningInputTest still FAIL — needs `_preview_from_commit_slots_at_cell` seal for non-drag |
+| R24b (applied) | Test-only `_assert_cursor_matches_slots` uses settle path per critic 6 amendments | pending re-council | Applied | Superseded by R24c |
 
 ---
 
