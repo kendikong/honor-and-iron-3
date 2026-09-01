@@ -417,7 +417,9 @@ func _planning_action_range_tiles_for_unit(
 	unit: UnitState,
 	origin: Vector2i,
 	selected_ability: int,
+	range_hover: Vector2i = Vector2i(-999999, -999999),
 ) -> Array[Vector2i]:
+	var hover_coord: Vector2i = range_hover if range_hover.x > -900000 else _hover_coord
 	return PlanningPreviewTiles.action_range_tiles(
 		_director,
 		_board,
@@ -425,7 +427,7 @@ func _planning_action_range_tiles_for_unit(
 		selected_ability,
 		_planning_input,
 		origin,
-		_hover_coord
+		hover_coord,
 	)
 func _hover_is_walk_only_premove(unit: UnitState) -> bool:
 	if _planning_input != null:
@@ -917,51 +919,63 @@ func _apply_planning_tile_layers(
 	):
 		return
 	var paint_hover: Vector2i = _hover_coord
+	var settled: PlanningHoverPreview = null
+	var paint_matches: bool = false
 	if is_selected_player and _planning_input != null:
 		paint_hover = _planning_input.pointer_grid_cell()
-	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
-		_director, _board, unit, selected_ability, _planning_input, paint_hover,
-	)
-	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
-	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
-	match phase:
-		PlanningPreviewTiles.PhaseKind.WAIT:
-			return
-		PlanningPreviewTiles.PhaseKind.MOVEMENT:
-			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
-			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
-				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
-					_director, _board, unit, selected_ability, _planning_input, locked_move,
-				)
-		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-			var locked_aim: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
-			if locked_aim.x > -900000 and show_action_range:
-				_blast_tiles_on_hover_layer = false
-				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-					unit, locked_aim, selected_ability if is_selected_player else -1,
-				)
-	if is_selected_player and _planning_input != null:
-		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		var paint_matches: bool = (
-			settled != null
-			and settled.matches_paint_context(
+		settled = _planning_input.get_settled_hover_preview()
+		if settled != null:
+			paint_matches = settled.matches_paint_context(
 				paint_hover,
 				unit.id,
 				"",
 				selected_ability,
 			)
+			if (
+				not paint_matches
+				and _board != null
+				and not _board.is_in_bounds(paint_hover)
+			):
+				paint_matches = settled.matches_display_context(
+					unit.id,
+					"",
+					selected_ability,
+				)
+	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+		_director, _board, unit, selected_ability, _planning_input, paint_hover,
+	)
+	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
+	var locked_phase: int = phase
+	if settled != null and settled.valid and not paint_matches:
+		var at_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+			_director, _board, unit, selected_ability, _planning_input, settled.hover_cell,
 		)
-		if (
-			not paint_matches
-			and settled != null
-			and _board != null
-			and not _board.is_in_bounds(paint_hover)
-		):
-			paint_matches = settled.matches_display_context(
-				unit.id,
-				"",
-				selected_ability,
-			)
+		locked_phase = int(
+			at_settle_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT),
+		)
+	var locked_stand: Vector2i = Vector2i(-999999, -999999)
+	if _planning_input != null:
+		locked_stand = _planning_input.phase_entry_stand_cell(unit.id)
+	if locked_stand.x <= -900000:
+		locked_stand = _proj_origin(unit)
+	match locked_phase:
+		PlanningPreviewTiles.PhaseKind.WAIT:
+			return
+		PlanningPreviewTiles.PhaseKind.MOVEMENT:
+			if locked_stand.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
+					_director, _board, unit, selected_ability, _planning_input, locked_stand,
+				)
+		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+			if locked_stand.x > -900000:
+				_blast_tiles_on_hover_layer = false
+				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+					unit,
+					locked_stand,
+					selected_ability if is_selected_player else -1,
+					locked_stand,
+				)
+	if is_selected_player and _planning_input != null and settled != null:
 		if paint_matches:
 			match phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
@@ -973,13 +987,17 @@ func _apply_planning_tile_layers(
 					_hover_blast_tiles = settled.blast_tiles.duplicate()
 					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			return
-		if bool(layer_plan.get("show_blast", false)):
-			var blast_origin: Vector2i = layer_plan.get("blast_origin", Vector2i(-999999, -999999))
-			if blast_origin.x > -900000:
-				_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
-				_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-					unit, unit, blast_origin, selected_ability, voluntary_walk, is_selected_player,
-				)
+		## Bundle mismatch: locked fields painted above; hold last sealed hover-shaped layers.
+		if settled.valid:
+			match locked_phase:
+				PlanningPreviewTiles.PhaseKind.MOVEMENT:
+					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					_hover_blast_tiles = settled.blast_tiles.duplicate()
+					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+					_hover_move_tiles = settled.move_tiles.duplicate()
+					_hover_blast_tiles = settled.blast_tiles.duplicate()
+					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 		return
 	match phase:
 		PlanningPreviewTiles.PhaseKind.MOVEMENT:
@@ -987,7 +1005,10 @@ func _apply_planning_tile_layers(
 			if next_aim.x > -900000:
 				_blast_tiles_on_hover_layer = false
 				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-					unit, next_aim, selected_ability if is_selected_player else -1,
+					unit,
+					next_aim,
+					selected_ability if is_selected_player else -1,
+					paint_hover,
 				)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 			var next_move: Vector2i = layer_plan.get("next_move_origin", Vector2i(-999999, -999999))
@@ -2436,7 +2457,7 @@ func _proj_origin(unit: UnitState) -> Vector2i:
 	return CombatPlanningPreview.forecast_stand_at_phase_entry(_director, _board, unit.id, preview)
 
 
-## Action-range anchor: delegates to CombatPlanningInput stand SSOT.
+## Action-range anchor: phase-entry stand when bundle pending (EX-LOCKED-FIELD); settled stand when sealed.
 func _intent_stand_origin(unit: UnitState) -> Vector2i:
 	if unit == null:
 		return Vector2i(-999999, -999999)
@@ -2449,7 +2470,7 @@ func _intent_stand_origin(unit: UnitState) -> Vector2i:
 			and settled.stand_origin.x > -900000
 		):
 			return settled.stand_origin
-		return Vector2i(-999999, -999999)
+		return _proj_origin(unit)
 	return _proj_origin(unit)
 
 

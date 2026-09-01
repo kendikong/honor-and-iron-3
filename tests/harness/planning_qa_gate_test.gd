@@ -31,6 +31,9 @@ static func run_all(failures: Array[String]) -> void:
 		_test_locked_blue_stable_across_hovers,
 		_test_locked_blue_visible_without_bundle,
 		_test_bundle_mismatch_does_not_clear_locked_blue,
+		_test_locked_red_stable_across_hovers,
+		_test_locked_red_visible_without_bundle,
+		_test_bundle_mismatch_does_not_clear_locked_red,
 		_test_planning_display_mp_left_contract,
 		_test_committed_walk_preview_matches_sim_path,
 		_test_shield_bash_enemy_hover_commit_slots,
@@ -1760,6 +1763,83 @@ static func _test_bundle_mismatch_does_not_clear_locked_blue(failures: Array[Str
 		failures.append(
 			"PlanningQAGate bundle mismatch: locked blue must not clear (before %d after %d)"
 			% [blue_before.size(), blue_after.size()],
+		)
+
+
+static func 	_test_locked_red_stable_across_hovers(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate locked red stable: Shield Bash missing")
+		return
+	fix.director.selected_ability_index = bash_idx
+	var hover_a := ENEMY_POS
+	var hover_b := PlanningChecklistHarness.BASH_APPROACH
+	PlanningChecklistHarness.hover(fix, hover_a)
+	var red_a: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	PlanningChecklistHarness.hover(fix, hover_b)
+	var red_b: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	if red_a.is_empty() or red_b.is_empty():
+		failures.append(
+			"PlanningQAGate locked red stable: skill step must show red tiles on both hovers",
+		)
+		return
+	if red_a != red_b:
+		failures.append(
+			"PlanningQAGate locked red stable: hover A vs B must match (got %d vs %d tiles)"
+			% [red_a.size(), red_b.size()],
+		)
+
+
+static func _test_locked_red_visible_without_bundle(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate locked red without bundle: Shield Bash missing")
+		return
+	fix.director.selected_ability_index = bash_idx
+	var settled_cell := ENEMY_POS
+	var mismatch_cell := PlanningChecklistHarness.BASH_APPROACH
+	PlanningChecklistHarness.hover(fix, settled_cell)
+	if fix.input.get_settled_hover_preview() == null:
+		failures.append("PlanningQAGate locked red without bundle: expected settled hover bundle")
+		return
+	fix.input.set_qa_pointer_grid_cell(mismatch_cell)
+	overlay._recompute_hover_ranges_from_inputs()
+	var red: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	if red.is_empty():
+		failures.append(
+			"PlanningQAGate locked red without bundle: red must paint when bundle mismatches pointer",
+		)
+
+
+static func _test_bundle_mismatch_does_not_clear_locked_red(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, ENEMY_POS)
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	var bash_idx: int = _ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("PlanningQAGate bundle mismatch red: Shield Bash missing")
+		return
+	fix.director.selected_ability_index = bash_idx
+	var settled_cell := ENEMY_POS
+	var mismatch_cell := PlanningChecklistHarness.BASH_APPROACH
+	PlanningChecklistHarness.hover(fix, settled_cell)
+	var red_before: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	fix.input.set_qa_pointer_grid_cell(mismatch_cell)
+	overlay._recompute_hover_ranges_from_inputs()
+	var red_after: Array[Vector2i] = PlanningChecklistHarness.collect_red_tiles(fix)
+	if red_before.is_empty():
+		failures.append("PlanningQAGate bundle mismatch red: baseline locked red missing")
+		return
+	if red_after.is_empty() or red_after != red_before:
+		failures.append(
+			"PlanningQAGate bundle mismatch red: locked red must not clear (before %d after %d)"
+			% [red_before.size(), red_after.size()],
 		)
 
 

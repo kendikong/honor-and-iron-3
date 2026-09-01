@@ -39,8 +39,12 @@ This is **not** the Gauntlet Loop.
 - `locked_blue_stable_across_hovers` — hover A, hover B → **same blue set**; origin = phase entry.
 - `locked_blue_visible_without_bundle` — movement step, no matched receipt → blue still shows.
 - `bundle_mismatch_does_not_clear_locked_blue`.
+- `locked_red_stable_across_hovers` — skill step; hover A vs B → **same red set**.
+- `locked_red_visible_without_bundle` — skill step, bundle mismatch → red still shows.
+- `bundle_mismatch_does_not_clear_locked_red`.
 
----
+**Status (2026-08-31):** Layer 0 **DONE** — overlay split, stand fallback, hold sealed hover-shaped on throttle mismatch, `run_layer0_paint_gate.ps1` PASS (7 tests).
+
 
 ## Layer 1 — Blue tiles (legal walk)
 
