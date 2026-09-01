@@ -32,7 +32,7 @@ alwaysApply: true
 
 - Hover still builds **the same commit slots**; commit **ratifies the sealed bundle** — no re-path at click.
 - QA headless (`qa_static_overlay`) **always** runs full sim on hover — cheap path returns false there.
-- Overlay still reads **bundle only** — no live tile fallback when bundle missing.
+- Overlay: **locked** current-phase blue/red from `resolve_layer_origins` (stable under throttle — **EX-LOCKED-FIELD**). **Hover-shaped** layers (next-field, blast, path) from sealed bundle when matched; no overlay recompute when bundle missing for those layers.
 
 ## Before editing `combat_planning_input.gd` hover paths
 

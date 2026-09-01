@@ -901,6 +901,8 @@ func recompute_hover_ranges(
 
 
 ## MOVE_PREVIEW_RULES tile SSOT — one apply path (two-range model via PlanningPreviewTiles).
+## EX-LOCKED-FIELD: locked current-phase blue/red always from resolve_layer_origins (not bundle-gated).
+## Bundle when matched supplies hover-shaped layers only (next-field range, next move flood, blast).
 func _apply_planning_tile_layers(
 	unit: UnitState,
 	voluntary_walk: bool,
@@ -910,12 +912,36 @@ func _apply_planning_tile_layers(
 	if _board == null or _director == null or unit == null:
 		return
 	var is_selected_player: bool = _is_selected_player_unit(unit)
-	var cache_force: bool = voluntary_walk if unit.id == _director.selected_unit_id else false
-	if is_selected_player:
-		if _planning_input == null:
+	if PlanningPreviewTiles.tiles_blocked(
+		_director, unit, selected_ability, _planning_input, is_selected_player,
+	):
+		return
+	var paint_hover: Vector2i = _hover_coord
+	if is_selected_player and _planning_input != null:
+		paint_hover = _planning_input.pointer_grid_cell()
+	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+		_director, _board, unit, selected_ability, _planning_input, paint_hover,
+	)
+	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
+	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
+	match phase:
+		PlanningPreviewTiles.PhaseKind.WAIT:
 			return
+		PlanningPreviewTiles.PhaseKind.MOVEMENT:
+			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
+			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
+				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
+					_director, _board, unit, selected_ability, _planning_input, locked_move,
+				)
+		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+			var locked_aim: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
+			if locked_aim.x > -900000 and show_action_range:
+				_blast_tiles_on_hover_layer = false
+				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+					unit, locked_aim, selected_ability if is_selected_player else -1,
+				)
+	if is_selected_player and _planning_input != null:
 		var settled: PlanningHoverPreview = _planning_input.get_settled_hover_preview()
-		var paint_hover: Vector2i = _planning_input.pointer_grid_cell()
 		var paint_matches: bool = (
 			settled != null
 			and settled.matches_paint_context(
@@ -937,30 +963,26 @@ func _apply_planning_tile_layers(
 				selected_ability,
 			)
 		if paint_matches:
-			_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-			_hover_blast_tiles = settled.blast_tiles.duplicate()
-			_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
-			_hover_move_tiles = settled.move_tiles.duplicate()
+			match phase:
+				PlanningPreviewTiles.PhaseKind.MOVEMENT:
+					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					_hover_blast_tiles = settled.blast_tiles.duplicate()
+					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
+				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
+					_hover_move_tiles = settled.move_tiles.duplicate()
+					_hover_blast_tiles = settled.blast_tiles.duplicate()
+					_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 			return
-		return
-	if PlanningPreviewTiles.tiles_blocked(
-		_director, unit, selected_ability, _planning_input, is_selected_player,
-	):
-		return
-	var layer_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
-		_director, _board, unit, selected_ability, _planning_input, _hover_coord,
-	)
-	var phase: int = int(layer_plan.get("phase", PlanningPreviewTiles.PhaseKind.NON_MOVEMENT))
-	var show_action_range: bool = bool(layer_plan.get("show_action_range", false))
-	match phase:
-		PlanningPreviewTiles.PhaseKind.WAIT:
-			return
-		PlanningPreviewTiles.PhaseKind.MOVEMENT:
-			var locked_move: Vector2i = layer_plan.get("locked_move_origin", Vector2i(-999999, -999999))
-			if locked_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
-				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
-					_director, _board, unit, selected_ability, _planning_input, locked_move,
+		if bool(layer_plan.get("show_blast", false)):
+			var blast_origin: Vector2i = layer_plan.get("blast_origin", Vector2i(-999999, -999999))
+			if blast_origin.x > -900000:
+				_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
+				_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
+					unit, unit, blast_origin, selected_ability, voluntary_walk, is_selected_player,
 				)
+		return
+	match phase:
+		PlanningPreviewTiles.PhaseKind.MOVEMENT:
 			var next_aim: Vector2i = layer_plan.get("next_aim_origin", Vector2i(-999999, -999999))
 			if next_aim.x > -900000:
 				_blast_tiles_on_hover_layer = false
@@ -968,12 +990,6 @@ func _apply_planning_tile_layers(
 					unit, next_aim, selected_ability if is_selected_player else -1,
 				)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
-			var locked_aim: Vector2i = layer_plan.get("locked_aim_origin", Vector2i(-999999, -999999))
-			if locked_aim.x > -900000 and show_action_range:
-				_blast_tiles_on_hover_layer = false
-				_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
-					unit, locked_aim, selected_ability if is_selected_player else -1,
-				)
 			var next_move: Vector2i = layer_plan.get("next_move_origin", Vector2i(-999999, -999999))
 			if next_move.x > -900000 and _can_show_move_tiles(unit, selected_ability):
 				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
@@ -984,7 +1000,7 @@ func _apply_planning_tile_layers(
 		if blast_origin.x > -900000:
 			_blast_tiles_on_hover_layer = bool(layer_plan.get("blast_on_hover_layer", false))
 			_hover_blast_tiles = _compute_hover_blast_action_range_tiles(
-				unit, unit, blast_origin, selected_ability, cache_force, is_selected_player,
+				unit, unit, blast_origin, selected_ability, voluntary_walk, is_selected_player,
 			)
 func _on_board_changed(board: BoardState) -> void:
 	set_board(board)

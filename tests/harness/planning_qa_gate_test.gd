@@ -28,6 +28,9 @@ static func run_all(failures: Array[String]) -> void:
 		_test_stale_hover_updates_commit_waypoints,
 		_test_cursor_walk_run_and_composite,
 		_test_blue_move_tiles_on_walk_select,
+		_test_locked_blue_stable_across_hovers,
+		_test_locked_blue_visible_without_bundle,
+		_test_bundle_mismatch_does_not_clear_locked_blue,
 		_test_planning_display_mp_left_contract,
 		_test_committed_walk_preview_matches_sim_path,
 		_test_shield_bash_enemy_hover_commit_slots,
@@ -1686,6 +1689,77 @@ static func _test_blue_move_tiles_on_walk_select(failures: Array[String]) -> voi
 	if not blue.has(dest):
 		failures.append(
 			"PlanningQAGate blue tiles: walk dest (5,5) must be reachable, got %s" % str(blue),
+		)
+
+
+static func _test_locked_blue_stable_across_hovers(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	fix.director.selected_ability_index = -1
+	var hover_a := Vector2i(5, 5)
+	var hover_b := Vector2i(5, 4)
+	PlanningChecklistHarness.hover(fix, hover_a)
+	var blue_a: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	PlanningChecklistHarness.hover(fix, hover_b)
+	var blue_b: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if blue_a.is_empty() or blue_b.is_empty():
+		failures.append(
+			"PlanningQAGate locked blue stable: movement step must show blue tiles on both hovers",
+		)
+		return
+	if blue_a != blue_b:
+		failures.append(
+			"PlanningQAGate locked blue stable: hover A vs B must match (got %d vs %d tiles)"
+			% [blue_a.size(), blue_b.size()],
+		)
+	var phase_entry: Vector2i = fix.input.phase_entry_stand_cell(fix.director.selected_unit_id)
+	if phase_entry != KNIGHT_START:
+		failures.append(
+			"PlanningQAGate locked blue stable: phase-entry stand must be turn start (got %s)"
+			% str(phase_entry),
+		)
+
+
+static func _test_locked_blue_visible_without_bundle(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	fix.director.selected_ability_index = -1
+	var settled_cell := Vector2i(5, 5)
+	var mismatch_cell := Vector2i(5, 4)
+	PlanningChecklistHarness.hover(fix, settled_cell)
+	if fix.input.get_settled_hover_preview() == null:
+		failures.append("PlanningQAGate locked blue without bundle: expected settled hover bundle")
+		return
+	fix.input.set_qa_pointer_grid_cell(mismatch_cell)
+	overlay._recompute_hover_ranges_from_inputs()
+	var blue: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if blue.is_empty():
+		failures.append(
+			"PlanningQAGate locked blue without bundle: blue must paint when bundle mismatches pointer",
+		)
+
+
+static func _test_bundle_mismatch_does_not_clear_locked_blue(failures: Array[String]) -> void:
+	var fix: Dictionary = _planning_fixture(KNIGHT_START, Vector2i(-1, -1))
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	fix["overlay"] = overlay
+	fix.director.selected_ability_index = -1
+	var settled_cell := Vector2i(5, 5)
+	var mismatch_cell := Vector2i(5, 4)
+	PlanningChecklistHarness.hover(fix, settled_cell)
+	var blue_before: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	fix.input.set_qa_pointer_grid_cell(mismatch_cell)
+	overlay._recompute_hover_ranges_from_inputs()
+	var blue_after: Array[Vector2i] = PlanningChecklistHarness.collect_blue_tiles(fix)
+	if blue_before.is_empty():
+		failures.append("PlanningQAGate bundle mismatch: baseline locked blue missing")
+		return
+	if blue_after.is_empty() or blue_after != blue_before:
+		failures.append(
+			"PlanningQAGate bundle mismatch: locked blue must not clear (before %d after %d)"
+			% [blue_before.size(), blue_after.size()],
 		)
 
 

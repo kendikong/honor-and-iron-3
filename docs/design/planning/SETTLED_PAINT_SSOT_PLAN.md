@@ -8,7 +8,7 @@
 Same pattern as hover preview carried SSOT:
 
 1. **Settle** — `PlanningPreviewTiles.resolve_paint` computes move tiles, range, blast, and stand data beside the slots; `CombatPlanningInput._store_intent_snapshot` seals all four in `PlanningHoverPreview`.
-2. **Display** — `TacticalPlanningOverlay` reads the sealed hover bundle only when its unit, cell, revision, and ability match; an out-of-bounds cursor keeps the last sealed paint without recomputing it.
+2. **Display** — **Locked** current-phase blue/red always from `PlanningPreviewTiles.resolve_layer_origins` (phase-entry stand, plan-revision keyed) — **not** gated on bundle match (**EX-LOCKED-FIELD**). **Hover-shaped** layers (next-field range, next move flood, blast/yellow) from sealed bundle when `matches_paint_context`; out-of-bounds cursor may keep last sealed hover-shaped paint — **no overlay recompute** for bundle-owned layers.
 3. **Ratify** — commit copies the sealed hover slots; the same bundle remains the display truth for all planning tiles.
 
 ## Gates
@@ -17,9 +17,7 @@ Same pattern as hover preview carried SSOT:
 - `scripts/qa/run_footprint_ssot_gate.ps1` — blast tiles owned by `PlanningPreviewTiles` and carried by the hover bundle
 - `scripts/qa/run_planning_ssot_gates.ps1` — runs all structural SSOT gates
 
-Blue movement tiles follow the same rule: they are resolved during settle and carried
-as `PlanningHoverPreview.move_tiles`; the selected-unit sealed-display branch does
-not call live reachability again.
+Blue movement tiles: **locked** current-phase flood is painted from `resolve_layer_origins` in the overlay (not bundle-gated). Settle still carries `PlanningHoverPreview.move_tiles` for parity; overlay does not use bundle `move_tiles` for locked blue on the selected-player path.
 
 **MOVE_PREVIEW alignment (no separate “paint-only” doctrine):**
 
