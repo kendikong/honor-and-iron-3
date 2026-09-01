@@ -92,17 +92,6 @@ static func resolve_layer_origins(
 	match phase:
 		PhaseKind.MOVEMENT:
 			plan["locked_move_origin"] = locked_stand if locked_stand.x > -900000 else none
-			var post_move_timing: bool = (
-				director != null
-				and director.get_planning_move_timing(unit.id) == GameEnums.MoveTiming.POST_ACTION
-			)
-			var post_move_phase: bool = (
-				director != null
-				and director.planning_timeline_phase_kind(unit.id)
-				== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-			)
-			if (post_move_timing or post_move_phase) and plan["locked_move_origin"] != none:
-				plan["post_action_locked_stand"] = plan["locked_move_origin"]
 			if show_action_range:
 				var range_origin: Vector2i = _action_range_paint_stand(
 					unit,
@@ -115,9 +104,7 @@ static func resolve_layer_origins(
 					settled_preview_paths,
 					settled_slots,
 				)
-				if (post_move_timing or post_move_phase) and plan["locked_move_origin"] != none:
-					plan["next_aim_origin"] = plan["locked_move_origin"]
-				elif range_origin.x > -900000:
+				if range_origin.x > -900000:
 					plan["next_aim_origin"] = range_origin
 			plan["show_blast"] = (
 				show_action_range
@@ -136,17 +123,10 @@ static func resolve_layer_origins(
 			if aim_stand.x > -900000:
 				plan["locked_aim_origin"] = aim_stand
 			var post_timing: int = director.get_planning_move_timing(unit.id)
-			var post_move_phase: bool = (
-				director.planning_timeline_phase_kind(unit.id)
-				== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-			)
-			if post_move_phase and plan["locked_aim_origin"] != none:
-				plan["post_action_locked_stand"] = plan["locked_aim_origin"]
 			if (
 				post_timing == GameEnums.MoveTiming.POST_ACTION
 				and not director.unit_has_move_planned_at_timing(unit.id, post_timing)
 				and planning_input != null
-				and not post_move_phase
 			):
 				var settled_unit: UnitState = (
 					settled_board.get_unit_by_id(unit.id)
@@ -298,9 +278,6 @@ static func _is_settled_walk_only_hover(
 
 static func _paint_stand_origin(plan: Dictionary, none: Vector2i) -> Vector2i:
 	var phase: int = int(plan.get("phase", PhaseKind.NON_MOVEMENT))
-	var post_locked: Variant = plan.get("post_action_locked_stand", none)
-	if post_locked is Vector2i and (post_locked as Vector2i).x > -900000:
-		return post_locked as Vector2i
 	var candidate: Vector2i = none
 	if phase == PhaseKind.MOVEMENT:
 		candidate = plan.get("next_aim_origin", none)
@@ -336,20 +313,6 @@ static func _action_range_paint_stand(
 	var none: Vector2i = Vector2i(-999999, -999999)
 	if unit == null:
 		return none
-	if (
-		director != null
-		and range_stand_origin.x > -900000
-		and planning_input != null
-		and planning_input.is_post_commit_walk_hover(unit, hover_coord)
-	):
-		return range_stand_origin
-	if (
-		director != null
-		and director.planning_timeline_phase_kind(unit.id)
-		== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-		and range_stand_origin.x > -900000
-	):
-		return range_stand_origin
 	if planning_input != null and planning_input.is_walk_only_hover_move(unit, hover_coord):
 		if (
 			planning_input.action_range_visible_for_hover()
