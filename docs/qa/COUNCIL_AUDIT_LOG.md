@@ -154,14 +154,22 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 | R8 | `_planning_drag_origin` → `_leg_anchor_for_painted_drag` | 1–6 | **6/6 PASS** | Applied |
 | R10 | Skip armed stand settle when `_authoritative_route_for_unit` ≥ 2 | 1–6 | **6/6 PASS** | Applied — **89→88 FAIL**, painted_route **73→72** |
 
+### Councils (continued)
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R11 | `_assemble_voluntary_walk_preview_path` origin → `_leg_anchor_for_painted_drag` | 1–6 | **6/6 PASS** | Applied — no delta alone |
+| R12 | `_leg_anchor_for_painted_drag` prefers `_authoritative_route_for_unit[0]` | 1–6 | **6/6 PASS** | Applied — no delta alone |
+| R13 | `_voluntary_walk_corridor_paint_active` false when authoritative route ≥ 2 | 1–6 | **6/6 PASS** | Applied — **88→46 FAIL**, painted_route **72→39** |
+
 ### Verify (latest)
 
 | Gate | Result |
 |------|--------|
-| `run_layer4_paint_gate.ps1` | **FAIL (88)** — painted_route_equivalence 72 + other buckets |
+| `run_layer4_paint_gate.ps1` | **FAIL (46)** — painted_route_equivalence 39 + waypoint 3 + teleport/drag/tile_aim/range2 |
 | L0–L3 regression | **PASS** |
 
-**Layer 4 status:** **IN PROGRESS** — trample orbit @(5,4) stand-stomp fixed (R10); 72 painted_route + waypoint/teleport/drag/tile_aim/range2 buckets remain (each needs own council cycle).
+**Layer 4 status:** **IN PROGRESS** — painted_route 72→39; orbit extend/freeze tuning + remaining buckets need council cycles.
 
 ---
 

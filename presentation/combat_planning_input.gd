@@ -2773,13 +2773,9 @@ func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
 	)
 	if sealed.x > -900000:
 		return sealed
-	var ability: AbilityData = _selected_ability_data(p_unit)
-	if ability != null and _is_awaiting_movement_endpoint(p_unit, ability) and _director != null:
-		var board: BoardState = _director.live_planning_board()
-		if board != null:
-			var live: UnitState = board.get_unit_by_id(p_unit.id)
-			if live != null:
-				return live.position
+	var painted: Array = _authoritative_route_for_unit(p_unit.id)
+	if painted.size() >= 2 and painted[0] is Vector2i:
+		return painted[0] as Vector2i
 	return _phase_entry_stand(p_unit)
 
 
@@ -4917,6 +4913,8 @@ func _voluntary_walk_corridor_paint_active(p_unit: UnitState = null) -> bool:
 		return false
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
+	if _authoritative_route_for_unit(p_unit.id).size() >= 2:
+		return false
 	if dragging:
 		if not _basic_move_economy_gate(p_unit):
 			return false
@@ -5120,7 +5118,7 @@ func _assemble_voluntary_walk_preview_path(
 		if frozen is Array and (frozen as Array).size() >= 2:
 			return (frozen as Array).duplicate()
 		return []
-	var origin: Vector2i = _settle_phase_entry_stand(actor)
+	var origin: Vector2i = _leg_anchor_for_painted_drag(actor)
 	if origin.x <= -900000:
 		return []
 	if (
