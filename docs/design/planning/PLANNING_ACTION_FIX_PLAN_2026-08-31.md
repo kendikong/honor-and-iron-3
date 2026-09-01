@@ -9,7 +9,7 @@
 **Workflow on every code change:**
 
 1. Agent **proposes** fix (owner layer, files, bible section).
-2. **Subagent Council Loop** — **5 parallel rules critics** (6–7 if QA-fix or class scope); see [`docs/qa/SUBAGENT_COUNCIL_LOOP.md`](../../qa/SUBAGENT_COUNCIL_LOOP.md). **All PASS** → apply.
+2. **Subagent Council Loop** — **5 parallel rules critics** (6–7 if QA-fix or class scope); see [`docs/qa/SUBAGENT_COUNCIL_LOOP.md`](../../qa/SUBAGENT_COUNCIL_LOOP.md) (proposal must name **behavioral tests**; critics use **owner-approved exceptions registry**). **All PASS** → apply.
 3. Run matching gate slice → report PASS/FAIL.
 
 This is **not** the Gauntlet Loop.

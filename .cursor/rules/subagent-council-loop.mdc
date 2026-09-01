@@ -7,7 +7,7 @@ alwaysApply: true
 
 **NOT:** Gauntlet loop · gauntlet-critic · BAR · scores · “make gate green.”
 
-**Full doc:** `docs/qa/SUBAGENT_COUNCIL_LOOP.md`
+**Full doc:** `docs/qa/SUBAGENT_COUNCIL_LOOP.md` (charters, **owner-approved exceptions registry**, proposal minimum, verify routing)
 
 Do **not** apply gameplay/planning fixes until council passes.
 
@@ -21,6 +21,8 @@ PROPOSE (no code) → COUNCIL (parallel) → all PASS → APPLY → VERIFY (auto
 
 Any FAIL → revise proposal → new council. Do not apply partial fixes from critics.
 
+**Proposal must name behavioral tests** for bible rules touched. Structural grep alone = instant FAIL.
+
 ---
 
 ## Council size (efficient)
@@ -31,8 +33,6 @@ Any FAIL → revise proposal → new council. Do not apply partial fixes from cr
 | + QA FAIL / test edits | **+ Critic 6** |
 | + class factory / skills | **+ Critic 7** |
 
-**5 is the default** — covers bible paint, commit SSOT, stand/range, anti-heuristic, and perf without 3-critic gaps or 8-critic overlap.
-
 Launch all in **one message**. Verdict: **all PASS** (5/5, 6/6, or 7/7).
 
 Subagent: **generalPurpose** with charter from doc. **Not** `gauntlet-critic`.
@@ -41,21 +41,41 @@ Subagent: **generalPurpose** with charter from doc. **Not** `gauntlet-critic`.
 
 ## Critics (summary — detail in doc)
 
-1. **Bible paint & tiles** — `MOVE_PREVIEW_RULES.md`, locked blue/red, path vs flood, frozen/live  
-2. **Settle / bundle / commit** — preview=commit, ratify, no overlay fallback, no post-process redo  
-3. **Stand & range origins** — phase-entry, two-range model, `action-range-latest-stand`  
-4. **Global systems & anti-heuristic** — one owner/path, 6-row audit, no bandaids, skill-global if abilities  
-5. **Perf & scheduling** — `planning-hover-perf-mandatory`, throttle, no perf heuristics  
+1. **Bible paint & tiles** — locked vs bundle (EX-LOCKED-FIELD), path vs flood, EX-BIBLE-UI, behavioral tests in proposal  
+2. **Settle / bundle / commit** — Director + Simulator owners, ratify, no post-process redo, EX-FROZEN-REPLAY, EX-PERF-SCHED at flush  
+3. **Stand & range origins** — phase-entry, two-range model, EX-POSTMOVE-SLOT  
+4. **Global systems & anti-heuristic** — 6-row audit, exception IDs cited correctly, no silent bypass  
+5. **Perf & scheduling** — EX-PERF-SCHED guardian; cheap-walk slot parity; locked paint stable under throttle  
 6. *(optional)* **QA-fix discipline** — `qa-fix-no-heuristics`  
-7. *(optional)* **Class / skill scope** — `skill-global-rules`, class QA bar  
+7. *(optional)* **Class / skill scope** — `skill-global-rules`, EX-CLASS-QA-SCOPE  
 
-Each returns **PASS/FAIL + rule cites only**. No scores. No regression plans.
+Each returns **PASS/FAIL + rule or exception ID cites only**. No scores.
+
+---
+
+## Owner-approved exceptions (few — critics enforce)
+
+See full registry in `docs/qa/SUBAGENT_COUNCIL_LOOP.md`. Key IDs:
+
+| ID | One line |
+|----|----------|
+| **EX-PERF-SCHED** | Throttle + cheap walk inside canonical owner; flush before ratify |
+| **EX-LOCKED-FIELD** | Locked blue/red outside hover bundle — plan revision keyed |
+| **EX-BIBLE-UI** | Teleport hop + push/pull separate UI |
+| **EX-FROZEN-REPLAY** | Sealed path display-only — no re-sim |
+| **EX-POSTMOVE-SLOT** | Documented POSTMOVE/modular cursor only |
+| **EX-SIM-REJECT** | Fail loud — no commit fixup of preview |
+| **EX-INTENT-DIVERGE** | Only with owner ⚠ yes |
+| **EX-CLASS-QA-SCOPE** | Drag/undo not on every skill row |
+
+Do **not** FAIL correct exception use. **Do** FAIL misuse, deletion, or relabeling as “heuristic cleanup.”
 
 ---
 
 ## After council
 
 - **All PASS:** apply → QA per `qa-after-gameplay-changes.mdc` → changelog `Council: N/N PASS`  
+- **Swap-only:** `run_swap_planning_acceptance.ps1` during iteration  
 - **Any FAIL:** new proposal → new council  
 
 Structural gates after apply are **not** council substitutes.
