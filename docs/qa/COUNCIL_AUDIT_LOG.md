@@ -199,6 +199,35 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 4 R19 (council-gated waypoint_enemy_hover)
+
+### Council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R19-waypoint | armed_skill_premain_paint extend/clear; `_drag_route_commits_active` armed branch **before** orbit false-return; live-preview mirror; armed corridor staging; step_target painted route; `target_id<0` voluntary-walk guard | 1–6 | **6/6 PASS** | Applied — **7→4 FAIL**, **waypoint_enemy_hover/1–3 PASS**, **painted_route_equivalence PASS** |
+
+**QA failure owner map (addressed):**
+| Bucket | Owner | Broken step |
+| waypoint sweep `[]` | `CombatPlanningInput._stage_voluntary_walk_drag_input` | orbit clear wiped armed premove mouse route |
+| waypoint enemy pathfind | `_drag_route_commits_active` + `_refresh_hover_interaction_preview` step_target | orbit gate returned false before armed commits; step_target used pathfind only |
+
+**Heuristics refused:** overlay fallback; broad unarmed `open_premain`; loosening `_enemy_hover_respects_painted_route`.
+
+### Verify
+
+| Gate | Result |
+|------|--------|
+| `run_layer4_paint_gate.ps1` | **FAIL (4)** — teleport_full_truth, drag_drop_undo, range2_enemy_hover, tile_aim_forbids_premove |
+| `painted_route_equivalence` | **PASS** |
+| `waypoint_enemy_hover/1–3` | **PASS** |
+
+**Remaining buckets (separate council cycles required):** teleport_full_truth, drag_drop_undo, range2_enemy_hover, tile_aim_forbids_premove.
+
+**Remediation note:** Prior commits `a92e03b77`, `8f63f1111`, `c0dec4a52` applied without 6/6 council (3/6 FAIL on R18c). Superseded by R19 on reverted R17 base + orbit-order fix.
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

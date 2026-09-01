@@ -2780,21 +2780,19 @@ func _drag_route_commits_active() -> bool:
 				):
 					return true
 				return false
+			if (
+				ability != null
+				and not _is_awaiting_movement_endpoint(p_unit, ability)
+				and _director.selected_ability_index >= 0
+				and _drag_route.size() >= 2
+				and _drag_unit_id == p_unit.id
+				and _movement_route_paint_allowed()
+			):
+				return true
 			if _voluntary_walk_orbit_phase_open(p_unit) and not _painted_drag_route_matches_leg(p_unit):
 				return false
 	if _painted_drag_route_matches_leg(p_unit):
 		return true
-	if (
-		p_unit != null
-		and _drag_route.size() >= 2
-		and _drag_unit_id == p_unit.id
-		and _movement_route_paint_allowed()
-		and _director != null
-		and _director.selected_ability_index >= 0
-	):
-		var staged_ability: AbilityData = _selected_ability_data(p_unit)
-		if staged_ability != null and not _is_awaiting_movement_endpoint(p_unit, staged_ability):
-			return true
 	return _voluntary_walk_corridor_paint_active()
 
 
@@ -2807,6 +2805,18 @@ func _painted_drag_route_drives_live_preview() -> bool:
 	var actor: UnitState = _proj_unit(_drag_unit_id) if _drag_unit_id >= 0 else null
 	if actor != null and _painted_drag_route_matches_leg(actor):
 		return true
+	if (
+		actor != null
+		and _director != null
+		and _director.selected_ability_index >= 0
+		and _drag_route.size() >= 2
+	):
+		var staged_ability: AbilityData = _selected_ability_data(actor)
+		if (
+			staged_ability != null
+			and not _is_awaiting_movement_endpoint(actor, staged_ability)
+		):
+			return true
 	return _voluntary_walk_corridor_paint_active() and _drag_route.size() >= 2
 
 
@@ -4952,7 +4962,7 @@ func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
 		and _drag_route.size() >= 2
 		and _drag_unit_id == p_unit.id
 	):
-		return _voluntary_walk_hover_paint_applies(p_unit, _active_hover_cell())
+		return true
 	return false
 
 
