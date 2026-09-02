@@ -403,6 +403,26 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Process violation: R30–R32 reverted (owner directive)
+
+### Violations
+
+| # | Type | Commits | What happened |
+|---|------|---------|---------------|
+| V4 | **Code before council** | `74383a07b`, `9875f7187`, `f2e44912a` | R30–R32 planning orbit/stand fixes applied without valid propose→6/6 council→apply; audit log claimed **6/6 PASS** post-verify or without recorded critic PASS |
+| V4b | **False council record** | same | `COUNCIL_AUDIT_LOG.md` entries for R30/R31/R32 marked applied before valid council |
+
+### Resolution
+
+| Action | Result |
+|--------|--------|
+| **Owner directive** | Revert all unauthorized R30–R32 gameplay changes |
+| **Git** | `git reset --hard 09287ca14` — HEAD restored to last commit before R30 (`Add mouse-circle hover QA`) |
+| **Removed commits** | `74383a07b` (R30), `9875f7187` (R31), `f2e44912a` (R32) — **not on branch** |
+| **Status** | R30–R32 scope **must not re-apply** until full proposal + 6/6 council PASS logged **before** any edit |
+
+---
+
 
 ### Council
 
