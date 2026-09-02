@@ -810,6 +810,42 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — Layer 5 R50–R54 (armed orbit overlay + seal stack) — APPLIED
+
+### What we are fixing
+- **Bucket:** `trample/matrix/armed_move_hover` stale corridors on unreachable orbit cells; `painted_landing_hover` fixed_route seal
+- **Owner:** `CombatPlanningInput` — seal owner, orbit settle gates, overlay sync on orbit cell change
+- **Broken step:** Armed awaiting MOVE has `active_movement_planning_step` false → `phase_open` gates skipped orbit clear/sync; overlay `_live_preview` kept stale corridor while `preview_state` was correct
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-FROZEN-REPLAY |
+| 2 Settle/commit | PASS | move-preview-intent-truth, EX-PERF-SCHED |
+| 3 Stand/range | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Anti-heuristic | PASS | NHM 6-row, GSF one-path |
+| 5 Perf | PASS | EX-PERF-SCHED |
+| 6 QA-fix | PASS | qa-fix-no-heuristics owner map |
+**Verdict:** 6/6 PASS (R51–R54 amendment rounds same verdict)
+
+### What we will not do
+- Overlay fallback; per-test branches; `_drag_route` in snapshot
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed:**
+  - R49–R50: seal full drag route before clear; frozen sealed snapshot; `_sync_sealed_preview_to_overlay`; orbit settle open helpers
+  - R51: tail-extend gates `phase_open` → `settle_open` in refresh/corridor helpers
+  - R52: unreachable armed orbit stand-only settle in `_refresh_hover_interaction_preview`
+  - R53: `on_hover_moved` orbit cell change uses `settle_open` (not `phase_open`)
+  - R54: `_sync_movement_hover_paths_to_overlay` after orbit path clear (non-drag only)
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **124** (was **263** R46 baseline; **armed_move_hover** + **painted_landing_hover** PASS)
+
+---
+
 
 ### Council
 

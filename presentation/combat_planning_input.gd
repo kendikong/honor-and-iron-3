@@ -1508,7 +1508,8 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var orbit_unit: UnitState = _proj_unit(_director.selected_unit_id)
 			if (
 				orbit_unit != null
-				and _voluntary_walk_orbit_phase_open(orbit_unit)
+				and _voluntary_walk_orbit_settle_open(orbit_unit)
+				and not dragging
 			):
 				if (
 					_settled_hover_preview != null
@@ -1520,6 +1521,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 					CombatPlanningPreview.clear_unit_preview_path(
 						preview_state, orbit_unit.id,
 					)
+					_sync_movement_hover_paths_to_overlay(orbit_unit.id)
 		## Drop leftover live path/ghost as soon as the cursor leaves the last
 		## simulated tile. Hover follow-route already moved; the parent overlay
 		## otherwise keeps the old 30 fps frame until the next settle.
@@ -1606,7 +1608,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
-	if _voluntary_walk_orbit_phase_open(p_unit) or active_movement_planning_step(p_unit):
+	if _voluntary_walk_orbit_settle_open(p_unit) or active_movement_planning_step(p_unit):
 		return true
 	if _director == null or p_unit == null:
 		return false
@@ -2111,7 +2113,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		and _hover_settle_fresh_at(p_unit.id, cell)
 	):
 		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots):
-			if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
+			if _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
 				)
@@ -2326,6 +2328,22 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 	if _director.selected_ability_index >= 0 and action_range_visible_for_hover():
 		var stand_only_ability: AbilityData = _selected_ability_data(p_unit)
 		if (
+			stand_only_ability != null
+			and _is_awaiting_movement_endpoint(p_unit, stand_only_ability)
+			and _voluntary_walk_orbit_settle_open(p_unit)
+			and not dragging
+			and not _can_move_to(p_unit, cell)
+			and _attack_target_id_at_cell(p_unit, cell) < 0
+		):
+			_apply_orbit_corridor_preview_path(p_unit, cell, [])
+			var orbit_stand_res: Dictionary = _preview_at_interaction_cell(
+				p_unit.id, cell, cell, -1, [], _snapshot_drag_legal_move_tiles(),
+			)
+			if not _is_invalid_dict(orbit_stand_res):
+				_apply_settled_preview_result(orbit_stand_res)
+			_refresh_click_target_highlight()
+			return
+		if (
 			not active_movement_planning_step(p_unit)
 			and (
 				stand_only_ability == null
@@ -2485,6 +2503,17 @@ func _restore_hover_preview() -> void:
 func _clear_hover_drag_route() -> void:
 	if _drag_route.is_empty() and _drag_unit_id < 0:
 		return
+	if _drag_unit_id >= 0 and _director != null:
+		var clear_actor: UnitState = _proj_unit(_drag_unit_id)
+		if (
+			clear_actor != null
+			and awaiting_targeting_active()
+			and _awaiting_painted_drag_matches_leg(clear_actor)
+			and not preview_state.is_painted_leg_sealed(clear_actor.id)
+		):
+			_restore_locked_painted_preview_paths(clear_actor.id)
+	if _drag_route.is_empty() and _drag_unit_id < 0:
+		return
 	_drag_route.clear()
 	_drag_unit_id = -1
 	if _planning != null:
@@ -2530,6 +2559,17 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 			)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
+		_sync_sealed_preview_to_overlay(unit_id)
+
+
+func _sync_sealed_preview_to_overlay(unit_id: int) -> void:
+	if unit_id < 0 or _planning == null:
+		return
+	if not preview_state.is_painted_leg_sealed(unit_id):
+		return
+	_planning.apply_preview_state(
+		preview_state, unit_id, _hover_attack_target_id(),
+	)
 
 
 ## Preview_paths is the painted landing SSOT — seal when it matches the active leg, then drop drag buffer.
@@ -2563,6 +2603,24 @@ func _awaiting_painted_drag_matches_leg(p_unit: UnitState) -> bool:
 	return (_drag_route[0] as Vector2i) == leg_anchor
 
 
+func _armed_awaiting_move_orbit_settle_open(p_unit: UnitState) -> bool:
+	if p_unit == null or not awaiting_targeting_active():
+		return false
+	var ability: AbilityData = _awaiting_ability_for(p_unit)
+	if ability == null:
+		ability = _selected_ability_data(p_unit)
+	return ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
+
+
+func _voluntary_walk_orbit_settle_open(p_unit: UnitState) -> bool:
+	if p_unit == null:
+		return false
+	return (
+		_voluntary_walk_orbit_phase_open(p_unit)
+		or _armed_awaiting_move_orbit_settle_open(p_unit)
+	)
+
+
 func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
 		return
@@ -2581,6 +2639,7 @@ func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	preview_state.seal_painted_leg(p_unit.id)
 	_sync_preview_board_to_sealed_landing(p_unit.id)
 	_discard_drag_buffer_when_preview_route_locked(p_unit)
+	_sync_sealed_preview_to_overlay(p_unit.id)
 
 
 func _discard_drag_buffer_when_preview_route_locked(p_unit: UnitState) -> void:
@@ -3530,22 +3589,17 @@ func _preview_paths_snapshot_for_settle(
 	var snapshot: Dictionary = {}
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
-	var awaiting_move_sealed: bool = (
+	var orbit_hover_ssot: bool = slot_wps.is_empty()
+	if not orbit_hover_ssot and _armed_awaiting_move_orbit_settle_open(settle_actor):
+		orbit_hover_ssot = true
+	if (
 		settle_actor != null
 		and preview_state.is_painted_leg_sealed(unit_id)
-	)
-	if awaiting_move_sealed:
-		var awaiting_ability: AbilityData = _awaiting_ability_for(settle_actor)
-		if awaiting_ability == null:
-			awaiting_ability = _selected_ability_data(settle_actor)
-		awaiting_move_sealed = (
-			awaiting_ability != null
-			and _is_awaiting_movement_endpoint(settle_actor, awaiting_ability)
-		)
-	if awaiting_move_sealed:
-		var painted_frozen: Variant = preview_state.preview_paths.get(unit_id, null)
-		if painted_frozen is Array and (painted_frozen as Array).size() >= 2:
-			snapshot[unit_id] = (painted_frozen as Array).duplicate()
+		and awaiting_targeting_active()
+	):
+		var targeting_frozen: Variant = preview_state.preview_paths.get(unit_id, null)
+		if targeting_frozen is Array and (targeting_frozen as Array).size() >= 2:
+			snapshot[unit_id] = (targeting_frozen as Array).duplicate()
 			return snapshot
 	if (
 		settle_actor != null
@@ -3560,11 +3614,24 @@ func _preview_paths_snapshot_for_settle(
 			return snapshot
 	if (
 		settle_actor != null
-		and _voluntary_walk_orbit_phase_open(settle_actor)
+		and _voluntary_walk_orbit_settle_open(settle_actor)
+		and not dragging
+		and _hover_cell.x > -900000
+		and _attack_target_id_at_cell(settle_actor, _hover_cell) < 0
+		and not preview_state.is_painted_leg_sealed(unit_id)
+		and not _can_move_to(settle_actor, _hover_cell)
+	):
+		var unreachable_stand: Vector2i = _settle_phase_entry_stand(settle_actor)
+		if unreachable_stand.x > -900000:
+			snapshot[unit_id] = [unreachable_stand]
+			return snapshot
+	if (
+		settle_actor != null
+		and _voluntary_walk_orbit_settle_open(settle_actor)
 		and not dragging
 		and _hover_cell.x > -900000
 		and waypoints.is_empty()
-		and slot_wps.is_empty()
+		and orbit_hover_ssot
 	):
 		var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, settle_actor, _hover_cell, waypoints,
@@ -3589,6 +3656,17 @@ func _preview_paths_snapshot_for_settle(
 		if settle_actor != null
 		else Vector2i(-999999, -999999)
 	)
+	if (
+		settle_actor != null
+		and _voluntary_walk_orbit_settle_open(settle_actor)
+		and not dragging
+		and _hover_cell.x > -900000
+		and not _can_move_to(settle_actor, _hover_cell)
+		and _attack_target_id_at_cell(settle_actor, _hover_cell) < 0
+		and move_origin_settle.x > -900000
+	):
+		snapshot[unit_id] = [move_origin_settle]
+		return snapshot
 	var built: Array[Vector2i] = []
 	if move_origin_settle.x > -900000:
 		built.append(move_origin_settle)
@@ -5293,7 +5371,7 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if _hover_settle_fresh_at(p_unit.id, cell):
 		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots):
-			if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
+			if _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
 				)
@@ -5308,7 +5386,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	var settle_waypoints: Array[Vector2i] = _hover_paint_waypoints_for_cell(p_unit, cell)
 	if active_movement_planning_step(p_unit):
 		if (
-			not _voluntary_walk_orbit_phase_open(p_unit)
+			not _voluntary_walk_orbit_settle_open(p_unit)
 			and not _voluntary_walk_corridor_paint_active(p_unit)
 			and _authoritative_route_for_unit(p_unit.id).size() >= 2
 		):
@@ -5331,7 +5409,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		_refresh_click_target_highlight()
 		return
 	var orbit_hover_paint: bool = (
-		_voluntary_walk_orbit_phase_open(p_unit) and not dragging
+		_voluntary_walk_orbit_settle_open(p_unit) and not dragging
 	)
 	if _voluntary_walk_corridor_paint_active(p_unit) or orbit_hover_paint:
 		var probe_path: Array[Vector2i] = []
@@ -5351,7 +5429,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			var existing_paint: Array = _authoritative_route_for_unit(p_unit.id)
 			if (
 				existing_paint.size() >= 2
-				and not _voluntary_walk_orbit_phase_open(p_unit)
+				and not _voluntary_walk_orbit_settle_open(p_unit)
 			):
 				var paint_tail: Vector2i = existing_paint[existing_paint.size() - 1] as Vector2i
 				if (
@@ -5406,7 +5484,7 @@ func _apply_assembler_prefix_preview_on_painted_route(p_unit: UnitState, cell: V
 	if prefix_path.is_empty():
 		return
 	if prefix_path.size() < 2 and not (
-		_voluntary_walk_orbit_phase_open(p_unit) and not dragging
+		_voluntary_walk_orbit_settle_open(p_unit) and not dragging
 	):
 		return
 	if prefix_path.size() >= 2:
@@ -5573,7 +5651,7 @@ func _assemble_voluntary_walk_preview_path(
 	if actor == null or _director == null:
 		return []
 	# Awaiting MOVE orbit: always recompute corridor from phase-entry stand (no tail-extend poison).
-	if _voluntary_walk_orbit_phase_open(actor) and not dragging:
+	if _voluntary_walk_orbit_settle_open(actor) and not dragging:
 		var orbit_origin: Vector2i = _phase_entry_stand(actor)
 		if orbit_origin.x <= -900000:
 			return []
@@ -5831,7 +5909,7 @@ func _corridor_board_for_voluntary_walk(actor: UnitState) -> BoardState:
 	return _proj()
 
 func _hover_orbit_extends_painted_receipt(p_unit: UnitState, cell: Vector2i) -> bool:
-	if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
+	if _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 		return false
 	var auth_route: Array = _authoritative_route_for_unit(p_unit.id)
 	if auth_route.size() < 2:
@@ -5854,7 +5932,7 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var orbit_extend_from_receipt: bool = _hover_orbit_extends_painted_receipt(actor, cell)
 	var origin: Vector2i = (
 		_phase_entry_stand(actor)
-		if _voluntary_walk_orbit_phase_open(actor) and not dragging
+		if _voluntary_walk_orbit_settle_open(actor) and not dragging
 		else (
 			_leg_anchor_for_painted_drag(actor)
 			if auth_route.size() >= 2
