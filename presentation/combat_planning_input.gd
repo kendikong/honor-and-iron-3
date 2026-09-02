@@ -1631,6 +1631,14 @@ func on_hover_moved(cell: Vector2i) -> void:
 					and not _selection_corridor_route_staging_active(p_unit)
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
+				elif (
+					_director.planning_timeline_phase_kind(p_unit.id)
+					== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+					and not dragging
+					and not _selection_corridor_route_staging_active(p_unit)
+					and _postmove_painted_drag_ready_to_seal(p_unit)
+				):
+					_seal_painted_preview_landing_if_needed(p_unit)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
@@ -2676,6 +2684,28 @@ func _awaiting_painted_drag_matches_leg(p_unit: UnitState) -> bool:
 	return (_drag_route[0] as Vector2i) == leg_anchor
 
 
+func _painted_leg_seal_eligible(p_unit: UnitState) -> bool:
+	if _director == null or p_unit == null:
+		return false
+	if awaiting_targeting_active():
+		return true
+	if _director.selected_ability_index >= 0:
+		return false
+	if not active_movement_planning_step(p_unit):
+		return false
+	return (
+		_director.planning_timeline_phase_kind(p_unit.id)
+		== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+	)
+
+
+func _postmove_painted_drag_ready_to_seal(p_unit: UnitState) -> bool:
+	if p_unit == null or _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+		return false
+	var route_tail: Vector2i = _drag_route[_drag_route.size() - 1] as Vector2i
+	return route_tail == _drag_last_free
+
+
 func _armed_awaiting_move_orbit_settle_open(p_unit: UnitState) -> bool:
 	if p_unit == null or not awaiting_targeting_active():
 		return false
@@ -2699,9 +2729,14 @@ func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 		return
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return
-	if not awaiting_targeting_active():
+	if not _painted_leg_seal_eligible(p_unit):
 		return
 	if not _awaiting_painted_drag_matches_leg(p_unit):
+		return
+	if (
+		not awaiting_targeting_active()
+		and not _postmove_painted_drag_ready_to_seal(p_unit)
+	):
 		return
 	if _drag_route.size() >= 2:
 		CombatPlanningPreview.set_unit_preview_path(

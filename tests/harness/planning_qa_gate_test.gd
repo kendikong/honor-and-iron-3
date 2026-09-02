@@ -1505,7 +1505,7 @@ static func _test_trample_full_phase_hover_matrix(failures: Array[String]) -> vo
 	})
 	# Landing hover on full post route after paint.
 	TramplingAdvanceE2ETest._paint_drag_route(input, unit, post_route, post_dest)
-	input.dragging = false
+	input._end_drag_interaction(false)
 	HoverMatrix.probe_hover_sweep(failures, fix, {
 		"label_prefix": LABEL,
 		"phase": "postmove_painted_hover",
