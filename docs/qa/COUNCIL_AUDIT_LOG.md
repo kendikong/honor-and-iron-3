@@ -1293,32 +1293,33 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
-## 2026-09-02 — R107–R109 painted_route_equivalence @(5,3)
+## 2026-09-02 — R110 painted_route_equivalence @(5,3) orbit parity (IN PROGRESS)
 
 ### What we are fixing
-- **Bucket:** `painted_route_equivalence` @(5,3)
-- **Owner:** `CombatPlanningInput` receipt budget, awaiting slots, post-sim resync, corridor pathfind actor
-- **Broken step:** Projected POST MP budget trim; ability waypoints poisoned with walk corridor; armed-only post-sim resync stomp; pathfind actor not board-aligned
-- **Planned delta:** live-board `planning_move_budget`; direct_relocation ability wps `[]` after voluntary walk; resync guard; board-aligned pathfind actor
+- **Bucket:** `painted_route_equivalence` @(5,3) — armed `[(5,4),(5,3)]` vs unarmed detour `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` settle snapshot + painted orbit corridor assembler + `_is_hover_move_cell`
+- **Broken step:** Armed sealed orbit used receipt short-circuit / direct_relocation hop / trample `_can_move_to` instead of unarmed premove basic-walk corridor assembler
+- **Planned delta:** `_painted_orbit_corridor_preview_path` (premove parity assembler); snapshot hop guard; preview_board receipt board; `_is_hover_move_cell` painted-orbit basic-walk tiles
 
 ### Council proof (pre-apply)
 | Critic | Verdict | Rule / exception IDs |
 |--------|---------|----------------------|
 | 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
-| 2 | PASS | MOVE_PREVIEW |
-| 3 | PASS | action-range-latest-stand |
-| 4 | PASS | non-heuristic-mandate |
+| 2 | PASS | settle snapshot owner, EX-FROZEN-REPLAY |
+| 3 | PASS | action-range-latest-stand, leg_anchor |
+| 4 | PASS | non-heuristic-mandate, single assembler owner |
 | 5 | PASS | EX-PERF-SCHED |
 | 6 | PASS | qa-fix-no-heuristics |
-**Verdict:** 6/6 PASS (R107 + R108 + R109 amendments)
+**Verdict:** 6/6 PASS
 
 ### Applied
-- **Commit:** `69566fa4f`
-- **What fixed (partial):** R107–R109 as above; @(5,3) unchanged
+- **Commit:** `b8cd040f7`
+- **What fixed (partial):** unified `_painted_orbit_corridor_preview_path`; snapshot/armed orbit SSOT; hop guard on sealed orbit; preview_board receipt board; painted-orbit `_is_hover_move_cell` uses basic-walk tiles
+- **@(5,3):** still FAIL — next owner step: `prior_leg_forbidden` / PRE-move occupancy parity between unarmed baseline and armed awaiting sealed paint
 
 ### Verify
 - **Suite:** `run_planning_headless_contracts.ps1`
-- **Result:** FAIL **47**; postmove **0 FAIL**
+- **Result:** FAIL **48**; `painted_route_equivalence` **~27** @(5,3) unchanged; `postmove_painted_hover` **0 FAIL**
 
 ---
 
