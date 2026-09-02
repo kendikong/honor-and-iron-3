@@ -3776,11 +3776,9 @@ func _preview_paths_snapshot_for_settle(
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	if (
 		settle_actor != null
-		and (
-			preview_state.is_painted_leg_sealed(unit_id)
-			or _armed_awaiting_move_orbit_settle_open(settle_actor)
-		)
+		and preview_state.is_painted_leg_sealed(unit_id)
 		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
+		and not _armed_awaiting_move_orbit_settle_open(settle_actor)
 	):
 		var receipt_orbit: Array[Vector2i] = _receipt_orbit_corridor_preview_path(
 			settle_actor, _hover_cell,
@@ -3793,9 +3791,17 @@ func _preview_paths_snapshot_for_settle(
 	if (
 		not orbit_hover_ssot
 		and _armed_awaiting_move_orbit_settle_open(settle_actor)
-		and not _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
+		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
 	):
 		orbit_hover_ssot = true
+	var armed_orbit_extend_settle: bool = (
+		settle_actor != null
+		and _armed_awaiting_move_orbit_settle_open(settle_actor)
+		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
+	)
+	var settle_waypoints: Array[Vector2i] = waypoints
+	if armed_orbit_extend_settle:
+		settle_waypoints = []
 	if (
 		settle_actor != null
 		and preview_state.is_painted_leg_sealed(unit_id)
@@ -3836,7 +3842,7 @@ func _preview_paths_snapshot_for_settle(
 		and _voluntary_walk_orbit_settle_open(settle_actor)
 		and not dragging
 		and _hover_cell.x > -900000
-		and waypoints.is_empty()
+		and settle_waypoints.is_empty()
 		and orbit_hover_ssot
 		and (
 			not preview_state.is_painted_leg_sealed(unit_id)
@@ -3846,14 +3852,12 @@ func _preview_paths_snapshot_for_settle(
 		var orbit_path: Array[Vector2i] = (
 			_receipt_orbit_corridor_preview_path(settle_actor, _hover_cell)
 			if (
-				(
-					preview_state.is_painted_leg_sealed(unit_id)
-					or _armed_awaiting_move_orbit_settle_open(settle_actor)
-				)
+				preview_state.is_painted_leg_sealed(unit_id)
 				and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
+				and not _armed_awaiting_move_orbit_settle_open(settle_actor)
 			)
 			else _assemble_voluntary_walk_preview_path(
-				unit_id, settle_actor, _hover_cell, waypoints,
+				unit_id, settle_actor, _hover_cell, settle_waypoints,
 			)
 		)
 		if not orbit_path.is_empty():
@@ -3876,13 +3880,7 @@ func _preview_paths_snapshot_for_settle(
 		_leg_anchor_for_painted_drag(settle_actor)
 		if (
 			settle_actor != null
-			and (
-				(
-					preview_state.is_painted_leg_sealed(unit_id)
-					or _armed_awaiting_move_orbit_settle_open(settle_actor)
-				)
-				and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
-			)
+			and _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
 		)
 		else (
 			_settle_phase_entry_stand(settle_actor)
@@ -5622,6 +5620,12 @@ func _armed_painted_receipt_orbit_extend_active(p_unit: UnitState, cell: Vector2
 	return _painted_receipt_orbit_extend_active(p_unit, cell)
 
 
+func _armed_orbit_extend_hover_paint(p_unit: UnitState, cell: Vector2i) -> bool:
+	if p_unit == null or not _armed_awaiting_move_orbit_settle_open(p_unit):
+		return false
+	return _hover_orbit_extends_painted_receipt(p_unit, cell)
+
+
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var armed_painted_orbit_extend: bool = _armed_painted_receipt_orbit_extend_active(
 		p_unit, cell,
@@ -5637,7 +5641,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			or armed_painted_orbit_extend
 		):
 			if armed_painted_orbit_extend:
-				_refresh_live_interaction_preview(p_unit.id, cell, -1, [])
+				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 			elif _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
@@ -5689,11 +5693,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		var probe_path: Array[Vector2i] = []
 		if sealed_orbit_extend:
-			probe_path = _receipt_orbit_corridor_preview_path(p_unit, cell)
-			if probe_path.is_empty():
-				probe_path = _assemble_voluntary_walk_preview_path(
-					p_unit.id, p_unit, cell, settle_waypoints,
-				)
+			probe_path = _assemble_voluntary_walk_preview_path(
+				p_unit.id, p_unit, cell, settle_waypoints,
+			)
 		elif (
 			_drag_route_commits_active()
 			and _drag_unit_id == p_unit.id
@@ -5746,10 +5748,6 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		settle_waypoints = _route_waypoints()
 	if active_movement_planning_step(p_unit):
-		if armed_painted_orbit_extend:
-			_refresh_live_interaction_preview(p_unit.id, cell, -1, [])
-			_refresh_click_target_highlight()
-			return
 		var walk_res: Dictionary = _preview_at_interaction_cell(
 			p_unit.id, cell, cell, -1, settle_waypoints, _snapshot_drag_legal_move_tiles(),
 		)
@@ -5940,8 +5938,18 @@ func _assemble_voluntary_walk_preview_path(
 	var skip_orbit_settle_assembler: bool = (
 		preview_state.is_painted_leg_sealed(unit_id)
 		and _hover_orbit_extends_painted_receipt(actor, hover_cell)
+		and not _armed_awaiting_move_orbit_settle_open(actor)
 	)
-	if _voluntary_walk_orbit_settle_open(actor) and not dragging and not skip_orbit_settle_assembler:
+	if (
+		_voluntary_walk_orbit_settle_open(actor)
+		and not dragging
+		and not skip_orbit_settle_assembler
+		and not (
+			_armed_awaiting_move_orbit_settle_open(actor)
+			and _hover_orbit_extends_painted_receipt(actor, hover_cell)
+			and _painted_preview_route_active(unit_id)
+		)
+	):
 		var orbit_origin: Vector2i = _phase_entry_stand(actor)
 		if orbit_origin.x <= -900000:
 			return []
@@ -6101,6 +6109,8 @@ func _hover_paint_waypoints_for_cell(actor: UnitState, cell: Vector2i) -> Array[
 		var corridor_wps: Array[Vector2i] = _corridor_waypoints_to_cell(actor, cell)
 		if not corridor_wps.is_empty() and corridor_wps.back() == cell:
 			return corridor_wps
+	if _armed_orbit_extend_hover_paint(actor, cell):
+		return []
 	if _hover_orbit_extends_painted_receipt(actor, cell):
 		var receipt_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(actor, cell)
 		if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
