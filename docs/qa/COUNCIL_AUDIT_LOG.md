@@ -1316,7 +1316,7 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - Overlay fallback; per-test branches; global seal disable; R93b armed live-preview reroute
 
 ### Applied
-- **Commit:** (this turn)
+- **Commit:** `d2a506e69e245fd1d674499624ad539a891c4474`
 - **What fixed (partial — @(5,3) still open):** Armed enters settle-fresh orbit apply; armed painted-orbit early refresh; `_is_hover_move_cell` basic-walk corridor legality; receipt board armed branch; assembler receipt_corridor_extend parity; preview_board null before armed orbit assemble
 
 ### Verify
