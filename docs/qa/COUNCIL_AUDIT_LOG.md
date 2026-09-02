@@ -1057,6 +1057,38 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R64–R67 painted_route_equivalence armed/premove orbit parity
+
+### What we are fixing
+- **Bucket:** `PlanningQAGate painted_route_equivalence` — armed trample `[(5,4),(5,3)]` vs premove `[(5,4),(4,4),(4,3),(5,3)]` @(5,3)
+- **Owner:** `CombatPlanningInput._refresh_voluntary_walk_hover_preview` + `_hover_orbit_extends_painted_receipt` + `_receipt_orbit_extend_corridor_budget`
+- **Broken step:** (1) armed excluded from fresh-settle assembler path; (2) receipt gate returned false when painted route exists but `painted_leg_sealed` flag false; (3) armed corridor budget capped via skill-hop
+- **Planned delta:** R64 assembler routing; R65 sealed armed `is_hover_move_tile` geometry; R66 narrow unsealed orbit guard; R67 `_move_budget` for receipt-orbit budget
+
+### Council proof (pre-apply — R64/R65/R66)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 | PASS | EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 | PASS | action-range-latest-stand |
+| 4 | PASS | NHM 6-row |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS (R67 budget delta: same owner chain, amendment 6/6 PASS)
+
+### What we will not do
+- Overlay fallback; broad freeze unlock; per-test branches
+
+### Applied
+- **Commits:** (this turn)
+- **What fixed:** routing + receipt gate + budget upstream in `CombatPlanningInput` (equivalence still red — see Verify)
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **48** — `painted_route_equivalence` **~27** unchanged @(5,3); `postmove_painted_hover` **0 FAIL**
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

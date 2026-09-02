@@ -4878,6 +4878,13 @@ func _hover_extends_walk_geometry(p_unit: UnitState, cell: Vector2i) -> bool:
 		return false
 	if _attack_target_id_at_cell(p_unit, cell) >= 0:
 		return false
+	if (
+		preview_state.is_painted_leg_sealed(p_unit.id)
+		and active_movement_planning_step(p_unit)
+		and _planning != null
+		and _planning.is_hover_move_tile(cell)
+	):
+		return true
 	if _voluntary_walk_corridor_paint_active(p_unit) and active_movement_planning_step(p_unit):
 		if _director != null and _director.board != null and _director.board.is_in_bounds(cell):
 			var geom_origin: Vector2i = _proj_origin(p_unit)
@@ -5600,7 +5607,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		and _armed_awaiting_move_orbit_settle_open(p_unit)
 		and _hover_orbit_extends_painted_receipt(p_unit, cell)
 	)
-	if _hover_settle_fresh_at(p_unit.id, cell) and not armed_sealed_orbit_extend:
+	if _hover_settle_fresh_at(p_unit.id, cell):
 		if _postmove_orbit_drag_unreachable(p_unit, cell):
 			_apply_postmove_orbit_drag_stand_preview(p_unit, cell)
 			_sync_movement_hover_paths_to_overlay(p_unit.id)
@@ -5608,10 +5615,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			return
 		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots) or armed_sealed_orbit_extend:
 			if armed_sealed_orbit_extend:
-				_apply_orbit_corridor_preview_path(
-					p_unit, cell, _receipt_orbit_corridor_preview_path(p_unit, cell),
-				)
-				_sync_orbit_preview_paths_to_receipt(p_unit.id, _preview_path_for_unit(p_unit.id))
+				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 			elif _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
@@ -5721,11 +5725,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		settle_waypoints = _route_waypoints()
 	if active_movement_planning_step(p_unit):
 		if armed_sealed_orbit_extend:
-			var receipt_orbit_path: Array[Vector2i] = _receipt_orbit_corridor_preview_path(p_unit, cell)
-			if receipt_orbit_path.size() >= 2:
-				CombatPlanningPreview.set_unit_preview_path(
-					preview_state, p_unit.id, receipt_orbit_path,
-				)
+			_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
+			_refresh_click_target_highlight()
+			return
 		var walk_res: Dictionary = _preview_at_interaction_cell(
 			p_unit.id, cell, cell, -1, settle_waypoints, _snapshot_drag_legal_move_tiles(),
 		)
@@ -6189,20 +6191,19 @@ func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i
 		GridSystem.set_occupant(board, origin, actor.id)
 	return board
 
-## Armed awaiting MOVE receipt-orbit: skill motion cap via _drag_max_steps, not orbit-phase live MP on projected landing.
+## Receipt-orbit extend: premove parity uses full walk budget from leg anchor, not armed skill-hop cap.
 func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
-	if _armed_awaiting_move_orbit_settle_open(actor):
-		return _drag_max_steps(actor)
 	return _move_budget(actor)
 
 func _hover_orbit_extends_painted_receipt(p_unit: UnitState, cell: Vector2i) -> bool:
+	var auth_route: Array = _authoritative_route_for_unit(p_unit.id)
 	if (
 		_voluntary_walk_orbit_settle_open(p_unit)
 		and not dragging
 		and not preview_state.is_painted_leg_sealed(p_unit.id)
+		and auth_route.size() < 2
 	):
 		return false
-	var auth_route: Array = _authoritative_route_for_unit(p_unit.id)
 	if auth_route.size() < 2:
 		return false
 	for step: Variant in auth_route:
