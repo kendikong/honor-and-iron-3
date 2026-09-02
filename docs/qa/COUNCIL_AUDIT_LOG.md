@@ -457,6 +457,49 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R34 (waypoint + sealed orbit + stale corridor) — REVERTED
+
+### What we are fixing
+- **Bucket:** painted_route_equivalence (45), sidestep/waypoint empty drag, armed_move_hover stale corridor
+- **Owner:** `CombatPlanningInput` drag staging, assembler, `_authoritative_route_for_unit`
+- **Broken step:** R31 orbit early return too broad; orbit assembler before sealed check; R32 live_path stale fallback
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW_RULES, EX-FROZEN-REPLAY, EX-LOCKED-FIELD |
+| 2 | PASS | move-preview-intent-truth, EX-FROZEN-REPLAY |
+| 3 | PASS | action-range-latest-stand, EX-LOCKED-FIELD |
+| 4 | PASS | non-heuristic-mandate 6-row |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Applied / outcome
+- **Result:** **REVERTED** — QA regressed **263 → 428** FAIL (recursion + wrong sealed/orbit interaction). Code restored to R33 (`181afbcca`).
+
+---
+
+## 2026-09-01 — Layer 5 R35 (open_premove_hover_paint extend parity — R19)
+
+### What we are fixing
+- **Bucket:** sidestep_waypoint_hover, sidestep_valid_waypoint, waypoint premove empty `_drag_route`
+- **Owner:** `CombatPlanningInput._stage_voluntary_walk_drag_input`
+- **Broken step:** Route extend gate missing `open_premove_hover_paint` (R19 armed-only parity); clear elif could wipe drag during open premove
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1–6 | PASS | MOVE_PREVIEW_RULES, move-preview-intent-truth, qa-fix-no-heuristics, EX-PERF-SCHED |
+**Verdict:** 6/6 PASS
+
+### Applied
+- **Commit:** (pending)
+- **What fixed:** Two-line parity — `or open_premove_hover_paint` on extend allow; `and not open_premove_hover_paint` on drag clear elif
+- **Verify:** Planning headless **FAIL 263** (no delta vs R33 — sidestep still blocked by R31 orbit early-return; separate round needed)
+
+---
+
 
 ### Council
 

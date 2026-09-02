@@ -1434,6 +1434,7 @@ func _stage_voluntary_walk_drag_input(
 			and not awaiting_move_leg
 		)
 		or armed_skill_premain_paint
+		or open_premove_hover_paint
 	):
 		var target_enemy_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if target_enemy_id >= 0:
@@ -1464,6 +1465,7 @@ func _stage_voluntary_walk_drag_input(
 		and not painted_move_route_locked(p_unit)
 		and not _voluntary_walk_corridor_paint_active()
 		and not armed_skill_premain_paint
+		and not open_premove_hover_paint
 	):
 		_clear_hover_drag_route()
 
