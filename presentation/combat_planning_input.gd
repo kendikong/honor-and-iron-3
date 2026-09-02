@@ -974,8 +974,7 @@ func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> 
 	var sealed_unit_id: int = -1
 	if _drag_unit_id >= 0 and not snap_back:
 		var drag_actor: UnitState = _proj_unit(_drag_unit_id)
-		if drag_actor != null and _painted_drag_route_matches_leg(drag_actor):
-			_apply_voluntary_walk_drag_preview(_drag_unit_id, true)
+		if drag_actor != null and _awaiting_painted_drag_matches_leg(drag_actor):
 			_seal_painted_preview_landing_if_needed(drag_actor)
 			if preview_state.is_painted_leg_sealed(_drag_unit_id):
 				sealed_unit_id = _drag_unit_id
@@ -1415,7 +1414,9 @@ func _stage_voluntary_walk_drag_input(
 	if orbit_phase_corridor and not dragging:
 		var basic_premove_orbit: bool = _director.selected_ability_index < 0
 		if awaiting_move_leg:
-			if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
+			if _awaiting_painted_drag_matches_leg(p_unit):
+				_restore_locked_painted_preview_paths(p_unit.id)
+			elif _drag_route_commits_active() and _drag_unit_id == p_unit.id:
 				_clear_hover_drag_route()
 			return
 		if basic_premove_orbit:
@@ -1488,6 +1489,14 @@ func on_hover_moved(cell: Vector2i) -> void:
 			_planning.set_hover_coord(cell, true)
 	if not _is_planning():
 		return
+	if not dragging and _director.selected_unit_id >= 0:
+		var seal_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if (
+			seal_unit != null
+			and awaiting_targeting_active()
+			and _awaiting_painted_drag_matches_leg(seal_unit)
+		):
+			_restore_locked_painted_preview_paths(seal_unit.id)
 	var previous_hover: Vector2i = _last_planning_hover_cell
 	var planning_cell_changed: bool = cell != previous_hover
 	if planning_cell_changed:
@@ -1551,6 +1560,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var awaiting_move_leg: bool = (
 				ability != null and _is_awaiting_movement_endpoint(p_unit, ability)
 			)
+			if (
+				awaiting_move_leg
+				and not dragging
+				and _awaiting_painted_drag_matches_leg(p_unit)
+			):
+				_seal_painted_preview_landing_if_needed(p_unit)
 			if (
 				awaiting_move_leg
 				and not dragging
@@ -1717,6 +1732,14 @@ func _flush_hover_heavy_sync() -> void:
 	## settle before ratify — always call _run_hover_sim_refresh here.
 	_hover_sim_schedule_generation += 1
 	_drag_preview_schedule_generation += 1
+	if not dragging and _director != null and _director.selected_unit_id >= 0:
+		var flush_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if (
+			flush_unit != null
+			and awaiting_targeting_active()
+			and _awaiting_painted_drag_matches_leg(flush_unit)
+		):
+			_restore_locked_painted_preview_paths(flush_unit.id)
 	if dragging:
 		_refresh_drag_preview_now()
 	var pointer_cell: Vector2i = _pointer_grid_cell()
@@ -2501,19 +2524,15 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 				CombatPlanningPreview.set_unit_preview_path(
 					preview_state, unit_id, sealed_route,
 				)
-		elif _painted_drag_route_matches_leg(actor) and _drag_route.size() >= 2:
-			if preview_state.is_painted_leg_sealed(unit_id):
-				var drag_sealed_route: Array = _authoritative_route_for_unit(unit_id)
-				if drag_sealed_route != _drag_route:
-					_clear_frozen_painted_leg(unit_id)
-			var drag_route: Array = _authoritative_route_for_unit(unit_id)
-			if drag_route.size() >= 2:
-				CombatPlanningPreview.set_unit_preview_path(
-					preview_state, unit_id, drag_route,
-				)
+		elif _awaiting_painted_drag_matches_leg(actor):
+			CombatPlanningPreview.set_unit_preview_path(
+				preview_state, unit_id, _drag_route.duplicate(),
+			)
 		_seal_painted_preview_landing_if_needed(actor)
 		_discard_drag_buffer_when_preview_route_locked(actor)
-## Preview_paths is the painted landing SSOT ÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¬ÃƒÆ’Ã‚Â´ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÆ’Ã‚Â§ÃƒÂ¢Ã¢â‚¬ÂÃ…â€œÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â¢ seal when it matches the active leg, then drop drag buffer.
+
+
+## Preview_paths is the painted landing SSOT — seal when it matches the active leg, then drop drag buffer.
 func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
 	if unit_id < 0 or _director == null:
 		return
@@ -2533,18 +2552,32 @@ func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
 			GridSystem.set_occupant(board, step_cell, unit_id)
 	preview_state.preview_board = board
 
+func _awaiting_painted_drag_matches_leg(p_unit: UnitState) -> bool:
+	if p_unit == null or _drag_route.size() < 2 or _drag_unit_id != p_unit.id:
+		return false
+	var leg_anchor: Vector2i = _leg_anchor_for_painted_drag(p_unit)
+	if leg_anchor.x <= -900000:
+		leg_anchor = _phase_entry_stand(p_unit)
+	if leg_anchor.x <= -900000:
+		return false
+	return (_drag_route[0] as Vector2i) == leg_anchor
+
+
 func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
 		return
-	if _voluntary_walk_orbit_phase_open(p_unit) and not _painted_drag_route_matches_leg(p_unit):
-		return
 	if preview_state.is_painted_leg_sealed(p_unit.id):
 		return
-	if not active_movement_planning_step(p_unit):
+	if not awaiting_targeting_active():
 		return
-	if not _painted_drag_route_matches_leg(p_unit):
+	if not _awaiting_painted_drag_matches_leg(p_unit):
 		return
-	_apply_voluntary_walk_drag_preview(p_unit.id, true)
+	if _drag_route.size() >= 2:
+		CombatPlanningPreview.set_unit_preview_path(
+			preview_state, p_unit.id, _drag_route.duplicate(),
+		)
+	else:
+		_apply_voluntary_walk_drag_preview(p_unit.id, true)
 	preview_state.seal_painted_leg(p_unit.id)
 	_sync_preview_board_to_sealed_landing(p_unit.id)
 	_discard_drag_buffer_when_preview_route_locked(p_unit)
@@ -3497,6 +3530,23 @@ func _preview_paths_snapshot_for_settle(
 	var snapshot: Dictionary = {}
 	var settle_actor: UnitState = _proj_unit(unit_id)
 	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
+	var awaiting_move_sealed: bool = (
+		settle_actor != null
+		and preview_state.is_painted_leg_sealed(unit_id)
+	)
+	if awaiting_move_sealed:
+		var awaiting_ability: AbilityData = _awaiting_ability_for(settle_actor)
+		if awaiting_ability == null:
+			awaiting_ability = _selected_ability_data(settle_actor)
+		awaiting_move_sealed = (
+			awaiting_ability != null
+			and _is_awaiting_movement_endpoint(settle_actor, awaiting_ability)
+		)
+	if awaiting_move_sealed:
+		var painted_frozen: Variant = preview_state.preview_paths.get(unit_id, null)
+		if painted_frozen is Array and (painted_frozen as Array).size() >= 2:
+			snapshot[unit_id] = (painted_frozen as Array).duplicate()
+			return snapshot
 	if (
 		settle_actor != null
 		and preview_state.is_painted_leg_sealed(unit_id)

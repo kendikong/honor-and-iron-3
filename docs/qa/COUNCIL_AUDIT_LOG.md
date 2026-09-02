@@ -820,6 +820,37 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R49 painted-leg seal owner (trample matrix)
+
+### What we are fixing
+- **Bucket:** trample/matrix/painted_landing_hover — orbit rewrites painted drag; harness sets `dragging=false` without `_end_drag_interaction`
+- **Owner:** `CombatPlanningInput` seal + `_restore_locked_painted_preview_paths`
+- **Broken step:** seal never wrote full `_drag_route` before seal; stage cleared drag buffer before seal; restore read empty authoritative route instead of drag buffer
+- **Planned delta:** seal writes full drag route; `_end_drag_interaction` delegates to seal owner; early seal/restore on hover+flush; stage seal-before-clear; awaiting-move sealed snapshot freeze
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | EX-LOCKED-FIELD, MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-BIBLE-UI |
+| 2 | PASS | MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 | PASS | MOVE_PREVIEW_RULES, EX-FROZEN-REPLAY, EX-LOCKED-FIELD |
+| 4 | PASS | non-heuristic #1–6 (amended: single seal owner, removed duplicate apply in end_drag) |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- `_drag_route` read in settle snapshot (R48 regression)
+- Overlay fallback / per-test branches
+
+### Applied (after council PASS only)
+- **Commit:** (pending)
+- **What fixed:** seal owner writes full painted drag route; restore uses drag buffer; stage no longer clears painted drag before seal; flush/hover early restore path
+- **QA:** Planning headless contracts **FAIL** — 246 fails (baseline R46 263); painted_landing still `[]` — drag buffer empty before restore (R50)
+- **Amendments post-council:** early seal ordering, `_awaiting_painted_drag_matches_leg`, frozen awaiting-move snapshot — amendment council pending R50
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
