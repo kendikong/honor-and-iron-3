@@ -1048,7 +1048,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback; per-test branches; second stand path; restore live MP overwrite on armed receipt extend
 
 ### Applied
-- **Commit:** (pending)
+- **Commit:** `477800ec03a8d69ba287c93a6deeb57781c67b05`
 - **What fixed:** receipt-orbit corridor budget uses armed `_drag_max_steps` / skill motion cap, not orbit-phase live MP via `_move_budget`
 
 ### Verify
