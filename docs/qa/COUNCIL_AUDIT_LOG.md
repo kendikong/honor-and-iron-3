@@ -1293,6 +1293,38 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R112 painted_route_equivalence armed orbit settle-fresh parity (IN PROGRESS)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) — armed `[(5,4),(5,3)]` vs unarmed `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` — `_refresh_voluntary_walk_hover_preview`, `_is_hover_move_cell`, `_apply_orbit_corridor_preview_path`, assembler receipt corridor
+- **Broken step:** Armed orbit excluded from settle-fresh `_apply_orbit_corridor_preview_path`; trample `_can_move_to` short-hop at @(5,3); sealed landing `preview_board` diverged from unarmed sim board
+- **Planned delta:** Route armed through settle-fresh orbit apply; basic-walk hover legality for painted orbit; receipt board parity; clear sealed landing board before armed orbit assemble
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS | settle-fresh owner, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand, leg_anchor |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate, single assembler owner |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; global seal disable; R93b armed live-preview reroute
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed (partial — @(5,3) still open):** Armed enters settle-fresh orbit apply; armed painted-orbit early refresh; `_is_hover_move_cell` basic-walk corridor legality; receipt board armed branch; assembler receipt_corridor_extend parity; preview_board null before armed orbit assemble
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47**; @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
+
+---
+
 ## 2026-09-02 — R111 painted_route_equivalence armed orbit corridor parity (IN PROGRESS)
 
 ### What we are fixing
