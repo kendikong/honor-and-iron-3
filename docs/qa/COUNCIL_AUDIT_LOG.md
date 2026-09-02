@@ -567,6 +567,69 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R40 (open_premove orbit bypass + settle guard) — REVERTED
+
+### What we were fixing
+- **Bucket A:** sidestep_valid_waypoint, sidestep_waypoint_hover, tile_aoe_waypoint_hover — `painted premove route []`
+- **Bucket B:** waypoint_enemy_hover — hover preview path short vs full mouse route
+- **Owner:** `_stage_voluntary_walk_drag_input` (A) + `_preview_paths_snapshot_for_settle` (B)
+- **Broken step:** R31 orbit early-return blocks unarmed extend; orbit settle assembler overrides staged waypoints on enemy hover
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-LOCKED-FIELD |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, no-heavy-postprocess-safety |
+| 3 Stand & range origins | PASS | action-range-latest-stand |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate 6-row |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Applied / outcome
+| Variant | QA | Notes |
+|---------|-----|-------|
+| R40 A+B (typo `open_premain` first) | **2 FAIL** (parse crash) | Invalid — compile error |
+| R40 A+B (fixed typo) | **263 → 653 FAIL** | Mass regression — **REVERTED** |
+| R40b A only (cell-change narrow) | **480 FAIL** | Sidestep still `[]` — **REVERTED** |
+| **Code baseline** | R35 `7a944d74c` | Production restored |
+
+---
+
+## 2026-09-01 — Layer 5 R41 (R38 corrected orbit guard only) — REVERTED
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1–6 | PASS | MOVE_PREVIEW_RULES, move-preview-intent-truth, qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Applied / outcome
+| Variant | QA | Notes |
+|---------|-----|-------|
+| R41 orbit guard only | **263 → 430 FAIL** | Sidestep still `[]`; matches prior R38a — **REVERTED** |
+
+**Investigation:** Orbit guard fall-through on `planning_cell_changed` is insufficient — same-cell hover clears drag because `_drag_route_commits_active()` stays false (orbit false-return ~2874).
+
+---
+
+## 2026-09-01 — Layer 5 R42 (R41 + leg-matched unarmed commits_active) — REVERTED
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1–6 | PASS | move-preview-intent-truth, non-heuristic-mandate, qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Applied / outcome
+| Variant | QA | Notes |
+|---------|-----|-------|
+| R42 A+B | **263 → 430 FAIL** | SSOT BREAK spam; sidestep still `[]` — **REVERTED** |
+
+**Next council target:** Runtime trace during `_commit_archer_waypoint_premove` — confirm whether `_extend_drag_route` runs, whether `open_premove_hover_paint` is true, and whether `_selection_corridor_route_staging_active` (R38 C) is required for harness sweep. Settle snapshot guard (R40 B) deferred until drag staging populates `_drag_route`.
+
+---
+
 
 ### Council
 
