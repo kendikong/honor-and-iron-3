@@ -1718,6 +1718,8 @@ func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
 	)
 	if _painted_receipt_orbit_extend_active(p_unit, hover_cell):
+		if _armed_awaiting_move_orbit_settle_open(p_unit):
+			return true
 		return false
 	if _voluntary_walk_orbit_settle_open(p_unit) or active_movement_planning_step(p_unit):
 		return true
@@ -3787,6 +3789,7 @@ func _preview_paths_snapshot_for_settle(
 	if (
 		settle_actor != null
 		and _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
+		and not _armed_awaiting_move_orbit_settle_open(settle_actor)
 	):
 		var receipt_orbit: Array[Vector2i] = _painted_orbit_corridor_preview_path(
 			settle_actor, _hover_cell,
@@ -3858,12 +3861,29 @@ func _preview_paths_snapshot_for_settle(
 			or _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
 		)
 	):
-		var orbit_path: Array[Vector2i] = (
-			_painted_orbit_corridor_preview_path(settle_actor, _hover_cell)
-			if _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
-			else _assemble_voluntary_walk_preview_path(
-				unit_id, settle_actor, _hover_cell, settle_waypoints,
-			)
+		var orbit_waypoints: Array[Vector2i] = settle_waypoints
+		var armed_painted_orbit: bool = (
+			_armed_awaiting_move_orbit_settle_open(settle_actor)
+			and _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
+		)
+		if armed_painted_orbit:
+			orbit_waypoints = []
+			var orbit_origin: Vector2i = _phase_entry_stand(settle_actor)
+			if orbit_origin.x > -900000:
+				var orbit_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(
+					settle_actor, _hover_cell, true,
+				)
+				if (
+					not orbit_corridor.is_empty()
+					and orbit_corridor.back() == _hover_cell
+				):
+					var armed_orbit_path: Array[Vector2i] = [orbit_origin]
+					for orbit_wp: Vector2i in orbit_corridor:
+						armed_orbit_path.append(orbit_wp)
+					snapshot[unit_id] = armed_orbit_path.duplicate()
+					return snapshot
+		var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
+			unit_id, settle_actor, _hover_cell, orbit_waypoints,
 		)
 		if not orbit_path.is_empty():
 			snapshot[unit_id] = orbit_path.duplicate()
@@ -5708,9 +5728,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		var probe_path: Array[Vector2i] = []
 		if sealed_orbit_extend:
-			probe_path = _painted_orbit_corridor_preview_path(p_unit, cell)
+			probe_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 			if probe_path.is_empty():
-				probe_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
+				probe_path = _painted_orbit_corridor_preview_path(p_unit, cell)
 		elif (
 			_drag_route_commits_active()
 			and _drag_unit_id == p_unit.id
@@ -5882,7 +5902,27 @@ func _apply_orbit_corridor_preview_path(
 		return
 	var orbit_path: Array[Vector2i] = path_override
 	if orbit_path.is_empty():
-		if _painted_receipt_orbit_extend_active(p_unit, cell):
+		if (
+			_armed_awaiting_move_orbit_settle_open(p_unit)
+			and _painted_receipt_orbit_extend_active(p_unit, cell)
+		):
+			var armed_origin: Vector2i = _phase_entry_stand(p_unit)
+			if armed_origin.x > -900000:
+				var armed_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(
+					p_unit, cell, true,
+				)
+				if (
+					not armed_corridor.is_empty()
+					and armed_corridor.back() == cell
+				):
+					orbit_path = [armed_origin]
+					for armed_wp: Vector2i in armed_corridor:
+						orbit_path.append(armed_wp)
+		if (
+			orbit_path.is_empty()
+			and _painted_receipt_orbit_extend_active(p_unit, cell)
+			and not _armed_awaiting_move_orbit_settle_open(p_unit)
+		):
 			orbit_path = _painted_orbit_corridor_preview_path(p_unit, cell)
 		if orbit_path.is_empty():
 			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
@@ -5953,9 +5993,14 @@ func _assemble_voluntary_walk_preview_path(
 ) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
+	var armed_painted_orbit_parity: bool = (
+		_armed_awaiting_move_orbit_settle_open(actor)
+		and _painted_preview_route_active(unit_id)
+		and _hover_orbit_extends_painted_receipt(actor, hover_cell)
+	)
 	var leg_sealed: bool = (
 		false
-		if painted_premove_orbit_parity
+		if painted_premove_orbit_parity or armed_painted_orbit_parity
 		else _assembler_treats_painted_leg_sealed(unit_id, actor, hover_cell)
 	)
 	# Awaiting MOVE orbit: recompute corridor from phase-entry stand (no tail-extend poison).
@@ -5964,6 +6009,8 @@ func _assemble_voluntary_walk_preview_path(
 		and leg_sealed
 		and not _armed_awaiting_move_orbit_settle_open(actor)
 	)
+	if armed_painted_orbit_parity:
+		skip_orbit_settle_assembler = true
 	if (
 		_voluntary_walk_orbit_settle_open(actor)
 		and not dragging
@@ -5989,20 +6036,30 @@ func _assemble_voluntary_walk_preview_path(
 			orbit_move_legal = true
 		if not orbit_move_legal:
 			return [orbit_origin]
+		var receipt_corridor_extend: bool = (
+			_hover_orbit_extends_painted_receipt(actor, hover_cell)
+			and not painted_premove_orbit_parity
+			and not armed_painted_orbit_parity
+		)
 		var orbit_board: BoardState = (
 			_corridor_board_for_receipt_orbit_extend(actor, orbit_origin)
-			if _hover_orbit_extends_painted_receipt(actor, hover_cell)
+			if receipt_corridor_extend
 			else _corridor_board_for_voluntary_walk(actor)
 		)
+		var pathfind_actor: UnitState = actor
+		if orbit_board != null:
+			var board_actor: UnitState = orbit_board.get_unit_by_id(actor.id)
+			if board_actor != null:
+				pathfind_actor = board_actor
 		var orbit_corridor: Array[Vector2i] = CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 			orbit_board,
-			actor,
+			pathfind_actor,
 			orbit_origin,
 			hover_cell,
 			(
 				_receipt_orbit_extend_corridor_budget(actor)
-				if _hover_orbit_extends_painted_receipt(actor, hover_cell)
-				else _move_budget(actor)
+				if receipt_corridor_extend
+				else _move_budget(pathfind_actor)
 			),
 			_director,
 		)
@@ -6012,7 +6069,7 @@ func _assemble_voluntary_walk_preview_path(
 		for orbit_wp: Vector2i in orbit_corridor:
 			orbit_path.append(orbit_wp)
 		if orbit_path.size() == 1 and GridSystem.manhattan(orbit_origin, hover_cell) == 1:
-			if not _hover_orbit_extends_painted_receipt(actor, hover_cell):
+			if not receipt_corridor_extend:
 				orbit_path.append(hover_cell)
 		return orbit_path
 	if painted_move_route_locked(actor, hover_cell):
@@ -6218,7 +6275,7 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		if not drag_wps.is_empty() and drag_wps.back() == cell:
 			return drag_wps
 	var painted_path: Array = _authoritative_route_for_unit(unit_id)
-	if painted_path.size() >= 2:
+	if painted_path.size() >= 2 and not _painted_receipt_orbit_extend_active(actor, cell):
 		var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
 			painted_path, move_origin, cell,
 		)
@@ -6230,23 +6287,13 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		if not skill_wps.is_empty() and skill_wps.back() == cell:
 			return skill_wps
 	if painted_path.size() >= 2 and _painted_receipt_orbit_extend_active(actor, cell):
-		var receipt_origin: Vector2i = _leg_anchor_for_painted_drag(actor)
-		if receipt_origin.x > -900000:
-			var receipt_board: BoardState = _corridor_board_for_receipt_orbit_extend(
-				actor, receipt_origin,
-			)
-			var receipt_corridor: Array[Vector2i] = (
-				CombatPlanningPreview.voluntary_walk_corridor_waypoints(
-					receipt_board,
-					actor,
-					receipt_origin,
-					cell,
-					_receipt_orbit_extend_corridor_budget(actor),
-					_director,
-				)
-			)
-			if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
-				return receipt_corridor
+		var receipt_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(
+			actor,
+			cell,
+			_armed_awaiting_move_orbit_settle_open(actor),
+		)
+		if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
+			return receipt_corridor
 		var orbit_assembled: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, actor, cell, [],
 		)
@@ -6344,12 +6391,32 @@ func _receipt_orbit_corridor_preview_path(p_unit: UnitState, cell: Vector2i) -> 
 func _painted_orbit_corridor_preview_path(p_unit: UnitState, cell: Vector2i) -> Array[Vector2i]:
 	if p_unit == null or not _hover_orbit_extends_painted_receipt(p_unit, cell):
 		return []
-	return _assemble_voluntary_walk_preview_path(
-		p_unit.id, p_unit, cell, [], true,
+	var origin: Vector2i = _phase_entry_stand(p_unit)
+	if origin.x <= -900000:
+		return []
+	if cell == origin:
+		return [origin]
+	var corridor: Array[Vector2i] = _corridor_waypoints_to_cell(
+		p_unit,
+		cell,
+		_armed_awaiting_move_orbit_settle_open(p_unit)
+		and _painted_receipt_orbit_extend_active(p_unit, cell),
 	)
+	if corridor.is_empty() or corridor.back() != cell:
+		return [origin]
+	var path: Array[Vector2i] = [origin]
+	for wp: Vector2i in corridor:
+		path.append(wp)
+	if path.size() == 1 and GridSystem.manhattan(origin, cell) == 1:
+		path.append(cell)
+	return path
 
 
-func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vector2i]:
+func _corridor_waypoints_to_cell(
+	actor: UnitState,
+	cell: Vector2i,
+	force_unsealed_orbit_budget: bool = false,
+) -> Array[Vector2i]:
 	if actor == null or _director == null:
 		return []
 	if not _voluntary_walk_corridor_paint_active(actor):
@@ -6378,7 +6445,11 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var sealed_mode: int = _sealed_leg_hover_mode(actor, cell)
 	var corridor_budget: int = _drag_max_steps(actor)
 	var corridor_ability: AbilityData = _route_pathfinding_ability(actor, cell)
-	if preview_state.is_painted_leg_sealed(actor.id):
+	var sealed_for_corridor_budget: bool = (
+		preview_state.is_painted_leg_sealed(actor.id)
+		and not force_unsealed_orbit_budget
+	)
+	if sealed_for_corridor_budget:
 		if corridor_orbit_extend:
 			corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
 		else:
@@ -8240,24 +8311,10 @@ func _build_commit_slots_at_cell(
 					awaiting_origin, cell, ability, actor, _proj(),
 				):
 					if _painted_receipt_orbit_extend_active(actor, cell):
-						var receipt_origin: Vector2i = _leg_anchor_for_painted_drag(actor)
+						var receipt_origin: Vector2i = _phase_entry_stand(actor)
 						if receipt_origin.x > -900000:
-							var receipt_board: BoardState = (
-								_corridor_board_for_receipt_orbit_extend(actor, receipt_origin)
-							)
-							var receipt_actor: UnitState = actor
-							var board_actor: UnitState = receipt_board.get_unit_by_id(actor.id)
-							if board_actor != null:
-								receipt_actor = board_actor
 							var receipt_corridor: Array[Vector2i] = (
-								CombatPlanningPreview.voluntary_walk_corridor_waypoints(
-									receipt_board,
-									receipt_actor,
-									receipt_origin,
-									cell,
-									_receipt_orbit_extend_corridor_budget(actor),
-									_director,
-								)
+								_corridor_waypoints_to_cell(actor, cell)
 							)
 							if (
 								not receipt_corridor.is_empty()
@@ -9314,6 +9371,8 @@ func _hover_walk_waypoints_for_skill(
 					_proj(), actor, approach, [], ability, false, preview_state)
 			return []
 	if _is_awaiting_movement_endpoint(actor, ability):
+		if _painted_receipt_orbit_extend_active(actor, cell):
+			return _hover_paint_waypoints_for_cell(actor, cell)
 		if (
 			_painted_drag_route_drives_live_preview()
 			and _drag_unit_id == actor.id

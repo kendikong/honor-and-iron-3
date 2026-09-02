@@ -1293,6 +1293,38 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R111 painted_route_equivalence armed orbit corridor parity (IN PROGRESS)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) — armed `[(5,4),(5,3)]` vs unarmed `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` — settle snapshot, `_corridor_waypoints_to_cell`, `_hover_walk_waypoints_for_skill`, `_apply_orbit_corridor_preview_path`
+- **Broken step:** Armed awaiting MOVE used direct-relocation / sealed-receipt short corridor while unarmed premove orbit uses voluntary-walk `corridor_fill` detour
+- **Planned delta:** Route armed painted-orbit through same corridor builder as unarmed; block skill `preview_waypoints_for_hover` on receipt orbit; force unsealed orbit budget for armed corridor
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS | MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-LOCKED-FIELD |
+| 4 Global systems / anti-heuristic | PASS | global-systems-first, non-heuristic-mandate |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; global seal disable; R93b armed live-preview reroute
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed (partial — @(5,3) still open):** Armed painted-orbit routes through `_corridor_waypoints_to_cell` + unsealed budget flag; `_hover_walk_waypoints_for_skill` skips direct-relocation on receipt orbit; snapshot/apply armed corridor builder; assembler armed_painted_orbit_parity skips top-block short hop; sim resync allowed for armed receipt orbit
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47**; `painted_route_equivalence` @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
+
+---
+
 ## 2026-09-02 — R110 painted_route_equivalence @(5,3) orbit parity (IN PROGRESS)
 
 ### What we are fixing
