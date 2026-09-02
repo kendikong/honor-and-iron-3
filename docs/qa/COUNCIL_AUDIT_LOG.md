@@ -1357,39 +1357,6 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
-## 2026-09-02 — R114-R120 painted orbit premove parity (IN PROGRESS)
-
-### What we are fixing
-- **Bucket:** `painted_route_equivalence` — armed short-hop / stand-only vs unarmed detour across orbit cells; anchor @(5,3)
-- **Owner:** `CombatPlanningInput` — `_corridor_waypoints_to_cell`, `_preview_paths_snapshot_for_settle`, `_refresh_voluntary_walk_hover_preview`, `_assemble_voluntary_walk_preview_path`
-- **Broken step:** Armed awaiting MOVE enters inline trample orbit-settle (`active_movement_planning_step=true`) and/or sealed trample MP cap while unarmed premove uses settle-snapshot bottom-corridor with live turn MP; armed settle-fresh short-circuits before full snapshot
-- **Planned delta:** Skip inline orbit-assembler for `armed_painted_orbit_parity`; unify orbit-extend corridor budget to `_painted_receipt_orbit_extend_corridor_budget`; armed painted-orbit bypass sealed corridor budget; settle-fresh fall-through for armed orbit; shared receipt board for orbit extend
-
-### Council proof (pre-apply)
-| Critic | Verdict | Rule / exception IDs |
-|--------|---------|----------------------|
-| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
-| 2 Settle / bundle / commit | PASS | settle snapshot owner, EX-FROZEN-REPLAY, EX-PERF-SCHED |
-| 3 Stand & range origins | PASS | action-range-latest-stand, leg_anchor |
-| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate, single corridor owner |
-| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
-| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
-**Verdict:** 6/6 PASS
-
-### What we will not do
-- Overlay fallback; per-test branches; global `painted_leg_sealed=false`; R93b armed live-preview reroute
-
-### Applied
-- **Commit:** (this turn)
-- **What fixed (partial):** `sealed_painted_geometry_routes` (R113 carry); `_corridor_board_for_unarmed_premove_orbit`; armed orbit skip inline assembler; unified orbit-extend MP; armed settle-fresh fall-through; removed force-unsealed board split
-
-### Verify
-- **Suite:** `run_planning_headless_contracts.ps1`
-- **Result:** FAIL **47** unchanged; @(5,3) armed `[(5,4),(5,3)]` vs baseline detour; `postmove_painted_hover` **0 FAIL**
-- **Next owner step:** Instrument armed vs unarmed at @(5,3) — compare `_preview_paths_snapshot_for_settle` output vs `_final_commit_slots_for_interaction` waypoints; confirm whether trample commit slots overwrite `settled_preview_paths` after snapshot returns detour
-
----
-
 ## 2026-09-02 — R113 sealed painted geometry at seal (partial)
 
 ### What we are fixing
@@ -1420,6 +1387,36 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Suite:** `run_planning_headless_contracts.ps1`
 - **Result:** FAIL **47**; @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
 - **Next owner step:** Armed awaiting opens `_voluntary_walk_orbit_settle_open` → inline orbit-settle returns 1-step hop; unarmed uses corridor owner with full MP — align armed to unarmed corridor path (policy `FREEZE_LANDING` + sealed MP cap)
+
+---
+
+## 2026-09-02 — R114-R120 painted orbit premove parity (partial)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` — armed short-hop / stand-only vs unarmed detour; anchor @(5,3)
+- **Owner:** `CombatPlanningInput` corridor + settle snapshot + hover refresh
+- **Broken step:** Armed `active_movement_planning_step` opens inline trample orbit-settle; sealed trample MP cap; settle-fresh short-circuit before full snapshot
+- **Planned delta:** Skip inline assembler for `armed_painted_orbit_parity`; orbit-extend live MP; armed bypass sealed corridor budget; settle-fresh fall-through
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 | PASS | settle snapshot, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 | PASS | action-range-latest-stand |
+| 4 | PASS | non-heuristic-mandate |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Applied
+- **Commit:** `88122008b51502dbfe91a95c26f0a2aadca5a5f8`
+- **What fixed (partial):** skip inline trample orbit for armed painted parity; unified orbit MP; armed settle-fresh fall-through; receipt board unify
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47**; @(5,3) unchanged; `postmove_painted_hover` **0 FAIL**
+- **Next:** instrument snapshot vs commit slots at @(5,3) for armed
 
 ---
 
