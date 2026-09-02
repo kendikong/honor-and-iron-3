@@ -1089,6 +1089,31 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R68–R73 painted orbit parity (armed painted-route gates)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) armed short path vs premove detour
+- **Owner:** `CombatPlanningInput` — gates keyed on `is_painted_leg_sealed` but fixture paints route without seal flag
+- **Broken step:** armed orbit extend never armed; fresh-settle used empty drag override; receipt geometry used `_can_move_to` not hover-move tiles
+- **Planned delta:** `_painted_preview_route_active` / `_armed_painted_receipt_orbit_extend_active` helpers; armed-only snapshot branches; live-preview parity; hover-move tile receipt gate (R73)
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1–6 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-PERF-SCHED, NHM, qa-fix |
+
+### What we will not do
+Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
+
+### Applied
+- **Commit:** (this turn)
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **48** — equivalence unchanged; postmove_drag **0 FAIL** (R68b restored)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
