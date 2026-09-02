@@ -3774,9 +3774,7 @@ func _preview_paths_snapshot_for_settle(
 	)
 	if (
 		settle_actor != null
-		and leg_sealed
-		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
-		and not _armed_awaiting_move_orbit_settle_open(settle_actor)
+		and _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
 	):
 		var receipt_orbit: Array[Vector2i] = _receipt_orbit_corridor_preview_path(
 			settle_actor, _hover_cell,
@@ -3840,7 +3838,6 @@ func _preview_paths_snapshot_for_settle(
 		and _hover_cell.x > -900000
 		and settle_waypoints.is_empty()
 		and orbit_hover_ssot
-		and not armed_orbit_extend_settle
 		and (
 			not leg_sealed
 			or _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
@@ -3913,6 +3910,7 @@ func _preview_paths_snapshot_for_settle(
 			and AbilitySystem.ability_uses_direct_relocation(hop_ability, settle_actor)
 			and move_origin_settle.x > -900000
 			and move_origin_settle != _hover_cell
+			and not _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
 		):
 			snapshot[unit_id] = [move_origin_settle, _hover_cell]
 	return snapshot
@@ -5944,18 +5942,16 @@ func _assemble_voluntary_walk_preview_path(
 	var leg_sealed: bool = _assembler_treats_painted_leg_sealed(unit_id, actor, hover_cell)
 	# Awaiting MOVE orbit: always recompute corridor from phase-entry stand (no tail-extend poison).
 	var skip_orbit_settle_assembler: bool = (
-		leg_sealed
-		and _hover_orbit_extends_painted_receipt(actor, hover_cell)
-		and not _armed_awaiting_move_orbit_settle_open(actor)
+		_hover_orbit_extends_painted_receipt(actor, hover_cell)
+		and (
+			leg_sealed
+			or _armed_awaiting_move_orbit_settle_open(actor)
+		)
 	)
 	if (
 		_voluntary_walk_orbit_settle_open(actor)
 		and not dragging
 		and not skip_orbit_settle_assembler
-		and not (
-			_armed_awaiting_move_orbit_settle_open(actor)
-			and _hover_orbit_extends_painted_receipt(actor, hover_cell)
-		)
 	):
 		var orbit_origin: Vector2i = _phase_entry_stand(actor)
 		if orbit_origin.x <= -900000:
