@@ -989,6 +989,42 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R61 painted_route_equivalence armed orbit parity (IN PROGRESS)
+
+### What we are fixing
+- **Bucket:** `PlanningQAGate painted_route_equivalence` (~27 FAIL at 47 baseline) — armed trample sealed orbit `[(5,4),(5,3)]` vs premove `[(5,4),(4,4),(4,3),(5,3)]` @(5,3)
+- **Owner:** `CombatPlanningInput` — `_preview_paths_snapshot_for_settle`, `_corridor_waypoints_to_cell`, `_assemble_voluntary_walk_preview_path`, voluntary-walk orbit policy
+- **Broken step:** Armed awaiting targeting freezes settle snapshot to partial slot waypoints; orbit assembler adjacent-hop + `_proj()` stand at landing poisons corridor vs premove receipt-extend path
+- **Planned delta:** R61 policy unlock (armed-only), receipt orbit corridor helper, snapshot early return, skip adjacent-hop on receipt extend, orbit board at leg anchor
+
+### Council proof (pre-apply — R61)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-FROZEN-REPLAY |
+| 2 | PASS | MOVE_PREVIEW preview=commit, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 | PASS | NHM 6-row, global-systems-first |
+| 5 | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 | PASS | qa-fix-no-heuristics — upstream settle owner |
+**Verdict:** 6/6 PASS
+
+### Amendments applied same turn (R61b–R61g)
+- R61b: narrow `painted_move_route_locked` to `_armed_awaiting_move_orbit_settle_open` (reverted broad unlock — 211 FAIL)
+- R61c–R61g: settle snapshot unfreeze, `_receipt_orbit_corridor_preview_path`, assembler adjacent-hop skip, orbit board at leg anchor
+
+### What we will not do
+- Overlay fallback; per-test branches; defer armed seal; broad postmove unlock
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed:** partial — postmove_painted_hover preserved **0 FAIL**; equivalence still **27 FAIL** @(5,3) unchanged
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **48** (equivalence **27** lines; postmove_painted_hover **0**)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
