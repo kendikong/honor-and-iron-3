@@ -1180,6 +1180,45 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R93 painted_route_equivalence settle waypoint poison removal
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) armed short leg `[(5,4),(5,3)]` vs unarmed detour
+- **Owner:** `CombatPlanningInput._refresh_voluntary_walk_hover_preview`
+- **Broken step:** After probe/leg_wps settle, lines 5778–5779 overwrote `settle_waypoints` with `_resolve_commit_move_waypoints` (short trample/skill leg) before `_preview_at_interaction_cell`
+- **Planned delta:** Remove armed `settle_waypoints` resolve override; keep R91–R92 assembler/corridor parity
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW — settle waypoints must not be replaced after probe |
+| 2 Settle / bundle / commit | PASS | One settle path; delete parallel resolve override |
+| 3 Stand & range origins | PASS | leg_anchor unchanged |
+| 4 Global systems / anti-heuristic | PASS | Removes second apply path, no overlay fallback |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | Owner `_refresh_voluntary_walk_hover_preview`; refused live-preview reroute (regressed) |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Route armed through `_refresh_live_interaction_preview` without amendment (R93b regressed to `[(5,4)]`-only)
+- Erase `settled_preview_paths` without slot parity (empty paths on far orbit cells)
+- Overlay fallback
+
+### Applied (after council PASS only)
+- **Commit:** (this turn)
+- **What fixed:** Removed post-probe `settle_waypoints = _resolve_commit_move_waypoints(...)` for armed painted orbit extend
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (unchanged); @(5,3) still FAIL; no mass orbit regression
+
+### R93 amendments tried and reverted (same turn)
+- Live-preview reroute for armed orbit → **regression** (armed `[(5,4)]` only on most orbit cells)
+- Omit `settled_preview_paths` for armed → @(5,3) unchanged; empty paths @(8,4)
+- **Next owner (R94):** `_final_commit_slots_for_interaction` / PRE-move slot waypoints for armed orbit must match unarmed sim detour
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

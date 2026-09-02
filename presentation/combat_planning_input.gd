@@ -5775,8 +5775,6 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 		and _drag_route.size() >= 2
 	):
 		settle_waypoints = _route_waypoints()
-	if armed_painted_orbit_extend:
-		settle_waypoints = _resolve_commit_move_waypoints(p_unit.id, p_unit, cell)
 	if active_movement_planning_step(p_unit):
 		var walk_res: Dictionary = _preview_at_interaction_cell(
 			p_unit.id, cell, cell, -1, settle_waypoints, _snapshot_drag_legal_move_tiles(),
