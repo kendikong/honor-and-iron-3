@@ -1714,6 +1714,11 @@ func on_hover_moved(cell: Vector2i) -> void:
 
 
 func _movement_preview_resync_after_sim_allowed(p_unit: UnitState) -> bool:
+	var hover_cell: Vector2i = (
+		_intent_state.hover_coord if _intent_state != null else Vector2i(-999999, -999999)
+	)
+	if _painted_receipt_orbit_extend_active(p_unit, hover_cell):
+		return false
 	if _voluntary_walk_orbit_settle_open(p_unit) or active_movement_planning_step(p_unit):
 		return true
 	if _director == null or p_unit == null:
@@ -6264,10 +6269,12 @@ func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i
 		GridSystem.set_occupant(board, origin, actor.id)
 	return board
 
-## Receipt-orbit extend: sealed painted leg uses planning move budget (armed/unarmed parity).
+## Receipt-orbit extend: sealed painted leg uses live turn-board MP (premove parity, not POST _proj cap).
 func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
 	if actor != null and preview_state.is_painted_leg_sealed(actor.id):
-		return _move_budget(actor)
+		if _director != null and _director.board != null:
+			return _director.planning_move_budget(actor, _director.board)
+		return AbilitySystem.planning_available_movement_points(actor)
 	if _director != null and _director.board != null:
 		var live_actor: UnitState = _director.board.get_unit_by_id(actor.id)
 		if live_actor != null:
@@ -6378,9 +6385,14 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
 	if corridor_orbit_extend and origin.x > -900000:
 		corridor_board = _corridor_board_for_receipt_orbit_extend(actor, origin)
+	var pathfind_actor: UnitState = actor
+	if corridor_orbit_extend and corridor_board != null:
+		var board_actor: UnitState = corridor_board.get_unit_by_id(actor.id)
+		if board_actor != null:
+			pathfind_actor = board_actor
 	return CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 		corridor_board,
-		actor,
+		pathfind_actor,
 		origin,
 		cell,
 		corridor_budget,
@@ -8216,10 +8228,14 @@ func _build_commit_slots_at_cell(
 							var receipt_board: BoardState = (
 								_corridor_board_for_receipt_orbit_extend(actor, receipt_origin)
 							)
+							var receipt_actor: UnitState = actor
+							var board_actor: UnitState = receipt_board.get_unit_by_id(actor.id)
+							if board_actor != null:
+								receipt_actor = board_actor
 							var receipt_corridor: Array[Vector2i] = (
 								CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 									receipt_board,
-									actor,
+									receipt_actor,
 									receipt_origin,
 									cell,
 									_receipt_orbit_extend_corridor_budget(actor),
@@ -8230,15 +8246,20 @@ func _build_commit_slots_at_cell(
 								not receipt_corridor.is_empty()
 								and receipt_corridor.back() == cell
 							):
-								effective_waypoints = receipt_corridor
-								_try_commit_voluntary_walk(
+								if _try_commit_voluntary_walk(
 									slots,
 									unit_id,
 									actor,
 									cell,
 									receipt_corridor,
 									legal_move_tiles,
-								)
+								):
+									if AbilitySystem.ability_uses_direct_relocation(
+										ability, actor,
+									):
+										effective_waypoints = []
+								else:
+									effective_waypoints = receipt_corridor
 					var occupant_id := hover_unit.id if hover_unit != null else -1
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 						ability, occupant_id,
