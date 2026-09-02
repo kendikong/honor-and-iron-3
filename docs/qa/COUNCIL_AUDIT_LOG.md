@@ -494,7 +494,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 **Verdict:** 6/6 PASS
 
 ### Applied
-- **Commit:** (pending)
+- **Commit:** `7a944d74c932063c8ec5ea647f76b383d5c78216`
 - **What fixed:** Two-line parity — `or open_premove_hover_paint` on extend allow; `and not open_premove_hover_paint` on drag clear elif
 - **Verify:** Planning headless **FAIL 263** (no delta vs R33 — sidestep still blocked by R31 orbit early-return; separate round needed)
 
