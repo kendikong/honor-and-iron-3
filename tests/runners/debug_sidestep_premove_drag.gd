@@ -46,6 +46,22 @@ func _run() -> void:
 	lines.append("FINAL drag=%s expected=%s match=%s" % [
 		str(input._drag_route), str(route), str(input._drag_route == route),
 	])
+	input.set_qa_pointer_grid_cell(route.back())
+	input._flush_hover_heavy_sync()
+	var bundle: PlanningHoverPreview = input.get_settled_hover_preview()
+	lines.append("pre-click settled valid=%s" % str(bundle != null and bundle.valid if bundle != null else false))
+	var wps: Array[Vector2i] = input._route_waypoints_for_commit(route.back())
+	lines.append("pre-click waypoints=%s" % str(wps))
+	input.on_left_press(map_stub.grid_to_local(route.back()))
+	director.flush_plan_refresh_signals_if_pending()
+	lines.append("post-click drag=%s plan_entries=%d" % [
+		str(input._drag_route), director.get_player_plan().entries.size(),
+	])
+	for action: TimelineAction in director.get_player_plan().entries:
+		if action != null and action.type == GameEnums.ActionType.MOVE:
+			lines.append("committed move target=%s wps=%s" % [
+				str(action.target_coord), str(action.waypoints),
+			])
 	PlanningDragE2EHarness.cleanup_all()
 	var f := FileAccess.open(OUT, FileAccess.WRITE)
 	for line: String in lines:

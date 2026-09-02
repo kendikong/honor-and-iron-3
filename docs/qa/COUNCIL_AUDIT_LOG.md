@@ -672,6 +672,51 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R44 (settle snapshot orbit skip when waypoints present) — APPLIED
+
+### What we are fixing
+- **Bucket:** sidestep commit — `pre-click settled valid=false` despite full `_drag_route`; SSOT BREAK `preview_paths leg [] != slots waypoints`
+- **Owner:** `CombatPlanningInput._preview_paths_snapshot_for_settle`
+- **Broken step:** orbit assembler ran before `slot_wps` extraction and overwrote waypoint-bearing settle snapshot with single-cell orbit leg
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-FROZEN-REPLAY |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate 6-row — hoist slot_wps; sealed-route fallback when both empty |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED — snapshot only, no extra sim |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics — fix settle owner not overlay |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Revert R43 A+B+C
+- Overlay fallback for missing preview path
+- Per-test branches in production
+
+### What fixed
+- **Before:** `_preview_paths_snapshot_for_settle` ran orbit assembler when orbit phase open, ignoring slot waypoints already in commit slots
+- **After:** hoist `slot_wps` before orbit block; skip orbit assembler when `waypoints` OR `slot_wps` non-empty; preserve sealed-route fallback when both empty
+
+### Trace verify (DebugSidestepPremove.tscn)
+| Check | Result |
+|-------|--------|
+| pre-click settled valid | **true** |
+| committed move wps | `[(2, 3), (3, 3), (3, 4), (4, 4)]` |
+
+### Verify
+| Suite | Result |
+|-------|--------|
+| `run_planning_headless_contracts.ps1` | **FAIL 301** (was 279; +22 — armed preview-path SSOT regressions) |
+| Sidestep bucket | **no `[FAIL]` lines** — commit ratify green |
+| `waypoint_enemy_hover` | Still preview path short vs full mouse route |
+| `tile_aoe_waypoint_hover` | AOE preview path `[]` at latest stand |
+
+**Next council target (R45):** armed drag preview path — hover paint must show full `_drag_route` during armed waypoint premove (`waypoint_enemy_hover`, `tile_aoe_waypoint_hover`); owner likely `_assemble_voluntary_walk_preview_path` / hover settle path assembly for `selected_ability_index >= 0` with active drag corridor — **not** revert R44 settle fix.
+
+---
+
 
 ### Council
 

@@ -3493,6 +3493,7 @@ func _preview_paths_snapshot_for_settle(
 	## Settling unit route comes from commit slots only — never the mutable drag/hover buffer.
 	var snapshot: Dictionary = {}
 	var settle_actor: UnitState = _proj_unit(unit_id)
+	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
 	if (
 		settle_actor != null
 		and preview_state.is_painted_leg_sealed(unit_id)
@@ -3509,6 +3510,8 @@ func _preview_paths_snapshot_for_settle(
 		and _voluntary_walk_orbit_phase_open(settle_actor)
 		and not dragging
 		and _hover_cell.x > -900000
+		and waypoints.is_empty()
+		and slot_wps.is_empty()
 	):
 		var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, settle_actor, _hover_cell, waypoints,
@@ -3516,7 +3519,6 @@ func _preview_paths_snapshot_for_settle(
 		if not orbit_path.is_empty():
 			snapshot[unit_id] = orbit_path.duplicate()
 			return snapshot
-	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
 	if slot_wps.is_empty() and waypoints.is_empty():
 		if preview_state.is_painted_leg_sealed(unit_id):
 			var sealed_route: Variant = preview_state.preview_paths.get(unit_id, null)
