@@ -844,7 +844,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback / per-test branches
 
 ### Applied (after council PASS only)
-- **Commit:** (pending)
+- **Commit:** `2d7952055116a1bff8fd21f47e3f9544efc52c9b`
 - **What fixed:** seal owner writes full painted drag route; restore uses drag buffer; stage no longer clears painted drag before seal; flush/hover early restore path
 - **QA:** Planning headless contracts **FAIL** — 246 fails (baseline R46 263); painted_landing still `[]` — drag buffer empty before restore (R50)
 - **Amendments post-council:** early seal ordering, `_awaiting_painted_drag_matches_leg`, frozen awaiting-move snapshot — amendment council pending R50
