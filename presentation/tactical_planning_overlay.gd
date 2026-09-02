@@ -564,6 +564,10 @@ func _movement_hover_route_cells(unit_id: int = -1) -> Array[Vector2i]:
 		return []
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
 	if ability == null:
+		var awaiting_action: TimelineAction = _director.find_awaiting_action(unit_id)
+		if awaiting_action != null:
+			ability = awaiting_action.ability
+	if ability == null:
 		return []
 	if not _movement_hover_route_context_active(unit, ability):
 		return []
@@ -982,7 +986,7 @@ func _apply_planning_tile_layers(
 			match phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
 					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					if committed_class_action:
+					if committed_class_action and not settled.blast_on_hover_layer:
 						_hover_blast_tiles.clear()
 						_blast_tiles_on_hover_layer = false
 					else:
@@ -992,7 +996,7 @@ func _apply_planning_tile_layers(
 					_hover_move_tiles = settled.move_tiles.duplicate()
 					if not settled.action_range_tiles.is_empty():
 						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					if committed_class_action:
+					if committed_class_action and not settled.blast_on_hover_layer:
 						_hover_blast_tiles.clear()
 						_blast_tiles_on_hover_layer = false
 					else:

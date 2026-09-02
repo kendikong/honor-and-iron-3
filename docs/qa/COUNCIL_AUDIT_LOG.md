@@ -424,6 +424,39 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R33 (orbit settle re-ship — council BEFORE apply)
+
+### What we are fixing
+- **Bucket:** `trample/matrix/postmove_painted_hover`, `armed_move_hover`, basic premove orbit frozen routes, post_swap/bash stand drift
+- **Owner:** `CombatPlanningInput` settle/assembler + `planning_preview_tiles._action_range_paint_stand`
+- **Broken step:** Orbit hovers poisoned by stale `_drag_route` / slot waypoints; stand-only probe re-sealed wrong corridors; action-range used sim landing during orbit after commit
+- **Planned delta:** R30+R31+R32 combined; R33b removes banned `_write_voluntary_walk_preview_path` (inline at settle-fresh helpers)
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-LOCKED-FIELD, EX-FROZEN-REPLAY, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, HOVER_PREVIEW_CARRIED_SSOT, EX-PERF-SCHED, EX-FROZEN-REPLAY, EX-SIM-REJECT |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-LOCKED-FIELD, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS (R33b amendment) | non-heuristic-mandate 6-row, run_hover_preview_ssot_gate — ghost writer deleted |
+| 5 Perf & scheduling | PASS | planning-hover-perf-mandatory, EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics — owner map filled, no overlay fallback |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay receipt fallback; per-test production branches; skip full settle on orbit; banned `_write_voluntary_walk_preview_path` symbol
+
+### Applied
+- **Commit:** (pending)
+- **What fixed:** Orbit corridor recomputed from phase-entry stand; drag tail cleared on premove/awaiting MOVE orbit; empty `settle_waypoints` on stand-only orbit probe before settle; phase-entry stand lock for action-range after committed ability; `blast_on_hover_layer` for orbit cursor after commit
+- **Heuristics refused:** overlay fallback; ghost writer function; per-test branches
+
+### Verify
+- **Suite:** `run_planning_qa_gate.ps1`, `run_hover_preview_ssot_gate.ps1`
+- **Result:** SSOT gate **PASS**; Planning QA **FAIL** 263 (was ~2022 at reverted baseline — matches prior R32 delta)
+
+---
+
 
 ### Council
 

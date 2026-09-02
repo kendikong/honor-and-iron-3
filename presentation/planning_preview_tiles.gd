@@ -7,6 +7,25 @@ extends RefCounted
 enum PhaseKind { WAIT, MOVEMENT, NON_MOVEMENT }
 
 
+static func _unit_has_committed_ability(director: CombatDirector, unit_id: int) -> bool:
+	if director == null or unit_id < 0:
+		return false
+	for column: Variant in [
+		director.plan_pre_move,
+		director.plan_action,
+		director.plan_post_move,
+	]:
+		for action: TimelineAction in column.entries:
+			if action == null or action.actor_id != unit_id:
+				continue
+			if action.type != GameEnums.ActionType.ABILITY:
+				continue
+			if action.ability != null and action.ability.kind == GameEnums.AbilityKind.UNIVERSAL_WAIT:
+				continue
+			return true
+	return false
+
+
 static func planning_phase(
 	director: CombatDirector,
 	unit: UnitState,
@@ -221,6 +240,7 @@ static func resolve_paint(
 			settled_preview_paths,
 		)
 	var show_action_range: bool = bool(plan.get("show_action_range", false))
+	var blast_on_hover_layer: bool = false
 	match phase:
 		PhaseKind.MOVEMENT:
 			var next_aim: Vector2i = plan.get("next_aim_origin", none)
@@ -262,9 +282,20 @@ static func resolve_paint(
 						paint_board,
 					)
 					stand = paint_stand
+					blast_on_hover_layer = true
 	var show_blast: bool = bool(plan.get("show_blast", false))
 	if director != null and director.unit_has_committed_class_action(paint_unit.id):
 		show_blast = false
+	if (
+		phase == PhaseKind.NON_MOVEMENT
+		and show_blast
+		and director != null
+		and _unit_has_committed_ability(director, paint_unit.id)
+		and board.is_in_bounds(hover_coord)
+	):
+		var locked_aim_blast: Vector2i = plan.get("locked_aim_origin", none)
+		if locked_aim_blast.x > -900000 and hover_coord != locked_aim_blast:
+			blast_on_hover_layer = true
 	if show_blast:
 		var blast_stand: Vector2i = stand
 		if blast_stand.x <= -900000:
@@ -290,7 +321,7 @@ static func resolve_paint(
 		"action_range_tiles": action_range,
 		"blast_tiles": blast,
 		"move_tiles": move_tiles,
-		"blast_on_hover_layer": bool(plan.get("blast_on_hover_layer", false)),
+		"blast_on_hover_layer": blast_on_hover_layer,
 		"show_action_range": show_action_range,
 		"show_blast": show_blast,
 		"phase": phase,
@@ -383,6 +414,27 @@ static func _action_range_paint_stand(
 			unit, none, director, board, planning_input,
 		)
 	if settled_board != null and board.is_in_bounds(hover_coord):
+		if (
+			planning_input != null
+			and director != null
+			and unit != null
+		):
+			var awaiting_action: TimelineAction = director.find_awaiting_action(unit.id)
+			if (
+				awaiting_action != null
+				and awaiting_action.ability != null
+				and planning_input._is_awaiting_movement_endpoint(
+					unit, awaiting_action.ability,
+				)
+				and phase_entry.x > -900000
+			):
+				return phase_entry
+			if (
+				planning_input._voluntary_walk_orbit_phase_open(unit)
+				and phase_entry.x > -900000
+				and _unit_has_committed_ability(director, unit.id)
+			):
+				return phase_entry
 		var landed_unit: UnitState = settled_board.get_unit_by_id(unit.id)
 		if (
 			landed_unit != null
