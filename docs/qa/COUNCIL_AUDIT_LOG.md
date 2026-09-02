@@ -1413,7 +1413,7 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - Overlay fallback; per-test branches; global seal disable; R93b armed live-preview reroute; `_refresh_live_interaction_preview` recursion bypass (R123b reverted — stack overflow)
 
 ### Applied
-- **Commit:** (this turn)
+- **Commit:** `52cb19dbc370f8054accd371a1820168b48ecc98`
 - **What fixed (partial — @(5,3) still open):** Orbit corridor board always `_corridor_board_for_unarmed_premove_orbit`; armed enters settle-fresh block; armed uses `_apply_assembler_prefix_preview_on_painted_route`; snapshot assemble-only for receipt orbit; flush restore skipped when `_painted_receipt_orbit_extend_active`
 
 ### Verify
