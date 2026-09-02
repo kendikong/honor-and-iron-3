@@ -5975,6 +5975,10 @@ func _assemble_voluntary_walk_preview_path(
 		_voluntary_walk_orbit_settle_open(actor)
 		and not dragging
 		and not skip_orbit_settle_assembler
+		and not (
+			_armed_awaiting_move_orbit_settle_open(actor)
+			and _hover_orbit_extends_painted_receipt(actor, hover_cell)
+		)
 	):
 		var orbit_origin: Vector2i = _phase_entry_stand(actor)
 		if orbit_origin.x <= -900000:
@@ -6336,9 +6340,14 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 				return painted
 	var auth_route: Array = _authoritative_route_for_unit(actor.id)
 	var orbit_extend_from_receipt: bool = _hover_orbit_extends_painted_receipt(actor, cell)
+	var armed_orbit_parity: bool = (
+		orbit_extend_from_receipt
+		and _armed_awaiting_move_orbit_settle_open(actor)
+	)
+	var corridor_orbit_extend: bool = orbit_extend_from_receipt and not armed_orbit_parity
 	var origin: Vector2i = (
 		_leg_anchor_for_painted_drag(actor)
-		if orbit_extend_from_receipt
+		if corridor_orbit_extend
 		else (
 			_phase_entry_stand(actor)
 			if _voluntary_walk_orbit_settle_open(actor) and not dragging
@@ -6355,12 +6364,12 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var corridor_budget: int = _drag_max_steps(actor)
 	var corridor_ability: AbilityData = _route_pathfinding_ability(actor, cell)
 	if preview_state.is_painted_leg_sealed(actor.id):
-		if orbit_extend_from_receipt:
+		if corridor_orbit_extend:
 			corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
 		else:
 			corridor_budget = _move_budget(actor)
 		corridor_ability = null
-	elif orbit_extend_from_receipt:
+	elif corridor_orbit_extend:
 		corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
 		corridor_ability = null
 	elif (
@@ -6371,12 +6380,12 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 		corridor_ability = null
 	if (
 		PlanningRoutePolicy.use_basic_walk_corridor_legality(sealed_mode)
-		or orbit_extend_from_receipt
+		or corridor_orbit_extend
 	):
-		if preview_state.preview_board == null and not orbit_extend_from_receipt:
+		if preview_state.preview_board == null and not corridor_orbit_extend:
 			_sync_preview_board_to_sealed_landing(actor.id)
 	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
-	if orbit_extend_from_receipt and origin.x > -900000:
+	if corridor_orbit_extend and origin.x > -900000:
 		corridor_board = _corridor_board_for_receipt_orbit_extend(actor, origin)
 	return CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 		corridor_board,
