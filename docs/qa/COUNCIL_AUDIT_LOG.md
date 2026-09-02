@@ -1357,6 +1357,39 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R113 sealed painted geometry at seal (partial)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) — armed `[(5,4),(5,3)]` vs unarmed detour `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` + `CombatPlanningPreview` — seal geometry, receipt orbit corridor, assembler parity
+- **Broken step:** Armed sealed leg reads live `preview_paths` (orbit-overwritten) instead of frozen paint-at-seal geometry; armed orbit-settle inline path bypasses unarmed corridor owner / MP budget
+- **Planned delta:** `sealed_painted_geometry_routes`; geometry in `_authoritative_route_for_unit`, sync, receipt board; armed `leg_sealed=false` for orbit; force-unsealed corridor budget; skip armed inline orbit-settle assembler
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-LOCKED-FIELD |
+| 2 | PASS | seal geometry owner, settle/slots single path |
+| 3 | PASS | action-range-latest-stand, phase-entry stand |
+| 4 | PASS | non-heuristic-mandate, no overlay fallback |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; corridor→assemble recursion; global `painted_leg_sealed=false` for armed
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed (partial):** Frozen paint-at-seal in `sealed_painted_geometry_routes`; receipt/sync reads geometry; armed orbit assembler treats leg unsealed; corridor `force_unsealed` MP for armed orbit; removed recursion; receipt board re-sync from geometry when sealed
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47**; @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
+- **Next owner step:** Armed awaiting opens `_voluntary_walk_orbit_settle_open` → inline orbit-settle returns 1-step hop; unarmed uses corridor owner with full MP — align armed to unarmed corridor path (policy `FREEZE_LANDING` + sealed MP cap)
+
+---
+
 ## 2026-09-02 — R110 painted_route_equivalence @(5,3) orbit parity (IN PROGRESS)
 
 ### What we are fixing

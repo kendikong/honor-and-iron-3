@@ -15,6 +15,8 @@ var preview_board: BoardState = null
 var live_intents: Array = []
 ## Painted drag legs sealed across awaiting-move buffer clears (unit_id → true).
 var painted_leg_sealed: Dictionary = {}
+## Frozen E-then-N paint geometry at seal — orbit may rewrite preview_paths without losing receipt.
+var sealed_painted_geometry_routes: Dictionary = {}
 
 
 func clear_interaction() -> void:
@@ -31,6 +33,7 @@ func clear_all() -> void:
 	preview_pushes.clear()
 	preview_board = null
 	painted_leg_sealed.clear()
+	sealed_painted_geometry_routes.clear()
 	live_intents.clear()
 
 
@@ -864,11 +867,15 @@ func sync_route_paths_from(other: CombatPlanningPreview) -> void:
 	action_splits = other.action_splits.duplicate()
 	preview_pushes = other.preview_pushes.duplicate(true)
 	painted_leg_sealed = other.painted_leg_sealed.duplicate()
+	sealed_painted_geometry_routes = other.sealed_painted_geometry_routes.duplicate(true)
 
 
 func seal_painted_leg(unit_id: int) -> void:
 	if unit_id >= 0:
 		painted_leg_sealed[unit_id] = true
+		var geometry: Variant = preview_paths.get(unit_id, null)
+		if geometry is Array and (geometry as Array).size() >= 2:
+			sealed_painted_geometry_routes[unit_id] = (geometry as Array).duplicate()
 
 
 func clear_route_geometry() -> void:
@@ -877,6 +884,7 @@ func clear_route_geometry() -> void:
 	preview_post_splits.clear()
 	preview_pushes.clear()
 	painted_leg_sealed.clear()
+	sealed_painted_geometry_routes.clear()
 
 
 func is_painted_leg_sealed(unit_id: int) -> bool:
@@ -885,6 +893,20 @@ func is_painted_leg_sealed(unit_id: int) -> bool:
 
 func clear_sealed_painted_leg(unit_id: int) -> void:
 	painted_leg_sealed.erase(unit_id)
+	sealed_painted_geometry_routes.erase(unit_id)
+
+
+## Receipt-orbit geometry — frozen paint at seal, not live orbit preview_paths.
+static func sealed_painted_geometry_route(
+	preview: CombatPlanningPreview,
+	unit_id: int,
+) -> Array:
+	if preview == null or unit_id < 0:
+		return []
+	var geometry: Variant = preview.sealed_painted_geometry_routes.get(unit_id, null)
+	if geometry is Array and (geometry as Array).size() >= 2:
+		return (geometry as Array).duplicate()
+	return []
 
 
 ## Read-only preview stub for commit-animation path slicing (paths dict only).

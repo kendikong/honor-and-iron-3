@@ -725,6 +725,11 @@ func _apply_postmove_orbit_drag_stand_preview(p_unit: UnitState, cell: Vector2i)
 
 func _authoritative_route_for_unit(unit_id: int) -> Array:
 	if preview_state.is_painted_leg_sealed(unit_id):
+		var geometry: Array = CombatPlanningPreview.sealed_painted_geometry_route(
+			preview_state, unit_id,
+		)
+		if geometry.size() >= 2:
+			return geometry
 		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
 		if painted is Array and (painted as Array).size() >= 2:
 			return (painted as Array).duplicate()
@@ -2736,7 +2741,11 @@ func _sync_sealed_preview_to_overlay(unit_id: int) -> void:
 func _sync_preview_board_to_sealed_landing(unit_id: int) -> void:
 	if unit_id < 0 or _director == null:
 		return
-	var route: Array = _authoritative_route_for_unit(unit_id)
+	var route: Array = CombatPlanningPreview.sealed_painted_geometry_route(
+		preview_state, unit_id,
+	)
+	if route.size() < 2:
+		route = _authoritative_route_for_unit(unit_id)
 	if route.size() < 2:
 		return
 	var board: BoardState = _proj().clone()
@@ -5663,6 +5672,8 @@ func _assembler_treats_painted_leg_sealed(
 	actor: UnitState,
 	hover_cell: Vector2i,
 ) -> bool:
+	if _armed_painted_receipt_orbit_extend_active(actor, hover_cell):
+		return false
 	return preview_state.is_painted_leg_sealed(unit_id)
 
 
@@ -5913,8 +5924,6 @@ func _apply_orbit_corridor_preview_path(
 			_armed_awaiting_move_orbit_settle_open(p_unit)
 			and _painted_receipt_orbit_extend_active(p_unit, cell)
 		):
-			# Sealed landing preview_board blocks orbit detours — use live projection like unarmed premove.
-			preview_state.preview_board = null
 			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 		if (
 			orbit_path.is_empty()
@@ -6003,9 +6012,12 @@ func _assemble_voluntary_walk_preview_path(
 	)
 	# Awaiting MOVE orbit: recompute corridor from phase-entry stand (no tail-extend poison).
 	var skip_orbit_settle_assembler: bool = (
-		_hover_orbit_extends_painted_receipt(actor, hover_cell)
-		and leg_sealed
-		and not _armed_awaiting_move_orbit_settle_open(actor)
+		(
+			_hover_orbit_extends_painted_receipt(actor, hover_cell)
+			and leg_sealed
+			and not _armed_awaiting_move_orbit_settle_open(actor)
+		)
+		or armed_painted_orbit_parity
 	)
 	if (
 		_voluntary_walk_orbit_settle_open(actor)
@@ -6066,7 +6078,11 @@ func _assemble_voluntary_walk_preview_path(
 		if orbit_path.size() == 1 and GridSystem.manhattan(orbit_origin, hover_cell) == 1:
 			if not receipt_corridor_extend:
 				orbit_path.append(hover_cell)
-		return orbit_path
+		var orbit_forbidden: Dictionary = CombatPlanningPreview.prior_leg_forbidden_cells(
+			_director, unit_id, orbit_origin,
+		)
+		if not CombatPlanningPreview.route_touches_forbidden(orbit_path, orbit_forbidden):
+			return orbit_path
 	if painted_move_route_locked(actor, hover_cell):
 		var locked_route: Array = _authoritative_route_for_unit(unit_id)
 		for locked_idx: int in range(locked_route.size()):
@@ -6095,9 +6111,15 @@ func _assemble_voluntary_walk_preview_path(
 	)
 	var painted_leg: Array = []
 	if leg_sealed:
-		var sealed_paint: Variant = preview_state.preview_paths.get(unit_id, null)
-		if sealed_paint is Array and (sealed_paint as Array).size() >= 2:
-			painted_leg = (sealed_paint as Array).duplicate()
+		var sealed_paint: Array = CombatPlanningPreview.sealed_painted_geometry_route(
+			preview_state, unit_id,
+		)
+		if sealed_paint.size() >= 2:
+			painted_leg = sealed_paint
+		else:
+			var sealed_live: Variant = preview_state.preview_paths.get(unit_id, null)
+			if sealed_live is Array and (sealed_live as Array).size() >= 2:
+				painted_leg = (sealed_live as Array).duplicate()
 	if painted_leg.size() < 2:
 		painted_leg = _authoritative_route_for_unit(unit_id)
 	if painted_leg.size() >= 2:
@@ -6137,7 +6159,11 @@ func _assemble_voluntary_walk_preview_path(
 			_voluntary_walk_corridor_paint_active(actor)
 			or _hover_orbit_extends_painted_receipt(actor, hover_cell)
 		):
-			var corridor_fill: Array[Vector2i] = _corridor_waypoints_to_cell(actor, hover_cell)
+			var corridor_fill: Array[Vector2i] = _corridor_waypoints_to_cell(
+				actor,
+				hover_cell,
+				_armed_painted_receipt_orbit_extend_active(actor, hover_cell),
+			)
 
 
 			if not corridor_fill.is_empty() and corridor_fill.back() == hover_cell:
@@ -6319,6 +6345,11 @@ func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i
 	if actor == null or _director == null or origin.x <= -900000:
 		return _proj()
 	if (
+		preview_state.is_painted_leg_sealed(actor.id)
+		and _authoritative_route_for_unit(actor.id).size() >= 2
+	):
+		_sync_preview_board_to_sealed_landing(actor.id)
+	if (
 		_armed_awaiting_move_orbit_settle_open(actor)
 		and _painted_preview_route_active(actor.id)
 	):
@@ -6371,6 +6402,10 @@ func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
 
 
 func _painted_preview_route_active(unit_id: int) -> bool:
+	if preview_state.is_painted_leg_sealed(unit_id):
+		return CombatPlanningPreview.sealed_painted_geometry_route(
+			preview_state, unit_id,
+		).size() >= 2
 	return _authoritative_route_for_unit(unit_id).size() >= 2
 
 
@@ -6381,7 +6416,11 @@ func _painted_receipt_orbit_extend_active(p_unit: UnitState, cell: Vector2i) -> 
 
 
 func _hover_orbit_extends_painted_receipt(p_unit: UnitState, cell: Vector2i) -> bool:
-	var auth_route: Array = _authoritative_route_for_unit(p_unit.id)
+	var auth_route: Array = (
+		CombatPlanningPreview.sealed_painted_geometry_route(preview_state, p_unit.id)
+		if preview_state.is_painted_leg_sealed(p_unit.id)
+		else _authoritative_route_for_unit(p_unit.id)
+	)
 	if (
 		_voluntary_walk_orbit_settle_open(p_unit)
 		and not dragging
@@ -6465,12 +6504,20 @@ func _corridor_waypoints_to_cell(
 	)
 	if sealed_for_corridor_budget:
 		if corridor_orbit_extend:
-			corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
+			corridor_budget = (
+				_move_budget(actor)
+				if force_unsealed_orbit_budget
+				else _receipt_orbit_extend_corridor_budget(actor)
+			)
 		else:
 			corridor_budget = _move_budget(actor)
 		corridor_ability = null
 	elif corridor_orbit_extend:
-		corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
+		corridor_budget = (
+			_move_budget(actor)
+			if force_unsealed_orbit_budget
+			else _receipt_orbit_extend_corridor_budget(actor)
+		)
 		corridor_ability = null
 	elif (
 		_voluntary_walk_corridor_paint_active(actor)
