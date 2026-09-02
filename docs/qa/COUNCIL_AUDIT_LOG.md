@@ -1146,6 +1146,40 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R91–R92 painted_route_equivalence armed orbit parity
+
+### What we are fixing
+- **Bucket:** `PlanningQAGate painted_route_equivalence` — armed trample @(5,3) `[(5,4),(5,3)]` vs unarmed `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` — `_assemble_voluntary_walk_preview_path`, `_corridor_waypoints_to_cell`, sealed-orbit hover probe
+- **Broken step:** Armed awaiting MOVE takes phase-entry orbit assembler + receipt corridor board; unarmed premove has no `active_movement_planning_step` and paints via sim/corridor-fill detour
+- **Planned delta:** Skip phase-entry orbit assembler for armed receipt extend; armed corridor uses voluntary-walk preview board (not receipt board) for premove parity
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW preview=commit; orbit path must match unarmed paint at @(5,3) |
+| 2 Settle / bundle / commit | PASS | Fix upstream assembler/corridor owner; no overlay fallback |
+| 3 Stand & range origins | PASS | leg_anchor unchanged; EX-POSTMOVE-SLOT N/A |
+| 4 Global systems / anti-heuristic | PASS | 6-row audit; no per-test branches |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED; no sync settle per cell added |
+| 6 QA-fix discipline | PASS | Owner map: settle/assembler/corridor; refused overlay fallback |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback when sealed receipt missing
+- Broad `painted_leg_sealed=false` for all armed MOVE (R83 regression)
+- Remove sealed-orbit probe without replacement (R91b proved regression)
+
+### Applied (after council PASS only)
+- **Commit:** `a1e2d8997ada1bf006c766cc3f0a5c57baa7514e`
+- **What fixed:** Armed receipt-orbit corridor uses `armed_orbit_parity` voluntary-walk board; assembler skips phase-entry orbit branch when armed+receipt extend; probe shortcut retained (removal regressed to `[(5,4)]`-only)
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (was 48); `painted_route_equivalence` @(5,3) still mismatched; `postmove_painted_hover` **0 FAIL**
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
