@@ -918,6 +918,44 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R57 postmove drag stale corridor (authoritative + settle-fresh)
+
+### What we are fixing
+- **Bucket:** `trample/matrix/postmove_drag/*` — stale corridor on unreachable post-move drag orbit cells
+- **Owner:** `CombatPlanningInput` — `_authoritative_route_for_unit`, `update_drag`, `_refresh_voluntary_walk_hover_preview`
+- **Broken step:** stale `_drag_route` and sealed receipt kept prior reachable corridor when drag swept to unreachable cells; `_apply_postmove_orbit_drag_stand_preview` was never wired
+- **Planned delta:** POSTMOVE-only gate (`_postmove_orbit_drag_active`); skip stale drag buffer in authoritative; reset `_drag_route` on unreachable in `update_drag`; re-settle stand-only when `_hover_settle_fresh_at` on unreachable postmove drag; skip stale receipt/live_path when drag route collapsed
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-FROZEN-REPLAY, EX-POSTMOVE-SLOT |
+| 2 | PASS | move-preview-intent-truth, no-heavy-postprocess, EX-PERF-SCHED, EX-FROZEN-REPLAY |
+| 3 | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 | PASS | NHM rows 1–6, global-systems-first |
+| 5 | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 | PASS | qa-fix-no-heuristics, forbidden overlay fallback |
+**Verdict:** 6/6 PASS
+
+### Amendment council (R57d → R57e after QA regression)
+| Critic | Verdict | Notes |
+|--------|---------|-------|
+| 1–6 | PASS | R57d top-of-function early return regressed 85→121; R57e narrows to settle-fresh branch + receipt skip only |
+
+### What we will not do
+- `settle_open` / `phase_open` alone (R56 armed regression)
+- Overlay fallback; per-test branches; `_can_move_to` in authoritative
+
+### Applied (after council PASS only)
+- **Commit:** (see below)
+- **What fixed:** POSTMOVE drag no longer reads stale `_drag_route` or stale receipt when route collapsed to stand; unreachable cells with fresh settle cache re-run stand-only settle via `_apply_postmove_orbit_drag_stand_preview`
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **81** (was **121** R55; **postmove_drag** **0 FAIL**; **armed_move_drag** **0 FAIL**)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
