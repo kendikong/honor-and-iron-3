@@ -1080,7 +1080,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback; broad freeze unlock; per-test branches
 
 ### Applied
-- **Commits:** (this turn)
+- **Commit:** `fa48589247d2e5178526a271b6d9ee3d90ef4c60`
 - **What fixed:** routing + receipt gate + budget upstream in `CombatPlanningInput` (equivalence still red — see Verify)
 
 ### Verify
