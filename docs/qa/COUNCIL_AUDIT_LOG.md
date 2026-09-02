@@ -1025,6 +1025,38 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R63 receipt-orbit corridor budget (armed motion cap)
+
+### What we are fixing
+- **Bucket:** armed sealed receipt-orbit extend pathfind used orbit-phase live MP (`_move_budget` → `planning_move_budget` on projected landing) instead of armed MOVE module cap; settle snapshot `_receipt_orbit_corridor_preview_path` over/under-shot corridor vs premove receipt-extend
+- **Owner:** `CombatPlanningInput._corridor_waypoints_to_cell` (+ `_receipt_orbit_extend_corridor_budget`)
+- **Broken step:** sealed + `orbit_extend_from_receipt` overwrote initial `_drag_max_steps` with `_move_budget` (live projected MP after sealed landing sync)
+- **Planned delta:** `_receipt_orbit_extend_corridor_budget` → `_drag_max_steps` when `_armed_awaiting_move_orbit_settle_open`; keep `_move_budget` for non-receipt sealed legs; retain `_corridor_board_for_receipt_orbit_extend` leg-anchor board
+
+### Council proof (pre-apply — R63)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW preview=commit, sealed receipt orbit from leg anchor |
+| 2 | PASS | settle snapshot reads `_receipt_orbit_corridor_preview_path` only; no overlay recompute |
+| 3 | PASS | action-range-latest-stand, leg-anchor origin unchanged |
+| 4 | PASS | NHM 6-row, single owner `_corridor_waypoints_to_cell` |
+| 5 | PASS | EX-PERF-SCHED — budget only on pathfind input, no hover throttle change |
+| 6 | PASS | qa-fix-no-heuristics — upstream corridor owner, no overlay fallback |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; second stand path; restore live MP overwrite on armed receipt extend
+
+### Applied
+- **Commit:** (pending)
+- **What fixed:** receipt-orbit corridor budget uses armed `_drag_max_steps` / skill motion cap, not orbit-phase live MP via `_move_budget`
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (equivalence **~27** unchanged — separate R61 parity scope)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

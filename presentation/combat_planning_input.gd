@@ -6176,6 +6176,25 @@ func _corridor_board_for_voluntary_walk(actor: UnitState) -> BoardState:
 		return preview_state.preview_board
 	return _proj()
 
+
+## Receipt-orbit extend pathfinds on live turn board at sealed leg anchor — not projected_state landing occupancy.
+func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i) -> BoardState:
+	if actor == null or _director == null or origin.x <= -900000:
+		return _proj()
+	var board: BoardState = _director.board.clone()
+	var walk_actor: UnitState = board.get_unit_by_id(actor.id)
+	if walk_actor != null:
+		GridSystem.set_occupant(board, walk_actor.position, -1)
+		walk_actor.position = origin
+		GridSystem.set_occupant(board, origin, actor.id)
+	return board
+
+## Armed awaiting MOVE receipt-orbit: skill motion cap via _drag_max_steps, not orbit-phase live MP on projected landing.
+func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
+	if _armed_awaiting_move_orbit_settle_open(actor):
+		return _drag_max_steps(actor)
+	return _move_budget(actor)
+
 func _hover_orbit_extends_painted_receipt(p_unit: UnitState, cell: Vector2i) -> bool:
 	if (
 		_voluntary_walk_orbit_settle_open(p_unit)
@@ -6236,10 +6255,13 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 	var corridor_budget: int = _drag_max_steps(actor)
 	var corridor_ability: AbilityData = _route_pathfinding_ability(actor, cell)
 	if preview_state.is_painted_leg_sealed(actor.id):
-		corridor_budget = _move_budget(actor)
+		if orbit_extend_from_receipt:
+			corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
+		else:
+			corridor_budget = _move_budget(actor)
 		corridor_ability = null
 	elif orbit_extend_from_receipt:
-		corridor_budget = _move_budget(actor)
+		corridor_budget = _receipt_orbit_extend_corridor_budget(actor)
 		corridor_ability = null
 	elif (
 		_voluntary_walk_corridor_paint_active(actor)
@@ -6255,12 +6277,7 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 			_sync_preview_board_to_sealed_landing(actor.id)
 	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
 	if orbit_extend_from_receipt and origin.x > -900000:
-		corridor_board = _proj().clone()
-		var orbit_actor: UnitState = corridor_board.get_unit_by_id(actor.id)
-		if orbit_actor != null:
-			GridSystem.set_occupant(corridor_board, orbit_actor.position, -1)
-			orbit_actor.position = origin
-			GridSystem.set_occupant(corridor_board, origin, actor.id)
+		corridor_board = _corridor_board_for_receipt_orbit_extend(actor, origin)
 	return CombatPlanningPreview.voluntary_walk_corridor_waypoints(
 		corridor_board,
 		actor,
