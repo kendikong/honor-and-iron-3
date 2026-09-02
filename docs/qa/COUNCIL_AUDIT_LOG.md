@@ -500,6 +500,41 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R36 / R36b / R37 / R37b (orbit early-return fall-through) — REVERTED
+
+### What we were fixing
+- **Bucket:** sidestep_valid_waypoint, sidestep_waypoint_hover, tile_aoe_waypoint_hover — `painted premove route []`
+- **Owner:** `CombatPlanningInput._stage_voluntary_walk_drag_input` (+ R37b `_preview_paths_snapshot_for_settle`)
+- **Broken step:** R31 orbit early-return blocks `_extend_drag_route` before R35 `open_premove_hover_paint` extend gate runs
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-LOCKED-FIELD, sidestep_valid_waypoint behavioral |
+| 2 Settle / bundle / commit | FAIL (R37) → PASS (R37b amend) | move-preview-intent-truth, no-heavy-postprocess-safety |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate 6-row |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** R36/R36b 6/6 PASS (applied without pre-apply table in chat — process violation); R37 blocked 5/6; R37b 6/6 PASS
+
+### What we will not do
+- `armed_skill_premain_paint: pass` orbit branch (R36 regression 263→428)
+- Overlay fallback; per-test branches
+
+### Applied / outcome
+| Round | Delta | QA | Outcome |
+|-------|-------|-----|---------|
+| R36 | Split orbit return; armed premain fall-through | 263→**428** FAIL | **REVERTED** |
+| R36b | Narrow basic_premain + open_premain only | **428** FAIL | **REVERTED** (never committed) |
+| R37a | basic_premove+open_premain fall-through only | 263→**428** FAIL; sidestep still `[]` | **REVERTED** |
+| R37b | R37a + settle orbit guard empty waypoints | **442** FAIL | **REVERTED** |
+
+- **Code baseline:** R35 `7a944d74c` — **263 FAIL**
+- **Investigation note:** `_movement_planning_excluding_autorun` keeps orbit open during PREMOVE even with `selected_ability_index < 0`; fall-through alone does not populate `_drag_route` in harness and regresses MOVE-SKILL/bash buckets. Next round needs trace of `_extend_drag_route` / `planning_cell_changed` during `_commit_archer_waypoint_premove`, not broader orbit pass.
+
+---
+
 
 ### Council
 
