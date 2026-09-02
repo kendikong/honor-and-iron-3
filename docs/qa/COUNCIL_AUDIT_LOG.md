@@ -786,6 +786,30 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R47 (trample orbit unreachable + sealed full route) — REVERTED
+
+### What we are fixing
+- **Bucket:** `trample/matrix/armed_move_hover` unreachable cells; `painted_landing_hover` fixed_route
+- **Owner:** `CombatPlanningInput` settle snapshot + assembler
+- **Planned delta:** unreachable stand-only snapshot; full frozen sealed route; stomp-guard amendment
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1–6 | PASS | R47 initial proposal |
+**Verdict:** 6/6 PASS — apply attempted
+
+### Outcome — REVERTED (no ship)
+| Suite | R46 | R47 apply | R47c |
+|-------|-----|-----------|------|
+| `run_planning_headless_contracts.ps1` | **263** | **303** (+40) | **303** |
+
+**Blocker:** Unreachable snapshot guard used `active_movement_planning_step` without excluding enemy-target hovers → broke MOVE-SKILL-01. Trample painted_landing still failed — leg not sealed after matrix sets `dragging=false` without `_seal_painted_preview_landing_if_needed`; frozen-route fix never engaged. **Reverted to R46** (`a393fbcaf` production state).
+
+**Next council target (R48):** Trample painted_landing — require `_seal_painted_preview_landing_if_needed` on hover path after drag ends OR snapshot reads `_drag_route` when `_painted_drag_route_matches_leg` before orbit assembler; unreachable armed orbit needs trace on why `_can_move_to` guard never fires at settle for (3,1).
+
+---
+
 
 ### Council
 
