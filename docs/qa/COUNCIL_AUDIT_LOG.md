@@ -1219,6 +1219,37 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R94–R101 painted_route_equivalence orbit parity (in progress)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) armed `[(5,4),(5,3)]` vs unarmed detour `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` — probe, corridor, snapshot, slot build
+- **Broken step:** Armed orbit extend used short resolve/probe leg, ability waypoints poisoned snapshot keys, armed snapshot early-return bypassed slot-built detour
+- **Planned delta:** Unify receipt-orbit corridor; probe→assemble([]); MOVE-only snapshot wp key; receipt corridor in resolve + awaiting slots; remove armed snapshot shortcut
+
+### Council proof (pre-apply — R94c)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS (R94c) → FAIL (R94b critic 2) → amended R99+ | MOVE_PREVIEW |
+| 3 Stand & range origins | PASS | ACTION_RANGE, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS (R94b) | non-heuristic-mandate |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS at R94c proposal; R94c QA regressed compare cells → reverted probe/snapshot portions; R95–R101 amendment iterations same turn
+
+### What we will not do
+- Overlay fallback; per-test branches; global seal disable; armed-only live-preview reroute (R93b regression)
+
+### Applied (after council PASS — incremental amendments R95–R101 same session)
+- **What fixed (partial — @(5,3) still open):** MOVE-only `_waypoints_for_snapshot_key_from_slots`; `corridor_orbit_extend` includes armed; sealed-orbit probe uses `assemble([])`; receipt corridor in `_resolve_commit_move_waypoints`; awaiting-endpoint orbit adds PRE voluntary walk + receipt corridor; removed armed snapshot early-return assemble/resolve shortcut
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (unchanged); `painted_route_equivalence` @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

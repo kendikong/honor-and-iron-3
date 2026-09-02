@@ -202,13 +202,7 @@ func _intent_snapshot_matches_interaction(unit_id: int, cell: Vector2i) -> bool:
 
 
 func _waypoints_for_snapshot_key_from_slots(slots: Dictionary) -> Array[Vector2i]:
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if raw is TimelineAction:
-				var act: TimelineAction = raw as TimelineAction
-				if not act.waypoints.is_empty():
-					return act.waypoints.duplicate()
-	return []
+	return _HoverPreviewBundle.move_waypoints_from_slots(slots)
 
 
 func on_left_press(local: Vector2) -> void:
@@ -3804,8 +3798,6 @@ func _preview_paths_snapshot_for_settle(
 		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
 	)
 	var settle_waypoints: Array[Vector2i] = waypoints
-	if armed_orbit_extend_settle:
-		settle_waypoints = []
 	if (
 		settle_actor != null
 		and preview_state.is_painted_leg_sealed(unit_id)
@@ -3908,14 +3900,6 @@ func _preview_paths_snapshot_for_settle(
 	if move_origin_settle.x > -900000:
 		built.append(move_origin_settle)
 	var route_cells: Array[Vector2i] = slot_wps if not slot_wps.is_empty() else waypoints
-	if armed_orbit_extend_settle and settle_actor != null:
-		var orbit_full: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
-			unit_id, settle_actor, _hover_cell, [],
-		)
-		if orbit_full.size() >= 2:
-			snapshot[unit_id] = orbit_full.duplicate()
-			return snapshot
-		route_cells = _resolve_commit_move_waypoints(unit_id, settle_actor, _hover_cell)
 	for wp_i: int in range(route_cells.size()):
 		built.append(route_cells[wp_i])
 	if built.size() >= 2:
@@ -5716,14 +5700,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		var probe_path: Array[Vector2i] = []
 		if sealed_orbit_extend:
-			var parity_wps: Array[Vector2i] = _resolve_commit_move_waypoints(
-				p_unit.id, p_unit, cell,
+			probe_path = _assemble_voluntary_walk_preview_path(
+				p_unit.id, p_unit, cell, [],
 			)
-			var anchor: Vector2i = _leg_anchor_for_painted_drag(p_unit)
-			if anchor.x > -900000:
-				probe_path.append(anchor)
-			for rp: Vector2i in parity_wps:
-				probe_path.append(rp)
 		elif (
 			_drag_route_commits_active()
 			and _drag_unit_id == p_unit.id
@@ -6232,6 +6211,23 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		if not skill_wps.is_empty() and skill_wps.back() == cell:
 			return skill_wps
 	if painted_path.size() >= 2 and _painted_receipt_orbit_extend_active(actor, cell):
+		var receipt_origin: Vector2i = _leg_anchor_for_painted_drag(actor)
+		if receipt_origin.x > -900000:
+			var receipt_board: BoardState = _corridor_board_for_receipt_orbit_extend(
+				actor, receipt_origin,
+			)
+			var receipt_corridor: Array[Vector2i] = (
+				CombatPlanningPreview.voluntary_walk_corridor_waypoints(
+					receipt_board,
+					actor,
+					receipt_origin,
+					cell,
+					_receipt_orbit_extend_corridor_budget(actor),
+					_director,
+				)
+			)
+			if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
+				return receipt_corridor
 		var orbit_assembled: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, actor, cell, [],
 		)
@@ -6338,11 +6334,7 @@ func _corridor_waypoints_to_cell(actor: UnitState, cell: Vector2i) -> Array[Vect
 				return painted
 	var auth_route: Array = _authoritative_route_for_unit(actor.id)
 	var orbit_extend_from_receipt: bool = _hover_orbit_extends_painted_receipt(actor, cell)
-	var armed_orbit_parity: bool = (
-		orbit_extend_from_receipt
-		and _armed_awaiting_move_orbit_settle_open(actor)
-	)
-	var corridor_orbit_extend: bool = orbit_extend_from_receipt and not armed_orbit_parity
+	var corridor_orbit_extend: bool = orbit_extend_from_receipt
 	var origin: Vector2i = (
 		_leg_anchor_for_painted_drag(actor)
 		if corridor_orbit_extend
@@ -8217,6 +8209,35 @@ func _build_commit_slots_at_cell(
 				if AbilitySystem.planning_is_valid_awaiting_endpoint(
 					awaiting_origin, cell, ability, actor, _proj(),
 				):
+					if _painted_receipt_orbit_extend_active(actor, cell):
+						var receipt_origin: Vector2i = _leg_anchor_for_painted_drag(actor)
+						if receipt_origin.x > -900000:
+							var receipt_board: BoardState = (
+								_corridor_board_for_receipt_orbit_extend(actor, receipt_origin)
+							)
+							var receipt_corridor: Array[Vector2i] = (
+								CombatPlanningPreview.voluntary_walk_corridor_waypoints(
+									receipt_board,
+									actor,
+									receipt_origin,
+									cell,
+									_receipt_orbit_extend_corridor_budget(actor),
+									_director,
+								)
+							)
+							if (
+								not receipt_corridor.is_empty()
+								and receipt_corridor.back() == cell
+							):
+								effective_waypoints = receipt_corridor
+								_try_commit_voluntary_walk(
+									slots,
+									unit_id,
+									actor,
+									cell,
+									receipt_corridor,
+									legal_move_tiles,
+								)
 					var occupant_id := hover_unit.id if hover_unit != null else -1
 					var committed_target_id := AbilitySystem.planning_commit_target_unit_id(
 						ability, occupant_id,
