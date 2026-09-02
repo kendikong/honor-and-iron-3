@@ -956,6 +956,39 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R58f/R58g postmove painted landing seal (drag-end + branch priority)
+
+### What we are fixing
+- **Bucket:** `trample/matrix/postmove_painted_hover/*` — orbit per hover cell instead of frozen full post_route
+- **Owner:** `CombatPlanningInput._restore_locked_painted_preview_paths` + `seal_postmove_painted_landing_if_ready`
+- **Broken step:** `matches_leg` branch set preview path without sealing; postmove seal `elif` skipped; `_seal_painted_preview_landing_if_needed` returned early on `dragging==true`
+- **Planned delta:** R58f drag-end context, postmove eligibility, orbit snapshot guard, explicit seal API; R58g reorder postmove `ready_to_seal` before `matches_leg`; harness `dragging=false` before seal
+
+### Council proof (pre-apply — R58g amendment)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-LOCKED-FIELD, EX-POSTMOVE-SLOT |
+| 2 | PASS | move-preview-intent-truth, SETTLED_PAINT_SSOT, EX-FROZEN-REPLAY |
+| 3 | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 | PASS | NHM rows 1–6, global-systems-first, EX-POSTMOVE-SLOT |
+| 5 | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 | PASS | qa-fix-no-heuristics — owner seal, no overlay fallback |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Per-cell hover seal storm (R58 apply11 regression)
+- Overlay fallback; `phase_entry` fork in `matches_leg`
+
+### Applied (after council PASS only)
+- **Commit:** (pending)
+- **What fixed:** postmove painted drag seals full route at drag-end/explicit API; frozen path on all hover cells; no postmove_hover regression
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (was **81** R57; **postmove_painted_hover** **0 FAIL**; **postmove_hover** **0 FAIL**)
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

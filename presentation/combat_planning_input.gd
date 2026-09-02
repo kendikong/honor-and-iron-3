@@ -270,6 +270,19 @@ func on_left_press(local: Vector2) -> void:
 			_commit_at_interaction_cell(_director.selected_unit_id, cell, local)
 
 
+func seal_postmove_painted_landing_if_ready() -> void:
+	if _drag_unit_id < 0:
+		return
+	var actor: UnitState = _proj_unit(_drag_unit_id)
+	if actor == null:
+		return
+	if not _voluntary_walk_postmove_slot_open(actor):
+		return
+	if not _postmove_painted_drag_ready_to_seal(actor):
+		return
+	_restore_locked_painted_preview_paths(actor.id)
+
+
 func on_left_release(local: Vector2) -> void:
 	if _drag_armed and not dragging:
 		if not _try_click_through_drag_armed(local):
@@ -286,13 +299,11 @@ func on_left_release(local: Vector2) -> void:
 	var cell: Vector2i = _pointer_grid_cell()
 	var actor := board.get_unit_by_id(_drag_unit_id) if board != null else null
 	if actor == null or board == null or not board.is_in_bounds(cell):
-		_drag_unit_id = -1
 		_end_drag_interaction(true, had_movement)
 		_drag_drop_finishing = false
 		return
 	var committed: bool = _process_unit_drop(local, had_movement)
 	var snap_back: bool = had_movement and not committed
-	_drag_unit_id = -1
 	_end_drag_interaction(false, snap_back)
 	_drag_drop_finishing = false
 
@@ -1044,22 +1055,47 @@ func _begin_drag(unit: UnitState, local: Vector2, was_already_selected: bool) ->
 
 func _end_drag_interaction(restore_committed: bool, snap_back: bool = false) -> void:
 	dragging = false
+	var finishing_drag_unit_id: int = _drag_unit_id
 	var sealed_unit_id: int = -1
-	if _drag_unit_id >= 0 and not snap_back:
-		var drag_actor: UnitState = _proj_unit(_drag_unit_id)
-		if drag_actor != null and _awaiting_painted_drag_matches_leg(drag_actor):
+	if finishing_drag_unit_id >= 0 and not snap_back:
+		var drag_actor: UnitState = _proj_unit(finishing_drag_unit_id)
+		var should_seal_painted: bool = false
+		if drag_actor != null:
+			if _awaiting_painted_drag_matches_leg(drag_actor):
+				should_seal_painted = true
+			elif (
+				_voluntary_walk_postmove_slot_open(drag_actor)
+				and _postmove_painted_drag_ready_to_seal(drag_actor)
+				and _drag_route.size() >= 2
+				and (_drag_route[0] as Vector2i) == _phase_entry_stand(drag_actor)
+			):
+				should_seal_painted = true
+		if drag_actor != null and should_seal_painted:
 			_seal_painted_preview_landing_if_needed(drag_actor)
-			if preview_state.is_painted_leg_sealed(_drag_unit_id):
-				sealed_unit_id = _drag_unit_id
-				_sync_preview_board_to_sealed_landing(sealed_unit_id)
+		if (
+			drag_actor != null
+			and not preview_state.is_painted_leg_sealed(finishing_drag_unit_id)
+			and _voluntary_walk_postmove_slot_open(drag_actor)
+			and _postmove_painted_drag_ready_to_seal(drag_actor)
+			and _drag_route.size() >= 2
+		):
+			CombatPlanningPreview.set_unit_preview_path(
+				preview_state, drag_actor.id, _drag_route.duplicate(),
+			)
+			preview_state.seal_painted_leg(drag_actor.id)
+		if preview_state.is_painted_leg_sealed(finishing_drag_unit_id):
+			sealed_unit_id = finishing_drag_unit_id
+			_sync_preview_board_to_sealed_landing(sealed_unit_id)
+			_sync_sealed_preview_to_overlay(sealed_unit_id)
 	_invalidate_planning_hover_cache()
 	_clear_drag_preview_cache()
-	if _drag_unit_id >= 0:
-		if _drag_unit_id != sealed_unit_id:
-			_clear_frozen_painted_leg(_drag_unit_id)
+	if finishing_drag_unit_id >= 0:
+		if finishing_drag_unit_id != sealed_unit_id:
+			_clear_frozen_painted_leg(finishing_drag_unit_id)
 		if _director.selected_unit_id != sealed_unit_id:
 			_clear_frozen_painted_leg(_director.selected_unit_id)
 	_drag_route.clear()
+	_drag_unit_id = -1
 	drag_preview_failed = false
 	preview_state.clear_interaction()
 	if _planning != null:
@@ -1615,9 +1651,12 @@ func on_hover_moved(cell: Vector2i) -> void:
 			var ability := _selected_ability_data(p_unit)
 			_discard_enemy_hover_painted_buffers_if_needed(p_unit, cell, ability)
 			if active_movement_planning_step(p_unit):
-				var leg_origin: Vector2i = _phase_entry_stand(p_unit)
+				var leg_origin: Vector2i = _leg_anchor_for_painted_drag(p_unit)
+				if leg_origin.x <= -900000:
+					leg_origin = _phase_entry_stand(p_unit)
 				if (
-					_drag_route_commits_active()
+					not _postmove_painted_drag_ready_to_seal(p_unit)
+					and _drag_route_commits_active()
 					and _drag_unit_id == p_unit.id
 					and not _drag_route.is_empty()
 					and leg_origin.x > -900000
@@ -1629,14 +1668,6 @@ func on_hover_moved(cell: Vector2i) -> void:
 					== CombatDirector.PlanningTimelinePhaseKind.PREMOVE_MOVEMENT
 					and not dragging
 					and not _selection_corridor_route_staging_active(p_unit)
-				):
-					_seal_painted_preview_landing_if_needed(p_unit)
-				elif (
-					_director.planning_timeline_phase_kind(p_unit.id)
-					== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-					and not dragging
-					and not _selection_corridor_route_staging_active(p_unit)
-					and _postmove_painted_drag_ready_to_seal(p_unit)
 				):
 					_seal_painted_preview_landing_if_needed(p_unit)
 			_sealed_leg_hover_restore_if_blocked(p_unit, cell)
@@ -2634,6 +2665,19 @@ func _restore_locked_painted_preview_paths(unit_id: int) -> void:
 				CombatPlanningPreview.set_unit_preview_path(
 					preview_state, unit_id, sealed_route,
 				)
+		elif (
+			_voluntary_walk_postmove_slot_open(actor)
+			and _postmove_painted_drag_ready_to_seal(actor)
+			and _drag_route.size() >= 2
+		):
+			CombatPlanningPreview.set_unit_preview_path(
+				preview_state, unit_id, _drag_route.duplicate(),
+			)
+			preview_state.seal_painted_leg(unit_id)
+			_sync_preview_board_to_sealed_landing(unit_id)
+			_discard_drag_buffer_when_preview_route_locked(actor)
+			_sync_sealed_preview_to_overlay(unit_id)
+			return
 		elif _awaiting_painted_drag_matches_leg(actor):
 			CombatPlanningPreview.set_unit_preview_path(
 				preview_state, unit_id, _drag_route.duplicate(),
@@ -2693,10 +2737,8 @@ func _painted_leg_seal_eligible(p_unit: UnitState) -> bool:
 		return false
 	if not active_movement_planning_step(p_unit):
 		return false
-	return (
-		_director.planning_timeline_phase_kind(p_unit.id)
-		== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
-	)
+	# Trample landing post-move often stays SKILL_AWAITING with modular post-open.
+	return _voluntary_walk_postmove_slot_open(p_unit)
 
 
 func _postmove_painted_drag_ready_to_seal(p_unit: UnitState) -> bool:
@@ -2704,6 +2746,16 @@ func _postmove_painted_drag_ready_to_seal(p_unit: UnitState) -> bool:
 		return false
 	var route_tail: Vector2i = _drag_route[_drag_route.size() - 1] as Vector2i
 	return route_tail == _drag_last_free
+
+
+func _painted_postmove_landing_drag_complete(p_unit: UnitState) -> bool:
+	if p_unit == null or not _postmove_painted_drag_ready_to_seal(p_unit):
+		return false
+	if _drag_route.size() >= 4:
+		return true
+	if _voluntary_walk_orbit_settle_open(p_unit):
+		return false
+	return _drag_route.size() >= 2
 
 
 func _armed_awaiting_move_orbit_settle_open(p_unit: UnitState) -> bool:
@@ -2728,11 +2780,32 @@ func _seal_painted_preview_landing_if_needed(p_unit: UnitState) -> void:
 	if dragging or p_unit == null or _director == null:
 		return
 	if preview_state.is_painted_leg_sealed(p_unit.id):
-		return
+		if not (
+			_painted_leg_seal_eligible(p_unit)
+			and _postmove_painted_drag_ready_to_seal(p_unit)
+		):
+			return
+		var existing: Variant = preview_state.preview_paths.get(p_unit.id, null)
+		if existing is Array and (existing as Array).size() >= 2:
+			var same_route: bool = (existing as Array).size() == _drag_route.size()
+			if same_route:
+				for i: int in range((existing as Array).size()):
+					if (existing[i] as Vector2i) != (_drag_route[i] as Vector2i):
+						same_route = false
+						break
+			if same_route:
+				return
+		_clear_frozen_painted_leg(p_unit.id)
 	if not _painted_leg_seal_eligible(p_unit):
 		return
 	if not _awaiting_painted_drag_matches_leg(p_unit):
-		return
+		if not (
+			_painted_leg_seal_eligible(p_unit)
+			and _postmove_painted_drag_ready_to_seal(p_unit)
+			and _drag_route.size() >= 2
+			and (_drag_route[0] as Vector2i) == _phase_entry_stand(p_unit)
+		):
+			return
 	if (
 		not awaiting_targeting_active()
 		and not _postmove_painted_drag_ready_to_seal(p_unit)
@@ -3127,6 +3200,11 @@ func _leg_anchor_for_painted_drag(p_unit: UnitState) -> Vector2i:
 	)
 	if sealed.x > -900000:
 		return sealed
+	if _director != null and p_unit != null:
+		if _voluntary_walk_postmove_slot_open(p_unit):
+			var post_entry: Vector2i = _phase_entry_stand(p_unit)
+			if post_entry.x > -900000:
+				return post_entry
 	var painted: Array = _authoritative_route_for_unit(p_unit.id)
 	if painted.size() >= 2 and painted[0] is Vector2i:
 		return painted[0] as Vector2i
@@ -3740,6 +3818,7 @@ func _preview_paths_snapshot_for_settle(
 		and _hover_cell.x > -900000
 		and waypoints.is_empty()
 		and orbit_hover_ssot
+		and not preview_state.is_painted_leg_sealed(unit_id)
 	):
 		var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, settle_actor, _hover_cell, waypoints,
@@ -5012,7 +5091,11 @@ func _typed_route_cells(route: Array) -> Array[Vector2i]:
 func _discard_stale_drag_route_for_leg(p_unit: UnitState) -> void:
 	if p_unit == null or _drag_route.is_empty():
 		return
-	var origin: Vector2i = _phase_entry_stand(p_unit)
+	if _postmove_painted_drag_ready_to_seal(p_unit):
+		return
+	var origin: Vector2i = _leg_anchor_for_painted_drag(p_unit)
+	if origin.x <= -900000:
+		origin = _phase_entry_stand(p_unit)
 	if origin.x <= -900000:
 		return
 	if (_drag_route[0] as Vector2i) != origin:
