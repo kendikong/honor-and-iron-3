@@ -447,7 +447,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay receipt fallback; per-test production branches; skip full settle on orbit; banned `_write_voluntary_walk_preview_path` symbol
 
 ### Applied
-- **Commit:** (pending)
+- **Commit:** `181afbccae9956769901c8dd533d371ef5a6976f`
 - **What fixed:** Orbit corridor recomputed from phase-entry stand; drag tail cleared on premove/awaiting MOVE orbit; empty `settle_waypoints` on stand-only orbit probe before settle; phase-entry stand lock for action-range after committed ability; `blast_on_hover_layer` for orbit cursor after commit
 - **Heuristics refused:** overlay fallback; ghost writer function; per-test branches
 
