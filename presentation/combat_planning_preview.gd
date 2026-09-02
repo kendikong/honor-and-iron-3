@@ -929,6 +929,9 @@ static func sealed_phase_entry_anchor(
 	unit_id: int,
 ) -> Vector2i:
 	if preview != null and preview.is_painted_leg_sealed(unit_id):
+		var geometry: Variant = preview.sealed_painted_geometry_routes.get(unit_id, null)
+		if geometry is Array and (geometry as Array).size() >= 1 and (geometry as Array)[0] is Vector2i:
+			return (geometry as Array)[0] as Vector2i
 		var sealed_route: Array = preview.preview_paths.get(unit_id, [])
 		if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
 			return sealed_route[0] as Vector2i
