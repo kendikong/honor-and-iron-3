@@ -11,6 +11,8 @@ alwaysApply: true
 
 Do **not** apply gameplay/planning fixes until council passes.
 
+**Permanent report mandate (owner 2026-09-01):** Every fix turn must show **what fixed** + **per-critic PASS proof in chat before apply**. See `.cursor/rules/council-report-mandatory.mdc` and `docs/qa/COUNCIL_REPORT_MANDATE.md`. Headline QA delta without proof table = **invalid report**. “6/6 PASS” without critic rows = **forgery**.
+
 ---
 
 ## Loop
@@ -78,8 +80,10 @@ Do **not** FAIL correct exception use. **Do** FAIL misuse, deletion, or relabeli
 
 ## After council
 
-- **All PASS:** apply → QA per `qa-after-gameplay-changes.mdc` → changelog `Council: N/N PASS` + entry in `docs/qa/COUNCIL_AUDIT_LOG.md` when remediating  
+- **All PASS:** **publish council proof table in chat (before apply)** → apply → QA per `qa-after-gameplay-changes.mdc` → changelog `### Council proof (pre-apply)` + `### What fixed` + audit log entry with **same table** + commit hash  
 - **Swap-only:** `run_swap_planning_acceptance.ps1` during iteration  
 - **Any FAIL:** new proposal → new council  
+
+**Forbidden:** `Council: N/N PASS` without per-critic rows · council logged post-commit · QA count as opening headline without proof block.
 
 Structural gates after apply are **not** council substitutes.

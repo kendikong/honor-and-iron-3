@@ -7,6 +7,8 @@ Full rule (always on): `.cursor/rules/subagent-council-loop.mdc`
 
 **Audit log (violations + remediation):** [`COUNCIL_AUDIT_LOG.md`](COUNCIL_AUDIT_LOG.md)
 
+**Permanent report mandate (owner 2026-09-01):** [`COUNCIL_REPORT_MANDATE.md`](COUNCIL_REPORT_MANDATE.md) · always-on `.cursor/rules/council-report-mandatory.mdc` — every fix turn shows **what fixed** + **per-critic PASS proof before apply**. Unauthorized ships may be **reverted** (see audit log V4).
+
 ---
 
 ## Why this exists
@@ -24,6 +26,8 @@ Agents kept applying code before review, using gauntlet scoring as “rules chec
 3. **Verdict** — **all** critics PASS → apply. Any FAIL → new proposal → new council.
 4. **Apply** — approved proposal only.
 5. **Verify** — automated QA per `qa-after-gameplay-changes.mdc` (see **Verify routing**). Council ≠ tests.
+
+6. **Report** — owner-facing reply and changelog use [`COUNCIL_REPORT_MANDATE.md`](COUNCIL_REPORT_MANDATE.md): council proof table **before** apply; **what fixed** after apply. QA headline without proof = invalid.
 
 ---
 
@@ -65,11 +69,12 @@ Launch all selected critics **in one message** (parallel).
 
 **Remediation (when violation discovered):** If code shipped without council, or council was skipped on a delta:
 
-1. **Do not revert** automatically if layer gates pass — run **remediation council** on **current shipped scope** (commit hash + file list).
-2. Record violation type, commits, remediation verdict (`Council: N/N PASS`), and gate result in `COUNCIL_AUDIT_LOG.md`.
-3. Layer may stay **DONE** only after remediation **all PASS** + verify gate PASS.
+1. **Owner may order REVERT** (see `COUNCIL_AUDIT_LOG.md` V4) — not only remediation council.
+2. If not reverted: run **remediation council** on **current shipped scope** (commit hash + file list).
+3. Record violation type, commits, remediation verdict with **full per-critic table**, and gate result in `COUNCIL_AUDIT_LOG.md`.
+4. Layer may stay **DONE** only after remediation **all PASS** + verify gate PASS + valid report per `COUNCIL_REPORT_MANDATE.md`.
 
-**Lead agent records:** After council, changelog must include `Council: N/N PASS` with each critic id (1–5) — not a single “council approved” line. Remediation turns add `Remediation council: N/N PASS` + audit log entry.
+**Lead agent records:** After council, changelog must include **`### Council proof (pre-apply)`** with each critic row (1–7) PASS + rule IDs — not a single “council approved” line. After apply: **`### What fixed`** with owner, before→after, commit hash. See `COUNCIL_REPORT_MANDATE.md`. Remediation turns add `Remediation council: N/N PASS` + audit log entry with **full critic table**.
 
 ---
 
@@ -367,3 +372,4 @@ Use with `docs/design/planning/PLANNING_ACTION_FIX_PLAN_2026-08-31.md` — **one
 | 2026-08-31 | Owner mandate; distinguished from Gauntlet Loop |
 | 2026-08-31 | Expanded to 5-critic efficient split + optional 6/7; master rules index |
 | 2026-08-31 | Rigorous checklists; owner-approved exceptions registry; proposal minimum; verify routing |
+| 2026-09-01 | Permanent `COUNCIL_REPORT_MANDATE.md` + `council-report-mandatory.mdc`; proof before apply; V4 revert policy |

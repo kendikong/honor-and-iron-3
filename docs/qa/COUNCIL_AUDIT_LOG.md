@@ -419,7 +419,8 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 | **Owner directive** | Revert all unauthorized R30–R32 gameplay changes |
 | **Git** | `git reset --hard 09287ca14` — HEAD restored to last commit before R30 (`Add mouse-circle hover QA`) |
 | **Removed commits** | `74383a07b` (R30), `9875f7187` (R31), `f2e44912a` (R32) — **not on branch** |
-| **Status** | R30–R32 scope **must not re-apply** until full proposal + 6/6 council PASS logged **before** any edit |
+| **Permanent rule** | `.cursor/rules/council-report-mandatory.mdc` + `docs/qa/COUNCIL_REPORT_MANDATE.md` — every report: critic proof **before** apply, what fixed **after** |
+| **Status** | R30–R32 scope **must not re-apply** until full proposal + per-critic 6/6 table in chat **before** any edit |
 
 ---
 
@@ -436,11 +437,34 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 ```
 ## YYYY-MM-DD — <short title>
 
-### Violations
-| # | Type | Commits | What happened |
+### What we are fixing
+- **Bucket:**
+- **Owner:**
+- **Broken step:**
+- **Planned delta:**
 
-### Remediation / amendment council
-| Layer | Commit | Council | Verdict | Gate |
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS / FAIL | |
+| 2 | PASS / FAIL | |
+| 3 | PASS / FAIL | |
+| 4 | PASS / FAIL | |
+| 5 | PASS / FAIL | |
+| 6 | PASS / FAIL / N/A | |
+| 7 | PASS / FAIL / N/A | |
+**Verdict:** __/N PASS — invalid if any FAIL or table missing
 
-### Resolution
+### What we will not do
+- …
+
+### Applied (after council PASS only)
+- **Commit:** `<40-char hash>`
+- **What fixed:** before → after (canonical owner, one path)
+
+### Verify
+- **Suite:**
+- **Result:** PASS / FAIL
 ```
+
+**Invalid entry:** “6/6 PASS (applied)” or “logged post-verify” without the critic table above.

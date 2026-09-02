@@ -1,0 +1,125 @@
+---
+description: Mandatory council report — every gameplay turn shows what fixed + per-critic PASS proof before apply (owner permanent mandate 2026-09-01)
+alwaysApply: true
+---
+
+# Council Report Mandatory (ABSOLUTE — PERMANENT)
+
+**Owner mandate (2026-09-01):** After R30–R32 shipped without valid council, owner reverted unauthorized commits. **Every report that claims a fix or progress on gameplay/planning/combat MUST show what changed AND per-critic PASS proof recorded BEFORE apply.** No exceptions.
+
+**Canonical template:** `docs/qa/COUNCIL_REPORT_MANDATE.md`  
+**Audit log:** `docs/qa/COUNCIL_AUDIT_LOG.md` (same proof block required per round)
+
+**Wins over:** convenience, QA pressure, “significant progress” without council, changelog-only “Council: 6/6 PASS” with no critic table.
+
+---
+
+## When this applies
+
+Any turn that:
+
+- Proposes or applies gameplay/planning/combat/class/skill fixes
+- Reports QA improvement as “done” or “fixed”
+- Commits production code under `presentation/`, `core/`, `data/definitions/`, planning tests that fix behavior
+- Logs a council round in `COUNCIL_AUDIT_LOG.md`
+
+**Read-only Q&A** — no council report required.
+
+---
+
+## Order (non-negotiable)
+
+```
+PROPOSE → COUNCIL (parallel, all PASS) → REPORT WITH PROOF → APPLY → VERIFY → COMMIT → REPORT AGAIN (proof + what fixed + QA)
+```
+
+| Step | Forbidden |
+|------|-----------|
+| Apply before council table in chat | **Instant violation** |
+| Commit before council table in chat | **Instant violation** |
+| “6/6 PASS” / “council approved” without per-critic lines | **Invalid report** |
+| “Logged post-verify” / council after commit | **Invalid — treat as unauthorized** |
+| Headline = QA FAIL count only | **Invalid — proof block must come first** |
+
+**Owner may order REVERT** of unauthorized commits (see `COUNCIL_AUDIT_LOG.md` V4). Remediation council does **not** replace revert when owner rejects the ship.
+
+---
+
+## Mandatory report block (copy into every gameplay fix turn)
+
+Use **exact section titles** in owner-facing reply **and** `## Changelog`:
+
+### 1. What we are fixing
+
+- **Bucket / symptom:** (test names or owner symptom — one line)
+- **Canonical owner:** (one system/API — not a file alone)
+- **Broken step:** (one sentence — what step in owner chain failed)
+- **Planned delta:** (files + functions; before → after behavior in plain language)
+
+### 2. Council proof (before apply)
+
+| Critic | Charter | Verdict | Rule / exception IDs cited |
+|--------|---------|---------|----------------------------|
+| 1 | Bible paint & tiles | PASS / FAIL | e.g. EX-LOCKED-FIELD, MOVE_PREVIEW |
+| 2 | Settle / bundle / commit | PASS / FAIL | … |
+| 3 | Stand & range origins | PASS / FAIL | … |
+| 4 | Global systems / anti-heuristic | PASS / FAIL | … |
+| 5 | Perf & scheduling | PASS / FAIL | … |
+| 6 | QA-fix discipline *(if QA FAIL scope)* | PASS / FAIL / N/A | … |
+| 7 | Class / skill *(if class scope)* | PASS / FAIL / N/A | … |
+
+**Council round ID:** e.g. `R33`  
+**Verdict:** `N/N PASS` — **apply forbidden unless every row is PASS**
+
+Proof must exist in the **same turn’s chat** before first `StrReplace`/`Write` on production code. Pasting a table without having run parallel critics this turn = **forgery**.
+
+### 3. What we will not do
+
+- (overlay fallback, per-test branches, second stand path, etc.)
+
+### 4. After apply only (second report section)
+
+- **What fixed:** (plain language — same owner, one path)
+- **Files touched:** (list)
+- **Council round ID + N/N PASS:** (repeat table or link “same as §2”)
+- **QA:** suite name, **PASS/FAIL**, commit hash
+- **Audit log:** `COUNCIL_AUDIT_LOG.md` entry added/updated — **yes/no**
+
+---
+
+## Changelog requirement
+
+Every gameplay edit turn **must** include under `## Changelog`:
+
+```markdown
+### Council proof (pre-apply)
+- **Round:** R__
+- **Verdict:** __/6 PASS (or __/5, __/7)
+- **Critic 1:** PASS — [IDs]
+- **Critic 2:** PASS — [IDs]
+…
+
+### What fixed
+- **Owner:** …
+- **Before → After:** …
+```
+
+**Forbidden changelog lines:** `Council: 6/6 PASS` alone · `Logged post-verify` · `council approved` without critic IDs.
+
+---
+
+## Audit log requirement
+
+Each applied round in `docs/qa/COUNCIL_AUDIT_LOG.md` **must** include the **same critic table** as §2 above **before** the commit hash is recorded for that round. Entries that only say “6/6 PASS (applied)” without per-critic rows are **invalid** and must be corrected or marked **VIOLATION**.
+
+---
+
+## Violations
+
+| ID | Pattern | Owner action |
+|----|---------|--------------|
+| **V-REPORT** | Fix reported or committed without §2 table pre-apply | Revert authorized; remediation or re-ship only after real council |
+| **V-FORGE** | Table pasted without parallel critic run this turn | Same as unauthorized code |
+| **V-POST** | Council logged after commit/verify | Same as V1 code-before-council |
+
+Record in `COUNCIL_AUDIT_LOG.md` § Violations.
