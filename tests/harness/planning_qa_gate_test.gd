@@ -2,6 +2,7 @@ class_name PlanningQAGateTest
 extends RefCounted
 
 const HoverMatrix := preload("res://tests/harness/move_skill_hover_matrix_harness.gd")
+const MouseFollowHarness := preload("res://tests/harness/move_preview_mouse_follow_harness.gd")
 
 ## Automated mirror of the owner's manual planning QA checklist (Skill Arena / TestBattle).
 ## Asserts production planning, preview, commit-slot, cursor, and sim APIs — not pixel draw.
@@ -48,6 +49,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_trampling_premove_then_arm_commit_flow,
 		_test_trampling_unarmed_empty_hover_is_premove,
 		_test_trampling_unarmed_hover_follows_mouse_waypoints,
+		_test_move_preview_circle_follows_mouse_without_flush,
 		# Integrity extensions (headless-only; beyond manual checklist)
 		_test_hover_slots_are_deterministic,
 		_test_commit_plan_matches_hover_slots,
@@ -161,6 +163,7 @@ static func run_all(failures: Array[String]) -> void:
 		"trample_flow",
 		"trample_unarmed_hover",
 		"trample_unarmed_hover_paint",
+		"move_preview_circle_follows_mouse",
 		"hover_deterministic",
 		"commit_matches_hover",
 		"undo_keeps_premove",
@@ -1343,6 +1346,12 @@ static func _wire_overlay(fix: Dictionary) -> TacticalPlanningOverlay:
 	return overlay
 
 
+static func _wire_overlay_live(fix: Dictionary) -> TacticalPlanningOverlay:
+	var overlay: TacticalPlanningOverlay = _wire_overlay(fix)
+	overlay.qa_static_overlay = false
+	return overlay
+
+
 static func _wire_click_drop_context(fix: Dictionary) -> void:
 	_wire_overlay(fix)
 
@@ -2407,6 +2416,50 @@ static func _test_trampling_unarmed_empty_hover_is_premove(failures: Array[Strin
 
 static func _test_trampling_unarmed_hover_follows_mouse_waypoints(failures: Array[String]) -> void:
 	TramplingAdvanceE2ETest._test_unarmed_hover_follows_mouse_waypoints(failures)
+
+
+static func _test_move_preview_circle_follows_mouse_without_flush(failures: Array[String]) -> void:
+	const LABEL := "PlanningQAGate move_preview_circle_follows_mouse"
+	var fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	fix.director.auto_run = true
+	var overlay: TacticalPlanningOverlay = _wire_overlay_live(fix)
+	var input: CombatPlanningInput = fix.input
+	var director: CombatDirector = fix.director
+	var unit: UnitState = fix.unit
+	if fix.trample_idx < 0:
+		failures.append("%s: Trampling Advance missing" % LABEL)
+		return
+	if not TramplingAdvanceE2ETest._arm_trample_awaiting(input, director, unit):
+		failures.append("%s: arm awaiting MOVE module failed" % LABEL)
+		return
+	var stand: Vector2i = TramplingAdvanceE2ETest.START_CELL
+	var orbit: Array[Vector2i] = HoverMatrix.dense_hover_cells(
+		fix.board, [stand, TramplingAdvanceE2ETest.END_CELL], HoverMatrix.ORBIT_RADIUS, true,
+	)
+	if orbit.size() < 2:
+		failures.append("%s: orbit sweep too small" % LABEL)
+		return
+	MouseFollowHarness.assert_live_hover_redraws_main_overlay(
+		failures, LABEL, fix, overlay, orbit.slice(0, mini(8, orbit.size())),
+	)
+	for corridor_cell: Vector2i in TramplingAdvanceE2ETest.EAST_THEN_NORTH:
+		MouseFollowHarness.assert_movement_ghost_circle_at_hover(
+			failures, LABEL, fix, overlay, corridor_cell, unit,
+		)
+	# Fresh fixture: unarmed skill-select corridor staging on live throttle (not awaiting).
+	var unarmed_fix: Dictionary = PlanningChecklistHarness.wire_trample_board()
+	unarmed_fix.director.auto_run = true
+	unarmed_fix.director.selected_ability_index = unarmed_fix.trample_idx
+	var unarmed_overlay: TacticalPlanningOverlay = _wire_overlay_live(unarmed_fix)
+	var corridor_cells: Array[Vector2i] = [TramplingAdvanceE2ETest.START_CELL]
+	corridor_cells.append_array(TramplingAdvanceE2ETest.EAST_THEN_NORTH)
+	MouseFollowHarness.assert_drag_corridor_follows_hover_without_flush(
+		failures,
+		LABEL,
+		unarmed_fix,
+		unarmed_overlay,
+		corridor_cells,
+	)
 
 
 static func _test_hover_slots_are_deterministic(failures: Array[String]) -> void:

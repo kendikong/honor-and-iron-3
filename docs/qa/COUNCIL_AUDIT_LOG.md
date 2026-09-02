@@ -380,7 +380,29 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
-## 2026-09-01 — Layer 5 R24 (council-gated PlanningInputTest cursor — partial)
+## 2026-09-01 — Layer 5 R29 (mouse-circle hover QA — remediation + amendment)
+
+### Violations
+
+| # | Type | Commits | What happened |
+|---|------|---------|---------------|
+| 1 | Council skipped | (uncommitted) | R29 applied without propose→council→apply |
+
+### Remediation / amendment council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R29 remediation | `overlay_redraw_nonce`, `move_preview_mouse_follow_harness`, gate test | 1–6 | **5/6** | [Critic 1](3d515b5a-aa39-4aac-a063-921b31e6ec14) FAIL — nonce only, no ghost paint assert |
+| R29b amendment | `movement_ghost_paint_applies`, unified `_queue_overlay_redraw`, ghost circle + corridor drag asserts | 1 (re-run) | **PASS** | [Amendment Critic 1](cd847e26-8b79-40d4-b686-271fd394daef); critics 2–6 unchanged PASS from remediation |
+
+**Behavioral test:** `PlanningQAGate move_preview_circle_follows_mouse` — live throttle (`qa_static_overlay=false`), no `_flush_hover_heavy_sync`; orbit redraw nonce + `hover_coord`; armed awaiting ghost circle at corridor cells; fresh-fixture unarmed drag corridor follows pointer.
+
+**Verify:** `PlanningQaGate.tscn` — `move_preview_circle_follows_mouse` **PASS** (full gate still has other buckets).
+
+**Heuristics refused:** overlay receipt fallback; per-test production branches; sync settle every live hover cell.
+
+---
+
 
 ### Council
 

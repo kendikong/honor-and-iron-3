@@ -1181,7 +1181,7 @@ func _on_ability_selected(index: int) -> void:
 	_last_sim_hover_refresh_cell = Vector2i(-9999, -9999)
 	_clear_hover_preview()
 	if _planning != null:
-		_planning.queue_redraw()
+		_planning._queue_overlay_redraw()
 	_schedule_ability_settled_refresh()
 
 
@@ -1469,7 +1469,7 @@ func on_hover_moved(cell: Vector2i) -> void:
 			and _planning != null
 			and _last_sim_hover_refresh_cell == previous_hover
 		):
-			_planning.queue_redraw()
+			_planning._queue_overlay_redraw()
 	if (
 		not dragging
 		and _director.board.is_in_bounds(cell)
@@ -1714,11 +1714,11 @@ func _run_hover_overlay_refresh() -> void:
 				_planning._invalidate_hover_cache()
 				_planning._recompute_hover_ranges_from_inputs()
 		if _planning != null:
-			_planning.queue_redraw()
+			_planning._queue_overlay_redraw()
 		return
 	if _planning != null:
 		_planning._recompute_hover_ranges_from_inputs()
-		_planning.queue_redraw()
+		_planning._queue_overlay_redraw()
 
 
 func _run_hover_sim_refresh() -> void:
@@ -2399,7 +2399,7 @@ func _restore_hover_preview() -> void:
 		_planning.restore_committed_display()
 		if _director != null and _director.selected_unit_id >= 0 and _is_planning():
 			_planning._recompute_hover_ranges_from_inputs()
-			_planning.queue_redraw()
+			_planning._queue_overlay_redraw()
 	_sync_intent_live_board()
 
 
@@ -4550,7 +4550,7 @@ func clear_hover_route_preview() -> void:
 			if preview_state.is_painted_leg_sealed(uid):
 				preview_state.seal_painted_leg(uid)
 	if _planning != null:
-		_planning.queue_redraw()
+		_planning._queue_overlay_redraw()
 
 
 func committed_route_preview() -> CombatPlanningPreview:

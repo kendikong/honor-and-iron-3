@@ -84,6 +84,7 @@ var _blast_tiles_on_hover_layer: bool = false
 ## Tier 3 QA: skip flow redraws from committed plan entries (drag-only pulse).
 var qa_static_overlay: bool = false
 var _hover_action_icon: String = ""
+var _overlay_redraw_nonce: int = 0
 var _live_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _committed_preview: CombatPlanningPreview = CombatPlanningPreview.new()
 var _stashed_committed: CombatPlanningPreview = CombatPlanningPreview.new()
@@ -217,9 +218,15 @@ func _queue_flow_arrows_redraw() -> void:
 
 
 func _queue_overlay_redraw() -> void:
+	_overlay_redraw_nonce += 1
 	_anim_redraw_accum = 0.0
 	queue_redraw()
 	_queue_flow_arrows_redraw()
+
+
+## Headless QA: main overlay redraw requests (move-preview ghost circles live here).
+func overlay_redraw_nonce() -> int:
+	return _overlay_redraw_nonce
 
 
 func _overlay_draw_target() -> CanvasItem:
@@ -2345,6 +2352,47 @@ func _draw_ghosts() -> void:
 				_draw_facing_wedge(ghost_center, face, Color(_COLOR_ENEMY_ARROW.r, _COLOR_ENEMY_ARROW.g, _COLOR_ENEMY_ARROW.b, alpha + 0.15))
 
 
+func movement_ghost_paint_applies(unit: UnitState) -> bool:
+	if _director == null or _board == null or _planning_input == null:
+		return false
+	if _director.selected_unit_id < 0 or not _board.is_in_bounds(_hover_coord):
+		return false
+	if unit == null or not unit.is_alive():
+		return false
+	if not _planning_input.awaiting_movement_endpoint_ghost_visible(unit):
+		return false
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
+		return false
+	if not _planning_input.awaiting_targeting_active():
+		return false
+	if (
+		AbilitySystem.planning_awaiting_phase(ability)
+		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
+	):
+		return false
+	var origin: Vector2i = _intent_stand_origin(unit)
+	return AbilitySystem.planning_is_valid_awaiting_endpoint(
+		origin, _hover_coord, ability, unit, _planning_board(),
+	)
+
+
+## Headless QA: route endpoint _draw_move_ghosts would use (display route, else staged drag).
+func movement_ghost_route_endpoint(unit: UnitState) -> Vector2i:
+	if not movement_ghost_paint_applies(unit):
+		return Vector2i(-999999, -999999)
+	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
+	if ability != null and AbilitySystem.ability_has_movement_effect(ability):
+		var route_cells: Array[Vector2i] = _display_move_route_cells(unit.id)
+		if route_cells.size() >= 2:
+			return route_cells[route_cells.size() - 1]
+		if _planning_input != null:
+			var drag_route: Array[Vector2i] = _planning_input.get_drag_route()
+			if not drag_route.is_empty():
+				return drag_route[drag_route.size() - 1] as Vector2i
+	return _hover_coord
+
+
 func _draw_move_ghosts() -> void:
 	if _director == null or _board == null or _planning_input == null:
 		return
@@ -2353,33 +2401,19 @@ func _draw_move_ghosts() -> void:
 	var unit := _proj_unit(_director.selected_unit_id)
 	if unit == null or not unit.is_alive():
 		return
-	if not _planning_input.awaiting_movement_endpoint_ghost_visible(unit):
+	if not movement_ghost_paint_applies(unit):
 		return
 	var ability: AbilityData = _selected_ability_data(unit, _director.selected_ability_index)
-	if ability == null or AbilitySystem.planning_commit_flow(unit, ability) != GameEnums.PlanningCommitFlow.AWAITING_TARGET:
-		return
-	if _planning_input != null and not _planning_input.awaiting_targeting_active():
-		return
-	if (
-		AbilitySystem.planning_awaiting_phase(ability)
-		!= GameEnums.PlanningAwaitingPhase.MOVEMENT_ENDPOINT
-	):
-		return
-	var origin: Vector2i = _intent_stand_origin(unit)
-	if not AbilitySystem.planning_is_valid_awaiting_endpoint(
-		origin, _hover_coord, ability, unit, _planning_board(),
-	):
-		return
 	var center: Vector2 = _map_view.grid_to_local(_hover_coord)
 	var p_col: Color = _player_color_for_unit(unit)
 	draw_circle(center, _token_radius() + 1.0, Color(p_col.r, p_col.g, p_col.b, 0.45))
-	var dash_face: int = _facing_toward(origin, _hover_coord)
+	var dash_face: int = _facing_toward(_intent_stand_origin(unit), _hover_coord)
 	_draw_facing_wedge(center, dash_face, Color(p_col.r, p_col.g, p_col.b, 0.85))
 	if ability != null and AbilitySystem.ability_has_effect(
 		ability, GameEnums.EffectType.TELEPORT_CASTER,
 	):
 		_draw_dashed_route(
-			[origin, _hover_coord],
+			[_intent_stand_origin(unit), _hover_coord],
 			Color(p_col.r, p_col.g, p_col.b, 0.85),
 		)
 	elif ability != null and AbilitySystem.ability_has_movement_effect(ability):
