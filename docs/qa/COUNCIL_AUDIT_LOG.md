@@ -1390,6 +1390,39 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R121-R123 painted orbit premove parity (partial)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` — armed `[(5,4),(5,3)]` vs unarmed `[(5,4),(4,4),(4,3),(5,3)]` @(5,3); armed stand-only on most orbit cells
+- **Owner:** `CombatPlanningInput` — corridor board, settle-fresh apply path, flush restore, snapshot assembler
+- **Broken step:** (1) armed orbit corridor pathfound on sealed landing board; (2) armed excluded from settle-fresh assembler prefix; (3) flush restore overwrote orbit preview; (4) armed-only orbit corridor apply bypassed unarmed assembler path
+- **Planned delta:** unify orbit corridor board to live turn board; route armed painted orbit through assembler prefix + snapshot assemble; skip flush restore on receipt orbit extend; remove `not armed_painted_orbit_extend` settle-fresh gate
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS | settle-fresh owner, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand, leg_anchor |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate, single assembler owner |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; global seal disable; R93b armed live-preview reroute; `_refresh_live_interaction_preview` recursion bypass (R123b reverted — stack overflow)
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed (partial — @(5,3) still open):** Orbit corridor board always `_corridor_board_for_unarmed_premove_orbit`; armed enters settle-fresh block; armed uses `_apply_assembler_prefix_preview_on_painted_route`; snapshot assemble-only for receipt orbit; flush restore skipped when `_painted_receipt_orbit_extend_active`
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (unchanged); @(5,3) **still FAIL**; `postmove_painted_hover` **0 FAIL**
+- **Next owner step:** armed `active_movement_planning_step` still reaches `_preview_at_interaction_cell` after settle-fresh return — need non-recursive unarmed-parity path without sim short-hop
+
+---
+
 ## 2026-09-02 — R114-R120 painted orbit premove parity (partial)
 
 ### What we are fixing

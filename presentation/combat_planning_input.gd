@@ -1852,14 +1852,6 @@ func _flush_hover_heavy_sync() -> void:
 	## settle before ratify — always call _run_hover_sim_refresh here.
 	_hover_sim_schedule_generation += 1
 	_drag_preview_schedule_generation += 1
-	if not dragging and _director != null and _director.selected_unit_id >= 0:
-		var flush_unit: UnitState = _proj_unit(_director.selected_unit_id)
-		if (
-			flush_unit != null
-			and awaiting_targeting_active()
-			and _awaiting_painted_drag_matches_leg(flush_unit)
-		):
-			_restore_locked_painted_preview_paths(flush_unit.id)
 	if dragging:
 		_refresh_drag_preview_now()
 	var pointer_cell: Vector2i = _pointer_grid_cell()
@@ -1877,6 +1869,15 @@ func _flush_hover_heavy_sync() -> void:
 	var flush_cell: Vector2i = (
 		_intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	)
+	if not dragging and _director != null and _director.selected_unit_id >= 0:
+		var flush_unit: UnitState = _proj_unit(_director.selected_unit_id)
+		if (
+			flush_unit != null
+			and awaiting_targeting_active()
+			and _awaiting_painted_drag_matches_leg(flush_unit)
+			and not _painted_receipt_orbit_extend_active(flush_unit, flush_cell)
+		):
+			_restore_locked_painted_preview_paths(flush_unit.id)
 	_run_hover_sim_refresh()
 	if _director != null and _director.selected_ability_index >= 0:
 		_sync_movement_preview_after_hover_sim(flush_cell)
@@ -3826,13 +3827,9 @@ func _preview_paths_snapshot_for_settle(
 		settle_actor != null
 		and _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
 	):
-		var receipt_orbit: Array[Vector2i] = _painted_orbit_corridor_preview_path(
-			settle_actor, _hover_cell,
+		var receipt_orbit: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
+			unit_id, settle_actor, _hover_cell, [],
 		)
-		if receipt_orbit.size() < 2:
-			receipt_orbit = _assemble_voluntary_walk_preview_path(
-				unit_id, settle_actor, _hover_cell, [],
-			)
 		if receipt_orbit.size() >= 2:
 			snapshot[unit_id] = receipt_orbit.duplicate()
 			return snapshot
@@ -5684,7 +5681,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	var armed_painted_orbit_extend: bool = _armed_painted_receipt_orbit_extend_active(
 		p_unit, cell,
 	)
-	if _hover_settle_fresh_at(p_unit.id, cell) and not armed_painted_orbit_extend:
+	if _hover_settle_fresh_at(p_unit.id, cell):
 		if _postmove_orbit_drag_unreachable(p_unit, cell):
 			_apply_postmove_orbit_drag_stand_preview(p_unit, cell)
 			_sync_movement_hover_paths_to_overlay(p_unit.id)
@@ -5695,9 +5692,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			or armed_painted_orbit_extend
 		):
 			if armed_painted_orbit_extend:
-				_apply_orbit_corridor_preview_path(
-					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
-				)
+				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 			elif _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
@@ -5749,9 +5744,7 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		var probe_path: Array[Vector2i] = []
 		if sealed_orbit_extend:
-			probe_path = _painted_orbit_corridor_preview_path(p_unit, cell)
-			if probe_path.size() < 2:
-				probe_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
+			probe_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 		elif (
 			_drag_route_commits_active()
 			and _drag_unit_id == p_unit.id
@@ -5923,19 +5916,10 @@ func _apply_orbit_corridor_preview_path(
 		return
 	var orbit_path: Array[Vector2i] = path_override
 	if orbit_path.is_empty():
-		if (
-			_armed_awaiting_move_orbit_settle_open(p_unit)
-			and _painted_receipt_orbit_extend_active(p_unit, cell)
-		):
-			orbit_path = _painted_orbit_corridor_preview_path(p_unit, cell)
-			if orbit_path.size() < 2:
-				orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
-		if (
-			orbit_path.is_empty()
-			and _painted_receipt_orbit_extend_active(p_unit, cell)
-			and not _armed_awaiting_move_orbit_settle_open(p_unit)
-		):
-			orbit_path = _painted_orbit_corridor_preview_path(p_unit, cell)
+		if _painted_receipt_orbit_extend_active(p_unit, cell):
+			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
+		elif _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
+			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 		if orbit_path.is_empty():
 			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 	if orbit_path.is_empty():
@@ -6054,7 +6038,7 @@ func _assemble_voluntary_walk_preview_path(
 			and not painted_premove_orbit_parity
 		)
 		var orbit_board: BoardState = (
-			_corridor_board_for_receipt_orbit_extend(actor, orbit_origin)
+			_corridor_board_for_unarmed_premove_orbit(actor, orbit_origin)
 			if receipt_corridor_extend
 			else _corridor_board_for_voluntary_walk(actor)
 		)
@@ -6312,7 +6296,6 @@ func _resolve_commit_move_waypoints(unit_id: int, actor: UnitState, cell: Vector
 		var receipt_corridor: Array[Vector2i] = _corridor_waypoints_to_cell(
 			actor,
 			cell,
-			_armed_awaiting_move_orbit_settle_open(actor),
 		)
 		if not receipt_corridor.is_empty() and receipt_corridor.back() == cell:
 			return receipt_corridor
@@ -6360,34 +6343,9 @@ func _corridor_board_for_unarmed_premove_orbit(actor: UnitState, origin: Vector2
 	return board
 
 
-## Receipt-orbit extend pathfinds with painted landing occupancy when preview_board exists.
+## Receipt-orbit extend pathfinds on live turn board (premove parity — not sealed landing occupancy).
 func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i) -> BoardState:
-	if actor == null or _director == null or origin.x <= -900000:
-		return _proj()
-	if (
-		preview_state.is_painted_leg_sealed(actor.id)
-		and _authoritative_route_for_unit(actor.id).size() >= 2
-	):
-		_sync_preview_board_to_sealed_landing(actor.id)
-	if preview_state.preview_board == null:
-		var painted_route: Array = _authoritative_route_for_unit(actor.id)
-		if painted_route.size() >= 2:
-			_sync_preview_board_to_sealed_landing(actor.id)
-	if preview_state.preview_board != null:
-		var preview_clone: BoardState = preview_state.preview_board.clone()
-		var preview_actor: UnitState = preview_clone.get_unit_by_id(actor.id)
-		if preview_actor != null:
-			GridSystem.set_occupant(preview_clone, preview_actor.position, -1)
-			preview_actor.position = origin
-			GridSystem.set_occupant(preview_clone, origin, actor.id)
-		return preview_clone
-	var board: BoardState = _director.board.clone()
-	var walk_actor: UnitState = board.get_unit_by_id(actor.id)
-	if walk_actor != null:
-		GridSystem.set_occupant(board, walk_actor.position, -1)
-		walk_actor.position = origin
-		GridSystem.set_occupant(board, origin, actor.id)
-	return board
+	return _corridor_board_for_unarmed_premove_orbit(actor, origin)
 
 ## Receipt-orbit extend: sealed painted leg uses live turn-board MP (premove parity, not POST _proj cap).
 func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
@@ -6541,7 +6499,7 @@ func _corridor_waypoints_to_cell(
 			_sync_preview_board_to_sealed_landing(actor.id)
 	var corridor_board: BoardState = _corridor_board_for_voluntary_walk(actor)
 	if corridor_orbit_extend and origin.x > -900000:
-		corridor_board = _corridor_board_for_receipt_orbit_extend(actor, origin)
+		corridor_board = _corridor_board_for_unarmed_premove_orbit(actor, origin)
 	var pathfind_actor: UnitState = actor
 	if corridor_orbit_extend and corridor_board != null:
 		var board_actor: UnitState = corridor_board.get_unit_by_id(actor.id)
@@ -8386,7 +8344,6 @@ func _build_commit_slots_at_cell(
 								_corridor_waypoints_to_cell(
 									actor,
 									cell,
-									_armed_awaiting_move_orbit_settle_open(actor),
 								)
 							)
 							if (
