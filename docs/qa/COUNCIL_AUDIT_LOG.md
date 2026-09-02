@@ -535,6 +535,38 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R38 (unarmed R19 parity + cell-change orbit gate) — REVERTED
+
+### What we were fixing
+- **Bucket:** sidestep_valid_waypoint, sidestep_waypoint_hover, tile_aoe_waypoint_hover — `painted premove route []`
+- **Owner:** `CombatPlanningInput._stage_voluntary_walk_drag_input` + `_drag_route_commits_active` + `_selection_corridor_route_staging_active`
+- **Broken step:** R31 orbit early-return blocks unarmed `_extend_drag_route` (armed R19 never hit this gate because `basic_premove_orbit` is false when ability armed)
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-LOCKED-FIELD, EX-BIBLE-UI, R19 unarmed parity |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, no-heavy-postprocess-safety, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate 6-row |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED, planning-hover-perf-mandatory |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- R36 `armed_skill_premain_paint: pass`; broad unarmed orbit fall-through (R37); overlay fallback
+
+### Applied / outcome
+| Variant | QA | Notes |
+|---------|-----|-------|
+| R38 full (A+B+C) | **263 → 279 FAIL** (+16 regression) | Sidestep bucket shifted from empty `_drag_route` to commit failures on some cases; SSOT BREAK spam on preview_paths vs slots |
+| R38a (orbit guard A only) | **430 FAIL** | Broke `waypoint_enemy_hover` (was PASS at R35) — **REVERTED** |
+| **Code baseline** | R35 `7a944d74c` — **263 FAIL** | Production restored |
+
+**Next council target:** partial drag build observed under R38 full — separate round for unarmed **commit** path (`_resolve_commit_move_waypoints` / click ratify) without `_drag_route_commits_active` unarmed branch that caused SSOT BREAK; orbit guard must not regress armed `waypoint_enemy_hover`.
+
+---
+
 
 ### Council
 
