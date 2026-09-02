@@ -1205,7 +1205,7 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - Overlay fallback
 
 ### Applied (after council PASS only)
-- **Commit:** (this turn)
+- **Commit:** `cb6989701b5ea63cd8d279c213ec9b862f4f5d85`
 - **What fixed:** Removed post-probe `settle_waypoints = _resolve_commit_move_waypoints(...)` for armed painted orbit extend
 
 ### Verify
