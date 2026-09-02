@@ -366,6 +366,20 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R28 (live F5 frozen move-preview circles)
+
+### Council
+
+| Round | Scope | Council | Verdict | Notes |
+|-------|-------|---------|---------|-------|
+| R28 | `set_hover_coord` queues `_queue_overlay_redraw`; restore `_run_hover_overlay_refresh` in-bounds recompute+redraw | pending formal 6/6 | Applied — owner F5 report |
+
+**Root cause:** Hover cell updated but only `_hover_tile_layer` redrew; move-preview ghost circles (`_draw_move_ghosts`) paint on main overlay and stayed on last frame.
+
+**Heuristics refused:** second settle path; overlay tile recompute fallback.
+
+---
+
 ## 2026-09-01 — Layer 5 R24 (council-gated PlanningInputTest cursor — partial)
 
 ### Council

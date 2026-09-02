@@ -1716,6 +1716,11 @@ func _run_hover_overlay_refresh() -> void:
 		if _planning != null:
 			_planning.queue_redraw()
 		return
+	if _planning != null:
+		_planning._recompute_hover_ranges_from_inputs()
+		_planning.queue_redraw()
+
+
 func _run_hover_sim_refresh() -> void:
 	if _director == null or _director.board == null or not _is_planning() or dragging:
 		return

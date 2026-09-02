@@ -704,6 +704,7 @@ func set_hover_coord(coord: Vector2i, redraw: bool = true) -> void:
 		_update_hover_action_icon()
 	if redraw:
 		_queue_hover_tile_redraw()
+		_queue_overlay_redraw()
 
 
 func begin_drag_sprite(unit_id: int) -> void:
