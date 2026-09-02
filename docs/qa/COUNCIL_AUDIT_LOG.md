@@ -947,7 +947,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback; per-test branches; `_can_move_to` in authoritative
 
 ### Applied (after council PASS only)
-- **Commit:** (see below)
+- **Commit:** `8870d51a40a8ef74120735d417d5ada3e31b7374`
 - **What fixed:** POSTMOVE drag no longer reads stale `_drag_route` or stale receipt when route collapsed to stand; unreachable cells with fresh settle cache re-run stand-only settle via `_apply_postmove_orbit_drag_stand_preview`
 
 ### Verify
