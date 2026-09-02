@@ -1016,7 +1016,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback; per-test branches; defer armed seal; broad postmove unlock
 
 ### Applied
-- **Commit:** (this turn)
+- **Commit:** `293e61c7a7b2fb82a62f2e32ea3aa76a1a2b819a`
 - **What fixed:** partial — postmove_painted_hover preserved **0 FAIL**; equivalence still **27 FAIL** @(5,3) unchanged
 
 ### Verify
