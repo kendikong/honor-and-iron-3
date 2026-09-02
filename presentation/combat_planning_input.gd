@@ -2087,12 +2087,13 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		and not _awaiting_target_pick_blocks_premove()
 		and _hover_settle_fresh_at(p_unit.id, cell)
 	):
-		if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
-			_apply_orbit_corridor_preview_path(
-				p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
-			)
-		else:
-			_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
+		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots):
+			if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
+				_apply_orbit_corridor_preview_path(
+					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
+				)
+			else:
+				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if p_unit != null and _sealed_leg_hover_restore_if_blocked(p_unit, cell):
@@ -3522,6 +3523,12 @@ func _preview_paths_snapshot_for_settle(
 			snapshot[unit_id] = orbit_path.duplicate()
 			return snapshot
 	if slot_wps.is_empty() and waypoints.is_empty():
+		if _hover_slots_are_skill_only(slots):
+			var committed_snapshot: Dictionary = _committed_premove_path_snapshot(
+				unit_id, settle_actor,
+			)
+			if not committed_snapshot.is_empty():
+				return committed_snapshot
 		if preview_state.is_painted_leg_sealed(unit_id):
 			var sealed_route: Variant = preview_state.preview_paths.get(unit_id, null)
 			if sealed_route is Array and (sealed_route as Array).size() >= 2:
@@ -5235,13 +5242,14 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if _hover_settle_fresh_at(p_unit.id, cell):
-		if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
-			_apply_orbit_corridor_preview_path(
-				p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
-			)
-			_sync_orbit_preview_paths_to_receipt(p_unit.id, _preview_path_for_unit(p_unit.id))
-		else:
-			_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
+		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots):
+			if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
+				_apply_orbit_corridor_preview_path(
+					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
+				)
+				_sync_orbit_preview_paths_to_receipt(p_unit.id, _preview_path_for_unit(p_unit.id))
+			else:
+				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
 		return
 	if painted_move_route_locked(p_unit, cell):
@@ -5373,6 +5381,69 @@ func _orbit_corridor_drag_route_override(p_unit: UnitState) -> Array[Vector2i]:
 		for drag_i: int in range(_drag_route.size()):
 			override.append(_drag_route[drag_i] as Vector2i)
 	return override
+
+
+func _settled_receipt_matches_slot_waypoints(
+	unit_id: int,
+	slots: Dictionary,
+) -> bool:
+	var slot_wps: Array[Vector2i] = _HoverPreviewBundle.move_waypoints_from_slots(slots)
+	if slot_wps.is_empty():
+		return false
+	if _settled_hover_preview == null or not _settled_hover_preview.valid:
+		return false
+	if _settled_hover_preview.unit_id != unit_id:
+		return false
+	var route: Variant = _settled_hover_preview.preview_paths.get(unit_id, null)
+	if not route is Array or (route as Array).size() < 2:
+		return false
+	var actor: UnitState = _proj_unit(unit_id)
+	var origin: Vector2i = (
+		_phase_entry_stand(actor) if actor != null else Vector2i(-999999, -999999)
+	)
+	var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
+		route as Array, origin, slot_wps[slot_wps.size() - 1],
+	)
+	return leg == slot_wps
+
+
+func _hover_slots_are_skill_only(slots: Dictionary) -> bool:
+	var has_move: bool = false
+	var has_ability: bool = false
+	for col: String in ["pre", "action", "post"]:
+		for raw: Variant in slots.get(col, []):
+			if not raw is TimelineAction:
+				continue
+			var action: TimelineAction = raw as TimelineAction
+			if action.type == GameEnums.ActionType.MOVE:
+				has_move = true
+			elif action.type == GameEnums.ActionType.ABILITY:
+				has_ability = true
+	return has_ability and not has_move
+
+
+func _committed_premove_path_snapshot(
+	unit_id: int,
+	actor: UnitState,
+) -> Dictionary:
+	var snapshot: Dictionary = {}
+	if _director == null or unit_id < 0 or actor == null:
+		return snapshot
+	var origin: Vector2i = _settle_phase_entry_stand(actor)
+	for action: TimelineAction in _director.plan_pre_move.entries:
+		if action == null or action.actor_id != unit_id:
+			continue
+		if action.type != GameEnums.ActionType.MOVE or action.waypoints.is_empty():
+			continue
+		var built: Array[Vector2i] = []
+		if origin.x > -900000:
+			built.append(origin)
+		for wp_i: int in range(action.waypoints.size()):
+			built.append(action.waypoints[wp_i] as Vector2i)
+		if built.size() >= 2:
+			snapshot[unit_id] = built
+		return snapshot
+	return snapshot
 
 
 func _apply_orbit_corridor_preview_path(

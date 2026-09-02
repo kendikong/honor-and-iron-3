@@ -751,6 +751,41 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R46 (settle-fresh stomp guard + committed premove snapshot) — APPLIED
+
+### What we are fixing
+- **Bucket:** MOVE-SKILL-01 / PUSH-PULL-01 SSOT BREAK `leg []`; `tile_aoe_waypoint_hover` path `[]`
+- **Owner:** `CombatPlanningInput` — `_preview_paths_snapshot_for_settle` + post-settle hover refresh
+- **Broken step:** (A) orbit early branch overwrote sealed receipt paths to stand-only after settle; (B) empty snapshot wiped committed premove corridor on skill-only hover
+
+### Council proof (pre-apply — R46b after critics 4–6 FAIL on R46a-only)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS (amend) | MOVE_PREVIEW, EX-FROZEN-REPLAY, EX-LOCKED-FIELD |
+| 2 Settle / bundle / commit | PASS (amend) | move-preview-intent-truth — receipt geometry preserved |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS (amend) | non-heuristic-mandate — committed path from `plan_pre_move` timeline not buffer |
+| 5 Perf & scheduling | PASS (amend) | EX-PERF-SCHED — skip repaint only when receipt leg matches slot waypoints |
+| 6 QA-fix discipline | PASS (amend) | qa-fix-no-heuristics — settle owner + stomp guard |
+**Verdict:** 6/6 PASS (R46c amendment: geometry-match guard + skill-only committed snapshot)
+
+### What fixed
+- **R46A:** Skip orbit/assembler repaint when `_hover_settle_fresh_at` AND `_settled_receipt_matches_slot_waypoints` (not blind size≥2)
+- **R46B:** `_committed_premove_path_snapshot` from `plan_pre_move` MOVE waypoints when `_hover_slots_are_skill_only`
+- **R46C:** Gate committed snapshot on skill-only; geometry-match stomp guard (fixes trample regression from R46b)
+
+### Verify
+| Suite | Result |
+|-------|--------|
+| `run_planning_headless_contracts.ps1` | **FAIL 263** (was 268 R45; **matches R35 baseline**) |
+| MOVE-SKILL-01 / PUSH-PULL-01/bash | **PASS** |
+| `tile_aoe_waypoint_hover` | **PASS** |
+| SSOT BREAK armed | **cleared** |
+
+**Next council target (R47):** remaining premove/orbit buckets (trample matrix unreachable cells, charge_strike_composite, reposition_preview_clear) — separate owner triage per bucket.
+
+---
+
 
 ### Council
 
