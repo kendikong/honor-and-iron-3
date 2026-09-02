@@ -1106,7 +1106,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ### Applied
-- **Commit:** (this turn)
+- **Commit:** `6145d1db9b6039a70685da084369e8e781254562`
 
 ### Verify
 - **Suite:** `run_planning_headless_contracts.ps1`
