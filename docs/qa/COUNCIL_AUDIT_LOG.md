@@ -1293,6 +1293,35 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R107–R109 painted_route_equivalence @(5,3)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3)
+- **Owner:** `CombatPlanningInput` receipt budget, awaiting slots, post-sim resync, corridor pathfind actor
+- **Broken step:** Projected POST MP budget trim; ability waypoints poisoned with walk corridor; armed-only post-sim resync stomp; pathfind actor not board-aligned
+- **Planned delta:** live-board `planning_move_budget`; direct_relocation ability wps `[]` after voluntary walk; resync guard; board-aligned pathfind actor
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 | PASS | MOVE_PREVIEW |
+| 3 | PASS | action-range-latest-stand |
+| 4 | PASS | non-heuristic-mandate |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS (R107 + R108 + R109 amendments)
+
+### Applied
+- **Commit:** `69566fa4f`
+- **What fixed (partial):** R107–R109 as above; @(5,3) unchanged
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47**; postmove **0 FAIL**
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 
