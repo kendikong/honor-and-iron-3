@@ -980,7 +980,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 - Overlay fallback; `phase_entry` fork in `matches_leg`
 
 ### Applied (after council PASS only)
-- **Commit:** (pending)
+- **Commit:** `6704947a6dbfcf659a0314e615d01fb69b10b70e`
 - **What fixed:** postmove painted drag seals full route at drag-end/explicit API; frozen path on all hover cells; no postmove_hover regression
 
 ### Verify
