@@ -1025,6 +1025,38 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — R85–R90 painted_route_equivalence armed orbit parity (IN PROGRESS)
+
+### What we are fixing
+- **Bucket:** `PlanningQAGate painted_route_equivalence` — armed `[(5,4),(5,3)]` vs unarmed `[(5,4),(4,4),(4,3),(5,3)]` @(5,3)
+- **Owner:** `CombatPlanningInput` — `_refresh_voluntary_walk_hover_preview`, `_preview_paths_snapshot_for_settle`, `_resolve_commit_move_waypoints`, `_assemble_voluntary_walk_preview_path`
+- **Broken step:** Armed orbit settle poisons probe with short receipt/skill waypoints; orbit assembler uses wrong board + manhattan-1 fallback; fresh-settle shortcut bypasses full settle
+- **Planned delta:** R85b bypass fresh-settle for armed orbit; probe `[]` + receipt parity wps; snapshot built-path owner; R88 skip `_hover_walk_waypoints_for_skill` on receipt extend; R89 receipt orbit board in assembler; R90 disable manhattan-1 hop on receipt extend
+
+### Council proof (pre-apply — R85b)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD, path-vs-flood |
+| 2 | PASS | move-preview-intent-truth, no-heavy-postprocess-safety (after R85b fresh-settle bypass) |
+| 3 | PASS | ACTION_RANGE_LATEST_STAND, EX-POSTMOVE-SLOT |
+| 4 | PASS | NHM 6-row, global-systems-first |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Global seal clear (R83 regression); overlay fallback; per-test branches; broad freeze unlock
+
+### Applied
+- **Commit:** `b94d0f91a` (includes pre-edit `7523e1eea` R84 snapshot)
+- **What fixed:** partial — **no delta** on equivalence @(5,3); postmove_painted_hover **0 FAIL** maintained
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **48** (equivalence **~27**; @(5,3) unchanged)
+
+---
+
 ## 2026-09-02 — R63 receipt-orbit corridor budget (armed motion cap)
 
 ### What we are fixing
