@@ -1414,10 +1414,18 @@ func _stage_voluntary_walk_drag_input(
 	## Basic premove / awaiting MOVE orbit: assembler corridor only — never poison _drag_route.
 	if orbit_phase_corridor and not dragging:
 		var basic_premove_orbit: bool = _director.selected_ability_index < 0
-		if basic_premove_orbit or awaiting_move_leg:
+		if awaiting_move_leg:
 			if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
 				_clear_hover_drag_route()
 			return
+		if basic_premove_orbit:
+			if not (
+				open_premove_hover_paint
+				and (planning_cell_changed or _drag_route_commits_active())
+			):
+				if _drag_route_commits_active() and _drag_unit_id == p_unit.id:
+					_clear_hover_drag_route()
+				return
 	var should_extend_route: bool = planning_cell_changed
 	if (
 		not should_extend_route
@@ -2866,6 +2874,13 @@ func _drag_route_commits_active() -> bool:
 				ability != null
 				and not _is_awaiting_movement_endpoint(p_unit, ability)
 				and _director.selected_ability_index >= 0
+				and _drag_route.size() >= 2
+				and _drag_unit_id == p_unit.id
+				and _movement_route_paint_allowed()
+			):
+				return true
+			if (
+				_director.selected_ability_index < 0
 				and _drag_route.size() >= 2
 				and _drag_unit_id == p_unit.id
 				and _movement_route_paint_allowed()
@@ -5089,6 +5104,14 @@ func _selection_corridor_route_staging_active(p_unit: UnitState) -> bool:
 		and not _is_awaiting_movement_endpoint(p_unit, staged_ability)
 		and _drag_route.size() >= 2
 		and _drag_unit_id == p_unit.id
+	):
+		return true
+	if (
+		_director != null
+		and _director.selected_ability_index < 0
+		and _drag_route.size() >= 2
+		and _drag_unit_id == p_unit.id
+		and _movement_route_paint_allowed()
 	):
 		return true
 	return false

@@ -630,6 +630,48 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R43 (unarmed drag staging chain A+B+C) — APPLIED
+
+### What we are fixing
+- **Bucket:** sidestep_valid_waypoint, sidestep_waypoint_hover, tile_aoe_waypoint_hover — `painted premove route []`
+- **Owner:** `CombatPlanningInput` drag staging chain (orbit guard → `_drag_route_commits_active` → `_selection_corridor_route_staging_active`)
+- **Broken step:** R31 orbit early-return blocks extend; without B same-cell clear wipes drag; without C premature seal runs before corridor staging
+
+### Trace proof (before apply — harness `debug_sidestep_premove_drag.gd`)
+| Step | drag after sweep to (4,4) |
+|------|---------------------------|
+| R35 baseline | `[]` |
+| A only (orbit guard) | `[]` (cleared after first sweep — commits false) |
+| A+B only | `[]` (seal before extend — staging false) |
+| **A+B+C** | **full route match=true, commits=true** |
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW_RULES, EX-LOCKED-FIELD |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, EX-PERF-SCHED |
+| 3 Stand & range origins | PASS | action-range-latest-stand |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate 6-row |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS (amendment) | qa-fix-no-heuristics — trace proves A+B+C = one owner chain |
+**Verdict:** 6/6 PASS (Critic 6 amendment after trace)
+
+### What fixed
+- **A** `_stage_voluntary_walk_drag_input`: split `awaiting_move_leg` hard-return; `basic_premove_orbit` fall-through when `open_premove_hover_paint and (planning_cell_changed or commits_active)`
+- **B** `_drag_route_commits_active`: unarmed branch before orbit false-return
+- **C** `_selection_corridor_route_staging_active`: unarmed branch defers premature seal during sweep
+
+### Verify
+| Suite | Result |
+|-------|--------|
+| `run_planning_headless_contracts.ps1` | **FAIL 279** (was 263; +16 — matches prior R38 full) |
+| Sidestep bucket | Empty `_drag_route` → **commit failures** on some cases; `sidestep_valid_waypoint/1` no longer empty-drag FAIL |
+| `waypoint_enemy_hover` | Still preview path short vs full route |
+
+**Next council target (R44):** commit ratify (`_resolve_commit_move_waypoints` / click) + settle snapshot orbit skip when slot waypoints present — **not** revert A+B+C (trace proves chain required).
+
+---
+
 
 ### Council
 
