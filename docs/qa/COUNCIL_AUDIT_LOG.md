@@ -1250,6 +1250,49 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
+## 2026-09-02 — R105–R106 painted_route_equivalence @(5,3) receipt orbit parity
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` @(5,3) armed `[(5,4),(5,3)]` vs unarmed detour `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` settle snapshot + receipt orbit corridor budget + live hover receipt path
+- **Broken step:** Armed orbit used assembler prefix / short receipt budget; snapshot orbit branch still excluded armed from receipt path; live armed hover did not route through receipt orbit like unarmed
+- **Planned delta:** `_receipt_orbit_extend_corridor_budget` → `_move_budget` when sealed; snapshot orbit branch uses `_painted_receipt_orbit_extend_active`; live hover/probe/orbit apply use `_receipt_orbit_corridor_preview_path` before assemble
+
+### Council proof (pre-apply — R105)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 Settle / bundle / commit | PASS (amended: budget in shared `_receipt_orbit_extend_corridor_budget`) | MOVE_PREVIEW, EX-FROZEN-REPLAY |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### Council proof (pre-apply — R106 amendment)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | MOVE_PREVIEW, path-vs-flood |
+| 2 Settle / bundle / commit | PASS | MOVE_PREVIEW, no overlay fallback |
+| 3 Stand & range origins | PASS | leg_anchor unchanged |
+| 4 Global systems / anti-heuristic | PASS | one receipt owner for armed/unarmed live hover |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; global seal disable; armed live-preview reroute (R93b)
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed (partial — @(5,3) still open):** R105 sealed receipt budget via `_move_budget`; snapshot orbit unified on `_painted_receipt_orbit_extend_active`; R106 live armed hover/probe/orbit apply receipt before assemble; restored assembler armed leg_sealed override after R105 removal regressed compare to `[(5,4)]`-only
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **47** (unchanged); @(5,3) **still FAIL**; postmove **0 FAIL**
+
+---
+
 ```
 ## YYYY-MM-DD — <short title>
 

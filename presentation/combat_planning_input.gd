@@ -3845,11 +3845,7 @@ func _preview_paths_snapshot_for_settle(
 	):
 		var orbit_path: Array[Vector2i] = (
 			_receipt_orbit_corridor_preview_path(settle_actor, _hover_cell)
-			if (
-				leg_sealed
-				and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
-				and not _armed_awaiting_move_orbit_settle_open(settle_actor)
-			)
+			if _painted_receipt_orbit_extend_active(settle_actor, _hover_cell)
 			else _assemble_voluntary_walk_preview_path(
 				unit_id, settle_actor, _hover_cell, settle_waypoints,
 			)
@@ -5615,7 +5611,7 @@ func _armed_painted_receipt_orbit_extend_active(p_unit: UnitState, cell: Vector2
 	return _painted_receipt_orbit_extend_active(p_unit, cell)
 
 
-## Armed MOVE-awaiting orbit extend: assembler reads leg as unsealed so premove-parity detour wins over receipt corridor.
+## Armed MOVE-awaiting orbit extend: assembler reads leg as unsealed so corridor_fill runs.
 func _assembler_treats_painted_leg_sealed(
 	unit_id: int,
 	actor: UnitState,
@@ -5646,7 +5642,9 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 			or armed_painted_orbit_extend
 		):
 			if armed_painted_orbit_extend:
-				_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
+				_apply_orbit_corridor_preview_path(
+					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
+				)
 			elif _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
 					p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
@@ -5698,9 +5696,11 @@ func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) ->
 	):
 		var probe_path: Array[Vector2i] = []
 		if sealed_orbit_extend:
-			probe_path = _assemble_voluntary_walk_preview_path(
-				p_unit.id, p_unit, cell, [],
-			)
+			probe_path = _receipt_orbit_corridor_preview_path(p_unit, cell)
+			if probe_path.is_empty():
+				probe_path = _assemble_voluntary_walk_preview_path(
+					p_unit.id, p_unit, cell, [],
+				)
 		elif (
 			_drag_route_commits_active()
 			and _drag_unit_id == p_unit.id
@@ -5872,7 +5872,10 @@ func _apply_orbit_corridor_preview_path(
 		return
 	var orbit_path: Array[Vector2i] = path_override
 	if orbit_path.is_empty():
-		orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
+		if _painted_receipt_orbit_extend_active(p_unit, cell):
+			orbit_path = _receipt_orbit_corridor_preview_path(p_unit, cell)
+		if orbit_path.is_empty():
+			orbit_path = _assemble_voluntary_walk_preview_path(p_unit.id, p_unit, cell, [])
 	if orbit_path.is_empty():
 		_clear_stale_painted_preview_route(p_unit.id)
 		_sync_orbit_preview_paths_to_receipt(p_unit.id, [])
@@ -6261,8 +6264,10 @@ func _corridor_board_for_receipt_orbit_extend(actor: UnitState, origin: Vector2i
 		GridSystem.set_occupant(board, origin, actor.id)
 	return board
 
-## Receipt-orbit extend: pathfind budget from live turn board MP (premove parity), not orbit-phase projected cap.
+## Receipt-orbit extend: sealed painted leg uses planning move budget (armed/unarmed parity).
 func _receipt_orbit_extend_corridor_budget(actor: UnitState) -> int:
+	if actor != null and preview_state.is_painted_leg_sealed(actor.id):
+		return _move_budget(actor)
 	if _director != null and _director.board != null:
 		var live_actor: UnitState = _director.board.get_unit_by_id(actor.id)
 		if live_actor != null:
