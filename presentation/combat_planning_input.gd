@@ -2088,7 +2088,9 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		and _hover_settle_fresh_at(p_unit.id, cell)
 	):
 		if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
-			_apply_orbit_corridor_preview_path(p_unit, cell)
+			_apply_orbit_corridor_preview_path(
+				p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
+			)
 		else:
 			_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
 		_refresh_click_target_highlight()
@@ -5234,7 +5236,9 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if _hover_settle_fresh_at(p_unit.id, cell):
 		if _voluntary_walk_orbit_phase_open(p_unit) and not dragging:
-			_apply_orbit_corridor_preview_path(p_unit, cell)
+			_apply_orbit_corridor_preview_path(
+				p_unit, cell, _orbit_corridor_drag_route_override(p_unit),
+			)
 			_sync_orbit_preview_paths_to_receipt(p_unit.id, _preview_path_for_unit(p_unit.id))
 		else:
 			_apply_assembler_prefix_preview_on_painted_route(p_unit, cell)
@@ -5356,6 +5360,19 @@ func _apply_assembler_prefix_preview_on_painted_route(p_unit: UnitState, cell: V
 	else:
 		CombatPlanningPreview.clear_unit_preview_path(preview_state, p_unit.id)
 	_sync_movement_hover_paths_to_overlay(p_unit.id)
+
+
+func _orbit_corridor_drag_route_override(p_unit: UnitState) -> Array[Vector2i]:
+	var override: Array[Vector2i] = []
+	if (
+		p_unit != null
+		and _drag_route_commits_active()
+		and _drag_unit_id == p_unit.id
+		and _drag_route.size() >= 2
+	):
+		for drag_i: int in range(_drag_route.size()):
+			override.append(_drag_route[drag_i] as Vector2i)
+	return override
 
 
 func _apply_orbit_corridor_preview_path(

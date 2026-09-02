@@ -717,6 +717,40 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-01 — Layer 5 R45 (orbit early branch drag-route override) — APPLIED
+
+### What we are fixing
+- **Bucket:** `waypoint_enemy_hover` — hover preview path `[(2,2)]` vs full mouse route; armed post-sweep enemy hover
+- **Owner:** `CombatPlanningInput` orbit corridor paint (`_refresh_hover_interaction_preview` + `_refresh_voluntary_walk_hover_preview`)
+- **Broken step:** orbit early-return called `_apply_orbit_corridor_preview_path` without path override after sweep ended (`dragging=false`), assembler replaced full `_drag_route` with single-cell leg
+
+### Council proof (pre-apply — R45b amendment after critics 1–2 FAIL)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS (amendment) | MOVE_PREVIEW_RULES — both orbit early branches + shared helper |
+| 2 Settle / bundle / commit | PASS (amendment) | move-preview-intent-truth — no receipt stomp after flush |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS | non-heuristic-mandate — `_orbit_corridor_drag_route_override` single helper |
+| 5 Perf & scheduling | PASS | EX-PERF-SCHED — duplicate only, no sim |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics — upstream paint owner |
+**Verdict:** 6/6 PASS (R45b amendment: critics 1–2 required second site ~2091)
+
+### What fixed
+- **Helper:** `_orbit_corridor_drag_route_override` — returns `_drag_route` duplicate when `_drag_route_commits_active()`
+- **Sites:** `_refresh_hover_interaction_preview` (~2091) and `_refresh_voluntary_walk_hover_preview` (~5237) pass override to `_apply_orbit_corridor_preview_path`
+
+### Verify
+| Suite | Result |
+|-------|--------|
+| `run_planning_headless_contracts.ps1` | **FAIL 268** (was 301 R44; **−33**) |
+| `waypoint_enemy_hover` | **PASS** (no `[FAIL]` lines) |
+| `tile_aoe_waypoint_hover` | Still `[]` at latest stand |
+| SSOT BREAK armed | MOVE-SKILL-01, PUSH-PULL-01 still open |
+
+**Next council target (R46):** `tile_aoe_waypoint_hover` + armed SSOT BREAK — settle snapshot / hover paint when tile-AOE skill armed after waypoint premove; path must end at latest stand from slots not empty `preview_paths`.
+
+---
+
 
 ### Council
 
