@@ -433,7 +433,14 @@ func update_drag(local: Vector2) -> void:
 		if clamp_actor != null and _voluntary_walk_orbit_phase_open(clamp_actor):
 			_clamp_voluntary_walk_drag_for_forbidden_hover(_drag_unit_id)
 	if _movement_route_paint_allowed() and cell_changed:
-		_extend_drag_route(cell)
+		var extend_actor: UnitState = _proj_unit(_drag_unit_id)
+		if extend_actor != null and _postmove_orbit_drag_unreachable(extend_actor, cell):
+			var leg_origin: Vector2i = _phase_entry_stand(extend_actor)
+			if leg_origin.x > -900000:
+				_drag_route = [leg_origin]
+				_drag_last_free = leg_origin
+		else:
+			_extend_drag_route(cell)
 		_clamp_voluntary_walk_drag_for_forbidden_hover(_drag_unit_id)
 	if drag_unit != null and (occ == null or occ.id == _drag_unit_id):
 		if cell == drag_unit.position or (_planning != null and _planning.is_hover_move_tile(cell)):
@@ -668,6 +675,49 @@ func _authoritative_preview_paths() -> Dictionary:
 	return {}
 
 
+## Post-move basic walk orbit drag (not armed SKILL_AWAITING MOVE).
+func _postmove_orbit_drag_active(p_unit: UnitState) -> bool:
+	if _director == null or p_unit == null or not dragging:
+		return false
+	if _director.selected_ability_index >= 0:
+		return false
+	return (
+		_director.planning_timeline_phase_kind(p_unit.id)
+		== CombatDirector.PlanningTimelinePhaseKind.POSTMOVE_MOVEMENT
+	)
+
+
+func _postmove_orbit_drag_unreachable(p_unit: UnitState, cell: Vector2i) -> bool:
+	if not _postmove_orbit_drag_active(p_unit):
+		return false
+	if _can_move_to(p_unit, cell):
+		return false
+	if _attack_target_id_at_cell(p_unit, cell) >= 0:
+		return false
+	return true
+
+
+func _apply_postmove_orbit_drag_stand_preview(p_unit: UnitState, cell: Vector2i) -> void:
+	var leg_origin: Vector2i = _phase_entry_stand(p_unit)
+	if (
+		leg_origin.x > -900000
+		and _drag_unit_id == p_unit.id
+		and _drag_route.size() >= 2
+		and (_drag_route[0] as Vector2i) == leg_origin
+	):
+		_drag_route = [leg_origin]
+		_drag_last_free = leg_origin
+	var stand_only_path: Array[Vector2i] = (
+		[leg_origin] if leg_origin.x > -900000 else []
+	)
+	_apply_orbit_corridor_preview_path(p_unit, cell, stand_only_path)
+	var stand_res: Dictionary = _preview_at_interaction_cell(
+		p_unit.id, cell, cell, -1, [], _snapshot_drag_legal_move_tiles(),
+	)
+	if not _is_invalid_dict(stand_res):
+		_apply_settled_preview_result(stand_res)
+
+
 func _authoritative_route_for_unit(unit_id: int) -> Array:
 	if preview_state.is_painted_leg_sealed(unit_id):
 		var painted: Variant = preview_state.preview_paths.get(unit_id, null)
@@ -684,11 +734,34 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 		if receipt_fresh:
 			var route: Variant = receipt.preview_paths.get(unit_id, [])
 			if route is Array and (route as Array).size() >= 2:
-				return (route as Array).duplicate()
+				var skip_stale_postmove_receipt: bool = false
+				if dragging and _drag_unit_id == unit_id:
+					var receipt_drag_actor: UnitState = _proj_unit(unit_id)
+					if (
+						receipt_drag_actor != null
+						and _postmove_orbit_drag_active(receipt_drag_actor)
+						and _drag_route.size() < 2
+					):
+						skip_stale_postmove_receipt = true
+				if not skip_stale_postmove_receipt:
+					return (route as Array).duplicate()
 	if dragging and _drag_unit_id == unit_id and _drag_route.size() >= 2:
-		return _drag_route.duplicate()
+		var drag_actor: UnitState = _proj_unit(unit_id)
+		if drag_actor == null or not _postmove_orbit_drag_active(drag_actor):
+			return _drag_route.duplicate()
 	var live_path: Variant = preview_state.preview_paths.get(unit_id, null)
 	if live_path is Array and (live_path as Array).size() >= 2:
+		if dragging and _drag_unit_id == unit_id:
+			var live_drag_actor: UnitState = _proj_unit(unit_id)
+			if (
+				live_drag_actor != null
+				and _postmove_orbit_drag_active(live_drag_actor)
+				and _drag_route.size() < 2
+			):
+				var live_stand: Vector2i = _phase_entry_stand(live_drag_actor)
+				if live_stand.x > -900000:
+					return [live_stand]
+				return []
 		return (live_path as Array).duplicate()
 	return []
 
@@ -5370,6 +5443,11 @@ func _voluntary_walk_preview_refresh_needed(p_unit: UnitState, cell: Vector2i) -
 ## PRE / ACTION (move module) / POST — one corridor preview owner for all move slots.
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	if _hover_settle_fresh_at(p_unit.id, cell):
+		if _postmove_orbit_drag_unreachable(p_unit, cell):
+			_apply_postmove_orbit_drag_stand_preview(p_unit, cell)
+			_sync_movement_hover_paths_to_overlay(p_unit.id)
+			_refresh_click_target_highlight()
+			return
 		if not _settled_receipt_matches_slot_waypoints(p_unit.id, _intent_snapshot_slots):
 			if _voluntary_walk_orbit_settle_open(p_unit) and not dragging:
 				_apply_orbit_corridor_preview_path(
