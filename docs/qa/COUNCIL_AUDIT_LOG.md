@@ -1380,7 +1380,7 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - Overlay fallback; per-test branches; corridor→assemble recursion; global `painted_leg_sealed=false` for armed
 
 ### Applied
-- **Commit:** (this turn)
+- **Commit:** `48da8df337d1347b0b1f9423dfa1ee445ef9b6c0`
 - **What fixed (partial):** Frozen paint-at-seal in `sealed_painted_geometry_routes`; receipt/sync reads geometry; armed orbit assembler treats leg unsealed; corridor `force_unsealed` MP for armed orbit; removed recursion; receipt board re-sync from geometry when sealed
 
 ### Verify
