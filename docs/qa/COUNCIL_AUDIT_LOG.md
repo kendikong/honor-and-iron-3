@@ -846,6 +846,37 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 ---
 
+## 2026-09-02 — Layer 5 R55 (armed_move_drag red at stand) — APPLIED
+
+### What we are fixing
+- **Bucket:** `trample/matrix/armed_move_drag/(5, 4)/red` — visibility gate false at drag start
+- **Owner:** `CombatPlanningInput.action_range_visible_for_hover`
+- **Broken step:** dragging + `drag_route.size() < 2` early `return false` blocked awaiting MOVE economy gate before second drag cell
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint | PASS | ACTION_RANGE_LATEST_STAND, EX-LOCKED-FIELD, MOVE_PREVIEW |
+| 2 Settle/commit | PASS | MOVE_PREVIEW, EX-PERF-SCHED |
+| 3 Stand/range | PASS | action-range-latest-stand, EX-LOCKED-FIELD |
+| 4 Anti-heuristic | PASS | global-systems-first, non-heuristic-mandate |
+| 5 Perf | PASS | EX-PERF-SCHED |
+| 6 QA-fix | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; change `settled_action_range_stand_cell`
+
+### Applied
+- **Commit:** (this turn)
+- **What fixed:** `action_range_visible_for_hover` — when dragging with route `< 2`, fall through for `awaiting_targeting_active` + `_is_awaiting_movement_endpoint` instead of hiding red
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL **121** (was **124** R54; **armed_move_drag** red PASS)
+
+---
+
 
 ### Council
 

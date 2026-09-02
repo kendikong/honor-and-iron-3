@@ -6460,7 +6460,18 @@ func action_range_visible_for_hover() -> bool:
 		if drag_route.is_empty() and _drag_route.size() >= 2:
 			drag_route = _drag_route
 		if drag_route.size() < 2:
-			return false
+			var drag_actor: UnitState = _proj_unit(_director.selected_unit_id)
+			var drag_ability: AbilityData = (
+				_selected_ability_data(drag_actor) if drag_actor != null else null
+			)
+			var awaiting_move_drag: bool = (
+				awaiting_targeting_active()
+				and drag_actor != null
+				and drag_ability != null
+				and _is_awaiting_movement_endpoint(drag_actor, drag_ability)
+			)
+			if not awaiting_move_drag:
+				return false
 	if _director == null or _director.selected_unit_id < 0 or _director.board == null:
 		return false
 	var unit_id: int = _director.selected_unit_id
