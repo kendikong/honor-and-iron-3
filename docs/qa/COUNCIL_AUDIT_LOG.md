@@ -372,7 +372,7 @@ Process violations and **remediation council** verdicts. Rules: `docs/qa/SUBAGEN
 
 | Round | Scope | Council | Verdict | Notes |
 |-------|-------|---------|---------|-------|
-| R28 | `set_hover_coord` queues `_queue_overlay_redraw`; restore `_run_hover_overlay_refresh` in-bounds recompute+redraw | pending formal 6/6 | Applied — owner F5 report |
+| R28 | `set_hover_coord` queues `_queue_overlay_redraw`; restore `_run_hover_overlay_refresh` in-bounds recompute+redraw | 1–5 | **5/5 PASS** | Applied — owner F5 frozen circles |
 
 **Root cause:** Hover cell updated but only `_hover_tile_layer` redrew; move-preview ghost circles (`_draw_move_ghosts`) paint on main overlay and stayed on last frame.
 
