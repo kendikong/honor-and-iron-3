@@ -3678,7 +3678,7 @@ func _promote_intent_preview_after_commit() -> void:
 	var committed: CombatPlanningPreview = _planning.get_committed_preview()
 	var preserve_full_route: bool = false
 	if unit_id >= 0 and _director != null:
-		for action: TimelineAction in _director.plan_pre_move.entries:
+		for action: TimelineAction in _director.get_player_plan().entries:
 			if action != null and action.actor_id == unit_id and not action.waypoints.is_empty():
 				preserve_full_route = true
 				break

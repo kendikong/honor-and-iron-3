@@ -1636,4 +1636,50 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Suite:** `run_action_range_ssot_gate.ps1` -> **PASS**
 - **Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `shield_bash_off_map_hover` **PASS**; **0** stack overflow; **0** recursion errors.
 
+---
+
+## 2026-09-02 — Council Round R133: Pre-Move / Post-Move Parity & Double Run Anim Fix
+
+### Scope
+1. Fix run animation playing twice on pre-move.
+2. Fix extra movepreview legs `(from destination to initial to destination)` on pre-move.
+3. Restore parity between pre-move and post-move timing phases.
+
+### Root cause
+1. In `CombatPlanningPreview.ensure_movement_intent_from_actions()`, pre-move actions read `move_origin` from `origins` which `_seed_movement_origins()` had populated with `planning_latest_stand_cell()`. Because the pre-move executed immediately on `live_planning_board()`, `origins[unit.id]` held the pre-move's *destination* instead of its starting position on `start_board`. `movement_intent_cells()` then appended destination -> initial -> destination, forming a boomerang route.
+2. In `TacticalUnitLayer`, the corrupted boomerang route in `preview_paths` caused `_sync_planning_actor_positions()` / `_animate_planning_path()` to re-animate along `[(4, 5), (5, 4)]` after the commit tween finished, playing the run animation a second time.
+3. In `CombatPlanningPreview.planning_move_origin_cell()`, when `timing < 0`, only `plan_pre_move` was checked, completely ignoring committed `plan_post_move` actions and causing post-move stand regressions (`K3-13`).
+4. In `CombatPlanningInput._promote_intent_preview_after_commit()`, `preserve_full_route` only inspected `plan_pre_move.entries` instead of `get_player_plan().entries`.
+5. In `TacticalUnitLayer._unit_uses_run_anim()`, post-move checked `action.is_run_boosted_pre_move()` which hardcoded `PRE_ACTION` timing, preventing run animation on post-move.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Focus Area |
+|--------|---------|------------|
+| 1 Bible paint & tiles | PASS | Identical movement rules and route geometry for pre-move and post-move; no false boomerang loops. |
+| 2 Settle / bundle / commit | PASS | Intent geometry anchored cleanly to `start_board` where pre-move initiated. |
+| 3 Stand & range origins | PASS | `plan_post_move` recognized as latest stand when `timing < 0`, fixing `K3-13`. |
+| 4 Global systems / anti-heuristic | PASS | Heuristics added: `none`. Unified SSOT handling across all timing slots. |
+| 5 Perf & scheduling | PASS | Prevents redundant second tween playback and wasteful route recalculation. |
+| 6 QA-fix discipline | PASS | Fixes root cause in canonical preview calculator, not in downstream rendering. |
+| 7 Class scope & parity | PASS | Parity restored across all classes. |
+**Verdict:** 7/7 PASS
+
+### Changes applied
+1. `presentation/combat_planning_preview.gd`:
+   - In `ensure_movement_intent_from_actions()`: anchor `move_origin` for `PRE_ACTION` moves to `start_board.get_unit_by_id(action.actor_id).position`.
+   - In `planning_move_origin_cell()`: check `director.plan_post_move` before `director.plan_pre_move` when `timing < 0`.
+2. `presentation/combat_planning_input.gd`:
+   - In `_promote_intent_preview_after_commit()`: check `_director.get_player_plan().entries` for `preserve_full_route`.
+3. `core/state/timeline_action.gd`:
+   - Add `is_run_boosted_move() -> bool` returning `type == GameEnums.ActionType.MOVE and uses_run`.
+4. `presentation/tactical_unit_layer.gd`:
+   - In `_unit_uses_run_anim()`: check `is_run_boosted_move()` for both `plan_pre_move` and `plan_post_move`.
+5. `tests/harness/action_range_regression_test.gd`:
+   - Add `_test_premove_intent_legs_no_boomerang` asserting route matches `[(from), (mid), (to)]` without boomerang or duplicate cells, and verifying latest stand.
+
+### Verify
+- **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `K3-13/post_after_commit` **PASS**; **0** stack overflow; **0** recursion errors.
+
+
 

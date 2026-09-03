@@ -44,6 +44,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_post_swap_post_move_stand_locked_on_orbit,
 		_test_premove_swap_committed_orbit_walk_intent,
 		_test_shield_bash_off_map_hover,
+		_test_premove_intent_legs_no_boomerang,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -67,6 +68,7 @@ static func run_all(failures: Array[String]) -> void:
 		"post_swap_post_move_stand_locked",
 		"premove_swap_committed_orbit_walk",
 		"shield_bash_off_map_hover",
+		"premove_no_boomerang",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
@@ -1106,4 +1108,57 @@ static func _test_shield_bash_off_map_hover(failures: Array[String]) -> void:
 		failures, "shield_bash_off_map_hover", fix, overlay, input,
 		OFF_MAP_CELL, ability, true, KNIGHT_START, false,
 	)
+
+
+static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> void:
+	const PREMOVE_DEST := Vector2i(5, 4)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	director.select_ability(-1)
+
+	var unit_id: int = fix.knight.id
+	_hover_sync(input, overlay, PREMOVE_DEST)
+	var walk_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, unit_id, PREMOVE_DEST)
+	input.call("_paint_intent_slots_before_commit", unit_id, walk_slots)
+	if not director.commit_from_slots(unit_id, walk_slots):
+		failures.append("ActionRangeRegression premove_no_boomerang: pre-move commit failed")
+		return
+	input.call("_promote_intent_preview_after_commit")
+
+	var committed: CombatPlanningPreview = overlay.get_committed_preview()
+	var route: Array = committed.preview_paths.get(unit_id, [])
+	if route.is_empty():
+		failures.append("ActionRangeRegression premove_no_boomerang: route missing after commit")
+		return
+
+	if route[0] != KNIGHT_START:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: route start %s expected %s" % [route[0], KNIGHT_START],
+		)
+	if route.back() != PREMOVE_DEST:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: route back %s expected %s" % [route.back(), PREMOVE_DEST],
+		)
+	if route.size() != 3:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: extra legs detected: route %s" % [route],
+		)
+	var seen: Dictionary = {}
+	for c: Variant in route:
+		if seen.has(c):
+			failures.append(
+				"ActionRangeRegression premove_no_boomerang: boomerang loop detected at %s in %s" % [c, route],
+			)
+			break
+		seen[c] = true
+
+	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
+		director, director.base_board, unit_id, committed,
+	)
+	if stand != PREMOVE_DEST:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: stand %s expected %s" % [stand, PREMOVE_DEST],
+		)
 

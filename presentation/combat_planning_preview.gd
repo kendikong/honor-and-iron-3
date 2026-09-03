@@ -514,10 +514,18 @@ func ensure_movement_intent_from_actions(
 		if action.type == GameEnums.ActionType.MOVE:
 			move_actors[action.actor_id] = true
 			var move_origin_from_plan: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and start_board != null:
+				var start_u: UnitState = start_board.get_unit_by_id(action.actor_id)
+				if start_u != null:
+					move_origin_from_plan = start_u.position
 			if not action.waypoints.is_empty():
 				movement_intents[action.actor_id] = movement_intent_cells(move_origin_from_plan, action)
 			var existing: Array = preview_paths.get(action.actor_id, [])
 			var move_origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+			if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and start_board != null:
+				var start_u: UnitState = start_board.get_unit_by_id(action.actor_id)
+				if start_u != null:
+					move_origin = start_u.position
 			var path_board: BoardState = _path_board_for_unit(director, start_board, action.actor_id)
 			var existing_end: Vector2i = (
 				existing.back() as Vector2i if existing.size() > 0 else Vector2i(-999999, -999999)
@@ -983,6 +991,11 @@ static func planning_move_origin_cell(
 			return prior_stand
 	var timing: int = director.get_planning_move_timing(unit_id)
 	if timing < 0:
+		var post_move: TimelineAction = committed_move_action(
+			director.plan_post_move, unit_id, GameEnums.MoveTiming.POST_ACTION,
+		)
+		if post_move != null:
+			return post_move.target_coord
 		var pre_move: TimelineAction = committed_move_action(
 			director.plan_pre_move, unit_id, GameEnums.MoveTiming.PRE_ACTION,
 		)

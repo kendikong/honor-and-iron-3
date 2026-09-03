@@ -69,6 +69,10 @@ func is_run_boosted_pre_move() -> bool:
 	)
 
 
+func is_run_boosted_move() -> bool:
+	return type == GameEnums.ActionType.MOVE and uses_run
+
+
 static func timeline_column_for_ability(ability: AbilityData) -> int:
 	if ability != null and (
 		ability.is_pre_move_planner() or ability.is_universal_run()

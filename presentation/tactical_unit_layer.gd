@@ -1559,10 +1559,10 @@ func _actor_grid_cell(unit_id: int) -> Vector2i:
 func _unit_uses_run_anim(unit_id: int) -> bool:
 	if _director != null:
 		for action: TimelineAction in _director.plan_pre_move.entries:
-			if action.actor_id == unit_id and action.is_run_boosted_pre_move():
+			if action.actor_id == unit_id and (action.is_run_boosted_move() or action.is_run_boosted_pre_move()):
 				return true
 		for action: TimelineAction in _director.plan_post_move.entries:
-			if action.actor_id == unit_id and action.is_run_boosted_pre_move():
+			if action.actor_id == unit_id and (action.is_run_boosted_move() or action.is_run_boosted_pre_move()):
 				return true
 	var projected := _proj_unit(unit_id)
 	if projected != null and projected.has_run_boost():
