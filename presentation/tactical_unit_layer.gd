@@ -1399,14 +1399,14 @@ func _should_rubberband_planning_move(
 func _should_animate_planning_commit_move(unit_id: int, event: SimEvent = null) -> bool:
 	if unit_id < 0 or _director == null:
 		return false
-	if event != null and bool(event.data.get("planning_commit_move", false)):
-		if int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)) == GameEnums.MoveTiming.POST_ACTION:
-			return false
-		return true
 	if _director.is_planning_move_instant(unit_id):
 		return false
 	if _drag_preview_active and unit_id == _drag_preview_id:
 		return false
+	if event != null and bool(event.data.get("planning_commit_move", false)):
+		if int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)) == GameEnums.MoveTiming.POST_ACTION:
+			return false
+		return true
 	return false
 
 

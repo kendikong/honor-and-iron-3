@@ -3994,12 +3994,6 @@ func _preview_paths_snapshot_for_settle(
 			snapshot[unit_id] = orbit_path.duplicate()
 			return snapshot
 	if slot_wps.is_empty() and waypoints.is_empty():
-		if _hover_slots_are_skill_only(slots):
-			var committed_snapshot: Dictionary = _committed_premove_path_snapshot(
-				unit_id, settle_actor,
-			)
-			if not committed_snapshot.is_empty():
-				return committed_snapshot
 		if preview_state.is_painted_leg_sealed(unit_id):
 			if not _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell):
 				var sealed_route: Variant = preview_state.preview_paths.get(unit_id, null)
@@ -6041,44 +6035,6 @@ func _settled_receipt_matches_slot_waypoints(
 	)
 	return leg == slot_wps
 
-
-func _hover_slots_are_skill_only(slots: Dictionary) -> bool:
-	var has_move: bool = false
-	var has_ability: bool = false
-	for col: String in ["pre", "action", "post"]:
-		for raw: Variant in slots.get(col, []):
-			if not raw is TimelineAction:
-				continue
-			var action: TimelineAction = raw as TimelineAction
-			if action.type == GameEnums.ActionType.MOVE:
-				has_move = true
-			elif action.type == GameEnums.ActionType.ABILITY:
-				has_ability = true
-	return has_ability and not has_move
-
-
-func _committed_premove_path_snapshot(
-	unit_id: int,
-	actor: UnitState,
-) -> Dictionary:
-	var snapshot: Dictionary = {}
-	if _director == null or unit_id < 0 or actor == null:
-		return snapshot
-	var origin: Vector2i = _settle_phase_entry_stand(actor)
-	for action: TimelineAction in _director.plan_pre_move.entries:
-		if action == null or action.actor_id != unit_id:
-			continue
-		if action.type != GameEnums.ActionType.MOVE or action.waypoints.is_empty():
-			continue
-		var built: Array[Vector2i] = []
-		if origin.x > -900000:
-			built.append(origin)
-		for wp_i: int in range(action.waypoints.size()):
-			built.append(action.waypoints[wp_i] as Vector2i)
-		if built.size() >= 2:
-			snapshot[unit_id] = built
-		return snapshot
-	return snapshot
 
 
 func _apply_orbit_corridor_preview_path(

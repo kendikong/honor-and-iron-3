@@ -1722,6 +1722,43 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Planning QA Gate:** `PlanningQaGate.tscn` -> `reposition_preview_clear` **PASS**, `bash_promote_ghost` **PASS**, `bash/phase5/promote_push` **PASS**, `bash/phase5/promote_ghost` **PASS**.
 - **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `move_preview_origin` **PASS**, `reposition_preview_clear` **PASS**, `K3-13/post_after_commit` **PASS**; **0** script errors; **0** stack overflow; **0** recursion errors.
 
+## 2026-09-02 — Council Round R136: Fix Skill Hover Boomerang Route & Drag Double Run Animation
+
+### Scope
+1. Eliminate lingering boomerang movepreview `(destination -> initial -> destination)` displayed when hovering any skill after a committed pre-move.
+2. Eliminate double run animation playback on drag pre-move commit.
+
+### Root cause
+1. In `CombatPlanningInput._preview_paths_snapshot_for_settle`, `_committed_premove_path_snapshot` was called whenever `_hover_slots_are_skill_only(slots)` was true. It prepended latest stand `(6, 3)` to the pre-move waypoints `[(4, 5), (6, 3)]`, synthesizing `[(6, 3), (4, 5), (6, 3)]` (boomerang loop from destination to initial and back to destination) and resurrecting an executed pre-move route during skill hovers.
+2. In `TacticalUnitLayer._should_animate_planning_commit_move`, lines 1402–1405 returned `true` for `planning_commit_move` without checking `_drag_preview_active and unit_id == _drag_preview_id`. On drag release, `_position_actor(unit_id, logical_from)` snapped the actor back to the start cell and re-played the run animation across the screen a second time, despite the unit having already animated and arrived at the destination during the drag.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Charter | Verdict | Rule / Exception IDs Cited | Focus & Proof |
+|:---|:---|:---:|:---|:---|
+| **1** | Bible paint & tiles | **PASS** | `EX-LOCKED-FIELD`, `MOVE_PREVIEW` | Completely eliminates the `(destination -> initial -> destination)` boomerang arrow shown in the screenshot. Hovering any skill after pre-move paints only the skill's action range and targeting arrows; executed pre-moves do not draw move arrows. |
+| **2** | Settle / bundle / commit | **PASS** | `COMMIT_TRUTH`, `INTENT_SSOT` | The settled hover snapshot for a pure skill hover does not synthesize synthetic movement routes. |
+| **3** | Stand & range origins | **PASS** | `ACTION_RANGE_LATEST_STAND` | Unit stands at latest stand `(6, 3)` on both the live and projected boards. Skill action range paints centered on `(6, 3)`. |
+| **4** | Global systems / anti-heuristic | **PASS** | `GLOBAL_SYSTEMS_FIRST`, `NO_BANDAID_FIXES` | Heuristics added: `none`. Deletes the obsolete `_committed_premove_path_snapshot` hack from R46. Aligns pre-move and post-move presentation parity so neither one animates twice or creates boomerang legs. |
+| **5** | Perf & scheduling | **PASS** | `PERF_SCHEDULING` | Eliminates redundant commit tween creation, position snapping, and extra route line drawing. |
+| **6** | QA-fix discipline | **PASS** | `QA_FIX_DISCIPLINE` | Directly addresses the exact root causes of the screenshot bug and user report without bandaid flags. |
+| **7** | Class / skill | **PASS** | `CLASS_KIT_PARITY` | Applies uniformly to all classes (Knight, Bruiser, Archer, Rogue, Mage) and all skill types when selected/hovered after pre-move. |
+
+**Verdict:** 7/7 PASS
+
+### Changes applied
+1. `presentation/combat_planning_input.gd`:
+   - Deleted `_hover_slots_are_skill_only` check in `_preview_paths_snapshot_for_settle`.
+   - Deleted `_hover_slots_are_skill_only` and `_committed_premove_path_snapshot` helpers.
+2. `presentation/tactical_unit_layer.gd`:
+   - In `_should_animate_planning_commit_move`, check `_drag_preview_active and unit_id == _drag_preview_id` before returning `true` for `planning_commit_move` events.
+
+### Verify
+- **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**
+- **Planning Input Suite:** `tests/runners/run_planning_input_only.gd` -> **PASS**
+- **Test Battle Bridge:** `tests/run_test_battle_bridge.gd` -> **PASS**
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `reposition_preview_clear` **PASS**, `move_preview_origin` **PASS**, `K3-13/post_after_commit` **PASS**; **0** script errors; **0** stack overflow; **0** recursion errors.
+
+
 
 
 
