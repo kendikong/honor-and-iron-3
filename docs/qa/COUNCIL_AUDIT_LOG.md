@@ -1520,32 +1520,33 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 
 ---
 
-## 2026-09-02 — R125-R126 painted_route_equivalence armed premove parity — APPLIED
+## 2026-09-02 — R127 armed orbit recursion guard — APPLIED (QA partial)
 
 ### What we are fixing
-- **Bucket:** `painted_route_equivalence` — armed trample orbit paths ≠ unarmed premove detour (anchor @(5,3))
-- **Owner:** `CombatPlanningInput` settle/hover + `CombatPlanningPreview` frozen paint geometry
-- **Broken step:** Armed sealed leg blocked `_voluntary_walk_hover_paint_applies`; armed ability-selected path skipped unarmed sim; geometry only frozen on seal
-- **Planned delta:** `freeze_painted_geometry_route` on drag end; `_armed_painted_orbit_hover_parity_active`; `_apply_armed_painted_orbit_sim_preview` via `_refresh_live_interaction_preview` with parked `preview_board`
+- **Bucket:** Stack overflow in `trample_full_phase_hover_matrix` (R126 regression); `painted_route_equivalence` parity still open when full suite runs to completion
+- **Owner:** `CombatPlanningInput` settle — `_apply_armed_painted_orbit_sim_preview` / `_refresh_live_interaction_preview`
+- **Broken step:** Armed orbit sim → live interaction (empty waypoints) → voluntary walk → armed sim loop
+- **Planned delta:** `_armed_orbit_sim_inflight` guard; skip voluntary delegate when inflight; sim re-entry noop; skip corridor waypoint prefetch for armed parity in live interaction
 
 ### Council proof (pre-apply)
 | Critic | Verdict | Rule / exception IDs |
 |--------|---------|----------------------|
 | 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
 | 2 | PASS | settle/receipt, EX-FROZEN-REPLAY, EX-PERF-SCHED |
-| 3 | PASS | action-range-latest-stand, leg_anchor geometry |
+| 3 | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
 | 4 | PASS | non-heuristic-mandate, single settle owner |
-| 5 | PASS | EX-PERF-SCHED (park/restore preview_board only) |
+| 5 | PASS | EX-PERF-SCHED (reentrancy guard only) |
 | 6 | PASS | qa-fix-no-heuristics |
 **Verdict:** 6/6 PASS
 
 ### What we will not do
-- Overlay fallback; per-test branches; voluntary-walk recursion bypass (R123b)
+- Overlay fallback; per-test branches; delete armed parity gate
 
 ### Applied
-- **Commit:** `80ffacdedc67397538c9d19a7f7227e9e0f79fa8`
-- **What fixed:** Freeze painted geometry on all painted drags; armed orbit hover uses unarmed `_refresh_live_interaction_preview` sim with live board parked
+- **What fixed:** Stack overflow eliminated via inflight guard on live→voluntary delegate + sim re-entry noop
+- **Still open:** `painted_route_equivalence` armed west-detour vs corridor shortcut when suite completes all tests (R126 masked via overflow abort)
 
 ### Verify
 - **Suite:** `run_planning_headless_contracts.ps1`
-- **Result:** PASS **0** fixture fails; `painted_route_equivalence` green; `postmove_painted_hover` **0 FAIL**
+- **Result:** FAIL — 55 `[FAIL]` lines; **0** `Stack overflow`; `painted_route_equivalence` still failing; `postmove_painted_hover` **0 FAIL** in summary
+- **Commit:** (pending)

@@ -79,6 +79,7 @@ var _drag_preview_schedule_key: String = ""
 var _planning_refresh_generation: int = 0
 var _planning_refresh_scheduled: bool = false
 var _planning_refresh_schedule_key: String = ""
+var _armed_orbit_sim_inflight: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -3029,10 +3030,12 @@ func _refresh_live_interaction_preview(
 		effective_waypoints.is_empty()
 		and _painted_receipt_orbit_extend_active(unit, cell)
 	):
-		effective_waypoints = _hover_paint_waypoints_for_cell(unit, cell)
+		if not _armed_painted_orbit_hover_parity_active(unit, cell):
+			effective_waypoints = _hover_paint_waypoints_for_cell(unit, cell)
 	if active_movement_planning_step(unit) and attack_target_id < 0 and effective_waypoints.is_empty():
-		_refresh_voluntary_walk_hover_preview(unit, cell)
-		return
+		if not _armed_orbit_sim_inflight:
+			_refresh_voluntary_walk_hover_preview(unit, cell)
+			return
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
 	if (
 		cache_key == _hover_preview_cache_key
@@ -5753,6 +5756,9 @@ func _restore_parked_preview_board(parked_preview_board: BoardState) -> void:
 func _apply_armed_painted_orbit_sim_preview(p_unit: UnitState, cell: Vector2i) -> bool:
 	if p_unit == null or not _armed_painted_orbit_hover_parity_active(p_unit, cell):
 		return false
+	if _armed_orbit_sim_inflight:
+		return true
+	_armed_orbit_sim_inflight = true
 	var parked_preview_board: BoardState = null
 	if preview_state.preview_board != null:
 		parked_preview_board = preview_state.preview_board
@@ -5761,6 +5767,7 @@ func _apply_armed_painted_orbit_sim_preview(p_unit: UnitState, cell: Vector2i) -
 	_refresh_live_interaction_preview(p_unit.id, cell, -1, orbit_waypoints)
 	_sync_movement_hover_paths_to_overlay(p_unit.id)
 	_restore_parked_preview_board(parked_preview_board)
+	_armed_orbit_sim_inflight = false
 	return true
 
 
