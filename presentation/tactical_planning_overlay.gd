@@ -605,15 +605,6 @@ func restore_stashed_committed() -> void:
 
 
 func restore_committed_display() -> void:
-	if _execution_preview_suppressed:
-		_live_preview.clear_interaction()
-		_live_preview.preview_board = null
-		_live_preview.clear_route_geometry()
-		_attack_target_id = -1
-		_preview_board = null
-		live_preview_changed.emit()
-		_queue_overlay_redraw()
-		return
 	_live_preview.clear_interaction()
 	_live_preview.preview_board = null
 	_live_preview.clear_route_geometry()
@@ -676,8 +667,6 @@ func _on_planning_commit_events(events: Array) -> void:
 ## Do not call ensure_movement_intent_from_plan here — that recalculates routes and
 ## violates move-preview intent truth (preview already ratified in _live_preview).
 func promote_live_preview_to_committed() -> void:
-	if _execution_preview_suppressed:
-		return
 	_committed_preview.copy_from(_live_preview)
 	_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
@@ -692,8 +681,7 @@ func apply_preview_state(
 	selected_id: int,
 	attack_target_id: int,
 ) -> void:
-	if _execution_preview_suppressed:
-		return
+	_execution_preview_suppressed = false
 	_live_preview.copy_from(state)
 	_attack_target_id = attack_target_id
 	if _unit_layer != null:
@@ -707,8 +695,7 @@ func apply_preview_state(
 
 
 func set_live_preview(state: CombatPlanningPreview) -> void:
-	if _execution_preview_suppressed:
-		return
+	_execution_preview_suppressed = false
 	_live_preview = state
 	if _unit_layer != null:
 		_unit_layer.set_live_forecast(_live_preview.forecast)
@@ -1146,6 +1133,8 @@ func _apply_committed_preview_update(result: SimResult) -> void:
 	set_preview_board(result.final_state)
 	if _director != null and _board != null:
 		_committed_preview = CombatPlanningPreview.from_sim_result(result, _director, _board)
+		if _director.plan_action.entries.is_empty() and _director.plan_post_move.entries.is_empty():
+			_committed_preview.preview_board = null
 		_preview_board = _committed_preview.preview_board
 	_has_stashed_committed = false
 	_invalidate_hover_cache()

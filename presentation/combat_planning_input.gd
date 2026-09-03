@@ -3667,7 +3667,7 @@ func _commit_at_cell(
 func _promote_intent_preview_after_commit() -> void:
 	if _planning == null:
 		return
-	if _planning.is_execution_preview_suppressed():
+	if _director != null and _director.plan_action.entries.is_empty() and _director.plan_post_move.entries.is_empty():
 		preview_state.clear_all()
 		_sync_intent_live_board()
 		_apply_post_commit_hover_truth()
@@ -3684,16 +3684,14 @@ func _promote_intent_preview_after_commit() -> void:
 	_planning.promote_live_preview_to_committed()
 	var committed: CombatPlanningPreview = _planning.get_committed_preview()
 	var preserve_full_route: bool = false
+	var had_pre_move: bool = false
 	if unit_id >= 0 and _director != null:
 		for action: TimelineAction in _director.get_player_plan().entries:
-			if (
-				action != null
-				and action.actor_id == unit_id
-				and not action.waypoints.is_empty()
-				and action.move_timing != GameEnums.MoveTiming.PRE_ACTION
-			):
-				preserve_full_route = true
-				break
+			if action != null and action.actor_id == unit_id:
+				if action.type == GameEnums.ActionType.MOVE and action.move_timing == GameEnums.MoveTiming.PRE_ACTION:
+					had_pre_move = true
+				if not action.waypoints.is_empty() and action.move_timing != GameEnums.MoveTiming.PRE_ACTION:
+					preserve_full_route = true
 		if preserve_full_route and intent_paths.has(unit_id):
 			var route: Variant = intent_paths[unit_id]
 			if route is Array and (route as Array).size() > 1:
@@ -3704,6 +3702,8 @@ func _promote_intent_preview_after_commit() -> void:
 		CombatPlanningPreview.trim_committed_paths_after_slot_promote(
 			_director, committed, unit_id, fallback_board, preserve_full_route,
 		)
+	if had_pre_move and not preserve_full_route:
+		CombatPlanningPreview.clear_unit_preview_path(committed, unit_id)
 	preview_state.sync_route_geometry_from(committed)
 	preview_state.clear_interaction()
 	preview_state.preview_board = null
@@ -5150,7 +5150,9 @@ func clear_hover_route_preview() -> void:
 				path = stored as Array
 		if path.size() >= 2:
 			preserved_paths[unit_id] = path.duplicate()
+	var preserved_pushes: Dictionary = preview_state.preview_pushes.duplicate(true)
 	preview_state.clear_route_geometry()
+	preview_state.preview_pushes = preserved_pushes
 	for unit_id: Variant in preserved_paths.keys():
 		var path: Array = preserved_paths[unit_id] as Array
 		var uid: int = int(unit_id)

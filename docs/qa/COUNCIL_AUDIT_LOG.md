@@ -1707,23 +1707,21 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 **Verdict:** 7/7 PASS
 
 ### Changes applied
-1. `presentation/tactical_planning_overlay.gd`:
-   - Add `is_execution_preview_suppressed() -> bool` and `clear_execution_preview_suppression() -> void`.
-   - `promote_live_preview_to_committed()`, `apply_preview_state()`, and `set_live_preview()` guard on `_execution_preview_suppressed`.
-   - `restore_committed_display()` clears live route geometry and skips restoring committed forecast when suppressed.
-   - Clear suppression on `set_hover_coord` and `selection_changed` when new planning interaction begins.
-2. `presentation/combat_planning_input.gd`:
-   - In `_promote_intent_preview_after_commit()`: if `_planning.is_execution_preview_suppressed()`, clear `preview_state`, sync intent live board, apply post-commit hover truth, and return early without reviving executed move routes.
-   - In `on_hover_moved()` and `set_qa_pointer_grid_cell()`: unsuppress execution preview when new hover interaction begins.
-3. `presentation/combat_planning_preview.gd`:
-   - In `ensure_movement_intent_from_actions()`: skip synthesizing pending move legs for `PRE_ACTION` moves where unit is already at `target_coord` on `start_board`.
-4. `tests/harness/action_range_regression_test.gd`:
+1. `presentation/combat_planning_input.gd`:
+   - In `_promote_intent_preview_after_commit()`: for plans where `plan_action.entries.is_empty()` and `plan_post_move.entries.is_empty()` (pure pre-move/reposition), all committed actions have already executed on the live board; clear preview state, sync live board, and return early so no stale preview board is ratified.
+   - For plans containing actions (e.g. Shield Bash), ratify live preview into committed preview (preserving ghosts, preview board, and push displacements), but clear the executed `PRE_ACTION` move route via `CombatPlanningPreview.clear_unit_preview_path(committed, unit_id)`.
+   - In `clear_hover_route_preview()`: preserve `preview_pushes` when clearing hover route geometry.
+2. `presentation/tactical_planning_overlay.gd`:
+   - In `_apply_committed_preview_update()`: if `plan_action.entries.is_empty()` and `plan_post_move.entries.is_empty()`, set `_committed_preview.preview_board = null` so deferred background sim refreshes do not restore a ghost preview board when no unexecuted actions remain.
+   - Reverted artificial suppression guards in `promote_live_preview_to_committed()`, `apply_preview_state()`, and `set_live_preview()`.
+3. `tests/harness/action_range_regression_test.gd`:
    - In `_test_premove_intent_legs_no_boomerang`: assert hover route before commit has no boomerang `[(4, 5), (5, 5), (5, 4)]`, and after commit execution the route clears immediately from committed preview paths while latest stand is `PREMOVE_DEST`.
 
 ### Verify
 - **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**
-- **Planning QA Gate:** `PlanningQAGate reposition_preview_clear` -> **PASS** (all 3 assertions)
-- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `move_preview_origin` **PASS**, `reposition_preview_clear` **PASS**, `K3-13/post_after_commit` **PASS**; **0** stack overflow; **0** recursion errors.
+- **Planning QA Gate:** `PlanningQaGate.tscn` -> `reposition_preview_clear` **PASS**, `bash_promote_ghost` **PASS**, `bash/phase5/promote_push` **PASS**, `bash/phase5/promote_ghost` **PASS**.
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `move_preview_origin` **PASS**, `reposition_preview_clear` **PASS**, `K3-13/post_after_commit` **PASS**; **0** script errors; **0** stack overflow; **0** recursion errors.
+
 
 
 
