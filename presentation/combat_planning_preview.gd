@@ -513,6 +513,11 @@ func ensure_movement_intent_from_actions(
 			continue
 		if action.type == GameEnums.ActionType.MOVE:
 			move_actors[action.actor_id] = true
+			if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and start_board != null:
+				var start_u: UnitState = start_board.get_unit_by_id(action.actor_id)
+				if start_u != null and start_u.position == action.target_coord:
+					origins[action.actor_id] = action.target_coord
+					continue
 			var move_origin_from_plan: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
 			if action.move_timing == GameEnums.MoveTiming.PRE_ACTION and start_board != null:
 				var start_u: UnitState = start_board.get_unit_by_id(action.actor_id)

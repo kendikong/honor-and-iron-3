@@ -1120,6 +1120,35 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 
 	var unit_id: int = fix.knight.id
 	_hover_sync(input, overlay, PREMOVE_DEST)
+
+	# Verify hover route before commit: clean route from start to destination without boomerang.
+	var hover_paths: Dictionary = input._authoritative_preview_paths()
+	var hover_route: Array = hover_paths.get(unit_id, [])
+	if hover_route.is_empty():
+		failures.append("ActionRangeRegression premove_no_boomerang: hover route missing before commit")
+		return
+	if hover_route[0] != KNIGHT_START:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: hover start %s expected %s" % [hover_route[0], KNIGHT_START],
+		)
+	if hover_route.back() != PREMOVE_DEST:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: hover back %s expected %s" % [hover_route.back(), PREMOVE_DEST],
+		)
+	if hover_route.size() != 3:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: extra legs detected in hover: route %s" % [hover_route],
+		)
+	var seen: Dictionary = {}
+	for c: Variant in hover_route:
+		if seen.has(c):
+			failures.append(
+				"ActionRangeRegression premove_no_boomerang: boomerang loop detected at %s in %s" % [c, hover_route],
+			)
+			break
+		seen[c] = true
+
+	# Commit pre-move: executes immediately on live board and clears move preview immediately.
 	var walk_slots: Dictionary = PlanningQAGateTest._commit_slots_at(input, unit_id, PREMOVE_DEST)
 	input.call("_paint_intent_slots_before_commit", unit_id, walk_slots)
 	if not director.commit_from_slots(unit_id, walk_slots):
@@ -1127,33 +1156,23 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 		return
 	input.call("_promote_intent_preview_after_commit")
 
+	# Move preview must clear immediately upon execution.
+	if overlay._should_draw_player_move_preview():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: overlay still exposes move preview after execution",
+		)
 	var committed: CombatPlanningPreview = overlay.get_committed_preview()
-	var route: Array = committed.preview_paths.get(unit_id, [])
-	if route.is_empty():
-		failures.append("ActionRangeRegression premove_no_boomerang: route missing after commit")
-		return
+	var committed_route: Array = committed.preview_paths.get(unit_id, [])
+	if not committed_route.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: committed route not cleared after execution: %s" % [committed_route],
+		)
+	if committed.preview_board != null:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: preview_board not cleared after execution",
+		)
 
-	if route[0] != KNIGHT_START:
-		failures.append(
-			"ActionRangeRegression premove_no_boomerang: route start %s expected %s" % [route[0], KNIGHT_START],
-		)
-	if route.back() != PREMOVE_DEST:
-		failures.append(
-			"ActionRangeRegression premove_no_boomerang: route back %s expected %s" % [route.back(), PREMOVE_DEST],
-		)
-	if route.size() != 3:
-		failures.append(
-			"ActionRangeRegression premove_no_boomerang: extra legs detected: route %s" % [route],
-		)
-	var seen: Dictionary = {}
-	for c: Variant in route:
-		if seen.has(c):
-			failures.append(
-				"ActionRangeRegression premove_no_boomerang: boomerang loop detected at %s in %s" % [c, route],
-			)
-			break
-		seen[c] = true
-
+	# Latest stand must reflect the destination reached.
 	var stand: Vector2i = CombatPlanningPreview.planning_latest_stand_cell(
 		director, director.base_board, unit_id, committed,
 	)

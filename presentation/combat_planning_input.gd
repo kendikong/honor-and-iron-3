@@ -1601,6 +1601,8 @@ func _stage_voluntary_walk_drag_input(
 func on_hover_moved(cell: Vector2i) -> void:
 	if _director == null or _director.board == null:
 		return
+	if _planning != null:
+		_planning.clear_execution_preview_suppression()
 	if not dragging:
 		_sync_intent_skill_mode()
 		if _intent_state != null:
@@ -3665,6 +3667,11 @@ func _commit_at_cell(
 func _promote_intent_preview_after_commit() -> void:
 	if _planning == null:
 		return
+	if _planning.is_execution_preview_suppressed():
+		preview_state.clear_all()
+		_sync_intent_live_board()
+		_apply_post_commit_hover_truth()
+		return
 	var unit_id: int = _director.selected_unit_id if _director != null else -1
 	var fallback_board: BoardState = _proj() if _director != null else null
 	var intent_paths: Dictionary = _authoritative_preview_paths()
@@ -3679,7 +3686,12 @@ func _promote_intent_preview_after_commit() -> void:
 	var preserve_full_route: bool = false
 	if unit_id >= 0 and _director != null:
 		for action: TimelineAction in _director.get_player_plan().entries:
-			if action != null and action.actor_id == unit_id and not action.waypoints.is_empty():
+			if (
+				action != null
+				and action.actor_id == unit_id
+				and not action.waypoints.is_empty()
+				and action.move_timing != GameEnums.MoveTiming.PRE_ACTION
+			):
 				preserve_full_route = true
 				break
 		if preserve_full_route and intent_paths.has(unit_id):
@@ -4098,6 +4110,8 @@ func set_qa_pointer_screen_pos(screen_pos: Vector2) -> void:
 
 
 func set_qa_pointer_grid_cell(cell: Vector2i) -> void:
+	if _planning != null:
+		_planning.clear_execution_preview_suppression()
 	_qa_pointer_grid_override = true
 	_qa_pointer_grid_cell = cell
 	_qa_pointer_override = false

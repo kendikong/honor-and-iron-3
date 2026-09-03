@@ -1681,5 +1681,50 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**
 - **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `K3-13/post_after_commit` **PASS**; **0** stack overflow; **0** recursion errors.
 
+---
+
+## 2026-09-02 — Council Round R134: Pre-Move Execution Preview Immediate Clear
+
+### Scope
+1. Enforce canonical lifecycle: move previews clear immediately once executed (including pre-move).
+2. Fix `PlanningQAGate reposition_preview_clear` across all 3 failure points (renderer exposure, route clearing on execution start, deferred refresh restoration).
+3. Fix `move_preview_origin` Trampling Advance preview after pre-move commit.
+
+### Root cause
+1. In `TacticalPlanningOverlay._on_planning_commit_events`, `_clear_execution_preview_state()` set `_execution_preview_suppressed = true`. However, `CombatPlanningInput._promote_intent_preview_after_commit` was called right after commit and ran `apply_preview_state()` and `promote_live_preview_to_committed()`, which unconditionally reset `_execution_preview_suppressed = false` and copied the dead pre-move route back into `_committed_preview`.
+2. In `CombatPlanningPreview.ensure_movement_intent_from_actions()`, `ensure_movement_intent_from_plan` did not check if the unit on `start_board` was already at `action.target_coord` (already executed), synthesizing a redundant pending move leg for an executed move.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Focus Area |
+|--------|---------|------------|
+| 1 Bible paint & tiles | PASS | Executed moves do not show pending arrows. Unit is already at destination; route clears immediately. |
+| 2 Settle / bundle / commit | PASS | `_on_planning_commit_events` seals boundary and prevents `_promote_intent_preview_after_commit` from reviving dead previews. |
+| 3 Stand & range origins | PASS | Latest stand remains destination on live board; action range paints from stand even with empty preview paths. |
+| 4 Global systems / anti-heuristic | PASS | Heuristics added: `none`. Uses canonical `_execution_preview_suppressed` and board state truth. |
+| 5 Perf & scheduling | PASS | Eliminates redundant chevron redraws and duplicate tween triggers after commit. |
+| 6 QA-fix discipline | PASS | Directly resolves all 3 failure points of `PlanningQAGate reposition_preview_clear`. |
+| 7 Class scope & parity | PASS | Shared across all classes and reposition abilities (Swap, basic pre-move, etc.). |
+**Verdict:** 7/7 PASS
+
+### Changes applied
+1. `presentation/tactical_planning_overlay.gd`:
+   - Add `is_execution_preview_suppressed() -> bool` and `clear_execution_preview_suppression() -> void`.
+   - `promote_live_preview_to_committed()`, `apply_preview_state()`, and `set_live_preview()` guard on `_execution_preview_suppressed`.
+   - `restore_committed_display()` clears live route geometry and skips restoring committed forecast when suppressed.
+   - Clear suppression on `set_hover_coord` and `selection_changed` when new planning interaction begins.
+2. `presentation/combat_planning_input.gd`:
+   - In `_promote_intent_preview_after_commit()`: if `_planning.is_execution_preview_suppressed()`, clear `preview_state`, sync intent live board, apply post-commit hover truth, and return early without reviving executed move routes.
+   - In `on_hover_moved()` and `set_qa_pointer_grid_cell()`: unsuppress execution preview when new hover interaction begins.
+3. `presentation/combat_planning_preview.gd`:
+   - In `ensure_movement_intent_from_actions()`: skip synthesizing pending move legs for `PRE_ACTION` moves where unit is already at `target_coord` on `start_board`.
+4. `tests/harness/action_range_regression_test.gd`:
+   - In `_test_premove_intent_legs_no_boomerang`: assert hover route before commit has no boomerang `[(4, 5), (5, 5), (5, 4)]`, and after commit execution the route clears immediately from committed preview paths while latest stand is `PREMOVE_DEST`.
+
+### Verify
+- **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**
+- **Planning QA Gate:** `PlanningQAGate reposition_preview_clear` -> **PASS** (all 3 assertions)
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `move_preview_origin` **PASS**, `reposition_preview_clear` **PASS**, `K3-13/post_after_commit` **PASS**; **0** stack overflow; **0** recursion errors.
+
+
 
 
