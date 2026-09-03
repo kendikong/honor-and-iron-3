@@ -1517,3 +1517,35 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 ```
 
 **Invalid entry:** “6/6 PASS (applied)” or “logged post-verify” without the critic table above.
+
+---
+
+## 2026-09-02 — R125-R126 painted_route_equivalence armed premove parity — APPLIED
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` — armed trample orbit paths ≠ unarmed premove detour (anchor @(5,3))
+- **Owner:** `CombatPlanningInput` settle/hover + `CombatPlanningPreview` frozen paint geometry
+- **Broken step:** Armed sealed leg blocked `_voluntary_walk_hover_paint_applies`; armed ability-selected path skipped unarmed sim; geometry only frozen on seal
+- **Planned delta:** `freeze_painted_geometry_route` on drag end; `_armed_painted_orbit_hover_parity_active`; `_apply_armed_painted_orbit_sim_preview` via `_refresh_live_interaction_preview` with parked `preview_board`
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 | PASS | settle/receipt, EX-FROZEN-REPLAY, EX-PERF-SCHED |
+| 3 | PASS | action-range-latest-stand, leg_anchor geometry |
+| 4 | PASS | non-heuristic-mandate, single settle owner |
+| 5 | PASS | EX-PERF-SCHED (park/restore preview_board only) |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback; per-test branches; voluntary-walk recursion bypass (R123b)
+
+### Applied
+- **Commit:** (see turn changelog)
+- **What fixed:** Freeze painted geometry on all painted drags; armed orbit hover uses unarmed `_refresh_live_interaction_preview` sim with live board parked
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** PASS **0** fixture fails; `painted_route_equivalence` green; `postmove_painted_hover` **0 FAIL**

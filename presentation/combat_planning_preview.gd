@@ -878,6 +878,18 @@ func seal_painted_leg(unit_id: int) -> void:
 			sealed_painted_geometry_routes[unit_id] = (geometry as Array).duplicate()
 
 
+## Frozen paint geometry without sealing the leg — premove/armed orbit parity (receipt-orbit anchor).
+static func freeze_painted_geometry_route(
+	preview: CombatPlanningPreview,
+	unit_id: int,
+	route: Variant,
+) -> void:
+	if preview == null or unit_id < 0:
+		return
+	if route is Array and (route as Array).size() >= 2:
+		preview.sealed_painted_geometry_routes[unit_id] = (route as Array).duplicate()
+
+
 func clear_route_geometry() -> void:
 	preview_paths.clear()
 	preview_splits.clear()
@@ -928,13 +940,14 @@ static func sealed_phase_entry_anchor(
 	preview: CombatPlanningPreview,
 	unit_id: int,
 ) -> Vector2i:
-	if preview != null and preview.is_painted_leg_sealed(unit_id):
+	if preview != null and unit_id >= 0:
 		var geometry: Variant = preview.sealed_painted_geometry_routes.get(unit_id, null)
 		if geometry is Array and (geometry as Array).size() >= 1 and (geometry as Array)[0] is Vector2i:
 			return (geometry as Array)[0] as Vector2i
-		var sealed_route: Array = preview.preview_paths.get(unit_id, [])
-		if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
-			return sealed_route[0] as Vector2i
+		if preview.is_painted_leg_sealed(unit_id):
+			var sealed_route: Array = preview.preview_paths.get(unit_id, [])
+			if not sealed_route.is_empty() and sealed_route[0] is Vector2i:
+				return sealed_route[0] as Vector2i
 	return Vector2i(-999999, -999999)
 
 
