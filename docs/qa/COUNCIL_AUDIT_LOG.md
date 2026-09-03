@@ -1550,3 +1550,37 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Suite:** `run_planning_headless_contracts.ps1`
 - **Result:** FAIL — 55 `[FAIL]` lines; **0** `Stack overflow`; `painted_route_equivalence` still failing; `postmove_painted_hover` **0 FAIL** in summary
 - **Commit:** `b269750d2441912b4db064b287a02acae5ff33f1`
+
+---
+
+## 2026-09-02 — R128-R131 armed orbit premove parity funnel — APPLIED (QA FAIL)
+
+### What we are fixing
+- **Bucket:** `painted_route_equivalence` — armed trample @(5,3) `[(5,4),(5,3)]` vs unarmed west detour `[(5,4),(4,4),(4,3),(5,3)]`
+- **Owner:** `CombatPlanningInput` — voluntary-walk settle / `_preview_paths_snapshot_for_settle` / `_is_hover_move_cell`
+- **Broken step:** Armed awaiting-MOVE orbit used corridor shortcut + adjacent `_can_move_to` legality; unarmed sealed premove uses full receipt-orbit pathfind + sim settle
+- **Planned delta:** Delete R126 sim shortcut; gate armed parity out of orbit probe/corridor early-settle; align corridor MP budget; snapshot parity assembler path; fix hover-move legality to unarmed premove board+budget
+
+### Council proof (pre-apply)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 | PASS | MOVE_PREVIEW, EX-LOCKED-FIELD |
+| 2 | PASS | settle/receipt, EX-FROZEN-REPLAY |
+| 3 | PASS | action-range-latest-stand, EX-POSTMOVE-SLOT |
+| 4 | PASS | non-heuristic-mandate, single settle owner |
+| 5 | PASS | EX-PERF-SCHED |
+| 6 | PASS | qa-fix-no-heuristics |
+**Verdict:** 6/6 PASS (R129); R130-R131 amendments same owner chain
+
+### What we will not do
+- Overlay fallback; per-test branches; restore deleted `_apply_armed_painted_orbit_sim_preview`
+
+### Applied
+- **What fixed (partial):** Removed armed-only sim shortcut (R128); armed parity bypasses orbit probe/corridor early-settle; sealed receipt-orbit MP budget unified; snapshot + `_is_hover_move_cell` use unarmed premove board/budget for armed parity
+- **Still open:** `painted_route_equivalence` @(5,3) and most orbit cells — armed `preview_paths` still frozen at sealed leg `[(5,4)]` or corridor `[(5,4),(5,3)]`; next owner step likely `_final_commit_slots_for_interaction` / slot waypoints for armed vs unarmed
+
+### Verify
+- **Suite:** `run_planning_headless_contracts.ps1`
+- **Result:** FAIL — 47 `[FAIL]` lines; **0** stack overflow; `painted_route_equivalence` still red; `postmove_painted_hover` **0 FAIL** in filtered summary
+- **Commit:** `f8d6946b1147bdd9b9deb8b2a9e2c18873b8b02c`
+
