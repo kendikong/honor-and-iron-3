@@ -1543,7 +1543,7 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - Overlay fallback; per-test branches; voluntary-walk recursion bypass (R123b)
 
 ### Applied
-- **Commit:** (see turn changelog)
+- **Commit:** `80ffacdedc67397538c9d19a7f7227e9e0f79fa8`
 - **What fixed:** Freeze painted geometry on all painted drags; armed orbit hover uses unarmed `_refresh_live_interaction_preview` sim with live board parked
 
 ### Verify
