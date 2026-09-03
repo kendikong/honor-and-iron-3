@@ -1549,4 +1549,4 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 ### Verify
 - **Suite:** `run_planning_headless_contracts.ps1`
 - **Result:** FAIL — 55 `[FAIL]` lines; **0** `Stack overflow`; `painted_route_equivalence` still failing; `postmove_painted_hover` **0 FAIL** in summary
-- **Commit:** (pending)
+- **Commit:** `b269750d2441912b4db064b287a02acae5ff33f1`
