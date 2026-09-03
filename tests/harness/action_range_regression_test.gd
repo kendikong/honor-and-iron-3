@@ -43,6 +43,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_visibility_gate_parity_hide,
 		_test_post_swap_post_move_stand_locked_on_orbit,
 		_test_premove_swap_committed_orbit_walk_intent,
+		_test_shield_bash_off_map_hover,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -65,6 +66,7 @@ static func run_all(failures: Array[String]) -> void:
 		"parity_gate_hide",
 		"post_swap_post_move_stand_locked",
 		"premove_swap_committed_orbit_walk",
+		"shield_bash_off_map_hover",
 	]
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
@@ -1085,3 +1087,23 @@ static func _test_premove_swap_committed_orbit_walk_intent(failures: Array[Strin
 				"ActionRangeRegression premove_swap_committed_orbit_walk: ally cell must not re-pair swap",
 			)
 			break
+
+
+static func _test_shield_bash_off_map_hover(failures: Array[String]) -> void:
+	const OFF_MAP_CELL := Vector2i(-1, -1)
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	var bash_idx: int = PlanningQAGateTest._ability_index(fix.knight, SHIELD_BASH_ID)
+	if bash_idx < 0:
+		failures.append("ActionRangeRegression shield_bash_off_map_hover: Shield Bash missing")
+		return
+	director.selected_ability_index = bash_idx
+	var ability: AbilityData = PlanningQAGateTest._knight_ability(SHIELD_BASH_ID)
+	_attack_hover_sync(input, overlay, OFF_MAP_CELL)
+	_assert_contract(
+		failures, "shield_bash_off_map_hover", fix, overlay, input,
+		OFF_MAP_CELL, ability, true, KNIGHT_START, false,
+	)
+

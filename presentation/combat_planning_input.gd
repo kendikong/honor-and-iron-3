@@ -79,6 +79,8 @@ var _drag_preview_schedule_key: String = ""
 var _planning_refresh_generation: int = 0
 var _planning_refresh_scheduled: bool = false
 var _planning_refresh_schedule_key: String = ""
+var _live_interaction_preview_inflight: bool = false
+var _voluntary_walk_refresh_inflight: bool = false
 var _drag_move_commit_instant: bool = false
 var _drag_preview_cache_key: int = 0
 var _drag_preview_cache: Dictionary = {}
@@ -1909,10 +1911,10 @@ func _run_hover_overlay_refresh() -> void:
 		return
 	var cell: Vector2i = _intent_state.hover_coord if _intent_state != null else Vector2i(-999, -999)
 	if not _director.board.is_in_bounds(cell):
-		if _director.selected_unit_id >= 0 and action_range_visible_for_hover():
+		if _director.selected_unit_id >= 0:
 			if _planning != null:
 				_planning._recompute_hover_ranges_from_inputs()
-		elif _director.selected_unit_id < 0:
+		else:
 			_sync_intent_live_board()
 			if _planning != null:
 				_planning._invalidate_hover_cache()
@@ -2284,12 +2286,18 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				_apply_settled_preview_result(stand_res)
 			_refresh_click_target_highlight()
 			return
-	if active_movement_planning_step(p_unit):
-		var step_ability: AbilityData = _selected_ability_data(p_unit)
-		if step_ability == null:
-			var awaiting_for_refresh: TimelineAction = _awaiting_action_for(p_unit)
-			if awaiting_for_refresh != null:
-				step_ability = awaiting_for_refresh.ability
+	var step_ability: AbilityData = _selected_ability_data(p_unit)
+	if step_ability == null:
+		var awaiting_for_refresh: TimelineAction = _awaiting_action_for(p_unit)
+		if awaiting_for_refresh != null:
+			step_ability = awaiting_for_refresh.ability
+	var skip_movement_settle_off_map: bool = (
+		not _director.board.is_in_bounds(cell)
+		and _director.planning_timeline_phase_kind(p_unit.id) == CombatDirector.PlanningTimelinePhaseKind.NON_MOVEMENT
+		and step_ability != null
+		and DataLibrary.is_basic_ability(step_ability.id)
+	)
+	if active_movement_planning_step(p_unit) and not skip_movement_settle_off_map:
 		if (
 			step_ability != null
 			and _is_awaiting_movement_endpoint(p_unit, step_ability)
@@ -2491,7 +2499,7 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			_refresh_click_target_highlight()
 			return
 		if (
-			not active_movement_planning_step(p_unit)
+			(not active_movement_planning_step(p_unit) or skip_movement_settle_off_map)
 			and (
 				stand_only_ability == null
 				or not _is_awaiting_movement_endpoint(p_unit, stand_only_ability)
@@ -3014,6 +3022,19 @@ func _refresh_live_interaction_preview(
 	attack_target_id: int = -1,
 	waypoints: Array[Vector2i] = [],
 ) -> void:
+	if _live_interaction_preview_inflight:
+		return
+	_live_interaction_preview_inflight = true
+	_do_refresh_live_interaction_preview(unit_id, move_coord, attack_target_id, waypoints)
+	_live_interaction_preview_inflight = false
+
+
+func _do_refresh_live_interaction_preview(
+	unit_id: int,
+	move_coord: Vector2i,
+	attack_target_id: int = -1,
+	waypoints: Array[Vector2i] = [],
+) -> void:
 	if _director == null or _director.board == null or unit_id < 0:
 		return
 	var unit := _director.board.get_unit_by_id(unit_id)
@@ -3027,9 +3048,16 @@ func _refresh_live_interaction_preview(
 		and not _armed_painted_orbit_hover_parity_active(unit, cell)
 	):
 		effective_waypoints = _hover_paint_waypoints_for_cell(unit, cell)
-	if active_movement_planning_step(unit) and attack_target_id < 0 and effective_waypoints.is_empty():
-		_refresh_voluntary_walk_hover_preview(unit, cell)
-		return
+	var skip_movement_settle_live: bool = (
+		not _director.board.is_in_bounds(cell)
+		and _director.planning_timeline_phase_kind(unit.id) == CombatDirector.PlanningTimelinePhaseKind.NON_MOVEMENT
+		and _selected_ability_data(unit) != null
+		and DataLibrary.is_basic_ability(_selected_ability_data(unit).id)
+	)
+	if active_movement_planning_step(unit) and attack_target_id < 0 and effective_waypoints.is_empty() and not skip_movement_settle_live:
+		if not _voluntary_walk_refresh_inflight:
+			_refresh_voluntary_walk_hover_preview(unit, cell)
+			return
 	var cache_key: String = _hover_interaction_cache_key(unit_id, cell, attack_target_id)
 	if (
 		cache_key == _hover_preview_cache_key
@@ -5758,6 +5786,14 @@ func _restore_parked_preview_board(parked_preview_board: BoardState) -> void:
 
 
 func _refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
+	if _voluntary_walk_refresh_inflight:
+		return
+	_voluntary_walk_refresh_inflight = true
+	_do_refresh_voluntary_walk_hover_preview(p_unit, cell)
+	_voluntary_walk_refresh_inflight = false
+
+
+func _do_refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i) -> void:
 	var armed_painted_orbit_parity: bool = _armed_painted_orbit_hover_parity_active(
 		p_unit, cell,
 	)

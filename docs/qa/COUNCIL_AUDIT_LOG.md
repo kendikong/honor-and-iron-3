@@ -1584,3 +1584,56 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Result:** FAIL — 47 `[FAIL]` lines; **0** stack overflow; `painted_route_equivalence` still red; `postmove_painted_hover` **0 FAIL** in filtered summary
 - **Commit:** `f8d6946b1147bdd9b9deb8b2a9e2c18873b8b02c`
 
+---
+
+## 2026-09-02 — Layer 5 R132-red (locked red & off-map hover stack overflow fix) — APPLIED
+
+### What we are fixing
+- **Bucket:** Action-range red tiles disappearing off-map & stack overflow on orbit/off-map hover
+- **Owner:** `CombatPlanningInput` hover settle & `TacticalPlanningOverlay` / `PlanningPreviewTiles` locked red paint
+- **Broken step:**
+  1) `_refresh_live_interaction_preview` (empty waypoints delegate to voluntary walk) and `_refresh_voluntary_walk_hover_preview` (calling live interaction on orbit/off-map) mutually recurse without inflight guards.
+  2) `_refresh_hover_interaction_preview` and `_refresh_live_interaction_preview` enter movement settle for basic attack in `NON_MOVEMENT` phase when off-map.
+  3) `TacticalPlanningOverlay._apply_planning_tile_layers` in `PhaseKind.MOVEMENT` fails to paint `_hover_action_range_tiles` from `locked_plan` when `settled` is null (off-map hover).
+  4) `CombatPlanningInput._run_hover_overlay_refresh` only refreshed overlay off-map if `action_range_visible_for_hover()` was already true, missing red/move tile sync for selected units.
+- **Planned delta:**
+  1) `presentation/combat_planning_input.gd`:
+     - Add `_live_interaction_preview_inflight` and `_voluntary_walk_refresh_inflight` booleans to guard `_refresh_live_interaction_preview` and `_refresh_voluntary_walk_hover_preview` against mutual and recursive re-entrance.
+     - In `_refresh_hover_interaction_preview` and `_refresh_live_interaction_preview`: skip voluntary movement settle when hovering off-map (`not _director.board.is_in_bounds(cell)`) during `NON_MOVEMENT` phase with a basic attack, falling through to stand-only preview.
+     - In `_run_hover_overlay_refresh`: ensure `_planning._recompute_hover_ranges_from_inputs()` is called whenever `_director.selected_unit_id >= 0` on off-map hover.
+  2) `presentation/tactical_planning_overlay.gd`:
+     - In `_apply_planning_tile_layers`: under `PlanningPreviewTiles.PhaseKind.MOVEMENT`, when `show_locked_action_range` is true, populate `_hover_action_range_tiles` from `locked_plan.get("next_aim_origin", locked_stand)` so locked red range tiles remain rendered from stand even when `settled` is null (off-map hover).
+  3) `tests/harness/action_range_regression_test.gd`:
+     - Add `_test_shield_bash_off_map_hover` verifying `action_range_visible_for_hover() == true`, `action_range_intent_stand_cell() == KNIGHT_START`, overlay red tiles exist and anchor at stand, and no stack overflow occurs.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Verdict | Rule / exception IDs |
+|--------|---------|----------------------|
+| 1 Bible paint & tiles | PASS | EX-LOCKED-FIELD, MOVE_PREVIEW_RULES, EX-BIBLE-UI |
+| 2 Settle / bundle / commit | PASS | move-preview-intent-truth, EX-PERF-SCHED, EX-FROZEN-REPLAY |
+| 3 Stand & range origins | PASS | action-range-latest-stand, EX-LOCKED-FIELD, EX-POSTMOVE-SLOT |
+| 4 Global systems / anti-heuristic | PASS | global-systems-first, non-heuristic-mandate 6-row, no-bandaid-fixes |
+| 5 Perf & scheduling | PASS | planning-hover-perf-mandatory, minimal-performance-impact, EX-PERF-SCHED |
+| 6 QA-fix discipline | PASS | qa-fix-no-heuristics, QA failure owner map, no overlay fallback |
+**Verdict:** 6/6 PASS
+
+### What we will not do
+- Overlay fallback math or per-test branches
+- Second stand / route / origin truth (strictly adheres to `_intent_stand_origin` and `PlanningPreviewTiles.resolve_layer_origins`)
+- Touch trample painted_route parity
+- Stage reports/logs/ junk
+
+### Applied
+- **Commit:** `6a57f307b40346533e2d025d99d19d9cbe4c9535`
+- **What fixed:**
+  - `_live_interaction_preview_inflight` and `_voluntary_walk_refresh_inflight` eliminate mutual re-entrance between live and voluntary walk preview routines.
+  - `_run_hover_overlay_refresh` recomputes overlay hover ranges for any selected unit on off-map hover.
+  - `TacticalPlanningOverlay._apply_planning_tile_layers` draws locked red action range in `PhaseKind.MOVEMENT` when `show_locked_action_range` is true, preserving red tiles off-map.
+  - `_refresh_hover_interaction_preview` and `_refresh_live_interaction_preview` skip movement settle for off-map basic attacks in `NON_MOVEMENT` phase.
+  - Added `_test_shield_bash_off_map_hover` to `ActionRangeRegressionTest`.
+
+### Verify
+- **Suite:** `run_action_range_ssot_gate.ps1` -> **PASS**
+- **Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `shield_bash_off_map_hover` **PASS**; **0** stack overflow; **0** recursion errors.
+
+

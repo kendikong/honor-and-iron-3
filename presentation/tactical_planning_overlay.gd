@@ -972,6 +972,17 @@ func _apply_planning_tile_layers(
 				_hover_move_tiles = PlanningPreviewTiles.reachable_move_tiles(
 					_director, _board, unit, selected_ability, _planning_input, locked_stand,
 				)
+			if show_locked_action_range:
+				var aim_origin: Vector2i = locked_plan.get("next_aim_origin", locked_stand)
+				if aim_origin.x <= -900000:
+					aim_origin = locked_stand
+				if aim_origin.x > -900000:
+					_hover_action_range_tiles = _planning_action_range_tiles_for_unit(
+						unit,
+						aim_origin,
+						selected_ability if is_selected_player else -1,
+						aim_origin,
+					)
 		PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 			if locked_stand.x > -900000 and show_locked_action_range:
 				_blast_tiles_on_hover_layer = false
