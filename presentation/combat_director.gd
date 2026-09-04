@@ -2712,6 +2712,8 @@ func _cancel_plans_for_displacement(mover_id: int, pre_board: BoardState, events
 func _extract_commit_anim_events(events: Array[SimEvent]) -> Array[SimEvent]:
 	var out: Array[SimEvent] = []
 	for e in events:
+		if e.type == GameEnums.SimEventType.UNIT_MOVED and bool(e.data.get("run_boost", false)):
+			continue
 		if e.type in [
 			GameEnums.SimEventType.UNIT_MOVED,
 			GameEnums.SimEventType.UNIT_PUSHED,
@@ -3248,6 +3250,8 @@ func _finalize_planning_commit_move_event(
 	before_board: BoardState,
 ) -> void:
 	if move_event == null or action == null or before_board == null:
+		return
+	if bool(move_event.data.get("run_boost", false)):
 		return
 	var moved_id: int = move_event.moved_unit_id()
 	if moved_id < 0:

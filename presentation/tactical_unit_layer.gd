@@ -531,7 +531,10 @@ func _drain_planning_commit_queue() -> void:
 		_planning_commit_sequence_running = false
 		_planning_commit_stage = &""
 		if _planning_overlay != null:
-			_planning_overlay.queue_redraw()
+			_planning_overlay.clear_execution_preview_suppression()
+			_planning_overlay._queue_overlay_redraw()
+		if _map_view != null:
+			_map_view.reset_hover_poll()
 
 
 func await_planning_move_tweens_for_actor(unit_id: int) -> void:
@@ -1402,6 +1405,8 @@ func _should_animate_planning_commit_move(unit_id: int, event: SimEvent = null) 
 	if _director.is_planning_move_instant(unit_id):
 		return false
 	if _drag_preview_active and unit_id == _drag_preview_id:
+		return false
+	if event != null and bool(event.data.get("run_boost", false)):
 		return false
 	if event != null and bool(event.data.get("planning_commit_move", false)):
 		if int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION)) == GameEnums.MoveTiming.POST_ACTION:

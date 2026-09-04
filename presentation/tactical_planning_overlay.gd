@@ -195,6 +195,8 @@ func _queue_overlay_redraw() -> void:
 	_anim_redraw_accum = 0.0
 	queue_redraw()
 	_queue_flow_arrows_redraw()
+	_queue_hover_tile_redraw()
+	_queue_static_tiles_redraw()
 
 
 ## Headless QA: main overlay redraw requests (move-preview ghost circles live here).
@@ -247,7 +249,7 @@ func _draw_static_tile_layers() -> void:
 		return
 	if CombatDirector.is_planning_phase(_phase):
 		_draw_danger_area(canvas)
-	if _preview_range_overlays_enabled():
+	if _preview_range_overlays_enabled() and _should_draw_player_move_preview():
 		_draw_hover_tiles(canvas)
 
 
@@ -612,6 +614,8 @@ func _movement_hover_route_context_active(unit: UnitState, ability: AbilityData)
 func _display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _planning_input == null or unit_id < 0:
 		return []
+	if not _should_draw_player_move_preview():
+		return []
 	return _planning_input.display_move_route_cells(unit_id)
 
 
@@ -673,6 +677,7 @@ func _clear_execution_preview_state() -> void:
 	_has_stashed_committed = false
 	_lock_committed_from_intent = false
 	_preview_board = null
+	_hover_coord = Vector2i(-999999, -999999)
 	_hover_move_tiles.clear()
 	_clear_hover_skill_tiles()
 	_hit_markers.clear()
@@ -1180,9 +1185,9 @@ func _draw() -> void:
 		return
 	var show_planning: bool = CombatDirector.is_planning_phase(_phase)
 	if show_planning:
-		if _preview_live_ghosts_enabled():
+		if _preview_live_ghosts_enabled() and _should_draw_player_move_preview():
 			_draw_move_ghosts()
-		if _preview_live_ghosts_enabled():
+		if _preview_live_ghosts_enabled() and _should_draw_player_move_preview():
 			_draw_ghosts()
 		if _preview_arrows_enabled():
 			_draw_preview_arrows()
@@ -1276,6 +1281,8 @@ func _draw_tile_perimeter(cells: Array[Vector2i], tint: Color, perimeter_alpha: 
 
 func _draw_hover_tile_on(canvas: CanvasItem) -> void:
 	if canvas == null or _board == null or _map_view == null:
+		return
+	if not _should_draw_player_move_preview():
 		return
 	if not _preview_routes_enabled():
 		return
@@ -1438,6 +1445,8 @@ func _display_intent_list() -> Array:
 
 
 func _should_draw_interaction_overlay() -> bool:
+	if not _should_draw_player_move_preview():
+		return false
 	if _planning_input != null and _planning_input.selected_phase_action_exhausted():
 		return false
 	if _planning_input == null:
@@ -1856,6 +1865,8 @@ func targeting_intent_arrow_cells() -> Array[Vector2i]:
 
 
 func _draw_interaction_overlay(flowing: bool) -> void:
+	if not _should_draw_player_move_preview():
+		return
 	if _director == null or _director.selected_unit_id < 0 or _planning_input == null:
 		return
 	var preview_board: BoardState = _planning_input.preview_board_for_display()
@@ -1937,6 +1948,8 @@ func _unit_can_still_move(unit_id: int) -> bool:
 
 func _draw_hover_follow_route_on(canvas: CanvasItem) -> void:
 	if canvas == null or _map_view == null or _director == null or _planning_input == null:
+		return
+	if not _should_draw_player_move_preview():
 		return
 	if _planning_input.dragging:
 		return

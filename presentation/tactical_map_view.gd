@@ -644,6 +644,11 @@ func _update_hover_coord() -> void:
 			_planning_overlay.set_hover_coord(cell)
 
 
+func reset_hover_poll() -> void:
+	_last_polled_mouse_pos = Vector2i(-999999, -999999)
+	_last_polled_hover_cell = Vector2i(-999999, -999999)
+
+
 func _ui_menus_open() -> bool:
 	return (
 		(_options != null and _options.is_open())

@@ -1306,6 +1306,31 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 			% [KNIGHT_START, mid_walk_leg],
 		)
 
+	# Verify commit anim events contains exactly 1 UNIT_MOVED event (not duplicate run_boost event)
+	var scratch_board: BoardState = dir2.base_board.clone()
+	var test_commit_ev: Array[SimEvent] = []
+	ResolutionPipeline.apply_action(scratch_board, autorun_act, test_commit_ev)
+	var extracted_anim_events: Array[SimEvent] = dir2._extract_commit_anim_events(test_commit_ev)
+	var unit_moved_count := 0
+	for ev: SimEvent in extracted_anim_events:
+		if ev.type == GameEnums.SimEventType.UNIT_MOVED:
+			unit_moved_count += 1
+	if unit_moved_count != 1:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: autorun commit anim events has %d UNIT_MOVED events (expected 1, prevents double run animation): %s"
+			% [unit_moved_count, extracted_anim_events],
+		)
+
+	# Verify overlay interaction overlay and hover route cells are cleared immediately on commit
+	if over2._should_draw_interaction_overlay():
+		failures.append("ActionRangeRegression premove_no_boomerang: overlay interaction overlay still active after commit")
+	var overlay_cells: Array[Vector2i] = over2._display_move_route_cells(u2_id)
+	if not overlay_cells.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: overlay move route cells not cleared on commit: %s"
+			% [overlay_cells],
+		)
+
 	# Verify autorun move does NOT animate a second time during execution phase
 	var unit_layer := TacticalUnitLayer.new()
 	unit_layer._board = dir2.board
