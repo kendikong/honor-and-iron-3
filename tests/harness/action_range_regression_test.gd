@@ -21,7 +21,15 @@ const BOWLING_CHARGE_ID: StringName = &"knight_bowling_charge"
 const TRAMPLE_ID: StringName = &"knight_trampling_advance"
 
 
-static func run_all(failures: Array[String]) -> void:
+## =============================================================================
+## NOTE / MANDATE ON SWAP TESTS:
+## Swap tests are isolated from the general regression run by default.
+## Do NOT run swap tests in general regression suites unless specifically fixing
+## swap mechanics. Use `run_swap_tests()` or `include_swap = true` when actively
+## working on swap. Dedicated swap suite: `scripts/qa/run_swap_planning_acceptance.ps1`.
+## =============================================================================
+
+static func run_all(failures: Array[String], include_swap: bool = false) -> void:
 	var tests: Array[Callable] = [
 		_test_show_move_hover_without_action_slot,
 		_test_show_enemy_bash_with_committed_premove,
@@ -41,8 +49,6 @@ static func run_all(failures: Array[String]) -> void:
 		_test_hover_step_updates_stand_and_red_tiles,
 		_test_visibility_gate_parity_show,
 		_test_visibility_gate_parity_hide,
-		_test_post_swap_post_move_stand_locked_on_orbit,
-		_test_premove_swap_committed_orbit_walk_intent,
 		_test_shield_bash_off_map_hover,
 		_test_premove_intent_legs_no_boomerang,
 	]
@@ -65,15 +71,30 @@ static func run_all(failures: Array[String]) -> void:
 		"hover_step_updates_stand",
 		"parity_gate_show",
 		"parity_gate_hide",
-		"post_swap_post_move_stand_locked",
-		"premove_swap_committed_orbit_walk",
 		"shield_bash_off_map_hover",
 		"premove_no_boomerang",
 	]
+	if include_swap:
+		tests.append(_test_post_swap_post_move_stand_locked_on_orbit)
+		names.append("post_swap_post_move_stand_locked")
+		tests.append(_test_premove_swap_committed_orbit_walk_intent)
+		names.append("premove_swap_committed_orbit_walk")
+	else:
+		print("[SKIP] action_range/swap tests skipped by default (run only when specifically fixing swap: use run_swap_tests() or include_swap=true)")
 	for i: int in range(tests.size()):
 		print("[RUN] action_range/%s" % names[i])
 		tests[i].call(failures)
 		PlanningDragE2EHarness.cleanup_all()
+
+
+## Dedicated runner for swap tests — run ONLY when specifically debugging or fixing swap.
+static func run_swap_tests(failures: Array[String]) -> void:
+	print("[RUN] action_range/post_swap_post_move_stand_locked")
+	_test_post_swap_post_move_stand_locked_on_orbit(failures)
+	PlanningDragE2EHarness.cleanup_all()
+	print("[RUN] action_range/premove_swap_committed_orbit_walk")
+	_test_premove_swap_committed_orbit_walk_intent(failures)
+	PlanningDragE2EHarness.cleanup_all()
 
 
 static func _fixture_unit(fix: Dictionary) -> UnitState:
@@ -1005,6 +1026,10 @@ static func _find_run_hover_tile(board: BoardState, unit: UnitState) -> Vector2i
 	return Vector2i(-999999, -999999)
 
 
+## NOTE / MANDATE:
+## Do NOT run swap tests unless specifically fixing swap mechanics!
+## Swap mechanics have a dedicated acceptance runner (scripts/qa/run_swap_planning_acceptance.ps1)
+## and dedicated harness entry `ActionRangeRegressionTest.run_swap_tests(failures)`.
 static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[String]) -> void:
 	var Checklist := PlanningChecklistHarness
 	var fix: Dictionary = Checklist.wire_swap_board(Checklist.SWAP_ALLY_CELL)
@@ -1056,6 +1081,10 @@ static func _test_post_swap_post_move_stand_locked_on_orbit(failures: Array[Stri
 		)
 
 
+## NOTE / MANDATE:
+## Do NOT run swap tests unless specifically fixing swap mechanics!
+## Swap mechanics have a dedicated acceptance runner (scripts/qa/run_swap_planning_acceptance.ps1)
+## and dedicated harness entry `ActionRangeRegressionTest.run_swap_tests(failures)`.
 static func _test_premove_swap_committed_orbit_walk_intent(failures: Array[String]) -> void:
 	var Checklist := PlanningChecklistHarness
 	var fix: Dictionary = Checklist.wire_swap_board(Checklist.WALK_SWAP_ALLY_CELL)
