@@ -1819,6 +1819,7 @@ func _should_draw_player_move_preview() -> bool:
 	return (
 		CombatDirector.is_planning_phase(_phase)
 		and not _execution_preview_suppressed
+		and (_unit_layer == null or not _unit_layer.is_planning_commit_sequence_active())
 	)
 
 

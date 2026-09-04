@@ -1167,61 +1167,23 @@ static func move_route_leg_from_preview(
 	return route.slice(start_idx, end_idx)
 
 
-## True when a committed PRE-MOVE displacement is visually done (sprite on target).
+## True when a committed PRE-MOVE displacement preview is cleared.
+## Move previews clear right before the unit starts walking, not after.
 ## Post-move legs always draw: they document action-end → post-dest even after full projection.
-## When visual_cell is set, logical/projected board must not hide arrows before commit walk finishes.
 static func committed_move_already_realized(
 	director: CombatDirector,
-	board: BoardState,
-	unit_id: int,
+	_board: BoardState,
+	_unit_id: int,
 	timing: int,
 	move_action: TimelineAction,
 	_route_leg: Array,
-	visual_cell: Vector2i = INVALID_VISUAL_CELL,
+	_visual_cell: Vector2i = INVALID_VISUAL_CELL,
 ) -> bool:
 	if timing != GameEnums.MoveTiming.PRE_ACTION:
 		return false
 	if director == null or move_action == null:
 		return false
-	var origin: Vector2i = move_leg_origin_cell(
-		director, board, unit_id, timing, move_action,
-	)
-	## Intentional loop / same-tile-end — origin equals target, path still matters.
-	var target: Vector2i = move_action.target_coord
-	if (
-		_route_leg.size() >= 3
-		and _route_leg[0] is Vector2i
-		and _route_leg[_route_leg.size() - 1] is Vector2i
-		and (_route_leg[0] as Vector2i) == target
-		and (_route_leg[_route_leg.size() - 1] as Vector2i) == target
-	):
-		return false
-	if origin == target:
-		if (
-			_route_leg.size() < 2
-			or not _route_leg[0] is Vector2i
-			or (_route_leg[0] as Vector2i) == target
-		):
-			return false
-		var loop_live_unit: UnitState = board.get_unit_by_id(unit_id) if board != null else null
-		return loop_live_unit != null and loop_live_unit.position == target
-	if visual_cell != INVALID_VISUAL_CELL:
-		if director.is_planning_move_instant(unit_id):
-			return true
-		return visual_cell == target
-	if board != null:
-		var live_unit: UnitState = board.get_unit_by_id(unit_id)
-		if (
-			live_unit != null
-			and not _route_leg.is_empty()
-			and _route_leg[0] is Vector2i
-			and live_unit.position == target
-			and (_route_leg[0] as Vector2i) != target
-		):
-			return true
-		if live_unit != null and _committed_pre_move_satisfied(origin, live_unit.position, target):
-			return true
-	return false
+	return true
 
 
 static func _committed_pre_move_satisfied(

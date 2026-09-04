@@ -1801,6 +1801,46 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Planning Input Suite:** `tests/runners/run_planning_input_only.gd` -> **PASS**.
 - **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> **PASS** (0 script errors, 0 recursion errors).
 
+---
+
+## 2026-09-04 — Council Round R138: Clear Move Preview Before Unit Walk & Prevent Auto-Run Double Animation
+
+### Scope
+1. Update QA regression test in `tests/harness/action_range_regression_test.gd` to assert (1) move preview clears before unit starts walking (mid-walk visual cell), and (2) auto-run pre-move event does not animate during execution phase (First Priority).
+2. Fix `presentation/tactical_unit_layer.gd` `_should_animate_move` so that execution-phase pre-move suppression (`timing == POST_ACTION`) runs before `presentation_anim != AUTO` checks, preventing `RUN` pre-moves from re-animating during execution phase.
+3. Fix `presentation/combat_planning_preview.gd` `committed_move_already_realized` so committed pre-moves clear immediately upon commit before walking starts rather than lingering while `visual_cell != target`.
+4. Fix `presentation/tactical_planning_overlay.gd` `_should_draw_player_move_preview` to suppress player move preview while unit layer is running a planning commit sequence.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Charter | Verdict | Rule / Exception IDs Cited | Focus & Proof |
+|:---|:---|:---:|:---|:---|
+| **1** | Bible paint & tiles | **PASS** | `EX-LOCKED-FIELD`, `MOVE_PREVIEW` | Move preview arrows and destination boxes clear the instant commit executes, before the unit takes its first step. The walk occurs on a clean board. |
+| **2** | Settle / bundle / commit | **PASS** | `COMMIT_TRUTH`, `INTENT_SSOT` | Commit ratifies player intent and transitions immediately to physical actor locomotion without lingering preview artifacts underneath the actor. |
+| **3** | Stand & range origins | **PASS** | `ACTION_RANGE_LATEST_STAND` | Origin tracking remains anchored to canonical start board; no corruption of latest stand. |
+| **4** | Global systems / anti-heuristic | **PASS** | `GLOBAL_SYSTEMS_FIRST`, `NO_BANDAID_FIXES` | Heuristics added: `none`. Fixes the logic order bug in `_should_animate_move` and connects planning commit sequence state to overlay preview suppression at the canonical owner level. |
+| **5** | Perf & scheduling | **PASS** | `PERF_SCHEDULING` | Eliminates duplicate tween creation and redundant route redraws while tweens are active. |
+| **6** | QA-fix discipline | **PASS** | `QA_FIX_DISCIPLINE` | First priority mandate: updated QA regression test caught both failures on baseline, and verified both pass cleanly after canonical fixes. |
+| **7** | Class / skill | **PASS** | `CLASS_KIT_PARITY` | Applies uniformly to all classes and all movement types (Walk, Run, Auto-Run). |
+
+**Verdict:** 7/7 PASS
+
+### Changes applied
+1. `tests/harness/action_range_regression_test.gd`:
+   - Added assertions to verify `display_committed_move_route_leg` clears before unit arrival (mid-walk visual cell).
+   - Added assertion to verify `TacticalUnitLayer._should_animate_move` returns `false` during `PHASE_EXECUTING` for `RUN` pre-moves.
+2. `presentation/tactical_unit_layer.gd`:
+   - Enforced `CombatDirector.is_executing_phase(_phase)` check before `presentation_anim != AUTO` so pre-moves do not animate a second time during execution.
+3. `presentation/combat_planning_preview.gd`:
+   - Updated `committed_move_already_realized` so pre-moves clear immediately upon commit before walking.
+4. `presentation/tactical_planning_overlay.gd`:
+   - Suppressed player move previews while `_unit_layer.is_planning_commit_sequence_active()`.
+
+### Verify
+- **Action Range Regression Suite:** `tests/runners/run_action_range_regression_only.gd` -> **PASS** (20/20 PASS).
+- **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**.
+- **Planning Input Suite:** `tests/runners/run_planning_input_only.gd` -> **PASS**.
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> **PASS** (0 new fails, 0 script errors).
+
 
 
 

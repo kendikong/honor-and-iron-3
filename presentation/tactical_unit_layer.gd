@@ -1252,14 +1252,14 @@ func _should_animate_move(event: SimEvent) -> bool:
 		return false
 	if unit != null and unit.is_enemy():
 		return true
+	if CombatDirector.is_executing_phase(_phase):
+		var timing: int = int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION))
+		return timing == GameEnums.MoveTiming.POST_ACTION
 	if event.data.get("presentation_anim", GameEnums.PresentationAnim.WALK) == GameEnums.PresentationAnim.SUPER_RUN:
 		return true
 	var pres_anim: int = int(event.data.get("presentation_anim", GameEnums.PresentationAnim.AUTO))
 	if pres_anim != GameEnums.PresentationAnim.AUTO and pres_anim != GameEnums.PresentationAnim.NONE:
 		return true
-	if CombatDirector.is_executing_phase(_phase):
-		var timing: int = int(event.data.get("move_timing", GameEnums.MoveTiming.PRE_ACTION))
-		return timing == GameEnums.MoveTiming.POST_ACTION
 	return true
 
 

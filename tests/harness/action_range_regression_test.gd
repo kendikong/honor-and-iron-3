@@ -1296,13 +1296,33 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 		dir2, dir2.board, u2_id, GameEnums.MoveTiming.PRE_ACTION, autorun_act, slots_route, AUTORUN_DEST,
 	):
 		failures.append("ActionRangeRegression premove_no_boomerang: autorun move not marked realized after arrival")
-
-	var autorun_committed_leg: Array = inp2.display_committed_move_route_leg(
-		u2_id, GameEnums.MoveTiming.PRE_ACTION, AUTORUN_DEST,
+	# Verify move preview clears before unit starts walking (visual cell still at start or mid-walk)
+	var mid_walk_leg: Array = inp2.display_committed_move_route_leg(
+		u2_id, GameEnums.MoveTiming.PRE_ACTION, KNIGHT_START,
 	)
-	if not autorun_committed_leg.is_empty():
+	if not mid_walk_leg.is_empty():
 		failures.append(
-			"ActionRangeRegression premove_no_boomerang: autorun leg not cleared after execution: %s"
-			% [autorun_committed_leg],
+			"ActionRangeRegression premove_no_boomerang: move preview leg not cleared before unit starts walking (mid-walk visual cell %s): %s"
+			% [KNIGHT_START, mid_walk_leg],
 		)
+
+	# Verify autorun move does NOT animate a second time during execution phase
+	var unit_layer := TacticalUnitLayer.new()
+	unit_layer._board = dir2.board
+	unit_layer._phase = CombatDirector.Phase.EXECUTING
+	var exec_move_event := SimEvent.make(
+		GameEnums.SimEventType.UNIT_MOVED,
+		{
+			"actor": u2_id,
+			"from": KNIGHT_START,
+			"to": AUTORUN_DEST,
+			"move_timing": GameEnums.MoveTiming.PRE_ACTION,
+			"presentation_anim": GameEnums.PresentationAnim.RUN,
+		},
+	)
+	if unit_layer._should_animate_move(exec_move_event):
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: auto run pre-move must NOT animate during execution phase (plays twice)",
+		)
+	unit_layer.free()
 
