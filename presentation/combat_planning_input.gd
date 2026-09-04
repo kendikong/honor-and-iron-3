@@ -2307,6 +2307,21 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			var endpoint_wps: Array[Vector2i] = _hover_walk_waypoints_for_skill(
 				p_unit, cell, step_ability,
 			)
+			var await_res: Dictionary = _preview_at_interaction_cell(
+				p_unit.id,
+				cell,
+				cell,
+				-1,
+				endpoint_wps,
+				_snapshot_drag_legal_move_tiles(),
+			)
+			if not _is_invalid_dict(await_res):
+				_apply_settled_preview_result(await_res)
+			else:
+				_clear_live_preview_preserve_intent()
+				_clear_intent_snapshot()
+			_refresh_click_target_highlight()
+			return
 		var step_target_id: int = _attack_target_id_at_cell(p_unit, cell)
 		if step_ability != null and step_target_id >= 0:
 			var approach_wps: Array[Vector2i] = []
@@ -7171,9 +7186,8 @@ func action_range_visible_for_hover() -> bool:
 	if ability == null or AbilitySystem.is_run_ability(ability) or AbilitySystem.is_wait_ability(ability):
 		return false
 	var board: BoardState = _proj()
-	var auto_run_move: bool = auto_run_movement_active(actor)
-	if unit_move_requires_run(unit_id):
-		auto_run_move = true
+	var force_run_move: bool = unit_move_requires_run(unit_id)
+	var auto_run_move: bool = auto_run_movement_active(actor) or force_run_move
 	var stand: Vector2i = settled_action_range_stand_cell(unit_id)
 	var economy_board: BoardState = board
 	var economy_actor: UnitState = actor
@@ -7207,7 +7221,7 @@ func action_range_visible_for_hover() -> bool:
 		):
 			premove_cell = hover_cell
 	return AbilitySystem.can_show_planning_action_range_after_premove(
-		economy_board, economy_actor, ability, premove_cell, auto_run_move,
+		economy_board, economy_actor, ability, premove_cell, auto_run_move, force_run_move,
 	)
 
 
@@ -7766,9 +7780,11 @@ func _unit_at_input_cell(cell: Vector2i) -> UnitState:
 
 
 func _proj() -> BoardState:
-	if _director.projected_state != null:
+	if _director != null and _director.projected_state != null:
 		return _director.projected_state
-	return _director.board
+	if _director != null:
+		return _director.board
+	return null
 
 
 func projected_unit_for_preview(unit_id: int) -> UnitState:
@@ -7777,7 +7793,8 @@ func projected_unit_for_preview(unit_id: int) -> UnitState:
 func _proj_unit(unit_id: int) -> UnitState:
 	if unit_id < 0:
 		return null
-	return _proj().get_unit_by_id(unit_id)
+	var b: BoardState = _proj()
+	return b.get_unit_by_id(unit_id) if b != null else null
 
 
 func _proj_origin(unit: UnitState) -> Vector2i:

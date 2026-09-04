@@ -284,18 +284,21 @@ static func resolve_paint(
 					stand = paint_stand
 					blast_on_hover_layer = true
 	var show_blast: bool = bool(plan.get("show_blast", false))
-	if director != null and director.unit_has_committed_class_action(paint_unit.id):
-		show_blast = false
 	if (
-		phase == PhaseKind.NON_MOVEMENT
-		and show_blast
-		and director != null
+		director != null
 		and _unit_has_committed_ability(director, paint_unit.id)
 		and board.is_in_bounds(hover_coord)
 	):
-		var locked_aim_blast: Vector2i = plan.get("locked_aim_origin", none)
-		if locked_aim_blast.x > -900000 and hover_coord != locked_aim_blast:
+		var locked_blast_origin: Vector2i = (
+			plan.get("locked_aim_origin", none)
+			if phase == PhaseKind.NON_MOVEMENT
+			else plan.get("locked_move_origin", none)
+		)
+		if locked_blast_origin.x > -900000 and hover_coord != locked_blast_origin:
 			blast_on_hover_layer = true
+			show_blast = true
+	elif director != null and director.unit_has_committed_class_action(paint_unit.id):
+		show_blast = false
 	if show_blast:
 		var blast_stand: Vector2i = stand
 		if blast_stand.x <= -900000:

@@ -124,37 +124,9 @@ func setup(
 	EventBus.board_changed.connect(_on_board_changed)
 	EventBus.preview_updated.connect(_on_preview_updated)
 	EventBus.planning_commit_events.connect(_on_planning_commit_events)
-	EventBus.timeline_changed.connect(func(_plan: Timeline, _statuses: PackedStringArray) -> void:
-		_invalidate_hover_cache()
-		_recompute_hover_ranges_from_inputs()
-	)
-	EventBus.selection_changed.connect(func(_id: int) -> void:
-		_execution_preview_suppressed = false
-		if _director == null:
-			return
-		_update_hover_action_icon()
-		_queue_overlay_redraw(),
-	)
-	EventBus.turn_phase_changed.connect(func(phase: int) -> void:
-		var was_planning: bool = CombatDirector.is_planning_phase(_phase)
-		_phase = phase
-		var planning: bool = CombatDirector.is_planning_phase(phase)
-		if was_planning and not planning:
-			_clear_execution_preview_state()
-		elif planning and not was_planning:
-			_execution_preview_suppressed = false
-		if not planning and _planning_input != null:
-			_planning_input.clear_interaction_preview()
-		_invalidate_hover_cache()
-		if planning:
-			_recompute_hover_ranges_from_inputs()
-		else:
-			_hover_move_tiles.clear()
-			_clear_hover_skill_tiles()
-			_queue_static_tiles_redraw()
-		mark_danger_dirty()
-		_queue_overlay_redraw(),
-	)
+	EventBus.timeline_changed.connect(_on_timeline_changed)
+	EventBus.selection_changed.connect(_on_selection_changed)
+	EventBus.turn_phase_changed.connect(_on_turn_phase_changed)
 	EventBus.sim_event.connect(_on_sim_event)
 	if _intent_state != null:
 		_intent_state.intents_changed.connect(func(_units: Dictionary) -> void: _queue_overlay_redraw())
@@ -281,6 +253,7 @@ func _draw_static_tile_layers() -> void:
 
 func teardown() -> void:
 	set_process(false)
+	_disconnect_event_bus()
 	if _hover_tile_layer != null:
 		_hover_tile_layer.queue_free()
 		_hover_tile_layer = null
@@ -294,6 +267,61 @@ func teardown() -> void:
 	_director = null
 	_intent_state = null
 	_planning_input = null
+
+
+func _disconnect_event_bus() -> void:
+	if EventBus.board_changed.is_connected(_on_board_changed):
+		EventBus.board_changed.disconnect(_on_board_changed)
+	if EventBus.preview_updated.is_connected(_on_preview_updated):
+		EventBus.preview_updated.disconnect(_on_preview_updated)
+	if EventBus.planning_commit_events.is_connected(_on_planning_commit_events):
+		EventBus.planning_commit_events.disconnect(_on_planning_commit_events)
+	if EventBus.timeline_changed.is_connected(_on_timeline_changed):
+		EventBus.timeline_changed.disconnect(_on_timeline_changed)
+	if EventBus.selection_changed.is_connected(_on_selection_changed):
+		EventBus.selection_changed.disconnect(_on_selection_changed)
+	if EventBus.turn_phase_changed.is_connected(_on_turn_phase_changed):
+		EventBus.turn_phase_changed.disconnect(_on_turn_phase_changed)
+	if EventBus.sim_event.is_connected(_on_sim_event):
+		EventBus.sim_event.disconnect(_on_sim_event)
+
+
+func _on_timeline_changed(_plan: Timeline, _statuses: PackedStringArray) -> void:
+	if _director == null:
+		return
+	_invalidate_hover_cache()
+	_recompute_hover_ranges_from_inputs()
+
+
+func _on_selection_changed(_id: int) -> void:
+	_execution_preview_suppressed = false
+	if _director == null:
+		return
+	_update_hover_action_icon()
+	_queue_overlay_redraw()
+
+
+func _on_turn_phase_changed(phase: int) -> void:
+	if _director == null:
+		return
+	var was_planning: bool = CombatDirector.is_planning_phase(_phase)
+	_phase = phase
+	var planning: bool = CombatDirector.is_planning_phase(phase)
+	if was_planning and not planning:
+		_clear_execution_preview_state()
+	elif planning and not was_planning:
+		_execution_preview_suppressed = false
+	if not planning and _planning_input != null:
+		_planning_input.clear_interaction_preview()
+	_invalidate_hover_cache()
+	if planning:
+		_recompute_hover_ranges_from_inputs()
+	else:
+		_hover_move_tiles.clear()
+		_clear_hover_skill_tiles()
+		_queue_static_tiles_redraw()
+	mark_danger_dirty()
+	_queue_overlay_redraw()
 
 
 func apply_settings(settings: GameSettings) -> void:
@@ -1029,14 +1057,14 @@ func _apply_planning_tile_layers(
 			match locked_phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
 					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					if not committed_class_action:
+					if not committed_class_action or settled.blast_on_hover_layer:
 						_hover_blast_tiles = settled.blast_tiles.duplicate()
 						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 				PlanningPreviewTiles.PhaseKind.NON_MOVEMENT:
 					_hover_move_tiles = settled.move_tiles.duplicate()
 					if not settled.action_range_tiles.is_empty():
 						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
-					if not committed_class_action:
+					if not committed_class_action or settled.blast_on_hover_layer:
 						_hover_blast_tiles = settled.blast_tiles.duplicate()
 						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
 		elif committed_class_action:

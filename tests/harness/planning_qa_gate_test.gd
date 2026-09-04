@@ -257,7 +257,8 @@ static func run_all(failures: Array[String]) -> void:
 		"steady_aim_auto_run_parity",
 	]
 	for i: int in range(tests.size()):
-		print("[RUN] %s" % names[i])
+		var test_name: String = names[i] if i < names.size() else "test_%d" % i
+		print("[RUN] %s" % test_name)
 		tests[i].call(failures)
 		PlanningDragE2EHarness.cleanup_all()
 

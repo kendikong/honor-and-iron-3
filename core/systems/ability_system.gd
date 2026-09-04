@@ -3023,6 +3023,7 @@ static func can_show_planning_action_range_after_premove(
 	ability: AbilityData,
 	premove_cell: Vector2i,
 	auto_run_active: bool,
+	force_run: bool = false,
 ) -> bool:
 	if board == null or actor == null or ability == null:
 		return false
@@ -3035,7 +3036,7 @@ static func can_show_planning_action_range_after_premove(
 	if premove_cell == actor.position:
 		return can_plan(actor, ability)
 	var projected: UnitState = project_actor_after_premove(
-		board, actor, premove_cell, auto_run_active,
+		board, actor, premove_cell, auto_run_active, force_run,
 	)
 	if projected == null:
 		return false
@@ -3048,6 +3049,7 @@ static func project_actor_after_premove(
 	actor: UnitState,
 	premove_cell: Vector2i,
 	auto_run_active: bool,
+	force_run: bool = false,
 ) -> UnitState:
 	if board == null or actor == null:
 		return null
@@ -3055,8 +3057,8 @@ static func project_actor_after_premove(
 		return actor.clone()
 	if not board.is_in_bounds(premove_cell):
 		return null
-	var needs_run: bool = movement_requires_run(board, actor, premove_cell, [])
-	if needs_run and not auto_run_active:
+	var needs_run: bool = force_run or movement_requires_run(board, actor, premove_cell, [])
+	if needs_run and not (auto_run_active or force_run):
 		return null
 	var trial: BoardState = board.clone()
 	var trial_actor: UnitState = trial.get_unit_by_id(actor.id)
