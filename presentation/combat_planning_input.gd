@@ -3673,10 +3673,10 @@ func _commit_at_cell(
 		_play_sfx("invalid")
 		return false
 	_play_commit_sfx(slots)
+	_clear_intent_snapshot()
+	_clear_hover_drag_route()
 	_promote_intent_preview_after_commit()
 	_on_commit_slots_applied(unit_id, slots)
-	_clear_hover_drag_route()
-	_clear_intent_snapshot()
 	return true
 
 func _promote_intent_preview_after_commit() -> void:

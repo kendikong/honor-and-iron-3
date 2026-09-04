@@ -1758,6 +1758,50 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Test Battle Bridge:** `tests/run_test_battle_bridge.gd` -> **PASS**
 - **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> `premove_no_boomerang` **PASS**, `reposition_preview_clear` **PASS**, `move_preview_origin` **PASS**, `K3-13/post_after_commit` **PASS**; **0** script errors; **0** stack overflow; **0** recursion errors.
 
+---
+
+## 2026-09-04 — Council Round R137: Fix Pre-Move Leg Origin & Post-Execution Realization Clearing (BUG-20260904T000206-156 & BUG-20260904T000305-623)
+
+### Scope
+1. Fix QA regression test in `tests/harness/action_range_regression_test.gd` (`_test_premove_intent_legs_no_boomerang`) so it explicitly asserts move leg origin, post-execution clearing, post-commit hover isolation, and autorun non-boomerang route (First Priority).
+2. Fix `CombatPlanningPreview.move_leg_origin_cell` to evaluate pre-move origin from the turn start / base board instead of projected board so the origin is not falsely set to the move destination.
+3. Fix boomerang route construction and failure to clear executed pre-moves in `committed_move_already_realized`.
+4. Fix stale hover receipt retention across commit by clearing intent snapshot before promoting preview.
+
+### Root cause
+1. In `CombatPlanningPreview.move_leg_origin_cell`, `timing != POST_ACTION` passed `planning_projection_board(director, board)` (which returns `director.projected_state`) into `CombatUiFormatters.plan_action_origin_cell`. Because `projected_state` reflects the state *after* plan execution, `unit.position` was already at `target_coord`. `plan_action_origin_cell` initialized `origin` to `target_coord` and immediately broke on the pre-move action, returning destination as origin.
+2. In `_committed_move_route_from_slots`, having `origin == target_coord` prepended destination to waypoints, synthesizing boomerang loops (e.g. `[(6, 3), (4, 5), (6, 3)]` destination -> initial -> destination) and causing double-run animation playback in `TacticalUnitLayer`.
+3. In `committed_move_already_realized`, having `origin == target_coord` triggered the loop guard, preventing executed pre-moves from ever being recognized as realized, leaving lingering blue boxes and arrows on screen.
+4. In `action_range_regression_test.gd`, `_test_premove_intent_legs_no_boomerang` previously tested only `_should_draw_player_move_preview()`, which was temporarily suppressed by `_execution_preview_suppressed` during commit signal dispatch, masking the fact that `display_committed_move_route_leg` was returning uncleared boomerang routes.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Charter | Verdict | Rule / Exception IDs Cited | Focus & Proof |
+|:---|:---|:---:|:---|:---|
+| **1** | Bible paint & tiles | **PASS** | `EX-LOCKED-FIELD`, `MOVE_PREVIEW` | Move preview arrows and destination boxes clear immediately upon pre-move execution on the live board. No lingering blue box or arrow remains on screen. |
+| **2** | Settle / bundle / commit | **PASS** | `COMMIT_TRUTH`, `INTENT_SSOT` | Commit ratifies preview; post-commit does not preserve stale hover receipt or synthesize synthetic boomerang routes. |
+| **3** | Stand & range origins | **PASS** | `ACTION_RANGE_LATEST_STAND` | Unit stands at destination on live board; pre-move leg origin starts at canonical turn start stand `(4, 5)` instead of destination. |
+| **4** | Global systems / anti-heuristic | **PASS** | `GLOBAL_SYSTEMS_FIRST`, `NO_BANDAID_FIXES` | Heuristics added: `none`. Fixes canonical owner `move_leg_origin_cell` to pass `start_board` to `plan_action_origin_cell`, matching every other caller in the architecture. |
+| **5** | Perf & scheduling | **PASS** | `PERF_SCHEDULING` | Eliminates redundant tween execution, double run animations, and extra route line draws. |
+| **6** | QA-fix discipline | **PASS** | `QA_FIX_DISCIPLINE` | First priority: updated QA test to catch all 7 failure points on baseline, and verified all 7 pass after fix without heuristics. |
+| **7** | Class / skill | **PASS** | `CLASS_KIT_PARITY` | Applies uniformly to all classes and movement types (Walk, Run, Auto-Run). |
+
+**Verdict:** 7/7 PASS
+
+### Changes applied
+1. `tests/harness/action_range_regression_test.gd`:
+   - Updated `_test_premove_intent_legs_no_boomerang` to assert `move_leg_origin_cell == KNIGHT_START`, `committed_move_already_realized == true`, `display_committed_move_route_leg == []`, post-commit hover does not resurrect pre-move leg, and multi-tile autorun route has no boomerang loop.
+2. `presentation/combat_planning_preview.gd`:
+   - In `move_leg_origin_cell`: use `start_board` (`turn_start_board` else `base_board` else `board`) instead of `planning_projection_board` when delegating to `plan_action_origin_cell`.
+3. `presentation/combat_planning_input.gd`:
+   - In `commit_from_slots`: clear intent snapshot and hover drag route before calling `_promote_intent_preview_after_commit`.
+
+### Verify
+- **Action Range Regression Suite:** `tests/runners/run_action_range_regression_only.gd` -> **PASS** (all 20 tests pass, including strengthened `premove_no_boomerang`).
+- **Action Range SSOT Gate:** `scripts/qa/run_action_range_ssot_gate.ps1` -> **PASS**.
+- **Planning Input Suite:** `tests/runners/run_planning_input_only.gd` -> **PASS**.
+- **T3 Mimic Headless Suite:** `scripts/qa/run_t3_mimic_headless.ps1` -> **PASS** (0 script errors, 0 recursion errors).
+
+
 
 
 

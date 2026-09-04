@@ -1210,3 +1210,99 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 			"ActionRangeRegression premove_no_boomerang: stand %s expected %s" % [stand, PREMOVE_DEST],
 		)
 
+	# Verify move_leg_origin_cell reflects the true starting cell (KNIGHT_START), not PREMOVE_DEST.
+	var move_act: TimelineAction = CombatPlanningPreview.committed_move_action(
+		director.get_player_plan(), unit_id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if move_act == null:
+		failures.append("ActionRangeRegression premove_no_boomerang: committed move action missing")
+		return
+	var origin_cell: Vector2i = CombatPlanningPreview.move_leg_origin_cell(
+		director, director.board, unit_id, GameEnums.MoveTiming.PRE_ACTION, move_act,
+	)
+	if origin_cell != KNIGHT_START:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: move origin %s expected %s" % [origin_cell, KNIGHT_START],
+		)
+
+	# Verify committed_move_already_realized returns true when unit has arrived at destination
+	if not CombatPlanningPreview.committed_move_already_realized(
+		director, director.board, unit_id, GameEnums.MoveTiming.PRE_ACTION, move_act, [KNIGHT_START, PREMOVE_DEST], PREMOVE_DEST,
+	):
+		failures.append("ActionRangeRegression premove_no_boomerang: committed move not marked realized after arrival")
+
+	# Verify display_committed_move_route_leg returns empty array (cleared) once executed
+	var committed_leg: Array = input.display_committed_move_route_leg(
+		unit_id, GameEnums.MoveTiming.PRE_ACTION, PREMOVE_DEST,
+	)
+	if not committed_leg.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: committed leg not cleared after execution: %s" % [committed_leg],
+		)
+
+	# Post-commit hover on another tile (BUG-20260904T000206-156: hover tile (6, 5)) must NOT resurrect pre-move route or arrows
+	_hover_sync(input, overlay, Vector2i(6, 5))
+	var post_hover_leg: Array = input.display_committed_move_route_leg(
+		unit_id, GameEnums.MoveTiming.PRE_ACTION, PREMOVE_DEST,
+	)
+	if not post_hover_leg.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: hover on other cell resurrected committed leg: %s" % [post_hover_leg],
+		)
+
+	# Multi-tile autorun pre-move test (BUG-20260904T000305-623):
+	const AUTORUN_DEST := Vector2i(6, 3)
+	var fix2: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var dir2: CombatDirector = fix2.director
+	var inp2: CombatPlanningInput = fix2.input
+	var over2: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix2)
+	dir2.auto_run = true
+	dir2.select_ability(-1)
+	var u2_id: int = fix2.knight.id
+	_hover_sync(inp2, over2, AUTORUN_DEST)
+	var autorun_slots: Dictionary = PlanningQAGateTest._commit_slots_at(inp2, u2_id, AUTORUN_DEST)
+	inp2.call("_paint_intent_slots_before_commit", u2_id, autorun_slots)
+	if not dir2.commit_from_slots(u2_id, autorun_slots):
+		failures.append("ActionRangeRegression premove_no_boomerang: autorun commit failed")
+		return
+	inp2.call("_promote_intent_preview_after_commit")
+
+	var autorun_act: TimelineAction = CombatPlanningPreview.committed_move_action(
+		dir2.get_player_plan(), u2_id, GameEnums.MoveTiming.PRE_ACTION,
+	)
+	if autorun_act == null:
+		failures.append("ActionRangeRegression premove_no_boomerang: autorun move action missing")
+		return
+	var autorun_origin: Vector2i = CombatPlanningPreview.move_leg_origin_cell(
+		dir2, dir2.board, u2_id, GameEnums.MoveTiming.PRE_ACTION, autorun_act,
+	)
+	if autorun_origin != KNIGHT_START:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: autorun origin %s expected %s" % [autorun_origin, KNIGHT_START],
+		)
+
+	# Verify slots route does not start with destination (no boomerang loop)
+	var slots_route: Array[Vector2i] = CombatPlanningPreview._committed_move_route_from_slots(
+		dir2, dir2.board, u2_id, GameEnums.MoveTiming.PRE_ACTION, autorun_act,
+	)
+	if not slots_route.is_empty() and slots_route[0] == AUTORUN_DEST:
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: autorun slots route starts at destination %s: %s"
+			% [AUTORUN_DEST, slots_route],
+		)
+
+	# Verify realized and cleared once executed
+	if not CombatPlanningPreview.committed_move_already_realized(
+		dir2, dir2.board, u2_id, GameEnums.MoveTiming.PRE_ACTION, autorun_act, slots_route, AUTORUN_DEST,
+	):
+		failures.append("ActionRangeRegression premove_no_boomerang: autorun move not marked realized after arrival")
+
+	var autorun_committed_leg: Array = inp2.display_committed_move_route_leg(
+		u2_id, GameEnums.MoveTiming.PRE_ACTION, AUTORUN_DEST,
+	)
+	if not autorun_committed_leg.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_no_boomerang: autorun leg not cleared after execution: %s"
+			% [autorun_committed_leg],
+		)
+

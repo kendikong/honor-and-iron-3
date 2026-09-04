@@ -1085,10 +1085,14 @@ static func move_leg_origin_cell(
 		var plan_board: BoardState = planning_projection_board(director, board)
 		return committed_plan_action_end_cell(director, plan_board, unit_id)
 	if move_action != null and director != null:
-		var plan_board: BoardState = planning_projection_board(director, board)
-		var unit: UnitState = plan_board.get_unit_by_id(unit_id) if plan_board != null else null
+		var start_board: BoardState = (
+			director.turn_start_board
+			if director.turn_start_board != null
+			else (director.base_board if director.base_board != null else board)
+		)
+		var unit: UnitState = start_board.get_unit_by_id(unit_id) if start_board != null else null
 		return CombatUiFormatters.plan_action_origin_cell(
-			plan_board,
+			start_board,
 			director.get_player_plan(),
 			move_action,
 			unit,
