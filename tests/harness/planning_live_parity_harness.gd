@@ -36,6 +36,23 @@ static func run_k1_bash_live_parity(
 	):
 		return
 	assert_k1_bash_committed(fix, failures, k1_id, "%s/selection" % label_prefix, false)
+	var bash_hover: Array[Vector2i] = selection_pre.get("preview_path", []) as Array
+	PlanningChecklistHarness.assert_ghost_at_dest_until_walk_starts(
+		failures,
+		fix,
+		k1_id,
+		PlanningChecklistHarness.BASH_APPROACH,
+		PlanningChecklistHarness.KNIGHT_START,
+		"%s/selection/ghost" % label_prefix,
+	)
+	PlanningChecklistHarness.assert_non_move_step_move_preview(
+		failures,
+		fix,
+		k1_id,
+		bash_hover,
+		PlanningChecklistHarness.KNIGHT_START,
+		"%s/selection" % label_prefix,
+	)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, k1_id)
 	PlanningChecklistHarness.assert_red_contract(
 		failures,
@@ -146,6 +163,14 @@ static func run_k4_run_live_parity(
 	enter_k4_auto_run_paint_mode(fix, k4_id)
 	run_k4_selection_route(fix, failures, k4_id, bowling, "%s/selection" % label_prefix)
 	assert_k4_run_committed(fix, failures, k4_id, "%s/selection" % label_prefix)
+	PlanningChecklistHarness.assert_ghost_at_dest_until_walk_starts(
+		failures,
+		fix,
+		k4_id,
+		PlanningChecklistHarness.K4_RUN_TRIGGER,
+		PlanningChecklistHarness.K4_START,
+		"%s/selection/ghost" % label_prefix,
+	)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, k4_id)
 
 	undo_until_unit_clear(fix, failures, k4_id, PlanningChecklistHarness.K4_START, label_prefix)
@@ -964,6 +989,18 @@ static func run_undo_sprite_smoke(fix: Dictionary, failures: Array[String], k1_i
 		PlanningChecklistHarness.assert_fail(failures, "UNDO-02", "unit must be undoable after drag walk")
 		return
 	undo_until_unit_clear(fix, failures, k1_id, home, "UNDO-03")
+	PlanningChecklistHarness.assert_display_move_route_empty(
+		failures, fix, k1_id, "UNDO-03/cleared",
+	)
+	PlanningChecklistHarness.hover(fix, dest)
+	PlanningChecklistHarness.flush_planning(fix)
+	var live_after_undo: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, k1_id)
+	if live_after_undo.size() < 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"UNDO-03/live",
+			"undo must restore live walk preview, got %s" % str(live_after_undo),
+		)
 
 
 static func run_k1_journey_mirror(
@@ -1020,6 +1057,16 @@ static func run_k1_journey_mirror(
 			"blue_any": true,
 		}, "K1-04/walk",
 	)
+	PlanningChecklistHarness.assert_hover_field_outline(
+		failures, fix, PlanningChecklistHarness.BASH_HOVER_WALK, true, "K1-04/outline",
+	)
+	PlanningChecklistHarness.assert_illegal_hover_has_no_walk(
+		failures,
+		fix,
+		k1_id,
+		PlanningChecklistHarness.OFF_BLUE_CELL,
+		"K1-04/illegal_restore",
+	)
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.ENEMY_POS)
 	PlanningChecklistHarness.refresh_attack_hover(fix, PlanningChecklistHarness.ENEMY_POS)
 	var push_to: Vector2i = PlanningChecklistHarness.push_destination(fix, e_bash_id)
@@ -1040,6 +1087,22 @@ static func run_k1_journey_mirror(
 			"push_dest": push_to,
 			"push_enemy_id": e_bash_id,
 		}, "K1-05/approach",
+	)
+	if bash_idx >= 0:
+		PlanningChecklistHarness.assert_preview_approach_tile(
+			failures,
+			"K1-05/facing",
+			fix,
+			e_bash_id,
+			bash_idx,
+			PlanningChecklistHarness.ENEMY_POS,
+			PlanningChecklistHarness.BASH_APPROACH,
+		)
+	PlanningChecklistHarness.assert_forced_displace_not_walk_path(
+		failures, fix, k1_id, push_to, "K1-05/push_not_walk",
+	)
+	PlanningChecklistHarness.assert_targeting_arrow_not_walk(
+		failures, fix, k1_id, "K1-05/arrow_not_walk",
 	)
 	run_k1_bash_live_parity(fix, failures, k1_id, e_bash_id, bash, "K1")
 	var bashed: UnitState = PlanningChecklistHarness.projected_unit(fix, e_bash_id)
@@ -1070,7 +1133,11 @@ static func probe_k1_hover_edges(
 			"icon_is": PlanningIcons.GLYPH_NULL,
 			"slots_invalid": true,
 			"tiles_only_in_bounds": true,
+			"display_empty": true,
 		}, "K1-03/off_blue",
+	)
+	PlanningChecklistHarness.assert_hover_field_outline(
+		failures, fix, PlanningChecklistHarness.OFF_BLUE_CELL, false, "K1-03/outline",
 	)
 	assert_off_blue_click_must_not_commit(
 		fix, failures, k1_id, PlanningChecklistHarness.OFF_BLUE_CELL, "K1-03/off_blue_click",
@@ -1141,6 +1208,12 @@ static func run_k2_journey_mirror(
 			"pull_dest": pull_preview,
 			"pull_enemy_id": e_hook_id,
 		}, "K2-03/enemy",
+	)
+	PlanningChecklistHarness.assert_forced_displace_not_walk_path(
+		failures, fix, k2_id, pull_preview, "K2-03/pull_not_walk",
+	)
+	PlanningChecklistHarness.assert_targeting_arrow_not_walk(
+		failures, fix, k2_id, "K2-03/arrow_not_walk",
 	)
 	PlanningChecklistHarness.select_unit(fix, k2_id, PlanningChecklistHarness.K2_CELL)
 	var hook_pre: Dictionary = capture_preview_intent(
@@ -1263,6 +1336,23 @@ static func run_k3_journey_mirror(
 	if not commit_from_preview_intent(fix, k3_id, sel_pre, "K3-05/selection/release", failures):
 		return
 	assert_k3_trample_committed(fix, failures, k3_id, "K3-05/selection", false)
+	var trample_hover: Array[Vector2i] = sel_pre.get("preview_path", []) as Array
+	PlanningChecklistHarness.assert_ghost_at_dest_until_walk_starts(
+		failures,
+		fix,
+		k3_id,
+		PlanningChecklistHarness.TRAMPLE_END,
+		PlanningChecklistHarness.K3_CELL,
+		"K3-05/ghost",
+	)
+	PlanningChecklistHarness.assert_non_move_step_move_preview(
+		failures,
+		fix,
+		k3_id,
+		trample_hover,
+		Vector2i(5, 3),
+		"K3-05",
+	)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, k3_id)
 	undo_until_unit_clear(fix, failures, k3_id, PlanningChecklistHarness.K3_CELL, "K3-06")
 	if not rearm_trample_awaiting(fix, failures, k3_id, "K3-07"):
@@ -1721,6 +1811,9 @@ static func run_execute_all_plans(
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "EXEC-01/e_hook", board.get_unit_by_id(e_hook_id).position, expect["e_hook_pos"] as Vector2i,
 	)
+	PlanningChecklistHarness.assert_execution_planning_ui_off(
+		failures, fix, k1_id, "EXEC-01/ui_off",
+	)
 
 
 ## Mirror shaped-skill AOE footprint & premove overlay parity (Cleave ARC).
@@ -1765,6 +1858,15 @@ static func run_aoe_cleave_session_mirror(failures: Array[String]) -> void:
 	var arm_pre: Dictionary = capture_preview_intent(fix, actor_id, PlanningChecklistHarness.BASH_APPROACH, false)
 	if not commit_from_preview_intent(fix, actor_id, arm_pre, "CLEAVE-04/arm", failures):
 		return
+	var frozen_premove: Array[Vector2i] = pre_intent.get("preview_path", []) as Array
+	PlanningChecklistHarness.assert_non_move_step_move_preview(
+		failures,
+		fix,
+		actor_id,
+		frozen_premove,
+		PlanningChecklistHarness.ENEMY_POS,
+		"CLEAVE-04",
+	)
 
 	# Step 5: Hover target at (7, 5) -> verify yellow blast footprint (ARC of 3 tiles)
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.ENEMY_POS)
@@ -1803,6 +1905,9 @@ static func run_aoe_cleave_session_mirror(failures: Array[String]) -> void:
 	var cleave_pre: Dictionary = capture_preview_intent(fix, actor_id, PlanningChecklistHarness.ENEMY_POS, false)
 	if not commit_from_preview_intent(fix, actor_id, cleave_pre, "CLEAVE-08/commit", failures):
 		return
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.ENEMY_POS)
+	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.assert_yellow_blast_empty(failures, "CLEAVE-08/yellow_cleared", fix)
 
 	# Step 9: Execution via simulate_committed -> verify all 3 dummies damaged
 	var sim_result: SimResult = PlanningChecklistHarness.simulate_committed(fix.director)
@@ -1813,3 +1918,76 @@ static func run_aoe_cleave_session_mirror(failures: Array[String]) -> void:
 			PlanningChecklistHarness.assert_fail(failures, "CLEAVE-09/sim", "dummy %d took no sim damage from cleave" % e_id)
 
 	undo_until_unit_clear(fix, failures, actor_id, PlanningChecklistHarness.KNIGHT_START, "CLEAVE-10/undo")
+
+
+static func run_wait_all_tiles_off(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_bash_board()
+	var knight: UnitState = fix.knight as UnitState
+	if knight == null:
+		PlanningChecklistHarness.assert_fail(failures, "WAIT-01", "knight missing")
+		return
+	var k1_id: int = knight.id
+	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.KNIGHT_START)
+	PlanningChecklistHarness.select_wait(fix)
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.KNIGHT_START)
+	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.assert_wait_all_tiles_off(failures, fix, k1_id, "WAIT-01/stand")
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.BASH_HOVER_WALK)
+	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.assert_wait_all_tiles_off(failures, fix, k1_id, "WAIT-01/walk_cell")
+
+
+static func run_charge_strike_stand_handoff(failures: Array[String]) -> void:
+	const BruiserFixture := preload("res://tests/harness/bruiser_planning_checklist_harness.gd")
+	var start := Vector2i(5, 4)
+	var enemy_cell := Vector2i(8, 2)
+	var pre_dest := Vector2i(6, 3)
+	var charge_dest := Vector2i(7, 2)
+	var pre_route: Array[Vector2i] = [start, Vector2i(6, 4), pre_dest]
+	var fix: Dictionary = BruiserFixture.wire_board(
+		start, enemy_cell, Vector2i(-1, -1), &"bruiser_charge_strike",
+	)
+	if fix.is_empty():
+		PlanningChecklistHarness.assert_fail(failures, "CS-01", "bruiser Charge Strike fixture missing")
+		return
+	var actor: UnitState = fix.actor as UnitState
+	if actor == null:
+		PlanningChecklistHarness.assert_fail(failures, "CS-01", "bruiser missing")
+		return
+	var actor_id: int = actor.id
+	PlanningChecklistHarness.set_unit_pools(fix, actor_id, 1, 8)
+	fix.director.auto_run = false
+	fix.input.auto_use_skill_after_move = false
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	var pre_intent: Dictionary = paint_route_and_capture_pre_intent(
+		fix, actor_id, pre_route, pre_dest, true, "CS-01/premove", failures,
+	)
+	if pre_intent.is_empty():
+		return
+	if not commit_from_preview_intent(fix, actor_id, pre_intent, "CS-01/premove_release", failures):
+		return
+	var idx: int = PlanningChecklistHarness.select_ability(fix, &"bruiser_charge_strike")
+	if idx < 0:
+		PlanningChecklistHarness.assert_fail(failures, "CS-02", "bruiser_charge_strike missing")
+		return
+	var charge: AbilityData = actor.active_abilities[idx]
+	var arm_pre: Dictionary = capture_preview_intent(fix, actor_id, pre_dest, false)
+	if not commit_from_preview_intent(fix, actor_id, arm_pre, "CS-02/arm", failures):
+		return
+	PlanningChecklistHarness.refresh_attack_hover(fix, charge_dest)
+	var charge_hover: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, actor_id)
+	var charge_pre: Dictionary = capture_preview_intent(fix, actor_id, charge_dest, false)
+	if not commit_from_preview_intent(fix, actor_id, charge_pre, "CS-03/charge", failures):
+		return
+	PlanningChecklistHarness.hover(fix, enemy_cell)
+	PlanningChecklistHarness.flush_planning(fix)
+	PlanningChecklistHarness.assert_red_contract(
+		failures, "CS-04/red_stand", fix, charge, true, charge_dest, actor_id,
+	)
+	PlanningChecklistHarness.assert_blue_walk_tiles_off(failures, "CS-04/blue_off", fix)
+	PlanningChecklistHarness.assert_frozen_walk_not_redrawn_by_mouse(
+		failures, fix, actor_id, charge_hover, enemy_cell, "CS-04/frozen",
+	)
+	PlanningChecklistHarness.assert_ghost_at_dest_until_walk_starts(
+		failures, fix, actor_id, charge_dest, pre_dest, "CS-04/ghost",
+	)

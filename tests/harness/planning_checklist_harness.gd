@@ -492,6 +492,241 @@ static func assert_display_move_preview_after_commit(
 		)
 
 
+static func assert_display_move_route_empty(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	var display: Array[Vector2i] = display_move_route(fix, unit_id)
+	if display.size() >= 2:
+		assert_fail(
+			failures,
+			label,
+			"display_move_route_cells must be empty, got %s" % str(display),
+		)
+
+
+static func assert_blue_walk_tiles_off(
+	failures: Array[String], label: String, fix: Dictionary,
+) -> void:
+	var blue: Array[Vector2i] = collect_blue_tiles(fix)
+	if not blue.is_empty():
+		assert_fail(failures, label, "blue walk tiles must be off, got %s" % str(blue))
+
+
+static func collect_yellow_tiles(fix: Dictionary) -> Array[Vector2i]:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		return []
+	return typed_cells(overlay.get_hover_blast_tiles())
+
+
+static func assert_yellow_blast_empty(
+	failures: Array[String], label: String, fix: Dictionary,
+) -> void:
+	var yellow: Array[Vector2i] = collect_yellow_tiles(fix)
+	if not yellow.is_empty():
+		assert_fail(failures, label, "yellow hover blast must clear after commit, got %s" % str(yellow))
+
+
+static func hover_in_painted_field(fix: Dictionary, cell: Vector2i) -> bool:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		return false
+	return (
+		overlay.is_hover_move_tile(cell)
+		or overlay.is_hover_action_range_tile(cell)
+		or overlay.is_hover_blast_tile(cell)
+	)
+
+
+static func assert_hover_field_outline(
+	failures: Array[String],
+	fix: Dictionary,
+	cell: Vector2i,
+	expect_on: bool,
+	label: String,
+) -> void:
+	assert_true(
+		failures,
+		label,
+		hover_in_painted_field(fix, cell) == expect_on,
+		"hover field outline expected %s at %s" % [expect_on, cell],
+	)
+
+
+## On a non-move step: no blue walk field, and the mouse must not draw a new walk.
+## Skips when the current step is still a movement step (live walk is required).
+static func assert_non_move_step_move_preview(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	frozen_route_raw: Array,
+	hover_cell: Vector2i,
+	label: String,
+) -> void:
+	var unit: UnitState = projected_unit(fix, unit_id)
+	var input: CombatPlanningInput = fix.input
+	if unit != null and input != null and input.active_movement_planning_step(unit):
+		return
+	assert_blue_walk_tiles_off(failures, "%s/blue_off" % label, fix)
+	assert_frozen_walk_not_redrawn_by_mouse(
+		failures, fix, unit_id, frozen_route_raw, hover_cell, "%s/frozen" % label,
+	)
+
+
+static func assert_frozen_walk_not_redrawn_by_mouse(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	frozen_route_raw: Array,
+	hover_cell: Vector2i,
+	label: String,
+) -> void:
+	var frozen: Array[Vector2i] = typed_cells(frozen_route_raw)
+	hover(fix, hover_cell)
+	flush_planning(fix)
+	var display: Array[Vector2i] = display_move_route(fix, unit_id)
+	if frozen.size() >= 2:
+		if display.size() >= 2 and not routes_equal(display, frozen):
+			assert_fail(
+				failures,
+				label,
+				"non-move hover at %s drew a new walk %s instead of frozen %s"
+				% [hover_cell, str(display), str(frozen)],
+			)
+		return
+	if display.size() >= 2 and display[display.size() - 1] == hover_cell:
+		assert_fail(
+			failures,
+			label,
+			"non-move hover at %s must not draw a live walk %s" % [hover_cell, str(display)],
+		)
+
+
+static func assert_illegal_hover_has_no_walk(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	illegal_cell: Vector2i,
+	label: String,
+) -> void:
+	hover(fix, illegal_cell)
+	flush_planning(fix)
+	assert_display_move_route_empty(failures, fix, unit_id, label)
+
+
+static func assert_forced_displace_not_walk_path(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	displace_cell: Vector2i,
+	label: String,
+) -> void:
+	if displace_cell.x <= -900000:
+		return
+	var display: Array[Vector2i] = display_move_route(fix, unit_id)
+	if display.size() < 2:
+		return
+	if display[display.size() - 1] == displace_cell:
+		assert_fail(
+			failures,
+			label,
+			"push/pull dest %s must not be the walk path end %s"
+			% [displace_cell, str(display)],
+		)
+
+
+static func assert_targeting_arrow_not_walk(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	var walk: Array[Vector2i] = display_move_route(fix, unit_id)
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	var arrow: Array[Vector2i] = []
+	if overlay != null:
+		arrow = typed_cells(overlay.targeting_intent_arrow_cells())
+	elif fix.input != null:
+		arrow = typed_cells(fix.input.targeting_intent_arrow_cells())
+	if walk.size() >= 2 and arrow.size() >= 2 and routes_equal(walk, arrow):
+		assert_fail(
+			failures,
+			label,
+			"targeting intent arrow must not be the walk path %s" % str(walk),
+		)
+
+
+static func assert_ghost_at_dest_until_walk_starts(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	dest: Vector2i,
+	origin: Vector2i,
+	label: String,
+) -> void:
+	var live: UnitState = null
+	if fix.director != null and fix.director.board != null:
+		live = fix.director.board.get_unit_by_id(unit_id)
+	if live != null and live.position != origin:
+		return
+	assert_eq_cell(failures, label, preview_unit_pos(fix, unit_id), dest)
+
+
+static func select_wait(fix: Dictionary) -> void:
+	var director: CombatDirector = fix.director
+	director.select_ability(CombatDirector.WAIT_ABILITY_INDEX)
+	flush_planning(fix)
+	var input: CombatPlanningInput = fix.input
+	if input != null:
+		input.call("_run_ability_settled_refresh")
+	flush_planning(fix)
+
+
+static func assert_wait_all_tiles_off(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	assert_blue_walk_tiles_off(failures, "%s/blue" % label, fix)
+	if not collect_red_tiles(fix).is_empty():
+		assert_fail(failures, "%s/red" % label, "Wait must turn red tiles off")
+	assert_yellow_blast_empty(failures, "%s/yellow" % label, fix)
+	assert_display_move_route_empty(failures, fix, unit_id, "%s/path" % label)
+
+
+static func assert_execution_planning_ui_off(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	EventBus.turn_phase_changed.emit(CombatDirector.Phase.EXECUTING)
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		assert_fail(failures, label, "overlay missing")
+		return
+	assert_true(
+		failures,
+		"%s/suppressed" % label,
+		overlay.is_execution_preview_suppressed(),
+		"execution must suppress planning preview",
+	)
+	assert_true(
+		failures,
+		"%s/draw" % label,
+		not overlay._should_draw_player_move_preview(),
+		"execution must not draw planning move preview",
+	)
+	assert_blue_walk_tiles_off(failures, "%s/blue" % label, fix)
+	if not collect_red_tiles(fix).is_empty():
+		assert_fail(failures, "%s/red" % label, "execution must hide red tiles")
+	assert_yellow_blast_empty(failures, "%s/yellow" % label, fix)
+
+
 static func push_destination(fix: Dictionary, enemy_id: int = 2) -> Vector2i:
 	var pushes: Array = fix.input.preview_state.preview_pushes.get(enemy_id, [])
 	for seg: Variant in pushes:

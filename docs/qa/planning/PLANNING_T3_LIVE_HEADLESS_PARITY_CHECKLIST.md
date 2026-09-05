@@ -55,6 +55,35 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 | K4-07 | drag commit + mode parity | `run_k4_run_live_parity` |
 | K4-08 | drag post_commit red off | `assert_red_contract` |
 | EXEC-01 | simulate committed final cells | `run_execute_all_plans` |
+| EXEC-01/ui_off | execution hides planning UI (blue/red/yellow/draw) | `assert_execution_planning_ui_off` |
+
+## Move preview rules (headless; `MOVE_PREVIEW_RULES.md`)
+
+These IDs watch the rest of the owner spec. They are **not** live-scene twins. Failures are honest; do not greenwash persist.
+
+| ID | Rule | Headless owner |
+|----|------|----------------|
+| K1-03/off_blue + display_empty | Invalid movement-step hover: no walk path | `probe_k1_hover_edges` |
+| K1-03/outline | Faint outline only inside a painted field | `assert_hover_field_outline` |
+| K1-04/outline | Outline on a legal walk hover | `assert_hover_field_outline` |
+| K1-04/illegal_restore | Illegal tile must not restore a live/sealed walk | `assert_illegal_hover_has_no_walk` |
+| K1-04/walk red_stand | Next-phase red from hover stand | existing `red_stand` on K1-04 |
+| K1-05/facing | Click freezes approach/facing | `assert_preview_approach_tile` |
+| K1-05/push_not_walk | Push dest is not the walk path | `assert_forced_displace_not_walk_path` |
+| K1-05/arrow_not_walk | Strike arrow is not the walk path | `assert_targeting_arrow_not_walk` |
+| K1/selection/frozen + blue_off + ghost | Frozen walk on non-move; no new mouse walk; ghost until walk starts | `run_k1_bash_live_parity` |
+| K2-03/pull_not_walk | Pull dest is not the walk path | `assert_forced_displace_not_walk_path` |
+| K3-05/frozen + blue_off + ghost | Trample commit: frozen path, no blue, ghost at landing | `run_k3_journey_mirror` |
+| K4/selection/ghost | Ghost at run dest until that walk starts | `run_k4_run_live_parity` |
+| UNDO-03/cleared + live | Undo clears frozen path; live walk works again | `run_undo_sprite_smoke` |
+| CLEAVE-04/blue_off + frozen | Aim step: no blue; mouse does not redraw the premove | `run_aoe_cleave_session_mirror` |
+| CLEAVE-08/yellow_cleared | Yellow does not freeze after commit | same |
+| BA-07 | Off-red hover: **no** walk path (not a restored dash) | `_probe_off_red_tiles` |
+| BA-09/frozen + blue_off | Frozen dash; mouse must not draw a new walk | `_assert_bowling_dash_committed` |
+| BA-10/cleared + live | Undo dash: path gone, then live walk works | bowling session |
+| WAIT-01 | Wait = all tiles off (stand + hover a walk cell) | `run_wait_all_tiles_off` |
+| CS-04 | Charge Strike strike uses charge landing stand; frozen charge path on strike | `run_charge_strike_stand_handoff` |
+| MP-COOP | Everyone sees all units' paths | **out of scope** — printed `[SKIP]`, never a dummy PASS |
 
 ## Bowling Charge advance — `test_live_bowling_advance_session`
 

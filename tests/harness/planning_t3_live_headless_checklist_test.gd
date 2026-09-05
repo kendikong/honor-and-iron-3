@@ -13,3 +13,6 @@ static func run_all(failures: Array[String]) -> void:
 	PlanningLiveParityHarness.run_swap_session_mirror(failures)
 	PlanningLiveParityHarness.run_aoe_cleave_session_mirror(failures)
 	_BowlingAdvance.run_all(failures)
+	PlanningLiveParityHarness.run_wait_all_tiles_off(failures)
+	PlanningLiveParityHarness.run_charge_strike_stand_handoff(failures)
+	print("[SKIP] MP-COOP: second client is out of scope for this runner")

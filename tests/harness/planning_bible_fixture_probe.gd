@@ -42,6 +42,13 @@ static func _audit_surface(
 			path.size() > 0,
 			"display_move_route_cells empty at %s" % hover_cell,
 		)
+	if contract.get("display_empty", false):
+		PlanningChecklistHarness.assert_true(
+			failures,
+			label,
+			path.size() < 2,
+			"display_move_route_cells must be empty on invalid hover, got %s" % str(path),
+		)
 	if contract.has("path"):
 		_assert_path_equals(failures, path, contract["path"] as Array, label)
 	elif contract.has("path_end"):

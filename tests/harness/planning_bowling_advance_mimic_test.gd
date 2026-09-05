@@ -36,6 +36,22 @@ static func run_bowling_advance_session(failures: Array[String]) -> void:
 	PlanningLiveParityHarness.undo_until_unit_clear(
 		fix, failures, knight_id, PlanningChecklistHarness.BOWLING_ADVANCE_START, "BA-10",
 	)
+	PlanningChecklistHarness.assert_display_move_route_empty(
+		failures, fix, knight_id, "BA-10/cleared",
+	)
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.BOWLING_ADVANCE_L_MID)
+	PlanningChecklistHarness.flush_planning(fix)
+	var live_after_undo: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, knight_id)
+	if live_after_undo.size() < 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"BA-10/live",
+			"undo must restore live walk preview, got %s" % str(live_after_undo),
+		)
+	bowling = _select_bowling(fix, failures, knight_id, "BA-11")
+	if bowling == null:
+		return
 	if not _commit_l_walk_and_arm(fix, failures, knight_id, bowling, "BA-11"):
 		return
 	var hover_route_2: Array[Vector2i] = _commit_dash_past_enemy(
@@ -449,9 +465,11 @@ static func _probe_off_red_tiles(
 				PlanningChecklistHarness.assert_fail(
 					failures, "%s/%s" % [label, cell], "off-red must not show dash cursor, got %s" % icon,
 				)
-		if not path.is_empty() and path[path.size() - 1] == cell:
+		if not path.is_empty() and path.size() >= 2:
 			PlanningChecklistHarness.assert_fail(
-				failures, "%s/%s" % [label, cell], "off-red must not paint a dash path to an illegal tile",
+				failures,
+				"%s/%s" % [label, cell],
+				"invalid hover must show no walk path, got %s" % str(path),
 			)
 		PlanningChecklistHarness.assert_red_contract(
 			failures, "%s/%s/red_from_stand" % [label, cell], fix, bowling, true, stand, knight_id,
@@ -507,14 +525,12 @@ static func _commit_dash_past_enemy(
 			"%s/persist_display" % label,
 			"display_move_route_cells was wiped after dash commit: %s" % str(post_commit),
 		)
-		return []
-	if not _routes_equal(post_commit, hover_route):
+	elif not _routes_equal(post_commit, hover_route):
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			"%s/persist_display" % label,
 			"committed display_move_route_cells %s differs from hover %s" % [str(post_commit), str(hover_route)],
 		)
-		return []
 	return hover_route
 
 
@@ -587,6 +603,14 @@ static func _assert_bowling_dash_committed(
 	var bowling: AbilityData = action.ability
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "%s/post_commit_red" % label, fix, bowling, false, dest, knight_id,
+	)
+	PlanningChecklistHarness.assert_non_move_step_move_preview(
+		failures,
+		fix,
+		knight_id,
+		hover_route,
+		PlanningChecklistHarness.BOWLING_ADVANCE_OFF_RED_A,
+		label,
 	)
 
 
