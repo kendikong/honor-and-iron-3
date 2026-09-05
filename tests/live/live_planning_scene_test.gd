@@ -1642,20 +1642,12 @@ func _assert_move_preview_pre_post_commit_parity(
 	pre_intent: Dictionary,
 	label: String,
 ) -> void:
-	var input: CombatPlanningInput = ctx.input
 	var director: CombatDirector = ctx.director
 	director.flush_plan_refresh_signals_if_pending()
 	await _sweep_mouse_to_cell(ctx, hover_cell, "%s/post_commit_hover" % label, unit_id)
-	var pre_preview_path: Array = pre_intent.get("preview_path", [])
-	var post_preview_path: Array[Vector2i] = _preview_path(input, unit_id)
-	if not pre_preview_path.is_empty():
-		assert_that(post_preview_path).override_failure_message(
-			"%s: post-commit move preview path must match pre-commit (%s vs %s)" % [
-				label,
-				str(post_preview_path),
-				str(pre_preview_path),
-			],
-		).is_equal(pre_preview_path)
+	_assert_display_move_preview_after_commit(
+		ctx, unit_id, pre_intent.get("preview_path", []) as Array, "%s/display" % label,
+	)
 	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary
 	var post_slots: Dictionary = _commit_slots_for_interaction(ctx, unit_id, hover_cell, false)
 	assert_that(_intent_slot_signature(post_slots)).override_failure_message(
@@ -2809,12 +2801,36 @@ func _preview_push_destination(input: CombatPlanningInput, enemy_id: int) -> Vec
 
 
 func _preview_path(input: CombatPlanningInput, unit_id: int) -> Array[Vector2i]:
-	var raw: Array = input.preview_state.preview_paths.get(unit_id, [])
-	var out: Array[Vector2i] = []
-	for step: Variant in raw:
-		if step is Vector2i:
-			out.append(step)
-	return out
+	return input.display_move_route_cells(unit_id)
+
+
+func _assert_display_move_preview_after_commit(
+	ctx: Dictionary,
+	unit_id: int,
+	hover_route_raw: Array,
+	label: String,
+) -> void:
+	var hover: Array[Vector2i] = []
+	for v: Variant in hover_route_raw:
+		hover.append(v as Vector2i)
+	if hover.size() < 2:
+		return
+	var live: UnitState = ctx.director.board.get_unit_by_id(unit_id)
+	var display: Array[Vector2i] = ctx.input.display_move_route_cells(unit_id)
+	var walk_started: bool = live != null and live.position != hover[0]
+	if walk_started:
+		assert_bool(PlanningChecklistHarness.routes_equal(display, hover)).override_failure_message(
+			"%s: that walk started; display_move_route_cells must not still be the hover path %s (live at %s)"
+			% [label, hover, live.position if live != null else Vector2i(-1, -1)],
+		).is_false()
+	else:
+		assert_int(display.size()).override_failure_message(
+			"%s: walk has not started; display_move_route_cells wiped after commit: %s (hover was %s)"
+			% [label, display, hover],
+		).is_greater(1)
+		assert_that(display).override_failure_message(
+			"%s: display_move_route_cells %s differs from hover %s" % [label, display, hover],
+		).is_equal(hover)
 
 
 func _slots_invalid(slots: Dictionary) -> bool:
@@ -3059,6 +3075,9 @@ func _assert_commit_ratifies_preview(
 		assert_that(pre_move.waypoints).override_failure_message(
 			"%s: committed waypoints must ratify painted drag route tail" % label,
 		).is_equal(drag_route.slice(1))
+	_assert_display_move_preview_after_commit(
+		ctx, unit_id, pre.get("preview_path", []) as Array, "%s/display" % label,
+	)
 	if not preview_path.is_empty() and label.contains("swap"):
 		await _assert_animation_route_matches_preview(ctx, unit_id, preview_path, label)
 

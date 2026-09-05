@@ -429,10 +429,67 @@ static func preview_unit_pos(fix: Dictionary, unit_id: int = 1) -> Vector2i:
 
 static func preview_path(fix: Dictionary, unit_id: int = 1) -> Array[Vector2i]:
 	var raw: Array = fix.input.preview_state.preview_paths.get(unit_id, [])
+	return typed_cells(raw)
+
+
+## On-screen move preview the overlay draws. Not the internal preview_paths buffer.
+static func display_move_route(fix: Dictionary, unit_id: int) -> Array[Vector2i]:
+	return typed_cells(fix.input.display_move_route_cells(unit_id))
+
+
+static func typed_cells(raw: Array) -> Array[Vector2i]:
 	var out: Array[Vector2i] = []
 	for v: Variant in raw:
 		out.append(v as Vector2i)
 	return out
+
+
+static func routes_equal(a: Array[Vector2i], b: Array[Vector2i]) -> bool:
+	if a.size() != b.size():
+		return false
+	for i: int in range(a.size()):
+		if a[i] != b[i]:
+			return false
+	return true
+
+
+## Hover corridor stays until THAT walk starts. If live already left the hover start, that path must be gone.
+static func assert_display_move_preview_after_commit(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	hover_route_raw: Array,
+	label: String,
+) -> void:
+	var hover: Array[Vector2i] = typed_cells(hover_route_raw)
+	if hover.size() < 2:
+		return
+	var live: UnitState = null
+	if fix.director != null and fix.director.board != null:
+		live = fix.director.board.get_unit_by_id(unit_id)
+	var display: Array[Vector2i] = display_move_route(fix, unit_id)
+	var walk_started: bool = live != null and live.position != hover[0]
+	if walk_started:
+		if routes_equal(display, hover):
+			assert_fail(
+				failures,
+				label,
+				"that walk started; display_move_route_cells must not still be the hover path %s (live at %s)"
+				% [str(hover), live.position],
+			)
+	elif display.size() < 2:
+		assert_fail(
+			failures,
+			label,
+			"walk has not started; display_move_route_cells wiped after commit: %s (hover was %s)"
+			% [str(display), str(hover)],
+		)
+	elif not routes_equal(display, hover):
+		assert_fail(
+			failures,
+			label,
+			"display_move_route_cells %s differs from hover %s" % [str(display), str(hover)],
+		)
 
 
 static func push_destination(fix: Dictionary, enemy_id: int = 2) -> Vector2i:

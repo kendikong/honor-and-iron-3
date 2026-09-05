@@ -23,7 +23,7 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 | K1-08 | selection post_commit red off + enemy live | parity harness |
 | K1-09 | waypoint drag + waypoints on pre-move | `run_k1_bash_live_parity` (waypoint) |
 | K1-10 | mode commit parity selection vs waypoint | `assert_mode_commit_parity` |
-| K1-11 | committed display path ratifies pre-commit | `assert_committed_display_ratifies_pre_commit` |
+| K1-11 | committed `display_move_route_cells` ratifies hover (persist until that walk starts) | `assert_display_move_preview_after_commit` |
 | K1-12 | waypoint post_commit probes | parity harness |
 | K2-01 | hook stand probe | `run_k2_journey_mirror` |
 | K2-02 | hook walk probe | K2-02/walk |

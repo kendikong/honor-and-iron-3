@@ -317,7 +317,7 @@ static func capture_preview_intent(
 		"cell": cell,
 		"slots": slots,
 		"slots_signature": PlanningQAGateTest._intent_slot_signature(slots),
-		"preview_path": PlanningChecklistHarness.preview_path(fix, unit_id).duplicate(),
+		"preview_path": PlanningChecklistHarness.display_move_route(fix, unit_id).duplicate(),
 		"drag_route": fix.input.get_drag_route().duplicate(),
 		"display_ap": input.planning_display_ap_left(unit_id),
 		"requires_run": input.unit_move_requires_run(unit_id),
@@ -353,9 +353,15 @@ static func commit_from_preview_intent(
 	if not PlanningChecklistHarness.commit_slots_production(fix, slots):
 		PlanningChecklistHarness.assert_fail(failures, label, "commit_from_slots failed")
 		return false
-	var failures_before_ratify: int = failures.size()
 	assert_commit_ratifies_preview(fix, failures, unit_id, pre_intent, label)
-	return failures.size() == failures_before_ratify
+	PlanningChecklistHarness.assert_display_move_preview_after_commit(
+		failures,
+		fix,
+		unit_id,
+		pre_intent.get("preview_path", []) as Array,
+		"%s/display" % label,
+	)
+	return true
 
 
 static func assert_commit_ratifies_preview(
@@ -430,19 +436,13 @@ static func assert_execution_preview_cleared_after_commit(
 	pre_intent: Dictionary,
 	label: String,
 ) -> void:
-	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
-	if overlay == null:
-		PlanningChecklistHarness.assert_fail(failures, label, "overlay missing")
-		return
-	var pre_preview_path: Array = pre_intent.get("preview_path", [])
-	var committed_path: Array = overlay.get_committed_preview().preview_paths.get(unit_id, [])
-	if not pre_preview_path.is_empty() and not committed_path.is_empty():
-		PlanningChecklistHarness.assert_fail(
-			failures,
-			label,
-			"execution must clear the committed move preview (%s; pre-commit was %s)"
-			% [str(committed_path), str(pre_preview_path)],
-		)
+	PlanningChecklistHarness.assert_display_move_preview_after_commit(
+		failures,
+		fix,
+		unit_id,
+		pre_intent.get("preview_path", []) as Array,
+		"%s/display" % label,
+	)
 	var pre_slots: Dictionary = pre_intent.get("slots", {}) as Dictionary
 	var pre_target: Vector2i = pre_target_from_slots(pre_slots)
 	var projected: UnitState = fix.director.projected_state.get_unit_by_id(unit_id)
@@ -555,12 +555,13 @@ static func assert_preview_path_equals(
 	expected: Array,
 	label: String,
 ) -> void:
-	var actual: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, unit_id)
-	if actual != expected:
+	var actual: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, unit_id)
+	var want: Array[Vector2i] = PlanningChecklistHarness.typed_cells(expected)
+	if not PlanningChecklistHarness.routes_equal(actual, want):
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			label,
-			"preview path expected %s got %s" % [str(expected), str(actual)],
+			"display_move_route_cells expected %s got %s" % [str(want), str(actual)],
 		)
 
 
@@ -744,16 +745,24 @@ static func run_swap_adjacent_premove_mirror(failures: Array[String]) -> void:
 		failures, fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL, {
 			"blue_any": true,
 			"ability": swap,
-			"manhattan": true,
-			"preview_nonempty": true,
 		}, "SWAP-01/hover",
 	)
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL)
+	var swap_pre: Dictionary = capture_preview_intent(
+		fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL, false,
+	)
 	if PlanningChecklistHarness.slots_invalid(
 		PlanningChecklistHarness.commit_production(fix, PlanningChecklistHarness.SWAP_ALLY_CELL),
 	):
 		PlanningChecklistHarness.assert_fail(failures, "SWAP-02", "swap commit failed")
 		return
+	PlanningChecklistHarness.assert_display_move_preview_after_commit(
+		failures,
+		fix,
+		k1_id,
+		swap_pre.get("preview_path", []) as Array,
+		"SWAP-02/display",
+	)
 	if director.selected_unit_id != k1_id:
 		PlanningChecklistHarness.assert_fail(failures, "SWAP-02", "must keep k1 selected after swap commit")
 	assert_swap_premove_state_layers(
@@ -1003,6 +1012,7 @@ static func run_k1_journey_mirror(
 			"path_start": PlanningChecklistHarness.KNIGHT_START,
 			"path_min_size": 2,
 			"manhattan": true,
+			"preview_nonempty": true,
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.BASH_HOVER_WALK,
 			"ability": bash,
@@ -1021,6 +1031,7 @@ static func run_k1_journey_mirror(
 			"path_start": PlanningChecklistHarness.KNIGHT_START,
 			"path_min_size": 3,
 			"manhattan": true,
+			"preview_nonempty": true,
 			"blue_any": true,
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.BASH_APPROACH,
@@ -1113,6 +1124,7 @@ static func run_k2_journey_mirror(
 			"path_start": PlanningChecklistHarness.K2_CELL,
 			"path_min_size": 2,
 			"manhattan": true,
+			"preview_nonempty": true,
 			"blue_any": true,
 		}, "K2-02/walk",
 	)
@@ -1121,11 +1133,7 @@ static func run_k2_journey_mirror(
 		PlanningChecklistHarness.assert_fail(failures, "K2-03", "pull preview must be west of enemy")
 	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, k2_id, PlanningChecklistHarness.E_HOOK_CELL, {
-			"path_end": PlanningChecklistHarness.K2_CELL,
-			"path_start": PlanningChecklistHarness.K2_CELL,
-			"path_min_size": 1,
 			"icon_has": [PlanningIcons.GLYPH_ATTACK],
-			"manhattan": true,
 			"blue_any": true,
 			"red_on": true,
 			"red_stand": PlanningChecklistHarness.K2_CELL,
@@ -1297,6 +1305,7 @@ static func run_k3_journey_mirror(
 			"blue_any": true,
 		}, "K3-11/post_hover_dest",
 	)
+	var post_hover: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, k3_id)
 	if not PlanningChecklistHarness.commit_painted_drop_on_cell(
 		fix,
 		PlanningChecklistHarness.TRAMPLE_POST_ROUTE,
@@ -1304,6 +1313,9 @@ static func run_k3_journey_mirror(
 	):
 		PlanningChecklistHarness.assert_fail(failures, "K3-12/post_drag", "post-trample drag failed")
 		return
+	PlanningChecklistHarness.assert_display_move_preview_after_commit(
+		failures, fix, k3_id, post_hover, "K3-12/display",
+	)
 	assert_k3_post_move_committed(fix, failures, k3_id, "K3-12")
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "K3-13/post_after_commit", fix, trample, false,

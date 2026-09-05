@@ -30,7 +30,7 @@ static func _audit_surface(
 	label: String,
 ) -> void:
 	var input: CombatPlanningInput = fix.input
-	var path: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, unit_id)
+	var path: Array[Vector2i] = PlanningChecklistHarness.display_move_route(fix, unit_id)
 	var icon: String = input.compute_hover_action_icon(hover_cell)
 	var overlay_blue: bool = _overlay_has_blue(fix)
 	var overlay_red: bool = not PlanningChecklistHarness.collect_red_tiles(fix).is_empty()
@@ -40,7 +40,7 @@ static func _audit_surface(
 			failures,
 			label,
 			path.size() > 0,
-			"preview path empty at %s" % hover_cell,
+			"display_move_route_cells empty at %s" % hover_cell,
 		)
 	if contract.has("path"):
 		_assert_path_equals(failures, path, contract["path"] as Array, label)
