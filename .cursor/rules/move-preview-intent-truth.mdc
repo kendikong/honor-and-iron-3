@@ -14,6 +14,16 @@ globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_di
 
 **Timeline:** premove → skill modules → postmove. Voluntary walk uses **one pipeline** for every movement phase; only commit slot / `move_timing` / animate-on-commit differ (`docs/design/MOVE_PREVIEW_RULES.md` § Timeline model). Do not fork preview or origin per PRE / MOVE / POST label.
 
+---
+
+## Domain Scope & Separation (Planning Core vs. Class Kits)
+
+- **This rule governs planning infrastructure:** `presentation/combat_planning_input.gd`, `presentation/combat_planning_preview.gd`, and `presentation/tactical_planning_overlay.gd`.
+- **Infrastructure, not per-class logic:** Dashes, walks, pushes, trajectory arrows, and ghosts are shared presentation pipelines.
+- **Do not mix scopes:** Never run class QA gates (`run_<class>_qa_gate.ps1`) or pull in class matrix requirements (`class-qa-standards.mdc`) when fixing core move preview or planning bugs. Planning QA (`run_planning_qa_gate.ps1`) is the sole test authority for this domain.
+
+---
+
 The on-screen **move preview** (hover / drag / aim ghosts, path, facing, approach, paired skill markers — everything the intent UI renders before confirm) is the **single source of truth** for planning intent.
 
 It is not a hint. It is the intent system.

@@ -22,6 +22,10 @@ During the **VERIFY** step of the Subagent Council Loop (`subagent-council-loop.
 
 *Run QA **once per turn**. Re-run only if the suite fails and you are fixing toward a new pass.*
 
+### Domain Separation
+- **Planning / Move Preview fixes:** Run `.\scripts\run_planning_qa_gate.ps1` ONLY. Do **not** run class gates.
+- **Class Skill fixes:** Run `.\scripts\run_<class>_qa_gate.ps1` and `.\scripts\run_<class>_live_qa.ps1` for that specific class. Planning QA is **not** a substitute.
+
 ---
 
 ## 2. Verification Reporting (Changelog)

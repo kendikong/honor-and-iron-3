@@ -1,7 +1,7 @@
 ---
 description: ABSOLUTE — all classes must reach full Knight-bar automated QA depth; class kits are living drafts (never recite owner sign-off / LOCK)
 alwaysApply: false
-globs: "core/factory/classes/**,tests/skills/**,tests/passives/**,docs/qa/classes/**,tests/*QaGate*"
+globs: "core/factory/classes/**,data/definitions/abilities/**,tests/skills/**,tests/passives/**,docs/qa/classes/**"
 ---
 
 # Class QA Standards & Living Drafts Mandate (ABSOLUTE)
@@ -9,6 +9,14 @@ globs: "core/factory/classes/**,tests/skills/**,tests/passives/**,docs/qa/classe
 **Owner directive:** Class QA must be thorough enough that **green gate = no hand-testing every skill in F5.** Every shipped Bible class must reach full Knight-bar depth. Never stop early, never ask the owner if they want full depth, and remember that **class kits are living drafts** that will evolve.
 
 **Authoritative template:** `docs/qa/classes/KNIGHT_QA_GATE.md` · `docs/qa/_CLASS_QA_GATE_TEMPLATE.md` · `docs/design/class-rollout.md`
+
+---
+
+## Domain Scope & Separation (Class Kits vs. Planning Core)
+
+- **This rule governs class content:** Class factories (`core/factory/classes/`), ability resources (`data/definitions/abilities/`), per-class scenario suites (`tests/skills/`, `tests/passives/`), and class matrices (`docs/<CLASS>_QA_GATE.md`).
+- **Out of Scope (Planning Core):** Core move preview arrows, click handling, ghost persistence, stand origins, and `PlanningQaGate.tscn`.
+- **Do not mix scopes:** Never apply class matrix standards or run class gates when debugging or fixing core planning presentation bugs. Conversely, never use `run_planning_qa_gate.ps1` as a substitute for a class gate.
 
 ---
 
