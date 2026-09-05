@@ -1,3 +1,9 @@
+---
+description: Layer Shape Conversion Gate (ER-2) — shape bar, no Effect Knobs dumps
+alwaysApply: false
+globs: "tests/run_layer_shape_conversion_gate.gd,docs/design/EXTRA_RULES_TO_MODULES_PLAN.md"
+---
+
 # Layer Shape Conversion Gate (ER-2)
 
 When touching ER-2 conversion, skill factories, or `CONVERTED_SKILL_IDS`:

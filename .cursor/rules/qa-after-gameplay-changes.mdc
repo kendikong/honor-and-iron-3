@@ -1,6 +1,7 @@
 ---
-description: ABSOLUTE — run automated QA after any gameplay-system edit before ending the turn
-alwaysApply: true
+description: Mandatory headless QA pass after sim, combat, planning, or ability edits; report PASS/FAIL in Changelog before turn ends
+alwaysApply: false
+globs: "presentation/combat*.gd,presentation/tactical*.gd,core/simulation/**,core/factory/**,data/**,tests/**"
 ---
 
 # QA After Gameplay Changes (ABSOLUTE — ALWAYS ON)

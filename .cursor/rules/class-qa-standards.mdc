@@ -1,6 +1,7 @@
 ---
 description: ABSOLUTE — all classes must reach full Knight-bar automated QA depth; class kits are living drafts (never recite owner sign-off / LOCK)
-alwaysApply: true
+alwaysApply: false
+globs: "core/factory/classes/**,tests/skills/**,tests/passives/**,docs/qa/classes/**,tests/*QaGate*"
 ---
 
 # Class QA Standards & Living Drafts Mandate (ABSOLUTE)

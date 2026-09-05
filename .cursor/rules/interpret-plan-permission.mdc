@@ -70,3 +70,32 @@ Place them in **## Changelog → ### Single source of truth** (see `global-syste
 - Any add/edit/refactor plan that skips **Will not add** parallel paths or ships `Heuristics added: none` without walking the 6-row audit
 - Refactor/cleanup that adds a helper or file but leaves the old path live “for safety” without owner-approved deferral
 - **How this protects SSOT** that only names a file/API with no explanation of what stays one path or what parallel path was avoided
+
+---
+
+## Model Sizing & Escalation (Usage Savings Priority)
+
+**Default:** Composer 2.5. **Escalate:** GPT 5.6 Terra only when scope clearly exceeds Composer limits or needs frontier depth. Frontier models (Gemini Pro / Sonnet) are scarce reserve for architecture.
+
+### Decision Rule
+- **Use Composer 2.5 (Standard):**
+  - Read-only Q&A, grep, audits, reviews.
+  - Micro fix (≤5 lines) through medium one-file fix (~31–60 lines) with approved plan.
+  - Two related files (≤60 lines total, e.g. `.gd` + `.tres`, rule + doc).
+  - Single Master Bible skill/passive (data + small hook, ≤2 files, ≤60 lines).
+  - Scoped bug fix in combat/preview/commit (≤2 files, clear plan).
+- **Use GPT 5.6 Terra (Escalation Reserve):**
+  - 3+ files or >60 lines in one turn.
+  - Full class or full phase milestone (“implement Phase N”, whole promotion tree).
+  - New subsystem, manager, or sim resolution-order change.
+  - Co-op networking or broad determinism refactor.
+  - Composer already failed or looped twice on same scoped task.
+  - Explicit owner override.
+  - *Terra first message must include:* numbered steps, files/functions, acceptance criteria.
+
+### Usage Traps
+1. **Premature Terra:** Opening Terra for a small 15-line two-file fix burns monthly reserve; try Composer first.
+2. **Composer proposal loops:** Bundle scope in one approved plan; after **two** failed Composer attempts on same task → Terra.
+3. **Subagents:** Burn quota twice; avoid unless owner explicitly requests.
+4. **Fast mode:** Never use Fast mode for Composer 2.5.
+

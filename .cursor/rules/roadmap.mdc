@@ -1,6 +1,7 @@
 ---
 description: Mandatory roadmap & phase audit gate — canonical build plan, phase deliverables, exit criteria, and coherence audits
-alwaysApply: true
+alwaysApply: false
+globs: "ROADMAP.md,IMPLEMENTATION_STATUS.md,docs/roadmap/**"
 ---
 
 # Roadmap & Phase Audit Protocol (MANDATORY)

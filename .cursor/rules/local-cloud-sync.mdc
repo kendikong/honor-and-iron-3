@@ -1,6 +1,7 @@
 ---
 description: Keep local Agent and Cloud Agent on the same git commit via push/pull discipline.
-alwaysApply: true
+alwaysApply: false
+globs: "scripts/sync*,.github/**,docs/design/LOCAL_CLOUD_SYNC.md"
 ---
 
 # Local ↔ Cloud sync (ALWAYS ON)

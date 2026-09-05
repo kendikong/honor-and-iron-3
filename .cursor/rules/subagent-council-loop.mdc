@@ -1,6 +1,7 @@
 ---
 description: Subagent Council Loop — propose → 5-7 rules critics (parallel) → proof table in chat → apply; mandatory council report on all gameplay/SSOT fixes
-alwaysApply: true
+alwaysApply: false
+globs: "presentation/combat*.gd,presentation/tactical*.gd,core/simulation/**,core/factory/**,tests/**"
 ---
 
 # Subagent Council Loop & Report Protocol (MANDATORY — NOT GAUNTLET)

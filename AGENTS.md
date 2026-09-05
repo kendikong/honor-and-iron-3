@@ -110,7 +110,7 @@ Composer 2.5 draws from Cursor's **Auto + Composer pool**, not the frontier API 
    - Read-only investigation (grep/read) to draft the proposal is allowed before approval; **implementing** is not.
 3. **Commit before writing (local only).** After approval only: before the first edit, run `git status`. If the repo is dirty, stage only relevant source files and **local-commit the current state** so recovery is one revert away. Only then apply edits. Pre-edit commits do **not** require an immediate remote push unless the spread-push rules below already apply.
 4. **Targeted edits only — never full rewrites.** Use surgical replacements (`StrReplace` / partial edits) on the minimum lines needed. Do not rewrite entire files, functions, or classes when a localized diff suffices. If a task would require replacing >50% of a file, stop and defer or ask the user to rescope.
-5. **Edit size limits** (see also `.cursor/rules/model-selection-usage.mdc` — bias Composer to preserve monthly quota):
+5. **Edit size limits** (see also `.cursor/rules/interpret-plan-permission.mdc` § Model Sizing — bias Composer to preserve monthly quota):
    - **Small (default):** ≤5 lines changed, single file, no new functions or logic flows — proceed only after user approval.
    - **Small-medium (requires explicit approval):** one file, ~6–30 lines, or a small localized addition (one helper, one signal hook) — include scope in the proposal; user must approve small-medium explicitly in their reply.
    - **Medium (requires explicit approval):** one file ~31–60 lines, **or** two related files with ≤60 lines total (e.g. `.gd` + `.tres`) — numbered plan required; user must approve medium scope explicitly.

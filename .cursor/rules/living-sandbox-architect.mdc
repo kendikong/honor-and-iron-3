@@ -1,6 +1,7 @@
 ---
 description: Lead Godot 4.7 architect rules for the Living Sandbox Map System (Mana Seed)
-alwaysApply: true
+alwaysApply: false
+globs: "scenes/map/**,assets/**,scripts/map/**,core/map/**,docs/design/sandbox*"
 ---
 
 # ROLE: LEAD GODOT 4.7 ARCHITECT & TECHNICAL ART DIRECTOR

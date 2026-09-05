@@ -1,6 +1,7 @@
 ---
 description: Mandatory performance & frame budget standards — 60-120 FPS hover preview throttle, cheap walk preview, no post-process redo loops, minimize CPU/GPU
-alwaysApply: true
+alwaysApply: false
+globs: "presentation/combat*.gd,presentation/tactical*.gd,core/simulation/**,tests/**"
 ---
 
 # Performance & Frame-Budget Standards (MANDATORY)
