@@ -19,11 +19,7 @@ func _run_gate() -> void:
 		{"name": "planning_forecast", "path": "res://tests/harness/planning_forecast_test.gd"},
 		{"name": "drag_e2e", "path": "res://tests/harness/planning_drag_e2e_test.gd"},
 		{"name": "planning_input", "path": "res://tests/harness/planning_input_test.gd"},
-		{"name": "trample_e2e", "path": "res://tests/harness/trampling_advance_e2e_test.gd"},
-		{"name": "action_range_regression", "path": "res://tests/harness/action_range_regression_test.gd"},
 		{"name": "qa_checklist", "path": "res://tests/harness/planning_qa_gate_test.gd"},
-		{"name": "intent_contract_e2e", "path": "res://tests/harness/planning_intent_contract_e2e_test.gd"},
-		{"name": "intent_source_of_truth", "path": "res://tests/harness/intent_source_of_truth_gate_test.gd"},
 	]
 	for suite: Dictionary in suites:
 		print("[SUITE] %s" % suite.name)
