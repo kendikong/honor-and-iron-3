@@ -1,89 +1,33 @@
 ---
-description: Mandatory headless QA pass after sim, combat, planning, or ability edits; report PASS/FAIL in Changelog before turn ends
+description: Automated QA suite selection and execution for the Council VERIFY step
 alwaysApply: false
 globs: "presentation/combat*.gd,presentation/tactical*.gd,core/simulation/**,core/factory/**,data/**,tests/**"
 ---
 
-# QA After Gameplay Changes (ABSOLUTE — ALWAYS ON)
+# Automated QA Suite Selection (Council VERIFY Step)
 
-**Mandatory.** The owner must not have to ask "did you run QA?" after combat, planning, sim, or ability work.
+During the **VERIFY** step of the Subagent Council Loop (`subagent-council-loop.mdc`), the agent must execute the matching automated suite once headless and report `PASS` or `FAIL` in the Changelog under `### QA`. Never claim a fix is complete without QA output.
 
-If this turn **changed gameplay systems** (see scope below), the agent **must run the matching automated QA suite(s)** and **report PASS or FAIL** in the turn **Changelog** before ending the turn. **Do not claim a fix is done without QA output.**
+---
 
-## What counts as a gameplay-system change
+## 1. Suite Selection Matrix
 
-Any edit under these paths (or equivalent behavior owners):
+| Change touches | Command (Headless) | Scope & Details |
+|---|---|---|
+| **Planning, preview, commit, drag, undo, cursor, overlay** | `.\scripts\run_planning_qa_gate.ps1` | SSOT + AOE + full fixtures (`PlanningQaGate.tscn`) + T3 bible mirror. (Default; do **not** run live Tier 3 unless requested). |
+| **Core simulation / bridge / broad combat regression** | `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` | Determinism, bridge, and sim unit regression. |
+| **Both planning & core sim** | Run both commands in order | One run each. |
+| **Class factory / skills / passives** | `.\scripts\run_<class>_qa_gate.ps1` + `.\scripts\run_<class>_live_qa.ps1` | Full Knight-bar depth required (`class-qa-standards.mdc`). |
+| **Focused swap-only iteration** | `.\scripts\run_swap_planning_acceptance.ps1` | Iterate until green; then run `run_planning_qa_gate.ps1` once before commit. |
 
-| Domain | Typical paths / owners |
-|--------|-------------------------|
-| Simulation | `core/simulation/`, `Simulator`, `ResolutionPipeline`, `BoardState` / `UnitState` resolution |
-| Combat systems | `core/systems/` (`AbilitySystem`, `MovementSystem`, `CombatSystem`, …) |
-| Planning / commit | `presentation/combat_planning_input.gd`, `combat_director.gd`, commit slots, preview, drag/drop, undo |
-| Abilities / data | `data/definitions/`, ability `.tres`, factories that affect combat legality or resolution |
-| Presentation tied to sim | `tactical_unit_layer.gd`, `tactical_planning_overlay.gd`, planning cursor/icons when commit/preview semantics change |
-| Tests that **fix** gameplay | Changing production code **and** tests together still requires running the suite |
+*Run QA **once per turn**. Re-run only if the suite fails and you are fixing toward a new pass.*
 
-**Not in scope (QA not required):** pure docs, `.cursor/rules`, menu/UI theming with no combat behavior, living-map/VFX-only slices (use phase visual gates from `roadmap.mdc` instead).
+---
 
-## Which suite to run
+## 2. Verification Reporting (Changelog)
 
-| Change touches | Run (headless) |
-|----------------|----------------|
-| Planning, preview, commit, drag, undo, cursor, overlay paths, `CombatDirector` refresh | **Planning QA gate (headless)** — `.\scripts\run_planning_qa_gate.ps1` **once** (default; **no** `-LiveTier3`). Runs SSOT + AOE + full headless fixtures (`PlanningQaGate.tscn`) + T3 bible mirror. **Do not** run `run_planning_scene_acceptance.ps1` unless the owner explicitly asks for live Tier 3. |
-| Core sim / bridge / broad combat regression | **Full regression** — `.\scripts\run_regression_tests.ps1 -GodotPath "<godot.exe>"` |
-| Both planning and core sim | **Planning QA gate** + **full regression** (two commands, one run each) |
-
-### Class factory / skills / passives (`.cursor/rules/class-qa-standards.mdc`)
-
-**Mandatory when touching** `core/factory/classes/`, class scenario registries, `docs/<CLASS>_QA_GATE.md`, `live_<class>_class_test.gd`, or claiming a class complete.
-
-| Action | Run |
-|--------|-----|
-| Any class factory or per-class scenario change | `.\scripts\run_<class>_qa_gate.ps1` **and** `.\scripts\run_<class>_live_qa.ps1` |
-| Changelog | Suite **PASS** / **FAIL** for the class you touched. Do not recite owner sign-off or LOCK. |
-
-**Headless harness green alone is not class QA PASS.** Planning QA does not substitute for class gates.
-
-### Focused swap iteration (mandatory while fixing swap)
-
-When the turn is **only** fixing swap / walk-then-swap / swap commit presentation / swap preview parity:
-
-| Do | Don't |
-|----|-------|
-| Run **`.\scripts\run_swap_planning_acceptance.ps1`** each fix attempt | Run `run_planning_qa_gate.ps1` or the full bible session until swap PASS |
-| Report swap script **PASS** or **FAIL** with `[FAIL]` lines | Dismiss swap failures as "pre-existing" or unrelated |
-| After swap PASS, run **`.\scripts\run_planning_qa_gate.ps1`** once before claiming the turn done | Stop at swap PASS if other planning files changed outside swap scope without re-gating |
-
-Swap-only runner: GdUnit `test_live_swap_session` in `tests/live_planning_scene_test.gd` (ignores `test_live_planning_bible_multi_knight_session`).
-
-When unsure, run **Planning QA gate** at minimum for anything in `presentation/combat_*` or planning input. Run **full regression** when `core/simulation/` or `ResolutionPipeline` changes.
-
-**Run QA once per turn.** Re-run only if the suite **FAIL**s and you are fixing toward a new pass.
-
-Authoritative checklist mapping: `docs/qa/planning/PLANNING_QA_GATE.md`.
-
-## Agent workflow (every gameplay edit turn)
-
-1. Implement the change.
-2. **Run** the required suite(s) — agent executes the command; do not only tell the owner to run it.
-3. **Changelog (mandatory):** under `### QA`, record:
-   - Suite name(s) run
-   - **Result:** `PASS` or `FAIL`
-   - On FAIL: paste or summarize `[FAIL]` lines; **fix or stop** — do not hand-wave "should work"
-4. **Commit** per `auto-commit-absolute.mdc` only after QA **PASS**, or after documenting FAIL with owner-approved deferral.
-
-## Fail policy
-
-- **FAIL → do not mark task complete.** Fix and re-run QA, or stop and report blockers.
-- **QA-fix discipline (ABSOLUTE):** `.cursor/rules/global-systems-first.mdc` § QA Fix Discipline — fix the **canonical owner** (settle/slots/sim/director), never heuristic overlay fallbacks or per-test branches to chase green. Invalid plan → do not implement.
-- **Never ignore Tier 3 `[FAIL]` lines** — every failure is in scope until fixed or owner explicitly defers.
-- **Swap-only work:** iterate with `run_swap_planning_acceptance.ps1` until PASS; full gate only after swap is green.
-- **Skipped QA → rule violation** (same severity as skipping auto-commit).
-- **Manual Layer B** (F5 pixels, walk anim feel, FPS) remains the owner's job; headless PASS does not replace visual checks for animation/perf claims.
-
-## Relationship to other rules
-
-- **Parent:** `global-systems-first.mdc` — preview/commit parity tests live in planning QA.
-- **Class work:** `class-qa-standards.mdc` — Knight-depth automated tests when you touch a class; planning QA is not a substitute. Kits are drafts.
-- **Complements:** `roadmap.mdc` (phase gates), `move-preview-intent-truth.mdc` (drag E2E catches release path).
-- **Wins over:** convenience, "small fix", ending the turn without running tests.
+Under `### QA` in the turn Changelog, record:
+- **Suite name(s)** run
+- **Result:** `PASS` or `FAIL`
+- **Failure lines:** If `FAIL`, paste/summarize `[FAIL]` lines. Fix upstream at the canonical owner (`global-systems-first.mdc` § QA Fix Discipline); never paper over failures with display fallbacks or per-test branches.
+- **Commit gate:** Commit per `auto-commit-absolute.mdc` only after QA passes (or after documenting an owner-approved deferral).
