@@ -291,9 +291,13 @@ func _journey_bowling_advance(ctx: Dictionary) -> void:
 		"ability": bowling,
 	}, "ba/dest/pre_tap")
 	_assert_dash_path_not_teleport(ctx, k1_id, _BOWL_DEST, "ba/dest/pre_tap/path")
+	var dash_hover_route: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
+	assert_int(dash_hover_route.size()).override_failure_message(
+		"ba/dest/pre_tap/display: display_move_route_cells empty before dash commit: %s" % str(dash_hover_route),
+	).is_greater(1)
 	await _tap_cell(ctx, _BOWL_DEST, "ba/dest/commit")
 	await _wait_ability_settle(ctx)
-	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/selection")
+	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/selection", dash_hover_route)
 	_remember_mode_commit(ctx, "ba/selection", k1_id)
 	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
 	await _select_ability_for_unit(ctx, k1_id, _BOWLING_CHARGE_ID)
@@ -301,9 +305,23 @@ func _journey_bowling_advance(ctx: Dictionary) -> void:
 	await _wait_planning_move_tween(ctx, k1_id)
 	_assert_bowling_premove_cleared(ctx, k1_id, "ba/l_walk2/cleared")
 	await _arm_bowling_at_stand(ctx, k1_id, bowling)
+	await _probe_cell(ctx, k1_id, _BOWL_DEST, {
+		"ghost_pos": _BOWL_DEST,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_not": [PlanningIcons.GLYPH_NULL],
+		"red_on": true,
+		"red_stand": _BOWL_STAND,
+		"ability": bowling,
+	}, "ba/dest2/pre_tap")
+	_assert_dash_path_not_teleport(ctx, k1_id, _BOWL_DEST, "ba/dest2/pre_tap/path")
+	var dash_hover_route_2: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
+	assert_int(dash_hover_route_2.size()).override_failure_message(
+		"ba/dest2/pre_tap/display: display_move_route_cells empty before dash commit: %s" % str(dash_hover_route_2),
+	).is_greater(1)
 	await _tap_cell(ctx, _BOWL_DEST, "ba/dest2/commit")
 	await _wait_ability_settle(ctx)
-	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/second")
+	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/second", dash_hover_route_2)
 	_remember_mode_commit(ctx, "ba/second", k1_id)
 	_assert_mode_commit_parity(ctx, "ba/selection", "ba/second")
 	await _select_unit_live(ctx, k1_id, _BOWL_DEST)
@@ -1233,7 +1251,7 @@ func _probe_bowling_off_red(
 			"slots_invalid": true,
 			"icon_not": [PlanningIcons.GLYPH_DASH],
 		}, "%s/%s" % [label_prefix, cell])
-		var path: Array[Vector2i] = _preview_path(ctx.input, k1_id)
+		var path: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
 		if not path.is_empty() and path[path.size() - 1] == cell:
 			assert_that("off-red must not path to %s" % cell).is_equal("")
 		await _tap_off_blue_must_not_commit(ctx, k1_id, cell, "%s/%s/click" % [label_prefix, cell])
@@ -1241,13 +1259,11 @@ func _probe_bowling_off_red(
 
 func _assert_dash_path_not_teleport(ctx: Dictionary, k1_id: int, dest: Vector2i, label: String) -> void:
 	var path: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
-	if path.size() < 2:
-		path = _preview_path(ctx.input, k1_id)
 	var line: Array[Vector2i] = PhysicsSystem.cardinal_straight_line_path(_BOWL_STAND, dest)
-	assert_bool(not path.is_empty()).override_failure_message(
-		"%s: dash movement module must show a move preview" % label,
-	).is_true()
-	if path.is_empty() or line.is_empty():
+	assert_int(path.size()).override_failure_message(
+		"%s: dash movement module must show display_move_route_cells, got %s" % [label, path],
+	).is_greater(1)
+	if path.size() < 2 or line.is_empty():
 		return
 	assert_that(path[path.size() - 1]).is_equal(dest)
 	for i: int in range(1, path.size()):
@@ -1281,6 +1297,7 @@ func _assert_bowling_dash_committed_live(
 	enemy_id: int,
 	bowling: AbilityData,
 	label: String,
+	hover_route: Array[Vector2i],
 ) -> void:
 	var action: TimelineAction = _committed_action_for_unit(ctx.director, k1_id)
 	assert_object(action).override_failure_message("%s: bowling action missing" % label).is_not_null()
@@ -1296,16 +1313,19 @@ func _assert_bowling_dash_committed_live(
 	var live_e: UnitState = ctx.director.board.get_unit_by_id(enemy_id)
 	assert_that(live_e.position).is_equal(_BOWL_ENEMY)
 	var persist: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
-	if persist.size() < 2:
-		persist.clear()
-		for v: Variant in ctx.input.display_committed_action_route_cells(k1_id, action, _BOWL_STAND):
-			persist.append(v as Vector2i)
-	if persist.size() < 2 and action != null and not action.waypoints.is_empty():
-		persist = [_BOWL_STAND]
-		persist.append_array(action.waypoints)
 	assert_int(persist.size()).override_failure_message(
-		"%s: committed dash preview must persist until execute" % label,
+		"%s: display_move_route_cells wiped after dash commit (walk has not started): %s"
+		% [label, persist],
 	).is_greater(1)
+	assert_that(persist).override_failure_message(
+		"%s: committed display_move_route_cells %s differs from hover %s" % [label, persist, hover_route],
+	).is_equal(hover_route)
+	var action_route: Array[Vector2i] = []
+	for v: Variant in ctx.input.display_committed_action_route_cells(k1_id, action, _BOWL_STAND):
+		action_route.append(v as Vector2i)
+	assert_that(action_route).override_failure_message(
+		"%s: committed action route %s differs from hover %s" % [label, action_route, hover_route],
+	).is_equal(hover_route)
 
 
 func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:

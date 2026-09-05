@@ -26,18 +26,24 @@ static func run_bowling_advance_session(failures: Array[String]) -> void:
 		return
 	_probe_all_red_dash_tiles(fix, failures, knight_id, bowling, enemy_id, "BA-06")
 	_probe_off_red_tiles(fix, failures, knight_id, bowling, "BA-07")
-	if not _commit_dash_past_enemy(fix, failures, knight_id, bowling, enemy_id, "BA-08"):
+	var hover_route: Array[Vector2i] = _commit_dash_past_enemy(
+		fix, failures, knight_id, bowling, enemy_id, "BA-08",
+	)
+	if hover_route.is_empty():
 		return
-	_assert_bowling_dash_committed(fix, failures, knight_id, enemy_id, "BA-09")
+	_assert_bowling_dash_committed(fix, failures, knight_id, enemy_id, "BA-09", hover_route)
 	var selection_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, knight_id)
 	PlanningLiveParityHarness.undo_until_unit_clear(
 		fix, failures, knight_id, PlanningChecklistHarness.BOWLING_ADVANCE_START, "BA-10",
 	)
 	if not _commit_l_walk_and_arm(fix, failures, knight_id, bowling, "BA-11"):
 		return
-	if not _commit_dash_past_enemy(fix, failures, knight_id, bowling, enemy_id, "BA-12"):
+	var hover_route_2: Array[Vector2i] = _commit_dash_past_enemy(
+		fix, failures, knight_id, bowling, enemy_id, "BA-12",
+	)
+	if hover_route_2.is_empty():
 		return
-	_assert_bowling_dash_committed(fix, failures, knight_id, enemy_id, "BA-12")
+	_assert_bowling_dash_committed(fix, failures, knight_id, enemy_id, "BA-12", hover_route_2)
 	var drag_surface: Dictionary = PlanningChecklistHarness.mode_commit_surface(fix, knight_id)
 	PlanningChecklistHarness.assert_mode_commit_parity(
 		failures, "ba/first", selection_surface, "ba/second", drag_surface,
@@ -112,6 +118,9 @@ static func _probe_unarmed_l_walk(
 		}, "BA-02/l_mid",
 	)
 	_assert_cursor_matches_slots(fix, failures, knight_id, mid, "BA-02/l_mid/cursor")
+	_require_display_move_route(
+		fix, failures, knight_id, start, mid, "BA-02/l_mid/display",
+	)
 	PlanningBibleFixtureProbe.probe_cell(
 		failures, fix, knight_id, stand, {
 			"path_start": start,
@@ -128,6 +137,9 @@ static func _probe_unarmed_l_walk(
 		}, "BA-03/l_dest",
 	)
 	_assert_cursor_matches_slots(fix, failures, knight_id, stand, "BA-03/l_dest/cursor")
+	_require_display_move_route(
+		fix, failures, knight_id, start, stand, "BA-03/l_dest/display",
+	)
 
 
 static func _commit_l_walk_and_arm(
@@ -141,10 +153,32 @@ static func _commit_l_walk_and_arm(
 	var dest: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_STAND
 	PlanningChecklistHarness.select_unit(fix, knight_id, route[0])
 	PlanningChecklistHarness.wait_ability_settle_sync(fix)
-	if not PlanningChecklistHarness.commit_painted_drop_on_cell(fix, route, dest):
+	PlanningChecklistHarness.clear_drag_state(fix)
+	var unit: UnitState = fix.board.get_unit_by_id(knight_id)
+	TramplingAdvanceE2ETest._paint_drag_route(fix.input, unit, route, dest)
+	PlanningChecklistHarness.hover(fix, dest)
+	PlanningChecklistHarness.flush_planning(fix)
+	var painted_l: Array[Vector2i] = _require_display_move_route(
+		fix, failures, knight_id, route[0], dest, "%s/l_walk/painted_display" % label,
+	)
+	if painted_l.size() < 2:
+		return false
+	var slots: Dictionary = PlanningChecklistHarness.drop_slots_for_cell(fix, dest)
+	if PlanningChecklistHarness.slots_invalid(slots):
 		PlanningChecklistHarness.assert_fail(failures, "%s/l_walk" % label, "L-walk premove commit failed")
 		return false
+	if not PlanningChecklistHarness.commit_slots_production(fix, slots):
+		PlanningChecklistHarness.assert_fail(failures, "%s/l_walk" % label, "L-walk premove commit failed")
+		return false
+	PlanningChecklistHarness.clear_drag_state(fix)
 	_assert_premove_executed_and_preview_cleared(fix, failures, knight_id, dest, "%s/premove_clear" % label)
+	var after_l: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if _routes_equal(after_l, painted_l):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/premove_clear" % label,
+			"executed L-walk must clear THAT display_move_route_cells path %s" % str(painted_l),
+		)
 	var pre: TimelineAction = PlanningChecklistHarness.committed_pre_move(fix.director, knight_id)
 	if pre == null:
 		PlanningChecklistHarness.assert_fail(failures, "%s/premove" % label, "L-walk must write a pre-move")
@@ -183,6 +217,13 @@ static func _commit_l_walk_and_arm(
 			"manhattan": true,
 		}, "%s/armed_stand" % label,
 	)
+	var armed_display: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if armed_display.size() >= 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/armed_stand/display" % label,
+			"armed stand with no dash hover must not keep a move preview, got %s" % str(armed_display),
+		)
 	return true
 
 
@@ -276,7 +317,13 @@ static func _assert_red_dash_hover(
 	PlanningChecklistHarness.refresh_attack_hover(fix, tile)
 	var path: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
 	if path.size() < 2:
-		path = PlanningChecklistHarness.preview_path(fix, knight_id)
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"red dash tile %s must show display_move_route_cells (got %s); dash is a movement module"
+			% [tile, str(path)],
+		)
+		return
 	_assert_dash_path_is_straight_walk(failures, stand, tile, path, label)
 	var ghost: Vector2i = PlanningChecklistHarness.preview_unit_pos(fix, knight_id)
 	PlanningChecklistHarness.assert_eq_cell(failures, "%s/ghost" % label, ghost, tile)
@@ -392,7 +439,7 @@ static func _probe_off_red_tiles(
 			)
 		var slots: Dictionary = PlanningChecklistHarness.slots_for_hover(fix, cell)
 		var icon: String = fix.input.compute_hover_action_icon(cell)
-		var path: Array[Vector2i] = PlanningChecklistHarness.preview_path(fix, knight_id)
+		var path: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
 		if not PlanningChecklistHarness.slots_invalid(slots) and not (slots.get("action", []) as Array).is_empty():
 			PlanningChecklistHarness.assert_fail(
 				failures, "%s/%s" % [label, cell], "off-red hover must not build a dash action",
@@ -424,21 +471,51 @@ static func _commit_dash_past_enemy(
 	bowling: AbilityData,
 	enemy_id: int,
 	label: String,
-) -> bool:
+) -> Array[Vector2i]:
 	var dest: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_DEST
+	var stand: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_STAND
 	PlanningChecklistHarness.refresh_attack_hover(fix, dest)
 	_assert_red_dash_hover(
-		fix, failures, knight_id, bowling, enemy_id,
-		PlanningChecklistHarness.BOWLING_ADVANCE_STAND, dest, "%s/pre_commit" % label,
+		fix, failures, knight_id, bowling, enemy_id, stand, dest, "%s/pre_commit" % label,
 	)
+	var hover_route: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if hover_route.size() < 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/hover_display" % label,
+			"dash hover display_move_route_cells empty or < 2 before commit: %s" % str(hover_route),
+		)
+		return []
+	if hover_route[0] != stand or hover_route[hover_route.size() - 1] != dest:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/hover_display" % label,
+			"dash hover route %s must start at %s and end at %s" % [str(hover_route), stand, dest],
+		)
+		return []
 	var pre_intent: Dictionary = PlanningLiveParityHarness.capture_preview_intent(
 		fix, knight_id, dest, false,
 	)
 	if not PlanningLiveParityHarness.commit_from_preview_intent(
 		fix, knight_id, pre_intent, "%s/release" % label, failures,
 	):
-		return false
-	return true
+		return []
+	var post_commit: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if post_commit.size() < 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/persist_display" % label,
+			"display_move_route_cells was wiped after dash commit: %s" % str(post_commit),
+		)
+		return []
+	if not _routes_equal(post_commit, hover_route):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"%s/persist_display" % label,
+			"committed display_move_route_cells %s differs from hover %s" % [str(post_commit), str(hover_route)],
+		)
+		return []
+	return hover_route
 
 
 static func _assert_bowling_dash_committed(
@@ -447,8 +524,10 @@ static func _assert_bowling_dash_committed(
 	knight_id: int,
 	enemy_id: int,
 	label: String,
+	hover_route: Array[Vector2i],
 ) -> void:
 	var dest: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_DEST
+	var stand: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_STAND
 	var action: TimelineAction = PlanningChecklistHarness.committed_action(fix.director, knight_id)
 	if action == null:
 		PlanningChecklistHarness.assert_fail(failures, label, "bowling dash action missing")
@@ -466,26 +545,45 @@ static func _assert_bowling_dash_committed(
 		failures, "%s/live_enemy" % label, fix, enemy_id, PlanningChecklistHarness.BOWLING_ADVANCE_ENEMY,
 	)
 	var live_knight: UnitState = fix.director.board.get_unit_by_id(knight_id)
-	if live_knight == null or live_knight.position != PlanningChecklistHarness.BOWLING_ADVANCE_STAND:
+	if live_knight == null or live_knight.position != stand:
 		PlanningChecklistHarness.assert_fail(
 			failures,
 			label,
-			"dash has not executed yet; live knight must remain at armed stand %s"
-			% PlanningChecklistHarness.BOWLING_ADVANCE_STAND,
+			"dash has not executed yet; live knight must remain at armed stand %s" % stand,
 		)
-	var persist_path: Array[Vector2i] = _committed_dash_persist_path(fix, knight_id, action, dest)
+	var persist_path: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
 	if persist_path.size() < 2:
 		PlanningChecklistHarness.assert_fail(
-			failures, label, "committed dash move preview must persist until execution",
+			failures,
+			label,
+			"display_move_route_cells was wiped after dash commit (walk has not started): %s"
+			% str(persist_path),
+		)
+	elif not _routes_equal(persist_path, hover_route):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"committed display_move_route_cells %s differs from hover %s"
+			% [str(persist_path), str(hover_route)],
 		)
 	else:
-		_assert_dash_path_is_straight_walk(
+		_assert_dash_path_is_straight_walk(failures, stand, dest, persist_path, "%s/committed_path" % label)
+	var action_route: Array = fix.input.display_committed_action_route_cells(knight_id, action, stand)
+	var typed_action: Array[Vector2i] = _typed_cells(action_route)
+	if typed_action.size() < 2:
+		PlanningChecklistHarness.assert_fail(
 			failures,
-			PlanningChecklistHarness.BOWLING_ADVANCE_STAND,
-			dest,
-			persist_path,
-			"%s/committed_path" % label,
+			label,
+			"display_committed_action_route_cells empty or < 2: %s" % str(typed_action),
 		)
+	elif not _routes_equal(typed_action, hover_route):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"committed action route %s differs from hover %s" % [str(typed_action), str(hover_route)],
+		)
+	var ghost: Vector2i = PlanningChecklistHarness.preview_unit_pos(fix, knight_id)
+	PlanningChecklistHarness.assert_eq_cell(failures, "%s/ghost" % label, ghost, dest)
 	var bowling: AbilityData = action.ability
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "%s/post_commit_red" % label, fix, bowling, false, dest, knight_id,
@@ -520,6 +618,9 @@ static func _probe_postmove_from_landing(
 		}, "BA-14/post_hover",
 	)
 	_assert_cursor_matches_slots(fix, failures, knight_id, post, "BA-14/post_cursor")
+	var post_hover: Array[Vector2i] = _require_display_move_route(
+		fix, failures, knight_id, land, post, "BA-14/post_display",
+	)
 	var post_route: Array[Vector2i] = [land, post]
 	if not PlanningChecklistHarness.commit_painted_drop_on_cell(fix, post_route, post):
 		PlanningChecklistHarness.assert_fail(failures, "BA-15/post_commit", "postmove after bowling failed")
@@ -530,6 +631,22 @@ static func _probe_postmove_from_landing(
 		return
 	if post_action.target_coord != post:
 		PlanningChecklistHarness.assert_fail(failures, "BA-15/post_commit", "post-move dest")
+	var live_after_post: UnitState = fix.director.board.get_unit_by_id(knight_id)
+	var post_display: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if live_after_post != null and live_after_post.position == post:
+		if post_display.size() >= 2 and post_display[post_display.size() - 1] == post:
+			PlanningChecklistHarness.assert_fail(
+				failures,
+				"BA-15/post_display",
+				"executed postmove must clear THAT display_move_route_cells, got %s" % str(post_display),
+			)
+	elif post_hover.size() >= 2 and not _routes_equal(post_display, post_hover):
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"BA-15/post_display",
+			"postmove has not started walking; display_move_route_cells %s must equal hover %s"
+			% [str(post_display), str(post_hover)],
+		)
 	PlanningChecklistHarness.assert_red_contract(
 		failures, "BA-16/post_after_commit", fix, bowling, false, post, knight_id,
 	)
@@ -580,33 +697,50 @@ static func _assert_cursor_matches_slots(
 		)
 
 
-static func _committed_dash_persist_path(
+static func _require_display_move_route(
 	fix: Dictionary,
+	failures: Array[String],
 	knight_id: int,
-	action: TimelineAction,
-	dest: Vector2i,
+	expected_start: Vector2i,
+	expected_end: Vector2i,
+	label: String,
 ) -> Array[Vector2i]:
-	var stand: Vector2i = PlanningChecklistHarness.BOWLING_ADVANCE_STAND
-	var candidates: Array = [
-		fix.input.display_move_route_cells(knight_id),
-		_typed_cells(fix.input.display_frozen_route_cells(knight_id)),
-		_typed_cells(fix.input.display_committed_action_route_cells(knight_id, action, stand)),
-	]
-	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
-	if overlay != null:
-		candidates.append(_typed_cells(overlay.get_committed_preview().preview_paths.get(knight_id, [])))
-	if fix.input.preview_state != null:
-		candidates.append(_typed_cells(fix.input.preview_state.preview_paths.get(knight_id, [])))
-	if action != null and not action.waypoints.is_empty():
-		var from_wp: Array[Vector2i] = [stand]
-		from_wp.append_array(action.waypoints)
-		candidates.append(from_wp)
-		candidates.append(action.waypoints.duplicate())
-	for path: Array in candidates:
-		var typed: Array[Vector2i] = _typed_cells(path)
-		if typed.size() >= 2 and typed[typed.size() - 1] == dest:
-			return typed
-	return []
+	var route: Array[Vector2i] = fix.input.display_move_route_cells(knight_id)
+	if route.size() < 2:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"display_move_route_cells empty or < 2 (got %s); move preview must be on screen"
+			% str(route),
+		)
+		return []
+	if route[0] != expected_start or route[route.size() - 1] != expected_end:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			label,
+			"display_move_route_cells %s must start at %s and end at %s"
+			% [str(route), expected_start, expected_end],
+		)
+		return []
+	for i: int in range(1, route.size()):
+		if GridSystem.manhattan(route[i - 1], route[i]) != 1:
+			PlanningChecklistHarness.assert_fail(
+				failures,
+				label,
+				"display_move_route_cells skipped a tile at %s -> %s"
+				% [route[i - 1], route[i]],
+			)
+			return []
+	return route
+
+
+static func _routes_equal(a: Array[Vector2i], b: Array[Vector2i]) -> bool:
+	if a.size() != b.size():
+		return false
+	for i: int in range(a.size()):
+		if a[i] != b[i]:
+			return false
+	return true
 
 
 static func _typed_cells(raw: Array) -> Array[Vector2i]:

@@ -69,7 +69,7 @@ L-shape walk/arm, then DASH 3 past an enemy. Premove executes immediately and **
 | BA-06 | hover **every** red dash tile (path, ghost, cursor, slots) | `_probe_all_red_dash_tiles` |
 | BA-07 | at least two off-red hovers + click must not commit | `_probe_off_red_tiles` |
 | BA-08 | commit dest 3 tiles past enemy | `_commit_dash_past_enemy` |
-| BA-09 | dash committed; live still at stand; projected at dest; enemy live unchanged | `_assert_bowling_dash_committed` |
+| BA-09 | dash committed; live still at stand; **display_move_route_cells equals hover snapshot** (no waypoint fallback) | `_assert_bowling_dash_committed` |
 | BA-10 | undo clear | `undo_until_unit_clear` |
 | BA-11 / BA-12 | second L-walk + dash commit + mode parity | second pass |
 | BA-13–BA-16 | postmove from bowling landing | `_probe_postmove_from_landing` |
