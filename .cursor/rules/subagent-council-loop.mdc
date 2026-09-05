@@ -47,8 +47,8 @@ Subagent: **generalPurpose** with charter from doc. **Not** `gauntlet-critic`.
 
 ## Critics (summary — detail in doc)
 
-1. **Bible paint & tiles** — locked vs bundle (EX-LOCKED-FIELD), path vs flood, EX-BIBLE-UI, behavioral tests in proposal  
-2. **Settle / bundle / commit** — Director + Simulator owners, ratify, no post-process redo, EX-FROZEN-REPLAY, EX-PERF-SCHED at flush  
+1. **Bible paint & tiles (HARSH)** — range selectability parity (all red legal tiles selectable, no ∅), locked vs bundle (EX-LOCKED-FIELD), path vs flood, EX-BIBLE-UI, behavioral tests in proposal  
+2. **Settle / bundle / commit (HARSH)** — move preview persistence across commit until execution phase (no vanishing routes/ghosts), no waypoint wiping on adjacent destinations, Director + Simulator owners, ratify, no post-process redo, EX-FROZEN-REPLAY, EX-PERF-SCHED at flush  
 3. **Stand & range origins** — phase-entry, two-range model, EX-POSTMOVE-SLOT  
 4. **Global systems & anti-heuristic** — 6-row audit, exception IDs cited correctly, no silent bypass  
 5. **Perf & scheduling** — EX-PERF-SCHED guardian; cheap-walk slot parity; locked paint stable under throttle  

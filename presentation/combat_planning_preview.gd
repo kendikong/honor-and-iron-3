@@ -717,7 +717,7 @@ static func apply_movement_result(
 		director.plan_revision if director != null else -1,
 	)
 	if director != null:
-		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board, director)
 
 
 static func forecast_baseline_board(
@@ -754,7 +754,7 @@ static func from_sim_result(
 			director.plan_revision if director != null else -1,
 		)
 	if director != null:
-		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board)
+		preview.ensure_movement_intent_from_plan(director.get_player_plan(), base_board, director)
 	return preview
 
 

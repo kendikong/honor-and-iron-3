@@ -5146,6 +5146,11 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		var sealed_route: Array = _authoritative_route_for_unit(unit_id)
 		if sealed_route.size() >= 2:
 			return CombatPlanningPreview.frozen_move_route_cells_from_array(sealed_route)
+		var committed_route: Array[Vector2i] = CombatPlanningPreview.frozen_move_route_cells(
+			unit_id, committed_route_preview()
+		)
+		if committed_route.size() >= 2:
+			return committed_route
 	var movement_step: bool = active_movement_planning_step(actor)
 	if movement_step:
 		var route_ability: AbilityData = _selected_ability_data(actor)
@@ -6991,9 +6996,6 @@ func _dash_tile_endpoint_one_click_commit(
 	) == 0:
 		return false
 	if _proj() == null:
-		return false
-	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
-	if hover_unit == null or not hover_unit.is_alive() or not hover_unit.is_enemy():
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
 		return false
@@ -9213,6 +9215,10 @@ func _append_module_awaiting_target(
 				if wps.is_empty() or wps.back() != cell:
 					wps = _hover_walk_waypoints_for_skill(actor, cell, committed.ability)
 				if wps.is_empty() or wps.back() != cell:
+					var hop_origin: Vector2i = _phase_entry_stand(actor)
+					if hop_origin.x > -900000 and cell != hop_origin and GridSystem.manhattan(hop_origin, cell) == 1:
+						wps = [cell]
+				if wps.is_empty() or wps.back() != cell:
 					slots["invalid"] = "Ability move requires preview waypoints."
 					return false
 		committed.waypoints = wps
@@ -9596,7 +9602,7 @@ func _hover_walk_waypoints_for_skill(
 					continue
 				trimmed.append(wp)
 			if not trimmed.is_empty():
-				return _normalize_adjacent_single_step_waypoints(trimmed, origin)
+				return trimmed
 		return _hover_paint_waypoints_for_cell(actor, cell)
 	var empty: Array[Vector2i] = []
 	if not _is_hover_move_cell(actor, cell):

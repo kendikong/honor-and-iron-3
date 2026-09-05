@@ -2389,9 +2389,6 @@ func _draw_ghosts() -> void:
 					if ghost_action.target_coord == leg_origin:
 						break
 					var stand: Vector2i = unit.position
-					var pv_unit: UnitState = preview_board.get_unit_by_id(unit.id)
-					if pv_unit != null:
-						stand = pv_unit.position
 					if ghost_action.target_coord == stand:
 						break
 					var center: Vector2 = _map_view.grid_to_local(ghost_action.target_coord)

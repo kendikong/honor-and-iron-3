@@ -152,6 +152,10 @@ Subagent type: **generalPurpose** with charter pasted below. **Not** `gauntlet-c
 **Check — AOE / yellow:**
 - Blast footprint from correct stand; shared geometry via `GridSystem.get_affected_tiles` — no per-skill overlay branches
 
+**Check — range selectability parity (HARSH MANDATE):**
+- Any tile painted in action range (red) MUST be selectable for legal ability targets (e.g. empty landing tile for dash, or 1 tile away from stand)
+- **Instant FAIL** if range paints tiles that cannot be selected, or if hovering/clicking an in-range legal tile returns null glyph `∅`
+
 **Check — proposal quality:**
 - Names behavioral tests per `PLANNING_ACTION_FIX_PLAN` matrix for rules touched
 - FAIL if structural grep alone claimed as behavioral done
@@ -160,7 +164,7 @@ Subagent type: **generalPurpose** with charter pasted below. **Not** `gauntlet-c
 
 ### Critic 2 — Settle, bundle, commit
 
-**Charter:** Preview = commit; one ratify path; canonical sim/director owners.
+**Charter:** Preview = commit; one ratify path; canonical sim/director owners; **HARSH move preview persistence guardian**.
 
 **Must read if in scope:**
 - `.cursor/rules/move-preview-intent-truth.mdc`
@@ -179,6 +183,12 @@ Subagent type: **generalPurpose** with charter pasted below. **Not** `gauntlet-c
 - No click-time hover redo; no overlay fallback tile math when hover bundle missing for **bundle-owned** layers
 - No seal/discard/redo storms; no paint-only fake bundles for commit-shaped hover
 - Drag drop = same commit path as hover (`_commit_at_interaction_cell`); `_drag_route` / waypoint caches **staging only** — never direct overlay paint
+
+**Check — move preview persistence across commit (HARSH MANDATE):**
+- After committing any move or movement ability (e.g. dash), move preview paths, route lines, and actor ghosts MUST NOT vanish during planning
+- Move previews clear ONLY right before animation begins or execution phase starts (`docs/design/planning/MOVE_PREVIEW_RULES.md`)
+- **Instant FAIL** if committing an action clears or hides the move preview or actor ghosts while planning phase is still active
+- **Instant FAIL** if waypoints for movement skills are normalized or wiped to `[]` when destination is 1 step away, triggering false invalid slot errors
 
 **Check — exceptions:**
 - **EX-PERF-SCHED:** cheap walk allowed only when same slots at commit flush; throttle does not skip flush before ratify

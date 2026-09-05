@@ -8,6 +8,8 @@
 > You are strictly forbidden from writing or proposing heuristic fixes. Before attempting any fix, you MUST read `.cursor/rules/global-systems-first.mdc`, `.cursor/rules/no-bandaid-fixes.mdc`, and `.cursor/rules/move-preview-intent-truth.mdc`.
 > All fixes must adhere to the **6 Major Architectural Sources of Truth** (`Simulator`, `CombatDirector.validate_commit_slots`, `CombatPlanningPreview`, action range latest stand, `.tres` data, simulation-derived presentation).
 
+- `BUG-20260904T222920-418` **done** — Medium — Bug — armed dash
+- `BUG-20260904T222807-386` **done** — Medium — Bug — armed dash
 - `BUG-20260904T210641-841` **done** — Medium — Bug — after armed dash is commited
 - `BUG-20260904T210528-218` **done** — Medium — Bug — armed dash red tiles
 - `BUG-20260904T000305-623` **done** — Medium — Bug — when autorun, animatest wice and shows bad movepreview

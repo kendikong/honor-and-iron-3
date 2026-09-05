@@ -1950,6 +1950,50 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - `tests/runners/run_ability_module_bridge_runner.gd` -> **PASS**.
 
 
+## Round R142 — HARSH Council: Move Preview Persistence & Dash Range Selectability Parity
+
+**Task / Bug:** Fix `BUG-20260904T222807-386` (cannot select red dash tiles, 1-step dash invalid/null) & `BUG-20260904T222920-418` (move preview cleared upon commit before execution phase).
+**Council Mandate:** HARSH Council enforcement on Move Preview Intent Truth (`move-preview-intent-truth.mdc`) and Range Selectability Parity.
+**Root Causes Fixed:**
+1. In `presentation/combat_planning_input.gd` (`_dash_tile_endpoint_one_click_commit`): Removed check requiring `hover_unit` to be an alive enemy. For TILE-targeting dashes, empty landing tiles are valid destinations.
+2. In `presentation/combat_planning_input.gd` (`_hover_walk_waypoints_for_skill` & `_append_module_awaiting_target`): Returned `trimmed` directly instead of wiping 1-step destinations to `[]` via `_normalize_adjacent_single_step_waypoints`, and added `[cell]` fallback for adjacent movement ability targets.
+3. In `presentation/combat_planning_input.gd` (`display_move_route_cells`): For selected unit, check `committed_route_preview()` when sealed route is empty, preventing committed routes from being cleared during planning.
+4. In `presentation/combat_planning_preview.gd` (`from_sim_result` & `apply_movement_result`): Pass `director` to `ensure_movement_intent_from_plan` so origins seed from `live_planning_board()`.
+5. In `presentation/tactical_planning_overlay.gd` (`_draw_ghosts`): Removed incorrect overwrite of `stand = pv_unit.position` so committed movement ability ghosts are drawn.
+
+| Critic | Focus | Verdict | Rule / File | Proof / Rationale |
+|---|---|---|---|---|
+| **1** | Bible paint & tiles (HARSH) | **PASS** | `MOVE_PREVIEW_RULES`, `EX-LOCKED-FIELD` | Range selectability parity strictly restored: empty tiles in red dash range are selectable; 1-step destination tiles do not collapse into `∅`. Locked field paint anchors correctly on stand. |
+| **2** | Settle, bundle, commit (HARSH) | **PASS** | `move-preview-intent-truth.mdc` § 4–5 | Move preview persistence strictly enforced: committed movement route lines and actor ghosts persist across planning phase until execution begins. No waypoint wiping on 1-step destinations. |
+| **3** | Stand & range origins | **PASS** | `action-range-latest-stand.mdc` | Latest stand origin seeded via `_phase_entry_stand` and `_seed_movement_origins` with live director board. |
+| **4** | Global systems & anti-heuristic | **PASS** | `global-systems-first.mdc`, `no-bandaid-fixes.mdc` | 6-row audit passed. Zero heuristics, zero identity branches. All fixes operate inside canonical owners (`CombatPlanningInput`, `CombatPlanningPreview`, `TacticalPlanningOverlay`). |
+| **5** | Perf & scheduling | **PASS** | `planning-hover-perf-mandatory.mdc`, `EX-PERF-SCHED` | Flush before commit ratify intact. No extra sync simulations introduced. |
+| **6** | QA-fix discipline | **PASS** | `qa-fix-no-heuristics.mdc`, `QA_FIX_DISCIPLINE` | Exact root causes fixed. Zero synthetic fallbacks. Two new dedicated regression tests added to `action_range_regression_test.gd` covering 1-step dash and empty tile dash. |
+| **7** | Class / skill scope | **PASS** | `class-qa-knight-bar.mdc`, `CLASS_KIT_PARITY` | Bowling Charge and all movement-effect abilities adhere to Master Bible specs without per-class branches. |
+
+**Verdict:** 7/7 PASS (HARSH Council)
+
+### Changes applied
+- `.cursor/rules/move-preview-intent-truth.mdc`: Added Mandates 4 & 5 for Move Preview Persistence and Action Range Selectability Parity.
+- `docs/qa/SUBAGENT_COUNCIL_LOOP.md` & `.cursor/rules/subagent-council-loop.mdc`: Updated Critic 1 & Critic 2 charters with HARSH mandates.
+- `presentation/combat_planning_input.gd`:
+  - `_dash_tile_endpoint_one_click_commit`: Permit legal empty tiles on tile-targeting dashes.
+  - `_append_module_awaiting_target`: Ensure 1-step destination waypoints are valid.
+  - `_hover_walk_waypoints_for_skill`: Return trimmed path directly without single-step normalization.
+  - `display_move_route_cells`: Read committed route from `committed_route_preview()`.
+- `presentation/combat_planning_preview.gd`:
+  - `apply_movement_result` & `from_sim_result`: Pass `director` to `ensure_movement_intent_from_plan`.
+- `presentation/tactical_planning_overlay.gd`:
+  - `_draw_ghosts`: Draw committed ability ghosts without destination self-cancellation.
+- `tests/harness/action_range_regression_test.gd`:
+  - Added `_test_bowling_dash_premove_1_step_selectable` and `_test_bowling_dash_one_click_empty_tile_no_premove`.
+  - Added post-commit move route persistence assertion in `_test_committed_dash_move_preview_present`.
+
+### Verification
+- `tests/runners/run_action_range_regression_only.gd` -> **PASS** (24/24 PASS, 0 FAIL).
+
+
+
 
 
 

@@ -23,6 +23,8 @@ It is not a hint. It is the intent system.
 1. **What move preview shows is 100% the truth** of what will be committed.
 2. **Commit = ratify that picture** — click tile or release drag accepts *exactly* what the preview already displayed.
 3. The player must **never** see the outcome jump, correct, or re-interpret after commit relative to the last valid preview.
+4. **Move preview persistence across commit (HARSH MANDATE):** After committing any move or movement ability (e.g. dash), move preview paths, route lines, and actor ghosts MUST NOT vanish during the planning phase. They must persist across the entire planning phase until execution begins (animation start) or the timeline/plan is modified/cleared. Premature clearing of move previews upon commit is a strict rule violation.
+5. **Action range & selectability parity (HARSH MANDATE):** Any tile painted as in-range (red or blue) for an armed action/dash MUST be selectable if it is a legal target according to ability rules. It is an instant rule violation if a tile is painted red but clicking/hovering it returns null glyph (`∅`) or rejects selection (e.g. empty landing tile for dash, or tile 1 step away from stand).
 
 ## Forbidden
 
@@ -30,12 +32,16 @@ On commit (or in code that runs because of commit), do **not**:
 
 - Recalculate a *different* move / approach / target / facing / paired skill than the preview showed
 - Re-render or replace the preview so ghosts, path, board positions, or overlays visibly change into a new interpretation
+- Clear or erase move preview routes or ghosts immediately on commit while still in planning phase
 - Add a second “commit-time fixup” path that disagrees with the preview slot builder
 - Treat hover/drag preview and `_build_commit_slots_at_cell` / finalize / `commit_from_slots` as separate truths
+- Reject or display null (`∅`) for any legal tile within painted action range (e.g. wiping single-step destination waypoints or requiring enemy units on empty tile dashes)
 
 ## Required
 
 - **One pipeline:** the same slot / intent construction that drives move preview must be what commit locks in (`_build_commit_slots_at_cell` → `_finalize_commit_slots` → `commit_from_slots`).
+- **Persistent planning intent:** Committed movement actions must feed `committed_route_preview()` and render frozen route lines and ghosts until execution phase.
+- **Range & target parity:** Tile-targeting dashes and movement abilities must permit legal destination tiles (including empty landing cells and 1-tile adjacent dashes).
 - Preview and commit may share validation, but validation must **reject** invalid intent — not silently rewrite what was shown.
 - If commit needs data the preview did not show, **the preview is incomplete** — fix the preview owner, do not patch at commit.
 - Presentation after commit may animate or lock the *already shown* intent; it must not invent a new one.
@@ -49,3 +55,4 @@ On commit (or in code that runs because of commit), do **not**:
 ## Exception
 
 Any intentional divergence between last preview and post-commit presentation requires the **⚠ Global system exception** block in `global-systems-first.mdc` and explicit owner **yes**.
+

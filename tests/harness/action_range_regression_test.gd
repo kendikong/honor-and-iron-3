@@ -53,6 +53,8 @@ static func run_all(failures: Array[String], include_swap: bool = false) -> void
 		_test_premove_intent_legs_no_boomerang,
 		_test_armed_dash_red_tiles_frozen_at_phase_entry,
 		_test_committed_dash_move_preview_present,
+		_test_bowling_dash_premove_1_step_selectable,
+		_test_bowling_dash_one_click_empty_tile_no_premove,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -77,6 +79,8 @@ static func run_all(failures: Array[String], include_swap: bool = false) -> void
 		"premove_no_boomerang",
 		"armed_dash_frozen_origin",
 		"committed_dash_preview",
+		"bowling_dash_premove_1_step",
+		"bowling_dash_empty_tile_no_premove",
 	]
 	if include_swap:
 		tests.append(_test_post_swap_post_move_stand_locked_on_orbit)
@@ -1471,4 +1475,82 @@ static func _test_committed_dash_move_preview_present(failures: Array[String]) -
 			"ActionRangeRegression committed_dash_preview: committed route %s differs from hover route %s"
 			% [str(route), str(hover_route)]
 		)
+
+	# Assert move preview persistence across commit (BUG-20260904T222920-418):
+	var post_commit_move_route: Array[Vector2i] = input.display_move_route_cells(1)
+	if post_commit_move_route.size() < 2:
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: display_move_route_cells(1) was wiped after commit: %s"
+			% str(post_commit_move_route)
+		)
+
+
+## Regression test for BUG-20260904T222807-386 (dash 1-tile away selectable after premove).
+static func _test_bowling_dash_premove_1_step_selectable(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	_sync_knight_ap(fix, 1, 2)
+	const PREMOVE_DEST := Vector2i(4, 4)
+	var walk_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, PREMOVE_DEST, Vector2.ZERO)
+	if not director.commit_from_slots(1, walk_slots):
+		failures.append("ActionRangeRegression premove_1_step_dash: premove commit failed")
+		return
+
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression premove_1_step_dash: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, PREMOVE_DEST, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression premove_1_step_dash: self-arm commit failed")
+		return
+
+	const ADJACENT_DASH_TILE := Vector2i(5, 4)
+	_attack_hover_sync(input, overlay, ADJACENT_DASH_TILE)
+	var dest_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, ADJACENT_DASH_TILE, Vector2.ZERO)
+	if input._is_invalid_dict(dest_slots):
+		failures.append(
+			"ActionRangeRegression premove_1_step_dash: 1-step dash tile %s was invalid (%s)"
+			% [ADJACENT_DASH_TILE, str(dest_slots.get("invalid", ""))]
+		)
+	var dest_actions: Array = dest_slots.get("action", []) as Array
+	if dest_actions.is_empty():
+		failures.append(
+			"ActionRangeRegression premove_1_step_dash: 1-step dash tile %s returned empty action (null glyph ∅)"
+			% ADJACENT_DASH_TILE
+		)
+
+
+## Regression test for BUG-20260904T222807-386 (one-click empty tile dash with no premove).
+static func _test_bowling_dash_one_click_empty_tile_no_premove(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	_sync_knight_ap(fix, 1, 1)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression empty_tile_dash_no_premove: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+
+	const EMPTY_DASH_TILE := Vector2i(6, 5)
+	_attack_hover_sync(input, overlay, EMPTY_DASH_TILE)
+	var slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, EMPTY_DASH_TILE, Vector2.ZERO)
+	if input._is_invalid_dict(slots):
+		failures.append(
+			"ActionRangeRegression empty_tile_dash_no_premove: empty dash tile %s was invalid (%s)"
+			% [EMPTY_DASH_TILE, str(slots.get("invalid", ""))]
+		)
+	var actions: Array = slots.get("action", []) as Array
+	if actions.is_empty():
+		failures.append(
+			"ActionRangeRegression empty_tile_dash_no_premove: empty dash tile %s returned empty action"
+			% EMPTY_DASH_TILE
+		)
+
 
