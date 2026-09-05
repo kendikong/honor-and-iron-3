@@ -199,7 +199,7 @@ Scenarios must prove **both** rules:
 
 ### Planning coverage (K3-LOCK — Fixture Parity Suite)
 
-Knight **class gate** (Tier 1 harness) proves **sim + data** per row. **Planning** (preview = commit, blue/red tiles, swap, premove) is owned by **`run_planning_qa_gate.ps1`** → `tests/planning_bible_fixture_test.gd` (Fixture Parity Suite). **Obsolete:** per-row `run_planning_commit_smoke` / `run_planning_select_smoke` / knight movement smoke in `knight_qa_runner.gd`.
+Knight **class gate** (Tier 1 harness) proves **sim + data** per row. **Planning** (preview = commit, blue/red tiles, swap, premove) is owned by **`run_planning_qa_gate.ps1`** → `tests/harness/planning_live_parity_harness.gd` (Fixture Parity Suite via Tier 3 Mimic). **Obsolete:** per-row `run_planning_commit_smoke` / `run_planning_select_smoke` / knight movement smoke in `knight_qa_runner.gd`.
 
 
 | Tier  | Meaning | Actives |

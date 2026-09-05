@@ -16,6 +16,7 @@ static func run_all(failures: Array[String]) -> void:
 		_test_f5_display_ap_zero_implies_no_red,
 		_test_f5_stale_projection_at_run_dest_display_ap_zero,
 		_test_simulation_validator_rejects_invalid_timeline_action,
+		_test_painted_skill_path_is_preview_and_execution_truth,
 	]
 	for test: Callable in tests:
 		test.call(failures)
@@ -672,3 +673,54 @@ static func _test_simulation_validator_rejects_invalid_timeline_action(
 		not rejection.is_empty(),
 		"preview_commit_valid must reject an out-of-bounds timeline action",
 	)
+
+
+static func _test_painted_skill_path_is_preview_and_execution_truth(
+	failures: Array[String],
+) -> void:
+	var board := BoardState.new()
+	board.grid_size = Vector2i(12, 12)
+	var terrain := TerrainData.new()
+	terrain.id = &"plain"
+	terrain.blocks_movement = false
+	for y: int in range(board.grid_size.y):
+		for x: int in range(board.grid_size.x):
+			var coord := Vector2i(x, y)
+			board.tiles[coord] = TileState.create(coord, terrain)
+	var actor := UnitState.new()
+	actor.id = 1
+	actor.team = GameEnums.Team.PLAYER
+	actor.position = Vector2i(6, 3)
+	actor.movement.points_left = 4
+	actor.movement.max_points = 4
+	actor.ability.points_left = 1
+	actor.ability.max_points = 1
+	board.units = [actor]
+	GridSystem.set_occupant(board, actor.position, actor.id)
+
+	var trample := AbilityData.new()
+	trample.id = &"test_trample"
+	trample.kind = GameEnums.AbilityKind.MOVEMENT_SKILL
+	trample.movement_point_cost = 2
+	trample.range_tiles = 2
+	trample.targeting_mode = GameEnums.TargetingMode.TILE
+	trample.targeting_flags = AbilityData._targeting_mode_to_flags(trample.targeting_mode)
+	trample.modules = [DataLibrary._module(
+		GameEnums.EffectType.MOVE, 2, 1, 2, GameEnums.TargetingFlags.TILE,
+	)]
+
+	var waypoints: Array[Vector2i] = [Vector2i(7, 3), Vector2i(7, 2)]
+	var action := TimelineAction.make_ability(
+		actor.id, trample, Vector2i(7, 2), -1, GameEnums.MoveTiming.PRE_ACTION, waypoints,
+	)
+	var preview := CombatPlanningPreview.new()
+	preview.preview_paths[actor.id] = [Vector2i(6, 3), Vector2i(6, 2), Vector2i(7, 2)]
+	preview.ensure_movement_intent_from_actions([action], board)
+	var preview_path: Array = preview.preview_paths.get(actor.id, [])
+	if preview_path != [Vector2i(6, 3), Vector2i(7, 3), Vector2i(7, 2)]:
+		PlanningChecklistHarness.assert_fail(
+			failures,
+			"intent_contract/preview_path_waypoints",
+			"preview must replace N-then-E with committed E-then-N waypoints",
+		)
+

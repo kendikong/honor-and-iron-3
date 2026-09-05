@@ -17,7 +17,6 @@ func _run_gate() -> void:
 	PlanningDragE2EHarness.set_host(self)
 	var suites: Array[Dictionary] = [
 		{"name": "planning_forecast", "path": "res://tests/harness/planning_forecast_test.gd"},
-		{"name": "skill_scenarios", "path": "res://tests/harness/planning_skill_scenarios_test.gd"},
 		{"name": "drag_e2e", "path": "res://tests/harness/planning_drag_e2e_test.gd"},
 		{"name": "planning_input", "path": "res://tests/harness/planning_input_test.gd"},
 		{"name": "trample_e2e", "path": "res://tests/harness/trampling_advance_e2e_test.gd"},
