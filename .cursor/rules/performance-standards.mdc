@@ -1,0 +1,60 @@
+---
+description: Mandatory performance & frame budget standards — 60-120 FPS hover preview throttle, cheap walk preview, no post-process redo loops, minimize CPU/GPU
+alwaysApply: true
+---
+
+# Performance & Frame-Budget Standards (MANDATORY)
+
+**Owner mandate (2026-08-31):** Live F5 planning must stay responsive (~120 FPS reference). All implementations, fixes, and refactors must prefer the lowest-cost approach that still meets requirements. Performance is a first-class constraint—not an afterthought.
+
+**Priority:** Performance is strictly **subordinate** to `.cursor/rules/global-systems-first.mdc` and `.cursor/rules/move-preview-intent-truth.mdc`. Performance optimizations must **never** introduce parallel truth paths, second preview functions, or divergent hover/commit pipelines.
+
+---
+
+## 1. Planning Hover Performance (`CombatPlanningInput`)
+
+Live hover uses bounded scheduling and cheap previews to maintain frame rate:
+
+| Mechanism | Purpose | Code Anchors |
+|---|---|---|
+| **Hover sim throttle** | `_schedule_hover_sim_refresh` + `hover_sim_interval_sec` (~45ms) + pointer-still | `on_hover_moved`, `_should_run_hover_sim_sync`, `_HOVER_SIM_MIN_INTERVAL_SEC` |
+| **Sync only when needed** | QA (`qa_static_overlay`), occupy-push, commit flush | `_should_run_hover_sim_sync`, `_flush_hover_heavy_sync` |
+| **Cheap empty-walk preview** | Board clone from same slots — skip `Simulator.simulate` on live basic move | `_hover_can_preview_move_without_simulate`, `_preview_from_commit_slots_at_cell` |
+| **Cheap occupy-push preview** | Same pattern for allied push hovers | `_hover_can_preview_occupy_push_without_simulate` |
+
+### Forbidden (Instant Violation — Even For "SSOT Cleanup")
+- Calling full settle synchronously in `on_hover_moved` per pixel.
+- Making `_should_run_hover_sim_sync` return true for live basic move (`selected_ability_index < 0`).
+- Removing `_hover_can_preview_move_without_simulate` or forcing full `preview_actions` on every mouse jitter.
+- Deleting `PERF GUARD` blocks in `combat_planning_input.gd` without explicit owner approval.
+- QA headless (`qa_static_overlay`) must **always** run full sim on hover—the cheap path returns false there.
+
+---
+
+## 2. No Heavy Post-Process or Safety Recalc
+
+Bad upstream output is fixed **at the owner that produces it**—never papered over with extra computation in display, click, or "safety" paths.
+
+### Forbidden Patterns
+| Pattern | Why Forbidden |
+|---|---|
+| **Seal / lock / discard / redo loops** on hover | Multiplies CPU; re-runs sim + tile math every mouse move |
+| **`_settle_paint_only_preview_at_cell` / fake noop bundles** | Display without real commit slots+sim — preview ≠ commit |
+| **Display-layer fallback recompute** when hover bundle missing | Second truth path; masks broken settle — **fix settle once** |
+| **Click-time full hover redo** before commit | Extra sim pass; commit must ratify what hover already settled |
+| **Defensive duplicate + match + discard + rebuild** chains | Multiplies CPU for the same cursor position |
+| **Post-process pathfind / tile flood** to "fix" slots | Bandaid — fix the producer, not the consumer |
+
+### Required Architecture
+1. **One settle owner:** `CombatPlanningInput` builds slots + sim + paint **once** per hover cell change.
+2. **Display reads only:** Overlay paints from the settled bundle for the selected player; **no live tile math** on the draw path.
+3. **Commit copies settled slots:** Reject if missing; do **not** run hover settle again on click.
+
+---
+
+## 3. Lag & Feel Fixes (Mandatory Order)
+
+1. **Parity:** Why is the fast case fast and the slow case slow? Trace the single owner pipeline (slots → preview → overlay).
+2. **Unify:** Unify the slow case onto the fast canonical path.
+3. **Measure:** Profile inside the owner.
+4. **Optimize inside the owner:** Cache keys, dirty flags, cheaper simulation start state, GPU shaders—never parallel UI staging.

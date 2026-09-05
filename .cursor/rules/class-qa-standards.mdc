@@ -1,0 +1,58 @@
+---
+description: ABSOLUTE — all classes must reach full Knight-bar automated QA depth; class kits are living drafts (never recite owner sign-off / LOCK)
+alwaysApply: true
+---
+
+# Class QA Standards & Living Drafts Mandate (ABSOLUTE)
+
+**Owner directive:** Class QA must be thorough enough that **green gate = no hand-testing every skill in F5.** Every shipped Bible class must reach full Knight-bar depth. Never stop early, never ask the owner if they want full depth, and remember that **class kits are living drafts** that will evolve.
+
+**Authoritative template:** `docs/qa/classes/KNIGHT_QA_GATE.md` · `docs/qa/_CLASS_QA_GATE_TEMPLATE.md` · `docs/design/class-rollout.md`
+
+---
+
+## Class Kits Are Living Drafts (Owner-Facing Replies)
+
+Skill kits are **not final**—they will change throughout development. Automated suites prove **this turn’s change**, but do not mean a class is permanently frozen.
+
+**Forbidden in owner-facing replies (do not say, even as a footer or Changelog note):**
+- Reciting owner QA sign-off / class LOCK / "this class is complete"
+- "Knight is the only class with owner sign-off"
+- Asking the owner to hand-test F5 for you
+
+---
+
+## The Knight QA Bar: Full Depth Required for All 12 Classes
+
+Every class (Knight, Bruiser, Archer, Lancer, Mage, Cleric, Beast Rider, Engineer, Mercenary, Monk, Rogue, Shaman) must achieve:
+
+1. **`docs/<CLASS>_QA_GATE.md`:** Full matrix, meta-critic contract, three tiers, global systems fidelity.
+2. **Matrix Coverage:** 100% rows `PASS` (meta-critic approved); 0 `HARNESS_ONLY`; 0 undocumented `PLANNED`.
+3. **One Scenario Per Factory Row:** `tests/skills/<id>_scenario.gd` or `tests/passives/<id>_scenario.gd` with Bible header + named global effect + base + `[+]` upgrades.
+4. **Tier 1 Gate (`run_<class>_qa_gate.ps1`):** PASS on all matrix rows, not a monolithic smoke alone.
+5. **Tier 2 Live (`run_<class>_live_qa.ps1`):** PASS with preview/commit + overlay tile sets + slots + sim parity.
+6. **Movement Planning Smoke:** Every movement skill must prove commit-path parity; no silent skips.
+
+---
+
+## Forbidden Shallow Patterns (Instant Rule Violation)
+
+| Pattern | Why It Fails the Knight Bar |
+|---|---|
+| Single `*_class_scenario.gd` as sole coverage | No per-row Bible proof; one green script hides weak skills |
+| Assert `ability.target_shape` or metadata only | Does not prove tiles hit or red overlay correct |
+| Grid enum math disconnected from ability | Proves math, not the skill at the cursor |
+| Sim/live: `ABILITY_USED` or single damage event only | Does not prove footprint, multi-target, or wrong-tile exclusion |
+| Live asserts without `overlay.get_hover_action_range_tiles()` | Violates `PLANNING_SKILL_QA_CHECKLIST.md` |
+| Red tiles compared to range bubble only for AOE | Range bubble ≠ Bible blast; self-referential pass |
+| Asking "want me to run live suite?" / "expand matrix?" | Owner already answered: **yes, all classes, full depth** |
+| Stopping when one class is green while others are shallow | The mandate is all classes, not one gate |
+
+---
+
+## Required Asserts (AOE / Shapes / Ranged)
+
+For any skill with `target_shape` ≠ `SINGLE` or Bible `AOE` / `ARC` / `LINE` / `CONE`:
+1. **Simulation:** Place units inside and outside `GridSystem.get_affected_tiles(origin, target, shape, size)`; assert damage/status/terrain only on expected coords.
+2. **Live / Planning:** At scripted hover, `overlay.get_hover_action_range_tiles()` must match the **Bible footprint at cursor**, not the Manhattan range bubble alone.
+3. **Commit:** Preview slots and `Simulator.simulate` must agree on `target_coord` and affected tile set.

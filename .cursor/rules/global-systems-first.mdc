@@ -1,154 +1,139 @@
 ---
-description: ABSOLUTE — every edit uses global systems first; warn before any exception
-alwaysApply: false
-globs: "**/*.gd,**/*.tscn,**/*.tres,core/**,presentation/**,data/**,tests/**"
+description: ABSOLUTE — every edit uses global systems first; no bandaids or heuristics; QA fix discipline; warn before any exception
+alwaysApply: true
 ---
 
 # Global Systems First (ABSOLUTE — ALWAYS ON)
 
-**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc` — if chat was summarized, read that first, then this file for detail.
+**Highest-priority engineering rule for this repo.** Applies to **every** change type — **new code, bug fixes, refactors, cleanups, perf work, data edits, and tests that touch production** — not only skills, and not only when the user repeats it.
 
-**Highest-priority engineering rule for this repo.** Applies to **every** change type — **new code, bug fixes, refactors, cleanups, perf work, data edits, tests that touch production** — not only skills, not only when the user repeats it.
-
-**Refactor, cleanup, or “small fix” is not a waiver.** Same mandate as a new feature: one owner, one path, delete the wrong path in the same change.
+Refactor, cleanup, or "small fix" is not a waiver. Same mandate as a new feature: **one owner, one path, delete the wrong path in the same change.**
 
 The project owner must **not** have to re-explain this. Agents enforce it on **every turn** without being asked.
 
-## Priority order (when rules conflict)
+---
 
-1. **This rule** + `.cursor/rules/no-bandaid-fixes.mdc` + `.cursor/rules/skill-global-rules.mdc` + `.cursor/rules/move-preview-intent-truth.mdc` + `.cursor/rules/qa-after-gameplay-changes.mdc`
+## Priority Order (When Rules Conflict)
+
+1. **This rule** + `.cursor/rules/move-preview-intent-truth.mdc` + `.cursor/rules/subagent-council-loop.mdc` + `.cursor/rules/qa-after-gameplay-changes.mdc`
 2. Roadmap / phase gates / architecture skills (`Simulator`, layers, timeline, `AbilitySystem`)
-3. Convenience, speed, “small local fix,” model-default shortcuts
+3. Convenience, speed, "small local fix," model-default shortcuts
 
 If a proposed edit violates (1) to satisfy (3) → **do not implement** until redesigned or the owner approves a documented exception.
 
-## Every edit must
+---
+
+## Core Mandate: Every Edit Must
 
 1. **Use the existing global system** that owns the behavior (sim, director, `AbilitySystem`, commit slots, data definitions, overlay derived from slots — not parallel logic).
 2. **Minimize heuristics** — no second state machines, no UI-only flags that commit path ignores, no cursor/preview/click paths that disagree.
 3. **Extend the canonical path** — one truth pipeline; preview == execution where applicable.
 4. **Prefer data** over `if ability.id == …` / per-unit branches.
-5. **Remove** the obsolete path in the same change when replacing behavior.
+5. **Remove the obsolete path** in the same change when replacing behavior.
+6. **Fail loud** — assert or reject; never silently swallow invalid state.
 
-## Heuristic (forbidden unless owner-approved exception)
+---
 
-A **heuristic** here means: behavior driven by a local shortcut that is **not** the same rule the rest of the feature uses — e.g. a flag only presentation reads, a special case only one skill uses, a fix that makes hover/click disagree with `commit_from_slots`.
+## Definition: Bandaids & Heuristics (Forbidden)
 
-**Default: zero new heuristics.** Fix the owner system instead.
+A **heuristic or bandaid** means behavior driven by a local shortcut that is **not** the same rule the rest of the feature uses. A change is a bandaid if it:
+- Papers over a bug with an extra `if`, flag, or early `return` without fixing **why** the main path failed.
+- Duplicates logic that already exists (or should exist) in a manager, `AbilitySystem`, `commit_from_slots`, or sim preview.
+- Adds per-skill / per-unit / per-scene branches when data, targeting, or the shared pipeline can express it.
+- Introduces a second source of truth (e.g. cursor heuristics that disagree with commit slots).
+- Disables validation, asserts, or tests "for now".
+- Leaves dead or overlapping paths (old + new) instead of deleting the wrong one in the same change.
+- Wires new features through presentation-only state instead of the domain owner (`AbilitySystem`, commit slots, `Simulator`, data).
 
-### Examples that **are** heuristics (must be named — never report as `none`)
+### Examples That Are Heuristics (Forbidden)
 
 | Pattern | Example (this repo) |
-|---------|---------------------|
+|---|---|
 | Tab- or screen-only apply | UI scale preview only on Interface tab; Display tab unchanged |
 | Node/widget identity at apply time | `if lbl == _ui_scale_label` instead of shared applier / data tier |
 | Parallel apply paths | `save_to_disk` + `changed` but combat never reloads; separate preview function |
 | Presentation-only state | Slider moves a local var UI reads; `GameSettings` / commit path unchanged |
 | Per-id / per-scene branch | `if ability.id == …` when `.tres` / `EffectData` could express it |
 
-### Examples that are **not** heuristics (still name the canonical owner)
+### Examples That Are Not Heuristics (Canonical Owners)
 
 | Pattern | Example (this repo) |
-|---------|---------------------|
+|---|---|
 | Single shared applier | `GameSettings` → `MenuInterfaceApplier.apply(root, settings)` on whole tree |
-| Data/meta at **build**, type rules at **apply** | `menu_font_tier` meta + walk by `Control` type — not `if node == _foo` |
+| Data/meta at build, type rules at apply | `menu_font_tier` meta + walk by `Control` type — not `if node == _foo` |
 | One reload+apply bus | `EventBus.interface_settings_changed` → owner `_on_display_settings_applied` |
 
-### ⚠ Approved performance scheduling exception — planning preview
+---
 
-The owner-approved exception permits bounded defer/throttle/coalesce scheduling for
-expensive planning preview simulation and presentation redraws when synchronous work
-would violate the tuned frame budget. Scheduled work must remain inside the canonical
-`CombatPlanningInput` → `PlanningPreviewTiles` → `PlanningHoverPreview.seal` path,
-use the current interaction/revision as its key, and discard stale callbacks.
+## The 6-Row Heuristics Audit Table
 
-This exception does **not** permit deferred intent creation, alternate tile painting,
-commit-slot reconstruction, UI-only truth, or ratification of an unsealed/stale
-revision. Commit must synchronously ratify the matching sealed bundle or reject.
+Before completing any implementation plan or edit, answer all 6 rows in the proposal or changelog. Any "No" on requirements 1–5 or "Yes" on 6 means **redesign**:
 
-## Heuristics audit (mandatory — before declaring `none`)
+| # | Question | Pass Requirement |
+|---|---|---|
+| 1 | Single owner? | **Yes** — one system/API owns this behavior end-to-end; no parallel owner |
+| 2 | One apply path? | **Yes** — no second preview/save/commit/hover path |
+| 3 | No identity branches? | **Yes** — no `if node/tab/scene/skill_id ==` for this behavior |
+| 4 | No UI-only state? | **Yes** — sim/commit/slots/`GameSettings` see the identical truth |
+| 5 | Reusable? | **Yes** — other skills/screens use the same path without new `if` branches |
+| 6 | Obsolete path removed? | **Yes** — deleted old hack/obsolete path in the **same** change |
 
-**Forbidden:** Writing `Heuristics added: none` as a default footer, ritual checkbox, or without completing the audit below. **Claiming `none` without walking the table is a rule violation** — same severity as inventing a heuristic silently.
+**Changelog Requirement:** Always state **How this protects SSOT**, **Heuristics added:** (`none` or list), and **Why (not) heuristic:**. Vacuous lines count as missing.
 
-**Process (every plan, edit, or fix turn with code changes):**
+---
 
-1. State **how this protects SSOT** — plain language: which single canonical path stays unified, what parallel path was avoided or removed, how preview/commit/sim/UI stay aligned. **Naming a file or symbol alone is insufficient.**
-2. Walk **every row** of the audit table below.
-3. If **any row fails** → list each failure under **Heuristics added** (short name + one line), or **redesign** before merge.
-4. If **all rows pass** → write `none` under **Heuristics added**, then **Why (not) heuristic:** — one brief sentence stating why the change is not heuristic (single owner, one path, what you avoided).
-5. If **any row fails** → name each under **Heuristics added**, then **Why (not) heuristic:** — one brief sentence per item explaining why it counts as heuristic.
+## QA Fix Discipline (No Heuristic Green)
 
-Owner may ask **“Walk the table”** — you must answer each row in plain language. Inability to do so means the assessment was invalid.
+The biggest source of regressions is agents trying to make QA green by adding unnecessary heuristic code, branching paths, and alternate sources of truth. **That refactor tax is forbidden.**
 
-| # | Audit question | Pass requires |
-|---|----------------|---------------|
-| 1 | **Single owner** | The listed global system owns this behavior end-to-end — no parallel owner |
-| 2 | **One apply path** | No second preview / save / commit / combat path that can diverge |
-| 3 | **No identity branches** | No `if node == …`, `if tab == …`, `if scene == …` for this behavior (unless owner approved ⚠ exception) |
-| 4 | **No UI-only state** | No flag/meta only presentation reads that sim/commit/`GameSettings` ignore |
-| 5 | **Reusable** | Another screen/feature could use the same path without a new special-case branch |
-| 6 | **Obsolete path removed** | Replacing a hack deletes the old path in the **same** change |
+### Mandatory QA Triage (Before Any Code Edit)
+1. **Group failures by canonical owner** — not by file that happened to assert first:
+   - Settle / seal / receipt → `CombatPlanningInput`, `PlanningHoverPreview`
+   - Stand / range origin → same owner + `planning_preview_tiles.gd` (never overlay-only)
+   - Commit legality → `CombatDirector.validate_commit_slots` / slot build path
+   - Sim truth → `Simulator.simulate` + timeline
+2. **Name the single broken step** in that owner chain (e.g. "receipt never sealed on hover" — not "overlay stand blank").
+3. **Fix that owner step** so the existing paint/commit path receives correct truth.
+4. **Fix upstream, never downstream:** Fix settle/seal/slots/sim. Never patch downstream (overlay paint) to paper over a missing receipt.
 
-## Mandatory: exception warning (no silent bypass)
+### Forbidden QA-Fix Patterns (Instant Rule Violation)
 
-If the **correct** fix requires **breaking, bypassing, or adding an exception to** a global system, you **must stop** and post this block **before any edit**:
+| Pattern | Why Forbidden |
+|---|---|
+| Overlay/input fallback when sealed receipt missing | Second stand truth; masks broken settle |
+| Loosening `matches_paint_context` / revision checks so paint "works" | Hides stale or partial settle |
+| `if test_name` / scenario id / fixture branch in production | Per-test truth path |
+| Weakening asserts, skipping cases, `push_warning` instead of fail | Hides regression |
+| UI-only flags that sim/commit ignores | Preview ≠ commit |
+| Duplicate origin getters (`_intent_stand_origin` vs `_proj_origin` both live) | Two competing anchors |
+| Partial settle / `_noop` bundle that paints hover without full slots+sim | Violates preview=commit truth; fix settle upstream |
+| Restoring mutable-buffer route/stand reads "until receipt works" | Parallel path |
+| Editing tests to match wrong behavior without owner fix | False green |
 
-```
-## ⚠ Global system exception (approval required)
+---
 
-**Global rule / system affected:** (name the system + file/API, e.g. commit slots, AbilitySystem.can_use, timeline column rule)
+## Skill Global Rules Mandate
 
-**Why the global path is insufficient:** (one paragraph — root cause, not symptom)
+When implementing or changing **any skill, passive, universal action, or ability economy behavior**:
+1. **Shared global systems:** Use `AbilityKind`, AP/MP, timeline columns, `EffectData`, targeting modes, `AbilitySystem`, `Simulator`, preview parity.
+2. **Data over code:** Prefer `.tres` / factory definitions over per-skill code branches.
+3. **Master Bible compliance:** Match `class_abilities.txt` (economy, keywords, timeline, Wait/Run modifiers).
 
-**Proposed exception:** (exact behavior change — what would diverge from the global rule)
+### Required When a New Rule or Exception Is Unavoidable
+**Stop and warn the project owner before implementing:**
+1. What global rule the skill would break or bypass.
+2. The **proposed new rule** or exception (exact behavior).
+3. At least one alternative that stays on the global system.
+4. Ask explicitly: **"Is this acceptable?"** Do not ship silent exceptions.
 
-**Alternatives considered:** (at least one way to stay on the global system, even if harder)
+---
 
-**Is this acceptable?** (yes / no / suggest alternative)
-```
+## ⚠ Approved Performance Scheduling Exception (Planning Preview)
 
-- Do **not** implement the exception until the owner replies **yes** to that specific exception.
-- Do **not** hide exceptions in changelog prose — use the block above.
-- “User said fix it fast” is **not** approval.
+Bounded defer/throttle/coalesce is allowed for expensive preview simulation and presentation redraw work when required to preserve the tuned frame budget. It must:
+1. Run through the canonical planning owner.
+2. Use the current interaction/revision key.
+3. Discard stale callbacks.
+4. Never mutate or replace the sealed intent.
 
-## Mandatory disclosure (every agent turn — no exceptions)
-
-Any response that **proposes, implements, or summarizes** a code or rule change MUST include **all** lines below, visibly (not buried in prose):
-
-- **How this protects SSOT:** **Mandatory prose** — describe the fix as a **non-heuristic fix**: name the canonical owner, the one apply path, and what parallel or obsolete path was avoided or deleted. Citing only `CombatDirector` or “commit slots” **without** this explanation is a rule violation. A pasted label without substance does not count.
-- **Heuristics added:** `none` OR each heuristic named (only after walking the audit table)
-- **Why (not) heuristic:** **one brief sentence** (mandatory — ties to the SSOT line above)
-  - If `none`: what you did **not** add (e.g. no tab-only apply, no `node ==`, no parallel preview path, no UI-only defer flag).
-  - If named: why each listed item **is** heuristic under the definition above.
-
-**Forbidden:** Fix summaries that don't describe the fix as non-heuristic (owner + one path + obsolete path removed), `Heuristics added: none` with no **Why (not) heuristic:** line, a vacuous why, or **How this protects SSOT** that only names a file/API. **All are rule violations.**
-
-**Required in:**
-- Permission gate / plans (`interpret-plan-permission.mdc`)
-- Post-implementation summaries and fix explanations (including bug-fix replies)
-- **## Changelog** on every edit turn (`living-sandbox-architect.mdc`, `AGENTS.md`) — dedicated `### Single source of truth` subsection
-
-**Omit only** on pure read-only Q&A with **no** proposed or completed changes.
-
-**Omitting any line = rule violation** — same severity as skipping the permission gate or auto-commit.
-
-## Canonical global systems (Honor & Iron — non-exhaustive)
-
-| Domain | Global owner |
-|--------|----------------|
-| Planning commit / cursor / preview | **Move preview is intent truth** (`.cursor/rules/move-preview-intent-truth.mdc`) — same slots path: `_build_commit_slots_at_cell` → `_finalize_commit_slots` → `CombatDirector.commit_from_slots` / `preview_commit_valid`; commit ratifies preview, never rewrites it |
-| Red action-range tiles / stand origin | **Latest stand** (`.cursor/rules/action-range-latest-stand.mdc`) — `_intent_stand_origin` / `planning_latest_stand_cell`; never `base_board`. Failure log: `docs/design/ACTION_RANGE_LATEST_STAND.md` |
-| Ability legality / range / targeting | `AbilitySystem` + ability data |
-| Turn resolution | `Simulator.simulate` — headless, no Nodes |
-| Skills / economy | Timeline columns, AP/MP, `EffectData` — see `skill-global-rules.mdc` |
-| Living sandbox / map VFX | `docs/design/sandbox_map_system.md`, `EffectsSettings`, GPU shaders — see `living-sandbox-architect.mdc` |
-
-When unsure which system owns a behavior → **read and extend that system**; do not add a presentation-only workaround.
-
-## Related rules
-
-- `.cursor/rules/move-preview-intent-truth.mdc` — move preview = intent system; commit must not change what preview showed
-- `.cursor/rules/action-range-latest-stand.mdc` — red tiles from latest stand; read `docs/design/ACTION_RANGE_LATEST_STAND.md` before any origin change
-- `.cursor/rules/no-bandaid-fixes.mdc` — what counts as a bandaid; self-check table
-- `.cursor/rules/skill-global-rules.mdc` — skill-specific global mandate
-- `.cursor/rules/interpret-plan-permission.mdc` — plans still required; exception block is **in addition**
+The exception does **not** allow a scheduled alternate paint path, deferred commit-slot construction, UI-only state, or commit of anything other than the matching sealed bundle. Ratification remains synchronous and rejects when no matching bundle exists.

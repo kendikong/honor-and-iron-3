@@ -24,10 +24,9 @@ board states to solve spatial puzzles. **Positioning over damage. No RNG in comb
 - **Composition over Inheritance**: Assemble units/entities from independent components.
 - **Data-Driven**: Abilities are data (Ability Resources / tres files), not engine code modifications.
 - **Fail Loudly**: Assert on resource/state validation; do not silently ignore errors.
-- **Global systems first (absolute)**: `.cursor/rules/global-systems-first.mdc` — every edit; minimal heuristics; **mandatory exception warning** before bypassing any global rule. Owner must not re-explain.
+- **Global systems first (absolute)**: `.cursor/rules/global-systems-first.mdc` — every edit; no bandaids; minimal heuristics; **mandatory exception warning** before bypassing any global rule. Owner must not re-explain.
 - **Move preview = intent truth (absolute)**: `.cursor/rules/move-preview-intent-truth.mdc` — move preview is the intent system; commit must not rewrite or re-render a different outcome than the last valid preview.
 - **Red tiles = latest stand (absolute)**: `.cursor/rules/action-range-latest-stand.mdc` — never paint action range from turn-start `base_board`. Read `docs/design/ACTION_RANGE_LATEST_STAND.md` before any origin change.
-- **No bandaid fixes (absolute)**: `.cursor/rules/no-bandaid-fixes.mdc` — one commit/preview path; delete obsolete hacks in the same change.
 - **Test execution hierarchy (absolute)**: Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) while debugging. When an edit is ready, run **`run_planning_qa_gate.ps1` for regression prevention** and **`run_<class>_qa_gate.ps1` for the specific class edited**. `run_all_background_class_tests.ps1` is master CI only — **never run iteratively**; run only at milestone completion or upon explicit user request.
 
 ## Model Policy & API Efficiency
@@ -57,7 +56,6 @@ Whenever tasked with writing or executing an Implementation Plan based on a "Mas
 ## Bug Report Triage & Architectural Sources of Truth Mandate
 Whenever tasked with investigating, diagnosing, or fixing any bug report (from `reports/bug_reports/` or from user logs), **ALL agents across all models MUST read and obey the core non-heuristic rules first**:
 - `.cursor/rules/global-systems-first.mdc`
-- `.cursor/rules/no-bandaid-fixes.mdc`
 - `.cursor/rules/move-preview-intent-truth.mdc`
 - `.cursor/rules/action-range-latest-stand.mdc`
 

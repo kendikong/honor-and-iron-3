@@ -6,7 +6,7 @@ globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_di
 
 # Action Range = Latest Stand (ABSOLUTE — ALWAYS ON)
 
-**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc`
+**Always-on entry:** `.cursor/rules/global-systems-first.mdc`
 
 **Read the failure log first:** `docs/design/ACTION_RANGE_LATEST_STAND.md`
 

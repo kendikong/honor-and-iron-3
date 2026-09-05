@@ -1,22 +1,59 @@
 ---
-description: Mandatory roadmap — read before any implementation work in mana-seed-test
+description: Mandatory roadmap & phase audit gate — canonical build plan, phase deliverables, exit criteria, and coherence audits
 alwaysApply: true
 ---
 
-# Roadmap Is Source of Truth
+# Roadmap & Phase Audit Protocol (MANDATORY)
 
-Before planning or implementing features in this repo:
-
+Before planning or implementing milestone features in this repo:
 1. Read **`ROADMAP.md`** — canonical phased build plan (do not skip phases).
-2. Read **`docs/design/sandbox_map_system.md`** — Living Stillness, pixel integrity, Boredom Test, channel audit.
+2. Read **`docs/design/sandbox_map_system.md`** — Living Stillness, pixel integrity, Boredom Test, channel audit (when touching map/world).
 3. Check **`IMPLEMENTATION_STATUS.md`** — current phase, completed criteria, known gaps.
 
-## Rules
+---
+
+## Core Roadmap Rules
 
 - **Never replace or truncate `ROADMAP.md`.** Append progress only to `IMPLEMENTATION_STATUS.md`.
-- **Never hallucinate assets.** Only use files listed in `docs/reference/asset_manifest.md` (created Phase 0).
+- **Never hallucinate assets.** Only use files listed in `docs/reference/asset_manifest.md`.
 - **Work the current phase only** unless the user explicitly approves advancing or fixing a prior phase gate failure.
 - **`IMPLEMENTATION_PLAN.md` is a pointer** — the real plan is `ROADMAP.md`.
-- **Auto-commit (absolute):** `.cursor/rules/auto-commit-absolute.mdc` — full-backup git commit every edit turn; no overrides.
-- **Phase audit gate:** every phase must be rigorously audited for coherence to rules and code; re-audit until ≤ 2 issues remain. See `.cursor/rules/phase-audit.mdc`.
-- **Phase commit gate:** tag `phase-N` when phase closes; per-turn commits still mandatory via auto-commit-absolute. See `.cursor/rules/phase-commit.mdc`.
+- **Auto-commit (absolute):** `.cursor/rules/auto-commit-absolute.mdc` — full-backup git commit every edit turn.
+
+---
+
+## Phase Audit Gate (Mandatory Before Closing Any Phase)
+
+Every roadmap phase must pass a **rigorous audit** before it is declared complete or before advancing to the next phase.
+
+### What to Audit
+Cross-check the phase deliverables and exit criteria against:
+1. **`ROADMAP.md`** — phase scope, deliverables, exit criteria.
+2. **`docs/design/sandbox_map_system.md`** — constraints when applicable.
+3. **Actual code and docs on disk** — not the plan alone.
+
+### Pass Criterion
+- Audit **must be re-run** until **≤ 2 issues** remain discovered.
+- If **3+ issues** are found: fix them, then **re-audit** the whole phase.
+- Do not mark the phase complete in `IMPLEMENTATION_STATUS.md` until the audit passes **and** a phase commit exists (`auto-commit-absolute.mdc` § Phase Completion Commits).
+
+### The 4 Mandatory Audit Pillars
+
+| Pillar | What to Verify |
+|---|---|
+| **Completeness** | Every deliverable and exit criterion from `ROADMAP.md` exists on disk and works as specified |
+| **Correct coding** | Static types, project patterns, **no bandaids** (`global-systems-first.mdc` — absolute), fail-loud; automated tests run |
+| **Inconsistencies** | Cross-layer drift: constants, walkability vs terrain mapping, duplicate classes, sim→Node leaks |
+| **Issues** | Numbered list with severity; **fix if 3+** found, then re-audit whole phase; **≤2** may defer with target phase |
+
+*Fail any pillar with a HIGH-severity issue → audit FAIL (must fix before phase close).*
+
+---
+
+## Phase Completion Order
+
+1. Implement phase deliverables.
+2. Audit until ≤ 2 issues remain.
+3. **Commit & tag:** Standalone full backup `Complete Phase N: <desc>` + tag `phase-N`.
+4. Mark phase complete in `IMPLEMENTATION_STATUS.md` (include commit hash).
+5. Begin next phase.

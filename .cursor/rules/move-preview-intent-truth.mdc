@@ -6,7 +6,7 @@ globs: "presentation/combat*.gd,presentation/tactical*.gd,presentation/combat_di
 
 # Move Preview = Intent Truth (ABSOLUTE — ALWAYS ON)
 
-**Always-on entry:** `.cursor/rules/non-heuristic-mandate.mdc`
+**Always-on entry:** `.cursor/rules/global-systems-first.mdc`
 
 **Owner philosophy (do not make the project owner re-explain this).**
 
@@ -49,7 +49,7 @@ On commit (or in code that runs because of commit), do **not**:
 ## Relationship to other rules
 
 - **Parent:** `.cursor/rules/global-systems-first.mdc` — planning domain owner is move-preview / commit slots.
-- **Complements:** `.cursor/rules/no-bandaid-fixes.mdc` — commit-time “correction” of preview is a bandaid / second source of truth.
+- **Complements:** `.cursor/rules/global-systems-first.mdc` — commit-time “correction” of preview is a bandaid / second source of truth.
 - **Sim note:** `Simulator` / `preview_commit_valid` may still run to fail-loud reject; they must not be used as an excuse to mutate the displayed intent into something else on accept.
 
 ## Exception

@@ -38,6 +38,5 @@ alwaysApply: false
 ## Wins over (only while flag exists)
 
 - `.cursor/rules/qa-after-gameplay-changes.mdc` (mandatory QA after gameplay edits)
-- `.cursor/rules/class-qa-all-classes-mandatory.mdc` (QA run portions)
-- `.cursor/rules/class-qa-knight-bar.mdc` (QA run portions)
+- `.cursor/rules/class-qa-standards.mdc` (QA run portions)
 - `AGENTS.md` test execution hierarchy (QA runs)

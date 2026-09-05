@@ -18,12 +18,12 @@ The core constitution is managed through Antigravity's Customizations. The core 
 - **Move preview = intent truth (absolute):** On-screen move preview is the intent system; commit ratifies it and must not change/re-render a different outcome — see `.cursor/rules/move-preview-intent-truth.mdc` (always on).
 - **Red tiles = latest stand (absolute):** action range paints from the committed stand, never turn-start `base_board` — `.cursor/rules/action-range-latest-stand.mdc`. Read the failure log `docs/design/ACTION_RANGE_LATEST_STAND.md` before touching origin again.
 - **QA after gameplay changes (absolute):** Any edit to sim, combat systems, planning/commit, or ability data **must** run the matching headless suite and report PASS or FAIL in Changelog before ending the turn — see `.cursor/rules/qa-after-gameplay-changes.mdc`.
-- **QA fix discipline (absolute):** Never chase green by overlay fallbacks, per-test branches, or second stand/route truth — fix settle/slots/sim owner first — see `.cursor/rules/qa-fix-no-heuristics.mdc` and `docs/qa/QA_FIX_DISCIPLINE.md`.
-- **Subagent Council Loop (absolute):** Before applying gameplay/planning fixes — **propose → critics (parallel) → per-critic PASS table in chat → apply** (+ critics 6–7 when QA-fix or class scope). **Every report:** what fixed + critic proof **before** apply — `docs/qa/COUNCIL_REPORT_MANDATE.md` · `.cursor/rules/council-report-mandatory.mdc`. NOT Gauntlet. See `docs/qa/SUBAGENT_COUNCIL_LOOP.md`.
+- **QA fix discipline (absolute):** Never chase green by overlay fallbacks, per-test branches, or second stand/route truth — fix settle/slots/sim owner first — see `.cursor/rules/global-systems-first.mdc` § QA Fix Discipline and `docs/qa/QA_FIX_DISCIPLINE.md`.
+- **Subagent Council Loop (absolute):** Before applying gameplay/planning fixes — **propose → critics (parallel) → per-critic PASS table in chat → apply** (+ critics 6–7 when QA-fix or class scope). **Every report:** what fixed + critic proof **before** apply — `docs/qa/COUNCIL_REPORT_MANDATE.md` · `.cursor/rules/subagent-council-loop.mdc`. NOT Gauntlet. See `docs/qa/SUBAGENT_COUNCIL_LOOP.md`.
 - **Test execution hierarchy (absolute):** Never use test suites as interactive debuggers. Run only isolated single test cases (`GdUnitCmdTool.gd -t <test>`) while debugging. When an edit is ready, run **`run_planning_qa_gate.ps1` for regression prevention** and **`run_<class>_qa_gate.ps1` for the specific class edited**. `run_all_background_class_tests.ps1` is heavy master CI only — **never run iteratively**; run only at final milestone completion or upon explicit user request.
 - **Headless `--script` entry points:** Godot requires `extends SceneTree` (or `MainLoop`). Files named `*_runner.gd` / `*_harness.gd` with `extends RefCounted` are **libraries** — load them from a `run_*.gd` wrapper or a `*QaGate.tscn` host. See table below.
 - **Automated QA = planning gate stack:** **Default headless** — `run_planning_qa_gate.ps1` → SSOT + AOE + `PlanningQaGate.tscn` (full fixtures) + T3 bible mirror. **Live** — `run_planning_scene_acceptance.ps1` → `live_planning_scene_test.gd` (GdUnit + TestBattle). Use `-LiveTier3` on the planning gate for live instead of headless mirror.
-- **Class kits are drafts:** never recite owner QA sign-off / LOCK / “Knight is the only PASS” — `.cursor/rules/skill-lists-are-drafts.mdc`. Still run matching automated class gates when you touch a class — `.cursor/rules/class-qa-knight-bar.mdc` · `.cursor/rules/class-qa-all-classes-mandatory.mdc`
+- **Class kits are drafts:** never recite owner QA sign-off / LOCK / “Knight is the only PASS” — `.cursor/rules/class-qa-standards.mdc`. Still run matching automated class gates when you touch a class.
 - One pure `Simulator.simulate(state, timeline)`; preview == execution.
 - Simulation = plain RefCounted state, headless, never references Nodes.
 - Static typing, enums over strings, composition over inheritance, data over hardcoding.
@@ -57,8 +57,7 @@ Windows example:
 ## Code Quality (All Agents — every model)
 
 **See also (always on, highest priority):**
-- `.cursor/rules/global-systems-first.mdc` — every edit respects global systems; **mandatory exception warning** before bypassing any global rule
-- `.cursor/rules/no-bandaid-fixes.mdc` — no bandaids; one truth path; delete obsolete hacks
+- `.cursor/rules/global-systems-first.mdc` — every edit respects global systems; no bandaids; **mandatory exception warning** before bypassing any global rule
 
 The project owner is not a coder. **All agents and models** must write code that would pass a normal professional review — clean, correct, and maintainable, not a rushed patch.
 
@@ -279,7 +278,6 @@ Durable, non-obvious notes for running this Godot 4.7 project on the Linux Cloud
 ## Bug Report Triage & Architectural Sources of Truth Mandate
 Whenever tasked with investigating, diagnosing, or fixing any bug report (from `reports/bug_reports/` or from user logs), **ALL agents across all models MUST read and obey the core non-heuristic rules first**:
 - `.cursor/rules/global-systems-first.mdc`
-- `.cursor/rules/no-bandaid-fixes.mdc`
 - `.cursor/rules/move-preview-intent-truth.mdc`
 - `.cursor/rules/action-range-latest-stand.mdc`
 
