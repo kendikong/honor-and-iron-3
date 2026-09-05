@@ -5,10 +5,13 @@ extends RefCounted
 ## Headless CLI: godot --headless --path . --script res://tests/runners/run_t3_mimic_headless.gd
 
 const _IntentSot := preload("res://tests/harness/intent_source_of_truth_gate_test.gd")
+const _AoeFootprint := preload("res://tests/harness/aoe_footprint_contract_suite.gd")
 
-## Fixture Parity Suite (headless): action_range + intent_contract + full T3 live checklist.
+## Fixture Parity Suite (headless): action_range + intent_contract + full T3 live checklist + AOE geometry.
 ## Not Tier 3 LIVE — fixture board, not TestBattle.
 static func run_all(failures: Array[String]) -> void:
+	print("[SUITE] aoe_footprint_contract")
+	_AoeFootprint.run(failures)
 	print("[SUITE] action_range_regression")
 	ActionRangeRegressionTest.run_all(failures)
 	print("[SUITE] intent_contract_e2e")

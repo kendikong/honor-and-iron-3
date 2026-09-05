@@ -1272,6 +1272,26 @@ static func wire_bible_board() -> Dictionary:
 	return fix
 
 
+static func wire_aoe_cleave_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var session := TestBattleSession.new()
+	session.reset_defaults()
+	session.player_class_id = &"bruiser"
+	session.extra_player_coords = []
+	session.dummy_coords = [Vector2i(7, 5), Vector2i(7, 4), Vector2i(7, 6)]
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var actor_id: int = _unit_id_at(board, KNIGHT_START)
+	assert(actor_id > 0, "wire_aoe_cleave_board: bruiser missing at %s" % KNIGHT_START)
+	var fix: Dictionary = _wire_board_fixture(board, actor_id)
+	clamp_training_board_pools(fix)
+	fix["actor_id"] = actor_id
+	fix["knight"] = fix.board.get_unit_by_id(actor_id)
+	fix["e1_id"] = _unit_id_at(fix.board, Vector2i(7, 5))
+	fix["e2_id"] = _unit_id_at(fix.board, Vector2i(7, 4))
+	fix["e3_id"] = _unit_id_at(fix.board, Vector2i(7, 6))
+	return fix
+
+
 static func wire_swap_board(ally_cell: Vector2i) -> Dictionary:
 	PlanningDragE2EHarness.cleanup_all()
 	var session := TestBattleSession.new()

@@ -1709,3 +1709,95 @@ static func run_execute_all_plans(
 	PlanningChecklistHarness.assert_eq_cell(
 		failures, "EXEC-01/e_hook", board.get_unit_by_id(e_hook_id).position, expect["e_hook_pos"] as Vector2i,
 	)
+
+
+## Mirror shaped-skill AOE footprint & premove overlay parity (Cleave ARC).
+static func run_aoe_cleave_session_mirror(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningChecklistHarness.wire_aoe_cleave_board()
+	var actor_id: int = fix["actor_id"] as int
+	var actor: UnitState = fix.board.get_unit_by_id(actor_id)
+	if actor == null:
+		PlanningChecklistHarness.assert_fail(failures, "CLEAVE-01", "actor missing")
+		return
+
+	# Step 1: Pre-move from (4, 5) to (6, 5)
+	PlanningChecklistHarness.enter_basic_movement(fix)
+	PlanningChecklistHarness.select_unit(fix, actor_id, PlanningChecklistHarness.KNIGHT_START)
+	var pre_route: Array[Vector2i] = [
+		PlanningChecklistHarness.KNIGHT_START,
+		PlanningChecklistHarness.BASH_HOVER_WALK,
+		PlanningChecklistHarness.BASH_APPROACH,
+	]
+	var pre_intent: Dictionary = paint_route_and_capture_pre_intent(
+		fix, actor_id, pre_route, PlanningChecklistHarness.BASH_APPROACH, true, "CLEAVE-01/premove", failures,
+	)
+	if pre_intent.is_empty():
+		return
+	if not commit_from_preview_intent(fix, actor_id, pre_intent, "CLEAVE-01/premove_release", failures):
+		return
+	var stand: Vector2i = PlanningChecklistHarness.projected_unit(fix, actor_id).position
+	PlanningChecklistHarness.assert_eq_cell(failures, "CLEAVE-01/stand", stand, PlanningChecklistHarness.BASH_APPROACH)
+	# Step 2: Select Cleave (ARC shaped skill)
+	var cleave_idx: int = PlanningChecklistHarness.select_ability_for_unit(fix, actor_id, &"bruiser_cleave")
+	if cleave_idx < 0:
+		PlanningChecklistHarness.assert_fail(failures, "CLEAVE-02", "bruiser_cleave missing")
+		return
+	var cleave: AbilityData = actor.active_abilities[cleave_idx]
+
+	# Step 3: Verify red action range tiles paint from latest stand (6, 5), not (4, 5)
+	PlanningChecklistHarness.assert_red_contract(
+		failures, "CLEAVE-03/red_range", fix, cleave, true, PlanningChecklistHarness.BASH_APPROACH, actor_id,
+	)
+
+	# Step 4: Arm Cleave on self (stand cell) for awaiting-target aiming
+	var arm_pre: Dictionary = capture_preview_intent(fix, actor_id, PlanningChecklistHarness.BASH_APPROACH, false)
+	if not commit_from_preview_intent(fix, actor_id, arm_pre, "CLEAVE-04/arm", failures):
+		return
+
+	# Step 5: Hover target at (7, 5) -> verify yellow blast footprint (ARC of 3 tiles)
+	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.ENEMY_POS)
+	PlanningChecklistHarness.flush_planning(fix)
+	var aoe_harness_script: GDScript = load("res://tests/harness/aoe_footprint_qa_harness.gd") as GDScript
+	if aoe_harness_script != null:
+		aoe_harness_script.call(
+			"assert_planning_overlay_footprint",
+			failures, "CLEAVE-05/footprint", fix, cleave, PlanningChecklistHarness.BASH_APPROACH, PlanningChecklistHarness.ENEMY_POS,
+		)
+
+	# Step 6: Verify red action range and yellow blast coexist
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay != null:
+		var red_tiles: Array[Vector2i] = overlay.get_hover_action_range_tiles()
+		var yellow_tiles: Array[Vector2i] = overlay.get_hover_blast_tiles()
+		if red_tiles.is_empty():
+			PlanningChecklistHarness.assert_fail(failures, "CLEAVE-06/coexist", "red action range must not be erased by yellow blast")
+		if yellow_tiles.size() != 3:
+			PlanningChecklistHarness.assert_fail(failures, "CLEAVE-06/coexist", "cleave blast must have 3 arc tiles, got %d" % yellow_tiles.size())
+
+	# Step 7: Verify live forecast predicts damage to dummy targets
+	var live_prev: CombatPlanningPreview = overlay.get_live_preview() if overlay != null else null
+	if live_prev != null and live_prev.forecast != null:
+		var dmg: int = live_prev.forecast.damage_hp(fix.e1_id)
+		if dmg <= 0:
+			var any_dmg: bool = false
+			for id_key: Variant in live_prev.forecast._damage_hp:
+				if int(live_prev.forecast._damage_hp[id_key]) > 0:
+					any_dmg = true
+					break
+			if not any_dmg:
+				PlanningChecklistHarness.assert_fail(failures, "CLEAVE-07/forecast", "cleave hover forecast missing damage")
+
+	# Step 8: Commit Cleave from preview
+	var cleave_pre: Dictionary = capture_preview_intent(fix, actor_id, PlanningChecklistHarness.ENEMY_POS, false)
+	if not commit_from_preview_intent(fix, actor_id, cleave_pre, "CLEAVE-08/commit", failures):
+		return
+
+	# Step 9: Execution via simulate_committed -> verify all 3 dummies damaged
+	var sim_result: SimResult = PlanningChecklistHarness.simulate_committed(fix.director)
+	var final_board: BoardState = sim_result.final_state
+	for e_id: int in [fix.e1_id, fix.e2_id, fix.e3_id]:
+		var dummy: UnitState = final_board.get_unit_by_id(e_id)
+		if dummy != null and dummy.health.current_hp >= dummy.health.max_hp:
+			PlanningChecklistHarness.assert_fail(failures, "CLEAVE-09/sim", "dummy %d took no sim damage from cleave" % e_id)
+
+	undo_until_unit_clear(fix, failures, actor_id, PlanningChecklistHarness.KNIGHT_START, "CLEAVE-10/undo")
