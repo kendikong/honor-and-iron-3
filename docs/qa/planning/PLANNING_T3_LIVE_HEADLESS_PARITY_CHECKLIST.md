@@ -65,8 +65,16 @@ These IDs watch the rest of the owner spec. They are **not** live-scene twins. F
 |----|------|----------------|
 | K1-03/off_blue + display_empty | Invalid movement-step hover: no walk path | `probe_k1_hover_edges` |
 | K1-03/outline | Faint outline only inside a painted field | `assert_hover_field_outline` |
-| K1-04/outline | Outline on a legal walk hover | `assert_hover_field_outline` |
+| K1-04/outline | Outline uses overlay `hover_field_outline_would_draw` | `assert_hover_field_outline` |
+| K1-04/next_phase | Next-phase red from hover stand, not turn-start | `assert_next_phase_red_from_hover_stand` |
 | K1-04/illegal_restore | Illegal tile must not restore a live/sealed walk | `assert_illegal_hover_has_no_walk` |
+| K1-05/facing | Click freezes approach/facing | `assert_preview_approach_tile` |
+| K1-05/route_facing | Walk path facing is the last step | `assert_walk_facing` |
+| K1-05/push_not_walk | Push dest is not the walk path | `assert_forced_displace_not_walk_path` |
+| K1-05/arrow_not_walk | Strike arrow is not the walk path | `assert_targeting_arrow_not_walk` |
+| SWAP-01/not_walk | Adjacent swap is not a stepped walk corridor | `assert_not_stepped_walk_corridor` |
+| CLEAVE-04/aim + frozen | After arm, target pick: no blue; mouse must not draw a new walk | ungated Cleave aim |
+| CLEAVE-04/outline | Outline on aim hover | `assert_hover_field_outline` |
 | K1-04/walk red_stand | Next-phase red from hover stand | existing `red_stand` on K1-04 |
 | K1-05/facing | Click freezes approach/facing | `assert_preview_approach_tile` |
 | K1-05/push_not_walk | Push dest is not the walk path | `assert_forced_displace_not_walk_path` |
@@ -81,7 +89,7 @@ These IDs watch the rest of the owner spec. They are **not** live-scene twins. F
 | BA-07 | Off-red hover: **no** walk path (not a restored dash) | `_probe_off_red_tiles` |
 | BA-09/frozen + blue_off | Frozen dash; mouse must not draw a new walk | `_assert_bowling_dash_committed` |
 | BA-10/cleared + live | Undo dash: path gone, then live walk works | bowling session |
-| WAIT-01 | Wait = all tiles off (stand + hover a walk cell) | `run_wait_all_tiles_off` |
+| WAIT-01 | Wait = all tiles off + outline off (stand and walk cell) | `run_wait_all_tiles_off` |
 | CS-04 | Charge Strike strike uses charge landing stand; frozen charge path on strike | `run_charge_strike_stand_handoff` |
 | MP-COOP | Everyone sees all units' paths | **out of scope** — printed `[SKIP]`, never a dummy PASS |
 

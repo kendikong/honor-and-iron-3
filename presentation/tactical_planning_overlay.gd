@@ -578,6 +578,36 @@ func is_hover_blast_tile(cell: Vector2i) -> bool:
 	return _hover_blast_tiles.has(cell)
 
 
+func get_hover_coord() -> Vector2i:
+	return _hover_coord
+
+
+func _hover_coord_in_painted_field() -> bool:
+	return (
+		_hover_move_tiles.has(_hover_coord)
+		or _hover_action_range_tiles.has(_hover_coord)
+		or _hover_blast_tiles.has(_hover_coord)
+	)
+
+
+## Same gate `_draw_hover_tile_on` uses for the faint hover-tile outline.
+func hover_field_outline_would_draw() -> bool:
+	if _board == null:
+		return false
+	if not _should_draw_player_move_preview():
+		return false
+	if not _preview_routes_enabled():
+		return false
+	if not _board.is_in_bounds(_hover_coord):
+		return false
+	if _planning_input != null and _director != null and _director.selected_unit_id >= 0:
+		if _planning_input.selected_phase_action_exhausted(_director.selected_unit_id):
+			return false
+		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+			return false
+	return _hover_coord_in_painted_field()
+
+
 func is_hover_threat_tile(cell: Vector2i) -> bool:
 	return is_hover_action_range_tile(cell)
 
@@ -1293,12 +1323,7 @@ func _draw_hover_tile_on(canvas: CanvasItem) -> void:
 			return
 		if CombatDirector.is_wait_ability_index(_director.selected_ability_index):
 			return
-	var in_field: bool = (
-		_hover_move_tiles.has(_hover_coord)
-		or _hover_action_range_tiles.has(_hover_coord)
-		or _hover_blast_tiles.has(_hover_coord)
-	)
-	if not in_field:
+	if not hover_field_outline_would_draw():
 		_draw_hover_follow_route_on(canvas)
 		return
 	var tile_px: float = float(TacticalConstants.TILE_PX)

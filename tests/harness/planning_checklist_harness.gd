@@ -548,12 +548,100 @@ static func assert_hover_field_outline(
 	expect_on: bool,
 	label: String,
 ) -> void:
+	hover(fix, cell)
+	flush_planning(fix)
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	if overlay == null:
+		assert_fail(failures, label, "overlay missing")
+		return
+	if overlay.get_hover_coord() != cell and expect_on:
+		assert_fail(
+			failures, label, "overlay hover coord %s must be %s for outline" % [overlay.get_hover_coord(), cell],
+		)
 	assert_true(
 		failures,
 		label,
-		hover_in_painted_field(fix, cell) == expect_on,
-		"hover field outline expected %s at %s" % [expect_on, cell],
+		overlay.hover_field_outline_would_draw() == expect_on,
+		"hover field outline would_draw expected %s at %s" % [expect_on, cell],
 	)
+
+
+static func assert_next_phase_red_from_hover_stand(
+	failures: Array[String],
+	fix: Dictionary,
+	ability: AbilityData,
+	hover_stand: Vector2i,
+	turn_start: Vector2i,
+	label: String,
+) -> void:
+	var overlay: TacticalPlanningOverlay = fix.overlay as TacticalPlanningOverlay
+	var unit: UnitState = projected_unit(fix)
+	if overlay == null or unit == null or ability == null:
+		assert_fail(failures, label, "next-phase red requires overlay, unit, ability")
+		return
+	var from_hover: Array[Vector2i] = expected_red_tiles(fix.board, unit, ability, hover_stand)
+	var from_start: Array[Vector2i] = expected_red_tiles(fix.board, unit, ability, turn_start)
+	var hover_only: Vector2i = Vector2i(-999999, -999999)
+	for cell: Vector2i in from_hover:
+		if cell != hover_stand and not from_start.has(cell):
+			hover_only = cell
+			break
+	if hover_only.x > -900000:
+		assert_true(
+			failures,
+			"%s/from_hover" % label,
+			overlay.is_hover_action_range_tile(hover_only),
+			"next-phase red must include %s from hover stand %s" % [hover_only, hover_stand],
+		)
+	var start_only: Vector2i = Vector2i(-999999, -999999)
+	for cell: Vector2i in from_start:
+		if cell != turn_start and not from_hover.has(cell):
+			start_only = cell
+			break
+	if start_only.x > -900000:
+		assert_true(
+			failures,
+			"%s/not_turn_start" % label,
+			not overlay.is_hover_action_range_tile(start_only),
+			"next-phase red must not include turn-start-only cell %s" % start_only,
+		)
+
+
+static func assert_walk_facing(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	expected_facing: int,
+	label: String,
+) -> void:
+	var route: Array[Vector2i] = display_move_route(fix, unit_id)
+	if route.size() < 2:
+		assert_fail(failures, label, "walk path too short for facing: %s" % str(route))
+		return
+	var got: int = CombatPlanningPreview.facing_from_route_leg(route)
+	assert_eq_int(failures, label, got, expected_facing)
+
+
+static func assert_not_stepped_walk_corridor(
+	failures: Array[String],
+	fix: Dictionary,
+	unit_id: int,
+	label: String,
+) -> void:
+	var display: Array[Vector2i] = display_move_route(fix, unit_id)
+	if display.size() < 3:
+		return
+	var stepped: bool = true
+	for i: int in range(1, display.size()):
+		if GridSystem.manhattan(display[i - 1], display[i]) != 1:
+			stepped = false
+			break
+	if stepped:
+		assert_fail(
+			failures,
+			label,
+			"teleport/swap must not paint a stepped walk corridor %s" % str(display),
+		)
 
 
 ## On a non-move step: no blue walk field, and the mouse must not draw a new walk.

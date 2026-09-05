@@ -772,6 +772,9 @@ static func run_swap_adjacent_premove_mirror(failures: Array[String]) -> void:
 			"ability": swap,
 		}, "SWAP-01/hover",
 	)
+	PlanningChecklistHarness.assert_not_stepped_walk_corridor(
+		failures, fix, k1_id, "SWAP-01/not_walk",
+	)
 	PlanningChecklistHarness.select_unit(fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL)
 	var swap_pre: Dictionary = capture_preview_intent(
 		fix, k1_id, PlanningChecklistHarness.SWAP_ALLY_CELL, false,
@@ -1060,6 +1063,15 @@ static func run_k1_journey_mirror(
 	PlanningChecklistHarness.assert_hover_field_outline(
 		failures, fix, PlanningChecklistHarness.BASH_HOVER_WALK, true, "K1-04/outline",
 	)
+	if bash != null:
+		PlanningChecklistHarness.assert_next_phase_red_from_hover_stand(
+			failures,
+			fix,
+			bash,
+			PlanningChecklistHarness.BASH_HOVER_WALK,
+			PlanningChecklistHarness.KNIGHT_START,
+			"K1-04/next_phase",
+		)
 	PlanningChecklistHarness.assert_illegal_hover_has_no_walk(
 		failures,
 		fix,
@@ -1103,6 +1115,9 @@ static func run_k1_journey_mirror(
 	)
 	PlanningChecklistHarness.assert_targeting_arrow_not_walk(
 		failures, fix, k1_id, "K1-05/arrow_not_walk",
+	)
+	PlanningChecklistHarness.assert_walk_facing(
+		failures, fix, k1_id, GameEnums.Facing.EAST, "K1-05/route_facing",
 	)
 	run_k1_bash_live_parity(fix, failures, k1_id, e_bash_id, bash, "K1")
 	var bashed: UnitState = PlanningChecklistHarness.projected_unit(fix, e_bash_id)
@@ -1859,14 +1874,23 @@ static func run_aoe_cleave_session_mirror(failures: Array[String]) -> void:
 	if not commit_from_preview_intent(fix, actor_id, arm_pre, "CLEAVE-04/arm", failures):
 		return
 	var frozen_premove: Array[Vector2i] = pre_intent.get("preview_path", []) as Array
-	PlanningChecklistHarness.assert_non_move_step_move_preview(
-		failures,
-		fix,
-		actor_id,
-		frozen_premove,
-		PlanningChecklistHarness.ENEMY_POS,
-		"CLEAVE-04",
-	)
+	if not fix.input.awaiting_targeting_active():
+		PlanningChecklistHarness.assert_fail(
+			failures, "CLEAVE-04/aim", "cleave arm must open target pick (non-move step)",
+		)
+	else:
+		PlanningChecklistHarness.assert_blue_walk_tiles_off(failures, "CLEAVE-04/blue_off", fix)
+		PlanningChecklistHarness.assert_frozen_walk_not_redrawn_by_mouse(
+			failures,
+			fix,
+			actor_id,
+			frozen_premove,
+			PlanningChecklistHarness.KNIGHT_START,
+			"CLEAVE-04/frozen",
+		)
+		PlanningChecklistHarness.assert_hover_field_outline(
+			failures, fix, PlanningChecklistHarness.ENEMY_POS, true, "CLEAVE-04/outline",
+		)
 
 	# Step 5: Hover target at (7, 5) -> verify yellow blast footprint (ARC of 3 tiles)
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.ENEMY_POS)
@@ -1932,9 +1956,15 @@ static func run_wait_all_tiles_off(failures: Array[String]) -> void:
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.KNIGHT_START)
 	PlanningChecklistHarness.flush_planning(fix)
 	PlanningChecklistHarness.assert_wait_all_tiles_off(failures, fix, k1_id, "WAIT-01/stand")
+	PlanningChecklistHarness.assert_hover_field_outline(
+		failures, fix, PlanningChecklistHarness.KNIGHT_START, false, "WAIT-01/outline_stand",
+	)
 	PlanningChecklistHarness.hover(fix, PlanningChecklistHarness.BASH_HOVER_WALK)
 	PlanningChecklistHarness.flush_planning(fix)
 	PlanningChecklistHarness.assert_wait_all_tiles_off(failures, fix, k1_id, "WAIT-01/walk_cell")
+	PlanningChecklistHarness.assert_hover_field_outline(
+		failures, fix, PlanningChecklistHarness.BASH_HOVER_WALK, false, "WAIT-01/outline_walk",
+	)
 
 
 static func run_charge_strike_stand_handoff(failures: Array[String]) -> void:
