@@ -3244,6 +3244,10 @@ func clear_commit_intent_preview_paths() -> void:
 	_commit_intent_preview_paths.clear()
 
 
+func get_commit_intent_preview_paths() -> Dictionary:
+	return _commit_intent_preview_paths
+
+
 func _finalize_planning_commit_move_event(
 	move_event: SimEvent,
 	action: TimelineAction,

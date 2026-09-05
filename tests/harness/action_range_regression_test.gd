@@ -1537,6 +1537,10 @@ static func _test_bowling_dash_one_click_empty_tile_no_premove(failures: Array[S
 		failures.append("ActionRangeRegression empty_tile_dash_no_premove: Bowling Charge missing")
 		return
 	director.selected_ability_index = bowling_idx
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT_START, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression empty_tile_dash_no_premove: self-arm commit failed")
+		return
 
 	const EMPTY_DASH_TILE := Vector2i(6, 5)
 	_attack_hover_sync(input, overlay, EMPTY_DASH_TILE)

@@ -3695,6 +3695,8 @@ func _promote_intent_preview_after_commit() -> void:
 	var unit_id: int = _director.selected_unit_id if _director != null else -1
 	var fallback_board: BoardState = _proj() if _director != null else null
 	var intent_paths: Dictionary = _authoritative_preview_paths()
+	if intent_paths.is_empty() and _director != null:
+		intent_paths = _director.get_commit_intent_preview_paths()
 	if preview_state.preview_board != null:
 		_planning.apply_preview_state(
 			preview_state,
@@ -3712,12 +3714,23 @@ func _promote_intent_preview_after_commit() -> void:
 					had_pre_move = true
 				if not action.waypoints.is_empty() and action.move_timing != GameEnums.MoveTiming.PRE_ACTION:
 					preserve_full_route = true
-		if preserve_full_route and intent_paths.has(unit_id):
-			var route: Variant = intent_paths[unit_id]
-			if route is Array and (route as Array).size() > 1:
-				CombatPlanningPreview.set_unit_preview_path(
-					committed, unit_id, route as Array,
-				)
+				if action.ability != null and AbilitySystem.ability_has_movement_effect(action.ability):
+					preserve_full_route = true
+		if preserve_full_route:
+			if intent_paths.has(unit_id):
+				var route: Variant = intent_paths[unit_id]
+				if route is Array and (route as Array).size() > 1:
+					CombatPlanningPreview.set_unit_preview_path(
+						committed, unit_id, route as Array,
+					)
+			elif not committed.preview_paths.has(unit_id) and _director != null:
+				var stashed: Dictionary = _director.get_commit_intent_preview_paths()
+				if stashed.has(unit_id):
+					var route2: Variant = stashed[unit_id]
+					if route2 is Array and (route2 as Array).size() > 1:
+						CombatPlanningPreview.set_unit_preview_path(
+							committed, unit_id, route2 as Array,
+						)
 	if unit_id >= 0 and _director != null:
 		CombatPlanningPreview.trim_committed_paths_after_slot_promote(
 			_director, committed, unit_id, fallback_board, preserve_full_route,
@@ -5146,11 +5159,6 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 		var sealed_route: Array = _authoritative_route_for_unit(unit_id)
 		if sealed_route.size() >= 2:
 			return CombatPlanningPreview.frozen_move_route_cells_from_array(sealed_route)
-		var committed_route: Array[Vector2i] = CombatPlanningPreview.frozen_move_route_cells(
-			unit_id, committed_route_preview()
-		)
-		if committed_route.size() >= 2:
-			return committed_route
 	var movement_step: bool = active_movement_planning_step(actor)
 	if movement_step:
 		var route_ability: AbilityData = _selected_ability_data(actor)
@@ -6996,6 +7004,9 @@ func _dash_tile_endpoint_one_click_commit(
 	) == 0:
 		return false
 	if _proj() == null:
+		return false
+	var hover_unit: UnitState = _resolve_hover_unit_at(cell)
+	if hover_unit == null or not hover_unit.is_alive() or not hover_unit.is_enemy():
 		return false
 	if not _cell_on_dash_line_from_stand(actor, ability, cell):
 		return false
