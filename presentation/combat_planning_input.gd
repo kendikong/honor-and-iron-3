@@ -2613,6 +2613,10 @@ func _is_hover_move_cell(p_unit: UnitState, cell: Vector2i) -> bool:
 	if _skill_interaction_active():
 		var selected_ability := _selected_ability_data(p_unit)
 		if selected_ability != null and _is_awaiting_movement_endpoint(p_unit, selected_ability):
+			if awaiting_targeting_active() or (
+				_director != null and _director.find_awaiting_action(p_unit.id) != null
+			):
+				return false
 			if not _armed_painted_orbit_hover_parity_active(p_unit, cell):
 				return _can_move_to(p_unit, cell)
 		## Armed TARGET_PICK (Volley, traps): in-range hover is the blast cell, not a walk.

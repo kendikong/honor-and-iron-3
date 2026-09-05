@@ -416,28 +416,28 @@ static func _action_range_paint_stand(
 		phase_entry = _locked_current_phase_stand(
 			unit, none, director, board, planning_input,
 		)
-	if settled_board != null and board.is_in_bounds(hover_coord):
+	if (
+		planning_input != null
+		and director != null
+		and unit != null
+	):
+		var awaiting_action: TimelineAction = director.find_awaiting_action(unit.id)
 		if (
-			planning_input != null
-			and director != null
-			and unit != null
+			awaiting_action != null
+			and awaiting_action.ability != null
+			and planning_input._is_awaiting_movement_endpoint(
+				unit, awaiting_action.ability,
+			)
+			and phase_entry.x > -900000
 		):
-			var awaiting_action: TimelineAction = director.find_awaiting_action(unit.id)
-			if (
-				awaiting_action != null
-				and awaiting_action.ability != null
-				and planning_input._is_awaiting_movement_endpoint(
-					unit, awaiting_action.ability,
-				)
-				and phase_entry.x > -900000
-			):
-				return phase_entry
-			if (
-				planning_input._voluntary_walk_orbit_phase_open(unit)
-				and phase_entry.x > -900000
-				and _unit_has_committed_ability(director, unit.id)
-			):
-				return phase_entry
+			return phase_entry
+		if (
+			planning_input._voluntary_walk_orbit_phase_open(unit)
+			and phase_entry.x > -900000
+			and _unit_has_committed_ability(director, unit.id)
+		):
+			return phase_entry
+	if settled_board != null and board.is_in_bounds(hover_coord):
 		var landed_unit: UnitState = settled_board.get_unit_by_id(unit.id)
 		if (
 			landed_unit != null

@@ -1716,14 +1716,27 @@ static func display_committed_action_route_cells(
 ) -> Array:
 	if action == null:
 		return []
+	var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
+	if path_leg.size() >= 2:
+		return path_leg
 	var draw_route: Array = display_route_cells_from_preview(
 		unit_id, preview, director, board, false,
 	)
 	if draw_route.size() >= 2:
-		return draw_route
-	var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
-	if path_leg.size() >= 2:
-		return path_leg
+		var start_idx: int = draw_route.find(start_pos)
+		var end_idx: int = draw_route.find(action.target_coord)
+		if start_idx >= 0 and end_idx > start_idx:
+			return draw_route.slice(start_idx, end_idx + 1)
+		if action.type == GameEnums.ActionType.MOVE:
+			return draw_route
+	if (
+		action.ability != null
+		and AbilitySystem.ability_has_movement_effect(action.ability)
+		and start_pos.x > -900000
+		and action.target_coord.x > -900000
+		and start_pos != action.target_coord
+	):
+		return movement_intent_cells(start_pos, action)
 	return []
 
 

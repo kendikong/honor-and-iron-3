@@ -1873,6 +1873,45 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 ### Verify
 - **Action Range Regression Suite:** `tests/runners/run_action_range_regression_only.gd` -> **PASS** (20/20 PASS).
 
+---
+
+## 2026-09-04 — Council Round R140: Armed Dash Red Range Anchor Freeze & Committed Dash Move Preview Route (BUG-20260904T210528-218 & BUG-20260904T210641-841)
+
+### Scope
+1. Fix red action range tiles flickering and tracking the mouse cursor when Bowling Charge dash is armed and awaiting target pick (`BUG-20260904T210528-218`).
+2. Fix missing move preview route/chevrons when an armed dash like Bowling Charge is committed (`BUG-20260904T210641-841`).
+3. Add automated regression tests in `tests/harness/action_range_regression_test.gd`: `_test_armed_dash_red_tiles_frozen_at_phase_entry` and `_test_committed_dash_move_preview_present`.
+
+### Root cause
+1. In `presentation/planning_preview_tiles.gd` (`_action_range_paint_stand`), the check for `find_awaiting_action(unit.id) != null` and `_is_awaiting_movement_endpoint` was nested inside `if settled_board != null and board.is_in_bounds(hover_coord):`. Before the async/throttled hover settle completed (`settled_board == null`), it fell through to `move_intent_destination()`.
+2. In `presentation/combat_planning_input.gd` (`_is_hover_move_cell`), armed dash destination hovers were treated as voluntary walk cells (`_can_move_to`), causing `move_intent_destination` to return the hovered mouse coordinate. Thus, red tiles jumped to the mouse cursor on live hover, then snapped back to `phase_entry` once `settled_board` became available.
+3. In `presentation/combat_planning_input.gd` (`_preview_paths_snapshot_for_settle`), `_HoverPreviewBundle.move_waypoints_from_slots(slots)` only extracted waypoints from `MOVE` actions. For abilities with movement effects (e.g. Bowling Charge in `slots["action"]`), `slot_wps` was empty, leading to an early exit at `if slot_wps.is_empty() and waypoints.is_empty():`, wiping out `preview_paths` on settle.
+4. In `presentation/combat_planning_preview.gd` (`ensure_movement_intent_from_actions`), ability movement paths were discarded if `actors_with_committed_move` was true instead of merging with the existing route.
+5. In `presentation/combat_planning_preview.gd` (`display_committed_action_route_cells`), `display_route_cells_from_preview` was returned before `committed_action_route_leg`, returning the full route or empty array without a fallback to `movement_intent_cells(start_pos, action)`.
+
+### Council proof (pre-apply — BEFORE first production edit)
+| Critic | Charter | Verdict | Rule / Exception IDs Cited | Focus & Proof |
+|:---|:---|:---:|:---|:---|
+| **1** | Bible paint & tiles | **PASS** | `EX-LOCKED-FIELD`, `MOVE_PREVIEW` | Completely eliminates cursor tracking and flickering of red action range tiles during armed dash. Range origin stays planted at `phase_entry`. Move preview chevrons/arrows draw continuously and accurately for committed dashes. |
+| **2** | Settle / bundle / commit | **PASS** | `COMMIT_TRUTH`, `INTENT_SSOT` | `_preview_paths_snapshot_for_settle` preserves ability movement waypoints in `slot_wps` and `snapshot`, ensuring settle preview state carries canonical dash paths. |
+| **3** | Stand & range origins | **PASS** | `ACTION_RANGE_LATEST_STAND` | Evaluates stand origin directly at `phase_entry` when an action is awaiting resolution, independent of unsettled live hovers. |
+| **4** | Global systems / anti-heuristic | **PASS** | `GLOBAL_SYSTEMS_FIRST`, `NO_BANDAID_FIXES` | Heuristics added: `none`. Fixes the canonical pipeline: awaiting state check in `PlanningPreviewTiles`, voluntary walk guard in `CombatPlanningInput`, and unified route resolution in `CombatPlanningPreview`. |
+| **5** | Perf & scheduling | **PASS** | `PERF_SCHEDULING` | Eliminates tile jitter and unnecessary redraw thrashing during mouse movements while targeting abilities. |
+| **6** | QA-fix discipline | **PASS** | `QA_FIX_DISCIPLINE` | 2 new dedicated regression tests added in `action_range_regression_test.gd` (`armed_dash_frozen_origin` and `committed_dash_preview`). |
+| **7** | Class / skill | **PASS** | `CLASS_KIT_PARITY` | Uses generic `AbilitySystem.ability_has_movement_effect(action.ability)` and `_is_awaiting_movement_endpoint`, benefiting all dash/charge/movement skills across all classes. |
+
+**Verdict:** 7/7 PASS
+
+### Changes applied
+- `presentation/planning_preview_tiles.gd`: Elevate awaiting movement endpoint check above `settled_board != null` in `_action_range_paint_stand()`.
+- `presentation/combat_planning_input.gd`: Guard `_is_hover_move_cell` when an action is awaiting endpoint; populate `slot_wps` from ability movement actions in `_preview_paths_snapshot_for_settle`.
+- `presentation/combat_planning_preview.gd`: Merge ability movement intent when existing path ends at origin in `ensure_movement_intent_from_actions`; prioritize `committed_action_route_leg` and add `movement_intent_cells` fallback in `display_committed_action_route_cells`.
+- `tests/harness/action_range_regression_test.gd`: Added `_test_armed_dash_red_tiles_frozen_at_phase_entry` and `_test_committed_dash_move_preview_present`.
+
+### Verify
+- **Action Range Regression Suite:** `tests/runners/run_action_range_regression_only.gd` -> **PASS** (22/22 PASS).
+
+
 
 
 

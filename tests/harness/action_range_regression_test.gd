@@ -51,6 +51,8 @@ static func run_all(failures: Array[String], include_swap: bool = false) -> void
 		_test_visibility_gate_parity_hide,
 		_test_shield_bash_off_map_hover,
 		_test_premove_intent_legs_no_boomerang,
+		_test_armed_dash_red_tiles_frozen_at_phase_entry,
+		_test_committed_dash_move_preview_present,
 	]
 	var names: PackedStringArray = [
 		"show_move_hover_no_action_slot",
@@ -73,6 +75,8 @@ static func run_all(failures: Array[String], include_swap: bool = false) -> void
 		"parity_gate_hide",
 		"shield_bash_off_map_hover",
 		"premove_no_boomerang",
+		"armed_dash_frozen_origin",
+		"committed_dash_preview",
 	]
 	if include_swap:
 		tests.append(_test_post_swap_post_move_stand_locked_on_orbit)
@@ -1350,4 +1354,105 @@ static func _test_premove_intent_legs_no_boomerang(failures: Array[String]) -> v
 			"ActionRangeRegression premove_no_boomerang: auto run pre-move must NOT animate during execution phase (plays twice)",
 		)
 	unit_layer.free()
+
+
+## Regression test for BUG-20260904T210528-218 (armed dash red tiles frozen at phase entry).
+static func _test_armed_dash_red_tiles_frozen_at_phase_entry(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	_sync_knight_ap(fix, 1, 1)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression armed_dash_frozen_origin: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT_START, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression armed_dash_frozen_origin: self-arm commit failed")
+		return
+	if director.find_awaiting_action(1) == null:
+		failures.append("ActionRangeRegression armed_dash_frozen_origin: self click must arm awaiting dash")
+		return
+
+	# Assert that for various hovers, before and after settle, stand remains firmly at KNIGHT_START
+	var test_hovers: Array[Vector2i] = [
+		Vector2i(5, 5), Vector2i(6, 5), Vector2i(7, 5), Vector2i(4, 4), Vector2i(3, 5), Vector2i(8, 5)
+	]
+	for hover: Vector2i in test_hovers:
+		_attack_hover_sync(input, overlay, hover)
+		# 1. input._is_hover_move_cell must be false while awaiting dash endpoint
+		if input._is_hover_move_cell(fix.knight, hover):
+			failures.append(
+				"ActionRangeRegression armed_dash_frozen_origin: hover %s must not be reported as move cell while dash is armed"
+				% str(hover)
+			)
+		# 2. Before settle (settled_board == null), resolve_layer_origins next_aim_origin must equal KNIGHT_START
+		var pre_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+			director, director.board, fix.knight, bowling_idx, input, hover, null
+		)
+		var stand_pre_settle: Vector2i = pre_settle_plan.get("next_aim_origin", pre_settle_plan.get("locked_aim_origin", Vector2i(-1, -1)))
+		if stand_pre_settle != KNIGHT_START:
+			failures.append(
+				"ActionRangeRegression armed_dash_frozen_origin: pre-settle stand at hover %s was %s (expected %s)"
+				% [str(hover), str(stand_pre_settle), str(KNIGHT_START)]
+			)
+		# 3. After settle, stand must still equal KNIGHT_START
+		var post_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
+			director, director.board, fix.knight, bowling_idx, input, hover, director.board
+		)
+		var stand_post_settle: Vector2i = post_settle_plan.get("next_aim_origin", post_settle_plan.get("locked_aim_origin", Vector2i(-1, -1)))
+		if stand_post_settle != KNIGHT_START:
+			failures.append(
+				"ActionRangeRegression armed_dash_frozen_origin: post-settle stand at hover %s was %s (expected %s)"
+				% [str(hover), str(stand_post_settle), str(KNIGHT_START)]
+			)
+
+
+## Regression test for BUG-20260904T210641-841 (committed dash move preview present).
+static func _test_committed_dash_move_preview_present(failures: Array[String]) -> void:
+	var fix: Dictionary = PlanningQAGateTest._planning_fixture(KNIGHT_START, ENEMY_POS)
+	var director: CombatDirector = fix.director
+	var input: CombatPlanningInput = fix.input
+	var overlay: TacticalPlanningOverlay = PlanningQAGateTest._wire_overlay(fix)
+	_sync_knight_ap(fix, 1, 1)
+	var bowling_idx: int = PlanningQAGateTest._ability_index(fix.knight, BOWLING_CHARGE_ID)
+	if bowling_idx < 0:
+		failures.append("ActionRangeRegression committed_dash_preview: Bowling Charge missing")
+		return
+	director.selected_ability_index = bowling_idx
+	var arm_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, KNIGHT_START, Vector2.ZERO)
+	if not director.commit_from_slots(1, arm_slots):
+		failures.append("ActionRangeRegression committed_dash_preview: self-arm commit failed")
+		return
+
+	const DASH_DEST := Vector2i(6, 5)
+	_attack_hover_sync(input, overlay, DASH_DEST)
+	var dest_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_DEST, Vector2.ZERO)
+	if not director.commit_from_slots(1, dest_slots):
+		failures.append("ActionRangeRegression committed_dash_preview: dest commit failed")
+		return
+
+	var committed_action: TimelineAction = null
+	for act: TimelineAction in director.get_player_plan().entries:
+		if act.actor_id == 1 and act.type == GameEnums.ActionType.ABILITY:
+			committed_action = act
+			break
+	if committed_action == null:
+		failures.append("ActionRangeRegression committed_dash_preview: committed ability action missing on plan")
+		return
+
+	# Check display_committed_action_route_cells
+	var route: Array = input.display_committed_action_route_cells(1, committed_action, KNIGHT_START)
+	if route.size() < 2:
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: committed action route cells empty or < 2: %s"
+			% str(route)
+		)
+	elif (route[0] as Vector2i) != KNIGHT_START or (route[route.size() - 1] as Vector2i) != DASH_DEST:
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: committed action route cells %s must start at %s and end at %s"
+			% [str(route), str(KNIGHT_START), str(DASH_DEST)]
+		)
 
