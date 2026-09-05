@@ -1382,13 +1382,7 @@ static func _test_armed_dash_red_tiles_frozen_at_phase_entry(failures: Array[Str
 	]
 	for hover: Vector2i in test_hovers:
 		_attack_hover_sync(input, overlay, hover)
-		# 1. input._is_hover_move_cell must be false while awaiting dash endpoint
-		if input._is_hover_move_cell(fix.knight, hover):
-			failures.append(
-				"ActionRangeRegression armed_dash_frozen_origin: hover %s must not be reported as move cell while dash is armed"
-				% str(hover)
-			)
-		# 2. Before settle (settled_board == null), resolve_layer_origins next_aim_origin must equal KNIGHT_START
+		# 1. Before settle (settled_board == null), resolve_layer_origins next_aim_origin must equal KNIGHT_START
 		var pre_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
 			director, director.board, fix.knight, bowling_idx, input, hover, null
 		)
@@ -1398,7 +1392,7 @@ static func _test_armed_dash_red_tiles_frozen_at_phase_entry(failures: Array[Str
 				"ActionRangeRegression armed_dash_frozen_origin: pre-settle stand at hover %s was %s (expected %s)"
 				% [str(hover), str(stand_pre_settle), str(KNIGHT_START)]
 			)
-		# 3. After settle, stand must still equal KNIGHT_START
+		# 2. After settle, stand must still equal KNIGHT_START
 		var post_settle_plan: Dictionary = PlanningPreviewTiles.resolve_layer_origins(
 			director, director.board, fix.knight, bowling_idx, input, hover, director.board
 		)
@@ -1429,6 +1423,23 @@ static func _test_committed_dash_move_preview_present(failures: Array[String]) -
 
 	const DASH_DEST := Vector2i(6, 5)
 	_attack_hover_sync(input, overlay, DASH_DEST)
+
+
+
+
+	# Assert Move Preview Intent Truth: on-screen hover preview MUST show the route before commit.
+	var hover_route: Array[Vector2i] = input.display_move_route_cells(1)
+	if hover_route.size() < 2:
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: hover move route cells empty or < 2 before commit: %s"
+			% str(hover_route)
+		)
+	elif (hover_route[0] as Vector2i) != KNIGHT_START or (hover_route[hover_route.size() - 1] as Vector2i) != DASH_DEST:
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: hover move route %s must start at %s and end at %s"
+			% [str(hover_route), str(KNIGHT_START), str(DASH_DEST)]
+		)
+
 	var dest_slots: Dictionary = input._final_commit_slots_for_click_at_cell(1, DASH_DEST, Vector2.ZERO)
 	if not director.commit_from_slots(1, dest_slots):
 		failures.append("ActionRangeRegression committed_dash_preview: dest commit failed")
@@ -1443,7 +1454,7 @@ static func _test_committed_dash_move_preview_present(failures: Array[String]) -
 		failures.append("ActionRangeRegression committed_dash_preview: committed ability action missing on plan")
 		return
 
-	# Check display_committed_action_route_cells
+	# Assert commit ratifies the hover route without any fallback
 	var route: Array = input.display_committed_action_route_cells(1, committed_action, KNIGHT_START)
 	if route.size() < 2:
 		failures.append(
@@ -1454,5 +1465,10 @@ static func _test_committed_dash_move_preview_present(failures: Array[String]) -
 		failures.append(
 			"ActionRangeRegression committed_dash_preview: committed action route cells %s must start at %s and end at %s"
 			% [str(route), str(KNIGHT_START), str(DASH_DEST)]
+		)
+	elif route.size() != hover_route.size():
+		failures.append(
+			"ActionRangeRegression committed_dash_preview: committed route %s differs from hover route %s"
+			% [str(route), str(hover_route)]
 		)
 

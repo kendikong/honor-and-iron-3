@@ -2248,9 +2248,15 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 		_clear_hover_drag_route()
 		if p_unit != null:
 			_clear_stale_painted_preview_route(p_unit.id)
+	var step_ability: AbilityData = _selected_ability_data(p_unit) if p_unit != null else null
+	if step_ability == null and p_unit != null:
+		var awaiting_for_refresh: TimelineAction = _awaiting_action_for(p_unit)
+		if awaiting_for_refresh != null:
+			step_ability = awaiting_for_refresh.ability
 	if (
 		p_unit != null
 		and not _awaiting_target_pick_blocks_premove()
+		and not (step_ability != null and _is_awaiting_movement_endpoint(p_unit, step_ability))
 		and _hover_settle_fresh_at(p_unit.id, cell)
 	):
 		if not _armed_painted_orbit_hover_parity_active(p_unit, cell):
@@ -2288,11 +2294,6 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				_apply_settled_preview_result(stand_res)
 			_refresh_click_target_highlight()
 			return
-	var step_ability: AbilityData = _selected_ability_data(p_unit)
-	if step_ability == null:
-		var awaiting_for_refresh: TimelineAction = _awaiting_action_for(p_unit)
-		if awaiting_for_refresh != null:
-			step_ability = awaiting_for_refresh.ability
 	var skip_movement_settle_off_map: bool = (
 		not _director.board.is_in_bounds(cell)
 		and _director.planning_timeline_phase_kind(p_unit.id) == CombatDirector.PlanningTimelinePhaseKind.NON_MOVEMENT
@@ -3973,9 +3974,17 @@ func _preview_paths_snapshot_for_settle(
 		if frozen_route is Array and (frozen_route as Array).size() >= 2:
 			snapshot[unit_id] = (frozen_route as Array).duplicate()
 			return snapshot
+	var awaiting_mov_ability: AbilityData = _awaiting_ability_for(settle_actor)
+	if awaiting_mov_ability == null:
+		awaiting_mov_ability = _selected_ability_data(settle_actor)
+	var is_awaiting_endpoint: bool = (
+		awaiting_mov_ability != null
+		and _is_awaiting_movement_endpoint(settle_actor, awaiting_mov_ability)
+	)
 	if (
 		settle_actor != null
 		and _voluntary_walk_orbit_settle_open(settle_actor)
+		and not is_awaiting_endpoint
 		and not dragging
 		and _hover_cell.x > -900000
 		and _attack_target_id_at_cell(settle_actor, _hover_cell) < 0
@@ -4009,7 +4018,7 @@ func _preview_paths_snapshot_for_settle(
 		var orbit_path: Array[Vector2i] = _assemble_voluntary_walk_preview_path(
 			unit_id, settle_actor, _hover_cell, orbit_waypoints, orbit_parity,
 		)
-		if not orbit_path.is_empty():
+		if orbit_path.size() >= 2:
 			snapshot[unit_id] = orbit_path.duplicate()
 			return snapshot
 	if slot_wps.is_empty() and waypoints.is_empty():
@@ -4034,6 +4043,7 @@ func _preview_paths_snapshot_for_settle(
 	if (
 		settle_actor != null
 		and _voluntary_walk_orbit_settle_open(settle_actor)
+		and not is_awaiting_endpoint
 		and not dragging
 		and _hover_cell.x > -900000
 		and not _can_move_to(settle_actor, _hover_cell)
@@ -4896,8 +4906,8 @@ func active_movement_planning_step(p_unit: UnitState) -> bool:
 			step_ability = awaiting_for_step.ability
 	if step_ability == null:
 		return false
-	if _director.selected_ability_index < 0:
-		return _is_awaiting_movement_endpoint(p_unit, step_ability)
+	if _is_awaiting_movement_endpoint(p_unit, step_ability):
+		return true
 	if auto_run_movement_active(p_unit):
 		return _basic_move_economy_gate(p_unit)
 	return false

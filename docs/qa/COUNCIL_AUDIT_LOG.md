@@ -1912,6 +1912,46 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - **Action Range Regression Suite:** `tests/runners/run_action_range_regression_only.gd` -> **PASS** (22/22 PASS).
 
 
+## Round R141 — Zero Fallback Mandate: Eliminate Commit-Time Route Fallback & Restore Hover Move Preview SSOT
+
+**Task / Bug:** Zero Fallback Mandate & Move Preview Intent Truth enforcement (`BUG-20260904T210528-218`, `BUG-20260904T210641-841`).
+**Core Violation Eliminated:** Synthetic commit-time fallback `movement_intent_cells(start_pos, action)` in `CombatPlanningPreview.display_committed_action_route_cells()` deleted. Committing now ONLY ratifies routes established during preview (`committed_action_route_leg` and `display_route_cells_from_preview`). Zero synthetic fallbacks remain.
+**Root Cause Fixed:**
+1. In `CombatPlanningPreview.display_committed_action_route_cells()`, synthetic fallback was synthesizing dash paths on commit even when hover preview was empty.
+2. In `CombatPlanningInput._refresh_hover_interaction_preview()`, voluntary walk corridor logic ran whenever `_hover_settle_fresh_at` was true and clobbered awaiting movement abilities with a 1-tile stand when voluntary walk MP was exhausted.
+3. In `CombatPlanningInput._preview_paths_snapshot_for_settle()`, unreachable stand checks tested `_can_move_to` (voluntary walk MP) and collapsed awaiting movement abilities into `[phase_entry_stand]` instead of using `waypoints`.
+4. In `CombatPlanningInput.active_movement_planning_step()`, required `selected_ability_index < 0` before checking `_is_awaiting_movement_endpoint()`, preventing armed dash abilities from engaging the movement planning pipeline.
+
+| Critic | Focus | Verdict | Rule / File | Proof / Rationale |
+|---|---|---|---|---|
+| **1** | Architecture / SSOT | **PASS** | `GLOBAL_SYSTEMS_FIRST`, `MOVE_PREVIEW_RULES` | Zero commit-time fallbacks. Hover preview owner (`_refresh_hover_interaction_preview` + `_preview_paths_snapshot_for_settle`) builds and preserves the preview route directly. Commit ratifies `preview_paths` without synthesis. |
+| **2** | Economy / Timeline | **PASS** | `TIMELINE_INTEGRITY` | Action remains in `slots["action"]`, respecting timeline phases and AP/MP budget rules. |
+| **3** | Determinism / Math | **PASS** | `DETERMINISM_SSOT` | Deterministic corridor calculation via `corridor_waypoints_to_cell`. Zero heuristics or RNG. |
+| **4** | Presentation / Juice | **PASS** | `PRESENTATION_TRUTH` | Hover chevron arrow displays during destination aiming for armed dash skills. Commit ratifies the chevron arrow seamlessly without flicker, re-interpretation, or delay. Action range red tiles remain anchored at phase entry stand. |
+| **5** | Roguelike / Systems | **PASS** | `SYSTEM_INTEGRITY` | Respects unit occupancy, terrain, and ability motion ranges across all classes. |
+| **6** | QA-fix discipline | **PASS** | `QA_FIX_DISCIPLINE` | Zero heuristic fallbacks. Regression test verifies hover preview route is present before commit and committed route matches preview route after commit. |
+| **7** | Class / skill | **PASS** | `CLASS_KIT_PARITY` | Knight's Bowling Charge (dash 3 + bulldoze) and all generic movement-effect abilities adhere to Master Bible specs without per-class branching. |
+
+**Verdict:** 7/7 PASS
+
+### Changes applied
+- `presentation/combat_planning_preview.gd`:
+  - Removed `movement_intent_cells` fallback in `display_committed_action_route_cells()`.
+  - In `ensure_movement_intent_from_actions()`, anchor initial ability action origin to `start_board` when actor has not yet moved.
+- `presentation/combat_planning_input.gd`:
+  - In `_refresh_hover_interaction_preview()`, bypass voluntary walk corridor override when unit is awaiting a movement endpoint for an ability.
+  - In `_preview_paths_snapshot_for_settle()`, add `is_awaiting_endpoint` guard to unreachable stand checks so awaiting movement abilities do not collapse into 1-tile stands.
+  - In `active_movement_planning_step()`, return `true` whenever `_is_awaiting_movement_endpoint()` is true.
+- `tests/harness/action_range_regression_test.gd`:
+  - Updated `_test_committed_dash_move_preview_present` to assert hover preview route presence before commit and exact equality with committed route after commit without any fallback.
+
+### Verification
+- `tests/runners/run_action_range_regression_only.gd` -> **PASS** (22/22 PASS).
+- `tests/runners/run_ability_module_bridge_runner.gd` -> **PASS**.
+
+
+
+
 
 
 

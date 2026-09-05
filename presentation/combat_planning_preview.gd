@@ -617,6 +617,10 @@ func ensure_movement_intent_from_actions(
 		if action.ability == null or not AbilitySystem.ability_has_movement_effect(action.ability):
 			continue
 		var origin: Vector2i = origins.get(action.actor_id, action.target_coord) as Vector2i
+		if not move_actors.get(action.actor_id, false) and start_board != null:
+			var start_u: UnitState = start_board.get_unit_by_id(action.actor_id)
+			if start_u != null:
+				origin = start_u.position
 		var relocation_actor: UnitState = start_board.get_unit_by_id(action.actor_id)
 		if AbilitySystem.ability_uses_direct_relocation(action.ability, relocation_actor):
 			var hop: Array = [origin, action.target_coord]
@@ -1729,14 +1733,6 @@ static func display_committed_action_route_cells(
 			return draw_route.slice(start_idx, end_idx + 1)
 		if action.type == GameEnums.ActionType.MOVE:
 			return draw_route
-	if (
-		action.ability != null
-		and AbilitySystem.ability_has_movement_effect(action.ability)
-		and start_pos.x > -900000
-		and action.target_coord.x > -900000
-		and start_pos != action.target_coord
-	):
-		return movement_intent_cells(start_pos, action)
 	return []
 
 
