@@ -34,6 +34,14 @@ const _BASH_APPROACH := Vector2i(6, 5)
 const _HOVER_WALK := Vector2i(5, 5)
 const _OFF_BLUE_CELL := Vector2i(9, 9)
 const _OFF_MAP_HOVER := Vector2i(-999, -999)
+const _BOWL_L_MID := Vector2i(5, 5)
+const _BOWL_STAND := Vector2i(5, 6)
+const _BOWL_ENEMY := Vector2i(5, 8)
+const _BOWL_DEST := Vector2i(5, 9)
+const _BOWL_L_ROUTE: Array[Vector2i] = [_K1_CELL, _BOWL_L_MID, _BOWL_STAND]
+const _BOWL_OFF_RED_A := Vector2i(6, 7)
+const _BOWL_OFF_RED_B := Vector2i(6, 8)
+const _BOWL_POST_DEST := Vector2i(6, 9)
 const _TRAMPLE_ROUTE: Array[Vector2i] = [Vector2i(6, 4), Vector2i(6, 3)]
 const _TRAMPLE_END := Vector2i(6, 3)
 const _TRAMPLE_FULL_PATH: Array[Vector2i] = [_K3_CELL, _TRAMPLE_ROUTE[0], _TRAMPLE_ROUTE[1]]
@@ -170,6 +178,171 @@ func test_live_push_through_premove_session(timeout := 120000) -> void:
 	_assert_actor_on_cell(
 		ctx, ctx.ally_id, Vector2i(3, 6), "push_through/ally",
 	)
+
+
+func test_live_bowling_advance_session(timeout := 120000) -> void:
+	var runner := scene_runner("res://scenes/TestBattle.tscn")
+	_ensure_live_test_window(runner)
+	await runner.simulate_frames(8)
+	var scene: TestBattleMapView = runner.scene() as TestBattleMapView
+	assert_object(scene).is_not_null()
+	var ctx: Dictionary = await _boot_bowling_advance_session(runner, scene)
+	await _journey_bowling_advance(ctx)
+
+
+func _boot_bowling_advance_session(
+	runner: GdUnitSceneRunner,
+	scene: TestBattleMapView,
+) -> Dictionary:
+	var session: TestBattleSession = scene.get_session()
+	session.reset_defaults()
+	session.extra_player_coords = []
+	var dummy_cells: Array[Vector2i] = [_BOWL_ENEMY]
+	session.dummy_coords = dummy_cells
+	scene.apply_training_board()
+	if _qa_fast_enabled():
+		scene._center_map()
+	await runner.simulate_frames(_SETTLE_FRAMES, _settle_delta_ms())
+	var shell: TacticalCombatShell = scene.get_node("CombatShell") as TacticalCombatShell
+	var director: CombatDirector = scene.get_node("CombatDirector") as CombatDirector
+	var overlay: TacticalPlanningOverlay = scene.get_node(
+		"WorldModulate/MapRoot/PlanningOverlay",
+	) as TacticalPlanningOverlay
+	director.auto_run = false
+	if _qa_fast_enabled():
+		scene.apply_qa_performance_mode(overlay)
+	var board: BoardState = director.board
+	assert_object(board).is_not_null()
+	var k1_id: int = _unit_id_at(board, _K1_CELL)
+	var enemy_id: int = _unit_id_at(board, _BOWL_ENEMY)
+	assert_int(k1_id).is_greater(0)
+	assert_int(enemy_id).is_greater(0)
+	ctx_input_auto_walk(shell)
+	return {
+		"runner": runner,
+		"scene": scene,
+		"shell": shell,
+		"director": director,
+		"input": shell.planning_input,
+		"overlay": overlay,
+		"board": board,
+		"k1_id": k1_id,
+		"e_bowl_id": enemy_id,
+		"expect": {},
+		"trace": [],
+		"mode_commits": {},
+	}
+
+
+func ctx_input_auto_walk(shell: TacticalCombatShell) -> void:
+	shell.planning_input.auto_use_skill_after_move = false
+
+
+func _journey_bowling_advance(ctx: Dictionary) -> void:
+	var k1_id: int = ctx.k1_id
+	var enemy_id: int = ctx.e_bowl_id
+	await _select_unit_live(ctx, k1_id, _K1_CELL)
+	var bowling: AbilityData = await _select_ability_for_unit(ctx, k1_id, _BOWLING_CHARGE_ID)
+	assert_object(bowling).is_not_null()
+	await _probe_cell(ctx, k1_id, _K1_CELL, {
+		"blue_any": true,
+		"red_on": true,
+		"red_stand": _K1_CELL,
+		"ability": bowling,
+		"manhattan": true,
+	}, "ba/phase1/stand")
+	await _probe_cell(ctx, k1_id, _BOWL_L_MID, {
+		"path": [_K1_CELL, _BOWL_L_MID],
+		"ghost_pos": _BOWL_L_MID,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"icon_not": [PlanningIcons.GLYPH_NULL],
+		"red_on": true,
+		"red_stand": _BOWL_L_MID,
+		"ability": bowling,
+	}, "ba/unarmed/l_mid")
+	await _probe_cell(ctx, k1_id, _BOWL_STAND, {
+		"path_start": _K1_CELL,
+		"path_end": _BOWL_STAND,
+		"path_min_size": 3,
+		"ghost_pos": _BOWL_STAND,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"icon_not": [PlanningIcons.GLYPH_NULL],
+		"red_on": true,
+		"red_stand": _BOWL_STAND,
+		"ability": bowling,
+	}, "ba/unarmed/l_dest")
+	await _drag_through_cells_with_route_checks(ctx, _BOWL_L_ROUTE, "ba/l_walk", false, &"bowl_l_paint")
+	await _wait_planning_move_tween(ctx, k1_id)
+	_assert_bowling_premove_cleared(ctx, k1_id, "ba/l_walk/cleared")
+	await _arm_bowling_at_stand(ctx, k1_id, bowling)
+	await _probe_all_bowling_red_tiles(ctx, k1_id, bowling, enemy_id, "ba/red")
+	await _probe_bowling_off_red(ctx, k1_id, bowling, "ba/off_red")
+	await _probe_cell(ctx, k1_id, _BOWL_DEST, {
+		"ghost_pos": _BOWL_DEST,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_not": [PlanningIcons.GLYPH_NULL],
+		"red_on": true,
+		"red_stand": _BOWL_STAND,
+		"ability": bowling,
+	}, "ba/dest/pre_tap")
+	_assert_dash_path_not_teleport(ctx, k1_id, _BOWL_DEST, "ba/dest/pre_tap/path")
+	await _tap_cell(ctx, _BOWL_DEST, "ba/dest/commit")
+	await _wait_ability_settle(ctx)
+	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/selection")
+	_remember_mode_commit(ctx, "ba/selection", k1_id)
+	await _undo_until_unit_clear(ctx, k1_id, _K1_CELL)
+	await _select_ability_for_unit(ctx, k1_id, _BOWLING_CHARGE_ID)
+	await _drag_through_cells_with_route_checks(ctx, _BOWL_L_ROUTE, "ba/l_walk2", false, &"bowl_l_paint")
+	await _wait_planning_move_tween(ctx, k1_id)
+	_assert_bowling_premove_cleared(ctx, k1_id, "ba/l_walk2/cleared")
+	await _arm_bowling_at_stand(ctx, k1_id, bowling)
+	await _tap_cell(ctx, _BOWL_DEST, "ba/dest2/commit")
+	await _wait_ability_settle(ctx)
+	_assert_bowling_dash_committed_live(ctx, k1_id, enemy_id, bowling, "ba/second")
+	_remember_mode_commit(ctx, "ba/second", k1_id)
+	_assert_mode_commit_parity(ctx, "ba/selection", "ba/second")
+	await _select_unit_live(ctx, k1_id, _BOWL_DEST)
+	await _enter_basic_movement_mode(ctx, k1_id)
+	await _probe_cell(ctx, k1_id, _BOWL_DEST, {
+		"blue_any": true,
+		"manhattan": true,
+	}, "ba/post/stand")
+	await _probe_cell(ctx, k1_id, _BOWL_POST_DEST, {
+		"path": [_BOWL_DEST, _BOWL_POST_DEST],
+		"ghost_pos": _BOWL_POST_DEST,
+		"manhattan": true,
+		"preview_nonempty": true,
+		"icon_has": [PlanningIcons.GLYPH_WALK],
+		"blue_any": true,
+	}, "ba/post/hover")
+	await _drag_through_cells_with_route_checks(
+		ctx, [_BOWL_DEST, _BOWL_POST_DEST], "ba/post", false, &"post_after_bowl",
+	)
+	var post: TimelineAction = _committed_post_move_for_unit(ctx.director, k1_id)
+	assert_object(post).override_failure_message("ba/post: post-move missing").is_not_null()
+	if post != null:
+		assert_that(post.target_coord).is_equal(_BOWL_POST_DEST)
+	await _probe_cell(ctx, k1_id, _BOWL_POST_DEST, {
+		"red_on": false,
+		"red_stand": _BOWL_POST_DEST,
+		"ability": bowling,
+		"manhattan": true,
+	}, "ba/post/after_commit")
+	ctx.expect["k1_pos"] = _BOWL_POST_DEST
+	var sim: SimResult = Simulator.simulate(ctx.director.base_board.clone(), ctx.director.get_player_plan())
+	var sim_k: UnitState = sim.final_state.get_unit_by_id(k1_id)
+	var sim_e: UnitState = sim.final_state.get_unit_by_id(enemy_id)
+	var proj_k: UnitState = ctx.director.projected_state.get_unit_by_id(k1_id)
+	var proj_e: UnitState = ctx.director.projected_state.get_unit_by_id(enemy_id)
+	assert_that(sim_k.position).is_equal(proj_k.position)
+	assert_that(sim_e.position).is_equal(proj_e.position)
+	assert_that(sim_e.position).is_not_equal(_BOWL_ENEMY)
+	_cancel_active_pointer(ctx)
 
 
 func _boot_swap_session(
@@ -961,6 +1134,178 @@ func _rearm_trample_awaiting(ctx: Dictionary, k3_id: int) -> void:
 	assert_object(director.find_awaiting_action(k3_id)).override_failure_message(
 		"k3: awaiting action missing after re-arm",
 	).is_not_null()
+
+
+func _arm_bowling_at_stand(ctx: Dictionary, k1_id: int, bowling: AbilityData) -> void:
+	var director: CombatDirector = ctx.director
+	var input: CombatPlanningInput = ctx.input
+	await _select_ability_for_unit(ctx, k1_id, _BOWLING_CHARGE_ID)
+	await _select_unit_live(ctx, k1_id, _BOWL_STAND)
+	if not input.awaiting_targeting_active():
+		await _tap_cell(ctx, _BOWL_STAND, "ba/arm", false)
+		await _wait_ability_settle(ctx)
+	assert_bool(input.awaiting_targeting_active()).override_failure_message(
+		"ba: bowling must arm awaiting dash after L-walk",
+	).is_true()
+	assert_object(director.find_awaiting_action(k1_id)).override_failure_message(
+		"ba: awaiting bowling action missing",
+	).is_not_null()
+	await _probe_cell(ctx, k1_id, _BOWL_STAND, {
+		"red_on": true,
+		"red_stand": _BOWL_STAND,
+		"ability": bowling,
+		"manhattan": true,
+	}, "ba/armed_stand")
+
+
+func _assert_bowling_premove_cleared(ctx: Dictionary, k1_id: int, label: String) -> void:
+	var live: UnitState = ctx.director.board.get_unit_by_id(k1_id)
+	assert_object(live).override_failure_message("%s: knight missing" % label).is_not_null()
+	assert_that(live.position).override_failure_message(
+		"%s: premove executes immediately; live stand" % label,
+	).is_equal(_BOWL_STAND)
+	var pre_leg: Array = ctx.input.display_committed_move_route_leg(
+		k1_id, GameEnums.MoveTiming.PRE_ACTION, _BOWL_STAND,
+	)
+	assert_int(pre_leg.size()).override_failure_message(
+		"%s: executed L-walk committed leg must clear, got %s" % [label, pre_leg],
+	).is_equal(0)
+	var display_route: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
+	assert_bool(display_route.size() < 2).override_failure_message(
+		"%s: executed L-walk must not keep a live move preview, got %s" % [label, display_route],
+	).is_true()
+	var pre: TimelineAction = _committed_pre_move_for_unit(ctx.director, k1_id)
+	assert_object(pre).override_failure_message("%s: L-walk pre-move missing" % label).is_not_null()
+	if pre != null:
+		assert_that(pre.target_coord).is_equal(_BOWL_STAND)
+		assert_that(pre.waypoints).is_equal([_BOWL_L_MID, _BOWL_STAND])
+
+
+func _probe_all_bowling_red_tiles(
+	ctx: Dictionary,
+	k1_id: int,
+	bowling: AbilityData,
+	enemy_id: int,
+	label_prefix: String,
+) -> void:
+	await _select_unit_live(ctx, k1_id, _BOWL_STAND)
+	await _wait_ability_settle(ctx)
+	var red_tiles: Array[Vector2i] = _collect_red_tiles(ctx)
+	assert_int(red_tiles.size()).override_failure_message(
+		"%s: armed bowling must paint red dash tiles" % label_prefix,
+	).is_greater(0)
+	var unit: UnitState = ctx.director.projected_state.get_unit_by_id(k1_id)
+	var expected: Array[Vector2i] = AbilitySystem.planning_action_range_tiles(
+		ctx.director.projected_state, unit, bowling, _BOWL_STAND,
+	)
+	assert_int(red_tiles.size()).is_equal(expected.size())
+	for tile: Vector2i in expected:
+		assert_bool(red_tiles.has(tile)).override_failure_message(
+			"%s: missing red tile %s" % [label_prefix, tile],
+		).is_true()
+	for tile: Vector2i in red_tiles:
+		await _probe_cell(ctx, k1_id, tile, {
+			"ghost_pos": tile,
+			"manhattan": true,
+			"preview_nonempty": true,
+			"icon_not": [PlanningIcons.GLYPH_NULL],
+			"red_on": true,
+			"red_stand": _BOWL_STAND,
+			"ability": bowling,
+		}, "%s/%s" % [label_prefix, tile])
+		_assert_live_cursor_matches_slots(ctx, k1_id, tile, "%s/%s/cursor" % [label_prefix, tile])
+		_assert_dash_path_not_teleport(ctx, k1_id, tile, "%s/%s/path" % [label_prefix, tile])
+		var live_e: UnitState = ctx.director.board.get_unit_by_id(enemy_id)
+		assert_that(live_e.position).is_equal(_BOWL_ENEMY)
+
+
+func _probe_bowling_off_red(
+	ctx: Dictionary,
+	k1_id: int,
+	bowling: AbilityData,
+	label_prefix: String,
+) -> void:
+	for cell: Vector2i in [_BOWL_OFF_RED_A, _BOWL_OFF_RED_B]:
+		await _probe_cell(ctx, k1_id, cell, {
+			"red_on": true,
+			"red_stand": _BOWL_STAND,
+			"ability": bowling,
+			"slots_invalid": true,
+			"icon_not": [PlanningIcons.GLYPH_DASH],
+		}, "%s/%s" % [label_prefix, cell])
+		var path: Array[Vector2i] = _preview_path(ctx.input, k1_id)
+		if not path.is_empty() and path[path.size() - 1] == cell:
+			assert_that("off-red must not path to %s" % cell).is_equal("")
+		await _tap_off_blue_must_not_commit(ctx, k1_id, cell, "%s/%s/click" % [label_prefix, cell])
+
+
+func _assert_dash_path_not_teleport(ctx: Dictionary, k1_id: int, dest: Vector2i, label: String) -> void:
+	var path: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
+	if path.size() < 2:
+		path = _preview_path(ctx.input, k1_id)
+	var line: Array[Vector2i] = PhysicsSystem.cardinal_straight_line_path(_BOWL_STAND, dest)
+	assert_bool(not path.is_empty()).override_failure_message(
+		"%s: dash movement module must show a move preview" % label,
+	).is_true()
+	if path.is_empty() or line.is_empty():
+		return
+	assert_that(path[path.size() - 1]).is_equal(dest)
+	for i: int in range(1, path.size()):
+		assert_int(GridSystem.manhattan(path[i - 1], path[i])).override_failure_message(
+			"%s: dash skipped a tile at %s -> %s" % [label, path[i - 1], path[i]],
+		).is_equal(1)
+	for cell: Vector2i in line:
+		assert_bool(path.has(cell)).override_failure_message(
+			"%s: dash path %s skipped %s" % [label, path, cell],
+		).is_true()
+
+
+func _assert_live_cursor_matches_slots(
+	ctx: Dictionary,
+	k1_id: int,
+	cell: Vector2i,
+	label: String,
+) -> void:
+	var unit: UnitState = ctx.board.get_unit_by_id(k1_id)
+	var slots: Dictionary = _commit_slots_for_interaction(ctx, k1_id, cell, false)
+	var hover_icon: String = ctx.input.compute_hover_action_icon(cell)
+	var expected_icon: String = ctx.input._cursor_icon_from_commit_slots(slots, unit)
+	assert_that(hover_icon).override_failure_message(
+		"%s: cursor %s must match slots %s" % [label, hover_icon, expected_icon],
+	).is_equal(expected_icon)
+
+
+func _assert_bowling_dash_committed_live(
+	ctx: Dictionary,
+	k1_id: int,
+	enemy_id: int,
+	bowling: AbilityData,
+	label: String,
+) -> void:
+	var action: TimelineAction = _committed_action_for_unit(ctx.director, k1_id)
+	assert_object(action).override_failure_message("%s: bowling action missing" % label).is_not_null()
+	if action != null:
+		assert_that(action.target_coord).is_equal(_BOWL_DEST)
+	var projected: UnitState = ctx.director.projected_state.get_unit_by_id(k1_id)
+	assert_that(projected.position).is_equal(_BOWL_DEST)
+	assert_int(projected.ability.points_left).is_equal(0)
+	var live_k: UnitState = ctx.director.board.get_unit_by_id(k1_id)
+	assert_that(live_k.position).override_failure_message(
+		"%s: dash not executed yet; live knight stays at armed stand" % label,
+	).is_equal(_BOWL_STAND)
+	var live_e: UnitState = ctx.director.board.get_unit_by_id(enemy_id)
+	assert_that(live_e.position).is_equal(_BOWL_ENEMY)
+	var persist: Array[Vector2i] = ctx.input.display_move_route_cells(k1_id)
+	if persist.size() < 2:
+		persist.clear()
+		for v: Variant in ctx.input.display_committed_action_route_cells(k1_id, action, _BOWL_STAND):
+			persist.append(v as Vector2i)
+	if persist.size() < 2 and action != null and not action.waypoints.is_empty():
+		persist = [_BOWL_STAND]
+		persist.append_array(action.waypoints)
+	assert_int(persist.size()).override_failure_message(
+		"%s: committed dash preview must persist until execute" % label,
+	).is_greater(1)
 
 
 func _click_commit_at_cell(ctx: Dictionary, cell: Vector2i) -> void:

@@ -49,6 +49,21 @@ const TRAMPLE_FULL_PATH: Array[Vector2i] = [
 ]
 const K1_BASH_ROUTE: Array[Vector2i] = [KNIGHT_START, BASH_HOVER_WALK, BASH_APPROACH]
 const K1_BASH_WAYPOINTS: Array[Vector2i] = [BASH_HOVER_WALK, BASH_APPROACH]
+## Bowling Charge advance: L-walk premove, then DASH 3 past an enemy.
+const BOWLING_ADVANCE_START := KNIGHT_START
+const BOWLING_ADVANCE_L_MID := Vector2i(5, 5)
+const BOWLING_ADVANCE_STAND := Vector2i(5, 6)
+const BOWLING_ADVANCE_ENEMY := Vector2i(5, 8)
+const BOWLING_ADVANCE_DEST := Vector2i(5, 9)
+const BOWLING_ADVANCE_L_ROUTE: Array[Vector2i] = [
+	BOWLING_ADVANCE_START, BOWLING_ADVANCE_L_MID, BOWLING_ADVANCE_STAND,
+]
+const BOWLING_ADVANCE_L_WAYPOINTS: Array[Vector2i] = [
+	BOWLING_ADVANCE_L_MID, BOWLING_ADVANCE_STAND,
+]
+const BOWLING_ADVANCE_OFF_RED_A := Vector2i(6, 7)
+const BOWLING_ADVANCE_OFF_RED_B := Vector2i(6, 8)
+const BOWLING_ADVANCE_POST_DEST := Vector2i(6, 9)
 
 
 static func wire_bash_board_minimal() -> Dictionary:
@@ -1289,6 +1304,25 @@ static func wire_aoe_cleave_board() -> Dictionary:
 	fix["e1_id"] = _unit_id_at(fix.board, Vector2i(7, 5))
 	fix["e2_id"] = _unit_id_at(fix.board, Vector2i(7, 4))
 	fix["e3_id"] = _unit_id_at(fix.board, Vector2i(7, 6))
+	return fix
+
+
+static func wire_bowling_advance_board() -> Dictionary:
+	PlanningDragE2EHarness.cleanup_all()
+	var session := TestBattleSession.new()
+	session.reset_defaults()
+	session.extra_player_coords = []
+	var dummy_cells: Array[Vector2i] = [BOWLING_ADVANCE_ENEMY]
+	session.dummy_coords = dummy_cells
+	var board: BoardState = TestBattleEncounterBuilder.build_board(session)
+	var knight_id: int = _unit_id_at(board, BOWLING_ADVANCE_START)
+	assert(knight_id > 0, "wire_bowling_advance_board: knight missing at %s" % BOWLING_ADVANCE_START)
+	var enemy_id: int = _unit_id_at(board, BOWLING_ADVANCE_ENEMY)
+	assert(enemy_id > 0, "wire_bowling_advance_board: enemy missing at %s" % BOWLING_ADVANCE_ENEMY)
+	var fix: Dictionary = _wire_board_fixture(board, knight_id)
+	clamp_training_board_pools(fix)
+	fix["k1_id"] = knight_id
+	fix["e_bowl_id"] = enemy_id
 	return fix
 
 

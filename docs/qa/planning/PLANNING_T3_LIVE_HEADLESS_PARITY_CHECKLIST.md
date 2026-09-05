@@ -56,6 +56,25 @@ Authoritative mapping: every checkpoint in `tests/live_planning_scene_test.gd` m
 | K4-08 | drag post_commit red off | `assert_red_contract` |
 | EXEC-01 | simulate committed final cells | `run_execute_all_plans` |
 
+## Bowling Charge advance — `test_live_bowling_advance_session`
+
+L-shape walk/arm, then DASH 3 past an enemy. Premove executes immediately and **clears** that walk preview. Dash is a **movement module** (straight-line tile path, not teleport).
+
+| ID | Live source | Headless owner |
+|----|-------------|----------------|
+| BA-01 | unarmed stand probe (blue + red from start) | `_probe_unarmed_stand` |
+| BA-02 | L-walk hover mid (path, ghost, walk cursor) | `_probe_unarmed_l_walk` |
+| BA-03 | L-walk hover dest | `_probe_unarmed_l_walk` |
+| BA-04 | painted L-walk commit + immediate preview clear + arm | `_commit_l_walk_and_arm` |
+| BA-06 | hover **every** red dash tile (path, ghost, cursor, slots) | `_probe_all_red_dash_tiles` |
+| BA-07 | at least two off-red hovers + click must not commit | `_probe_off_red_tiles` |
+| BA-08 | commit dest 3 tiles past enemy | `_commit_dash_past_enemy` |
+| BA-09 | dash committed; live still at stand; projected at dest; enemy live unchanged | `_assert_bowling_dash_committed` |
+| BA-10 | undo clear | `undo_until_unit_clear` |
+| BA-11 / BA-12 | second L-walk + dash commit + mode parity | second pass |
+| BA-13–BA-16 | postmove from bowling landing | `_probe_postmove_from_landing` |
+| BA-17 | execute sim matches projected knight + displaced enemy | `_assert_execute_matches_projected` |
+
 ## Swap session — `test_live_swap_session`
 
 | ID | Live source | Headless owner |
