@@ -338,6 +338,8 @@ static func begin_drag_route(fix: Dictionary, route: Array[Vector2i]) -> void:
 static func release_at(fix: Dictionary, cell: Vector2i) -> void:
 	fix.input.set_qa_pointer_grid_cell(cell)
 	var local: Vector2 = fix.map_stub.grid_to_local(cell)
+	if fix.input.dragging:
+		fix.input.update_drag(local)
 	fix.input.on_left_release(local)
 	fix.director.flush_plan_refresh_signals_if_pending()
 

@@ -1818,9 +1818,9 @@ static func run_execute_all_plans(
 		failures, "EXEC-01/k3", board.get_unit_by_id(k3_id).position, expect["k3_pos"] as Vector2i,
 	)
 	var k3_steps: Array[Vector2i] = []
-	for ev: Dictionary in result.events:
-		if ev.get("type") == "UNIT_MOVED" and ev.get("actor") == k3_id:
-			var path_arr: Array = ev.get("path", [])
+	for ev: SimEvent in result.events:
+		if ev.type == GameEnums.SimEventType.UNIT_MOVED and ev.moved_unit_id() == k3_id:
+			var path_arr: Array = ev.data.get("path", [])
 			for step: Variant in path_arr:
 				k3_steps.append(step as Vector2i)
 	if k3_steps.size() >= 2:

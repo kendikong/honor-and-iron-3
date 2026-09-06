@@ -390,6 +390,8 @@ static func commit_slots_production(fix: Dictionary, slots: Dictionary) -> bool:
 	input.call("_paint_intent_slots_before_commit", unit_id, slots)
 	if not director.commit_from_slots(unit_id, slots):
 		return false
+	if input != null:
+		input.dragging = false
 	input.call("_promote_intent_preview_after_commit")
 	flush_planning(fix)
 	return true
@@ -468,7 +470,7 @@ static func assert_display_move_preview_after_commit(
 	if fix.director != null and fix.director.board != null:
 		live = fix.director.board.get_unit_by_id(unit_id)
 	var display: Array[Vector2i] = display_move_route(fix, unit_id)
-	var walk_started: bool = live != null and live.position != hover[0]
+	var walk_started: bool = live != null and hover.has(live.position) and live.position != hover[0]
 	if walk_started:
 		if routes_equal(display, hover):
 			assert_fail(

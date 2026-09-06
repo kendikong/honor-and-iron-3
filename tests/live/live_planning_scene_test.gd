@@ -2817,7 +2817,7 @@ func _assert_display_move_preview_after_commit(
 		return
 	var live: UnitState = ctx.director.board.get_unit_by_id(unit_id)
 	var display: Array[Vector2i] = ctx.input.display_move_route_cells(unit_id)
-	var walk_started: bool = live != null and live.position != hover[0]
+	var walk_started: bool = live != null and hover.has(live.position) and live.position != hover[0]
 	if walk_started:
 		assert_bool(PlanningChecklistHarness.routes_equal(display, hover)).override_failure_message(
 			"%s: that walk started; display_move_route_cells must not still be the hover path %s (live at %s)"

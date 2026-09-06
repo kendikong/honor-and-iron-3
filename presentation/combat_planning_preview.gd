@@ -1324,6 +1324,12 @@ static func _walk_committed_plan_action_end_cell(
 			if act.awaiting_target:
 				step = AbilitySystem.planning_committed_prefix(act)
 				if step == null:
+					if act.awaiting_module_index > 0 and not act.module_target_coords.is_empty():
+						var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+							act, act.awaiting_module_index - 1,
+						)
+						if prior_stand.x > -900000:
+							origin = prior_stand
 					continue
 			origin = _plan_step_end_cell_for_action_end(origin, step)
 	return origin
@@ -1334,11 +1340,19 @@ static func _plan_step_end_cell_for_action_end(origin: Vector2i, act: TimelineAc
 		return origin
 	if act.type == GameEnums.ActionType.MOVE:
 		return act.target_coord
-	if act.type != GameEnums.ActionType.ABILITY or act.awaiting_target:
+	if act.type != GameEnums.ActionType.ABILITY:
 		return origin
 	if act.ability == null:
 		return origin
 	if act.ability.is_movement_kind() or AbilitySystem.ability_has_movement_effect(act.ability):
+		if act.awaiting_target and act.awaiting_module_index > 0:
+			var prior_stand: Vector2i = AbilitySystem.module_target_coord(
+				act, act.awaiting_module_index - 1,
+			)
+			if prior_stand.x > -900000:
+				return prior_stand
+		if not act.waypoints.is_empty():
+			return act.waypoints.back()
 		return act.target_coord
 	return origin
 
@@ -1706,7 +1720,28 @@ static func display_route_cells_from_preview(
 		if fallback.size() >= 2:
 			return frozen_move_route_cells_from_array(fallback)
 		return []
-	return frozen_move_route_cells(unit_id, preview)
+	var frozen: Array[Vector2i] = frozen_move_route_cells(unit_id, preview)
+	if frozen.size() >= 2:
+		return frozen
+	if director != null:
+		var plan: Timeline = director.get_player_plan()
+		var live_board: BoardState = director.live_planning_board()
+		var live_unit: UnitState = live_board.get_unit_by_id(unit_id) if live_board != null else null
+		if plan != null:
+			for i: int in range(plan.entries.size() - 1, -1, -1):
+				var act: TimelineAction = plan.entries[i]
+				if act != null and act.actor_id == unit_id and not act.waypoints.is_empty():
+					if live_unit != null and live_unit.position == act.target_coord and act.type == GameEnums.ActionType.MOVE:
+						continue
+					var start_pos: Vector2i = move_leg_origin_cell(
+						director, board, unit_id, act.move_timing, act, preview
+					)
+					var cells: Array[Vector2i] = [start_pos]
+					for wp: Vector2i in act.waypoints:
+						cells.append(wp)
+					if cells.size() >= 2:
+						return cells
+	return []
 
 
 ## Committed timeline chevron route — single read API (frozen preview, then plan waypoints).
@@ -1723,6 +1758,11 @@ static func display_committed_action_route_cells(
 	var path_leg: Array = committed_action_route_leg(unit_id, preview, action, start_pos)
 	if path_leg.size() >= 2:
 		return path_leg
+	if not action.waypoints.is_empty():
+		var built: Array = [start_pos]
+		for wp: Vector2i in action.waypoints:
+			built.append(wp)
+		return built
 	var draw_route: Array = display_route_cells_from_preview(
 		unit_id, preview, director, board, false,
 	)

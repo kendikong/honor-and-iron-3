@@ -736,6 +736,10 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 		if painted is Array and (painted as Array).size() >= 2:
 			return (painted as Array).duplicate()
 		return []
+	if dragging and _drag_unit_id == unit_id and _drag_route.size() >= 2:
+		var drag_actor: UnitState = _proj_unit(unit_id)
+		if drag_actor == null or not _postmove_orbit_drag_active(drag_actor):
+			return _drag_route.duplicate()
 	var receipt: PlanningHoverPreview = _current_hover_receipt()
 	if receipt != null and receipt.unit_id == unit_id:
 		var receipt_fresh: bool = (
@@ -757,10 +761,6 @@ func _authoritative_route_for_unit(unit_id: int) -> Array:
 						skip_stale_postmove_receipt = true
 				if not skip_stale_postmove_receipt:
 					return (route as Array).duplicate()
-	if dragging and _drag_unit_id == unit_id and _drag_route.size() >= 2:
-		var drag_actor: UnitState = _proj_unit(unit_id)
-		if drag_actor == null or not _postmove_orbit_drag_active(drag_actor):
-			return _drag_route.duplicate()
 	var live_path: Variant = preview_state.preview_paths.get(unit_id, null)
 	if live_path is Array and (live_path as Array).size() >= 2:
 		if dragging and _drag_unit_id == unit_id:
@@ -2055,6 +2055,8 @@ func _should_refresh_hover_preview(cell: Vector2i, planning_cell_changed: bool) 
 
 
 func _hover_preview_fresh_at(cell: Vector2i) -> bool:
+	if _settled_hover_preview == null or not _settled_hover_preview.valid:
+		return false
 	if preview_state.preview_board == null or _hover_preview_cache_key.is_empty():
 		return false
 	if _director == null or _director.selected_unit_id < 0:
@@ -2357,6 +2359,8 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 				)
 				if not _is_invalid_dict(approach_res):
 					_apply_settled_preview_result(approach_res)
+				else:
+					_restore_hover_preview()
 				_refresh_click_target_highlight()
 				return
 			_clear_stale_painted_preview_route(p_unit.id)
@@ -2370,6 +2374,8 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			)
 			if not _is_invalid_dict(in_range_res):
 				_apply_settled_preview_result(in_range_res)
+			else:
+				_restore_hover_preview()
 			_refresh_click_target_highlight()
 			return
 		var step_ally_slots: Dictionary = _ally_skill_preview_slots(p_unit, cell)
@@ -2528,6 +2534,8 @@ func _refresh_hover_interaction_preview(cell: Vector2i) -> void:
 			)
 			if not _is_invalid_dict(stand_res):
 				_apply_settled_preview_result(stand_res)
+			else:
+				_restore_hover_preview()
 			_refresh_click_target_highlight()
 			return
 	_restore_hover_preview()
@@ -2731,6 +2739,8 @@ func _clear_stale_painted_preview_route(unit_id: int) -> void:
 	if unit_id < 0:
 		return
 	if preview_state.is_painted_leg_sealed(unit_id):
+		return
+	if awaiting_targeting_active():
 		return
 	_clear_frozen_painted_leg(unit_id)
 	if not preview_state.preview_paths.has(unit_id):
@@ -3685,6 +3695,7 @@ func _commit_at_cell(
 	return true
 
 func _promote_intent_preview_after_commit() -> void:
+	dragging = false
 	if _planning == null:
 		return
 	if _director != null and _director.plan_action.entries.is_empty() and _director.plan_post_move.entries.is_empty():
@@ -3965,15 +3976,39 @@ func _preview_paths_snapshot_for_settle(
 		and _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
 	)
 	var settle_waypoints: Array[Vector2i] = waypoints
+	var awaiting_mov_ability: AbilityData = _awaiting_ability_for(settle_actor)
+	if awaiting_mov_ability == null:
+		awaiting_mov_ability = _selected_ability_data(settle_actor)
+	var is_awaiting_endpoint: bool = (
+		awaiting_mov_ability != null
+		and _is_awaiting_movement_endpoint(settle_actor, awaiting_mov_ability)
+	)
+	var awaiting_act: TimelineAction = _director.find_awaiting_action(unit_id) if _director != null else null
 	if (
 		settle_actor != null
-		and preview_state.is_painted_leg_sealed(unit_id)
 		and awaiting_targeting_active()
+		and not is_awaiting_endpoint
+		and (
+			preview_state.is_painted_leg_sealed(unit_id)
+			or (awaiting_act != null and awaiting_act.awaiting_module_index > 0)
+		)
 		and not _hover_orbit_extends_painted_receipt(settle_actor, _hover_cell)
 	):
 		var targeting_frozen: Variant = preview_state.preview_paths.get(unit_id, null)
+		if targeting_frozen == null or (targeting_frozen is Array and (targeting_frozen as Array).size() < 2):
+			var committed_pv: CombatPlanningPreview = committed_route_preview()
+			if committed_pv != null:
+				targeting_frozen = committed_pv.preview_paths.get(unit_id, null)
+		if targeting_frozen == null or (targeting_frozen is Array and (targeting_frozen as Array).size() < 2):
+			var display_cells: Array[Vector2i] = display_move_route_cells(unit_id)
+			if display_cells.size() >= 2:
+				targeting_frozen = display_cells
 		if targeting_frozen is Array and (targeting_frozen as Array).size() >= 2:
 			snapshot[unit_id] = (targeting_frozen as Array).duplicate()
+			return snapshot
+		var landing: Vector2i = _settle_phase_entry_stand(settle_actor)
+		if landing.x > -900000:
+			snapshot[unit_id] = [landing]
 			return snapshot
 	if (
 		settle_actor != null
@@ -3987,13 +4022,6 @@ func _preview_paths_snapshot_for_settle(
 		if frozen_route is Array and (frozen_route as Array).size() >= 2:
 			snapshot[unit_id] = (frozen_route as Array).duplicate()
 			return snapshot
-	var awaiting_mov_ability: AbilityData = _awaiting_ability_for(settle_actor)
-	if awaiting_mov_ability == null:
-		awaiting_mov_ability = _selected_ability_data(settle_actor)
-	var is_awaiting_endpoint: bool = (
-		awaiting_mov_ability != null
-		and _is_awaiting_movement_endpoint(settle_actor, awaiting_mov_ability)
-	)
 	if (
 		settle_actor != null
 		and _voluntary_walk_orbit_settle_open(settle_actor)
@@ -4070,7 +4098,8 @@ func _preview_paths_snapshot_for_settle(
 		built.append(move_origin_settle)
 	var route_cells: Array[Vector2i] = slot_wps if not slot_wps.is_empty() else waypoints
 	for wp_i: int in range(route_cells.size()):
-		built.append(route_cells[wp_i])
+		if built.is_empty() or built.back() != route_cells[wp_i]:
+			built.append(route_cells[wp_i])
 	if built.size() >= 2:
 		snapshot[unit_id] = built
 	if settle_actor != null and _hover_cell.x > -900000:
@@ -4235,6 +4264,7 @@ func _play_commit_sfx(slots: Dictionary) -> void:
 
 
 func _on_commit_slots_applied(unit_id: int, slots: Dictionary) -> void:
+	dragging = false
 	if _director == null:
 		return
 	for column: String in ["pre", "action", "post"]:
@@ -4543,10 +4573,14 @@ func _hover_interaction_cache_key(
 		return ""
 	var resolved_target: int = attack_target_id
 	var hover_unit: UnitState = _resolve_hover_unit_at(hover_cell)
-	if hover_unit != null and hover_unit.is_enemy():
-		resolved_target = hover_unit.id
-	elif hover_unit != null and hover_unit.id == unit_id:
-		resolved_target = unit_id
+	var actor: UnitState = _proj_unit(unit_id)
+	if hover_unit != null:
+		if hover_unit.is_enemy():
+			resolved_target = hover_unit.id
+		elif hover_unit.id == unit_id:
+			resolved_target = unit_id
+		elif actor != null and _can_target_unit_with_selected_ability(actor, hover_unit):
+			resolved_target = hover_unit.id
 	var params: Dictionary = _commit_interaction_params(hover_cell, resolved_target)
 	var legal_tiles: Array[Vector2i] = params.legal_move_tiles as Array[Vector2i]
 	if legal_tiles.is_empty():
@@ -5150,6 +5184,10 @@ func movement_hover_route_display_applies(actor: UnitState, ability: AbilityData
 func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if _director == null or unit_id < 0:
 		return []
+	if _director.unit_has_wait_planned(unit_id):
+		return []
+	if unit_id == _director.selected_unit_id and CombatDirector.is_wait_ability_index(_director.selected_ability_index):
+		return []
 	var actor: UnitState = _proj_unit(unit_id)
 	if actor == null and _director.board != null:
 		actor = _director.board.get_unit_by_id(unit_id)
@@ -5163,16 +5201,28 @@ func display_move_route_cells(unit_id: int) -> Array[Vector2i]:
 	if movement_step:
 		var route_ability: AbilityData = _selected_ability_data(actor)
 		if not movement_hover_route_display_applies(actor, route_ability):
-			return []
-	if unit_id == _director.selected_unit_id:
-		return []
-	return CombatPlanningPreview.display_route_cells_from_preview(
+			movement_step = false
+	var live_cells: Array[Vector2i] = CombatPlanningPreview.display_route_cells_from_preview(
 		unit_id,
 		preview_state,
 		_director,
 		_proj(),
 		movement_step,
 	)
+	if live_cells.size() >= 2:
+		return live_cells
+	var committed_pv: CombatPlanningPreview = committed_route_preview()
+	if committed_pv != null:
+		var committed_cells: Array[Vector2i] = CombatPlanningPreview.display_route_cells_from_preview(
+			unit_id,
+			committed_pv,
+			_director,
+			_proj(),
+			false,
+		)
+		if committed_cells.size() >= 2:
+			return committed_cells
+	return []
 func clear_hover_route_preview() -> void:
 	var preserved_paths: Dictionary = {}
 	for uid: Variant in preview_state.painted_leg_sealed.keys():
@@ -5810,6 +5860,9 @@ func _armed_painted_orbit_hover_parity_active(p_unit: UnitState, cell: Vector2i)
 		return false
 	if _director.selected_ability_index < 0:
 		return false
+	var ability: AbilityData = _selected_ability_data(p_unit)
+	if ability == null or not _is_awaiting_movement_endpoint(p_unit, ability):
+		return false
 	if not preview_state.is_painted_leg_sealed(p_unit.id):
 		return false
 	if not _painted_preview_route_active(p_unit.id):
@@ -5904,12 +5957,17 @@ func _do_refresh_voluntary_walk_hover_preview(p_unit: UnitState, cell: Vector2i)
 				_refresh_click_target_highlight()
 				_restore_parked_preview_board(parked_preview_board)
 				return
+	if _hover_settle_fresh_at(p_unit.id, cell):
+		_restore_parked_preview_board(parked_preview_board)
+		return
 	if (
 		active_movement_planning_step(p_unit)
 		and not _voluntary_walk_can_paint_cell(p_unit, cell)
 		and not _is_hover_move_cell(p_unit, cell)
 	):
 		_clear_stale_painted_preview_route(p_unit.id)
+		preview_state.preview_board = null
+		_clear_intent_snapshot()
 		_refresh_click_target_highlight()
 		_restore_parked_preview_board(parked_preview_board)
 		return
@@ -8857,11 +8915,7 @@ func _build_ally_commit_slots(
 			move_dest = _drag_route_stand_cell()
 	if move_wps.is_empty():
 		var swap_range: int = _ability_range(actor)
-		var live_origin: Vector2i = _phase_entry_stand(actor)
-		if _director != null:
-			var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
-			if live_unit != null:
-				live_origin = live_unit.position
+		var live_origin: Vector2i = _settle_phase_entry_stand(actor)
 		if (
 			swap_range >= 0
 			and GridSystem.manhattan(live_origin, ally.position) <= swap_range
@@ -8885,11 +8939,7 @@ func _build_ally_commit_slots(
 	var approach: Vector2i = _director.preview_approach_tile(
 		unit_id, ally.id, ability_index, approach_hint,
 	)
-	var live_origin: Vector2i = _phase_entry_stand(actor)
-	if _director != null:
-		var live_unit: UnitState = _director.live_planning_board().get_unit_by_id(unit_id)
-		if live_unit != null:
-			live_origin = live_unit.position
+	var live_origin: Vector2i = _settle_phase_entry_stand(actor)
 	if approach == live_origin and not _in_ability_range_from(actor, ally.position, ally):
 		slots["invalid"] = "Target is out of range."
 		return slots

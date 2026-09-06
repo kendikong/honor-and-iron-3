@@ -191,8 +191,11 @@ static func validate_geometry(
 			% p_unit_id
 		)
 	var dest: Vector2i = slot_wps[slot_wps.size() - 1]
+	var origin: Vector2i = p_move_origin
+	if (origin.x <= -900000 or not route.has(origin) or origin == dest) and not route.is_empty() and route[0] is Vector2i:
+		origin = route[0] as Vector2i
 	var leg: Array[Vector2i] = CombatPlanningPreview.destination_cells_from_route(
-		route, p_move_origin, dest,
+		route, origin, dest,
 	)
 	if leg != slot_wps:
 		return (

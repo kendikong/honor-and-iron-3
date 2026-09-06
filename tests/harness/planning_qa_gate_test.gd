@@ -3493,7 +3493,13 @@ static func _test_push_through_repaths_off_expensive_walk(failures: Array[String
 	var slots: Dictionary = input._final_commit_slots_for_interaction(
 		1, Vector2i(3, 5), expensive_route,
 	)
-	if bool(slots.get("invalid", false)):
+	var is_inv: Variant = slots.get("invalid", false)
+	var slots_are_invalid: bool = false
+	if is_inv is bool:
+		slots_are_invalid = is_inv as bool
+	elif is_inv is String:
+		slots_are_invalid = not (is_inv as String).is_empty()
+	if slots_are_invalid:
 		failures.append(
 			"PlanningQAGate push_through repath: ally hover must repath off expensive walk (invalid=%s)"
 			% str(slots.get("invalid", "")),

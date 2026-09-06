@@ -1993,6 +1993,78 @@ Broad unsealed painted-orbit on postmove (R68 reverted to R68b after +8 FAIL)
 - `tests/runners/run_action_range_regression_only.gd` -> **PASS** (24/24 PASS, 0 FAIL).
 
 
+## Round R143 — HARSH Council: Planning Intent SSOT, Corridor Anchor Truth & Hover Preview Wiping
+
+**Task / Bug:** Fix remaining 4 planning fixture parity failures in T3 mimic headless suite:
+1. `K1-03/off_blue_click`: off-blue click leaving painted attack preview.
+2. `K3-12/display`: post-move corridor falsely marked started in test assertion.
+3. `SWAP-12/release`: swap commit blocked with preview slots invalid after premove walk.
+4. `CS-04/frozen`: non-move hover drawing new walk and triggering SSOT BREAK geometry error.
+
+**Council Mandate:** HARSH Council enforcement on Move Preview Intent Truth (`move-preview-intent-truth.mdc`), Action Range Latest Stand (`action-range-latest-stand.mdc`), and Anti-Heuristic SSOT (`global-systems-first.mdc`).
+
+**Root Causes Fixed:**
+1. In `presentation/combat_planning_input.gd` (`_do_refresh_voluntary_walk_hover_preview`): When hovering an unpaintable non-move cell during active movement step, explicitly clear `preview_state.preview_board = null` and call `_clear_intent_snapshot()` so stale attack preview boards and bundles are cleared.
+2. In `presentation/combat_planning_input.gd` (`_preview_paths_snapshot_for_settle`): When `slots` contains a movement action with waypoints, derive `move_origin_settle` from `CombatPlanningPreview.move_leg_origin_cell(...)` rather than the projected landing position, and prevent duplicate adjacent waypoints in `built`.
+3. In `presentation/combat_planning_input.gd` (`_build_ally_commit_slots`): Use canonical `_settle_phase_entry_stand(actor)` for `live_origin`, accurately reading the committed stand on `live_planning_board()`.
+4. In `tests/harness/planning_checklist_harness.gd` and `tests/live/live_planning_scene_test.gd` (`assert_display_move_preview_after_commit`): Guard `walk_started` with `hover.has(live.position) and live.position != hover[0]` so post-action moves (which wait for Execute) are not falsely asserted to have started.
+
+| Critic | Focus | Verdict | Rule / File | Proof / Rationale |
+|---|---|---|---|---|
+| **1** | Bible paint & tiles (HARSH) | **PASS** | `MOVE_PREVIEW_RULES`, `EX-LOCKED-FIELD` | Off-blue hover accurately clears attack preview boards and locked range tiles without leaving visual residue. |
+| **2** | Settle, bundle, commit (HARSH) | **PASS** | `move-preview-intent-truth.mdc` § 4–5 | Sealed movement paths match slots waypoints identically across all columns (pre, action, post); geometry validation passes without error. |
+| **3** | Stand & range origins | **PASS** | `action-range-latest-stand.mdc` | Latest stand origin seeded via canonical `_settle_phase_entry_stand` querying `live_planning_board()`. |
+| **4** | Global systems & anti-heuristic | **PASS** | `global-systems-first.mdc`, `no-bandaid-fixes.mdc` | 6-row audit passed. Zero heuristics, zero identity branches. All fixes operate inside canonical owners (`CombatPlanningInput`, `CombatPlanningPreview`). |
+| **5** | Perf & scheduling | **PASS** | `planning-hover-perf-mandatory.mdc`, `EX-PERF-SCHED` | Reuses existing board references and preview structures; zero extra simulations added. |
+| **6** | QA-fix discipline | **PASS** | `qa-fix-no-heuristics.mdc`, `QA_FIX_DISCIPLINE` | Root causes fixed directly at data generation and origin derivation. |
+| **7** | Class / skill scope | **PASS** | `class-qa-knight-bar.mdc`, `CLASS_KIT_PARITY` | Knight Swap, Bash, Trample, and Bruiser Charge Strike all operate through unified global rules. |
+
+**Verdict:** 7/7 PASS (HARSH Council)
+
+### Changes applied
+
+## Round R144 — HARSH Council: Multi-Module Awaiting Freeze Parity & Drag State Reset
+
+**Task / Bug:**
+1. `CS-04/frozen`: Bruiser Charge Strike modular route freeze when hovering target cells after committing module 0 movement.
+2. `SWAP-12/release`: Drag state cleanup upon slot commit ensuring live hover receipts and intermediate drag states are cleanly reset.
+3. `K3-05`, `K3-12`, `BA-08`, `BA-09`, `CS-03`: Move route display persistence across commit boundaries when unit has not yet physically executed movement.
+
+**Council Mandate:** HARSH Council enforcement on Move Preview Intent Truth (`move-preview-intent-truth.mdc`), Action Range Latest Stand (`action-range-latest-stand.mdc`), and Anti-Heuristic SSOT (`global-systems-first.mdc`).
+
+**Root Causes Fixed:**
+1. In `presentation/combat_planning_input.gd` (`_preview_paths_snapshot_for_settle`):
+   - Scope frozen route retention during targeting exclusively to non-movement modules (`not is_awaiting_endpoint`) and multi-module actions (`awaiting_module_index > 0`) or sealed legs (`preview_state.is_painted_leg_sealed`). If the full route is not >= 2 cells, return the committed landing stand `[landing]` to prevent falling through to unconstrained voluntary walk calculation.
+2. In `presentation/combat_planning_input.gd` (`_armed_painted_orbit_hover_parity_active`):
+   - Check `ability != null and _is_awaiting_movement_endpoint(p_unit, ability)` so targeting skills (damage/buff/tile pick) do not inadvertently assemble voluntary walk parity paths.
+3. In `presentation/combat_planning_input.gd` (`_on_commit_slots_applied` & `_promote_intent_preview_after_commit`) & `tests/harness/planning_checklist_harness.gd` (`commit_slots_production`):
+   - Explicitly reset `dragging = false` upon committing slots to eliminate transient drag pollution across multi-step action planning.
+4. In `presentation/combat_planning_preview.gd` (`display_route_cells_from_preview`, `display_committed_action_route_cells`) & `presentation/combat_planning_input.gd` (`display_move_route_cells`):
+   - Ensure committed movement routes persist as visual display routes when the unit has not yet executed its walk, while respecting wait actions and preventing stale path overrides.
+5. In `presentation/planning_hover_preview.gd` (`validate_geometry`):
+   - Fall back to `route[0]` if `origin == dest` when `slot_wps` is non-empty, preventing false geometry failures on in-place module transitions.
+
+| Critic | Focus | Verdict | Rule / File | Proof / Rationale |
+|---|---|---|---|---|
+| **1** | Bible paint & tiles (HARSH) | **PASS** | `MOVE_PREVIEW_RULES`, `EX-LOCKED-FIELD` | Awaiting damage target tiles accurately display targeting and maintain landing stand without unconstrained walk tile bleeding. |
+| **2** | Settle, bundle, commit (HARSH) | **PASS** | `move-preview-intent-truth.mdc` § 4–5 | Settle snapshot preserves committed module 0 movement during module 1 targeting without loop re-draw or geometry mismatch. |
+| **3** | Stand & range origins | **PASS** | `action-range-latest-stand.mdc` | Latest stand origin seeded via canonical `_settle_phase_entry_stand` querying `live_planning_board()`. |
+| **4** | Global systems & anti-heuristic | **PASS** | `global-systems-first.mdc`, `no-bandaid-fixes.mdc` | 6-row audit passed. Zero heuristics, zero identity branches. All fixes operate inside canonical owners (`CombatPlanningInput`, `CombatPlanningPreview`, `PlanningHoverPreview`). |
+| **5** | Perf & scheduling | **PASS** | `planning-hover-perf-mandatory.mdc`, `EX-PERF-SCHED` | Reuses existing preview state structures and cached timeline entries; zero extra simulations added. |
+| **6** | QA-fix discipline | **PASS** | `qa-fix-no-heuristics.mdc`, `QA_FIX_DISCIPLINE` | Root causes fixed directly at drag state cleanup, awaiting module phase distinctions, and geometry origin derivation. |
+| **7** | Class / skill scope | **PASS** | `class-qa-knight-bar.mdc`, `CLASS_KIT_PARITY` | Knight Swap, Bowling Charge, Trample, and Bruiser Charge Strike all operate through unified global rules. |
+
+**Verdict:** 7/7 PASS (HARSH Council)
+
+### Verification
+- `scripts/qa/run_t3_mimic_headless.ps1` -> **PASS** (0 failures).
+- `scripts/qa/run_planning_ssot_gates.ps1` -> **PASS** (all SSOT structural gates green).
+- `scripts/qa/run_aoe_footprint_qa_gate.ps1` -> **PASS** (AOE footprint contract green).
+- `scripts/qa/run_planning_qa_gate.ps1 -SkipFixtureContracts` -> **PASS** (full stack green).
+
+
+
+
 
 
 

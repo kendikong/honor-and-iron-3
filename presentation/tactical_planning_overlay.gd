@@ -1069,7 +1069,10 @@ func _apply_planning_tile_layers(
 		if paint_matches:
 			match phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
-					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					if show_locked_action_range:
+						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					else:
+						_hover_action_range_tiles.clear()
 					if committed_class_action and not settled.blast_on_hover_layer:
 						_hover_blast_tiles.clear()
 						_blast_tiles_on_hover_layer = false
@@ -1091,7 +1094,10 @@ func _apply_planning_tile_layers(
 		if settled.valid:
 			match locked_phase:
 				PlanningPreviewTiles.PhaseKind.MOVEMENT:
-					_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					if show_locked_action_range:
+						_hover_action_range_tiles = settled.action_range_tiles.duplicate()
+					else:
+						_hover_action_range_tiles.clear()
 					if not committed_class_action or settled.blast_on_hover_layer:
 						_hover_blast_tiles = settled.blast_tiles.duplicate()
 						_blast_tiles_on_hover_layer = settled.blast_on_hover_layer
